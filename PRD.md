@@ -512,106 +512,106 @@ This styling guide supplements the PRD and serves as the basis for frontend impl
 
 ## 8.4 Relations
 
+```
 (1)───∞ means: one-to-many; (1)───(1) means: one-to-one
 
-┌───────────────┐ ┌──────────────────┐
-│ users │(1)────────>│ user*credentials │
-│ id (PK) │ │ id (PK) │
-│ username │ │ user_id (FK) │
-│ password_hash │ │ type │
-│ role │ │ identifier │
-│ status │ │ secret │
-│ created_at │ │ created_at │
-└───────┬───────┘ └──────────────────┘
-│(1)
-│
-v(∞)
+┌───────────────┐            ┌──────────────────┐
+│ users         │(1)────────>│ user*credentials │
+│ id (PK)       │            │ id (PK)          │
+│ username      │            │ user_id (FK)     │
+│ password_hash │            │ type             │
+│ role          │            │ identifier       │
+│ status        │            │ secret           │
+│ created_at    │            │ created_at       │
+└───────┬───────┘            └──────────────────┘
+        │(1)
+        │
+        v(∞)
 ┌──────────────────┐
-│ user_contacts │
-│ id (PK) │
-│ user_id (FK) │
-│ type (email/…) │
-│ value │
-│ is_verified │
-│ created_at │
+│ user_contacts    │
+│ id (PK)          │
+│ user_id (FK)     │
+│ type (email/…)   │
+│ value            │
+│ is_verified      │
+│ created_at       │
 └────────┬─────────┘
-│(1)
-│
-v(1)
+         │(1)
+         │
+         v(1)
 ┌──────────────────┐
-│ user_static │ (immutable)
+│ user_static      │ (immutable)
 │ user_id (PK, FK) │
-│ date_of_birth │
-│ gender │
+│ date_of_birth    │
+│ gender           │
 └────────┬─────────┘
-│(1)
-│
-v(1)
-┌──────────────────┐ ┌──────────────────────┐
-│ user_state │(1)───∞──>│ user_state_history │
-│ user_id (PK, FK) │ │ id (PK) │
-│ alias │ │ user_id (FK) │
-│ weight │ │ alias │
-│ weight_unit │ │ weight │
-│ fitness_level │ │ weight_unit │
-│ photo_url │ │ fitness_level │
-│ updated_at │ │ photo_url │
-└────────┬─────────┘ │ updated_at │
-│(1) └──────────────────────┘
-│
-v(∞)
+         │(1)
+         │
+         v(1)
+┌──────────────────┐          ┌──────────────────────┐
+│ user_state       │(1)───∞──>│ user_state_history   │
+│ user_id (PK, FK) │          │ id (PK)              │
+│ alias            │          │ user_id (FK)         │
+│ weight           │          │ alias                │
+│ weight_unit      │          │ weight               │
+│ fitness_level    │          │ weight_unit          │
+│ photo_url        │          │ fitness_level        │
+│ updated_at       │          │ photo_url            │
+└────────┬─────────┘          │ updated_at           │
+         │(1)                 └──────────────────────┘
+         │
+         v(∞)
 ┌──────────────────┐
-│ badges │
-│ id (PK) │
-│ user_id (FK) │
-│ name │
-│ description │
-│ awarded_at │
+│ badges           │
+│ id (PK)          │
+│ user_id (FK)     │
+│ name             │
+│ description      │
+│ awarded_at       │
 └────────┬─────────┘
-│(1)
-│
-v(∞)
+         │(1)
+         │
+         v(∞)
 ┌──────────────────┐
-│ user_points │
-│ id (PK) │
-│ user_id (FK) │
-│ source_type │
-│ source_id │
-│ points │
-│ awarded_at │
+│ user_points      │
+│ id (PK)          │
+│ user_id (FK)     │
+│ source_type      │
+│ source_id        │
+│ points           │
+│ awarded_at       │
 └────────┬─────────┘
-│
-│
-v
-┌──────────────────┐ ┌───────────────────┐
-│ exercises │ │ sessions │
-│ id (PK) │ │ id (PK) │
-│ owner_user_id FK │(1)◄───────(∞) owner_user_id FK │
-│ name │ │ title │
-│ category │ │ planned_for │
-│ muscle_group │ │ completed_at │
-│ tags[] │ │ status │
-│ is_public │ │ visibility │
-│ created_at │ │ calories_burned │
-│ deleted_at │ │ points_total │
-└──────────────────┘ │ created_at │
-│ deleted_at │
-└─────────┬─────────┘
-│(1)
-│
-v(∞)
-┌──────────────────────┐
-│ session_exercises │
-│ id (PK) │
-│ session_id (FK) │
-│ name_snapshot │
-│ position (unique\*) │
-│ planned*\_ / actual\__ │
-│ _\_distance/\_load │
-│ \_\_duration/\_rpe │
-│ \*\_alt_unit │
-└──────────────────────┘
-
+         │
+         │
+         v
+┌──────────────────┐              ┌───────────────────┐
+│ exercises        │              │ sessions          │
+│ id (PK)          │              │ id (PK)           │
+│ owner_user_id FK │(1)◄───────(∞) owner_user_id FK   │
+│ name             │              │ title             │
+│ category         │              │ planned_for       │
+│ muscle_group     │              │ completed_at      │
+│ tags[]           │              │ status            │
+│ is_public        │              │ visibility        │
+│ created_at       │              │ calories_burned   │
+│ deleted_at       │              │ points_total      │
+└──────────────────┘              │ created_at        │
+                                  │ deleted_at        │
+                                  └─────────┬─────────┘
+                                            │(1)
+                                            │
+                                            v(∞)
+                                  ┌────────────────────────┐
+                                  │ session_exercises      │
+                                  │ id (PK)                │
+                                  │ session_id (FK)        │
+                                  │ name_snapshot          │
+                                  │ position (unique\*)    │
+                                  │ planned*\_ / actual\__ │
+                                  │ _\_distance/\_load     │
+                                  │ \_\_duration/\_rpe     │
+                                  │ \*\_alt_unit           │
+                                  └────────────────────────┘
 ```
 
 ## 9. Roadmap
@@ -646,5 +646,4 @@ v(∞)
 - **PII exposure** → Separate contacts/credentials from `users`; limit returned fields; audit logs; strict CORS.
 - **Unit ambiguity** → Store numeric values without units plus explicit `_alt_unit` fields; display according to user preference.
 - **Performance bottlenecks** → DB indexing (FKs, `owner_user_id`, `planned_for`); pagination for feed; CDN/static caching for uploads.
-- **Vendor lock-in for storage** → Abstract file storage to enable swap from local `/uploads` to S3/GCS later with minimal code change.
-```
+- **Vendor lock-in for storage** → Agitbstract file storage to enable swap from local `/uploads` to S3/GCS later with minimal code change.
