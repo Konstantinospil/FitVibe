@@ -113,7 +113,7 @@ export async function resetPasswordAtomic(
   resetTokenType: string,
 ): Promise<boolean> {
   return db.transaction(async (trx) => {
-    const token = await trx("auth_tokens")
+    const token = await trx<{ id: string }>("auth_tokens")
       .where({ id: resetTokenId, user_id: userId, token_type: resetTokenType })
       .whereNull("consumed_at")
       .forUpdate()
