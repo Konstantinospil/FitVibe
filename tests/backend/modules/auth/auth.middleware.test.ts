@@ -6,6 +6,9 @@ import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/auth/auth.session-tokens.js");
+jest.mock("../../../../apps/backend/src/db/connection.js", () => ({
+  db: jest.fn(),
+}));
 jest.mock("../../../../apps/backend/src/modules/auth/auth.state.repository.js");
 jest.mock("../../../../apps/backend/src/config/env.js", () => ({
   env: {
