@@ -143,9 +143,10 @@ describeWithTestDatabase("System Routes", () => {
         roleCode: "athlete",
       });
 
+      const regularToken = await tokenFor(regularUser);
       const response = await request(app)
         .post("/api/v1/system/read-only/enable")
-        .set("Authorization", `Bearer ${tokenFor(regularUser)}`)
+        .set("Authorization", `Bearer ${regularToken}`)
         .send({ reason: "Test" });
 
       expect(response.status).toBe(403);
@@ -209,9 +210,10 @@ describeWithTestDatabase("System Routes", () => {
         roleCode: "athlete",
       });
 
+      const regularToken = await tokenFor(regularUser);
       const response = await request(app)
         .post("/api/v1/system/read-only/disable")
-        .set("Authorization", `Bearer ${tokenFor(regularUser)}`)
+        .set("Authorization", `Bearer ${regularToken}`)
         .send({ notes: "Test" });
 
       expect(response.status).toBe(403);
