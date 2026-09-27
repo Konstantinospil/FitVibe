@@ -58,16 +58,16 @@ Production-ready Docker configurations.
 
 **Files:**
 
-- `docker-compose.prod.yml` - Production Docker Compose stack
-- `compose.prod.yml` - Alternative production configuration
+- `compose.yml` - Single authoritative production Compose contract
+- `README.md` - Production stack/runtime contract
 - `Dockerfile.backend` - Backend production image
 - `Dockerfile.frontend` - Frontend production image
 - `nginx.conf` - Production NGINX configuration
 
-**Usage:**
+Production deployment is performed by `.github/workflows/cd.yml`, which installs the canonical template as `/srv/stacks/fitvibe/compose.yml`. Validate changes with:
 
 ```bash
-docker compose -f infra/docker/prod/docker-compose.prod.yml up -d
+bash scripts/validate-production-compose.sh
 ```
 
 **Features:**
@@ -140,7 +140,8 @@ Key variables:
 
 ### Production Volumes
 
-- `postgres_data` - PostgreSQL data (backed up regularly)
+- `db_data` - PostgreSQL data (backed up regularly)
+- `clamav_signatures` - persisted ClamAV signature database
 - Static assets served via NGINX
 
 ## Networking

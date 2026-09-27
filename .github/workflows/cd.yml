@@ -221,11 +221,6 @@ jobs:
               exit 1
             fi
 
-            if [ ! -f "${PROD_STACK_DIR}/compose.yml" ]; then
-              echo "Production compose file not found at ${PROD_STACK_DIR}/compose.yml" >&2
-              exit 1
-            fi
-
             if [ ! -f "${PROD_STACK_DIR}/.env" ]; then
               echo "Production environment file not found at ${PROD_STACK_DIR}/.env" >&2
               exit 1
@@ -246,6 +241,13 @@ jobs:
 
             git checkout -B main "${DEPLOY_SHA}"
 
+            canonical_compose="${PROD_SOURCE_DIR}/infra/docker/prod/compose.yml"
+            if [ ! -f "${canonical_compose}" ]; then
+              echo "Canonical production compose file not found at ${canonical_compose}" >&2
+              exit 1
+            fi
+            install -m 0644 "${canonical_compose}" "${PROD_STACK_DIR}/compose.yml"
+
             cd "${PROD_STACK_DIR}"
             export BACKEND_IMAGE FRONTEND_IMAGE STACK_VERSION
 
@@ -256,6 +258,16 @@ jobs:
             compose config --quiet
 
             resolved_images="$(compose config --images)"
+            while IFS= read -r image; do
+              if ! printf '%s\n' "${image}" | grep -Eq '@sha256:[0-9a-fA-F]{64}$'; then
+                echo "Production compose resolved a mutable image reference: ${image}" >&2
+                echo "All production images must be pinned by a full sha256 digest." >&2
+                exit 1
+              fi
+            done <<EOF_IMAGES
+${resolved_images}
+EOF_IMAGES
+
             if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKEND_IMAGE}" >/dev/null; then
               echo "compose.yml does not resolve backend to ${BACKEND_IMAGE}." >&2
               echo "The production stack must consume the BACKEND_IMAGE variable from CD." >&2
@@ -267,7 +279,7 @@ jobs:
               exit 1
             fi
 
-            compose pull backend frontend
+            compose pull
             compose up -d --remove-orphans
 
             compose exec -T backend node dist/db/utils/migrateAll.js

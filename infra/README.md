@@ -8,7 +8,7 @@ The `infra` workspace defines how FitVibe is deployed, observed, and secured acr
 | ------------------------------ | ------------------------------------------------------------- |
 | `docker/`                      | Docker Compose stacks and service Dockerfiles                 |
 | `docker/dev/compose.dev.yml`   | Local developer stack (backend, frontend, postgres, nginx)    |
-| `docker/prod/compose.prod.yml` | Production-oriented stack                                     |
+| `docker/prod/compose.yml`      | Canonical production stack contract                                     |
 | `nginx/`                       | Base NGINX configuration and site definitions                 |
 | `observability/`               | Prometheus scrape configs and Grafana dashboards              |
 | `scripts/`                     | Helper shell scripts for migrating, seeding, and rollbacks    |
@@ -24,7 +24,7 @@ This spins up Postgres, the backend, the frontend, and NGINX configured with the
 
 ## CI/CD
 
-GitHub Actions workflows (`.github/workflows/ci.yml`, `cd-prod.yml`, `security-scan.yml`) call into these assets to build Docker images and deploy them to the target environment. Whenever you change Dockerfiles or compose manifests, ensure the workflows continue to reference the correct filenames.
+GitHub Actions workflows (`.github/workflows/ci.yml`, `.github/workflows/cd.yml`, `.github/workflows/security-scan.yml`) call into these assets. Production CD installs `infra/docker/prod/compose.yml` from the exact deployed commit into `/srv/stacks/fitvibe/compose.yml`; the host does not maintain an independent production Compose definition.
 
 ## Observability
 
