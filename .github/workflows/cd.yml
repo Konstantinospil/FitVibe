@@ -221,11 +221,6 @@ jobs:
               exit 1
             fi
 
-            if [ ! -f "${PROD_STACK_DIR}/compose.yml" ]; then
-              echo "Production compose file not found at ${PROD_STACK_DIR}/compose.yml" >&2
-              exit 1
-            fi
-
             if [ ! -f "${PROD_STACK_DIR}/.env" ]; then
               echo "Production environment file not found at ${PROD_STACK_DIR}/.env" >&2
               exit 1
@@ -245,6 +240,13 @@ jobs:
             fi
 
             git checkout -B main "${DEPLOY_SHA}"
+
+            canonical_compose="${PROD_SOURCE_DIR}/infra/docker/prod/compose.yml"
+            if [ ! -f "${canonical_compose}" ]; then
+              echo "Canonical production compose file not found at ${canonical_compose}" >&2
+              exit 1
+            fi
+            install -m 0644 "${canonical_compose}" "${PROD_STACK_DIR}/compose.yml"
 
             cd "${PROD_STACK_DIR}"
             export BACKEND_IMAGE FRONTEND_IMAGE STACK_VERSION
