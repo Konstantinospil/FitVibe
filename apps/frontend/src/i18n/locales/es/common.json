@@ -73,6 +73,12 @@
         "title": "Logros destacados",
         "description": "Sentadilla trasera 180 kg • Press banca 115 kg • Peso muerto 210 kg • Clasificado para el Maratón de Boston."
       }
+    },
+    "measurements": {
+      "title": "Mediciones",
+      "empty": "Todavía no se muestran mediciones en tu perfil.",
+      "noValue": "Sin valor registrado",
+      "loadError": "No se pudieron cargar las mediciones del perfil."
     }
   },
   "feed": {
@@ -714,6 +720,18 @@
       "loadError": "No se pudieron cargar las mediciones.",
       "saveError": "No se pudo guardar la medición.",
       "invalidValue": "Introduce un valor dentro del intervalo permitido."
+    },
+    "measurementDiscovery": {
+      "title": "Elegir mediciones",
+      "description": "Busca en el catálogo canónico y elige qué mediciones aparecen en tu perfil.",
+      "category": "Categoría de medición",
+      "search": "Buscar mediciones",
+      "searchPlaceholder": "Buscar por nombre",
+      "empty": "No se encontraron mediciones.",
+      "add": "Añadir",
+      "remove": "Quitar",
+      "loadError": "No se pudo cargar el catálogo de mediciones.",
+      "saveError": "No se pudieron actualizar las mediciones del perfil."
     }
   },
   "admin": {
