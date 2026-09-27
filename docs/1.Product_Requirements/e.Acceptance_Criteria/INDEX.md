@@ -531,5 +531,13 @@ Only files that exist on disk are listed. Individual AC files are canonical; thi
 
 ### Epic 21: Profile Measurements
 
-Canonical E21 stories exist, but their AC files are intentionally deferred until the documentation-to-live-implementation comparison. This prevents recreating detailed acceptance criteria from the obsolete US-1.4 design without first checking what is already implemented.
+#### US-21.1: Measurement Definition Catalogue
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-21.1-AC01 | [US-21.1](../d.User_stories/US-21.1-measurement-definition-catalogue.md) | Approved | Integration + DB constraint review | [US-21.1-AC01.md](./US-21.1-AC01.md) |
+| US-21.1-AC02 | [US-21.1](../d.User_stories/US-21.1-measurement-definition-catalogue.md) | Approved | Unit + integration | [US-21.1-AC02.md](./US-21.1-AC02.md) |
+| US-21.1-AC03 | [US-21.1](../d.User_stories/US-21.1-measurement-definition-catalogue.md) | Approved | Database + service review | [US-21.1-AC03.md](./US-21.1-AC03.md) |
+
+The remaining E21 story ACs stay deferred until their implementation comparisons are performed.
 

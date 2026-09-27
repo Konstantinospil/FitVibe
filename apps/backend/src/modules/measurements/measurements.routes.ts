@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireAccessToken } from "../auth/auth.middleware.js";
+import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import {
@@ -25,6 +26,7 @@ measurementsRouter.post(
   "/biometrics/attributes",
   rateLimit("measurements_bio_create", 20, 60),
   requireAccessToken,
+  requireRole("admin"),
   asyncHandler(createBioAttribute),
 );
 measurementsRouter.post(
@@ -50,6 +52,7 @@ measurementsRouter.post(
   "/performance/attributes",
   rateLimit("measurements_perf_create", 20, 60),
   requireAccessToken,
+  requireRole("admin"),
   asyncHandler(createPerfAttribute),
 );
 measurementsRouter.post(

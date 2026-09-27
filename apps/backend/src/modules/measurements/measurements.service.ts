@@ -20,6 +20,7 @@ import {
   withMeasurementTransaction,
 } from "./measurements.repository.js";
 import { upsertTranslation } from "../translations/translations.repository.js";
+import { insertAudit } from "../common/audit.util.js";
 
 const DEFAULT_TRANSLATION_LANGUAGE = "en";
 
@@ -235,7 +236,7 @@ export async function createMeasurementAttribute(
   userId: string,
   input: MeasurementAttributeCreateInput,
 ): Promise<MeasurementAttribute> {
-  return withMeasurementTransaction(async (trx) => {
+  const created = await withMeasurementTransaction(async (trx) => {
     // Note: userId is validated but not currently stored in the database.
     // If we need to track attribute creators, we would need to:
     // 1. Add a migration to add created_by_user_id column to bio_attributes and perf_attributes tables
@@ -320,6 +321,23 @@ export async function createMeasurementAttribute(
     }
     return toAttribute(created);
   });
+
+  await insertAudit({
+    actorUserId: userId,
+    entityType: "measurement_attribute",
+    action: "create",
+    entityId: created.id,
+    metadata: {
+      category,
+      key: created.key,
+      normalizedKey: created.normalizedKey,
+      unitType: created.unitType,
+      granularity: created.granularity,
+      measurementSystem: created.measurementSystem,
+    },
+  });
+
+  return created;
 }
 
 export async function addMeasurementValue(

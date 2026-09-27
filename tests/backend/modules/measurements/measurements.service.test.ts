@@ -18,6 +18,7 @@ import {
   withMeasurementTransaction,
 } from "../../../../apps/backend/src/modules/measurements/measurements.repository.js";
 import { upsertTranslation } from "../../../../apps/backend/src/modules/translations/translations.repository.js";
+import { insertAudit } from "../../../../apps/backend/src/modules/common/audit.util.js";
 
 jest.mock("../../../../apps/backend/src/modules/measurements/measurements.repository.js", () => ({
   getAttributeById: jest.fn(),
@@ -35,6 +36,10 @@ jest.mock("../../../../apps/backend/src/modules/measurements/measurements.reposi
 
 jest.mock("../../../../apps/backend/src/modules/translations/translations.repository.js", () => ({
   upsertTranslation: jest.fn(),
+}));
+
+jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
+  insertAudit: jest.fn(),
 }));
 
 describe("measurements service", () => {
@@ -201,6 +206,21 @@ describe("measurements service", () => {
     });
 
     expect(created.id).toBe("attr-1");
+    expect(insertAttribute).toHaveBeenCalledWith(
+      "bio",
+      expect.objectContaining({
+        key: "height",
+        normalized_key: "height",
+        unit_type: "length",
+        granularity: "cm",
+        measurement_system: "metric",
+        min_value_metric: 100,
+        max_value_metric: 200,
+        min_value_imperial: expect.closeTo(39.3701, 3),
+        max_value_imperial: expect.closeTo(78.7402, 3),
+      }),
+      expect.anything(),
+    );
     expect(upsertTranslation).toHaveBeenCalledWith(
       {
         namespace: "user_attributes",
@@ -210,6 +230,20 @@ describe("measurements service", () => {
       },
       expect.anything(),
     );
+    expect(insertAudit).toHaveBeenCalledWith({
+      actorUserId: "user-1",
+      entityType: "measurement_attribute",
+      action: "create",
+      entityId: "attr-1",
+      metadata: {
+        category: "bio",
+        key: "height",
+        normalizedKey: "height",
+        unitType: "length",
+        granularity: "cm",
+        measurementSystem: "metric",
+      },
+    });
   });
 
   it("rejects derived measurements without valid sources", async () => {
