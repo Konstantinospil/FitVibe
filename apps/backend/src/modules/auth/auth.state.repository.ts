@@ -10,6 +10,26 @@ export interface SessionInsert {
   expires_at: string;
 }
 
+interface RefreshStateRow {
+  token_hash: string;
+  session_jti: string;
+  revoked_at: string | null;
+}
+
+interface ResetTokenStateRow {
+  id: string;
+  user_id: string;
+  token_type: string;
+  consumed_at: string | null;
+}
+
+interface AuthSessionStateRow {
+  jti: string;
+  user_id: string;
+  revoked_at: string | null;
+  expires_at: string;
+}
+
 export interface RefreshInsert {
   id: string;
   user_id: string;
@@ -36,7 +56,7 @@ export async function rotateRefreshAtomic(
   sessionPatch: { expires_at: string; user_agent?: string | null; ip?: string | null },
 ): Promise<boolean> {
   return db.transaction(async (trx) => {
-    const current = await trx<{ revoked_at: string | null }>("refresh_tokens")
+    const current = await trx<RefreshStateRow>("refresh_tokens")
       .where({ token_hash: oldTokenHash, session_jti: sessionJti })
       .forUpdate()
       .first("revoked_at");
@@ -113,7 +133,7 @@ export async function resetPasswordAtomic(
   resetTokenType: string,
 ): Promise<boolean> {
   return db.transaction(async (trx) => {
-    const token = await trx<{ id: string }>("auth_tokens")
+    const token = await trx<ResetTokenStateRow>("auth_tokens")
       .where({ id: resetTokenId, user_id: userId, token_type: resetTokenType })
       .whereNull("consumed_at")
       .forUpdate()
@@ -138,7 +158,7 @@ export async function resetPasswordAtomic(
 }
 
 export async function isSessionActiveForUser(sessionJti: string, userId: string): Promise<boolean> {
-  const row = await db<{ jti: string }>("auth_sessions")
+  const row = await db<AuthSessionStateRow>("auth_sessions")
     .where({ jti: sessionJti, user_id: userId })
     .whereNull("revoked_at")
     .andWhere("expires_at", ">", new Date().toISOString())
