@@ -683,6 +683,43 @@ export const auditLogsApi = {
   },
 };
 
+export interface PrivilegedAdmin {
+  id: string;
+  username: string | null;
+  email: string | null;
+  role: "admin" | "superadmin";
+  status: string;
+  totpVerified: boolean;
+}
+
+export const superadminApi = {
+  listAdmins: async () => {
+    const response = await apiClient.get<{ users: PrivilegedAdmin[] }>(
+      "/api/v1/admin/superadmin/privileges/admins",
+    );
+    return response.data.users;
+  },
+  sudo: async (password: string) => {
+    const response = await apiClient.post<{ expiresAt: string }>(
+      "/api/v1/admin/superadmin/sudo",
+      { password },
+    );
+    return response.data;
+  },
+  changeRole: async (
+    userId: string,
+    role: "admin" | "superadmin",
+    reason: string,
+    totpCode: string,
+  ) => {
+    await apiClient.post("/api/v1/admin/superadmin/privileges/admins/" + userId + "/role", {
+      role,
+      reason,
+      totpCode,
+    });
+  },
+};
+
 export const usersApi = {
   search: async (query: string, limit = 20, blacklisted?: boolean) => {
     const response = await apiClient.get<{
