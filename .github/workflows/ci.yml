@@ -719,6 +719,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/fitvibe_test
       # Individual PG env vars for test files to detect database
@@ -797,6 +806,23 @@ jobs:
                   time.sleep(2)
           PY
 
+          echo "Waiting for Redis..."
+          python3 - <<'PY'
+          import socket, time, sys
+          host = "127.0.0.1"
+          port = 6379
+          for i in range(30):
+              try:
+                  with socket.create_connection((host, port), timeout=2):
+                      print("Redis is ready")
+                      sys.exit(0)
+              except OSError:
+                  if i == 29:
+                      print("Redis failed to start", file=sys.stderr)
+                      sys.exit(1)
+                  time.sleep(1)
+          PY
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
@@ -815,6 +841,9 @@ jobs:
         env:
           NODE_ENV: test
           CI: "true"
+          REDIS_INTEGRATION: "1"
+          REDIS_HOST: "127.0.0.1"
+          REDIS_PORT: "6379"
         # maxWorkers=1: these suites truncate a shared Postgres DB and IP-keyed
         # brute-force counters collide when two workers run in parallel.
         run: mkdir -p apps/backend/coverage && pnpm --filter @fitvibe/backend exec jest --maxWorkers=1 --testMatch="**/integration/**/*.integration.test.ts" --testPathIgnorePatterns="/node_modules/" --json --outputFile=coverage/jest-integration.json

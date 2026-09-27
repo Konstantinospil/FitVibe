@@ -40,6 +40,7 @@
 | ADR-034 | Endogenous Vibe Progression and Derived Gamification Recovery                                    | Accepted | 2026-09-26    | [ADR-034-endogenous-vibe-progression-and-derived-gamification.md](./ADR-034-endogenous-vibe-progression-and-derived-gamification.md) |
 | ADR-035 | Persisted Legal Publications as Runtime Authority                                                 | Accepted | 2026-09-26    | [ADR-035-persisted-legal-runtime-authority.md](./ADR-035-persisted-legal-runtime-authority.md) |
 | ADR-036 | Atomic Authentication State Transitions                                                           | Accepted | 2026-09-26    | [ADR-036-atomic-auth-state-transitions.md](./ADR-036-atomic-auth-state-transitions.md) |
+| ADR-037 | Require Durable Redis/BullMQ Background Work in Production                                      | Accepted | 2026-09-27    | [ADR-037-durable-production-job-queue.md](./ADR-037-durable-production-job-queue.md) |
 
 ## Numbering notes
 
@@ -56,3 +57,4 @@
 - ADR-034 records the endogenous FitVibe progression model, derived gamification recovery, and canonical JWT contract.
 - ADR-035 supersedes ADR-024 as the runtime legal-version authority: persisted publications and acceptances are authoritative.
 - ADR-036 makes authentication state transitions atomic and access authorization session-backed for immediate invalidation.
+- ADR-037 requires Redis/BullMQ for production background work and forbids silent fallback to process-memory queues.
