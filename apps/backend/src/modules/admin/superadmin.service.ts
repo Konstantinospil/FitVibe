@@ -64,7 +64,7 @@ export async function listPrivilegedAdmins(): Promise<PrivilegedAdminView[]> {
       "c.value as email",
       "u.role_code as role",
       "u.status",
-      db.raw("COALESCE(t.is_enabled, false) AND COALESCE(t.is_verified, false) as \"totpVerified\""),
+      db.raw('COALESCE(t.is_enabled, false) AND COALESCE(t.is_verified, false) as "totpVerified"'),
     )
     .whereIn("u.role_code", ["admin", "superadmin"])
     .whereNull("u.deleted_at")
