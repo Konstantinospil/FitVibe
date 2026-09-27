@@ -73,6 +73,12 @@
         "title": "Signature achievements",
         "description": "Back squat 180 kg • Bench 115 kg • Deadlift 210 kg • Boston Marathon qualifier."
       }
+    },
+    "measurements": {
+      "title": "Measurements",
+      "empty": "No measurements are shown on your profile yet.",
+      "noValue": "No value recorded",
+      "loadError": "Failed to load profile measurements."
     }
   },
   "feed": {
@@ -619,6 +625,18 @@
       "loadError": "Failed to load measurements.",
       "saveError": "Failed to save measurement.",
       "invalidValue": "Enter a value within the allowed range."
+    },
+    "measurementDiscovery": {
+      "title": "Choose measurements",
+      "description": "Search the canonical measurement catalogue and choose what appears on your profile.",
+      "category": "Measurement category",
+      "search": "Search measurements",
+      "searchPlaceholder": "Search by name",
+      "empty": "No measurements found.",
+      "add": "Add",
+      "remove": "Remove",
+      "loadError": "Failed to load measurement catalogue.",
+      "saveError": "Failed to update profile measurements."
     }
   },
   "common": {
