@@ -20,6 +20,7 @@
     "db:seed": "tsx src/db/utils/seedAll.ts",
     "db:check-i18n": "tsx src/db/scripts/check-i18n-db.ts",
     "db:import-translations": "tsx src/db/scripts/import-translations.ts",
+    "auth:bootstrap-superadmin": "tsx scripts/bootstrap-superadmin.ts",
     "docs:test-suite": "node scripts/generate-test-suite-doc.js"
   },
   "dependencies": {
