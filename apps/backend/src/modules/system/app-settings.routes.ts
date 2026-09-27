@@ -26,11 +26,11 @@ appSettingsRouter.get(
 appSettingsRouter.post(
   "/maintenance/enable",
   asyncHandler(async (req, res) => {
-    if (!req.user?.sub) {
+    if (!req.user?.sub || !req.user.sid) {
       throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
     }
     const reason = (req.body as { reason?: string }).reason ?? "";
-    await enableMaintenance(req.user.sub, reason);
+    await enableMaintenance(req.user.sub, req.user.sid, reason);
     res.json({ success: true });
   }),
 );
@@ -38,10 +38,10 @@ appSettingsRouter.post(
 appSettingsRouter.post(
   "/maintenance/disable",
   asyncHandler(async (req, res) => {
-    if (!req.user?.sub) {
+    if (!req.user?.sub || !req.user.sid) {
       throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
     }
-    await disableMaintenance(req.user.sub);
+    await disableMaintenance(req.user.sub, req.user.sid);
     res.json({ success: true });
   }),
 );
