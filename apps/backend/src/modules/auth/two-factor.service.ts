@@ -251,6 +251,31 @@ export async function verifyAndEnable2FA(
   return true;
 }
 
+
+export async function verifyTotpOnly(
+  userId: string,
+  code: string,
+  trx?: Knex.Transaction,
+): Promise<boolean> {
+  if (!/^\d{6}$/.test(code)) {
+    return false;
+  }
+
+  const exec = trx ?? db;
+  const settings = await exec<User2FASettings>("user_2fa_settings")
+    .where({ user_id: userId, is_enabled: true, is_verified: true })
+    .first();
+
+  if (!settings) {
+    return false;
+  }
+
+  return authenticator.verify({
+    token: code,
+    secret: decryptTotpSecret(settings.totp_secret),
+  });
+}
+
 /**
  * Verify a TOTP code during login
  */
