@@ -2,14 +2,7 @@ import { apiClient } from "./httpApi";
 
 export type MeasurementCategory = "bio" | "perf";
 export type MeasurementUnitType =
-  | "length"
-  | "weight"
-  | "volume"
-  | "ratio"
-  | "count"
-  | "time"
-  | "power"
-  | "percentage";
+  "length" | "weight" | "volume" | "ratio" | "count" | "time" | "power" | "percentage";
 
 export interface MeasurementValue {
   attributeId: string;
