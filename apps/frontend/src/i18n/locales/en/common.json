@@ -604,6 +604,21 @@
       "confirmDelete": "Confirm Delete",
       "deleteSuccess": "Your account has been scheduled for deletion. You will be logged out now.",
       "deleteError": "Failed to delete account. Please try again."
+    },
+    "measurements": {
+      "title": "Measurements",
+      "description": "Record values for measurements already enabled on your profile.",
+      "category": "Measurement category",
+      "biometric": "Biometric",
+      "performance": "Performance",
+      "latest": "Latest",
+      "value": "value",
+      "measuredAt": "measured at",
+      "save": "Save",
+      "noneEnabled": "No enabled measurements in this category.",
+      "loadError": "Failed to load measurements.",
+      "saveError": "Failed to save measurement.",
+      "invalidValue": "Enter a value within the allowed range."
     }
   },
   "common": {
