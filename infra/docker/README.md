@@ -142,6 +142,7 @@ Key variables:
 
 - `db_data` - PostgreSQL data (backed up regularly)
 - `clamav_signatures` - persisted ClamAV signature database
+- `redis_data` - Redis AOF/background-job durability
 - Static assets served via NGINX
 
 ## Networking
@@ -173,9 +174,11 @@ docker build -f infra/docker/prod/Dockerfile.frontend -t fitvibe-frontend:latest
 
 All services include health checks:
 
-- **Backend**: `GET /api/v1/health`
+- **Backend**: `GET /health` (includes queue adapter/health)
 - **Frontend**: HTTP 200 on root
 - **PostgreSQL**: `pg_isready`
+- **Redis**: `redis-cli ping`
+- **ClamAV**: `clamdscan --version`
 
 ## Security Considerations
 
