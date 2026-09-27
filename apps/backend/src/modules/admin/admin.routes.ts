@@ -7,6 +7,7 @@ import { asyncHandler } from "../../utils/async-handler.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
+import { superadminRouter } from "./superadmin.routes.js";
 import {
   listReportsHandler,
   moderateReportHandler,
@@ -16,11 +17,12 @@ import {
 
 export const adminRouter = Router();
 
-// All admin routes require authentication and admin role
 adminRouter.use(requireAccessToken);
 adminRouter.use(requireRole("admin"));
 
-// Content Reports Management
+// Superadmin inherits normal admin capabilities; privileged operations remain separately gated.
+adminRouter.use("/superadmin", superadminRouter);
+
 adminRouter.get(
   "/reports",
   rateLimit("admin_reports_list", 60, 60),
@@ -33,21 +35,18 @@ adminRouter.post(
   asyncHandler(moderateReportHandler),
 );
 
-// User Management
 adminRouter.get(
   "/users/search",
   rateLimit("admin_users_search", 60, 60),
   asyncHandler(searchUsersHandler),
 );
 
-// Generic user action endpoint
 adminRouter.post(
   "/users/:userId/action",
   rateLimit("admin_users_action", 30, 60),
   asyncHandler(userActionHandler),
 );
 
-// Specific user action endpoints for RESTful compatibility
 adminRouter.post(
   "/users/:userId/suspend",
   rateLimit("admin_users_suspend", 30, 60),
