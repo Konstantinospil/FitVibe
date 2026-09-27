@@ -13,8 +13,15 @@ import {
   setRuntimeMaintenance,
 } from "./app-settings.runtime.js";
 
+interface AppSettingsStateRow {
+  active_revision: string | number;
+  maintenance_enabled: boolean;
+}
+
 async function getCommittedValues(): Promise<Record<string, unknown>> {
-  const state = await db("app_settings_state").where({ id: 1 }).first<{ active_revision: string | number }>();
+  const state = await db("app_settings_state")
+    .where({ id: 1 })
+    .first<{ active_revision: string | number }>();
   const activeRevision = Number(state?.active_revision ?? 0);
   const values = getDefaultSettings();
 
@@ -42,7 +49,9 @@ async function getCommittedValues(): Promise<Record<string, unknown>> {
 }
 
 export async function getSettingsStatus() {
-  const state = await db("app_settings_state").where({ id: 1 }).first();
+  const state = await db("app_settings_state")
+    .where({ id: 1 })
+    .first<AppSettingsStateRow>();
   const runtime = getRuntimeGovernanceState();
 
   return {
@@ -57,7 +66,9 @@ export async function getSettingsStatus() {
       runtime.emergencyReadOnly ||
       Boolean(state?.maintenance_enabled) ||
       Number(state?.active_revision ?? 0) !== runtime.loadedRevision,
-    registry: Object.values(APP_SETTINGS_REGISTRY).map(({ schema: _schema, ...definition }) => definition),
+    registry: Object.values(APP_SETTINGS_REGISTRY).map(
+      ({ schema: _schema, ...definition }) => definition,
+    ),
     values: await getCommittedValues(),
   };
 }
@@ -70,7 +81,11 @@ export async function enableMaintenance(
   await assertActiveSudo(actorUserId, actorSessionJti);
   const normalizedReason = reason.trim();
   if (!normalizedReason) {
-    throw new HttpError(400, "MAINTENANCE_REASON_REQUIRED", "A non-blank maintenance reason is required");
+    throw new HttpError(
+      400,
+      "MAINTENANCE_REASON_REQUIRED",
+      "A non-blank maintenance reason is required",
+    );
   }
 
   await db("app_settings_state").where({ id: 1 }).update({
@@ -98,7 +113,11 @@ export async function disableMaintenance(
 
   const runtime = getRuntimeGovernanceState();
   if (runtime.emergencyReadOnly) {
-    throw new HttpError(409, "EMERGENCY_READ_ONLY_ACTIVE", "Emergency read-only override is active");
+    throw new HttpError(
+      409,
+      "EMERGENCY_READ_ONLY_ACTIVE",
+      "Emergency read-only override is active",
+    );
   }
   if (Number(state.active_revision) !== runtime.loadedRevision) {
     throw new HttpError(
@@ -141,7 +160,9 @@ export async function stageSettingsRevision(input: {
     throw new HttpError(400, "SETTINGS_REASON_REQUIRED", "A non-blank change reason is required");
   }
 
-  const state = await db("app_settings_state").where({ id: 1 }).first<{ maintenance_enabled: boolean }>();
+  const state = await db("app_settings_state")
+    .where({ id: 1 })
+    .first<{ maintenance_enabled: boolean }>();
   if (!state?.maintenance_enabled) {
     throw new HttpError(409, "MAINTENANCE_REQUIRED", "Settings changes require maintenance mode");
   }
@@ -156,7 +177,11 @@ export async function stageSettingsRevision(input: {
     }
   }
   if (Object.keys(normalized).length === 0) {
-    throw new HttpError(400, "SETTINGS_CHANGES_REQUIRED", "At least one settings change is required");
+    throw new HttpError(
+      400,
+      "SETTINGS_CHANGES_REQUIRED",
+      "At least one settings change is required",
+    );
   }
 
   return db.transaction(async (trx) => {
@@ -210,7 +235,9 @@ export async function commitSettingsRevision(input: {
   await assertFreshPrivilegedTotp(input.actorUserId, input.totpCode);
 
   return db.transaction(async (trx) => {
-    const state = await trx("app_settings_state").where({ id: 1 }).first<{ maintenance_enabled: boolean }>();
+    const state = await trx("app_settings_state")
+      .where({ id: 1 })
+      .first<{ maintenance_enabled: boolean }>();
     if (!state?.maintenance_enabled) {
       throw new HttpError(409, "MAINTENANCE_REQUIRED", "Settings changes require maintenance mode");
     }
