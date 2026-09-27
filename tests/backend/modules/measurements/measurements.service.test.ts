@@ -18,6 +18,7 @@ import {
   withMeasurementTransaction,
 } from "../../../../apps/backend/src/modules/measurements/measurements.repository.js";
 import { upsertTranslation } from "../../../../apps/backend/src/modules/translations/translations.repository.js";
+import { insertAudit } from "../../../../apps/backend/src/modules/common/audit.util.js";
 
 jest.mock("../../../../apps/backend/src/modules/measurements/measurements.repository.js", () => ({
   getAttributeById: jest.fn(),
@@ -35,6 +36,10 @@ jest.mock("../../../../apps/backend/src/modules/measurements/measurements.reposi
 
 jest.mock("../../../../apps/backend/src/modules/translations/translations.repository.js", () => ({
   upsertTranslation: jest.fn(),
+}));
+
+jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
+  insertAudit: jest.fn(),
 }));
 
 describe("measurements service", () => {
@@ -210,6 +215,20 @@ describe("measurements service", () => {
       },
       expect.anything(),
     );
+    expect(insertAudit).toHaveBeenCalledWith({
+      actorUserId: "user-1",
+      entityType: "measurement_attribute",
+      action: "create",
+      entityId: "attr-1",
+      metadata: {
+        category: "bio",
+        key: "height",
+        normalizedKey: "height",
+        unitType: "length",
+        granularity: "cm",
+        measurementSystem: "metric",
+      },
+    });
   });
 
   it("rejects derived measurements without valid sources", async () => {
