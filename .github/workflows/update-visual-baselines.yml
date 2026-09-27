@@ -2,27 +2,53 @@ name: Update Visual Baselines
 
 on:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Branch or ref whose UI should be used to regenerate baselines"
+        required: true
+        default: "dev"
+        type: string
+      target_branch:
+        description: "Branch the baseline PR should target"
+        required: true
+        default: "dev"
+        type: string
 
 permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: visual-baseline-update
-  cancel-in-progress: false
-
 jobs:
-  update:
+  update-visual-baselines:
     name: Regenerate Linux visual baselines
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: Checkout latest dev
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${{ inputs.source_ref }}" in
+            refs/*)
+              echo "source_ref must be a branch, tag, or SHA without the refs/ prefix" >&2
+              exit 1
+              ;;
+          esac
+          case "${{ inputs.target_branch }}" in
+            dev|stage|main) ;;
+            *)
+              echo "target_branch must be one of: dev, stage, main" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout source ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: dev
+          ref: ${{ inputs.source_ref }}
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -38,103 +64,107 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Regenerate Linux baselines
+      - name: Regenerate approved-environment baselines
         run: pnpm test:visual:update
 
-      - name: Verify regenerated baselines
+      - name: Verify generated baselines
         run: pnpm test:visual
 
-      - name: Stage and validate generated changes
+      - name: Restrict changes to visual baselines
         id: changes
         shell: bash
         run: |
           set -euo pipefail
 
-          git add -A
-          mapfile -t changed < <(git diff --cached --name-only)
-
-          if [ "${#changed[@]}" -eq 0 ]; then
+          changed="$(git status --porcelain)"
+          if [ -z "$changed" ]; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
-            echo "No visual baseline changes were generated."
+            echo "No visual baseline changes were produced."
             exit 0
           fi
 
-          invalid=0
-          for path in "${changed[@]}"; do
-            if [[ ! "$path" =~ ^tests/frontend/visual/.+-linux\.png$ ]]; then
-              echo "Unexpected generated change: $path" >&2
-              invalid=1
-            fi
-          done
+          unexpected="$(
+            git status --porcelain               | awk '{print $2}'               | grep -vE '^tests/frontend/visual/.+\.spec\.ts-snapshots/.+-linux\.png$'               || true
+          )"
 
-          if [ "$invalid" -ne 0 ]; then
-            echo "Refusing to commit changes outside Linux visual baseline PNGs." >&2
+          if [ -n "$unexpected" ]; then
+            echo "The baseline update modified files outside committed Linux snapshot paths:" >&2
+            echo "$unexpected" >&2
             exit 1
           fi
 
           echo "has_changes=true" >> "$GITHUB_OUTPUT"
-          printf 'Generated baseline changes:\n'
-          printf '  %s\n' "${changed[@]}"
+          echo "Updated baselines:"
+          git status --short
 
-      - name: Commit baseline update
+      - name: Create baseline branch
         if: steps.changes.outputs.has_changes == 'true'
-        id: commit
+        id: branch
         shell: bash
-        env:
-          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
-
-          branch="chore/visual-baselines-${RUN_ID}"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
-
+          branch="chore/visual-baselines-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "name=$branch" >> "$GITHUB_OUTPUT"
           git switch -c "$branch"
+
+      - name: Commit baseline screenshots
+        if: steps.changes.outputs.has_changes == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 'tests/frontend/visual/**/*-linux.png'
+          git diff --cached --quiet && {
+            echo "No baseline PNG changes staged."
+            exit 0
+          }
           git commit -m "test(visual): update Linux baselines"
-          git push --set-upstream origin "$branch"
+          git push --set-upstream origin "${{ steps.branch.outputs.name }}"
 
-      - name: Open draft pull request
+      - name: Open draft baseline PR
         if: steps.changes.outputs.has_changes == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
-          HEAD_BRANCH: ${{ steps.commit.outputs.branch }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_BRANCH: ${{ steps.branch.outputs.name }}
+          BASE_BRANCH: ${{ inputs.target_branch }}
+          SOURCE_REF: ${{ inputs.source_ref }}
         shell: bash
         run: |
           set -euo pipefail
+          cat > /tmp/pr-body.md <<EOF
+          ## Visual baseline update
 
-          cat > /tmp/pr-body.md <<'EOF'
-          ## Purpose
+          Generated from source ref: `$SOURCE_REF`
 
-          Regenerates the committed Playwright Linux visual-regression baselines from the current `dev` branch using the repository's pinned baseline-generation path.
+          The workflow regenerated Linux Playwright baselines using the repository's pinned visual-test environment and verified them with `pnpm test:visual`.
 
-          ## Review gate
+          ### Review gate
 
-          - Review every changed `*-linux.png` file as an intentional UI change.
-          - Do not merge if a screenshot exposes an unintended regression.
-          - When the screenshots are approved, mark this PR **Ready for review**.
-          - The normal CI pipeline then runs against the approved baselines.
+          - Review the changed `*-linux.png` baseline images.
+          - Confirm the visual changes are intentional.
+          - Do not merge this PR merely because the updater completed successfully.
+          - When the new baselines are approved, mark this draft PR **Ready for review**.
+          - The normal CI workflow will then run against the approved baseline PR.
 
-          Generated by the manually triggered **Update Visual Baselines** workflow.
+          Only committed Linux visual baseline PNGs are allowed in this PR.
           EOF
 
-          gh pr create \
-            --base dev \
-            --head "$HEAD_BRANCH" \
-            --draft \
-            --title "test(visual): update Linux baselines" \
-            --body-file /tmp/pr-body.md
+          gh pr create             --base "$BASE_BRANCH"             --head "$HEAD_BRANCH"             --title "test(visual): update Linux baselines"             --body-file /tmp/pr-body.md             --draft
 
       - name: Summary
         if: always()
         shell: bash
         run: |
           {
-            echo "## Visual baseline update"
+            echo "## Visual Baseline Update"
+            echo
             if [ "${{ steps.changes.outputs.has_changes }}" = "true" ]; then
-              echo "A draft PR containing only regenerated Linux baseline PNGs was created."
-              echo "Review the screenshots, then mark the PR Ready for review to trigger normal CI."
+              echo "- Linux baselines regenerated and verified."
+              echo "- A dedicated branch was pushed."
+              echo "- A draft pull request was opened for human review."
+              echo "- Mark the PR Ready for review only after approving the screenshot changes."
             else
-              echo "No baseline changes were generated; no PR was created."
+              echo "- No baseline changes were required."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
