@@ -2,13 +2,13 @@ import type { NextFunction, Request, Response } from "express";
 import * as authController from "../../../../apps/backend/src/modules/auth/auth.controller.js";
 import * as authService from "../../../../apps/backend/src/modules/auth/auth.service.js";
 import * as idempotencyService from "../../../../apps/backend/src/modules/common/idempotency.service.js";
-import * as tokensService from "../../../../apps/backend/src/services/tokens.js";
+import * as tokensService from "../../../../apps/backend/src/modules/auth/auth.session-tokens.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/auth/auth.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/idempotency.service.js");
-jest.mock("../../../../apps/backend/src/services/tokens.js");
+jest.mock("../../../../apps/backend/src/modules/auth/auth.session-tokens.js");
 jest.mock("../../../../apps/backend/src/services/mailer.service.js", () => ({
   mailerService: {
     send: jest.fn().mockResolvedValue(undefined),
