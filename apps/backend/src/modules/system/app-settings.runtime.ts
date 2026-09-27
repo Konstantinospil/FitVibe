@@ -1,4 +1,3 @@
-import { db } from "../../db/connection.js";
 import { env } from "../../config/env.js";
 import { getDefaultSettings } from "./app-settings.registry.js";
 
@@ -34,6 +33,7 @@ export function isEffectiveReadOnly(): boolean {
 }
 
 export async function initializeApplicationSettingsRuntime(): Promise<void> {
+  const { db } = await import("../../db/connection.js");
   const state = await db("app_settings_state").where({ id: 1 }).first<{
     active_revision: string | number;
     maintenance_enabled: boolean;
