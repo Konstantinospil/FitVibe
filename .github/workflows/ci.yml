@@ -78,6 +78,50 @@ jobs:
           echo "- ✅ Lint: Passed" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Type Check: Passed" >> $GITHUB_STEP_SUMMARY
 
+  deployment_contract:
+    name: Deployment Contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Validate canonical production Compose contract
+        run: bash scripts/validate-production-compose.sh
+
+  release_governance:
+    name: Release Governance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Require merged-PR provenance for main release commits
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const response = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+            });
+            const mergedToMain = response.data.filter(
+              (pr) => pr.merged_at && pr.base?.ref === 'main',
+            );
+            if (mergedToMain.length === 0) {
+              core.setFailed(
+                'main release commits must originate from a merged pull request; direct-push releases are blocked',
+              );
+            }
+
+      - name: Document non-release branch policy
+        if: github.ref != 'refs/heads/main'
+        run: echo "dev/stage are working branches; release provenance enforcement applies to main."
+
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -1183,12 +1227,22 @@ jobs:
     timeout-minutes: 10
     needs:
       - quality
+      - backend_tests
+      - frontend_tests
+      - database_tests
       - coverage
+      - integration
+      - metrics_contract
+      - accessibility
+      - security
+      - openapi_spec
       - lighthouse
       - i18n
       - performance
       - contract_tests
       - visual_regression
+      - deployment_contract
+      - release_governance
     permissions:
       contents: read
     steps:
@@ -1561,6 +1615,8 @@ jobs:
       - i18n
       - contract_tests
       - visual_regression
+      - deployment_contract
+      - release_governance
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
     permissions:
       contents: read
