@@ -699,6 +699,21 @@
       "confirmDelete": "Confirmar eliminación",
       "deleteSuccess": "Tu cuenta se ha programado para eliminación. Se cerrará la sesión ahora.",
       "deleteError": "No se pudo eliminar la cuenta. Inténtalo de nuevo."
+    },
+    "measurements": {
+      "title": "Mediciones",
+      "description": "Registra valores de las mediciones ya activadas en tu perfil.",
+      "category": "Categoría de medición",
+      "biometric": "Biométricas",
+      "performance": "Rendimiento",
+      "latest": "Último",
+      "value": "valor",
+      "measuredAt": "medido el",
+      "save": "Guardar",
+      "noneEnabled": "No hay mediciones activadas en esta categoría.",
+      "loadError": "No se pudieron cargar las mediciones.",
+      "saveError": "No se pudo guardar la medición.",
+      "invalidValue": "Introduce un valor dentro del intervalo permitido."
     }
   },
   "admin": {
