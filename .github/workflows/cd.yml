@@ -259,14 +259,53 @@ jobs:
 
             resolved_images="$(compose config --images)"
             while IFS= read -r image; do
-              case "${image}" in
-                *@sha256:[0-9a-fA-F][0-9a-fA-F]*) ;;
-                *)
-                  echo "Production compose resolved a mutable image reference: ${image}" >&2
-                  echo "All production images must be pinned by digest." >&2
-                  exit 1
-                  ;;
-              esac
+              if ! printf '%s\n' "${image}" | grep -Eq '@sha256:[0-9a-fA-F]{64}
+            if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKEND_IMAGE}" >/dev/null; then
+              echo "compose.yml does not resolve backend to ${BACKEND_IMAGE}." >&2
+              echo "The production stack must consume the BACKEND_IMAGE variable from CD." >&2
+              exit 1
+            fi
+            if ! printf '%s\n' "${resolved_images}" | grep -Fx "${FRONTEND_IMAGE}" >/dev/null; then
+              echo "compose.yml does not resolve frontend to ${FRONTEND_IMAGE}." >&2
+              echo "The production stack must consume the FRONTEND_IMAGE variable from CD." >&2
+              exit 1
+            fi
+
+            compose pull backend frontend
+            compose up -d --remove-orphans
+
+            compose exec -T backend node dist/db/utils/migrateAll.js
+            compose exec -T backend node dist/db/utils/seedAll.js
+            compose exec -T backend node dist/db/utils/postDeploy.js
+            compose exec -T backend node dist/db/utils/verifyIntegrity.js
+
+            attempt=1
+            until curl -fsS http://127.0.0.1:4000/health >/dev/null; do
+              if [ "${attempt}" -ge 24 ]; then
+                echo "Backend health check failed after 120 seconds." >&2
+                compose ps
+                compose logs --tail=200 backend frontend
+                exit 1
+              fi
+              attempt=$((attempt + 1))
+              sleep 5
+            done
+
+            curl -fsS http://127.0.0.1:4000/metrics >/dev/null
+            curl -fsS http://127.0.0.1/ >/dev/null
+            compose ps
+        env:
+          BACKEND_IMAGE: ${{ steps.deployment.outputs.backend_image }}
+          FRONTEND_IMAGE: ${{ steps.deployment.outputs.frontend_image }}
+          STACK_VERSION: ${{ steps.deployment.outputs.stack_version }}
+          DEPLOY_SHA: ${{ steps.deployment.outputs.deploy_sha }}
+          PROD_SOURCE_DIR: ${{ env.PROD_SOURCE_DIR }}
+          PROD_STACK_DIR: ${{ env.PROD_STACK_DIR }}
+; then
+                echo "Production compose resolved a mutable image reference: ${image}" >&2
+                echo "All production images must be pinned by a full sha256 digest." >&2
+                exit 1
+              fi
             done <<EOF_IMAGES
 ${resolved_images}
 EOF_IMAGES
