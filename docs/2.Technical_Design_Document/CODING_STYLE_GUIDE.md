@@ -327,17 +327,6 @@ export async function listLogsHandler(req: Request, res: Response): Promise<void
 // non-browser/API clients may use an Authorization: Bearer token. Do not
 // recreate token extraction or JWT verification inside feature modules.
 import { requireAccessToken } from "../auth/auth.middleware.js";
-  }
-
-  try {
-    const token = header.split(" ")[1];
-    const decoded = verifyAccess(token);
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-};
 ```
 
 ### Service Layer
