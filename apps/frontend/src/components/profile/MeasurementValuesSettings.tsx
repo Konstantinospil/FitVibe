@@ -64,7 +64,9 @@ export const MeasurementValuesSettings: React.FC = () => {
 
   const save = async (attribute: MeasurementAttribute) => {
     const draft = drafts[attribute.id];
-    if (!draft) return;
+    if (!draft) {
+      return;
+    }
 
     const valueNumber = Number(draft.value);
     const { min, max } = rangeFor(attribute);
@@ -108,7 +110,11 @@ export const MeasurementValuesSettings: React.FC = () => {
           <p className="text-secondary">{t("settings.measurements.description")}</p>
           {error && <Alert variant="danger">{error}</Alert>}
 
-          <div className="flex flex--gap-sm" role="group" aria-label={t("settings.measurements.category")}>
+          <div
+            className="flex flex--gap-sm"
+            role="group"
+            aria-label={t("settings.measurements.category")}
+          >
             <Button
               type="button"
               variant={category === "bio" ? "primary" : "secondary"}
@@ -132,7 +138,10 @@ export const MeasurementValuesSettings: React.FC = () => {
           ) : (
             <div className="grid grid--gap-md">
               {editable.map((attribute) => {
-                const draft = drafts[attribute.id] ?? { value: "", measuredAt: currentLocalDateTime() };
+                const draft = drafts[attribute.id] ?? {
+                  value: "",
+                  measuredAt: currentLocalDateTime(),
+                };
                 const range = rangeFor(attribute);
                 return (
                   <div key={attribute.id} className="grid grid--gap-sm">
@@ -147,7 +156,10 @@ export const MeasurementValuesSettings: React.FC = () => {
                     </div>
                     <div
                       className="grid"
-                      style={{ gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) auto", gap: "0.75rem" }}
+                      style={{
+                        gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) auto",
+                        gap: "0.75rem",
+                      }}
                     >
                       <input
                         className="form-input"
