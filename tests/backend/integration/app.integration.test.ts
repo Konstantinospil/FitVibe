@@ -1,6 +1,7 @@
 import request from "supertest";
 import app from "../../../apps/backend/src/app.js";
 import { env } from "../../../apps/backend/src/config/env.js";
+import { APP_SETTINGS_REGISTRY } from "../../../apps/backend/src/modules/system/app-settings.registry.js";
 
 const mutableEnv = env as {
   readOnlyMode: boolean;
@@ -31,7 +32,7 @@ describe("app entrypoint integration", () => {
     expect(response.status).toBe(503);
     expect(response.body.error).toMatchObject({
       code: "E.SYSTEM.READ_ONLY",
-      message: "Maintenance window",
+      message: APP_SETTINGS_REGISTRY["system.maintenance_message"].defaultValue,
       details: {
         readOnlyMode: true,
         path: "/api/v1/users",

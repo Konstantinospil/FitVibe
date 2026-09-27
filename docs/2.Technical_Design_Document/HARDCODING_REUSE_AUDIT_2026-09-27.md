@@ -379,3 +379,8 @@ The UI/API must expose the source(s) of read-only state so operators can disting
 ## Current #302 status
 
 **Decision-complete.** D302-01 through D302-05 are decided. The audit inventory is ready for final review/merge and #302 closure.
+
+
+### Implementation status — #303
+
+The governed application-settings implementation is currently under CI validation. This documentation update does not change runtime behavior.
