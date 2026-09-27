@@ -583,6 +583,21 @@
       "confirmDelete": "Löschen bestätigen",
       "deleteSuccess": "Dein Konto wurde zur Löschung vorgemerkt. Du wirst jetzt abgemeldet.",
       "deleteError": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut."
+    },
+    "measurements": {
+      "title": "Messwerte",
+      "description": "Erfassen Sie Werte für Messgrößen, die bereits in Ihrem Profil aktiviert sind.",
+      "category": "Messwertkategorie",
+      "biometric": "Biometrisch",
+      "performance": "Leistung",
+      "latest": "Zuletzt",
+      "value": "Wert",
+      "measuredAt": "gemessen am",
+      "save": "Speichern",
+      "noneEnabled": "In dieser Kategorie sind keine Messgrößen aktiviert.",
+      "loadError": "Messgrößen konnten nicht geladen werden.",
+      "saveError": "Messwert konnte nicht gespeichert werden.",
+      "invalidValue": "Geben Sie einen Wert innerhalb des zulässigen Bereichs ein."
     }
   },
   "common": {

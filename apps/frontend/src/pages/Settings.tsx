@@ -6,6 +6,7 @@ import {
   AccountDeletionForm,
   AvatarUpload,
   BodyProgressSettings,
+  MeasurementValuesSettings,
   DataExportButton,
   PrivacySettings,
   PreferencesSettings,
@@ -71,7 +72,12 @@ const Settings: React.FC = () => {
               <ProfileForm onSave={() => void loadUser()} />
             </div>
           }
-          progressContent={<BodyProgressSettings />}
+          progressContent={
+            <div className="grid grid--gap-lg">
+              <MeasurementValuesSettings />
+              <BodyProgressSettings />
+            </div>
+          }
           securityContent={
             <div className="grid grid--gap-lg">
               <SecuritySettings />

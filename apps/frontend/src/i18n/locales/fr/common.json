@@ -699,6 +699,21 @@
       "confirmDelete": "Confirmer la suppression",
       "deleteSuccess": "Votre compte a été programmé pour suppression. Vous allez être déconnecté.",
       "deleteError": "Impossible de supprimer le compte. Veuillez réessayer."
+    },
+    "measurements": {
+      "title": "Mesures",
+      "description": "Enregistrez les valeurs des mesures déjà activées sur votre profil.",
+      "category": "Catégorie de mesure",
+      "biometric": "Biométrique",
+      "performance": "Performance",
+      "latest": "Dernière",
+      "value": "valeur",
+      "measuredAt": "mesuré le",
+      "save": "Enregistrer",
+      "noneEnabled": "Aucune mesure activée dans cette catégorie.",
+      "loadError": "Impossible de charger les mesures.",
+      "saveError": "Impossible d’enregistrer la mesure.",
+      "invalidValue": "Saisissez une valeur dans la plage autorisée."
     }
   },
   "admin": {

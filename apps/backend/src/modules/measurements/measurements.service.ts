@@ -355,6 +355,14 @@ export async function addMeasurementValue(
   if (attribute.derivedOperator) {
     throw new HttpError(400, "MEASUREMENT_DERIVED_READONLY", "Derived values are read-only");
   }
+
+  const selections = await listSelections(category, userId);
+  const selection = selections.find((item) => item.attribute_id === attributeId);
+  const isEnabled = selection?.is_visible ?? attribute.isDefault;
+  if (!isEnabled) {
+    throw new HttpError(403, "MEASUREMENT_NOT_ENABLED", "Measurement is not enabled");
+  }
+
   assertWithinRange(attribute, valueNumber);
   await insertAttributeValue(category, userId, attributeId, valueNumber, measuredAt);
   return {
