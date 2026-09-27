@@ -62,7 +62,12 @@ export async function getSettingsStatus() {
   };
 }
 
-export async function enableMaintenance(actorUserId: string, reason: string): Promise<void> {
+export async function enableMaintenance(
+  actorUserId: string,
+  actorSessionJti: string,
+  reason: string,
+): Promise<void> {
+  await assertActiveSudo(actorUserId, actorSessionJti);
   const normalizedReason = reason.trim();
   if (!normalizedReason) {
     throw new HttpError(400, "MAINTENANCE_REASON_REQUIRED", "A non-blank maintenance reason is required");
@@ -78,7 +83,11 @@ export async function enableMaintenance(actorUserId: string, reason: string): Pr
   setRuntimeMaintenance(true);
 }
 
-export async function disableMaintenance(actorUserId: string): Promise<void> {
+export async function disableMaintenance(
+  actorUserId: string,
+  actorSessionJti: string,
+): Promise<void> {
+  await assertActiveSudo(actorUserId, actorSessionJti);
   const state = await db("app_settings_state").where({ id: 1 }).first<{
     active_revision: string | number;
     loaded_revision: string | number;
