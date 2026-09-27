@@ -27,7 +27,7 @@
 | ADR-021 | ADR-021: Standardize Backend Test Runner on Jest 30 + @swc/jest                                   | Deferred | 2025-10-14    | [ADR-021-test-runner-backend-jest30-swc.md](./ADR-021-test-runner-backend-jest30-swc.md)                   |
 | ADR-022 | ADR-022: Comprehensive Lighthouse Testing Across All Categories                                   | Accepted |               | [ADR-022-lighthouse-comprehensive-testing.md](./ADR-022-lighthouse-comprehensive-testing.md)               |
 | ADR-023 | ADR-023: Server-Side Rendering (SSR) Implementation                                               | Accepted |               | [ADR-023-server-side-rendering.md](./ADR-023-server-side-rendering.md)                                     |
-| ADR-024 | ADR-024: Legal Document Version Calculation from Multi-Language Translations                      | Accepted |               | [ADR-024-legal-document-version-calculation.md](./ADR-024-legal-document-version-calculation.md)           |
+| ADR-024 | ADR-024: Legal Document Version Calculation from Multi-Language Translations                      | Superseded |               | [ADR-024-legal-document-version-calculation.md](./ADR-024-legal-document-version-calculation.md)           |
 | ADR-025 | ADR-025: Lower Lighthouse CI Thresholds by 15%                                                    | Accepted |               | [ADR-025-lighthouse-ci-thresholds.md](./ADR-025-lighthouse-ci-thresholds.md)                               |
 | ADR-026 | ADR-026: Database Encryption (In Transit and At Rest)                                             | Accepted |               | [ADR-026-database-encryption.md](./ADR-026-database-encryption.md)                                         |
 | ADR-027 | Enforce Authentication Wall (pre-login access limited to auth and legal routes)                   | Accepted | 2025-10-26    | [ADR-027-auth-wall.md](./ADR-027-auth-wall.md)                                                             |
@@ -38,6 +38,8 @@
 | ADR-032 | Legal Document Publication Uses Immutable Snapshots                                                | Accepted | 2026-09-25    | [ADR-032-legal-document-publication-snapshots.md](./ADR-032-legal-document-publication-snapshots.md)       |
 | ADR-033 | Secrets Provider Contract                                                                          | Accepted | 2026-09-26    | [ADR-033-secrets-provider-contract.md](./ADR-033-secrets-provider-contract.md)                             |
 | ADR-034 | Endogenous Vibe Progression and Derived Gamification Recovery                                    | Accepted | 2026-09-26    | [ADR-034-endogenous-vibe-progression-and-derived-gamification.md](./ADR-034-endogenous-vibe-progression-and-derived-gamification.md) |
+| ADR-035 | Persisted Legal Publications as Runtime Authority                                                 | Accepted | 2026-09-26    | [ADR-035-persisted-legal-runtime-authority.md](./ADR-035-persisted-legal-runtime-authority.md) |
+| ADR-036 | Atomic Authentication State Transitions                                                           | Accepted | 2026-09-26    | [ADR-036-atomic-auth-state-transitions.md](./ADR-036-atomic-auth-state-transitions.md) |
 
 ## Numbering notes
 
@@ -52,3 +54,5 @@
 - ADR-032 makes immutable Backoffice publication snapshots authoritative for published legal-document versions.
 - ADR-033 defines provider selection, round-trip semantics, and environment fallback for application secrets.
 - ADR-034 records the endogenous FitVibe progression model, derived gamification recovery, and canonical JWT contract.
+- ADR-035 supersedes ADR-024 as the runtime legal-version authority: persisted publications and acceptances are authoritative.
+- ADR-036 makes authentication state transitions atomic and access authorization session-backed for immediate invalidation.
