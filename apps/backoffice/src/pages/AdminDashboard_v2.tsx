@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useAuthStore } from "../store/auth.store";
 import {
   Users,
   Settings as SettingsIcon,
@@ -13,7 +14,7 @@ import {
 
 const AdminDashboardV2: React.FC = () => {
   const location = useLocation();
-  const role = document.body.dataset.role;
+  const role = useAuthStore((state) => state.user?.role);
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
   const items = [
