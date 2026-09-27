@@ -26,9 +26,10 @@ while IFS= read -r image; do
   fi
 done <<< "${resolved_images}"
 
-docker compose -f "${compose_file}" config --format json | python3 - <<'PY'
+resolved_config="$(docker compose -f "${compose_file}" config --format json)"
+python3 - "${resolved_config}" <<'PY'
 import json, sys
-data = json.load(sys.stdin)
+data = json.loads(sys.argv[1])
 services = data.get("services", {})
 required = {"backend", "frontend", "db", "clamav"}
 missing = sorted(required - set(services))
