@@ -321,24 +321,12 @@ export async function listLogsHandler(req: Request, res: Response): Promise<void
 - **Return early** on errors (don't call `next()` after sending response)
 
 ```typescript
-// ✅ Good: Middleware pattern
-import type { Request, Response, NextFunction, RequestHandler } from "express";
-
-export const requireAccessToken: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Missing token" });
-  }
-
-  try {
-    const token = header.split(" ")[1];
-    const decoded = verifyAccess(token);
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ error: "Invalid token" });
-  }
-};
+// ✅ Good: Middleware ownership
+// Protected routes import the canonical middleware from auth/auth.middleware.ts.
+// Browser authentication uses the HttpOnly access-token cookie; deliberate
+// non-browser/API clients may use an Authorization: Bearer token. Do not
+// recreate token extraction or JWT verification inside feature modules.
+import { requireAccessToken } from "../auth/auth.middleware.js";
 ```
 
 ### Service Layer

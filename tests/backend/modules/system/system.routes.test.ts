@@ -7,7 +7,7 @@ import {
   createUser,
   type AuthUserRecord,
 } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
-import { signAccessToken } from "../../../../apps/backend/src/services/tokens.js";
+import { signAccess } from "../../../../apps/backend/src/modules/auth/auth.session-tokens.js";
 import { truncateAll, ensureRolesSeeded } from "../../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../../setup/db-availability.js";
 import { getCurrentTermsVersion } from "../../../../apps/backend/src/config/terms.js";
@@ -49,9 +49,8 @@ async function tokenFor(user: AuthUserRecord): Promise<string> {
     created_at: now,
     expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
   });
-  return signAccessToken({
+  return signAccess({
     sub: user.id,
-    username: user.username,
     role: user.role_code,
     sid: sessionId,
   });

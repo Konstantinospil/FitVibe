@@ -3,7 +3,7 @@
 > **Superseded by ADR-035 (2026-09-26).** Translation/database timestamps are no longer a runtime legal authority. Persisted legal publications and acceptances are authoritative.
 
 **Date:** 2025-12-22  
-**Status:** Accepted  
+**Status:** Superseded  
 **Author:** FitVibe Engineering Team  
 **Cross-References:** REQ-2025-01-20-001 (Terms and Conditions), E19 (Terms and Conditions Epic)
 

@@ -96,7 +96,7 @@ export async function createExample(input: CreateExampleInput): Promise<ExampleR
 
 ### Authentication
 
-Most modules require authentication via `requireAccessToken` middleware from `users/users.middleware.ts`.
+Most modules require authentication via the canonical `requireAccessToken` middleware from `auth/auth.middleware.ts`. Browser requests use the HttpOnly access-token cookie; deliberate API clients may use a Bearer token.
 
 ### Authorization
 
