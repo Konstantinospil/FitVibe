@@ -6,6 +6,7 @@ import {
   AccountDeletionForm,
   AvatarUpload,
   BodyProgressSettings,
+  MeasurementDiscoverySettings,
   MeasurementValuesSettings,
   DataExportButton,
   PrivacySettings,
@@ -74,6 +75,7 @@ const Settings: React.FC = () => {
           }
           progressContent={
             <div className="grid grid--gap-lg">
+              <MeasurementDiscoverySettings />
               <MeasurementValuesSettings />
               <BodyProgressSettings />
             </div>
