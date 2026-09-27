@@ -12,6 +12,7 @@ export BACKEND_IMAGE="ghcr.io/example/fitvibe-backend@sha256:${dummy_digest}"
 export FRONTEND_IMAGE="ghcr.io/example/fitvibe-frontend@sha256:${dummy_digest}"
 export POSTGRES_IMAGE="postgres@sha256:${dummy_digest}"
 export CLAMAV_IMAGE="clamav/clamav@sha256:${dummy_digest}"
+export REDIS_IMAGE="redis@sha256:${dummy_digest}"
 export POSTGRES_PASSWORD="contract-validation"
 export FITVIBE_ENV_FILE="/dev/null"
 
@@ -31,7 +32,7 @@ python3 - "${resolved_config}" <<'PY'
 import json, sys
 data = json.loads(sys.argv[1])
 services = data.get("services", {})
-required = {"backend", "frontend", "db", "clamav"}
+required = {"backend", "frontend", "db", "clamav", "redis"}
 missing = sorted(required - set(services))
 if missing:
     raise SystemExit(f"Missing production services: {', '.join(missing)}")
@@ -42,7 +43,7 @@ for name, service in services.items():
         raise SystemExit(f"Service {name} must not depend on itself")
 
 backend_depends = services["backend"].get("depends_on") or {}
-for dependency in ("db", "clamav"):
+for dependency in ("db", "clamav", "redis"):
     if dependency not in backend_depends:
         raise SystemExit(f"backend must depend on {dependency}")
 
@@ -52,6 +53,13 @@ if not any(
     for v in clamav_volumes
 ):
     raise SystemExit("clamav must persist signatures in clamav_signatures")
+
+redis_volumes = services["redis"].get("volumes") or []
+if not any(
+    (v.get("source") if isinstance(v, dict) else str(v).split(":", 1)[0]) == "redis_data"
+    for v in redis_volumes
+):
+    raise SystemExit("redis must persist data in redis_data")
 
 print("Production Compose contract is valid.")
 PY
