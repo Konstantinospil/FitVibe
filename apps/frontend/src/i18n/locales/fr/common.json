@@ -73,6 +73,12 @@
         "title": "Réalisations marquantes",
         "description": "Squat arrière 180 kg • Développé couché 115 kg • Soulevé de terre 210 kg • Qualifié pour le Marathon de Boston."
       }
+    },
+    "measurements": {
+      "title": "Mesures",
+      "empty": "Aucune mesure n’est encore affichée sur votre profil.",
+      "noValue": "Aucune valeur enregistrée",
+      "loadError": "Impossible de charger les mesures du profil."
     }
   },
   "feed": {
@@ -714,6 +720,18 @@
       "loadError": "Impossible de charger les mesures.",
       "saveError": "Impossible d’enregistrer la mesure.",
       "invalidValue": "Saisissez une valeur dans la plage autorisée."
+    },
+    "measurementDiscovery": {
+      "title": "Choisir les mesures",
+      "description": "Recherchez dans le catalogue canonique et choisissez les mesures affichées sur votre profil.",
+      "category": "Catégorie de mesure",
+      "search": "Rechercher des mesures",
+      "searchPlaceholder": "Rechercher par nom",
+      "empty": "Aucune mesure trouvée.",
+      "add": "Ajouter",
+      "remove": "Retirer",
+      "loadError": "Impossible de charger le catalogue des mesures.",
+      "saveError": "Impossible de mettre à jour les mesures du profil."
     }
   },
   "admin": {
