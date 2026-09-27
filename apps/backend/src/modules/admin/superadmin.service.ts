@@ -33,7 +33,7 @@ async function getPrivilegedUser(userId: string, trx: Knex | Knex.Transaction = 
       "c.value as email",
       "u.role_code as role",
       "u.status",
-      trx.raw("COALESCE(t.is_enabled, false) AND COALESCE(t.is_verified, false) as \"totpVerified\""),
+      trx.raw('COALESCE(t.is_enabled, false) AND COALESCE(t.is_verified, false) as "totpVerified"'),
       "u.password_hash as passwordHash",
     )
     .where("u.id", userId)
@@ -152,7 +152,6 @@ export async function assertActiveSudo(userId: string, sessionJti: string): Prom
   }
 }
 
-
 export async function assertFreshPrivilegedTotp(userId: string, totpCode: string): Promise<void> {
   const totpOk = await verifyTotpOnly(userId, totpCode);
   if (!totpOk) {
@@ -198,7 +197,11 @@ export async function changePrivilegedRole(input: {
 }): Promise<void> {
   const reason = input.reason.trim();
   if (!reason) {
-    throw new HttpError(400, "ROLE_CHANGE_REASON_REQUIRED", "A non-blank justification is required");
+    throw new HttpError(
+      400,
+      "ROLE_CHANGE_REASON_REQUIRED",
+      "A non-blank justification is required",
+    );
   }
 
   await assertActiveSudo(input.actorUserId, input.actorSessionJti);
@@ -226,7 +229,11 @@ export async function changePrivilegedRole(input: {
 
     const target = await getPrivilegedUser(input.targetUserId, trx);
     if (!target || !["admin", "superadmin"].includes(target.role)) {
-      throw new HttpError(400, "PRIVILEGED_ROLE_TARGET_INVALID", "Target must be an admin or superadmin");
+      throw new HttpError(
+        400,
+        "PRIVILEGED_ROLE_TARGET_INVALID",
+        "Target must be an admin or superadmin",
+      );
     }
 
     if (target.role === input.newRole) {
