@@ -206,6 +206,21 @@ describe("measurements service", () => {
     });
 
     expect(created.id).toBe("attr-1");
+    expect(insertAttribute).toHaveBeenCalledWith(
+      "bio",
+      expect.objectContaining({
+        key: "height",
+        normalized_key: "height",
+        unit_type: "length",
+        granularity: "cm",
+        measurement_system: "metric",
+        min_value_metric: 100,
+        max_value_metric: 200,
+        min_value_imperial: expect.closeTo(39.3701, 3),
+        max_value_imperial: expect.closeTo(78.7402, 3),
+      }),
+      expect.anything(),
+    );
     expect(upsertTranslation).toHaveBeenCalledWith(
       {
         namespace: "user_attributes",
