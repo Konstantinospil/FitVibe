@@ -700,10 +700,9 @@ export const superadminApi = {
     return response.data.users;
   },
   sudo: async (password: string) => {
-    const response = await apiClient.post<{ expiresAt: string }>(
-      "/api/v1/admin/superadmin/sudo",
-      { password },
-    );
+    const response = await apiClient.post<{ expiresAt: string }>("/api/v1/admin/superadmin/sudo", {
+      password,
+    });
     return response.data;
   },
   changeRole: async (
