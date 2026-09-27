@@ -73,6 +73,12 @@
         "title": "Highlights",
         "description": "180 kg Kniebeuge - 115 kg Bankdrücken - 210 kg Kreuzheben - Boston-Marathon-Qualifikation."
       }
+    },
+    "measurements": {
+      "title": "Messwerte",
+      "empty": "In Ihrem Profil werden noch keine Messwerte angezeigt.",
+      "noValue": "Noch kein Wert erfasst",
+      "loadError": "Profil-Messwerte konnten nicht geladen werden."
     }
   },
   "feed": {
@@ -598,6 +604,18 @@
       "loadError": "Messgrößen konnten nicht geladen werden.",
       "saveError": "Messwert konnte nicht gespeichert werden.",
       "invalidValue": "Geben Sie einen Wert innerhalb des zulässigen Bereichs ein."
+    },
+    "measurementDiscovery": {
+      "title": "Messgrößen auswählen",
+      "description": "Durchsuchen Sie den zentralen Messkatalog und wählen Sie aus, was in Ihrem Profil angezeigt wird.",
+      "category": "Messwertkategorie",
+      "search": "Messgrößen suchen",
+      "searchPlaceholder": "Nach Name suchen",
+      "empty": "Keine Messgrößen gefunden.",
+      "add": "Hinzufügen",
+      "remove": "Entfernen",
+      "loadError": "Messkatalog konnte nicht geladen werden.",
+      "saveError": "Profil-Messgrößen konnten nicht aktualisiert werden."
     }
   },
   "common": {
