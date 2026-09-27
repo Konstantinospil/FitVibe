@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import PageIntro from "../components/PageIntro";
+import { ProfileMeasurements } from "../components/profile";
 import { Button } from "../components/ui";
 
 const Profile: React.FC = () => {
@@ -33,6 +34,7 @@ const Profile: React.FC = () => {
           {t("profile.edit")}
         </Button>
       </div>
+      <ProfileMeasurements />
     </PageIntro>
   );
 };
