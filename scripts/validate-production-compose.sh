@@ -7,6 +7,23 @@ if [[ ! -f "${compose_file}" ]]; then
   exit 1
 fi
 
+canonical_path="infra/docker/prod/compose.yml"
+if [[ "${compose_file}" == "${canonical_path}" ]]; then
+  mapfile -t production_compose_files < <(
+    find infra/docker/prod -maxdepth 1 -type f \( -name '*compose*.yml' -o -name '*compose*.yaml' \) | sort
+  )
+  if [[ "${#production_compose_files[@]}" -ne 1 || "${production_compose_files[0]}" != "${canonical_path}" ]]; then
+    echo "Expected exactly one canonical production Compose file: ${canonical_path}" >&2
+    printf 'Found: %s\n' "${production_compose_files[@]}" >&2
+    exit 1
+  fi
+
+  if ! grep -F 'canonical_compose="${PROD_SOURCE_DIR}/infra/docker/prod/compose.yml"' .github/workflows/cd.yml >/dev/null; then
+    echo "CD must install the canonical production Compose template from the deployed commit." >&2
+    exit 1
+  fi
+fi
+
 dummy_digest="$(printf 'a%.0s' {1..64})"
 export BACKEND_IMAGE="ghcr.io/example/fitvibe-backend@sha256:${dummy_digest}"
 export FRONTEND_IMAGE="ghcr.io/example/fitvibe-frontend@sha256:${dummy_digest}"
