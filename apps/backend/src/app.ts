@@ -34,6 +34,7 @@ import { legalRouter } from "./api/legal.routes.js";
 import { vibeformsRouter } from "./api/vibeforms.routes.js";
 import healthRouter from "./modules/health/health.router.js";
 import systemRouter from "./modules/system/system.routes.js";
+import { appSettingsRouter } from "./modules/system/app-settings.routes.js";
 import { consentRouter } from "./modules/consent/consent.routes.js";
 import { logsRouter } from "./modules/logs/logs.routes.js";
 import { jwksHandler } from "./modules/auth/auth.controller.js";
@@ -195,6 +196,7 @@ apiRouter.use("/contact", contactRouter);
 apiRouter.use("/logs", logsRouter);
 
 apiRouter.use("/system", systemRouter);
+apiRouter.use("/system/settings", appSettingsRouter);
 apiRouter.use("/consent", consentRouter);
 apiRouter.use("/translations", translationsRouter);
 apiRouter.use("/legal", legalRouter);
