@@ -66,6 +66,11 @@ export async function startServer(): Promise<void> {
     if (!(await checkHealth())) {
       throw new Error("ClamAV health check failed during production startup");
     }
+
+    const { checkQueueHealth } = await import("./jobs/services/queue.factory.js");
+    if (!(await checkQueueHealth())) {
+      throw new Error("Redis/BullMQ health check failed during production startup");
+    }
   }
 
   app.listen(env.PORT, () => {
