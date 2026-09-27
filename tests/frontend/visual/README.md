@@ -99,6 +99,24 @@ Visual regression tests run automatically in CI:
 - Artifacts: actual/expected/diff screenshots, traces, HTML report, and JUnit output are uploaded for review
 - Baseline updates are never performed or committed by CI; use `pnpm test:visual:update` explicitly and commit approved `*-linux.png` files
 
+## GitHub Baseline Update Workflow
+
+A manual GitHub Actions workflow, **Update Visual Baselines**, regenerates the committed Linux baselines from the latest `dev` branch.
+
+The workflow:
+
+1. checks out the latest `dev`;
+2. installs the pinned project dependencies;
+3. runs `pnpm test:visual:update`;
+4. reruns `pnpm test:visual` to verify the regenerated baselines;
+5. refuses to continue if anything other than `*-linux.png` visual baselines changed;
+6. creates a run-specific branch;
+7. opens a **draft pull request** back to `dev`.
+
+The generated PR is intentionally draft. Review the screenshot changes before accepting them. Once they are approved, mark the PR **Ready for review**; the normal CI workflow includes the `ready_for_review` event and will run against the updated baselines.
+
+This workflow does not make visual differences self-approving. A human still decides whether the new screenshots represent the intended UI.
+
 ## Adding New Visual Tests
 
 1. Create a spec with a single test per screen (theme/viewport come from the project)
