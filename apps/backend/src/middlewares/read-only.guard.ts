@@ -61,6 +61,13 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
     return;
   }
 
+  const configuredMaintenanceMessage =
+    getRuntimeGovernanceState().settings["system.maintenance_message"];
+  const maintenanceMessage =
+    typeof configuredMaintenanceMessage === "string"
+      ? configuredMaintenanceMessage
+      : env.maintenanceMessage;
+
   // Block mutation (return void, not Response)
   logger.warn(
     {
@@ -76,10 +83,7 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
   res.status(503).json({
     error: {
       code: "E.SYSTEM.READ_ONLY",
-      message:
-        (getRuntimeGovernanceState().settings["system.maintenance_message"] as string | undefined) ??
-        env.maintenanceMessage ??
-        "System is in read-only mode",
+      message: maintenanceMessage ?? "System is in read-only mode",
       details: {
         readOnlyMode: true,
         method: req.method,
