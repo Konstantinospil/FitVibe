@@ -49,9 +49,7 @@ async function getCommittedValues(): Promise<Record<string, unknown>> {
 }
 
 export async function getSettingsStatus() {
-  const state = await db("app_settings_state")
-    .where({ id: 1 })
-    .first<AppSettingsStateRow>();
+  const state = await db("app_settings_state").where({ id: 1 }).first<AppSettingsStateRow>();
   const runtime = getRuntimeGovernanceState();
 
   return {
