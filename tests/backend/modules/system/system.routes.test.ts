@@ -3,6 +3,7 @@ import request from "supertest";
 import app from "../../../../apps/backend/src/app.js";
 import { env } from "../../../../apps/backend/src/config/env.js";
 import {
+  createAuthSession,
   createUser,
   type AuthUserRecord,
 } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
@@ -37,12 +38,22 @@ async function seedUser(params: {
   return user;
 }
 
-function tokenFor(user: AuthUserRecord): string {
+async function tokenFor(user: AuthUserRecord): Promise<string> {
+  const sessionId = uuidv4();
+  const now = new Date().toISOString();
+  await createAuthSession({
+    jti: sessionId,
+    user_id: user.id,
+    user_agent: "system-routes-test",
+    ip: null,
+    created_at: now,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+  });
   return signAccessToken({
     sub: user.id,
     username: user.username,
     role: user.role_code,
-    sid: uuidv4(),
+    sid: sessionId,
   });
 }
 
@@ -65,7 +76,7 @@ describeWithTestDatabase("System Routes", () => {
         displayName: "Admin",
         roleCode: "admin",
       });
-      adminToken = tokenFor(adminUser);
+      adminToken = await tokenFor(adminUser);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes("does not exist")) {
@@ -132,9 +143,10 @@ describeWithTestDatabase("System Routes", () => {
         roleCode: "athlete",
       });
 
+      const regularToken = await tokenFor(regularUser);
       const response = await request(app)
         .post("/api/v1/system/read-only/enable")
-        .set("Authorization", `Bearer ${tokenFor(regularUser)}`)
+        .set("Authorization", `Bearer ${regularToken}`)
         .send({ reason: "Test" });
 
       expect(response.status).toBe(403);
@@ -198,9 +210,10 @@ describeWithTestDatabase("System Routes", () => {
         roleCode: "athlete",
       });
 
+      const regularToken = await tokenFor(regularUser);
       const response = await request(app)
         .post("/api/v1/system/read-only/disable")
-        .set("Authorization", `Bearer ${tokenFor(regularUser)}`)
+        .set("Authorization", `Bearer ${regularToken}`)
         .send({ notes: "Test" });
 
       expect(response.status).toBe(403);

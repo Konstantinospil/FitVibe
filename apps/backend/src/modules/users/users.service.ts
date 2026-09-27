@@ -4,7 +4,6 @@ import { db } from "../../db/connection.js";
 import {
   findUserById,
   listUsers as listUserRows,
-  changePassword,
   createUserRecord,
   setUserStatus,
   fetchUserWithContacts,
@@ -20,7 +19,10 @@ import type {
   UserDetail,
   UserStatus,
 } from "./users.types.js";
-import { revokeRefreshByUserId } from "../auth/auth.repository.js";
+import {
+  changePasswordAndRevokeAuthAtomic,
+  revokeUserAuthStateAtomic,
+} from "../auth/auth.repository.js";
 import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
@@ -187,14 +189,13 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
 
   assertPasswordPolicy(dto.newPassword, { email, username: user.username });
   const newHash = await bcrypt.hash(dto.newPassword, 12);
-  await changePassword(userId, newHash);
-  await revokeRefreshByUserId(userId);
+  await changePasswordAndRevokeAuthAtomic(userId, newHash);
   await insertAudit({
     actorUserId: userId,
     entityType: "users",
     action: "password_change",
     entityId: userId,
-    metadata: { rotatedSessions: true },
+    metadata: { rotatedSessions: true, accessInvalidated: true },
   });
 }
 
@@ -219,6 +220,9 @@ export async function changeStatus(
   await db.transaction(async (trx) => {
     await setUserStatus(userId, nextStatus, trx);
     await insertStateHistory(userId, "status", user.status, nextStatus, trx);
+    if (nextStatus !== "active") {
+      await revokeUserAuthStateAtomic(userId, trx);
+    }
   });
 
   await insertAudit({
@@ -226,12 +230,12 @@ export async function changeStatus(
     entityType: "users",
     action: "status_change",
     entityId: userId,
-    metadata: { from: user.status, to: nextStatus },
+    metadata: {
+      from: user.status,
+      to: nextStatus,
+      accessInvalidated: nextStatus !== "active",
+    },
   });
-
-  if (nextStatus !== "active") {
-    await revokeRefreshByUserId(userId);
-  }
 
   const refreshed = await fetchUserWithContacts(userId);
   if (!refreshed) {
@@ -257,7 +261,6 @@ export async function requestAccountDeletion(
 
   if (user.status !== "pending_deletion") {
     await changeStatus(userId, userId, "pending_deletion");
-    await revokeRefreshByUserId(userId);
     await insertAudit({
       actorUserId: userId,
       entityType: "users",

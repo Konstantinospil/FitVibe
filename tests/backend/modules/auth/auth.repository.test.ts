@@ -24,6 +24,7 @@ function createMockQueryBuilder(defaultValue: unknown = null) {
     del: jest.fn().mockResolvedValue(1),
     count: jest.fn().mockReturnThis(),
     transacting: jest.fn().mockReturnThis(),
+    forUpdate: jest.fn().mockReturnThis(),
     raw: jest.fn().mockReturnValue({}),
   });
   (builder as any).raw = jest.fn().mockReturnValue({});
@@ -55,8 +56,76 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   return {
     db: mockDbFunction,
   };
-});
 
+  describe("atomic auth state", () => {
+    it("creates session and initial refresh token in one transaction", async () => {
+      const session = {
+        jti: "session-atomic",
+        user_id: userId,
+        user_agent: null,
+        ip: null,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+      };
+      const refresh = {
+        id: "refresh-atomic",
+        user_id: userId,
+        token_hash: "hash-atomic",
+        session_jti: session.jti,
+        created_at: session.created_at,
+        expires_at: session.expires_at,
+      };
+
+      await authRepository.createSessionWithRefresh(session, refresh);
+
+      expect(queryBuilders.auth_sessions.insert).toHaveBeenCalledWith(session);
+      expect(queryBuilders.refresh_tokens.insert).toHaveBeenCalledWith(refresh);
+    });
+
+    it("returns false without writes when refresh rotation has already been claimed", async () => {
+      const refreshBuilder = createMockQueryBuilder();
+      refreshBuilder.first.mockResolvedValue({ revoked_at: new Date().toISOString() });
+      queryBuilders.refresh_tokens = refreshBuilder;
+
+      const rotated = await authRepository.rotateRefreshAtomic(
+        "old-hash",
+        "session-1",
+        {
+          id: "replacement",
+          user_id: userId,
+          token_hash: "new-hash",
+          session_jti: "session-1",
+          expires_at: new Date(Date.now() + 60_000).toISOString(),
+          created_at: new Date().toISOString(),
+        },
+        { expires_at: new Date(Date.now() + 60_000).toISOString() },
+      );
+
+      expect(rotated).toBe(false);
+      expect(refreshBuilder.insert).not.toHaveBeenCalled();
+    });
+
+    it("locks a reset token before applying password reset", async () => {
+      const tokenBuilder = createMockQueryBuilder();
+      tokenBuilder.first.mockResolvedValue({ id: "reset-1" });
+      queryBuilders.auth_tokens = tokenBuilder;
+      queryBuilders.users = createMockQueryBuilder();
+      queryBuilders.refresh_tokens = createMockQueryBuilder();
+      queryBuilders.auth_sessions = createMockQueryBuilder();
+
+      await expect(
+        authRepository.resetPasswordAtomic(userId, "new-hash", "reset-1", "password_reset"),
+      ).resolves.toBe(true);
+
+      expect(tokenBuilder.forUpdate).toHaveBeenCalled();
+      expect(queryBuilders.users.update).toHaveBeenCalledWith(
+        expect.objectContaining({ password_hash: "new-hash" }),
+      );
+      expect(queryBuilders.auth_sessions.update).toHaveBeenCalled();
+    });
+  });
+
+});
 jest.mock("crypto", () => ({
   randomUUID: jest.fn(() => "uuid-123"),
 }));

@@ -1,7 +1,8 @@
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 import { env } from "../../config/env.js";
 import { HttpError } from "../../utils/http.js";
+import { isSessionActiveForUser } from "./auth.state.repository.js";
 import { verifyAccess } from "./auth.session-tokens.js";
 
 function bearerToken(header?: string | null): string | null {
@@ -15,19 +16,32 @@ function bearerToken(header?: string | null): string | null {
   return value;
 }
 
-export function requireAccessToken(req: Request, _res: Response, next: NextFunction) {
+export async function authenticateAccessToken(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): Promise<void> {
   const token =
     (req.cookies?.[env.ACCESS_COOKIE_NAME] as string | undefined) ??
     bearerToken(req.headers.authorization ?? null);
   if (!token) {
-    return next(new HttpError(401, "UNAUTHENTICATED", "Access token required"));
+    next(new HttpError(401, "UNAUTHENTICATED", "Access token required"));
+    return;
   }
 
   try {
     const payload = verifyAccess(token);
+    if (!payload.sid || !(await isSessionActiveForUser(payload.sid, payload.sub))) {
+      next(new HttpError(401, "UNAUTHENTICATED", "Session revoked or expired"));
+      return;
+    }
     req.user = payload;
-    return next();
+    next();
   } catch {
-    return next(new HttpError(401, "UNAUTHENTICATED", "Invalid or expired access token"));
+    next(new HttpError(401, "UNAUTHENTICATED", "Invalid or expired access token"));
   }
 }
+
+export const requireAccessToken: RequestHandler = (req, res, next): void => {
+  void authenticateAccessToken(req, res, next);
+};

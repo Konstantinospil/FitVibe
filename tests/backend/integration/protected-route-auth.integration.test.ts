@@ -8,8 +8,10 @@ import { sessionsRouter } from "../../../apps/backend/src/modules/sessions/sessi
 import { feedRouter } from "../../../apps/backend/src/modules/feed/feed.routes.js";
 import { pointsRouter } from "../../../apps/backend/src/modules/points/points.routes.js";
 import * as sessionTokens from "../../../apps/backend/src/modules/auth/auth.session-tokens.js";
+import * as authStateRepository from "../../../apps/backend/src/modules/auth/auth.state.repository.js";
 
 jest.mock("../../../apps/backend/src/modules/auth/auth.session-tokens.js");
+jest.mock("../../../apps/backend/src/modules/auth/auth.state.repository.js");
 jest.mock("../../../apps/backend/src/modules/common/rateLimiter.js", () => ({
   rateLimit: jest.fn(() => (_req: Request, _res: Response, next: () => void) => next()),
   rateLimitByUser: jest.fn(() => (_req: Request, _res: Response, next: () => void) => next()),
@@ -45,8 +47,14 @@ jest.mock("../../../apps/backend/src/modules/points/points.controller.js", () =>
 }));
 
 const mockedTokens = jest.mocked(sessionTokens);
+const mockedAuthState = jest.mocked(authStateRepository);
 
 describe("canonical protected-route authentication", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedAuthState.isSessionActiveForUser.mockResolvedValue(true);
+  });
+
   it.each([
     ["/users/me", "users"],
     ["/sessions", "sessions"],
@@ -73,5 +81,9 @@ describe("canonical protected-route authentication", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ route, sub: "user-cookie" });
     expect(mockedTokens.verifyAccess).toHaveBeenLastCalledWith("cookie-access-token");
+    expect(mockedAuthState.isSessionActiveForUser).toHaveBeenLastCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
   });
 });

@@ -9,9 +9,7 @@ import {
   findAuthToken,
   findUserByEmail,
   findUserById,
-  markAuthTokensConsumed,
-  revokeRefreshByUserId,
-  updateUserPassword,
+  resetPasswordAtomic,
 } from "./auth.repository.js";
 import { assertPasswordPolicy } from "./passwordPolicy.js";
 import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
@@ -98,8 +96,13 @@ export async function resetPassword(token: string, newPassword: string): Promise
   });
 
   const password_hash = await bcrypt.hash(newPassword, 12);
-  await updateUserPassword(record.user_id, password_hash);
-  await consumeAuthToken(record.id);
-  await markAuthTokensConsumed(record.user_id, TOKEN_TYPES.PASSWORD_RESET);
-  await revokeRefreshByUserId(record.user_id);
+  const resetApplied = await resetPasswordAtomic(
+    record.user_id,
+    password_hash,
+    record.id,
+    TOKEN_TYPES.PASSWORD_RESET,
+  );
+  if (!resetApplied) {
+    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+  }
 }

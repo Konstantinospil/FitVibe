@@ -2,19 +2,17 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import { RSA_KEYS } from "../../config/env.js";
-import { assertTermsRequirementSatisfied } from "./auth.legal-gate.js";
-import { HttpError } from "../../utils/http.js";
 import { incrementRefreshReuse } from "../../observability/metrics.js";
+import { HttpError } from "../../utils/http.js";
+import { assertTermsRequirementSatisfied } from "./auth.legal-gate.js";
 import {
   findRefreshTokenRaw,
   findSessionById,
   findUserById,
   getRefreshByHash,
-  insertRefreshToken,
   revokeRefreshByHash,
-  revokeRefreshBySession,
-  revokeSessionById,
-  updateSession,
+  revokeSessionFamilyAtomic,
+  rotateRefreshAtomic,
 } from "./auth.repository.js";
 import type { LoginContext, RefreshTokenPayload, UserSafe } from "./auth.types.js";
 import {
@@ -23,6 +21,24 @@ import {
 } from "./auth.audit.js";
 import { toSafeUser } from "./auth.mapping.js";
 import { nextSessionExpiry, signAccess, signRefresh } from "./auth.session-tokens.js";
+
+async function recordReuse(
+  userId: string | null,
+  sessionId: string,
+  context: LoginContext,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  incrementRefreshReuse();
+  await recordAuditEvent(userId, "auth.refresh_reuse", {
+    sessionId,
+    requestId: context.requestId ?? null,
+    ip: context.ip ?? null,
+    userAgent: sanitizeUserAgent(context.userAgent),
+    outcome: "failure",
+    familyRevoked: true,
+    ...metadata,
+  });
+}
 
 export async function refresh(
   refreshToken: string,
@@ -42,17 +58,8 @@ export async function refresh(
       try {
         const historical = await findRefreshTokenRaw(tokenHash);
         if (historical?.session_jti) {
-          await revokeSessionById(historical.session_jti);
-          await revokeRefreshBySession(historical.session_jti);
-          incrementRefreshReuse();
-          await recordAuditEvent(historical.user_id ?? null, "auth.refresh_reuse", {
-            sessionId: historical.session_jti,
-            requestId: context.requestId ?? null,
-            ip: context.ip ?? null,
-            userAgent: sanitizeUserAgent(context.userAgent),
-            outcome: "failure",
-            familyRevoked: true,
-          });
+          await revokeSessionFamilyAtomic(historical.session_jti);
+          await recordReuse(historical.user_id ?? null, historical.session_jti, context);
         }
       } catch (error: unknown) {
         if (error instanceof HttpError) {
@@ -83,47 +90,61 @@ export async function refresh(
       await revokeRefreshByHash(tokenHash);
       throw new HttpError(401, "AUTH_SESSION_REVOKED", "AUTH_SESSION_REVOKED");
     }
-    if (new Date(record.expires_at).getTime() <= Date.now()) {
-      await revokeRefreshByHash(tokenHash);
-      await revokeSessionById(session.jti);
-      throw new HttpError(401, "AUTH_REFRESH_EXPIRED", "AUTH_REFRESH_EXPIRED");
-    }
-    if (new Date(session.expires_at).getTime() <= Date.now()) {
-      await revokeRefreshBySession(session.jti);
-      await revokeSessionById(session.jti);
+    if (
+      new Date(record.expires_at).getTime() <= Date.now() ||
+      new Date(session.expires_at).getTime() <= Date.now()
+    ) {
+      await revokeSessionFamilyAtomic(session.jti);
       throw new HttpError(401, "AUTH_REFRESH_EXPIRED", "AUTH_REFRESH_EXPIRED");
     }
 
     const user = await findUserById(decoded.sub);
     if (!user || user.status !== "active") {
+      await revokeSessionFamilyAtomic(session.jti);
       throw new HttpError(401, "AUTH_USER_NOT_FOUND", "User not found");
     }
     await assertTermsRequirementSatisfied(user.id);
 
-    await revokeRefreshByHash(tokenHash);
     const newRefresh = signRefresh({ sub: user.id, sid: session.jti });
     const newHash = crypto.createHash("sha256").update(newRefresh).digest("hex");
     const newExpiry = nextSessionExpiry();
-
-    await insertRefreshToken({
-      id: uuidv4(),
-      user_id: user.id,
-      token_hash: newHash,
-      session_jti: session.jti,
-      expires_at: newExpiry,
-      created_at: new Date().toISOString(),
-    });
+    const createdAt = new Date().toISOString();
 
     const patch: { expires_at: string; user_agent?: string | null; ip?: string | null } = {
       expires_at: newExpiry,
     };
     if (context.userAgent) {
-      patch.user_agent = sanitizeUserAgent(context.userAgent);
+      const sanitizedUserAgent = sanitizeUserAgent(context.userAgent);
+      if (sanitizedUserAgent !== null && sanitizedUserAgent !== undefined) {
+        patch.user_agent = sanitizedUserAgent;
+      }
     }
     if (context.ip) {
       patch.ip = context.ip;
     }
-    await updateSession(session.jti, patch);
+
+    const rotated = await rotateRefreshAtomic(
+      tokenHash,
+      session.jti,
+      {
+        id: uuidv4(),
+        user_id: user.id,
+        token_hash: newHash,
+        session_jti: session.jti,
+        expires_at: newExpiry,
+        created_at: createdAt,
+      },
+      patch,
+    );
+
+    if (!rotated) {
+      await revokeSessionFamilyAtomic(session.jti);
+      await recordReuse(user.id, session.jti, context, {
+        previousTokenId: record.id,
+        concurrentReplay: true,
+      });
+      throw new HttpError(401, "AUTH_INVALID_REFRESH", "AUTH_INVALID_REFRESH");
+    }
 
     await recordAuditEvent(user.id, "auth.refresh", {
       sessionId: session.jti,
@@ -168,10 +189,10 @@ export async function logout(
     decoded = null;
   }
 
-  await revokeRefreshByHash(tokenHash);
   if (decoded?.sid) {
-    await revokeRefreshBySession(decoded.sid);
-    await revokeSessionById(decoded.sid);
+    await revokeSessionFamilyAtomic(decoded.sid);
+  } else {
+    await revokeRefreshByHash(tokenHash);
   }
 
   await recordAuditEvent(decoded?.sub ?? null, "auth.logout", {
@@ -179,5 +200,7 @@ export async function logout(
     requestId: context.requestId ?? null,
     ip: context.ip ?? null,
     userAgent: sanitizeUserAgent(context.userAgent),
+    familyRevoked: Boolean(decoded?.sid),
+    accessInvalidated: Boolean(decoded?.sid),
   });
 }

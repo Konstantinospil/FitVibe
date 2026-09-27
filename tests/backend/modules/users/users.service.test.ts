@@ -902,13 +902,13 @@ describe("Users Service", () => {
 
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockBcrypt.hash.mockResolvedValue("new_hash" as never);
-      mockUsersRepo.changePassword.mockResolvedValue(1);
+      mockAuthRepo.changePasswordAndRevokeAuthAtomic.mockResolvedValue(undefined);
 
       await usersService.updatePassword(userId, dto);
 
       expect(mockBcrypt.compare).toHaveBeenCalledWith("OldP@ssw0rd123", "old_hash");
       expect(mockBcrypt.hash).toHaveBeenCalledWith("NewP@ssw0rd456", 12);
-      expect(mockUsersRepo.changePassword).toHaveBeenCalled();
+      expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalled();
       expect(mockAuditUtil.insertAudit).toHaveBeenCalled();
     });
 
@@ -966,11 +966,11 @@ describe("Users Service", () => {
 
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockBcrypt.hash.mockResolvedValue("new_hash" as never);
-      mockUsersRepo.changePassword.mockResolvedValue(1);
+      mockAuthRepo.changePasswordAndRevokeAuthAtomic.mockResolvedValue(undefined);
 
       await usersService.updatePassword(userId, dto);
 
-      expect(mockAuthRepo.revokeRefreshByUserId).toHaveBeenCalledWith(userId);
+      expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalledWith(userId, expect.any(String));
     });
   });
 

@@ -12,7 +12,7 @@ import {
   getPending2FASession,
   incrementPending2FAFailures,
 } from "./pending-2fa.repository.js";
-import { createAuthSession, findUserById, insertRefreshToken } from "./auth.repository.js";
+import { createSessionWithRefresh, findUserById } from "./auth.repository.js";
 import type { LoginContext, TokenPair, UserSafe } from "./auth.types.js";
 import {
   recordAuthAuditEvent as recordAuditEvent,
@@ -125,26 +125,27 @@ export async function verify2FALogin(
     const issuedAtIso = new Date().toISOString();
     const sessionExpiresAt = nextSessionExpiry();
 
-    await createAuthSession({
-      jti: sessionId,
-      user_id: user.id,
-      user_agent: userAgent,
-      ip: context.ip ?? null,
-      created_at: issuedAtIso,
-      expires_at: sessionExpiresAt,
-    });
-
     const refreshToken = signRefresh({ sub: user.id, sid: sessionId });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
-    await insertRefreshToken({
-      id: uuidv4(),
-      user_id: user.id,
-      token_hash,
-      session_jti: sessionId,
-      expires_at: sessionExpiresAt,
-      created_at: issuedAtIso,
-    });
+    await createSessionWithRefresh(
+      {
+        jti: sessionId,
+        user_id: user.id,
+        user_agent: userAgent,
+        ip: context.ip ?? null,
+        created_at: issuedAtIso,
+        expires_at: sessionExpiresAt,
+      },
+      {
+        id: uuidv4(),
+        user_id: user.id,
+        token_hash,
+        session_jti: sessionId,
+        expires_at: sessionExpiresAt,
+        created_at: issuedAtIso,
+      },
+    );
 
     const tokens: TokenPair = {
       accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId }),
