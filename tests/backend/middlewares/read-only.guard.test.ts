@@ -2,6 +2,10 @@ import type { NextFunction, Request, Response } from "express";
 import { readOnlyGuard } from "../../../apps/backend/src/middlewares/read-only.guard.js";
 import { env } from "../../../apps/backend/src/config/env.js";
 import { logger } from "../../../apps/backend/src/config/logger.js";
+import {
+  getRuntimeGovernanceState,
+  isEffectiveReadOnly,
+} from "../../../apps/backend/src/modules/system/app-settings.runtime.js";
 
 // Mock env
 jest.mock("../../../apps/backend/src/config/env.js", () => ({
@@ -9,6 +13,11 @@ jest.mock("../../../apps/backend/src/config/env.js", () => ({
     readOnlyMode: false,
     maintenanceMessage: "System is in maintenance mode",
   },
+}));
+
+jest.mock("../../../apps/backend/src/modules/system/app-settings.runtime.js", () => ({
+  getRuntimeGovernanceState: jest.fn(),
+  isEffectiveReadOnly: jest.fn(),
 }));
 
 // Mock logger
@@ -19,7 +28,9 @@ jest.mock("../../../apps/backend/src/config/logger.js", () => ({
 }));
 
 const mockLogger = jest.mocked(logger);
-const mockEnv = env as { readOnlyMode: boolean; maintenanceMessage?: string };
+const mockEnv = env as { NODE_ENV?: string; readOnlyMode: boolean; maintenanceMessage?: string };
+const mockGovernanceState = jest.mocked(getRuntimeGovernanceState);
+const mockIsEffectiveReadOnly = jest.mocked(isEffectiveReadOnly);
 
 describe("Read-Only Guard", () => {
   let mockRequest: Partial<Request>;
@@ -28,8 +39,18 @@ describe("Read-Only Guard", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEnv.NODE_ENV = "development";
     mockEnv.readOnlyMode = false;
     mockEnv.maintenanceMessage = "System is in maintenance mode";
+    mockIsEffectiveReadOnly.mockReturnValue(false);
+    mockGovernanceState.mockReturnValue({
+      authorityReady: true,
+      maintenanceEnabled: false,
+      activeRevision: 0,
+      loadedRevision: 0,
+      emergencyReadOnly: false,
+      settings: { "system.maintenance_message": "System is in maintenance mode" },
+    });
 
     mockRequest = {
       method: "GET",
@@ -63,6 +84,15 @@ describe("Read-Only Guard", () => {
   describe("when read-only mode is enabled", () => {
     beforeEach(() => {
       mockEnv.readOnlyMode = true;
+      mockIsEffectiveReadOnly.mockReturnValue(true);
+      mockGovernanceState.mockReturnValue({
+        authorityReady: true,
+        maintenanceEnabled: true,
+        activeRevision: 0,
+        loadedRevision: 0,
+        emergencyReadOnly: false,
+        settings: { "system.maintenance_message": "System is in maintenance mode" },
+      });
     });
 
     it("should allow safe HTTP methods (GET)", () => {
@@ -107,6 +137,9 @@ describe("Read-Only Guard", () => {
             readOnlyMode: true,
             method: "POST",
             path: "/api/v1/sessions",
+            activeRevision: 0,
+            loadedRevision: 0,
+            emergencyReadOnly: false,
           },
           requestId: "req-123",
         },
@@ -242,6 +275,14 @@ describe("Read-Only Guard", () => {
 
     it("should use default maintenance message when not set", () => {
       delete mockEnv.maintenanceMessage;
+      mockGovernanceState.mockReturnValue({
+        authorityReady: true,
+        maintenanceEnabled: true,
+        activeRevision: 0,
+        loadedRevision: 0,
+        emergencyReadOnly: false,
+        settings: {},
+      });
       mockRequest.method = "POST";
       mockRequest.originalUrl = "/api/v1/sessions";
 
