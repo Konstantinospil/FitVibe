@@ -1,6 +1,7 @@
 // src/middlewares/read-only.guard.ts
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
+import { getRuntimeGovernanceState, isEffectiveReadOnly } from "../modules/system/app-settings.runtime.js";
 import { logger } from "../config/logger.js";
 
 /** Methods that can mutate state */
@@ -14,6 +15,7 @@ const ALLOWLIST_REGEX: RegExp[] = [
   /^\/(?:api\/v\d+\/)?system\/read-only\/status$/i,
   /^\/(?:api\/v\d+\/)?system\/read-only\/enable$/i,
   /^\/(?:api\/v\d+\/)?system\/read-only\/disable$/i,
+  /^\/(?:api\/v\d+\/)?system\/settings(?:\/.*)?$/i,
   /^\/(?:api\/v\d+\/)?auth\/refresh$/i,
 ];
 
@@ -35,8 +37,8 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
     next();
     return;
   }
-  // Fast path: nothing to enforce
-  if (!env.readOnlyMode) {
+  // Fast path: nothing to enforce.
+  if (!isEffectiveReadOnly()) {
     next();
     return;
   }
@@ -71,8 +73,18 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
   res.status(503).json({
     error: {
       code: "E.SYSTEM.READ_ONLY",
-      message: env.maintenanceMessage ?? "System is in read-only mode",
-      details: { readOnlyMode: true, method: req.method, path: urlPath },
+      message:
+        (getRuntimeGovernanceState().settings["system.maintenance_message"] as string | undefined) ??
+        env.maintenanceMessage ??
+        "System is in read-only mode",
+      details: {
+        readOnlyMode: true,
+        method: req.method,
+        path: urlPath,
+        activeRevision: getRuntimeGovernanceState().activeRevision,
+        loadedRevision: getRuntimeGovernanceState().loadedRevision,
+        emergencyReadOnly: getRuntimeGovernanceState().emergencyReadOnly,
+      },
       requestId: res.locals.requestId,
     },
   });
