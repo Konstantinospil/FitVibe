@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  listEnabledMeasurementAttributes,
-  type MeasurementAttribute,
-} from "../../services/api";
+import { listEnabledMeasurementAttributes, type MeasurementAttribute } from "../../services/api";
 import { Alert } from "../ui/Alert";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 
