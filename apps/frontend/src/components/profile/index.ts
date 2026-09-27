@@ -8,3 +8,5 @@ export * from "./AccountDeletionForm";
 export * from "./DataExportButton";
 
 export * from "./BodyProgressSettings";
+
+export * from "./MeasurementValuesSettings";
