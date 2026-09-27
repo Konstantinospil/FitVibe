@@ -155,7 +155,8 @@ apiMock.onGet("/health").reply(200, {
 });
 apiMock.onGet("/api/v1/logs/recent-activity").reply(200, { activity: [] });
 apiMock.onGet("/api/v1/admin/reports").reply(200, { data: [], total: 0, limit: 20, offset: 0 });
-apiMock.onGet("/api/v1/admin/users/search").reply(200, { data: [], total: 0, limit: 20, offset: 0 });
+apiMock.onGet("/api/v1/admin/users/search")
+  .reply(200, { data: [], total: 0, limit: 20, offset: 0 });
 
 apiMock.onGet("/api/v1/translations/metadata").reply(200, {
   data: { languages: ["en", "de", "fr", "es", "el"], namespaces: ["common", "auth"] },
