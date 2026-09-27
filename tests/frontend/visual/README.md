@@ -33,6 +33,20 @@ pnpm test:visual
 pnpm test:visual:update
 ```
 
+### Updating Baselines in GitHub
+
+A manual GitHub Actions workflow, **Update Visual Baselines**, provides the same operation without requiring local Docker:
+
+1. Open **Actions → Update Visual Baselines → Run workflow**.
+2. Set `source_ref` to the branch containing the intentional UI changes (normally `dev` or a feature branch).
+3. Keep `target_branch` as `dev` for normal development.
+4. The workflow regenerates and verifies the Linux baselines, rejects changes outside `*-linux.png` snapshot paths, pushes a dedicated branch, and opens a **draft** PR.
+5. Review the changed baseline images in that PR.
+6. If the screenshots are correct, mark the PR **Ready for review**. This triggers the normal CI workflow.
+7. Merge only after CI passes and the visual changes have been explicitly approved.
+
+The updater workflow is intentionally installed on the repository default branch so that GitHub exposes the `workflow_dispatch` control. It may still generate baselines from another `source_ref`.
+
 The comparison and update commands both run `mcr.microsoft.com/playwright:v1.63.0-jammy`, the same image as the `visual_regression` CI job. The update command rewrites `*-linux.png` files; commit them only after reviewing and approving the visual changes.
 
 **Important**: Baseline updates require design approval and should include before/after screenshots in the PR description.
