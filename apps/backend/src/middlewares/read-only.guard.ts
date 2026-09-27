@@ -77,9 +77,7 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
     error: {
       code: "E.SYSTEM.READ_ONLY",
       message:
-        (getRuntimeGovernanceState().settings["system.maintenance_message"] as
-          | string
-          | undefined) ??
+        (getRuntimeGovernanceState().settings["system.maintenance_message"] as string | undefined) ??
         env.maintenanceMessage ??
         "System is in read-only mode",
       details: {
