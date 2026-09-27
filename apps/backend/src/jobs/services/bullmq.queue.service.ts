@@ -145,6 +145,21 @@ export class BullMQQueueService {
     }
   }
 
+  async checkHealth(): Promise<boolean> {
+    const firstQueue = this.queues.values().next().value as Queue | undefined;
+    if (!firstQueue) {
+      return false;
+    }
+
+    try {
+      await firstQueue.waitUntilReady();
+      return true;
+    } catch (error) {
+      logger.error({ error }, "[bullmq] Redis health check failed");
+      return false;
+    }
+  }
+
   /**
    * Get queue statistics
    */
