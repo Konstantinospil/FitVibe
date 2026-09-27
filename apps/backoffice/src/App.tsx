@@ -9,6 +9,7 @@ import AuditLogsPage from "./pages/AuditLogs";
 import SettingsPage from "./pages/Settings";
 import UsersPage from "./pages/Users";
 import ContentReportsV2 from "./pages/ContentReports_v2";
+import PrivilegeManagementPage from "./pages/PrivilegeManagement";
 import Layout from "./components/Layout";
 import { useAuthStore } from "./store/auth.store";
 import { useThemeStore } from "./store/theme.store";
@@ -50,7 +51,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isInitializing: bool
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== "admin") {
+  if (!["admin", "superadmin"].includes(user.role ?? "")) {
     return <Navigate to="/login" replace />;
   }
 
@@ -96,7 +97,7 @@ const App: React.FC = () => {
           }
 
           const user = response.user;
-          if (user && user.role === "admin") {
+          if (user && ["admin", "superadmin"].includes(user.role)) {
             // Session is valid, restore auth state
             signIn({
               id: user.id,
@@ -156,6 +157,7 @@ const App: React.FC = () => {
               <Route path="settings" element={<SettingsPage />} />
               <Route path="users" element={<UsersPage />} />
               <Route path="admin/reports" element={<ContentReportsV2 />} />
+              <Route path="superadmin/privileges" element={<PrivilegeManagementPage />} />
             </Route>
           </Routes>
         </BrowserRouter>

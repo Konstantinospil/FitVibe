@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { JwtPayload } from "../../../../apps/backend/src/auth/auth.types.js";
-import { requireRole } from "../../../../apps/backend/src/modules/common/rbac.middleware.js";
+import { requireRole, roleSatisfies } from "../../../../apps/backend/src/modules/common/rbac.middleware.js";
 
 describe("rbac.middleware", () => {
   let mockRequest: Partial<Request>;
@@ -225,6 +225,28 @@ describe("rbac.middleware", () => {
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
       expect(jsonMock).toHaveBeenCalledWith({ error: "Unauthorized" });
+    });
+
+    it("should let superadmin inherit normal admin authorization", () => {
+      expect(roleSatisfies("superadmin", "admin")).toBe(true);
+      mockRequest.user = { sub: "user-123", role: "superadmin", sid: "session-123" };
+
+      const middleware = requireRole("admin");
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalledTimes(1);
+      expect(statusMock).not.toHaveBeenCalled();
+    });
+
+    it("should not let admin inherit superadmin authorization", () => {
+      expect(roleSatisfies("admin", "superadmin")).toBe(false);
+      mockRequest.user = { sub: "user-123", role: "admin", sid: "session-123" };
+
+      const middleware = requireRole("superadmin");
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).not.toHaveBeenCalled();
+      expect(statusMock).toHaveBeenCalledWith(403);
     });
   });
 });

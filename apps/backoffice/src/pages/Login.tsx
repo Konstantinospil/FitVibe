@@ -30,7 +30,7 @@ const Login: React.FC = () => {
     try {
       const response = await authApi.login(email, password);
       const user = response.user;
-      if (user && user.role === "admin") {
+      if (user && ["admin", "superadmin"].includes(user.role)) {
         signIn({
           id: user.id,
           username: user.username,

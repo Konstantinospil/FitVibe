@@ -108,6 +108,14 @@ export async function disableTwoFactor(
   code: string,
 ): Promise<void> {
   await db.transaction(async (trx) => {
+    const user = await trx("users").where({ id: userId }).first<{ role_code: string }>("role_code");
+    if (user?.role_code === "superadmin") {
+      throw new HttpError(
+        409,
+        "SUPERADMIN_2FA_REQUIRED",
+        "Demote the superadmin account before disabling two-factor authentication",
+      );
+    }
     await assertStepUp(userId, password, code, true, trx);
     await disable2FA(userId, trx);
   });
@@ -249,6 +257,31 @@ export async function verifyAndEnable2FA(
   });
 
   return true;
+}
+
+
+export async function verifyTotpOnly(
+  userId: string,
+  code: string,
+  trx?: Knex.Transaction,
+): Promise<boolean> {
+  if (!/^\d{6}$/.test(code)) {
+    return false;
+  }
+
+  const exec = trx ?? db;
+  const settings = await exec<User2FASettings>("user_2fa_settings")
+    .where({ user_id: userId, is_enabled: true, is_verified: true })
+    .first();
+
+  if (!settings) {
+    return false;
+  }
+
+  return authenticator.verify({
+    token: code,
+    secret: decryptTotpSecret(settings.totp_secret),
+  });
 }
 
 /**
