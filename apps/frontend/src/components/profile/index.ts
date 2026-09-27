@@ -10,3 +10,6 @@ export * from "./DataExportButton";
 export * from "./BodyProgressSettings";
 
 export * from "./MeasurementValuesSettings";
+
+export * from "./MeasurementDiscoverySettings";
+export * from "./ProfileMeasurements";

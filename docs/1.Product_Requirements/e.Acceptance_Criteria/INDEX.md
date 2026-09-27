@@ -547,5 +547,13 @@ Only files that exist on disk are listed. Individual AC files are canonical; thi
 | US-21.2-AC02 | [US-21.2](../d.User_stories/US-21.2-user-measurement-values.md) | Approved | Database + service review | [US-21.2-AC02.md](./US-21.2-AC02.md) |
 | US-21.2-AC03 | [US-21.2](../d.User_stories/US-21.2-user-measurement-values.md) | Approved | Unit + frontend contract review | [US-21.2-AC03.md](./US-21.2-AC03.md) |
 
+#### US-21.3: Measurement Discovery & Profile Presentation
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-21.3-AC01 | [US-21.3](../d.User_stories/US-21.3-measurement-discovery-profile-presentation.md) | Approved | API + frontend | [US-21.3-AC01.md](./US-21.3-AC01.md) |
+| US-21.3-AC02 | [US-21.3](../d.User_stories/US-21.3-measurement-discovery-profile-presentation.md) | Approved | API + frontend | [US-21.3-AC02.md](./US-21.3-AC02.md) |
+| US-21.3-AC03 | [US-21.3](../d.User_stories/US-21.3-measurement-discovery-profile-presentation.md) | Approved | Frontend + accessibility | [US-21.3-AC03.md](./US-21.3-AC03.md) |
+
 The remaining E21 story ACs stay deferred until their implementation comparisons are performed.
 

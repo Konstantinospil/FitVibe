@@ -325,6 +325,94 @@ export async function mockCurrentUser(page: Page, overrides?: Partial<typeof DEF
   });
 }
 
+const DEFAULT_BIO_MEASUREMENTS = [
+  {
+    id: "bio-weight",
+    key: "weight",
+    normalizedKey: "weight",
+    label: "Weight",
+    description: "Body weight",
+    unitType: "weight",
+    granularity: "kg",
+    measurementSystem: "metric",
+    minValueMetric: 20,
+    maxValueMetric: 400,
+    minValueImperial: 44.09,
+    maxValueImperial: 881.85,
+    isDefault: true,
+    derivedFromAId: null,
+    derivedFromBId: null,
+    derivedOperator: null,
+    createdAt: NOW_ISO,
+    updatedAt: NOW_ISO,
+    latestValue: {
+      attributeId: "bio-weight",
+      valueNumber: 72.5,
+      measuredAt: NOW_ISO,
+    },
+    isVisible: true,
+  },
+];
+
+const DEFAULT_PERFORMANCE_MEASUREMENTS = [
+  {
+    id: "perf-vo2-max",
+    key: "vo2_max",
+    normalizedKey: "vo2 max",
+    label: "VO2 max",
+    description: "Maximum oxygen uptake",
+    unitType: "ratio",
+    granularity: "ml/kg/min",
+    measurementSystem: "metric",
+    minValueMetric: 10,
+    maxValueMetric: 100,
+    minValueImperial: 10,
+    maxValueImperial: 100,
+    isDefault: true,
+    derivedFromAId: null,
+    derivedFromBId: null,
+    derivedOperator: null,
+    createdAt: NOW_ISO,
+    updatedAt: NOW_ISO,
+    latestValue: {
+      attributeId: "perf-vo2-max",
+      valueNumber: 49,
+      measuredAt: NOW_ISO,
+    },
+    isVisible: true,
+  },
+];
+
+export async function mockMeasurements(page: Page) {
+  const installCategory = async (
+    category: "biometrics" | "performance",
+    attributes: typeof DEFAULT_BIO_MEASUREMENTS,
+  ) => {
+    await page.route(`**/api/v1/measurements/${category}/attributes**`, async (route) => {
+      if (route.request().method() !== "GET") {
+        return route.fallback();
+      }
+      return fulfillJson(route, { attributes });
+    });
+
+    await page.route(
+      new RegExp(`/api/v1/measurements/${category}/attributes/[^/]+/visibility$`),
+      async (route) => {
+        if (route.request().method() !== "PUT") {
+          return route.fallback();
+        }
+        return route.fulfill({
+          status: 204,
+          headers: corsHeaders(route),
+        });
+      },
+    );
+  };
+
+  await installCategory("biometrics", DEFAULT_BIO_MEASUREMENTS);
+  await installCategory("performance", DEFAULT_PERFORMANCE_MEASUREMENTS);
+}
+
 export async function mockUserAttributes(
   page: Page,
   overrides?: { attributes?: typeof DEFAULT_ATTRIBUTES },
@@ -719,6 +807,7 @@ export async function installDefaultMocks(page: Page): Promise<void> {
   await mockSystemConfig(page);
   await mockCurrentUser(page);
   await mockUserAttributes(page);
+  await mockMeasurements(page);
   await mockAuthSessions(page);
   await mockAuthRefresh(page);
   await mock2FAStatus(page, false);

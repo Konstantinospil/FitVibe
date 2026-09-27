@@ -37,15 +37,28 @@ function collectionPath(category: MeasurementCategory): string {
   return category === "bio" ? "biometrics" : "performance";
 }
 
+export async function listMeasurementAttributes(
+  category: MeasurementCategory,
+  options?: { lang?: string; q?: string; includeHidden?: boolean },
+): Promise<MeasurementAttribute[]> {
+  const res = await apiClient.get<{ attributes: MeasurementAttribute[] }>(
+    `/api/v1/measurements/${collectionPath(category)}/attributes`,
+    {
+      params: {
+        ...(options?.lang ? { lang: options.lang } : {}),
+        ...(options?.q ? { q: options.q } : {}),
+        ...(options?.includeHidden ? { includeHidden: "true" } : {}),
+      },
+    },
+  );
+  return res.data.attributes;
+}
+
 export async function listEnabledMeasurementAttributes(
   category: MeasurementCategory,
   lang?: string,
 ): Promise<MeasurementAttribute[]> {
-  const res = await apiClient.get<{ attributes: MeasurementAttribute[] }>(
-    `/api/v1/measurements/${collectionPath(category)}/attributes`,
-    { params: lang ? { lang } : undefined },
-  );
-  return res.data.attributes;
+  return listMeasurementAttributes(category, { lang });
 }
 
 export async function addMeasurementValue(
@@ -58,4 +71,15 @@ export async function addMeasurementValue(
     payload,
   );
   return res.data.latestValue;
+}
+
+export async function updateMeasurementVisibility(
+  category: MeasurementCategory,
+  attributeId: string,
+  isVisible: boolean,
+): Promise<void> {
+  await apiClient.put(
+    `/api/v1/measurements/${collectionPath(category)}/attributes/${attributeId}/visibility`,
+    { isVisible },
+  );
 }
