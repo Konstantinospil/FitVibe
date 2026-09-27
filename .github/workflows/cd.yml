@@ -258,6 +258,19 @@ jobs:
             compose config --quiet
 
             resolved_images="$(compose config --images)"
+            while IFS= read -r image; do
+              case "${image}" in
+                *@sha256:[0-9a-fA-F][0-9a-fA-F]*) ;;
+                *)
+                  echo "Production compose resolved a mutable image reference: ${image}" >&2
+                  echo "All production images must be pinned by digest." >&2
+                  exit 1
+                  ;;
+              esac
+            done <<EOF_IMAGES
+${resolved_images}
+EOF_IMAGES
+
             if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKEND_IMAGE}" >/dev/null; then
               echo "compose.yml does not resolve backend to ${BACKEND_IMAGE}." >&2
               echo "The production stack must consume the BACKEND_IMAGE variable from CD." >&2
