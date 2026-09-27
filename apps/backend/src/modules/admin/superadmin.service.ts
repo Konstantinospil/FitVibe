@@ -182,7 +182,33 @@ export async function changePrivilegedRole(input: {
     throw new HttpError(401, "PRIVILEGED_TOTP_FAILED", "Fresh authenticator TOTP required");
   }
 
+  const totpCodeHash = crypto.createHash("sha256").update(input.totpCode).digest("hex");
+
   await db.transaction(async (trx) => {
+    // A privileged authenticator code is consumed once. Old rows are removed so
+    // a coincidental code repetition in a distant future TOTP window is allowed.
+    await trx("privileged_totp_uses")
+      .where("used_at", "<", new Date(Date.now() - 2 * 60 * 1000))
+      .del();
+
+    try {
+      await trx("privileged_totp_uses").insert({
+        id: crypto.randomUUID(),
+        user_id: input.actorUserId,
+        code_hash: totpCodeHash,
+        used_at: trx.fn.now(),
+      });
+    } catch (error) {
+      const candidate = error as { code?: string };
+      if (candidate.code === "23505") {
+        throw new HttpError(
+          409,
+          "PRIVILEGED_TOTP_ALREADY_USED",
+          "A fresh authenticator TOTP is required for each privileged change",
+        );
+      }
+      throw error;
+    }
     const actor = await getPrivilegedUser(input.actorUserId, trx);
     if (!actor || actor.role !== "superadmin" || actor.status !== "active") {
       throw new HttpError(403, "SUPERADMIN_REQUIRED", "Superadmin privileges required");
