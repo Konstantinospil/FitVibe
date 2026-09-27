@@ -259,7 +259,6 @@ export async function verifyAndEnable2FA(
   return true;
 }
 
-
 export async function verifyTotpOnly(
   userId: string,
   code: string,
