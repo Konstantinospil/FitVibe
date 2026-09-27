@@ -18,7 +18,12 @@ export async function up(knex: Knex): Promise<void> {
   `);
 
   await knex.schema.createTable("app_setting_revision_items", (table) => {
-    table.uuid("revision_id").notNullable().references("id").inTable("app_setting_revisions").onDelete("CASCADE");
+    table
+      .uuid("revision_id")
+      .notNullable()
+      .references("id")
+      .inTable("app_setting_revisions")
+      .onDelete("CASCADE");
     table.string("setting_key", 128).notNullable();
     table.jsonb("old_value").nullable();
     table.jsonb("new_value").notNullable();
@@ -31,7 +36,12 @@ export async function up(knex: Knex): Promise<void> {
     table.bigInteger("loaded_revision").notNullable().defaultTo(0);
     table.boolean("maintenance_enabled").notNullable().defaultTo(false);
     table.text("maintenance_reason").nullable();
-    table.uuid("maintenance_started_by").nullable().references("id").inTable("users").onDelete("SET NULL");
+    table
+      .uuid("maintenance_started_by")
+      .nullable()
+      .references("id")
+      .inTable("users")
+      .onDelete("SET NULL");
     table.timestamp("maintenance_started_at", { useTz: true }).nullable();
     table.timestamp("updated_at", { useTz: true }).notNullable().defaultTo(knex.fn.now());
   });
