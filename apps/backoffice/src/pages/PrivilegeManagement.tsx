@@ -43,7 +43,9 @@ const PrivilegeManagementPage: React.FC = () => {
   };
 
   const commitRoleChange = async () => {
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
     const nextRole = selected.role === "admin" ? "superadmin" : "admin";
     setLoading(true);
     setMessage(null);
@@ -111,7 +113,9 @@ const PrivilegeManagementPage: React.FC = () => {
             >
               <div>
                 <strong>{user.username ?? user.email ?? user.id}</strong>
-                <div>{user.role} · {user.status} · TOTP {user.totpVerified ? "verified" : "missing"}</div>
+                <div>
+                  {user.role} · {user.status} · TOTP {user.totpVerified ? "verified" : "missing"}
+                </div>
               </div>
               <Button
                 variant={user.role === "superadmin" ? "danger" : "secondary"}
@@ -128,9 +132,7 @@ const PrivilegeManagementPage: React.FC = () => {
       {selected ? (
         <Card>
           <CardHeader>
-            <CardTitle>
-              Confirm {selected.role === "admin" ? "promotion" : "demotion"}
-            </CardTitle>
+            <CardTitle>Confirm {selected.role === "admin" ? "promotion" : "demotion"}</CardTitle>
             <CardDescription>
               {selected.username ?? selected.email ?? selected.id}: {selected.role} →{" "}
               {selected.role === "admin" ? "superadmin" : "admin"}
