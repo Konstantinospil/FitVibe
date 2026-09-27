@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const listEnabledMeasurementAttributes = vi.fn();
 const addMeasurementValue = vi.fn();
+const t = (key: string) => key;
+const i18n = { language: "en" };
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: "en" },
+    t,
+    i18n,
   }),
 }));
 
