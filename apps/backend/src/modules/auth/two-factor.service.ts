@@ -108,6 +108,14 @@ export async function disableTwoFactor(
   code: string,
 ): Promise<void> {
   await db.transaction(async (trx) => {
+    const user = await trx("users").where({ id: userId }).first<{ role_code: string }>("role_code");
+    if (user?.role_code === "superadmin") {
+      throw new HttpError(
+        409,
+        "SUPERADMIN_2FA_REQUIRED",
+        "Demote the superadmin account before disabling two-factor authentication",
+      );
+    }
     await assertStepUp(userId, password, code, true, trx);
     await disable2FA(userId, trx);
   });
