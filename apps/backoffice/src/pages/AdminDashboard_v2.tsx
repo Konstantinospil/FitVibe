@@ -8,10 +8,12 @@ import {
   Mail,
   ListChecks,
   FileCheck2,
+  ShieldCheck,
 } from "lucide-react";
 
 const AdminDashboardV2: React.FC = () => {
   const location = useLocation();
+  const role = document.body.dataset.role;
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
 
   const items = [
@@ -58,6 +60,15 @@ const AdminDashboardV2: React.FC = () => {
       description: "Publish immutable legal document versions from reviewed translations.",
     },
   ];
+
+  if (role === "superadmin") {
+    items.splice(5, 0, {
+      path: "/superadmin/privileges",
+      label: "Privilege Management",
+      icon: <ShieldCheck size={20} />,
+      description: "Manage superadmin privileges with sudo and fresh TOTP approval.",
+    });
+  }
 
   return (
     <div className="grid grid--gap-md">
