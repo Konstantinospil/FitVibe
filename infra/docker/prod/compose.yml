@@ -9,11 +9,16 @@ services:
       CLAMAV_ENABLED: "true"
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
       clamav:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true
@@ -49,6 +54,21 @@ services:
       retries: 12
       start_period: 10s
 
+  redis:
+    image: ${REDIS_IMAGE:?REDIS_IMAGE digest reference is required}
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
   clamav:
     image: ${CLAMAV_IMAGE:?CLAMAV_IMAGE digest reference is required}
     restart: unless-stopped
@@ -67,4 +87,5 @@ services:
 
 volumes:
   db_data:
+  redis_data:
   clamav_signatures:
