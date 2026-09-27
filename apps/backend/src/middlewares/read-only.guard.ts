@@ -1,7 +1,10 @@
 // src/middlewares/read-only.guard.ts
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
-import { getRuntimeGovernanceState, isEffectiveReadOnly } from "../modules/system/app-settings.runtime.js";
+import {
+  getRuntimeGovernanceState,
+  isEffectiveReadOnly,
+} from "../modules/system/app-settings.runtime.js";
 import { logger } from "../config/logger.js";
 
 /** Methods that can mutate state */
@@ -74,7 +77,9 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
     error: {
       code: "E.SYSTEM.READ_ONLY",
       message:
-        (getRuntimeGovernanceState().settings["system.maintenance_message"] as string | undefined) ??
+        (getRuntimeGovernanceState().settings["system.maintenance_message"] as
+          | string
+          | undefined) ??
         env.maintenanceMessage ??
         "System is in read-only mode",
       details: {
