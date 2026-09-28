@@ -26,9 +26,7 @@ router.get(
     const readOnlyMode = isEffectiveReadOnly();
     res.status(200).json({
       readOnlyMode,
-      message: readOnlyMode
-        ? getRuntimeAppSetting<string>("system.maintenance_message")
-        : null,
+      message: readOnlyMode ? getRuntimeAppSetting<string>("system.maintenance_message") : null,
       sources: {
         authorityUnavailable: !runtime.authorityReady,
         persistedMaintenance: runtime.maintenanceEnabled,
