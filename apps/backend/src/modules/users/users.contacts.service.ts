@@ -28,10 +28,7 @@ const MILLISECONDS_PER_MINUTE = 60 * 1000;
 const MILLISECONDS_PER_DAY = 24 * 60 * MILLISECONDS_PER_MINUTE;
 
 function contactVerificationTtlMilliseconds(): number {
-  return (
-    getRuntimeAppSetting<number>("auth.email_verification_ttl_minutes") *
-    MILLISECONDS_PER_MINUTE
-  );
+  return getRuntimeAppSetting<number>("auth.email_verification_ttl_minutes") * MILLISECONDS_PER_MINUTE;
 }
 
 function contactTokenType(contactId: string): string {
@@ -72,9 +69,7 @@ export async function requestContactVerification(
   const now = Date.now();
   const tokenType = contactTokenType(contactId);
   const windowStart = new Date(
-    now -
-      AUTH_SECURITY_POLICY.contactVerification.resendWindowMinutes *
-        MILLISECONDS_PER_MINUTE,
+    now - AUTH_SECURITY_POLICY.contactVerification.resendWindowMinutes * MILLISECONDS_PER_MINUTE,
   );
   const recentAttempts = await countAuthTokensSince(userId, tokenType, windowStart);
   if (recentAttempts >= AUTH_SECURITY_POLICY.contactVerification.resendLimit) {
@@ -86,9 +81,7 @@ export async function requestContactVerification(
   }
 
   const retentionCutoff = new Date(
-    now -
-      AUTH_SECURITY_POLICY.contactVerification.tokenRetentionDays *
-        MILLISECONDS_PER_DAY,
+    now - AUTH_SECURITY_POLICY.contactVerification.tokenRetentionDays * MILLISECONDS_PER_DAY,
   );
   await purgeAuthTokensOlderThan(tokenType, retentionCutoff);
   await markAuthTokensConsumed(userId, tokenType);
