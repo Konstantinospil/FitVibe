@@ -18,49 +18,49 @@ export const sessionsRouter = Router();
 
 sessionsRouter.get(
   "/",
-  rateLimit("sessions_list", 60, 60),
+  rateLimit("sessions_list"),
   requireAccessToken,
   asyncHandler(listSessionsHandler),
 );
 sessionsRouter.get(
   "/:id",
-  rateLimit("sessions_get", 60, 60),
+  rateLimit("sessions_get"),
   requireAccessToken,
   asyncHandler(getSessionHandler),
 );
 sessionsRouter.post(
   "/",
-  rateLimit("sessions_create", 20, 60),
+  rateLimit("sessions_create"),
   requireAccessToken,
   asyncHandler(createSessionHandler),
 );
 sessionsRouter.patch(
   "/:id",
-  rateLimit("sessions_update", 30, 60),
+  rateLimit("sessions_update"),
   requireAccessToken,
   asyncHandler(updateSessionHandler),
 );
 sessionsRouter.post(
   "/:id/reopen",
-  rateLimit("sessions_reopen", 10, 60),
+  rateLimit("sessions_reopen"),
   requireAccessToken,
   asyncHandler(reopenSessionHandler),
 );
 sessionsRouter.post(
   "/:id/clone",
-  rateLimit("sessions_clone", 20, 60),
+  rateLimit("sessions_clone"),
   requireAccessToken,
   asyncHandler(cloneSessionHandler),
 );
 sessionsRouter.post(
   "/:id/recurrence",
-  rateLimit("sessions_recurrence", 10, 60),
+  rateLimit("sessions_recurrence"),
   requireAccessToken,
   asyncHandler(applyRecurrenceHandler),
 );
 sessionsRouter.delete(
   "/:id",
-  rateLimit("sessions_delete", 20, 60),
+  rateLimit("sessions_delete"),
   requireAccessToken,
   asyncHandler(deleteSessionHandler),
 );
