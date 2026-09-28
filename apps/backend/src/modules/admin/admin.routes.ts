@@ -23,11 +23,7 @@ adminRouter.use(requireRole("admin"));
 // Superadmin inherits normal admin capabilities; privileged operations remain separately gated.
 adminRouter.use("/superadmin", superadminRouter);
 
-adminRouter.get(
-  "/reports",
-  rateLimit("admin_reports_list"),
-  asyncHandler(listReportsHandler),
-);
+adminRouter.get("/reports", rateLimit("admin_reports_list"), asyncHandler(listReportsHandler));
 
 adminRouter.post(
   "/reports/:reportId/moderate",
