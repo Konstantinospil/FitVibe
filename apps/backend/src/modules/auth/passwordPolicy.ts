@@ -9,17 +9,9 @@ export interface PasswordContext {
 }
 
 const COMPLEXITY_REGEX = new RegExp(
-  `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{${AUTH_SECURITY_POLICY.password.minLengthFloor},}import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
-import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
-import { HttpError } from "../../utils/http.js";
-
-export interface PasswordContext {
-  email?: string;
-  username?: string;
-  alias?: string;
-}
-
-,
+  "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{" +
+    AUTH_SECURITY_POLICY.password.minLengthFloor +
+    ",}$",
 );
 
 export function assertPasswordPolicy(password: string, context?: PasswordContext) {
