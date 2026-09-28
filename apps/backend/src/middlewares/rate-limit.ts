@@ -140,3 +140,36 @@ export function rateLimitByIPAndEmail(key: string, points = 5, duration = 3600) 
       });
   };
 }
+
+
+/**
+ * Apply a policy resolved at request time. Used for governed limits whose
+ * values are loaded after application modules are imported.
+ */
+export function rateLimitFromPolicy(
+  key: string,
+  getPolicy: () => { points: number; duration: number },
+) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const policy = getPolicy();
+    const limiter = getLimiter(key, policy.points, policy.duration);
+    const ip = extractClientIpForRateLimit(req);
+    limiter
+      .consume(ip)
+      .then(() => next())
+      .catch((rejRes: { msBeforeNext?: number }) => {
+        const retryAfter = Math.ceil(
+          (rejRes.msBeforeNext || policy.duration * 1000) / 1000,
+        );
+        res.setHeader("Retry-After", retryAfter.toString());
+        res.status(429).json({
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many requests",
+            requestId: res.locals.requestId,
+            retryAfter,
+          },
+        });
+      });
+  };
+}
