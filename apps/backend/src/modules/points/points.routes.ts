@@ -17,6 +17,6 @@ pointsRouter.get("/history", requireAccessToken, asyncHandler(getPointsHistoryHa
 pointsRouter.get("/badges/earned", requireAccessToken, asyncHandler(getUserBadgesHandler));
 pointsRouter.get(
   "/badges",
-  rateLimit("badges_catalog", 60, 60),
+  rateLimit("badges_catalog"),
   asyncHandler(getBadgeCatalogHandler),
 );
