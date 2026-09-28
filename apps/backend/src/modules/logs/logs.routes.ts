@@ -23,7 +23,7 @@ logsRouter.use(requireRole("admin"));
  * List audit logs with optional filtering
  * Query params: action, entityType, actorUserId, outcome, limit, offset
  */
-logsRouter.get("/", rateLimit("logs_list", 60, 60), asyncHandler(listLogsHandler));
+logsRouter.get("/", rateLimit("logs_list"), asyncHandler(listLogsHandler));
 
 /**
  * GET /api/v1/logs/recent-activity
@@ -32,7 +32,7 @@ logsRouter.get("/", rateLimit("logs_list", 60, 60), asyncHandler(listLogsHandler
  */
 logsRouter.get(
   "/recent-activity",
-  rateLimit("logs_recent_activity", 60, 60),
+  rateLimit("logs_recent_activity"),
   asyncHandler(recentActivityHandler),
 );
 
