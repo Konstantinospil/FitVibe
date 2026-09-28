@@ -52,12 +52,7 @@ authRouter.post(
   validate(ResendVerificationSchema),
   asyncHandler(resendVerificationEmail),
 );
-authRouter.post(
-  "/login",
-  rateLimit("auth_login"),
-  validate(LoginSchema),
-  asyncHandler(login),
-);
+authRouter.post("/login", rateLimit("auth_login"), validate(LoginSchema), asyncHandler(login));
 authRouter.post(
   "/login/verify-2fa",
   rateLimit("auth_2fa_login"),
