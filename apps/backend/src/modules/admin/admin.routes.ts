@@ -31,11 +31,7 @@ adminRouter.post(
   asyncHandler(moderateReportHandler),
 );
 
-adminRouter.get(
-  "/users/search",
-  rateLimit("admin_users_search"),
-  asyncHandler(searchUsersHandler),
-);
+adminRouter.get("/users/search", rateLimit("admin_users_search"), asyncHandler(searchUsersHandler));
 
 adminRouter.post(
   "/users/:userId/action",
