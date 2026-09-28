@@ -170,8 +170,12 @@ describe("Rate Limiter Middleware", () => {
       };
       mockRequest.body = { email: "  User@Example.COM  " };
       const middleware = rateLimitByIPAndEmail("contact_submit", 5, 3600);
+      const nextCalled = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
 
-      await middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await nextCalled;
 
       const createdLimiters = RateLimiterMemory.mock.results
         .map((result) => result.value as { consume: jest.Mock })
@@ -181,7 +185,7 @@ describe("Rate Limiter Middleware", () => {
 
       expect(ipLimiter?.consume).toHaveBeenCalledWith("127.0.0.1");
       expect(emailLimiter?.consume).toHaveBeenCalledWith("email:user@example.com");
-      expect(mockNext).toHaveBeenCalled();
+      expect(mockNext).toHaveBeenCalledTimes(1);
     });
   });
 
