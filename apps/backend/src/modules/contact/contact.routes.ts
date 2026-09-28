@@ -18,7 +18,7 @@ export const contactRouter = Router();
 // Rate limit: 5 messages per hour per IP and per email address
 contactRouter.post(
   "/",
-  rateLimitByIPAndEmail("contact_submit", 5, 3600), // 5 requests per hour per IP and per email
+  rateLimitByIPAndEmail("contact_submit"), // 5 requests per hour per IP and per email
   asyncHandler(submitContactHandler),
 );
 
@@ -27,7 +27,7 @@ contactRouter.get(
   "/messages",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_list", 60, 60),
+  rateLimit("contact_list"),
   asyncHandler(listContactMessagesHandler),
 );
 
@@ -35,7 +35,7 @@ contactRouter.get(
   "/messages/:id",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_get", 60, 60),
+  rateLimit("contact_get"),
   asyncHandler(getContactMessageHandler),
 );
 
@@ -43,7 +43,7 @@ contactRouter.post(
   "/messages/:id/read",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_mark_read", 60, 60),
+  rateLimit("contact_mark_read"),
   asyncHandler(markMessageAsReadHandler),
 );
 
@@ -51,7 +51,7 @@ contactRouter.post(
   "/messages/:id/responded",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_mark_responded", 60, 60),
+  rateLimit("contact_mark_responded"),
   asyncHandler(markMessageAsRespondedHandler),
 );
 
@@ -59,6 +59,6 @@ contactRouter.post(
   "/messages/:id/response",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_save_response", 60, 60),
+  rateLimit("contact_save_response"),
   asyncHandler(saveMessageResponseHandler),
 );
