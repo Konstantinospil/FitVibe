@@ -40,12 +40,7 @@ usersRouter.use(usersAvatarRouter);
 usersRouter.use(usersBodyProgressRouter);
 
 usersRouter.get("/me", rateLimit("user_me"), requireAccessToken, asyncHandler(me));
-usersRouter.patch(
-  "/me",
-  rateLimit("user_update"),
-  requireAccessToken,
-  asyncHandler(updateMe),
-);
+usersRouter.patch("/me", rateLimit("user_update"), requireAccessToken, asyncHandler(updateMe));
 usersRouter.post(
   "/change-password",
   rateLimit("user_pw"),
