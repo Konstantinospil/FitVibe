@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { HttpError } from "../../utils/http.js";
 import { mailerService } from "../../services/mailer.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
@@ -14,9 +15,16 @@ import {
 import { assertPasswordPolicy } from "./passwordPolicy.js";
 import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
+import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 
-const PASSWORD_RESET_TTL = env.PASSWORD_RESET_TTL_SEC;
-const DUMMY_PASSWORD_HASH = bcrypt.hashSync("fitvibe-placeholder-password", 12);
+const SECONDS_PER_MINUTE = 60;
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
+  "fitvibe-placeholder-password",
+  AUTH_SECURITY_POLICY.password.hashCost,
+);
+function passwordResetTtlSeconds(): number {
+  return getRuntimeAppSetting<number>("auth.password_reset_ttl_minutes") * SECONDS_PER_MINUTE;
+}
 
 export async function requestPasswordReset(email: string): Promise<{ resetToken?: string }> {
   const startTime = Date.now();
@@ -33,7 +41,7 @@ export async function requestPasswordReset(email: string): Promise<{ resetToken?
     const resetToken = await issueAuthToken(
       user.id,
       TOKEN_TYPES.PASSWORD_RESET,
-      PASSWORD_RESET_TTL,
+      passwordResetTtlSeconds(),
     );
 
     if (env.email.enabled) {
@@ -53,14 +61,14 @@ export async function requestPasswordReset(email: string): Promise<{ resetToken?
           <p>Or copy and paste this link into your browser:</p>
           <p style="color: #666; word-break: break-all;">${resetUrl}</p>
           <p style="color: #999; font-size: 12px; margin-top: 32px;">
-            This link will expire in ${Math.floor(PASSWORD_RESET_TTL / 60)} minutes.
+            This link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.
           </p>
           <p style="color: #999; font-size: 12px;">
             If you didn't request this password reset, you can safely ignore this email.
           </p>
         </div>
       `,
-        text: `Password Reset Request\n\nWe received a request to reset your password. Please visit the following link to create a new password:\n\n${resetUrl}\n\nThis link will expire in ${Math.floor(PASSWORD_RESET_TTL / 60)} minutes.\n\nIf you didn't request this password reset, you can safely ignore this email.`,
+        text: `Password Reset Request\n\nWe received a request to reset your password. Please visit the following link to create a new password:\n\n${resetUrl}\n\nThis link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.\n\nIf you didn't request this password reset, you can safely ignore this email.`,
       });
     }
 
@@ -95,7 +103,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
     alias: user.username,
   });
 
-  const password_hash = await bcrypt.hash(newPassword, 12);
+  const password_hash = await bcrypt.hash(newPassword, AUTH_SECURITY_POLICY.password.hashCost);
   const resetApplied = await resetPasswordAtomic(
     record.user_id,
     password_hash,
