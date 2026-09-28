@@ -9,6 +9,7 @@ on:
   push:
     branches: ["main", "dev", "stage"]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # Default permissions (can be overridden per job for least privilege)
 permissions:
