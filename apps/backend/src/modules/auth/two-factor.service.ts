@@ -7,15 +7,23 @@ import { db } from "../../db/connection.js";
 import type { Knex } from "knex";
 import { HttpError } from "../../utils/http.js";
 import { decryptTotpSecret, encryptTotpSecret } from "./totp-secret.crypto.js";
+import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 
-const APP_NAME = "FitVibe";
-const BACKUP_CODE_COUNT = 10;
-const BACKUP_CODE_LENGTH = 8;
+const TOTP_CODE_PATTERN = new RegExp(`^\\d{${AUTH_SECURITY_POLICY.totp.digits}}import crypto from "crypto";
+import { authenticator } from "@otplib/preset-default";
+import QRCode from "qrcode";
+import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
+import { db } from "../../db/connection.js";
+import type { Knex } from "knex";
+import { HttpError } from "../../utils/http.js";
+);
 
 // Configure TOTP settings
 authenticator.options = {
-  window: 1, // Allow 1 step before/after for clock drift
-  step: 30, // 30 second time step
+  window: AUTH_SECURITY_POLICY.totp.windowSteps,
+  step: AUTH_SECURITY_POLICY.totp.stepSeconds,
 };
 
 interface User2FASettings {
@@ -161,7 +169,7 @@ export async function setupTwoFactor(
   const secret = authenticator.generateSecret();
 
   // Generate QR code
-  const otpauthUrl = authenticator.keyuri(userEmail, APP_NAME, secret);
+  const otpauthUrl = authenticator.keyuri(userEmail, env.appName, secret);
 
   const qrCode: string = await QRCode.toDataURL(otpauthUrl);
 
@@ -264,7 +272,7 @@ export async function verifyTotpOnly(
   code: string,
   trx?: Knex.Transaction,
 ): Promise<boolean> {
-  if (!/^\d{6}$/.test(code)) {
+  if (!TOTP_CODE_PATTERN.test(code)) {
     return false;
   }
 
@@ -317,7 +325,7 @@ export async function verify2FACode(
 
   // A numeric TOTP cannot match the human-readable backup-code format.
   // Avoid unnecessary bcrypt scans and keep invalid-TOTP timing predictable.
-  if (/^\d{6}$/.test(code)) {
+  if (TOTP_CODE_PATTERN.test(code)) {
     return false;
   }
 
@@ -424,9 +432,9 @@ export async function generateBackupCodes(
   await exec("backup_codes").where({ user_id: userId, generation_batch: batch }).del();
 
   // Generate new codes
-  for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
+  for (let i = 0; i < AUTH_SECURITY_POLICY.backupCodes.count; i++) {
     const code = generateBackupCode();
-    const codeHash = await bcrypt.hash(code, 10);
+    const codeHash = await bcrypt.hash(code, AUTH_SECURITY_POLICY.backupCodes.hashCost);
 
     await exec("backup_codes").insert({
       id: uuidv4(),
@@ -447,7 +455,7 @@ export async function generateBackupCodes(
     actor_user_id: userId,
     action: "2fa_backup_codes_generated",
     entity_type: "auth",
-    metadata: { batch, count: BACKUP_CODE_COUNT },
+    metadata: { batch, count: AUTH_SECURITY_POLICY.backupCodes.count },
     created_at: now,
   });
 
@@ -561,15 +569,15 @@ export async function regenerateBackupCodes(
  * Format: XXXX-XXXX (8 alphanumeric characters with dash)
  */
 function generateBackupCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude ambiguous characters
+  const chars = AUTH_SECURITY_POLICY.backupCodes.alphabet;
   let code = "";
 
-  for (let i = 0; i < BACKUP_CODE_LENGTH; i++) {
+  for (let i = 0; i < AUTH_SECURITY_POLICY.backupCodes.length; i++) {
     const randomIndex = crypto.randomInt(0, chars.length);
     code += chars[randomIndex];
 
     // Add dash in the middle
-    if (i === BACKUP_CODE_LENGTH / 2 - 1) {
+    if (i === AUTH_SECURITY_POLICY.backupCodes.length / 2 - 1) {
       code += "-";
     }
   }
