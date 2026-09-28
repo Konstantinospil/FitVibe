@@ -2,6 +2,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { env } from "../config/env.js";
 import {
+  getRuntimeAppSetting,
   getRuntimeGovernanceState,
   isEffectiveReadOnly,
 } from "../modules/system/app-settings.runtime.js";
@@ -16,8 +17,6 @@ const ALLOWLIST_REGEX: RegExp[] = [
   /^\/metrics(?:\/.*)?$/i,
   /^\/\.well-known\/jwks\.json$/i,
   /^\/(?:api\/v\d+\/)?system\/read-only\/status$/i,
-  /^\/(?:api\/v\d+\/)?system\/read-only\/enable$/i,
-  /^\/(?:api\/v\d+\/)?system\/read-only\/disable$/i,
   /^\/(?:api\/v\d+\/)?system\/settings(?:\/.*)?$/i,
   /^\/(?:api\/v\d+\/)?auth\/refresh$/i,
 ];
@@ -61,12 +60,7 @@ export function readOnlyGuard(req: Request, res: Response, next: NextFunction): 
     return;
   }
 
-  const configuredMaintenanceMessage =
-    getRuntimeGovernanceState().settings["system.maintenance_message"];
-  const maintenanceMessage =
-    typeof configuredMaintenanceMessage === "string"
-      ? configuredMaintenanceMessage
-      : env.maintenanceMessage;
+  const maintenanceMessage = getRuntimeAppSetting<string>("system.maintenance_message");
 
   // Block mutation (return void, not Response)
   logger.warn(
