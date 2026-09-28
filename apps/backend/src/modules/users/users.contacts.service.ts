@@ -28,7 +28,9 @@ const MILLISECONDS_PER_MINUTE = 60 * 1000;
 const MILLISECONDS_PER_DAY = 24 * 60 * MILLISECONDS_PER_MINUTE;
 
 function contactVerificationTtlMilliseconds(): number {
-  return getRuntimeAppSetting<number>("auth.email_verification_ttl_minutes") * MILLISECONDS_PER_MINUTE;
+  return (
+    getRuntimeAppSetting<number>("auth.email_verification_ttl_minutes") * MILLISECONDS_PER_MINUTE
+  );
 }
 
 function contactTokenType(contactId: string): string {
