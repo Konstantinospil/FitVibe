@@ -10,15 +10,7 @@ import { decryptTotpSecret, encryptTotpSecret } from "./totp-secret.crypto.js";
 import { env } from "../../config/env.js";
 import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 
-const TOTP_CODE_PATTERN = new RegExp(`^\\d{${AUTH_SECURITY_POLICY.totp.digits}}import crypto from "crypto";
-import { authenticator } from "@otplib/preset-default";
-import QRCode from "qrcode";
-import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
-import { db } from "../../db/connection.js";
-import type { Knex } from "knex";
-import { HttpError } from "../../utils/http.js";
-);
+const TOTP_CODE_PATTERN = new RegExp(`^\\d{${AUTH_SECURITY_POLICY.totp.digits}}$`);
 
 // Configure TOTP settings
 authenticator.options = {
