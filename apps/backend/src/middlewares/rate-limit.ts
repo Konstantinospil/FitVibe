@@ -1,74 +1,70 @@
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import type { NextFunction, Request, Response } from "express";
 import { extractClientIpForRateLimit } from "../utils/ip-extractor.js";
+import { getRouteRateLimitPolicy, type RateLimitPolicy } from "./rate-limit.policy.js";
 
 const limiters = new Map<string, RateLimiterMemory>();
 
-function getLimiter(key: string, points = 60, duration = 60) {
-  if (!limiters.has(key)) {
-    limiters.set(key, new RateLimiterMemory({ keyPrefix: key, points, duration }));
+function getLimiter(key: string, points: number, duration: number): RateLimiterMemory {
+  const cacheKey = `${key}:${points}:${duration}`;
+  let limiter = limiters.get(cacheKey);
+  if (!limiter) {
+    limiter = new RateLimiterMemory({ keyPrefix: key, points, duration });
+    limiters.set(cacheKey, limiter);
   }
-  return limiters.get(key)!;
+  return limiter;
 }
 
-/**
- * Clear all rate limiters (for test cleanup)
- * This removes all limiter instances, forcing new ones to be created with fresh state
- */
+function resolvePolicy(key: string, points?: number, duration?: number): RateLimitPolicy {
+  if (points === undefined && duration === undefined) {
+    return getRouteRateLimitPolicy(key);
+  }
+  if (points === undefined || duration === undefined) {
+    throw new Error(`Rate-limit overrides require both points and duration for ${key}`);
+  }
+  return { points, duration };
+}
+
+function rejectRateLimited(
+  res: Response,
+  duration: number,
+  rejRes: { msBeforeNext?: number },
+  message = "Too many requests",
+): void {
+  const retryAfter = Math.ceil((rejRes.msBeforeNext || duration * 1000) / 1000);
+  res.setHeader("Retry-After", retryAfter.toString());
+  res.status(429).json({
+    error: {
+      code: "RATE_LIMITED",
+      message,
+      requestId: res.locals.requestId,
+      retryAfter,
+    },
+  });
+}
+
 export function clearRateLimiters(): void {
-  // RateLimiterMemory doesn't expose a method to delete all keys,
-  // but clearing the map and creating new instances ensures fresh state
-  // The internal state is stored per instance, so new instances = fresh state
   limiters.clear();
 }
 
-/**
- * Apply a per-IP rate limit with secure IP extraction.
- * Prevents X-Forwarded-For header spoofing (OWASP A07:2021).
- *
- * Example: app.post('/login', rateLimit('login', 5, 60), handler)
- *
- * @param key - Rate limiter key prefix
- * @param points - Maximum requests allowed
- * @param duration - Time window in seconds
- */
-export function rateLimit(key: string, points = 60, duration = 60) {
+export function rateLimit(key: string, points?: number, duration?: number) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // Look up per request so clearRateLimiters() can replace the instance
-    const limiter = getLimiter(key, points, duration);
+    const policy = resolvePolicy(key, points, duration);
+    const limiter = getLimiter(key, policy.points, policy.duration);
     const ip = extractClientIpForRateLimit(req);
     limiter
       .consume(ip)
       .then(() => next())
-      .catch((rejRes: { msBeforeNext?: number }) => {
-        // Calculate retry-after in seconds
-        const retryAfter = Math.ceil((rejRes.msBeforeNext || duration * 1000) / 1000);
-        res.setHeader("Retry-After", retryAfter.toString());
-        res.status(429).json({
-          error: {
-            code: "RATE_LIMITED",
-            message: "Too many requests",
-            requestId: res.locals.requestId,
-            retryAfter,
-          },
-        });
-      });
+      .catch((rejRes: { msBeforeNext?: number }) =>
+        rejectRateLimited(res, policy.duration, rejRes),
+      );
   };
 }
 
-/**
- * Apply a rate limit keyed by the authenticated user id with secure IP extraction.
- * Falls back to IP-based limiting if the user context is absent.
- * Prevents X-Forwarded-For header spoofing (OWASP A07:2021).
- *
- * @param key - Rate limiter key prefix
- * @param points - Maximum requests allowed
- * @param duration - Time window in seconds
- */
-export function rateLimitByUser(key: string, points = 60, duration = 60) {
+export function rateLimitByUser(key: string, points?: number, duration?: number) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    // Look up per request so clearRateLimiters() can replace the instance
-    const limiter = getLimiter(`${key}:user`, points, duration);
+    const policy = resolvePolicy(key, points, duration);
+    const limiter = getLimiter(`${key}:user`, policy.points, policy.duration);
     const userId = req.user?.sub;
     const fallbackIp = extractClientIpForRateLimit(req);
     const identity = userId ? `user:${userId}` : fallbackIp;
@@ -76,35 +72,17 @@ export function rateLimitByUser(key: string, points = 60, duration = 60) {
     limiter
       .consume(identity)
       .then(() => next())
-      .catch((rejRes: { msBeforeNext?: number }) => {
-        // Calculate retry-after in seconds
-        const retryAfter = Math.ceil((rejRes.msBeforeNext || duration * 1000) / 1000);
-        res.setHeader("Retry-After", retryAfter.toString());
-        res.status(429).json({
-          error: {
-            code: "RATE_LIMITED",
-            message: "Too many requests",
-            requestId: res.locals.requestId,
-            retryAfter,
-          },
-        });
-      });
+      .catch((rejRes: { msBeforeNext?: number }) =>
+        rejectRateLimited(res, policy.duration, rejRes),
+      );
   };
 }
 
-/**
- * Apply rate limiting by both IP address and email address.
- * Used for contact form submissions to prevent abuse from both perspectives.
- * Limits by IP and email independently - if either limit is exceeded, the request is rejected.
- *
- * @param key - Rate limiter key prefix
- * @param points - Maximum requests allowed
- * @param duration - Time window in seconds
- */
-export function rateLimitByIPAndEmail(key: string, points = 5, duration = 3600) {
+export function rateLimitByIPAndEmail(key: string, points?: number, duration?: number) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const ipLimiter = getLimiter(`${key}:ip`, points, duration);
-    const emailLimiter = getLimiter(`${key}:email`, points, duration);
+    const policy = resolvePolicy(key, points, duration);
+    const ipLimiter = getLimiter(`${key}:ip`, policy.points, policy.duration);
+    const emailLimiter = getLimiter(`${key}:email`, policy.points, policy.duration);
     const ip = extractClientIpForRateLimit(req);
     const email =
       typeof req.body === "object" && req.body !== null && "email" in req.body
@@ -126,30 +104,19 @@ export function rateLimitByIPAndEmail(key: string, points = 5, duration = 3600) 
 
     Promise.all([ipPromise, emailPromise])
       .then(() => next())
-      .catch((rejRes: { msBeforeNext?: number }) => {
-        const retryAfter = Math.ceil((rejRes.msBeforeNext || duration * 1000) / 1000);
-        res.setHeader("Retry-After", retryAfter.toString());
-        res.status(429).json({
-          error: {
-            code: "RATE_LIMITED",
-            message: "Too many contact form submissions. Please try again later.",
-            requestId: res.locals.requestId,
-            retryAfter,
-          },
-        });
-      });
+      .catch((rejRes: { msBeforeNext?: number }) =>
+        rejectRateLimited(
+          res,
+          policy.duration,
+          rejRes,
+          "Too many contact form submissions. Please try again later.",
+        ),
+      );
   };
 }
 
-
-/**
- * Apply a policy resolved at request time. Used for governed limits whose
- * values are loaded after application modules are imported.
- */
-export function rateLimitFromPolicy(
-  key: string,
-  getPolicy: () => { points: number; duration: number },
-) {
+/** Apply a runtime-governed policy without capturing it during module import. */
+export function rateLimitFromPolicy(key: string, getPolicy: () => RateLimitPolicy) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const policy = getPolicy();
     const limiter = getLimiter(key, policy.points, policy.duration);
@@ -157,19 +124,8 @@ export function rateLimitFromPolicy(
     limiter
       .consume(ip)
       .then(() => next())
-      .catch((rejRes: { msBeforeNext?: number }) => {
-        const retryAfter = Math.ceil(
-          (rejRes.msBeforeNext || policy.duration * 1000) / 1000,
-        );
-        res.setHeader("Retry-After", retryAfter.toString());
-        res.status(429).json({
-          error: {
-            code: "RATE_LIMITED",
-            message: "Too many requests",
-            requestId: res.locals.requestId,
-            retryAfter,
-          },
-        });
-      });
+      .catch((rejRes: { msBeforeNext?: number }) =>
+        rejectRateLimited(res, policy.duration, rejRes),
+      );
   };
 }
