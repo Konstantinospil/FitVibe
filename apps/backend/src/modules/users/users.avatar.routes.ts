@@ -32,11 +32,7 @@ usersAvatarRouter.post(
   asyncHandler(uploadAvatarHandler),
 );
 
-usersAvatarRouter.get(
-  "/avatar/:id",
-  rateLimit("user_avatar_get"),
-  asyncHandler(getAvatarHandler),
-);
+usersAvatarRouter.get("/avatar/:id", rateLimit("user_avatar_get"), asyncHandler(getAvatarHandler));
 
 usersAvatarRouter.delete(
   "/avatar",
