@@ -8,14 +8,14 @@ export const vibeformsRouter = Router();
 
 vibeformsRouter.get(
   "/me",
-  rateLimit("vibeforms_me_get", 60, 60),
+  rateLimit("vibeforms_me_get"),
   requireAccessToken,
   asyncHandler(getMyVibeform),
 );
 
 vibeformsRouter.put(
   "/me/preferences",
-  rateLimit("vibeforms_me_preferences_put", 20, 60),
+  rateLimit("vibeforms_me_preferences_put"),
   requireAccessToken,
   asyncHandler(updateMyVibeformPreferences),
 );
