@@ -93,10 +93,13 @@ export function criteriaMet(criteria: Record<string, unknown>, ctx: BadgeCriteri
     return false;
   }
 
-  const windowDays = asNumber(criteria.window_days) ?? 7;
+  const windowDays = asNumber(criteria.window_days);
   const distinctNeed = asNumber(criteria.distinct_type_codes);
+  if ((distinctNeed !== null || criteria.all_type_codes === true) && windowDays === null) {
+    return false;
+  }
   if (distinctNeed !== null) {
-    const distinct = distinctForWindow(ctx, windowDays);
+    const distinct = distinctForWindow(ctx, windowDays as number);
     const vibeDistinct = [...distinct].filter((code) =>
       (VIBE_TYPE_CODES as readonly string[]).includes(code),
     );
@@ -106,7 +109,7 @@ export function criteriaMet(criteria: Record<string, unknown>, ctx: BadgeCriteri
   }
 
   if (criteria.all_type_codes === true) {
-    const distinct = distinctForWindow(ctx, windowDays);
+    const distinct = distinctForWindow(ctx, windowDays as number);
     const hasAll = VIBE_TYPE_CODES.every((code) => distinct.has(code));
     if (!hasAll) {
       return false;
