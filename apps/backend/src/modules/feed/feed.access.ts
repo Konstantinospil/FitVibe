@@ -1,5 +1,5 @@
 import { HttpError } from "../../utils/http.js";
-import { env } from "../../config/env.js";
+import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 import {
   findFeedItemById,
   findSessionById,
@@ -71,7 +71,9 @@ export async function ensureSessionInteractionAllowed(actorId: string, session: 
 }
 
 export function loadModerationBlocklist(): string[] {
-  return [...env.feed.blockedKeywords];
+  return getRuntimeAppSetting<string[]>("moderation.feed_blocked_keywords").map((word) =>
+    word.toLowerCase(),
+  );
 }
 
 export async function fetchStatsForFeedItem(feedItemId: string): Promise<FeedItemStats> {

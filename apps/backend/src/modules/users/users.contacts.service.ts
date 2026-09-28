@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
 import {
@@ -21,12 +21,17 @@ import {
 import { toContact, toUserDetail } from "./users.mapping.js";
 import type { UserContact, UserDetail } from "./users.types.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
+import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 
 const CONTACT_VERIFICATION_TOKEN_PREFIX = "contact_verify";
-const CONTACT_VERIFICATION_TTL_SEC = env.EMAIL_VERIFICATION_TTL_SEC;
-const CONTACT_VERIFICATION_RESEND_LIMIT = 3;
-const CONTACT_VERIFICATION_RESEND_WINDOW_MS = 60 * 60 * 1000;
-const CONTACT_VERIFICATION_RETENTION_DAYS = 7;
+const MILLISECONDS_PER_MINUTE = 60 * 1000;
+const MILLISECONDS_PER_DAY = 24 * 60 * MILLISECONDS_PER_MINUTE;
+
+function contactVerificationTtlMilliseconds(): number {
+  return (
+    getRuntimeAppSetting<number>("auth.email_verification_ttl_minutes") * MILLISECONDS_PER_MINUTE
+  );
+}
 
 function contactTokenType(contactId: string): string {
   return `${CONTACT_VERIFICATION_TOKEN_PREFIX}:${contactId}`;
@@ -65,9 +70,11 @@ export async function requestContactVerification(
 
   const now = Date.now();
   const tokenType = contactTokenType(contactId);
-  const windowStart = new Date(now - CONTACT_VERIFICATION_RESEND_WINDOW_MS);
+  const windowStart = new Date(
+    now - AUTH_SECURITY_POLICY.contactVerification.resendWindowMinutes * MILLISECONDS_PER_MINUTE,
+  );
   const recentAttempts = await countAuthTokensSince(userId, tokenType, windowStart);
-  if (recentAttempts >= CONTACT_VERIFICATION_RESEND_LIMIT) {
+  if (recentAttempts >= AUTH_SECURITY_POLICY.contactVerification.resendLimit) {
     throw new HttpError(
       429,
       "USER_CONTACT_VERIFY_LIMIT",
@@ -75,13 +82,15 @@ export async function requestContactVerification(
     );
   }
 
-  const retentionCutoff = new Date(now - CONTACT_VERIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const retentionCutoff = new Date(
+    now - AUTH_SECURITY_POLICY.contactVerification.tokenRetentionDays * MILLISECONDS_PER_DAY,
+  );
   await purgeAuthTokensOlderThan(tokenType, retentionCutoff);
   await markAuthTokensConsumed(userId, tokenType);
 
   const { raw, hash } = generateContactToken();
   const createdAt = new Date(now).toISOString();
-  const expiresAt = new Date(now + CONTACT_VERIFICATION_TTL_SEC * 1000).toISOString();
+  const expiresAt = new Date(now + contactVerificationTtlMilliseconds()).toISOString();
 
   await createAuthToken({
     id: crypto.randomUUID(),

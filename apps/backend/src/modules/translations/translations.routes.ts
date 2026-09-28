@@ -27,7 +27,7 @@ export const translationsRouter = Router();
 // Admin endpoint: Get latest namespace updates
 translationsRouter.get(
   "/namespace-updates",
-  rateLimit("translations_namespace_updates", 30, 60),
+  rateLimit("translations_namespace_updates"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(getNamespaceUpdates),
@@ -36,7 +36,7 @@ translationsRouter.get(
 // Admin endpoint: Get available namespaces and languages
 translationsRouter.get(
   "/metadata",
-  rateLimit("translations_metadata", 30, 60),
+  rateLimit("translations_metadata"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(getTranslationMetadata),
@@ -45,7 +45,7 @@ translationsRouter.get(
 // Public endpoint: Get translations for a language
 translationsRouter.get(
   "/:language",
-  rateLimit("translations_get", 100, 60), // 100 requests per minute
+  rateLimit("translations_get"), // 100 requests per minute
   validate(GetTranslationsParamsSchema, "params"),
   asyncHandler(getTranslations),
 );
@@ -55,7 +55,7 @@ translationsRouter.use(requireAccessToken); // Require auth for all admin routes
 
 translationsRouter.get(
   "/",
-  rateLimit("translations_list", 60, 60),
+  rateLimit("translations_list"),
   requireRole("admin"),
   validate(ListTranslationsQuerySchema, "query"),
   asyncHandler(listTranslations),
@@ -63,7 +63,7 @@ translationsRouter.get(
 
 translationsRouter.post(
   "/",
-  rateLimit("translations_create", 30, 60),
+  rateLimit("translations_create"),
   requireRole("admin"),
   validate(CreateTranslationSchema),
   asyncHandler(createTranslation),
@@ -71,7 +71,7 @@ translationsRouter.post(
 
 translationsRouter.put(
   "/:language/:namespace/:keyPath",
-  rateLimit("translations_update", 30, 60),
+  rateLimit("translations_update"),
   requireRole("admin"),
   validate(UpdateTranslationSchema),
   asyncHandler(updateTranslation),
@@ -79,7 +79,7 @@ translationsRouter.put(
 
 translationsRouter.post(
   "/bulk",
-  rateLimit("translations_bulk", 10, 60),
+  rateLimit("translations_bulk"),
   requireRole("admin"),
   validate(BulkUpdateTranslationSchema),
   asyncHandler(bulkUpdateTranslation),
@@ -87,7 +87,7 @@ translationsRouter.post(
 
 translationsRouter.delete(
   "/:language/:namespace/:keyPath",
-  rateLimit("translations_delete", 30, 60),
+  rateLimit("translations_delete"),
   requireRole("admin"),
   asyncHandler(deleteTranslation),
 );

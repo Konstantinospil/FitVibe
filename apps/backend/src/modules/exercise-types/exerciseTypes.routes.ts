@@ -13,27 +13,27 @@ import { asyncHandler } from "../../utils/async-handler.js";
 
 export const exerciseTypesRouter = Router();
 
-exerciseTypesRouter.get("/", rateLimit("types_list", 60, 60), asyncHandler(listTypes));
-exerciseTypesRouter.get("/:code", rateLimit("types_get", 60, 60), asyncHandler(getType));
+exerciseTypesRouter.get("/", rateLimit("types_list"), asyncHandler(listTypes));
+exerciseTypesRouter.get("/:code", rateLimit("types_get"), asyncHandler(getType));
 
 // Admin-only operations
 exerciseTypesRouter.post(
   "/",
-  rateLimit("types_create", 10, 60),
+  rateLimit("types_create"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(createType),
 );
 exerciseTypesRouter.patch(
   "/:code",
-  rateLimit("types_update", 10, 60),
+  rateLimit("types_update"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(updateType),
 );
 exerciseTypesRouter.delete(
   "/:code",
-  rateLimit("types_delete", 10, 60),
+  rateLimit("types_delete"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(deleteType),

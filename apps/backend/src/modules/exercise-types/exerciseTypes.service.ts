@@ -8,10 +8,11 @@ import {
 } from "./exerciseTypes.repository.js";
 import type { ExerciseType } from "./exerciseTypes.types.js";
 import NodeCache from "node-cache";
-import { env } from "../../config/env.js";
 import { insertAudit } from "../common/audit.util.js";
 
-const cache = new NodeCache({ stdTTL: env.typesCacheTtl });
+// Narrow implementation constant: cache behavior is not product/admin policy.
+const EXERCISE_TYPES_CACHE_TTL_SECONDS = 60;
+const cache = new NodeCache({ stdTTL: EXERCISE_TYPES_CACHE_TTL_SECONDS });
 
 function invalidateTypesCache() {
   for (const k of cache.keys()) {

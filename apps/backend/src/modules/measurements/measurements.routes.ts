@@ -18,52 +18,52 @@ export const measurementsRouter = Router();
 
 measurementsRouter.get(
   "/biometrics/attributes",
-  rateLimit("measurements_bio_list", 60, 60),
+  rateLimit("measurements_bio_list"),
   requireAccessToken,
   asyncHandler(listBioAttributes),
 );
 measurementsRouter.post(
   "/biometrics/attributes",
-  rateLimit("measurements_bio_create", 20, 60),
+  rateLimit("measurements_bio_create"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(createBioAttribute),
 );
 measurementsRouter.post(
   "/biometrics/attributes/:attributeId/values",
-  rateLimit("measurements_bio_value", 30, 60),
+  rateLimit("measurements_bio_value"),
   requireAccessToken,
   asyncHandler(addBioValue),
 );
 measurementsRouter.put(
   "/biometrics/attributes/:attributeId/visibility",
-  rateLimit("measurements_bio_visibility", 30, 60),
+  rateLimit("measurements_bio_visibility"),
   requireAccessToken,
   asyncHandler(updateBioVisibility),
 );
 
 measurementsRouter.get(
   "/performance/attributes",
-  rateLimit("measurements_perf_list", 60, 60),
+  rateLimit("measurements_perf_list"),
   requireAccessToken,
   asyncHandler(listPerfAttributes),
 );
 measurementsRouter.post(
   "/performance/attributes",
-  rateLimit("measurements_perf_create", 20, 60),
+  rateLimit("measurements_perf_create"),
   requireAccessToken,
   requireRole("admin"),
   asyncHandler(createPerfAttribute),
 );
 measurementsRouter.post(
   "/performance/attributes/:attributeId/values",
-  rateLimit("measurements_perf_value", 30, 60),
+  rateLimit("measurements_perf_value"),
   requireAccessToken,
   asyncHandler(addPerfValue),
 );
 measurementsRouter.put(
   "/performance/attributes/:attributeId/visibility",
-  rateLimit("measurements_perf_visibility", 30, 60),
+  rateLimit("measurements_perf_visibility"),
   requireAccessToken,
   asyncHandler(updatePerfVisibility),
 );

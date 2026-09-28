@@ -8,7 +8,8 @@ import { randomUUID } from "node:crypto";
 
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
-import { rateLimit } from "./middlewares/rate-limit.js";
+import { rateLimitFromPolicy } from "./middlewares/rate-limit.js";
+import { getRuntimeAppSetting } from "./modules/system/app-settings.runtime.js";
 import { csrfProtection, csrfTokenRoute, validateOrigin } from "./middlewares/csrf.js";
 import { httpLogger } from "./middlewares/request-logger.js";
 import { errorHandler } from "./middlewares/error.handler.js";
@@ -153,9 +154,14 @@ app.use(compression());
 app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
-// Global rate limiting applied to all routes (100 req/min/IP default)
+// Global rate limiting is governed and resolved lazily from the loaded settings revision.
 // lgtm[js/missing-rate-limiting] - Rate limiting IS applied globally here
-app.use(rateLimit("global", env.globalRateLimit.points, env.globalRateLimit.duration));
+app.use(
+  rateLimitFromPolicy("global", () => ({
+    points: getRuntimeAppSetting<number>("security.global_rate_limit_points"),
+    duration: getRuntimeAppSetting<number>("security.global_rate_limit_duration_seconds"),
+  })),
+);
 
 // CSRF protection enabled for all state-changing requests (POST/PUT/PATCH/DELETE)
 // Requires valid CSRF token in header or body. Safe methods (GET/HEAD/OPTIONS) bypass.
