@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { db } from "../../db/connection.js";
 import {
   findUserById,
@@ -97,7 +98,7 @@ export async function createUser(
 
   await ensureUsernameAvailable(userId, username);
   assertPasswordPolicy(dto.password, { email, username });
-  const passwordHash = await bcrypt.hash(dto.password, 12);
+  const passwordHash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
   const locale = dto.locale?.trim() || undefined;
   const preferredLang = dto.preferredLang;
 
@@ -188,7 +189,7 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
   const email = primaryEmail(contacts) ?? undefined;
 
   assertPasswordPolicy(dto.newPassword, { email, username: user.username });
-  const newHash = await bcrypt.hash(dto.newPassword, 12);
+  const newHash = await bcrypt.hash(dto.newPassword, AUTH_SECURITY_POLICY.password.hashCost);
   await changePasswordAndRevokeAuthAtomic(userId, newHash);
   await insertAudit({
     actorUserId: userId,
