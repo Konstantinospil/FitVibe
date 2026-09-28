@@ -26,4 +26,9 @@ export const AUTH_SECURITY_POLICY = {
     hashCost: 10,
     alphabet: "ABCDEFGHJKLMNPQRSTUVWXYZ23456789",
   },
+  contactVerification: {
+    resendLimit: 3,
+    resendWindowMinutes: 60,
+    tokenRetentionDays: 7,
+  },
 } as const;
