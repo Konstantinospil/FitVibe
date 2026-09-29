@@ -1,9 +1,14 @@
 import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
+import {
+  SelectControl,
+  type FieldControlSize,
+  type FieldControlVariant,
+} from "@fitvibe/ui";
 
-export type SelectSize = "sm" | "md" | "lg";
-export type SelectVariant = "default" | "error";
+export type SelectSize = FieldControlSize;
+export type SelectVariant = FieldControlVariant;
 
 export interface SelectOption {
   value: string;
@@ -21,53 +26,6 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
   placeholder?: string;
 }
 
-const sizeStyles: Record<SelectSize, React.CSSProperties> = {
-  sm: {
-    padding: "var(--space-xs) var(--space-sm)",
-    paddingRight: "calc(var(--space-sm) + 20px + var(--space-xs))",
-    fontSize: "var(--font-size-sm)",
-  },
-  md: {
-    padding: "var(--space-sm) var(--space-md)",
-    paddingRight: "calc(var(--space-md) + 20px + var(--space-sm))",
-    fontSize: "var(--font-size-md)",
-  },
-  lg: {
-    padding: "var(--space-md) var(--space-lg)",
-    paddingRight: "calc(var(--space-lg) + 20px + var(--space-md))",
-    fontSize: "var(--font-size-lg)",
-  },
-};
-
-const baseStyle: React.CSSProperties = {
-  width: "100%",
-  borderRadius: "var(--radius-xl)",
-  border: "1px solid var(--color-border)",
-  background: "var(--color-input-bg)",
-  color: "var(--color-text-primary)",
-  fontFamily: "var(--font-family-base)",
-  transition: "border-color 150ms ease, box-shadow 150ms ease",
-  outline: "none",
-  appearance: "none",
-  WebkitAppearance: "none",
-  MozAppearance: "none",
-  cursor: "pointer",
-};
-
-const focusStyle: React.CSSProperties = {
-  borderColor: "var(--color-highlight)",
-  boxShadow: "var(--focus-glow)",
-};
-
-const errorStyle: React.CSSProperties = {
-  borderColor: "var(--color-danger-border)",
-};
-
-const disabledStyle: React.CSSProperties = {
-  opacity: 0.6,
-  cursor: "not-allowed",
-};
-
 const wrapperStyle: React.CSSProperties = {
   position: "relative",
   width: "100%",
@@ -84,10 +42,6 @@ const iconStyle: React.CSSProperties = {
   height: "20px",
 };
 
-/**
- * Select component with label, error, helper text, and custom dropdown icon.
- * Provides consistent styling and accessibility attributes.
- */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   (
     {
@@ -113,24 +67,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const errorId = error ? `${selectId}-error` : undefined;
     const helperId = helperText ? `${selectId}-helper` : undefined;
 
-    const computedStyle: React.CSSProperties = {
-      ...baseStyle,
-      ...sizeStyles[size],
-      ...(error || variant === "error" ? errorStyle : {}),
-      ...(disabled ? disabledStyle : {}),
-      ...style,
-    };
-
     return (
       <div className="flex flex--column flex--gap-xs" style={{ width: "100%" }}>
         {label && (
           <label
             htmlFor={selectId}
             className="text-sm"
-            style={{
-              color: "var(--color-text-primary)",
-              fontWeight: 500,
-            }}
+            style={{ color: "var(--color-text-primary)", fontWeight: 500 }}
           >
             {label}
             {required && (
@@ -145,11 +88,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </label>
         )}
         <div style={wrapperStyle}>
-          <select
+          <SelectControl
             ref={ref}
             id={selectId}
             className={className}
-            style={computedStyle}
+            controlSize={size}
+            variant={error ? "error" : variant}
+            style={style}
             disabled={disabled}
             required={required}
             value={value}
@@ -157,18 +102,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-describedby={[errorId, helperId].filter(Boolean).join(" ") || undefined}
             aria-errormessage={errorId}
             aria-required={required}
-            onFocus={(e) => {
-              if (!error && !disabled) {
-                e.currentTarget.style.borderColor = focusStyle.borderColor as string;
-                e.currentTarget.style.boxShadow = focusStyle.boxShadow as string;
-              }
-              props.onFocus?.(e);
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "";
-              e.currentTarget.style.boxShadow = "";
-              props.onBlur?.(e);
-            }}
             {...props}
           >
             {placeholder && (
@@ -181,7 +114,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 {option.label}
               </option>
             ))}
-          </select>
+          </SelectControl>
           <ChevronDown style={iconStyle} aria-hidden="true" />
         </div>
         {error && (
@@ -199,10 +132,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <p
             id={helperId}
             className="text-sm"
-            style={{
-              margin: 0,
-              color: "var(--color-text-muted)",
-            }}
+            style={{ margin: 0, color: "var(--color-text-muted)" }}
           >
             {helperText}
           </p>
