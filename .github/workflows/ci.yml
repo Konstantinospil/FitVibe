@@ -28,6 +28,63 @@ env:
   PNPM_STORE_DIR: "/tmp/pnpm-store"
 
 jobs:
+  architecture_hardcoding:
+    name: Architecture & Hardcoding
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Backend constants and policy authority
+        run: |
+          if ! node tests/qa/check-architecture-hardcoding.mjs backend; then
+            echo "backend" >> "$RUNNER_TEMP/architecture-hardcoding-failures"
+          fi
+
+      - name: Frontend design-token compliance
+        run: |
+          if ! node tests/qa/check-architecture-hardcoding.mjs frontend-tokens; then
+            echo "frontend-tokens" >> "$RUNNER_TEMP/architecture-hardcoding-failures"
+          fi
+
+      - name: Frontend component reuse
+        run: |
+          if ! node tests/qa/check-architecture-hardcoding.mjs frontend-reuse; then
+            echo "frontend-reuse" >> "$RUNNER_TEMP/architecture-hardcoding-failures"
+          fi
+
+      - name: Enforce zero-tolerance result
+        if: always()
+        run: |
+          if [ -s "$RUNNER_TEMP/architecture-hardcoding-failures" ]; then
+            echo "::error::Architecture & Hardcoding violations were found in:"
+            sort -u "$RUNNER_TEMP/architecture-hardcoding-failures"
+            exit 1
+          fi
+          echo "Architecture & Hardcoding gate passed with zero violations."
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
+          if [ -s "$RUNNER_TEMP/architecture-hardcoding-failures" ]; then
+            echo "- ❌ Zero-tolerance gate failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Failed diagnostics:" >> "$GITHUB_STEP_SUMMARY"
+            sort -u "$RUNNER_TEMP/architecture-hardcoding-failures" | sed 's/^/  - /' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ✅ Backend policy authority: passed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- ✅ Frontend design tokens: passed" >> "$GITHUB_STEP_SUMMARY"
+            echo "- ✅ Frontend component reuse: passed" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest

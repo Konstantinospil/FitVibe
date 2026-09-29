@@ -831,6 +831,7 @@ const TranslationsPage: React.FC = () => {
                         <td style={{ padding: "0.75rem", color: "var(--color-text-primary)" }}>
                           <button
                             type="button"
+                            data-native-ui="table-cell-disclosure"
                             onClick={(event) => {
                               event.stopPropagation();
                               handleRowClick();
