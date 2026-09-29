@@ -9,6 +9,9 @@ describe("governed application settings registry", () => {
     const defaults = getDefaultSettings();
 
     expect(defaults).toEqual({
+      "auth.password_min_length": 12,
+      "security.global_rate_limit_points": 120,
+      "security.global_rate_limit_duration_seconds": 60,
       "auth.email_verification_ttl_minutes": 15,
       "auth.password_reset_ttl_minutes": 15,
       "privacy.dsr_purge_delay_minutes": 15,
@@ -20,6 +23,8 @@ describe("governed application settings registry", () => {
   });
 
   it("validates and normalizes registered values", () => {
+    expect(validateAppSetting("auth.password_min_length", 16)).toBe(16);
+    expect(validateAppSetting("security.global_rate_limit_points", 240)).toBe(240);
     expect(validateAppSetting("auth.email_verification_ttl_minutes", 30)).toBe(30);
     expect(validateAppSetting("system.maintenance_message", "  Planned maintenance  ")).toBe(
       "Planned maintenance",
@@ -34,6 +39,7 @@ describe("governed application settings registry", () => {
     expect(() => validateAppSetting("unknown.setting", true)).toThrow(
       "Unknown governed application setting",
     );
+    expect(() => validateAppSetting("auth.password_min_length", 11)).toThrow();
     expect(() => validateAppSetting("auth.password_reset_ttl_minutes", 1)).toThrow();
     expect(() => validateAppSetting("system.maintenance_message", "   ")).toThrow();
   });

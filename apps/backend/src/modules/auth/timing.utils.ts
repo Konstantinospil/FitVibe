@@ -9,6 +9,7 @@
  */
 
 import crypto from "crypto";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 
 /**
  * Minimum time (in milliseconds) that authentication operations should take.
@@ -22,7 +23,7 @@ import crypto from "crypto";
  * response time. 300ms balances security with acceptable UX while providing
  * sufficient buffer for normalization under varying system load conditions.
  */
-const MIN_AUTH_OPERATION_TIME_MS = 300;
+const MIN_AUTH_OPERATION_TIME_MS = AUTH_SECURITY_POLICY.timing.minOperationMs;
 
 /**
  * Add randomized delay to normalize timing across different code paths.
@@ -41,7 +42,8 @@ export async function normalizeAuthTiming(
 
   if (remaining > 0) {
     // Add small random jitter (±10ms) to prevent statistical timing attacks
-    const jitter = crypto.randomInt(-10, 11);
+    const jitterMs = AUTH_SECURITY_POLICY.timing.jitterMs;
+    const jitter = crypto.randomInt(-jitterMs, jitterMs + 1);
     const delay = Math.max(0, remaining + jitter);
     await sleep(delay);
   }
@@ -82,5 +84,5 @@ export const TIMING_CONSTANTS = {
   /**
    * Target variance threshold for AC-1.12: ≤10%
    */
-  MAX_VARIANCE_PERCENT: 10,
+  MAX_VARIANCE_PERCENT: AUTH_SECURITY_POLICY.timing.maxVariancePercent,
 } as const;

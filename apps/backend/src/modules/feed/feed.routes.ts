@@ -32,167 +32,167 @@ export const feedRouter = Router();
 feedRouter.get(
   "/",
   requireAccessToken,
-  rateLimitByUser("feed_user", 120, 60),
-  rateLimit("feed_public", 120, 60),
+  rateLimitByUser("feed_user"),
+  rateLimit("feed_public"),
   asyncHandler(getFeedHandler),
 );
 
 feedRouter.get(
   "/leaderboard",
   requireAccessToken,
-  rateLimitByUser("feed_leaderboard_user", 60, 60),
-  rateLimit("feed_leaderboard", 60, 60),
+  rateLimitByUser("feed_leaderboard_user"),
+  rateLimit("feed_leaderboard"),
   asyncHandler(getLeaderboardHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/clone",
   requireAccessToken,
-  rateLimitByUser("feed_clone_user", 20, 60),
-  rateLimit("feed_clone", 20, 60),
+  rateLimitByUser("feed_clone_user"),
+  rateLimit("feed_clone"),
   asyncHandler(cloneSessionFromFeedHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/publish",
   requireAccessToken,
-  rateLimitByUser("feed_publish_user", 20, 60),
-  rateLimit("feed_publish", 20, 60),
+  rateLimitByUser("feed_publish_user"),
+  rateLimit("feed_publish"),
   asyncHandler(publishSessionHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/link",
   requireAccessToken,
-  rateLimitByUser("feed_link_user", 20, 60),
-  rateLimit("feed_link", 20, 60),
+  rateLimitByUser("feed_link_user"),
+  rateLimit("feed_link"),
   asyncHandler(publishSessionHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/bookmark",
   requireAccessToken,
-  rateLimitByUser("feed_bookmark_user", 100, 300),
-  rateLimit("feed_bookmark", 100, 300),
+  rateLimitByUser("feed_bookmark_user"),
+  rateLimit("feed_bookmark"),
   asyncHandler(bookmarkSessionHandler),
 );
 
 feedRouter.delete(
   "/session/:sessionId/bookmark",
   requireAccessToken,
-  rateLimitByUser("feed_bookmark_user", 100, 300),
-  rateLimit("feed_bookmark", 100, 300),
+  rateLimitByUser("feed_bookmark_user"),
+  rateLimit("feed_bookmark"),
   asyncHandler(removeBookmarkHandler),
 );
 
 feedRouter.get(
   "/bookmarks",
   requireAccessToken,
-  rateLimitByUser("feed_bookmark_list_user", 60, 60),
-  rateLimit("feed_bookmark_list", 60, 60),
+  rateLimitByUser("feed_bookmark_list_user"),
+  rateLimit("feed_bookmark_list"),
   asyncHandler(listBookmarksHandler),
 );
 
 feedRouter.post(
   "/item/:feedItemId/like",
   requireAccessToken,
-  rateLimitByUser("feed_like_user", 100, 300),
-  rateLimit("feed_like", 100, 300),
+  rateLimitByUser("feed_like_user"),
+  rateLimit("feed_like"),
   asyncHandler(likeFeedItemHandler),
 );
 
 feedRouter.delete(
   "/item/:feedItemId/like",
   requireAccessToken,
-  rateLimitByUser("feed_like_user", 100, 300),
-  rateLimit("feed_like", 100, 300),
+  rateLimitByUser("feed_like_user"),
+  rateLimit("feed_like"),
   asyncHandler(unlikeFeedItemHandler),
 );
 
 feedRouter.get(
   "/item/:feedItemId/comments",
   requireAccessToken,
-  rateLimitByUser("feed_comments_list_user", 120, 60),
-  rateLimit("feed_comments_list", 120, 60),
+  rateLimitByUser("feed_comments_list_user"),
+  rateLimit("feed_comments_list"),
   asyncHandler(listCommentsHandler),
 );
 
 feedRouter.post(
   "/item/:feedItemId/comments",
   requireAccessToken,
-  rateLimitByUser("feed_comments_create_user", 20, 3600),
-  rateLimit("feed_comments_create", 20, 3600),
+  rateLimitByUser("feed_comments_create_user"),
+  rateLimit("feed_comments_create"),
   asyncHandler(createCommentHandler),
 );
 
 feedRouter.delete(
   "/comments/:commentId",
   requireAccessToken,
-  rateLimitByUser("feed_comments_delete_user", 60, 3600),
-  rateLimit("feed_comments_delete", 60, 3600),
+  rateLimitByUser("feed_comments_delete_user"),
+  rateLimit("feed_comments_delete"),
   asyncHandler(deleteCommentHandler),
 );
 
 feedRouter.post(
   "/item/:feedItemId/report",
   requireAccessToken,
-  rateLimitByUser("feed_report_item_user", 20, 3600),
-  rateLimit("feed_report_item", 20, 3600),
+  rateLimitByUser("feed_report_item_user"),
+  rateLimit("feed_report_item"),
   asyncHandler(reportFeedItemHandler),
 );
 
 feedRouter.post(
   "/comments/:commentId/report",
   requireAccessToken,
-  rateLimitByUser("feed_report_comment_user", 20, 3600),
-  rateLimit("feed_report_comment", 20, 3600),
+  rateLimitByUser("feed_report_comment_user"),
+  rateLimit("feed_report_comment"),
   asyncHandler(reportCommentHandler),
 );
 
 feedRouter.post(
   "/users/:alias/block",
   requireAccessToken,
-  rateLimitByUser("feed_block_user", 50, 86400),
-  rateLimit("feed_block_user", 50, 86400),
+  rateLimitByUser("feed_block_user"),
+  rateLimit("feed_block_user"),
   asyncHandler(blockUserHandler),
 );
 
 feedRouter.delete(
   "/users/:alias/block",
   requireAccessToken,
-  rateLimitByUser("feed_block_user", 50, 86400),
-  rateLimit("feed_block_user", 50, 86400),
+  rateLimitByUser("feed_block_user"),
+  rateLimit("feed_block_user"),
   asyncHandler(unblockUserHandler),
 );
 
 feedRouter.post(
   "/users/:alias/follow",
   requireAccessToken,
-  rateLimitByUser("feed_follow_user", 50, 86400),
-  rateLimit("feed_follow_user", 50, 86400),
+  rateLimitByUser("feed_follow_user"),
+  rateLimit("feed_follow_user"),
   asyncHandler(followUserHandler),
 );
 
 feedRouter.delete(
   "/users/:alias/follow",
   requireAccessToken,
-  rateLimitByUser("feed_follow_user", 50, 86400),
-  rateLimit("feed_follow_user", 50, 86400),
+  rateLimitByUser("feed_follow_user"),
+  rateLimit("feed_follow_user"),
   asyncHandler(unfollowUserHandler),
 );
 
 feedRouter.get(
   "/users/:alias/followers",
   requireAccessToken,
-  rateLimitByUser("feed_followers_list_user", 120, 60),
-  rateLimit("feed_followers_list", 120, 60),
+  rateLimitByUser("feed_followers_list_user"),
+  rateLimit("feed_followers_list"),
   asyncHandler(listFollowersHandler),
 );
 
 feedRouter.get(
   "/users/:alias/following",
   requireAccessToken,
-  rateLimitByUser("feed_following_list_user", 120, 60),
-  rateLimit("feed_following_list", 120, 60),
+  rateLimitByUser("feed_following_list_user"),
+  rateLimit("feed_following_list"),
   asyncHandler(listFollowingHandler),
 );

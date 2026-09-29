@@ -11,14 +11,14 @@ export const consentRouter = Router();
 // GET /api/v1/consent/cookie-status - Get consent status for IP
 consentRouter.get(
   "/cookie-status",
-  rateLimit("consent_status", 60, 60), // 60 requests per minute
+  rateLimit("consent_status"), // 60 requests per minute
   asyncHandler(getCookieStatusHandler),
 );
 
 // POST /api/v1/consent/cookie-preferences - Save cookie preferences
 consentRouter.post(
   "/cookie-preferences",
-  rateLimit("consent_save", 10, 60), // 10 requests per minute (to prevent abuse)
+  rateLimit("consent_save"), // 10 requests per minute (to prevent abuse)
   validate(SaveCookiePreferencesSchema),
   asyncHandler(saveCookiePreferencesHandler),
 );

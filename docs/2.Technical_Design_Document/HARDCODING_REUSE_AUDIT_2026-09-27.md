@@ -384,3 +384,19 @@ The UI/API must expose the source(s) of read-only state so operators can disting
 ### Implementation status — #303
 
 The governed application-settings implementation is currently under CI validation. This documentation update does not change runtime behavior.
+
+
+### Implementation status — #305
+
+Backend remediation applies the #302 authority decisions as follows:
+
+- governed settings own password minimum length (above the coded floor), email-verification TTL, password-reset TTL, global API rate-limit parameters, DSR timing, maintenance message and feed moderation keywords;
+- deployment configuration retains secrets, infrastructure endpoints, access/refresh token TTLs and the emergency read-only override;
+- authentication cryptographic/mechanical invariants are code-owned in a canonical security policy and cannot be weakened by app settings;
+- route-specific abuse-control thresholds remain code-reviewed security policy, but are centralized in one canonical map rather than repeated as route-local magic numbers;
+- seasonal events, streak lookback and streak bonus tiers are designer-owned, persisted and versioned in the database; point awards record the policy version used;
+- badge criteria that depend on a time window must carry that window explicitly in persisted catalog data; there is no implicit product-policy fallback;
+- the exercise-type cache TTL remains a narrow implementation constant because it changes cache mechanics rather than product, security or administrative semantics;
+- the legacy normal-admin read-only mutation endpoints are removed; persisted maintenance changes remain under the superadmin governed-settings workflow.
+
+Future designer tooling may author new gamification policy versions, but it must not grant gamification authority to normal admins or superadmins.

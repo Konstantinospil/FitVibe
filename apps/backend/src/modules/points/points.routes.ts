@@ -15,8 +15,4 @@ export const pointsRouter = Router();
 pointsRouter.get("/", requireAccessToken, asyncHandler(getPointsSummaryHandler));
 pointsRouter.get("/history", requireAccessToken, asyncHandler(getPointsHistoryHandler));
 pointsRouter.get("/badges/earned", requireAccessToken, asyncHandler(getUserBadgesHandler));
-pointsRouter.get(
-  "/badges",
-  rateLimit("badges_catalog", 60, 60),
-  asyncHandler(getBadgeCatalogHandler),
-);
+pointsRouter.get("/badges", rateLimit("badges_catalog"), asyncHandler(getBadgeCatalogHandler));

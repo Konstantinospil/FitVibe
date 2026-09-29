@@ -18,7 +18,7 @@ export const usersAvatarRouter = Router();
 
 usersAvatarRouter.post(
   "/avatar",
-  rateLimit("user_avatar_upload", 5, 60),
+  rateLimit("user_avatar_upload"),
   requireAccessToken,
   upload.single("avatar"),
   asyncHandler(uploadAvatarHandler),
@@ -26,28 +26,24 @@ usersAvatarRouter.post(
 
 usersAvatarRouter.post(
   "/me/avatar",
-  rateLimit("user_avatar_upload_me", 5, 60),
+  rateLimit("user_avatar_upload_me"),
   requireAccessToken,
   upload.single("avatar"),
   asyncHandler(uploadAvatarHandler),
 );
 
-usersAvatarRouter.get(
-  "/avatar/:id",
-  rateLimit("user_avatar_get", 60, 60),
-  asyncHandler(getAvatarHandler),
-);
+usersAvatarRouter.get("/avatar/:id", rateLimit("user_avatar_get"), asyncHandler(getAvatarHandler));
 
 usersAvatarRouter.delete(
   "/avatar",
-  rateLimit("user_avatar_delete", 10, 60),
+  rateLimit("user_avatar_delete"),
   requireAccessToken,
   asyncHandler(deleteAvatarHandler),
 );
 
 usersAvatarRouter.delete(
   "/me/avatar",
-  rateLimit("user_avatar_delete_me", 10, 60),
+  rateLimit("user_avatar_delete_me"),
   requireAccessToken,
   asyncHandler(deleteAvatarHandler),
 );

@@ -26,6 +26,19 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   };
 });
 
+jest.mock("../../../../apps/backend/src/modules/points/gamification-policy.repository.js", () => ({
+  getGamificationPolicy: jest.fn().mockResolvedValue({
+    versionCode: "v1",
+    streakLookbackDays: 90,
+    streakTiers: [
+      { minDays: 3, bonusPoints: 5 },
+      { minDays: 7, bonusPoints: 10 },
+      { minDays: 14, bonusPoints: 20 },
+      { minDays: 30, bonusPoints: 50 },
+    ],
+  }),
+}));
+
 // Mock the points repository
 jest.mock("../../../../apps/backend/src/modules/points/points.repository.js", () => ({
   getCompletedSessionDatesInRange: jest.fn(),

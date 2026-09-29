@@ -1,5 +1,5 @@
 import { env } from "../../config/env.js";
-import { getDefaultSettings } from "./app-settings.registry.js";
+import { getDefaultSettings, type AppSettingKey } from "./app-settings.registry.js";
 
 export interface RuntimeGovernanceState {
   authorityReady: boolean;
@@ -21,6 +21,10 @@ let runtimeState: RuntimeGovernanceState = {
 
 export function getRuntimeGovernanceState(): RuntimeGovernanceState {
   return runtimeState;
+}
+
+export function getRuntimeAppSetting<T>(key: AppSettingKey): T {
+  return runtimeState.settings[key] as T;
 }
 
 export function isEffectiveReadOnly(): boolean {

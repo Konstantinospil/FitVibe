@@ -15,31 +15,31 @@ export const exercisesRouter = Router();
 
 exercisesRouter.get(
   "/",
-  rateLimit("ex_list", 60, 60),
+  rateLimit("ex_list"),
   requireAccessToken,
   asyncHandler(listExercisesHandler),
 );
 exercisesRouter.get(
   "/:id",
-  rateLimit("ex_get", 60, 60),
+  rateLimit("ex_get"),
   requireAccessToken,
   asyncHandler(getExerciseHandler),
 );
 exercisesRouter.post(
   "/",
-  rateLimit("ex_create", 20, 60),
+  rateLimit("ex_create"),
   requireAccessToken,
   asyncHandler(createExerciseHandler),
 );
 exercisesRouter.put(
   "/:id",
-  rateLimit("ex_update", 20, 60),
+  rateLimit("ex_update"),
   requireAccessToken,
   asyncHandler(updateExerciseHandler),
 );
 exercisesRouter.delete(
   "/:id",
-  rateLimit("ex_delete", 20, 60),
+  rateLimit("ex_delete"),
   requireAccessToken,
   asyncHandler(deleteExerciseHandler),
 );
