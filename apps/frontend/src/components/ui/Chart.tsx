@@ -116,11 +116,7 @@ export const Chart: React.FC<ChartProps> = ({
                 <stop offset="100%" stopColor={color} stopOpacity={0.05} />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              stroke="var(--chart-grid-soft)"
-              vertical={false}
-              strokeDasharray="3 6"
-            />
+            <CartesianGrid stroke="var(--chart-grid-soft)" vertical={false} strokeDasharray="3 6" />
             <XAxis
               dataKey="label"
               axisLine={false}
