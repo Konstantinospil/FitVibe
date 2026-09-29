@@ -477,10 +477,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "64px",
                         height: "64px",
-                        filter:
-                          vibe.iconTone === "light"
-                            ? "brightness(0) invert(1)"
-                            : "brightness(0)",
+                        filter: vibe.iconTone === "light" ? "brightness(0) invert(1)" : "brightness(0)",
                       }}
                     />
                   </button>
@@ -599,7 +596,8 @@ const Home: React.FC = () => {
               </div>
             ) : (
               exerciseHistory.map((exercise) => {
-                const vibeColor = vibes.find((v) => v.key === exercise.vibe)?.colorBg || "var(--vibe-fallback)";
+                const vibeColor =
+                  vibes.find((v) => v.key === exercise.vibe)?.colorBg || "var(--vibe-fallback)";
                 return (
                   <div
                     key={exercise.id}
