@@ -95,10 +95,7 @@ export async function updateTranslation(req: Request, res: Response): Promise<vo
   const params = TranslationParamsSchema.parse({
     language: readRouteParam(req.params.language, "language"),
     namespace: readRouteParam(req.params.namespace, "namespace"),
-    keyPath: decodeURIComponent(readRouteParam(req.params.keyPath, "keyPath")).replace(
-      /%2E/g,
-      ".",
-    ), // Decode dots in URL
+    keyPath: decodeURIComponent(readRouteParam(req.params.keyPath, "keyPath")).replace(/%2E/g, "."), // Decode dots in URL
   });
 
   const dto = UpdateTranslationSchema.parse(req.body);
@@ -136,10 +133,7 @@ export async function deleteTranslation(req: Request, res: Response): Promise<vo
   const params = TranslationParamsSchema.parse({
     language: readRouteParam(req.params.language, "language"),
     namespace: readRouteParam(req.params.namespace, "namespace"),
-    keyPath: decodeURIComponent(readRouteParam(req.params.keyPath, "keyPath")).replace(
-      /%2E/g,
-      ".",
-    ), // Decode dots in URL
+    keyPath: decodeURIComponent(readRouteParam(req.params.keyPath, "keyPath")).replace(/%2E/g, "."), // Decode dots in URL
   });
 
   await deleteTranslationService(params.language, params.namespace, params.keyPath);
