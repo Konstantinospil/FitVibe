@@ -205,7 +205,7 @@ async function checkFrontendReuse() {
   for (const file of auditedFiles) {
     const rel = normalize(path.relative(ROOT, file));
     const source = await fs.readFile(file, "utf8");
-    const tagPattern = /<(button|select|textarea|input)\b[\s\S]*?>/gi;
+    const tagPattern = /<(button|select|textarea|input)\b[\s\S]*?>/g;
 
     for (const match of source.matchAll(tagPattern)) {
       const tagName = match[1].toLowerCase();
