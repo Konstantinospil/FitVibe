@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi, type User } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { Button } from "../components/ui/Button";
+import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 type UserFilter = "all" | "registered" | "unverified" | "blacklisted";
 
@@ -266,80 +268,40 @@ const UsersPage: React.FC = () => {
       <div style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
         {/* Filter Tabs */}
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <button
-            onClick={() => setFilter("all")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: filter === "all" ? colors.surfaceMuted : "transparent",
-              color: colors.text,
-              border: `1px solid ${colors.border}`,
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            All Users
-          </button>
-          <button
-            onClick={() => setFilter("registered")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: filter === "registered" ? colors.surfaceMuted : "transparent",
-              color: colors.text,
-              border: `1px solid ${colors.border}`,
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Registered (Active)
-          </button>
-          <button
-            onClick={() => setFilter("unverified")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: filter === "unverified" ? colors.surfaceMuted : "transparent",
-              color: colors.text,
-              border: `1px solid ${colors.border}`,
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Unverified
-          </button>
-          <button
-            onClick={() => setFilter("blacklisted")}
-            style={{
-              padding: "0.5rem 1rem",
-              background: filter === "blacklisted" ? colors.surfaceMuted : "transparent",
-              color: colors.text,
-              border: `1px solid ${colors.border}`,
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Blacklisted
-          </button>
+          {(
+            [
+              ["all", "All Users"],
+              ["registered", "Registered (Active)"],
+              ["unverified", "Unverified"],
+              ["blacklisted", "Blacklisted"],
+            ] as const
+          ).map(([value, label]) => (
+            <Button
+              key={value}
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilter(value)}
+              aria-pressed={filter === value}
+              style={{
+                background: filter === value ? colors.surfaceMuted : "transparent",
+                color: colors.text,
+                border: `1px solid ${colors.border}`,
+              }}
+            >
+              {label}
+            </Button>
+          ))}
         </div>
 
         {/* Search Input */}
-        <input
-          type="text"
+        <InputControl
+          type="search"
+          aria-label="Search users"
           placeholder="Search users by username or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: "100%",
-            maxWidth: "500px",
-            padding: "0.75rem",
-            background: "var(--color-input-bg)",
-            border: `1px solid ${colors.border}`,
-            borderRadius: "4px",
-            color: colors.text,
-            fontSize: "1rem",
-          }}
+          style={{ maxWidth: "500px" }}
         />
       </div>
 
@@ -357,19 +319,16 @@ const UsersPage: React.FC = () => {
           }}
         >
           <span>{errorMessage}</span>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label="Dismiss error"
             onClick={() => setErrorMessage(null)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: colors.text,
-              cursor: "pointer",
-              fontSize: "1.25rem",
-              padding: "0 0.5rem",
-            }}
+            style={{ color: colors.text, padding: "0 0.5rem", boxShadow: "none" }}
           >
             ×
-          </button>
+          </Button>
         </div>
       )}
 
@@ -611,148 +570,97 @@ const UsersPage: React.FC = () => {
                       <td style={{ padding: "1rem" }}>
                         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                           {!user.deactivated_at ? (
-                            <button
+                            <Button
+                              type="button"
+                              variant="primary"
+                              size="sm"
                               onClick={() => handleAction(user, "blacklist")}
-                              style={{
-                                padding: "0.5rem 1rem",
-                                background: "var(--color-primary)",
-                                color: "var(--color-primary-on)",
-                                border: "1px solid var(--color-primary)",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "0.875rem",
-                                fontWeight: "500",
-                              }}
                             >
                               Blacklist
-                            </button>
+                            </Button>
                           ) : (
-                            <button
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
                               onClick={() => handleAction(user, "unblacklist")}
-                              style={{
-                                padding: "0.5rem 1rem",
-                                background: "var(--color-secondary)",
-                                color: "var(--color-secondary-on)",
-                                border: "none",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "0.875rem",
-                                fontWeight: "500",
-                              }}
                             >
                               Unblacklist
-                            </button>
+                            </Button>
                           )}
-                          <button
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleChangeRole(user)}
                             style={{
-                              padding: "0.5rem 1rem",
                               background: colors.surfaceMuted,
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "0.875rem",
-                              fontWeight: "500",
                             }}
                           >
                             Change Role
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
                             onClick={() => handleSendVerificationEmail(user)}
                             disabled={sendVerificationEmailMutation.isPending}
+                            isLoading={sendVerificationEmailMutation.isPending}
                             style={{
-                              padding: "0.5rem 1rem",
                               background: "var(--color-info-text)",
                               color: "var(--color-secondary-on)",
                               border: "1px solid var(--color-info-text)",
-                              borderRadius: "4px",
-                              cursor: sendVerificationEmailMutation.isPending
-                                ? "not-allowed"
-                                : "pointer",
-                              fontSize: "0.875rem",
-                              fontWeight: "500",
-                              opacity: sendVerificationEmailMutation.isPending ? 0.6 : 1,
                             }}
                           >
-                            {sendVerificationEmailMutation.isPending
-                              ? "Sending..."
-                              : "Send Verification Email"}
-                          </button>
-                          <button
+                            Send Verification Email
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
                             onClick={() => handleSendPasswordReset(user)}
                             disabled={sendPasswordResetMutation.isPending}
+                            isLoading={sendPasswordResetMutation.isPending}
                             style={{
-                              padding: "0.5rem 1rem",
                               background: "var(--color-warning-text)",
                               color: "var(--color-secondary-on)",
                               border: "1px solid var(--color-warning-text)",
-                              borderRadius: "4px",
-                              cursor: sendPasswordResetMutation.isPending
-                                ? "not-allowed"
-                                : "pointer",
-                              fontSize: "0.875rem",
-                              fontWeight: "500",
-                              opacity: sendPasswordResetMutation.isPending ? 0.6 : 1,
                             }}
                           >
-                            {sendPasswordResetMutation.isPending ? "Sending..." : "Reset Password"}
-                          </button>
-                          <button
+                            Reset Password
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
                             onClick={() => handleDeleteAvatar(user)}
                             disabled={deleteAvatarMutation.isPending}
-                            style={{
-                              padding: "0.5rem 1rem",
-                              background: "var(--color-primary)",
-                              color: "var(--color-primary-on)",
-                              border: "1px solid var(--color-primary)",
-                              borderRadius: "4px",
-                              cursor: deleteAvatarMutation.isPending ? "not-allowed" : "pointer",
-                              fontSize: "0.875rem",
-                              fontWeight: "500",
-                              opacity: deleteAvatarMutation.isPending ? 0.6 : 1,
-                            }}
+                            isLoading={deleteAvatarMutation.isPending}
                           >
-                            {deleteAvatarMutation.isPending ? "Deleting..." : "Delete Avatar"}
-                          </button>
+                            Delete Avatar
+                          </Button>
                           {showUsername && (
-                            <button
+                            <Button
+                              type="button"
+                              variant="primary"
+                              size="sm"
                               onClick={() => handleDeleteDisplayName(user)}
                               disabled={deleteDisplayNameMutation.isPending}
-                              style={{
-                                padding: "0.5rem 1rem",
-                                background: "var(--color-primary)",
-                                color: "var(--color-primary-on)",
-                                border: "1px solid var(--color-primary)",
-                                borderRadius: "4px",
-                                cursor: deleteDisplayNameMutation.isPending
-                                  ? "not-allowed"
-                                  : "pointer",
-                                fontSize: "0.875rem",
-                                fontWeight: "500",
-                                opacity: deleteDisplayNameMutation.isPending ? 0.6 : 1,
-                              }}
+                              isLoading={deleteDisplayNameMutation.isPending}
                             >
-                              {deleteDisplayNameMutation.isPending
-                                ? "Deleting..."
-                                : "Delete Display Name"}
-                            </button>
+                              Delete Display Name
+                            </Button>
                           )}
-                          <button
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
                             onClick={() => handleDelete(user)}
-                            style={{
-                              padding: "0.5rem 1rem",
-                              background: "var(--color-primary)",
-                              color: "var(--color-primary-on)",
-                              border: "1px solid var(--color-primary)",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                              fontSize: "0.875rem",
-                              fontWeight: "500",
-                            }}
                           >
                             Delete
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -817,26 +725,17 @@ const UsersPage: React.FC = () => {
               >
                 Select Role
               </label>
-              <select
+              <SelectControl
+                aria-label="Select role"
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  background: "var(--color-input-bg)",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  color: colors.text,
-                  fontSize: "1rem",
-                  cursor: "pointer",
-                }}
               >
                 {availableRoles.map((role) => (
                   <option key={role} value={role}>
                     {role.charAt(0).toUpperCase() + role.slice(1)}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </div>
             <div style={{ marginBottom: "1.5rem" }}>
               <label
@@ -849,59 +748,38 @@ const UsersPage: React.FC = () => {
               >
                 Reason (optional)
               </label>
-              <textarea
+              <TextareaControl
+                aria-label="Reason for role change"
                 value={actionReason}
                 onChange={(e) => setActionReason(e.target.value)}
                 placeholder="Enter reason for role change..."
                 rows={3}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  background: "var(--color-input-bg)",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  color: colors.text,
-                  fontSize: "1rem",
-                  resize: "vertical",
-                }}
               />
             </div>
             <div style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => {
                   setShowRoleModal(false);
                   setSelectedUser(null);
                   setSelectedRole("");
                   setActionReason("");
                 }}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "transparent",
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                }}
+                style={{ color: colors.text, border: `1px solid ${colors.border}` }}
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={handleConfirmRoleChange}
                 disabled={changeRoleMutation.isPending || !selectedRole}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: colors.border,
-                  color: colors.text,
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: changeRoleMutation.isPending || !selectedRole ? "not-allowed" : "pointer",
-                  fontSize: "1rem",
-                  opacity: changeRoleMutation.isPending || !selectedRole ? 0.6 : 1,
-                }}
+                isLoading={changeRoleMutation.isPending}
+                style={{ background: colors.border, color: colors.text }}
               >
-                {changeRoleMutation.isPending ? "Changing..." : "Change Role"}
-              </button>
+                Change Role
+              </Button>
             </div>
           </div>
         </div>
