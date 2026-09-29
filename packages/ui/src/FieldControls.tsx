@@ -18,6 +18,12 @@ const sizeStyles: Record<FieldControlSize, React.CSSProperties> = {
   },
 };
 
+const selectPaddingRight: Record<FieldControlSize, string> = {
+  sm: "calc(var(--space-sm) + 20px + var(--space-xs))",
+  md: "calc(var(--space-md) + 20px + var(--space-sm))",
+  lg: "calc(var(--space-lg) + 20px + var(--space-md))",
+};
+
 const baseStyle: React.CSSProperties = {
   width: "100%",
   borderRadius: "var(--field-radius, var(--radius-xl))",
@@ -73,7 +79,10 @@ export const InputControl = forwardRef<HTMLInputElement, InputControlProps>(
     },
     ref,
   ) => {
-    const invalid = variant === "error" || props["aria-invalid"] === true || props["aria-invalid"] === "true";
+    const invalid =
+      variant === "error" ||
+      props["aria-invalid"] === true ||
+      props["aria-invalid"] === "true";
     return (
       <input
         ref={ref}
@@ -120,7 +129,10 @@ export const SelectControl = forwardRef<HTMLSelectElement, SelectControlProps>(
     },
     ref,
   ) => {
-    const invalid = variant === "error" || props["aria-invalid"] === true || props["aria-invalid"] === "true";
+    const invalid =
+      variant === "error" ||
+      props["aria-invalid"] === true ||
+      props["aria-invalid"] === "true";
     return (
       <select
         ref={ref}
@@ -128,7 +140,7 @@ export const SelectControl = forwardRef<HTMLSelectElement, SelectControlProps>(
         style={{
           ...baseStyle,
           ...sizeStyles[controlSize],
-          paddingRight: "calc(var(--space-md) + 20px + var(--space-sm))",
+          paddingRight: selectPaddingRight[controlSize],
           appearance: "none",
           WebkitAppearance: "none",
           MozAppearance: "none",
@@ -171,7 +183,10 @@ export const TextareaControl = forwardRef<HTMLTextAreaElement, TextareaControlPr
     },
     ref,
   ) => {
-    const invalid = variant === "error" || props["aria-invalid"] === true || props["aria-invalid"] === "true";
+    const invalid =
+      variant === "error" ||
+      props["aria-invalid"] === true ||
+      props["aria-invalid"] === "true";
     return (
       <textarea
         ref={ref}

@@ -758,7 +758,11 @@ const AuditLogsPage: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setSelectedLog(log)}
-                          style={{ background: colors.border, color: colors.text, whiteSpace: "nowrap" }}
+                          style={{
+                            background: colors.border,
+                            color: colors.text,
+                            whiteSpace: "nowrap",
+                          }}
                         >
                           View
                         </Button>
