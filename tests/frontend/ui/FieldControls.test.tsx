@@ -95,6 +95,10 @@ describe("shared field controls", () => {
     expect(select.style.boxShadow).toBe("var(--focus-glow)");
     expect(onFocus).toHaveBeenCalledTimes(1);
 
+    fireEvent.blur(select);
+    expect(select.style.borderColor).toBe("");
+    expect(select.style.boxShadow).toBe("");
+
     rerender(
       <SelectControl
         aria-label="Visibility"
