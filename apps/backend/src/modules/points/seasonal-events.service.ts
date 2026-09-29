@@ -3,63 +3,19 @@ import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 import { logger } from "../../config/logger.js";
 import { insertPointsEvent } from "./points.repository.js";
+import {
+  getSeasonalEventPolicies,
+  type SeasonalEventPolicy,
+} from "./gamification-policy.repository.js";
 
-/**
- * Seasonal event definition
- * Events are time-limited challenges that award bonus points
- */
-export interface SeasonalEvent {
-  code: string;
-  name: string;
-  startDate: Date;
-  endDate: Date;
-  multiplier: number; // Points multiplier for sessions during event
-  minSessionsForBonus: number; // Minimum sessions required to qualify
-  bonusPoints: number; // Bonus points awarded when minimum met
-}
+export type SeasonalEvent = SeasonalEventPolicy;
 
-/**
- * Predefined seasonal events
- * In a production system, these would come from a database table
- */
-const SEASONAL_EVENTS: SeasonalEvent[] = [
-  {
-    code: "new_year_2025",
-    name: "New Year Kickstart 2025",
-    startDate: new Date("2025-01-01T00:00:00Z"),
-    endDate: new Date("2025-01-31T23:59:59Z"),
-    multiplier: 1.5,
-    minSessionsForBonus: 12, // 3 sessions/week for 4 weeks
-    bonusPoints: 100,
-  },
-  {
-    code: "summer_shred_2025",
-    name: "Summer Shred 2025",
-    startDate: new Date("2025-06-01T00:00:00Z"),
-    endDate: new Date("2025-08-31T23:59:59Z"),
-    multiplier: 1.25,
-    minSessionsForBonus: 36, // 3 sessions/week for 12 weeks
-    bonusPoints: 250,
-  },
-  {
-    code: "holiday_hustle_2025",
-    name: "Holiday Hustle 2025",
-    startDate: new Date("2025-11-15T00:00:00Z"),
-    endDate: new Date("2025-12-31T23:59:59Z"),
-    multiplier: 2.0,
-    minSessionsForBonus: 20, // ~4 sessions/week for 6 weeks
-    bonusPoints: 200,
-  },
-];
-
-/**
- * Get currently active seasonal events
- *
- * @param now - Current date/time to check against
- * @returns Array of active events
- */
-export function getActiveEvents(now: Date = new Date()): SeasonalEvent[] {
-  return SEASONAL_EVENTS.filter((event) => now >= event.startDate && now <= event.endDate);
+/** Load the versioned designer-owned events applicable at the supplied timestamp. */
+export async function getActiveEvents(
+  now: Date = new Date(),
+  trx?: Knex.Transaction,
+): Promise<SeasonalEvent[]> {
+  return getSeasonalEventPolicies(now, trx);
 }
 
 /**
@@ -146,7 +102,7 @@ async function awardEventCompletionBonus(
       source_id: sessionId,
       points: event.bonusPoints,
       calories: null,
-      algorithm_version: "v1",
+      algorithm_version: event.policyVersion,
       metadata: {
         event_code: event.code,
         event_name: event.name,
@@ -183,7 +139,7 @@ export async function evaluateSeasonalEvents(
   const completedDate = typeof completedAt === "string" ? new Date(completedAt) : completedAt;
 
   const run = async (activeTrx: Knex.Transaction) => {
-    const activeEvents = getActiveEvents(completedDate);
+    const activeEvents = await getActiveEvents(completedDate, activeTrx);
 
     if (activeEvents.length === 0) {
       logger.debug({ userId, sessionId }, "[seasonal-events] No active events");

@@ -34,7 +34,7 @@
     "@otplib/preset-default": "^12.0.1",
     "archiver": "^8.0.0",
     "bcryptjs": "^2.4.3",
-    "bullmq": "^6.3.8",
+    "bullmq": "^6.3.9",
     "clamscan": "^2.4.0",
     "compression": "^1.8.2",
     "cookie-parser": "^1.4.6",
@@ -81,7 +81,7 @@
     "pg-mem": "^3.0.14",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "^5.5.4"
   }
 }

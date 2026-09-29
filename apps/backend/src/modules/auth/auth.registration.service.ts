@@ -2,6 +2,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { db } from "../../db/connection.js";
 import { acceptLegalDocumentVersion, getCurrentLegalPublication } from "../legal/legal.service.js";
 import { HttpError } from "../../utils/http.js";
@@ -30,8 +31,12 @@ import type { RegisterDTO, UserSafe } from "./auth.types.js";
 import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { toSafeUser } from "./auth.mapping.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
+import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 
-const EMAIL_VERIFICATION_TTL = env.EMAIL_VERIFICATION_TTL_SEC;
+const SECONDS_PER_MINUTE = 60;
+function emailVerificationTtlSeconds(): number {
+  return getRuntimeAppSetting<number>("auth.email_verification_ttl_minutes") * SECONDS_PER_MINUTE;
+}
 
 function dateOfBirthFromAge(age?: number | null): string | undefined {
   if (age === undefined || age === null) {
@@ -64,12 +69,12 @@ export async function register(
         const token = await issueAuthToken(
           existingByEmail.id,
           TOKEN_TYPES.EMAIL_VERIFICATION,
-          EMAIL_VERIFICATION_TTL,
+          emailVerificationTtlSeconds(),
         );
 
         if (env.email.enabled) {
           const verificationUrl = `${env.frontendUrl}/verify?token=${token}`;
-          const expiresInMinutes = Math.floor(EMAIL_VERIFICATION_TTL / 60);
+          const expiresInMinutes = Math.floor(emailVerificationTtlSeconds() / 60);
           const locale = existingByEmail.locale;
           const t = getEmailTranslations(locale);
 
@@ -91,7 +96,7 @@ export async function register(
     }
 
     const id = uuidv4();
-    const password_hash = await bcrypt.hash(dto.password, 12);
+    const password_hash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
     const now = new Date().toISOString();
     const currentTerms = await getCurrentLegalPublication("terms");
 
@@ -122,12 +127,12 @@ export async function register(
     const verificationToken = await issueAuthToken(
       id,
       TOKEN_TYPES.EMAIL_VERIFICATION,
-      EMAIL_VERIFICATION_TTL,
+      emailVerificationTtlSeconds(),
     );
 
     if (env.email.enabled) {
       const verificationUrl = `${env.frontendUrl}/verify?token=${verificationToken}`;
-      const expiresInMinutes = Math.floor(EMAIL_VERIFICATION_TTL / 60);
+      const expiresInMinutes = Math.floor(emailVerificationTtlSeconds() / 60);
 
       const user = await findUserById(id);
       const locale = user?.locale;
@@ -162,12 +167,12 @@ export async function resendVerificationEmail(email: string): Promise<void> {
       const token = await issueAuthToken(
         user.id,
         TOKEN_TYPES.EMAIL_VERIFICATION,
-        EMAIL_VERIFICATION_TTL,
+        emailVerificationTtlSeconds(),
       );
 
       if (env.email.enabled) {
         const verificationUrl = `${env.frontendUrl}/verify?token=${token}`;
-        const expiresInMinutes = Math.floor(EMAIL_VERIFICATION_TTL / 60);
+        const expiresInMinutes = Math.floor(emailVerificationTtlSeconds() / 60);
         const locale = user.locale;
         const t = getEmailTranslations(locale);
 

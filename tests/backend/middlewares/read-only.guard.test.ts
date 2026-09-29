@@ -3,6 +3,7 @@ import { readOnlyGuard } from "../../../apps/backend/src/middlewares/read-only.g
 import { env } from "../../../apps/backend/src/config/env.js";
 import { logger } from "../../../apps/backend/src/config/logger.js";
 import {
+  getRuntimeAppSetting,
   getRuntimeGovernanceState,
   isEffectiveReadOnly,
 } from "../../../apps/backend/src/modules/system/app-settings.runtime.js";
@@ -16,6 +17,7 @@ jest.mock("../../../apps/backend/src/config/env.js", () => ({
 }));
 
 jest.mock("../../../apps/backend/src/modules/system/app-settings.runtime.js", () => ({
+  getRuntimeAppSetting: jest.fn(),
   getRuntimeGovernanceState: jest.fn(),
   isEffectiveReadOnly: jest.fn(),
 }));
@@ -29,6 +31,7 @@ jest.mock("../../../apps/backend/src/config/logger.js", () => ({
 
 const mockLogger = jest.mocked(logger);
 const mockEnv = env as { NODE_ENV?: string; readOnlyMode: boolean; maintenanceMessage?: string };
+const mockRuntimeAppSetting = jest.mocked(getRuntimeAppSetting);
 const mockGovernanceState = jest.mocked(getRuntimeGovernanceState);
 const mockIsEffectiveReadOnly = jest.mocked(isEffectiveReadOnly);
 
@@ -43,6 +46,7 @@ describe("Read-Only Guard", () => {
     mockEnv.readOnlyMode = false;
     mockEnv.maintenanceMessage = "System is in maintenance mode";
     mockIsEffectiveReadOnly.mockReturnValue(false);
+    mockRuntimeAppSetting.mockReturnValue("System is in maintenance mode");
     mockGovernanceState.mockReturnValue({
       authorityReady: true,
       maintenanceEnabled: false,
@@ -221,22 +225,24 @@ describe("Read-Only Guard", () => {
       expect(mockNext).toHaveBeenCalledWith();
     });
 
-    it("should allow read-only enable endpoint", () => {
+    it("should block obsolete read-only enable endpoint", () => {
       mockRequest.method = "POST";
       mockRequest.originalUrl = "/system/read-only/enable";
 
       readOnlyGuard(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith();
+      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(503);
     });
 
-    it("should allow read-only disable endpoint", () => {
+    it("should block obsolete read-only disable endpoint", () => {
       mockRequest.method = "POST";
       mockRequest.originalUrl = "/api/v1/system/read-only/disable";
 
       readOnlyGuard(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockNext).toHaveBeenCalledWith();
+      expect(mockNext).not.toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(503);
     });
 
     it("should allow auth refresh endpoint", () => {
@@ -273,15 +279,15 @@ describe("Read-Only Guard", () => {
       );
     });
 
-    it("should use default maintenance message when not set", () => {
-      delete mockEnv.maintenanceMessage;
+    it("should use the governed maintenance message", () => {
+      mockRuntimeAppSetting.mockReturnValue("Governed maintenance");
       mockGovernanceState.mockReturnValue({
         authorityReady: true,
         maintenanceEnabled: true,
         activeRevision: 0,
         loadedRevision: 0,
         emergencyReadOnly: false,
-        settings: {},
+        settings: { "system.maintenance_message": "Governed maintenance" },
       });
       mockRequest.method = "POST";
       mockRequest.originalUrl = "/api/v1/sessions";
@@ -291,7 +297,7 @@ describe("Read-Only Guard", () => {
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
           error: expect.objectContaining({
-            message: "System is in read-only mode",
+            message: "Governed maintenance",
           }),
         }),
       );
