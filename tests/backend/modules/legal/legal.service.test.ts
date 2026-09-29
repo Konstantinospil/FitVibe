@@ -7,6 +7,7 @@ import {
   publishLegalDocument,
 } from "../../../../apps/backend/src/modules/legal/legal.service.js";
 import {
+  getActiveLegalTranslationRows,
   getCurrentLegalVersion,
   getLatestAcceptanceForDocument,
   getLatestRequiredLegalVersion,
@@ -82,6 +83,30 @@ describe("legal publication invariants", () => {
     ).rejects.toMatchObject({ code: "LEGAL_MATERIAL_ACTION_REQUIRED" });
 
     expect(withLegalTransaction).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported translation languages before authoring file access", async () => {
+    jest.mocked(withLegalTransaction).mockImplementation(async (work) =>
+      work({} as never),
+    );
+    jest.mocked(getActiveLegalTranslationRows).mockResolvedValue([
+      {
+        language: "../../outside",
+        key_path: "terms.title",
+        value: "Unsafe locale",
+      },
+    ]);
+
+    await expect(
+      publishLegalDocument(
+        {
+          documentType: "terms",
+          changeClass: "editorial",
+          userAction: "none",
+        },
+        "admin-1",
+      ),
+    ).rejects.toMatchObject({ code: "LEGAL_LANGUAGE_UNSUPPORTED" });
   });
 
   it("treats acceptance of a newer editorial publication as satisfying the preceding material gate", async () => {
