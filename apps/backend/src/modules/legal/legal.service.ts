@@ -39,13 +39,7 @@ const ALLOWED_ACTIONS: Record<LegalDocumentType, Set<LegalUserAction>> = {
 
 type SupportedLegalLanguage = "en" | "de" | "fr" | "es" | "el";
 
-const SUPPORTED_LEGAL_LANGUAGES: readonly SupportedLegalLanguage[] = [
-  "en",
-  "de",
-  "fr",
-  "es",
-  "el",
-];
+const SUPPORTED_LEGAL_LANGUAGES: readonly SupportedLegalLanguage[] = ["en", "de", "fr", "es", "el"];
 
 function toSupportedLegalLanguage(language: string): SupportedLegalLanguage | null {
   switch (language) {
