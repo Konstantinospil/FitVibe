@@ -1,11 +1,7 @@
 import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
-import {
-  SelectControl,
-  type FieldControlSize,
-  type FieldControlVariant,
-} from "@fitvibe/ui";
+import { SelectControl, type FieldControlSize, type FieldControlVariant } from "@fitvibe/ui";
 
 export type SelectSize = FieldControlSize;
 export type SelectVariant = FieldControlVariant;

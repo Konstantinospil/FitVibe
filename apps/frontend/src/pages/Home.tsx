@@ -790,7 +790,10 @@ const Home: React.FC = () => {
                     onChange={(e) => setSelectedExerciseId(e.target.value)}
                     disabled={isSubmitting || filteredExercisesLoading}
                     required={exerciseMode === "select"}
-                    style={{ background: "var(--color-bg)", cursor: isLoading ? "wait" : "pointer" }}
+                    style={{
+                      background: "var(--color-bg)",
+                      cursor: isLoading ? "wait" : "pointer",
+                    }}
                   >
                     <option value="">
                       {isLoading ? t("common.loading") : "Select exercise..."}

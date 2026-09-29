@@ -1,10 +1,6 @@
 import React, { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  TextareaControl,
-  type FieldControlSize,
-  type FieldControlVariant,
-} from "@fitvibe/ui";
+import { TextareaControl, type FieldControlSize, type FieldControlVariant } from "@fitvibe/ui";
 
 export type TextareaSize = FieldControlSize;
 export type TextareaVariant = FieldControlVariant;
