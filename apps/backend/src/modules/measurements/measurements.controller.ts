@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import {
   addMeasurementValue,
@@ -95,8 +94,8 @@ async function addValue(category: "bio" | "perf", req: Request, res: Response) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const attributeId = readRouteParam(req.params.attributeId, "attributeId");
-  if (!attributeId) {
+  const attributeId = req.params.attributeId;
+  if (typeof attributeId !== "string" || attributeId.length === 0) {
     res.status(400).json({ error: "Attribute ID is required" });
     return;
   }
@@ -122,8 +121,8 @@ async function updateVisibility(category: "bio" | "perf", req: Request, res: Res
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const attributeId = readRouteParam(req.params.attributeId, "attributeId");
-  if (!attributeId) {
+  const attributeId = req.params.attributeId;
+  if (typeof attributeId !== "string" || attributeId.length === 0) {
     res.status(400).json({ error: "Attribute ID is required" });
     return;
   }
