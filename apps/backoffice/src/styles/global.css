@@ -209,6 +209,15 @@
   --radius-xl: 24px;
   --radius-full: 9999px;
 
+  /* Shared UI primitive semantics */
+  --card-background: var(--color-surface-glass);
+  --card-radius: 18px;
+  --card-shadow: var(--shadow-e2);
+  --card-backdrop-filter: none;
+  --card-header-divider-color: var(--color-border-strong);
+  --card-footer-divider-color: var(--color-border-strong);
+  --button-shadow: var(--shadow-e1);
+
   /* Apply base styles */
   font-family: var(--font-family-base);
   background: var(--gradient-primary), var(--gradient-secondary);
