@@ -122,16 +122,16 @@ export async function likeFeedItemHandler(req: Request, res: Response): Promise<
     userId,
     { feedItemId: readRouteParam(req.params.feedItemId, "feedItemId") },
     async () => {
-      const result = await likeFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"));
+      const result = await likeFeedItem(
+        userId,
+        readRouteParam(req.params.feedItemId, "feedItemId"),
+      );
       return { status: 200, body: result };
     },
   );
 
   if (!handled) {
-    const result = await likeFeedItem(
-        userId,
-        readRouteParam(req.params.feedItemId, "feedItemId"),
-      );
+    const result = await likeFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"));
     res.json(result);
   }
 }
