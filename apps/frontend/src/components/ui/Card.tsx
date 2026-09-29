@@ -6,7 +6,7 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const cardBaseStyle: React.CSSProperties = {
   background: "var(--color-bg-card)",
-  borderRadius: "24px",
+  borderRadius: "var(--radius-xl)",
   border: "1px solid var(--color-border)",
   boxShadow: "var(--shadow-e2)",
   backdropFilter: "blur(18px)",
