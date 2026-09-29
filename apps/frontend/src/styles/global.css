@@ -227,6 +227,7 @@
   --surface-planner-item: rgba(15, 23, 42, 0.4);
   --border-planner-item: rgba(148, 163, 184, 0.18);
   --surface-danger-subtle: rgba(239, 68, 68, 0.1);
+  --surface-deleted-subtle: rgba(159, 36, 6, 0.05);
   --border-danger-subtle: rgba(239, 68, 68, 0.3);
   --modal-backdrop: rgba(0, 0, 0, 0.85);
   --dialog-backdrop: rgba(0, 0, 0, 0.5);

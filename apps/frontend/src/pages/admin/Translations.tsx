@@ -567,7 +567,7 @@ const Translations: React.FC = () => {
                           style={{
                             borderBottom: "1px solid var(--color-border)",
                             opacity: isDeleted ? 0.7 : 1,
-                            background: isDeleted ? "rgba(159, 36, 6, 0.05)" : "transparent",
+                            background: isDeleted ? "var(--surface-deleted-subtle)" : "transparent",
                           }}
                         >
                           <td style={{ padding: "0.75rem" }}>
@@ -661,7 +661,7 @@ const Translations: React.FC = () => {
                               position: "sticky",
                               right: 0,
                               background: isDeleted
-                                ? "rgba(159, 36, 6, 0.05)"
+                                ? "var(--surface-deleted-subtle)"
                                 : "var(--color-background)",
                               zIndex: 5,
                               minWidth: "150px",
