@@ -79,7 +79,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         }}
       >
         <div
-          style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-md)", marginBottom: "var(--space-md)" }}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "var(--space-md)",
+            marginBottom: "var(--space-md)",
+          }}
         >
           <div
             style={{
