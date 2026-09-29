@@ -16,6 +16,7 @@ import { logger } from "../utils/logger";
 import { useToast } from "../contexts/ToastContext";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import type { SessionVisibility } from "@fitvibe/contracts";
+import { InputControl, SelectControl } from "@fitvibe/ui";
 
 interface LoggedSet {
   order: number;
@@ -441,22 +442,19 @@ const Logger: React.FC = () => {
                 </div>
                 <VisibilityBadge level={sessionVisibility} />
               </div>
-              <select
+              <SelectControl
                 value={sessionVisibility}
                 onChange={(e) => void handleVisibilityChange(e.target.value as SessionVisibility)}
                 disabled={isUpdatingVisibility}
                 className="form-input"
-                style={{
-                  background: "var(--color-surface)",
-                  minWidth: "150px",
-                }}
+                style={{ background: "var(--color-surface)", minWidth: "150px" }}
                 aria-label={t("logger.visibilityLabel")}
               >
                 <option value="private">{t("logger.visibilityPrivate")}</option>
                 <option value="followers">{t("visibility.labels.followers")}</option>
                 <option value="link">{t("logger.visibilityLink")}</option>
                 <option value="public">{t("logger.visibilityPublic")}</option>
-              </select>
+              </SelectControl>
             </div>
             <p className="mt-05 text-085 text-muted">{t("logger.visibilityHelp")}</p>
           </CardContent>
@@ -480,19 +478,21 @@ const Logger: React.FC = () => {
                     </div>
                   </div>
 
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => toggleExerciseCollapsed(exerciseIndex)}
                     aria-label={exerciseLog.collapsed ? "Expand" : "Collapse"}
-                    className="bg-transparent border-none"
                     style={{
                       color: "var(--color-text-secondary)",
-                      cursor: "pointer",
                       padding: "0.5rem",
                       lineHeight: 0,
+                      boxShadow: "none",
                     }}
                   >
                     {exerciseLog.collapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-                  </button>
+                  </Button>
                 </div>
               </CardHeader>
 
@@ -538,7 +538,7 @@ const Logger: React.FC = () => {
                       >
                         <div style={{ fontWeight: 600, textAlign: "center" }}>{setIndex + 1}</div>
 
-                        <input
+                        <InputControl
                           type="number"
                           min="0"
                           value={set.reps ?? ""}
@@ -562,7 +562,7 @@ const Logger: React.FC = () => {
                           }}
                         />
 
-                        <input
+                        <InputControl
                           type="number"
                           step="0.5"
                           min="0"
@@ -587,7 +587,7 @@ const Logger: React.FC = () => {
                           }}
                         />
 
-                        <input
+                        <InputControl
                           type="number"
                           min="1"
                           max="10"
