@@ -92,22 +92,22 @@ describe("Modal", () => {
   describe("Size variants", () => {
     it("should apply sm size styles", () => {
       render(<Modal {...defaultProps} size="sm" />);
-      expect(getModalPanel()).toHaveStyle({ maxWidth: "28rem" });
+      expect(getModalPanel().style.maxWidth).toBe("28rem");
     });
 
     it("should apply md size styles (default)", () => {
       render(<Modal {...defaultProps} size="md" />);
-      expect(getModalPanel()).toHaveStyle({ maxWidth: "32rem" });
+      expect(getModalPanel().style.maxWidth).toBe("32rem");
     });
 
     it("should apply lg size styles", () => {
       render(<Modal {...defaultProps} size="lg" />);
-      expect(getModalPanel()).toHaveStyle({ maxWidth: "48rem" });
+      expect(getModalPanel().style.maxWidth).toBe("48rem");
     });
 
     it("should apply xl size styles", () => {
       render(<Modal {...defaultProps} size="xl" />);
-      expect(getModalPanel()).toHaveStyle({ maxWidth: "64rem" });
+      expect(getModalPanel().style.maxWidth).toBe("64rem");
     });
   });
 

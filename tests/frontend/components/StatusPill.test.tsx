@@ -3,24 +3,24 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { StatusPill } from "../../src/components/StatusPill";
 
+// Mock i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) => {
+      const translations: Record<string, string> = {
+        "status.checking": "Checking",
+        "status.online": "Server online",
+        "status.offline": "Server offline",
+      };
+      return translations[key] || options?.defaultValue || key;
+    },
+  }),
+}));
+
 describe("StatusPill", () => {
   afterEach(() => {
     cleanup();
   });
-
-  // Mock i18next
-  vi.mock("react-i18next", () => ({
-    useTranslation: () => ({
-      t: (key: string, options?: { defaultValue?: string }) => {
-        const translations: Record<string, string> = {
-          "status.checking": "Checking",
-          "status.online": "Server online",
-          "status.offline": "Server offline",
-        };
-        return translations[key] || options?.defaultValue || key;
-      },
-    }),
-  }));
 
   it("should render checking status with default label", () => {
     const { container } = render(<StatusPill status="checking" />);

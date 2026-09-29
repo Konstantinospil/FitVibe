@@ -29,7 +29,7 @@ describe("Skeleton", () => {
     it("uses default height of 1rem when not provided", () => {
       const { unmount } = render(<Skeleton data-testid="skeleton" />);
       const skeleton = screen.getByTestId("skeleton");
-      expect(skeleton).toHaveStyle({ height: "1rem" });
+      expect(skeleton.style.height).toBe("1rem");
       unmount();
     });
 
@@ -95,12 +95,8 @@ describe("Skeleton", () => {
         />,
       );
       const skeleton = screen.getByTestId("skeleton");
-      expect(skeleton).toHaveStyle({
-        width: "100px",
-      });
-      // Check that custom styles are applied (may be in inline style)
-      const style = skeleton.getAttribute("style");
-      expect(style).toContain("red");
+      expect(skeleton.style.width).toBe("100px");
+      expect(skeleton.style.opacity).toBe("0.5");
       unmount();
     });
 

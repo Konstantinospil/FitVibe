@@ -88,11 +88,11 @@ describe("DropdownMenu", () => {
     expect(disabledItem).toBeTruthy();
 
     fireEvent.mouseEnter(enabledItem!);
-    expect(enabledItem!).toHaveStyle({ background: "var(--color-bg-secondary)" });
+    expect(enabledItem!.style.background).toBe("var(--color-bg-secondary)");
     fireEvent.mouseLeave(enabledItem!);
-    expect(enabledItem!).toHaveStyle({ background: "transparent" });
+    expect(enabledItem!.style.background).toBe("transparent");
 
     fireEvent.mouseEnter(disabledItem!);
-    expect(disabledItem!).toHaveStyle({ background: "transparent" });
+    expect(disabledItem!.style.background).toBe("transparent");
   });
 });
