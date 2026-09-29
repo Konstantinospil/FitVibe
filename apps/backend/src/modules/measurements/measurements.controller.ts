@@ -94,7 +94,7 @@ async function addValue(category: "bio" | "perf", req: Request, res: Response) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const attributeId = req.params.attributeId;
+  const attributeId = readRouteParam(req.params.attributeId, "attributeId");
   if (!attributeId) {
     res.status(400).json({ error: "Attribute ID is required" });
     return;
@@ -121,7 +121,7 @@ async function updateVisibility(category: "bio" | "perf", req: Request, res: Res
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const attributeId = req.params.attributeId;
+  const attributeId = readRouteParam(req.params.attributeId, "attributeId");
   if (!attributeId) {
     res.status(400).json({ error: "Attribute ID is required" });
     return;

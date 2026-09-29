@@ -24,7 +24,7 @@ export async function privilegedRoleChangeHandler(req: Request, res: Response): 
     throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
   }
 
-  const { userId } = req.params;
+  const userId = readRouteParam(req.params.userId, "userId");
   const body = req.body as {
     role?: "admin" | "superadmin";
     reason?: string;

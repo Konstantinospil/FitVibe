@@ -178,7 +178,7 @@ export async function getSessionHandler(req: Request, res: Response): Promise<vo
     return;
   }
 
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const result = await getOne(userId, id);
   res.json(result);
 }
@@ -219,7 +219,7 @@ export async function updateSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   if (!id) {
     res.status(400).json({ error: "Session ID is required" });
     return;
@@ -246,15 +246,15 @@ export async function cloneSessionHandler(req: Request, res: Response): Promise<
     req,
     res,
     userId,
-    { source_id: req.params.id, ...parsed.data },
+    { source_id: readRouteParam(req.params.id, "id"), ...parsed.data },
     async () => {
-      const body = await cloneOne(userId, req.params.id, parsed.data);
+      const body = await cloneOne(userId, readRouteParam(req.params.id, "id"), parsed.data);
       return { status: 201, body };
     },
   );
 
   if (!handled) {
-    const body = await cloneOne(userId, req.params.id, parsed.data);
+    const body = await cloneOne(userId, readRouteParam(req.params.id, "id"), parsed.data);
     res.status(201).json(body);
   }
 }
@@ -276,15 +276,15 @@ export async function applyRecurrenceHandler(req: Request, res: Response): Promi
     req,
     res,
     userId,
-    { source_id: req.params.id, ...parsed.data },
+    { source_id: readRouteParam(req.params.id, "id"), ...parsed.data },
     async () => {
-      const sessions = await applyRecurrence(userId, req.params.id, parsed.data);
+      const sessions = await applyRecurrence(userId, readRouteParam(req.params.id, "id"), parsed.data);
       return { status: 201, body: { sessions } };
     },
   );
 
   if (!handled) {
-    const sessions = await applyRecurrence(userId, req.params.id, parsed.data);
+    const sessions = await applyRecurrence(userId, readRouteParam(req.params.id, "id"), parsed.data);
     res.status(201).json({ sessions });
   }
 }
@@ -295,7 +295,7 @@ export async function deleteSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   await cancelOne(userId, id);
   res.status(204).send();
 }
@@ -306,7 +306,7 @@ export async function reopenSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   if (!id) {
     res.status(400).json({ error: "Session ID is required" });
     return;

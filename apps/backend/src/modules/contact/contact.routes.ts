@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { asyncHandler } from "../../utils/async-handler.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit, rateLimitByIPAndEmail } from "../common/rateLimiter.js";
@@ -19,7 +18,7 @@ export const contactRouter = Router();
 contactRouter.post(
   "/",
   rateLimitByIPAndEmail("contact_submit"), // 5 requests per hour per IP and per email
-  asyncHandler(submitContactHandler),
+  submitContactHandler,
 );
 
 // Admin endpoints - require authentication and admin role
@@ -28,7 +27,7 @@ contactRouter.get(
   requireAccessToken,
   requireRole("admin"),
   rateLimit("contact_list"),
-  asyncHandler(listContactMessagesHandler),
+  listContactMessagesHandler,
 );
 
 contactRouter.get(
@@ -36,7 +35,7 @@ contactRouter.get(
   requireAccessToken,
   requireRole("admin"),
   rateLimit("contact_get"),
-  asyncHandler(getContactMessageHandler),
+  getContactMessageHandler,
 );
 
 contactRouter.post(
@@ -44,7 +43,7 @@ contactRouter.post(
   requireAccessToken,
   requireRole("admin"),
   rateLimit("contact_mark_read"),
-  asyncHandler(markMessageAsReadHandler),
+  markMessageAsReadHandler,
 );
 
 contactRouter.post(
@@ -52,7 +51,7 @@ contactRouter.post(
   requireAccessToken,
   requireRole("admin"),
   rateLimit("contact_mark_responded"),
-  asyncHandler(markMessageAsRespondedHandler),
+  markMessageAsRespondedHandler,
 );
 
 contactRouter.post(
@@ -60,5 +59,5 @@ contactRouter.post(
   requireAccessToken,
   requireRole("admin"),
   rateLimit("contact_save_response"),
-  asyncHandler(saveMessageResponseHandler),
+  saveMessageResponseHandler,
 );

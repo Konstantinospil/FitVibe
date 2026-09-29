@@ -22,7 +22,7 @@ export async function getLegalVersionsHandler(_req: Request, res: Response): Pro
 }
 
 export async function getLegalDocumentHandler(req: Request, res: Response): Promise<void> {
-  const documentType = parseDocumentType(req.params.documentType);
+  const documentType = parseDocumentType(readRouteParam(req.params.documentType, "documentType"));
   const language = typeof req.query.language === "string" ? req.query.language : "en";
   res.json(await getCurrentLegalDocument(documentType, language));
 }
@@ -41,7 +41,7 @@ export async function publishLegalDocumentHandler(req: Request, res: Response): 
     throw new HttpError(401, "UNAUTHENTICATED", "UNAUTHENTICATED");
   }
   const body = req.body as Omit<PublishLegalDocumentInput, "documentType">;
-  const documentType = parseDocumentType(req.params.documentType);
+  const documentType = parseDocumentType(readRouteParam(req.params.documentType, "documentType"));
   const publication = await publishLegalDocument(
     {
       documentType,

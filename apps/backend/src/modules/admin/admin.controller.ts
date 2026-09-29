@@ -31,7 +31,7 @@ export async function listReportsHandler(req: Request, res: Response): Promise<v
  * POST /api/v1/admin/reports/:reportId/moderate
  */
 export async function moderateReportHandler(req: Request, res: Response): Promise<void> {
-  const { reportId } = req.params;
+  const reportId = readRouteParam(req.params.reportId, "reportId");
   const action = (req.body as { action?: string }).action;
 
   if (!req.user?.sub) {
@@ -91,7 +91,7 @@ export async function searchUsersHandler(req: Request, res: Response): Promise<v
  * POST /api/v1/admin/users/:userId/action
  */
 export async function userActionHandler(req: Request, res: Response): Promise<void> {
-  const { userId } = req.params;
+  const userId = readRouteParam(req.params.userId, "userId");
   const body = req.body as { action?: string; reason?: string };
   const action = body.action;
   const reason = body.reason;

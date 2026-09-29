@@ -128,7 +128,7 @@ export async function getBodyProgressPhotoHandler(req: Request, res: Response): 
     return;
   }
 
-  const photo = await getBodyProgressPhoto(userId, req.params.id);
+  const photo = await getBodyProgressPhoto(userId, readRouteParam(req.params.id, "id"));
   if (!photo) {
     res.status(404).send("UPLOAD_NOT_FOUND");
     return;
@@ -151,7 +151,7 @@ export async function deleteBodyProgressPhotoHandler(req: Request, res: Response
     return;
   }
 
-  const photo = await deleteBodyProgressPhoto(userId, req.params.id);
+  const photo = await deleteBodyProgressPhoto(userId, readRouteParam(req.params.id, "id"));
   if (!photo) {
     res.status(404).json({ error: "UPLOAD_NOT_FOUND" });
     return;
@@ -162,7 +162,7 @@ export async function deleteBodyProgressPhotoHandler(req: Request, res: Response
     actorUserId: userId,
     entityType: "body_progress",
     action: "photo_deleted",
-    entityId: req.params.id,
+    entityId: readRouteParam(req.params.id, "id"),
   });
 
   res.status(204).send();
