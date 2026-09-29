@@ -9,7 +9,7 @@ import {
   deleteUserPlan,
   getUserPlanStats,
 } from "./plans.service.js";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 
 /**
  * Helper to get authenticated user ID from request
@@ -66,7 +66,7 @@ export async function getPlanStatsHandler(req: Request, res: Response): Promise<
  */
 export async function getPlanHandler(req: Request, res: Response): Promise<void> {
   const userId = requireUser(req);
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
 
   if (!id) {
     throw new HttpError(400, "E.PLAN.INVALID_ID", "Plan ID is required");
@@ -111,7 +111,7 @@ const updatePlanSchema = z.object({
  */
 export async function updatePlanHandler(req: Request, res: Response): Promise<void> {
   const userId = requireUser(req);
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
 
   if (!id) {
     throw new HttpError(400, "E.PLAN.INVALID_ID", "Plan ID is required");
@@ -132,7 +132,7 @@ export async function updatePlanHandler(req: Request, res: Response): Promise<vo
  */
 export async function archivePlanHandler(req: Request, res: Response): Promise<void> {
   const userId = requireUser(req);
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
 
   if (!id) {
     throw new HttpError(400, "E.PLAN.INVALID_ID", "Plan ID is required");
@@ -148,7 +148,7 @@ export async function archivePlanHandler(req: Request, res: Response): Promise<v
  */
 export async function deletePlanHandler(req: Request, res: Response): Promise<void> {
   const userId = requireUser(req);
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
 
   if (!id) {
     throw new HttpError(400, "E.PLAN.INVALID_ID", "Plan ID is required");

@@ -172,10 +172,8 @@ describe("ErrorBoundary", () => {
     );
 
     const errorContainer = screen.getByText("Test error").closest("div");
-    expect(errorContainer).toHaveStyle({
-      padding: "2rem",
-      textAlign: "center",
-    });
+    expect((errorContainer as HTMLElement).style.padding).toBe("2rem");
+    expect((errorContainer as HTMLElement).style.textAlign).toBe("center");
   });
 
   it("should not call onError when no error occurs", () => {

@@ -4,7 +4,7 @@
 
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/async-handler.js";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import {
   submitContactMessage,
   getContactMessagesList,
@@ -82,7 +82,7 @@ export const listContactMessagesHandler = asyncHandler(
  */
 export const getContactMessageHandler = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
+    const id = readRouteParam(req.params.id, "id");
     const message = await getContactMessage(id);
 
     res.json({
@@ -97,7 +97,7 @@ export const getContactMessageHandler = asyncHandler(
  */
 export const markMessageAsReadHandler = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
+    const id = readRouteParam(req.params.id, "id");
     const userId = req.user?.sub;
     if (!userId) {
       throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
@@ -117,7 +117,7 @@ export const markMessageAsReadHandler = asyncHandler(
  */
 export const markMessageAsRespondedHandler = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
+    const id = readRouteParam(req.params.id, "id");
     const userId = req.user?.sub;
     if (!userId) {
       throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
@@ -141,7 +141,7 @@ const saveResponseSchema = z.object({
  */
 export const saveMessageResponseHandler = asyncHandler(
   async (req: Request, res: Response): Promise<void> => {
-    const { id } = req.params;
+    const id = readRouteParam(req.params.id, "id");
     const userId = req.user?.sub;
     if (!userId) {
       throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");

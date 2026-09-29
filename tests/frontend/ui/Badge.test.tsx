@@ -122,28 +122,22 @@ describe("Badge", () => {
     it("should apply sm size styles", () => {
       const { container } = render(<Badge size="sm">Small</Badge>);
       const badge = container.querySelector("span");
-      expect(badge).toHaveStyle({
-        padding: "0.25rem 0.5rem",
-        fontSize: "var(--font-size-xs)",
-      });
+      expect((badge as HTMLElement).style.padding).toBe("0.25rem 0.5rem");
+      expect((badge as HTMLElement).style.fontSize).toBe("var(--font-size-xs)");
     });
 
     it("should apply md size styles (default)", () => {
       const { container } = render(<Badge size="md">Medium</Badge>);
       const badge = container.querySelector("span");
-      expect(badge).toHaveStyle({
-        padding: "0.375rem 0.75rem",
-        fontSize: "var(--font-size-sm)",
-      });
+      expect((badge as HTMLElement).style.padding).toBe("0.375rem 0.75rem");
+      expect((badge as HTMLElement).style.fontSize).toBe("var(--font-size-sm)");
     });
 
     it("should apply lg size styles", () => {
       const { container } = render(<Badge size="lg">Large</Badge>);
       const badge = container.querySelector("span");
-      expect(badge).toHaveStyle({
-        padding: "0.5rem 1rem",
-        fontSize: "var(--font-size-md)",
-      });
+      expect((badge as HTMLElement).style.padding).toBe("0.5rem 1rem");
+      expect((badge as HTMLElement).style.fontSize).toBe("var(--font-size-md)");
     });
   });
 

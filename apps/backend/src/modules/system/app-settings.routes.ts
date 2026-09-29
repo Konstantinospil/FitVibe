@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../../utils/async-handler.js";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import {
@@ -77,7 +77,7 @@ appSettingsRouter.post(
     const result = await commitSettingsRevision({
       actorUserId: req.user.sub,
       actorSessionJti: req.user.sid,
-      revisionId: req.params.revisionId,
+      revisionId: readRouteParam(req.params.revisionId, "revisionId"),
       totpCode: body.totpCode,
       requestId: req.requestId ?? null,
     });

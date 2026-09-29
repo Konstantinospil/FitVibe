@@ -8,33 +8,33 @@ vi.mock("../../src/i18n/config", () => ({
   loadLanguageTranslations: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        "footer.terms": "Terms",
+        "footer.privacy": "Privacy",
+        "brand.logoAlt": "FitVibe",
+      };
+      return translations[key] || key;
+    },
+    i18n: {
+      language: "en",
+    },
+  }),
+}));
+
+vi.mock("../../src/utils/idleScheduler", () => ({
+  scheduleIdleTask: (cb: () => void) => {
+    cb();
+    return { cancel: vi.fn() };
+  },
+}));
+
 describe("AuthPageLayout", () => {
   afterEach(() => {
     cleanup();
   });
-
-  vi.mock("react-i18next", () => ({
-    useTranslation: () => ({
-      t: (key: string) => {
-        const translations: Record<string, string> = {
-          "footer.terms": "Terms",
-          "footer.privacy": "Privacy",
-          "brand.logoAlt": "FitVibe",
-        };
-        return translations[key] || key;
-      },
-      i18n: {
-        language: "en",
-      },
-    }),
-  }));
-
-  vi.mock("../../src/utils/idleScheduler", () => ({
-    scheduleIdleTask: (cb: () => void) => {
-      cb();
-      return { cancel: vi.fn() };
-    },
-  }));
 
   it("should render with title and description", () => {
     render(

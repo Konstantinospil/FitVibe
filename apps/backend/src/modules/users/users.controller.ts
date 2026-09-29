@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import {
   getMe,
@@ -329,7 +330,7 @@ export async function updatePrivacy(req: Request, res: Response): Promise<void> 
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const user = await getMe(id);
   if (!user) {
     res.status(404).json({ error: "User not found" });
@@ -517,7 +518,7 @@ export async function removeContactHandler(req: Request, res: Response): Promise
 
 export async function adminChangeStatus(req: Request, res: Response): Promise<void> {
   const actorId = req.user?.sub ?? null;
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const parsed = statusSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -543,7 +544,13 @@ export async function adminChangeStatus(req: Request, res: Response): Promise<vo
 }
 
 export async function getMetrics(req: Request, res: Response): Promise<void> {
-  const targetUserId = req.params.userId || req.user?.sub;
+  const requestedUserId = req.params.userId;
+  if (Array.isArray(requestedUserId)) {
+    res.status(400).json({ error: "User ID must be a single value" });
+    return;
+  }
+
+  const targetUserId = requestedUserId || req.user?.sub;
   const requestingUserId = req.user?.sub;
   const requestingUserRole = req.user?.role;
 

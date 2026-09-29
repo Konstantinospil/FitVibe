@@ -39,6 +39,13 @@ export default defineConfig(() => {
         // Explicitly resolve testing libraries for setup files in tests/frontend/
         ...(isVitest
           ? {
+              "react/jsx-dev-runtime": pathResolve(
+                root,
+                "node_modules/react/jsx-dev-runtime.js",
+              ),
+              "react/jsx-runtime": pathResolve(root, "node_modules/react/jsx-runtime.js"),
+              "react-dom": pathResolve(root, "node_modules/react-dom"),
+              react: pathResolve(root, "node_modules/react"),
               "@testing-library/jest-dom": pathResolve(
                 root,
                 "node_modules/@testing-library/jest-dom",

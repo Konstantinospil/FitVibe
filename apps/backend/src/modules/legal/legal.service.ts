@@ -37,6 +37,27 @@ const ALLOWED_ACTIONS: Record<LegalDocumentType, Set<LegalUserAction>> = {
   cookie: new Set(["none", "renew_consent"]),
 };
 
+type SupportedLegalLanguage = "en" | "de" | "fr" | "es" | "el";
+
+const SUPPORTED_LEGAL_LANGUAGES: readonly SupportedLegalLanguage[] = ["en", "de", "fr", "es", "el"];
+
+function toSupportedLegalLanguage(language: string): SupportedLegalLanguage | null {
+  switch (language) {
+    case "en":
+      return "en";
+    case "de":
+      return "de";
+    case "fr":
+      return "fr";
+    case "es":
+      return "es";
+    case "el":
+      return "el";
+    default:
+      return null;
+  }
+}
+
 function assertPublicationPolicy(
   documentType: LegalDocumentType,
   changeClass: Exclude<LegalChangeClass, "legacy">,
@@ -91,7 +112,7 @@ function setNestedValue(
 
 function loadAuthoringDocument(
   documentType: LegalDocumentType,
-  language: string,
+  language: SupportedLegalLanguage,
 ): Record<string, unknown> | null {
   const candidates = [
     path.resolve(process.cwd(), "legal-authoring-locales", language, `${documentType}.json`),
@@ -141,7 +162,18 @@ function buildSnapshots(
   documentType: LegalDocumentType,
   rows: Array<{ language: string; key_path: string; value: string }>,
 ): Map<string, Record<string, unknown>> {
-  const languages = new Set(["en", "de", "es", "fr", "el", ...rows.map((row) => row.language)]);
+  const normalizedRows = rows.map((row) => {
+    const language = toSupportedLegalLanguage(row.language);
+    if (!language) {
+      throw new HttpError(
+        409,
+        "LEGAL_LANGUAGE_UNSUPPORTED",
+        "Cannot publish legal content for an unsupported language",
+      );
+    }
+    return { ...row, language };
+  });
+  const languages = new Set<SupportedLegalLanguage>(SUPPORTED_LEGAL_LANGUAGES);
   const snapshots = new Map<string, Record<string, unknown>>();
 
   for (const language of languages) {
@@ -151,7 +183,7 @@ function buildSnapshots(
     }
   }
 
-  for (const row of rows) {
+  for (const row of normalizedRows) {
     const content = snapshots.get(row.language) ?? {};
     const prefix = `${documentType}.`;
     const relativePath = row.key_path.startsWith(prefix)

@@ -64,28 +64,22 @@ describe("Textarea", () => {
     it("should apply sm size styles", () => {
       const { container } = render(<Textarea size="sm" />);
       const textarea = container.querySelector("textarea");
-      expect(textarea).toHaveStyle({
-        padding: "var(--space-xs) var(--space-sm)",
-        fontSize: "var(--font-size-sm)",
-      });
+      expect((textarea as HTMLTextAreaElement).style.padding).toBe("var(--space-xs) var(--space-sm)");
+      expect((textarea as HTMLTextAreaElement).style.fontSize).toBe("var(--font-size-sm)");
     });
 
     it("should apply md size styles (default)", () => {
       const { container } = render(<Textarea size="md" />);
       const textarea = container.querySelector("textarea");
-      expect(textarea).toHaveStyle({
-        padding: "var(--space-sm) var(--space-md)",
-        fontSize: "var(--font-size-md)",
-      });
+      expect((textarea as HTMLTextAreaElement).style.padding).toBe("var(--space-sm) var(--space-md)");
+      expect((textarea as HTMLTextAreaElement).style.fontSize).toBe("var(--font-size-md)");
     });
 
     it("should apply lg size styles", () => {
       const { container } = render(<Textarea size="lg" />);
       const textarea = container.querySelector("textarea");
-      expect(textarea).toHaveStyle({
-        padding: "var(--space-md) var(--space-lg)",
-        fontSize: "var(--font-size-lg)",
-      });
+      expect((textarea as HTMLTextAreaElement).style.padding).toBe("var(--space-md) var(--space-lg)");
+      expect((textarea as HTMLTextAreaElement).style.fontSize).toBe("var(--font-size-lg)");
     });
   });
 
@@ -229,9 +223,7 @@ describe("Textarea", () => {
     it("should merge custom style with default styles", () => {
       const { container } = render(<Textarea style={{ borderColor: "red" }} />);
       const textarea = container.querySelector("textarea");
-      expect(textarea).toHaveStyle({
-        borderColor: "red",
-      });
+      expect((textarea as HTMLTextAreaElement).style.borderColor).toBe("red");
     });
   });
 

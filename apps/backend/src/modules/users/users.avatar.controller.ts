@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import sharp from "sharp";
 import { insertAudit } from "../common/audit.util.js";
 import { logger } from "../../config/logger.js";
@@ -126,7 +127,7 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
 }
 
 export async function getAvatarHandler(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const metadata = await getUserAvatarMetadata(id);
   if (!metadata) {
     res.status(404).send("UPLOAD_NOT_FOUND");

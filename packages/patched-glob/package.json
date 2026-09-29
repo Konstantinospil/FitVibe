@@ -25,7 +25,7 @@
     "dist"
   ],
   "dependencies": {
-    "foreground-child": "^3.1.0",
+    "foreground-child": "^4.0.3",
     "minimatch": "^10.2.6",
     "jackspeak": "^4.2.3",
     "minipass": "^7.1.3",

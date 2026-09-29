@@ -7,9 +7,26 @@ import {
 import i18n from "../../src/i18n/config";
 
 describe("i18n config", () => {
-  const originalWindow = global.window;
-  const originalLocalStorage = global.localStorage;
-  const originalNavigator = global.navigator;
+  const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  const originalWindowNavigatorDescriptor = Object.getOwnPropertyDescriptor(window, "navigator");
+  const originalNavigatorLanguageDescriptor = Object.getOwnPropertyDescriptor(
+    window.navigator,
+    "language",
+  );
+
+  const restoreProperty = (
+    target: object,
+    key: PropertyKey,
+    descriptor: PropertyDescriptor | undefined,
+  ) => {
+    if (descriptor) {
+      Object.defineProperty(target, key, descriptor);
+    } else {
+      Reflect.deleteProperty(target, key);
+    }
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -17,9 +34,15 @@ describe("i18n config", () => {
   });
 
   afterEach(() => {
-    global.window = originalWindow;
-    global.localStorage = originalLocalStorage;
-    global.navigator = originalNavigator;
+    restoreProperty(globalThis, "window", originalWindowDescriptor);
+    restoreProperty(globalThis, "localStorage", originalLocalStorageDescriptor);
+    restoreProperty(globalThis, "navigator", originalNavigatorDescriptor);
+
+    if (typeof window !== "undefined") {
+      restoreProperty(window, "navigator", originalWindowNavigatorDescriptor);
+      restoreProperty(window.navigator, "language", originalNavigatorLanguageDescriptor);
+      window.localStorage.clear();
+    }
   });
 
   it("ensurePrivateTranslationsLoaded resolves successfully", async () => {
@@ -363,15 +386,18 @@ describe("i18n config", () => {
       // This branch is already covered, but we verify it doesn't break
       // when window is undefined
 
-      const originalWindow = global.window;
-      // @ts-expect-error - simulating SSR
-      delete global.window;
+      const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
 
       // The event listener setup should not break
       // (it's wrapped in typeof window !== "undefined" check)
       expect(i18n).toBeDefined();
 
-      global.window = originalWindow;
+      restoreProperty(globalThis, "window", windowDescriptor);
     });
   });
 
@@ -492,15 +518,18 @@ describe("i18n config", () => {
       // This is tested indirectly since detectLanguage runs at module init
       // We verify SSR safety by checking the module doesn't break
 
-      const originalWindow = global.window;
-      // @ts-expect-error - simulating SSR
-      delete global.window;
+      const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
 
       // Module should still work (uses FALLBACK_LANGUAGE)
       expect(i18n).toBeDefined();
       expect(i18n.language).toBeDefined();
 
-      global.window = originalWindow;
+      restoreProperty(globalThis, "window", windowDescriptor);
     });
   });
 

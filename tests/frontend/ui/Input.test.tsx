@@ -76,28 +76,22 @@ describe("Input", () => {
     it("should apply sm size styles", () => {
       const { container } = render(<Input size="sm" />);
       const input = container.querySelector("input");
-      expect(input).toHaveStyle({
-        padding: "var(--space-xs) var(--space-sm)",
-        fontSize: "var(--font-size-sm)",
-      });
+      expect((input as HTMLInputElement).style.padding).toBe("var(--space-xs) var(--space-sm)");
+      expect((input as HTMLInputElement).style.fontSize).toBe("var(--font-size-sm)");
     });
 
     it("should apply md size styles (default)", () => {
       const { container } = render(<Input size="md" />);
       const input = container.querySelector("input");
-      expect(input).toHaveStyle({
-        padding: "var(--space-sm) var(--space-md)",
-        fontSize: "var(--font-size-md)",
-      });
+      expect((input as HTMLInputElement).style.padding).toBe("var(--space-sm) var(--space-md)");
+      expect((input as HTMLInputElement).style.fontSize).toBe("var(--font-size-md)");
     });
 
     it("should apply lg size styles", () => {
       const { container } = render(<Input size="lg" />);
       const input = container.querySelector("input");
-      expect(input).toHaveStyle({
-        padding: "var(--space-md) var(--space-lg)",
-        fontSize: "var(--font-size-lg)",
-      });
+      expect((input as HTMLInputElement).style.padding).toBe("var(--space-md) var(--space-lg)");
+      expect((input as HTMLInputElement).style.fontSize).toBe("var(--font-size-lg)");
     });
   });
 
@@ -274,9 +268,7 @@ describe("Input", () => {
     it("should merge custom style with default styles", () => {
       const { container } = render(<Input style={{ borderColor: "red" }} />);
       const input = container.querySelector("input");
-      expect(input).toHaveStyle({
-        borderColor: "red",
-      });
+      expect((input as HTMLInputElement).style.borderColor).toBe("red");
     });
   });
 

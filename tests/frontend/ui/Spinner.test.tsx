@@ -36,31 +36,25 @@ describe("Spinner", () => {
     it("should apply sm size styles", () => {
       const { container } = render(<Spinner size="sm" />);
       const spinner = container.querySelector('[role="status"]');
-      expect(spinner).toHaveStyle({
-        width: "1rem",
-        height: "1rem",
-        borderWidth: "2px",
-      });
+      expect((spinner as HTMLElement).style.width).toBe("1rem");
+      expect((spinner as HTMLElement).style.height).toBe("1rem");
+      expect((spinner as HTMLElement).style.borderWidth).toBe("2px");
     });
 
     it("should apply md size styles (default)", () => {
       const { container } = render(<Spinner size="md" />);
       const spinner = container.querySelector('[role="status"]');
-      expect(spinner).toHaveStyle({
-        width: "1.5rem",
-        height: "1.5rem",
-        borderWidth: "3px",
-      });
+      expect((spinner as HTMLElement).style.width).toBe("1.5rem");
+      expect((spinner as HTMLElement).style.height).toBe("1.5rem");
+      expect((spinner as HTMLElement).style.borderWidth).toBe("3px");
     });
 
     it("should apply lg size styles", () => {
       const { container } = render(<Spinner size="lg" />);
       const spinner = container.querySelector('[role="status"]');
-      expect(spinner).toHaveStyle({
-        width: "2rem",
-        height: "2rem",
-        borderWidth: "4px",
-      });
+      expect((spinner as HTMLElement).style.width).toBe("2rem");
+      expect((spinner as HTMLElement).style.height).toBe("2rem");
+      expect((spinner as HTMLElement).style.borderWidth).toBe("4px");
     });
   });
 
@@ -80,10 +74,8 @@ describe("Spinner", () => {
     it("should merge custom style with default styles", () => {
       const { container } = render(<Spinner style={{ width: "3rem" }} />);
       const spinner = container.querySelector('[role="status"]');
-      expect(spinner).toHaveStyle({
-        width: "3rem",
-        display: "inline-block",
-      });
+      expect((spinner as HTMLElement).style.width).toBe("3rem");
+      expect((spinner as HTMLElement).style.display).toBe("inline-block");
     });
   });
 

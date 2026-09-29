@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import { getAll, getOne, createOne, updateOne, archiveOne } from "./exercise.service.js";
 import type { ExerciseQuery } from "./exercise.types.js";
@@ -127,7 +128,7 @@ export async function getExerciseHandler(req: Request, res: Response): Promise<v
   }
   const userId = authUser.sub;
   const isAdmin = authUser.role === "admin";
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const data = await getOne(id, userId, isAdmin);
   res.json(data);
 }
@@ -168,7 +169,7 @@ export async function updateExerciseHandler(req: Request, res: Response): Promis
   }
   const userId = authUser.sub;
   const isAdmin = authUser.role === "admin";
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
 
   const handled = await handleIdempotentRequest(req, res, userId, parsed.data, async () => {
     const body = await updateOne(id, userId, parsed.data, isAdmin);
@@ -188,7 +189,7 @@ export async function deleteExerciseHandler(req: Request, res: Response): Promis
   }
   const userId = authUser.sub;
   const isAdmin = authUser.role === "admin";
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
 
   const handled = await handleIdempotentRequest(req, res, userId, { id }, async () => {
     await archiveOne(id, userId, isAdmin);
