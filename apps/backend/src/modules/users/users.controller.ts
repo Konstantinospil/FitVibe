@@ -544,7 +544,13 @@ export async function adminChangeStatus(req: Request, res: Response): Promise<vo
 }
 
 export async function getMetrics(req: Request, res: Response): Promise<void> {
-  const targetUserId = readRouteParam(req.params.userId, "userId") || req.user?.sub;
+  const requestedUserId = req.params.userId;
+  if (Array.isArray(requestedUserId)) {
+    res.status(400).json({ error: "User ID must be a single value" });
+    return;
+  }
+
+  const targetUserId = requestedUserId || req.user?.sub;
   const requestingUserId = req.user?.sub;
   const requestingUserRole = req.user?.role;
 
