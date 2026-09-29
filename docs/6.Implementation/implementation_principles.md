@@ -623,6 +623,8 @@ This document should be updated when:
 
 The repository enforces the #302 authority decisions through the required **Architecture & Hardcoding** CI status.
 
+The zero-tolerance scope is the set of backend/frontend authority surfaces explicitly classified and remediated by #302–#306. This is a governed-surface list, not a grandfather baseline: every listed surface must remain at zero violations, and newly remediated surfaces must be added to the checker when they become governed.
+
 The gate has three independent diagnostics and deliberately has **no grandfather/baseline file**:
 
 1. **Backend policy authority** — business modules must not bypass validated configuration with direct `process.env`, direct rate-limiter construction is centralized, and security/gamification-sensitive services may not reintroduce policy literals that belong to governed, deployment, coded-invariant, or persisted authorities.
