@@ -31,13 +31,13 @@ const defaultLabelFormatter = (label: string) => label;
 const defaultValueFormatter = (value: number) => value.toLocaleString();
 
 const tooltipContainerStyle: React.CSSProperties = {
-  background: "rgba(15, 23, 42, 0.92)",
-  borderRadius: "12px",
-  padding: "0.75rem 1rem",
-  border: "1px solid rgba(148, 163, 184, 0.25)",
+  background: "var(--chart-tooltip-bg)",
+  borderRadius: "var(--radius-md)",
+  padding: "var(--space-sm) var(--space-md)",
+  border: "1px solid var(--chart-tooltip-border)",
   color: "var(--color-text-primary)",
-  fontSize: "0.85rem",
-  boxShadow: "0 18px 30px -24px rgba(15, 23, 42, 0.8)",
+  fontSize: "var(--font-size-sm)",
+  boxShadow: "var(--chart-tooltip-shadow)",
 };
 
 type TooltipProps = {
@@ -85,7 +85,7 @@ export const Chart: React.FC<ChartProps> = ({
         {type === "bar" ? (
           <BarChart data={data}>
             <CartesianGrid
-              stroke="rgba(148, 163, 184, 0.15)"
+              stroke="var(--chart-grid-strong)"
               vertical={false}
               strokeDasharray="3 4"
             />
@@ -93,15 +93,15 @@ export const Chart: React.FC<ChartProps> = ({
               dataKey="label"
               axisLine={false}
               tickLine={false}
-              style={{ fontSize: "0.75rem", fill: "rgba(226, 232, 240, 0.65)" }}
+              style={{ fontSize: "0.75rem", fill: "var(--chart-axis-text)" }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              style={{ fontSize: "0.75rem", fill: "rgba(226, 232, 240, 0.65)" }}
+              style={{ fontSize: "0.75rem", fill: "var(--chart-axis-text)" }}
             />
             <Tooltip
-              cursor={{ fill: "rgba(52, 211, 153, 0.1)" }}
+              cursor={{ fill: "var(--chart-cursor-fill)" }}
               content={
                 <ChartTooltip labelFormatter={labelFormatter} valueFormatter={valueFormatter} />
               }
@@ -117,7 +117,7 @@ export const Chart: React.FC<ChartProps> = ({
               </linearGradient>
             </defs>
             <CartesianGrid
-              stroke="rgba(148, 163, 184, 0.12)"
+              stroke="var(--chart-grid-soft)"
               vertical={false}
               strokeDasharray="3 6"
             />
@@ -125,16 +125,16 @@ export const Chart: React.FC<ChartProps> = ({
               dataKey="label"
               axisLine={false}
               tickLine={false}
-              style={{ fontSize: "0.75rem", fill: "rgba(226, 232, 240, 0.65)" }}
+              style={{ fontSize: "0.75rem", fill: "var(--chart-axis-text)" }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               width={48}
-              style={{ fontSize: "0.75rem", fill: "rgba(226, 232, 240, 0.65)" }}
+              style={{ fontSize: "0.75rem", fill: "var(--chart-axis-text)" }}
             />
             <Tooltip
-              cursor={{ stroke: "rgba(52, 211, 153, 0.35)", strokeWidth: 1.5 }}
+              cursor={{ stroke: "var(--chart-cursor-stroke)", strokeWidth: 1.5 }}
               content={
                 <ChartTooltip labelFormatter={labelFormatter} valueFormatter={valueFormatter} />
               }
