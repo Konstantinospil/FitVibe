@@ -15,6 +15,7 @@ import {
   type CreateSessionRequest,
 } from "../services/api";
 import { logger } from "../utils/logger";
+import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 interface ExerciseInSession {
   tempId: string;
@@ -235,7 +236,7 @@ const Planner: React.FC = () => {
                 >
                   Title (optional)
                 </label>
-                <input
+                <InputControl
                   id="session-title"
                   type="text"
                   value={sessionTitle}
@@ -259,7 +260,7 @@ const Planner: React.FC = () => {
                     />
                     Planned Date
                   </label>
-                  <input
+                  <InputControl
                     id="planned-date"
                     name="planned-date"
                     type="date"
@@ -278,7 +279,7 @@ const Planner: React.FC = () => {
                   >
                     Time
                   </label>
-                  <input
+                  <InputControl
                     id="planned-time"
                     type="time"
                     value={plannedTime}
@@ -296,7 +297,7 @@ const Planner: React.FC = () => {
                 >
                   Notes (optional)
                 </label>
-                <textarea
+                <TextareaControl
                   id="session-notes"
                   value={sessionNotes}
                   onChange={(e) => setSessionNotes(e.target.value)}
@@ -318,7 +319,7 @@ const Planner: React.FC = () => {
                 >
                   {t("planner.visibility") || "Visibility"}
                 </label>
-                <select
+                <SelectControl
                   id="session-visibility"
                   value={sessionVisibility}
                   onChange={(e) => setSessionVisibility(e.target.value as SessionVisibility)}
@@ -338,7 +339,7 @@ const Planner: React.FC = () => {
                   <option value="public">
                     {t("planner.visibilityPublic") || "Public (visible in feed)"}
                   </option>
-                </select>
+                </SelectControl>
                 <p className="mt-05 text-085 text-muted">
                   {t("planner.visibilityHelp") ||
                     "Private sessions are only visible to you. Link sessions can be shared via link. Public sessions appear in the community feed."}
@@ -357,8 +358,8 @@ const Planner: React.FC = () => {
             <div className="relative">
               <div className="relative">
                 <Search size={20} className="search-icon" />
-                <input
-                  type="text"
+                <InputControl
+                  type="search"
                   value={exerciseSearch}
                   onChange={(e) => setExerciseSearch(e.target.value)}
                   onFocus={() => exerciseResults.length > 0 && setShowSearchResults(true)}
@@ -394,19 +395,21 @@ const Planner: React.FC = () => {
                   }}
                 >
                   {exerciseResults.map((exercise) => (
-                    <button
+                    <Button
                       key={exercise.id}
+                      type="button"
+                      variant="ghost"
+                      fullWidth
                       onClick={() => addExercise(exercise)}
                       style={{
-                        width: "100%",
                         padding: "1rem",
-                        border: "none",
+                        borderRadius: 0,
                         background: "transparent",
                         color: "var(--color-text-primary)",
                         textAlign: "left",
-                        cursor: "pointer",
+                        justifyContent: "flex-start",
                         borderBottom: "1px solid var(--color-border)",
-                        transition: "background 150ms ease",
+                        boxShadow: "none",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = "var(--surface-accent-subtle)";
@@ -428,7 +431,7 @@ const Planner: React.FC = () => {
                           {exercise.equipment && ` • ${exercise.equipment}`}
                         </div>
                       )}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -476,42 +479,44 @@ const Planner: React.FC = () => {
                       }}
                     >
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => moveExercise(ex.tempId, "up")}
                           disabled={index === 0}
                           aria-label="Move up"
                           style={{
-                            background: "transparent",
-                            border: "none",
                             color:
                               index === 0
                                 ? "var(--color-text-muted)"
                                 : "var(--color-text-secondary)",
-                            cursor: index === 0 ? "not-allowed" : "pointer",
                             padding: "0.25rem",
                             lineHeight: 0,
+                            boxShadow: "none",
                           }}
                         >
                           ▲
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => moveExercise(ex.tempId, "down")}
                           disabled={index === exercises.length - 1}
                           aria-label="Move down"
                           style={{
-                            background: "transparent",
-                            border: "none",
                             color:
                               index === exercises.length - 1
                                 ? "var(--color-text-muted)"
                                 : "var(--color-text-secondary)",
-                            cursor: index === exercises.length - 1 ? "not-allowed" : "pointer",
                             padding: "0.25rem",
                             lineHeight: 0,
+                            boxShadow: "none",
                           }}
                         >
                           ▼
-                        </button>
+                        </Button>
                       </div>
 
                       <div style={{ flex: 1 }}>
@@ -531,21 +536,21 @@ const Planner: React.FC = () => {
                         )}
                       </div>
 
-                      <button
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => removeExercise(ex.tempId)}
                         aria-label="Remove exercise"
                         style={{
-                          background: "transparent",
                           border: "1px solid var(--color-border)",
-                          borderRadius: "8px",
                           padding: "0.5rem",
                           color: "var(--color-danger)",
-                          cursor: "pointer",
                           lineHeight: 0,
                         }}
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Exercise Parameters */}
@@ -568,7 +573,7 @@ const Planner: React.FC = () => {
                         >
                           Sets
                         </label>
-                        <input
+                        <InputControl
                           id={`${ex.tempId}-sets`}
                           type="number"
                           min="1"
@@ -599,7 +604,7 @@ const Planner: React.FC = () => {
                         >
                           Reps
                         </label>
-                        <input
+                        <InputControl
                           id={`${ex.tempId}-reps`}
                           type="number"
                           min="1"
@@ -631,7 +636,7 @@ const Planner: React.FC = () => {
                         >
                           Weight (kg)
                         </label>
-                        <input
+                        <InputControl
                           id={`${ex.tempId}-weight`}
                           type="number"
                           step="0.5"
@@ -666,7 +671,7 @@ const Planner: React.FC = () => {
                         >
                           RPE (1-10)
                         </label>
-                        <input
+                        <InputControl
                           id={`${ex.tempId}-rpe`}
                           type="number"
                           min="1"
@@ -700,7 +705,7 @@ const Planner: React.FC = () => {
                         >
                           Rest (sec)
                         </label>
-                        <input
+                        <InputControl
                           id={`${ex.tempId}-rest`}
                           type="number"
                           min="0"
@@ -735,7 +740,7 @@ const Planner: React.FC = () => {
                       >
                         Notes (optional)
                       </label>
-                      <input
+                      <InputControl
                         id={`${ex.tempId}-notes`}
                         type="text"
                         value={ex.notes}
