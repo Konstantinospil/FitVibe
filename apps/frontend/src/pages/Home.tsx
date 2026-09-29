@@ -477,7 +477,8 @@ const Home: React.FC = () => {
                       style={{
                         width: "64px",
                         height: "64px",
-                        filter: vibe.iconTone === "light" ? "brightness(0) invert(1)" : "brightness(0)",
+                        filter:
+                          vibe.iconTone === "light" ? "brightness(0) invert(1)" : "brightness(0)",
                       }}
                     />
                   </button>
