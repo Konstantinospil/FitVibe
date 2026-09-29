@@ -446,7 +446,7 @@ const AuditLogsPage: React.FC = () => {
                 border: `1px solid ${colors.border}`,
                 borderRadius: "6px",
                 padding: "0.75rem",
-                boxShadow: "0 12px 24px rgba(0, 0, 0, 0.18)",
+                boxShadow: "var(--shadow-popover)",
               }}
             >
               <div
@@ -906,7 +906,7 @@ const AuditLogsPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.8)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

@@ -779,7 +779,7 @@ const UsersPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.8)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

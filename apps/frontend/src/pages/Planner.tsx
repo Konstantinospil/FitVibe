@@ -409,7 +409,7 @@ const Planner: React.FC = () => {
                         transition: "background 150ms ease",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(52, 211, 153, 0.08)";
+                        e.currentTarget.style.background = "var(--surface-accent-subtle)";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = "transparent";
@@ -461,9 +461,9 @@ const Planner: React.FC = () => {
                     key={ex.tempId}
                     style={{
                       padding: "1.25rem",
-                      background: "rgba(15, 23, 42, 0.4)",
+                      background: "var(--surface-planner-item)",
                       borderRadius: "14px",
-                      border: "1px solid rgba(148, 163, 184, 0.18)",
+                      border: "1px solid var(--border-planner-item)",
                     }}
                   >
                     {/* Exercise Header */}
@@ -765,8 +765,8 @@ const Planner: React.FC = () => {
               <div
                 style={{
                   padding: "1rem",
-                  background: "rgba(239, 68, 68, 0.1)",
-                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  background: "var(--surface-danger-subtle)",
+                  border: "1px solid var(--border-danger-subtle)",
                   borderRadius: "12px",
                   color: "var(--color-danger)",
                   marginBottom: "1rem",

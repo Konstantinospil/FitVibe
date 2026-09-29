@@ -217,6 +217,18 @@
   /* Vibe contrast semantics */
   --vibe-on-light: #0b0c10;
   --vibe-on-dark: #ffffff;
+  --vibe-fallback: #cccccc;
+
+  /* Feature-surface semantics */
+  --surface-accent-subtle: rgba(52, 211, 153, 0.08);
+  --border-accent-subtle: rgba(52, 211, 153, 0.3);
+  --control-disabled-bg: rgba(0, 0, 0, 0.2);
+  --color-accent-on: #0f172a;
+  --surface-planner-item: rgba(15, 23, 42, 0.4);
+  --border-planner-item: rgba(148, 163, 184, 0.18);
+  --surface-danger-subtle: rgba(239, 68, 68, 0.1);
+  --border-danger-subtle: rgba(239, 68, 68, 0.3);
+  --modal-backdrop: rgba(0, 0, 0, 0.85);
 
   /* Apply base styles */
   font-family: var(--font-family-base);

@@ -529,10 +529,10 @@ const Logger: React.FC = () => {
                           gap: "0.75rem",
                           padding: "0.75rem",
                           background: set.completed
-                            ? "rgba(52, 211, 153, 0.08)"
+                            ? "var(--surface-accent-subtle)"
                             : "var(--color-surface-muted)",
                           borderRadius: "12px",
-                          border: `1px solid ${set.completed ? "rgba(52, 211, 153, 0.3)" : "var(--color-border)"}`,
+                          border: `1px solid ${set.completed ? "var(--border-accent-subtle)" : "var(--color-border)"}`,
                           alignItems: "center",
                         }}
                       >
@@ -555,7 +555,7 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: "1px solid var(--color-border)",
                             background: set.completed
-                              ? "rgba(0, 0, 0, 0.2)"
+                              ? "var(--control-disabled-bg)"
                               : "var(--color-surface)",
                             color: "var(--color-text-primary)",
                             textAlign: "center",
@@ -580,7 +580,7 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: "1px solid var(--color-border)",
                             background: set.completed
-                              ? "rgba(0, 0, 0, 0.2)"
+                              ? "var(--control-disabled-bg)"
                               : "var(--color-surface)",
                             color: "var(--color-text-primary)",
                             textAlign: "center",
@@ -606,7 +606,7 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: "1px solid var(--color-border)",
                             background: set.completed
-                              ? "rgba(0, 0, 0, 0.2)"
+                              ? "var(--control-disabled-bg)"
                               : "var(--color-surface)",
                             color: "var(--color-text-primary)",
                             textAlign: "center",
@@ -622,7 +622,7 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: set.completed ? "none" : "2px solid var(--color-border)",
                             background: set.completed ? "var(--color-accent)" : "transparent",
-                            color: set.completed ? "#0f172a" : "var(--color-text-secondary)",
+                            color: set.completed ? "var(--color-accent-on)" : "var(--color-text-secondary)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",

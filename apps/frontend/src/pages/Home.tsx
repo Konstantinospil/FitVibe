@@ -22,6 +22,7 @@ type Vibe = {
   colorText: string; // Text/icon color for contrast
   colorBorder: string; // Border color
   icon: string; // SVG icon path
+  iconTone: "dark" | "light";
 };
 
 type Period = "day" | "week" | "month" | "quarter" | "semester" | "year";
@@ -40,36 +41,42 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-strength)",
     colorText: "var(--vibe-on-light)",
     colorBorder: "var(--vibe-strength)",
+    iconTone: "dark",
   },
   {
     key: "agility",
     colorBg: "var(--vibe-agility)",
     colorText: "var(--vibe-on-light)",
     colorBorder: "var(--vibe-agility)",
+    iconTone: "dark",
   },
   {
     key: "endurance",
     colorBg: "var(--vibe-endurance)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-water-highlight)",
+    iconTone: "light",
   },
   {
     key: "explosivity",
     colorBg: "var(--vibe-explosivity)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-fire-highlight)",
+    iconTone: "light",
   },
   {
     key: "intelligence",
     colorBg: "var(--vibe-intelligence)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-water-highlight)",
+    iconTone: "light",
   },
   {
     key: "regeneration",
     colorBg: "var(--vibe-regeneration)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-earth-highlight)",
+    iconTone: "light",
   },
 ];
 
@@ -471,7 +478,7 @@ const Home: React.FC = () => {
                         width: "64px",
                         height: "64px",
                         filter:
-                          vibe.colorText === "#FFFFFF"
+                          vibe.iconTone === "light"
                             ? "brightness(0) invert(1)"
                             : "brightness(0)",
                       }}
@@ -592,7 +599,7 @@ const Home: React.FC = () => {
               </div>
             ) : (
               exerciseHistory.map((exercise) => {
-                const vibeColor = vibes.find((v) => v.key === exercise.vibe)?.colorBg || "#ccc";
+                const vibeColor = vibes.find((v) => v.key === exercise.vibe)?.colorBg || "var(--vibe-fallback)";
                 return (
                   <div
                     key={exercise.id}
@@ -651,7 +658,7 @@ const Home: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.85)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

@@ -217,6 +217,8 @@
   --card-header-divider-color: var(--color-border-strong);
   --card-footer-divider-color: var(--color-border-strong);
   --button-shadow: var(--shadow-e1);
+  --modal-backdrop: rgba(0, 0, 0, 0.8);
+  --shadow-popover: 0 12px 24px rgba(0, 0, 0, 0.18);
 
   /* Apply base styles */
   font-family: var(--font-family-base);
