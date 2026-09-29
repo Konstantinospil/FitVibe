@@ -764,6 +764,9 @@ importers:
 
   packages/ui:
     dependencies:
+      preact:
+        specifier: 10.28.2
+        version: 10.28.2
       react:
         specifier: ^19.2.8
         version: 19.2.8
