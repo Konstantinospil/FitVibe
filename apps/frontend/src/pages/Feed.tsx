@@ -7,6 +7,7 @@ import { getFeed, likeFeedItem, unlikeFeedItem, cloneSessionFromFeed } from "../
 import type { VisibilityLevel } from "../components/ui";
 import { useToast } from "../contexts/ToastContext";
 import { Search, Filter } from "lucide-react";
+import { InputControl, SelectControl } from "@fitvibe/ui";
 
 const Feed: React.FC = () => {
   const { t } = useTranslation();
@@ -137,8 +138,8 @@ const Feed: React.FC = () => {
         <div className="flex flex--align-center flex--gap-md flex--wrap">
           <div className="flex flex--align-center flex--gap-sm" style={{ flex: "1 1 300px" }}>
             <Search size={20} className="text-muted" />
-            <input
-              type="text"
+            <InputControl
+              type="search"
               placeholder={t("feed.searchPlaceholder") || "Search sessions, exercises, users..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -149,7 +150,7 @@ const Feed: React.FC = () => {
           </div>
           <div className="flex flex--align-center flex--gap-sm">
             <Filter size={20} className="text-muted" />
-            <select
+            <SelectControl
               value={sort}
               onChange={(e) => setSort(e.target.value as "date" | "popularity" | "relevance")}
               className="select"
@@ -158,7 +159,7 @@ const Feed: React.FC = () => {
               <option value="date">{t("feed.sortDate") || "Date"}</option>
               <option value="popularity">{t("feed.sortPopularity") || "Popularity"}</option>
               <option value="relevance">{t("feed.sortRelevance") || "Relevance"}</option>
-            </select>
+            </SelectControl>
           </div>
         </div>
       </div>
