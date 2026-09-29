@@ -501,7 +501,7 @@ importers:
   apps/backoffice:
     dependencies:
       '@ui':
-        specifier: workspace:*
+        specifier: 'workspace:*'
         version: link:../../packages/ui
       '@tanstack/react-query':
         specifier: ^5.102.8
@@ -568,7 +568,7 @@ importers:
   apps/frontend:
     dependencies:
       '@ui':
-        specifier: workspace:*
+        specifier: 'workspace:*'
         version: link:../../packages/ui
       '@fontsource-variable/inter':
         specifier: ^5.3.0
