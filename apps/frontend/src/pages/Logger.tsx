@@ -622,7 +622,9 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: set.completed ? "none" : "2px solid var(--color-border)",
                             background: set.completed ? "var(--color-accent)" : "transparent",
-                            color: set.completed ? "var(--color-accent-on)" : "var(--color-text-secondary)",
+                            color: set.completed
+                              ? "var(--color-accent-on)"
+                              : "var(--color-text-secondary)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
