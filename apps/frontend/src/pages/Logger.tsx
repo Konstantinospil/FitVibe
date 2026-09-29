@@ -613,27 +613,28 @@ const Logger: React.FC = () => {
                           }}
                         />
 
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => toggleSetCompleted(exerciseIndex, setIndex)}
                           aria-label={set.completed ? "Mark incomplete" : "Mark complete"}
+                          aria-pressed={set.completed}
                           style={{
                             width: "36px",
                             height: "36px",
+                            padding: 0,
                             borderRadius: "8px",
                             border: set.completed ? "none" : "2px solid var(--color-border)",
                             background: set.completed ? "var(--color-accent)" : "transparent",
                             color: set.completed
                               ? "var(--color-accent-on)"
                               : "var(--color-text-secondary)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "all 150ms ease",
+                            boxShadow: "none",
                           }}
                         >
                           {set.completed && <Check size={18} />}
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
