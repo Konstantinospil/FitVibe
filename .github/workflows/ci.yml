@@ -44,46 +44,56 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Backend constants and policy authority
-        run: |
-          if ! node tests/qa/check-architecture-hardcoding.mjs backend; then
-            echo "backend" >> "$RUNNER_TEMP/architecture-hardcoding-failures"
-          fi
+        id: architecture_backend
+        continue-on-error: true
+        run: node tests/qa/check-architecture-hardcoding.mjs backend
 
       - name: Frontend design-token compliance
-        run: |
-          if ! node tests/qa/check-architecture-hardcoding.mjs frontend-tokens; then
-            echo "frontend-tokens" >> "$RUNNER_TEMP/architecture-hardcoding-failures"
-          fi
+        id: architecture_frontend_tokens
+        continue-on-error: true
+        run: node tests/qa/check-architecture-hardcoding.mjs frontend-tokens
 
       - name: Frontend component reuse
-        run: |
-          if ! node tests/qa/check-architecture-hardcoding.mjs frontend-reuse; then
-            echo "frontend-reuse" >> "$RUNNER_TEMP/architecture-hardcoding-failures"
-          fi
+        id: architecture_frontend_reuse
+        continue-on-error: true
+        run: node tests/qa/check-architecture-hardcoding.mjs frontend-reuse
 
       - name: Enforce zero-tolerance result
         if: always()
+        env:
+          BACKEND_OUTCOME: ${{ steps.architecture_backend.outcome }}
+          FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
+          FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
         run: |
-          if [ -s "$RUNNER_TEMP/architecture-hardcoding-failures" ]; then
-            echo "::error::Architecture & Hardcoding violations were found in:"
-            sort -u "$RUNNER_TEMP/architecture-hardcoding-failures"
+          failed=0
+          if [ "$BACKEND_OUTCOME" != "success" ]; then
+            echo "::error::Backend policy-authority diagnostic failed."
+            failed=1
+          fi
+          if [ "$FRONTEND_TOKENS_OUTCOME" != "success" ]; then
+            echo "::error::Frontend design-token diagnostic failed."
+            failed=1
+          fi
+          if [ "$FRONTEND_REUSE_OUTCOME" != "success" ]; then
+            echo "::error::Frontend component-reuse diagnostic failed."
+            failed=1
+          fi
+          if [ "$failed" -ne 0 ]; then
             exit 1
           fi
           echo "Architecture & Hardcoding gate passed with zero violations."
 
       - name: Job summary
         if: always()
+        env:
+          BACKEND_OUTCOME: ${{ steps.architecture_backend.outcome }}
+          FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
+          FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
         run: |
           echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
-          if [ -s "$RUNNER_TEMP/architecture-hardcoding-failures" ]; then
-            echo "- ❌ Zero-tolerance gate failed" >> "$GITHUB_STEP_SUMMARY"
-            echo "- Failed diagnostics:" >> "$GITHUB_STEP_SUMMARY"
-            sort -u "$RUNNER_TEMP/architecture-hardcoding-failures" | sed 's/^/  - /' >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "- ✅ Backend policy authority: passed" >> "$GITHUB_STEP_SUMMARY"
-            echo "- ✅ Frontend design tokens: passed" >> "$GITHUB_STEP_SUMMARY"
-            echo "- ✅ Frontend component reuse: passed" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "- Backend policy authority: $BACKEND_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend design tokens: $FRONTEND_TOKENS_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend component reuse: $FRONTEND_REUSE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
 
   quality:
     name: Quality Gates (Lint & Type Check)
