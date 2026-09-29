@@ -70,8 +70,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           zIndex: 9999,
           background: "var(--color-surface)",
           border: "1px solid var(--color-border)",
-          borderRadius: "16px",
-          padding: "1.5rem",
+          borderRadius: "var(--radius-lg)",
+          padding: "var(--space-lg)",
           maxWidth: "400px",
           width: "90%",
           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
@@ -79,12 +79,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         }}
       >
         <div
-          style={{ display: "flex", alignItems: "flex-start", gap: "1rem", marginBottom: "1rem" }}
+          style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-md)", marginBottom: "var(--space-md)" }}
         >
           <div
             style={{
-              padding: "0.75rem",
-              borderRadius: "12px",
+              padding: "var(--space-sm)",
+              borderRadius: "var(--radius-md)",
               background: variantConfig.bg,
               display: "flex",
               alignItems: "center",
@@ -98,8 +98,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               id="confirm-dialog-title"
               style={{
                 margin: 0,
-                marginBottom: "0.5rem",
-                fontSize: "1.125rem",
+                marginBottom: "var(--space-xs)",
+                fontSize: "var(--font-size-lg)",
                 fontWeight: 600,
                 color: "var(--color-text-primary)",
               }}
@@ -119,7 +119,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: "var(--space-sm)", justifyContent: "flex-end" }}>
           <Button variant="secondary" onClick={onCancel}>
             {cancelLabel}
           </Button>
