@@ -500,7 +500,7 @@ importers:
 
   apps/backoffice:
     dependencies:
-      '@ui':
+      '@fitvibe/ui':
         specifier: 'workspace:*'
         version: link:../../packages/ui
       '@tanstack/react-query':
@@ -567,7 +567,7 @@ importers:
 
   apps/frontend:
     dependencies:
-      '@ui':
+      '@fitvibe/ui':
         specifier: 'workspace:*'
         version: link:../../packages/ui
       '@fontsource-variable/inter':
