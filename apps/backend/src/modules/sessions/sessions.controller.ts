@@ -220,8 +220,8 @@ export async function updateSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const id = readRouteParam(req.params.id, "id");
-  if (!id) {
+  const id = req.params.id;
+  if (typeof id !== "string" || id.length === 0) {
     res.status(400).json({ error: "Session ID is required" });
     return;
   }
@@ -315,8 +315,8 @@ export async function reopenSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const id = readRouteParam(req.params.id, "id");
-  if (!id) {
+  const id = req.params.id;
+  if (typeof id !== "string" || id.length === 0) {
     res.status(400).json({ error: "Session ID is required" });
     return;
   }
