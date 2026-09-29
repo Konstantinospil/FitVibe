@@ -18,6 +18,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useAuthStore } from "../store/auth.store";
 import { logger } from "../utils/logger";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 const Exercises: React.FC = () => {
   const { t } = useTranslation("common");
@@ -222,21 +223,21 @@ const Exercises: React.FC = () => {
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
               aria-hidden="true"
             />
-            <input
-              type="text"
+            <InputControl
+              type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("exercises.searchPlaceholder", "Search exercises...")}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full"
+              style={{ paddingLeft: "2.5rem" }}
               aria-label={t("exercises.searchLabel", "Search exercises")}
             />
           </div>
 
           {/* Filters */}
-          <select
+          <SelectControl
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             aria-label={t("exercises.filterType", "Filter by type")}
           >
             <option value="">{t("exercises.allTypes", "All Types")}</option>
@@ -245,7 +246,7 @@ const Exercises: React.FC = () => {
             <option value="power-endurance">
               {t("exercises.type.powerEndurance", "Power-Endurance")}
             </option>
-          </select>
+          </SelectControl>
 
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -383,16 +384,18 @@ const Exercises: React.FC = () => {
                     ? t("exercises.edit", "Edit Exercise")
                     : t("exercises.create", "Create Exercise")}
                 </CardTitle>
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setIsEditing(false);
                     setEditingExercise(null);
                   }}
-                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                   aria-label={t("common.close", "Close")}
                 >
                   <X size={20} />
-                </button>
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -400,11 +403,10 @@ const Exercises: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">
                   {t("exercises.name", "Name")} *
                 </label>
-                <input
+                <InputControl
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
@@ -413,10 +415,9 @@ const Exercises: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">
                   {t("exercises.type", "Type")} *
                 </label>
-                <select
+                <SelectControl
                   value={formData.type_code}
                   onChange={(e) => setFormData({ ...formData, type_code: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   required
                 >
                   <option value="">{t("common.select", "Select...")}</option>
@@ -425,18 +426,17 @@ const Exercises: React.FC = () => {
                   <option value="power-endurance">
                     {t("exercises.type.powerEndurance", "Power-Endurance")}
                   </option>
-                </select>
+                </SelectControl>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">
                   {t("exercises.muscleGroup", "Muscle Group")}
                 </label>
-                <input
+                <InputControl
                   type="text"
                   value={formData.muscle_group ?? ""}
                   onChange={(e) => setFormData({ ...formData, muscle_group: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -444,11 +444,10 @@ const Exercises: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">
                   {t("exercises.equipment", "Equipment")}
                 </label>
-                <input
+                <InputControl
                   type="text"
                   value={formData.equipment ?? ""}
                   onChange={(e) => setFormData({ ...formData, equipment: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
@@ -456,11 +455,10 @@ const Exercises: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">
                   {t("exercises.description", "Description")}
                 </label>
-                <textarea
+                <TextareaControl
                   value={formData.description_en ?? ""}
                   onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
