@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import sharp from "sharp";
 import { insertAudit } from "../common/audit.util.js";
 import { logger } from "../../config/logger.js";

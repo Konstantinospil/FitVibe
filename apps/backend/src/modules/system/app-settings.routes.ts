@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../../utils/async-handler.js";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import {

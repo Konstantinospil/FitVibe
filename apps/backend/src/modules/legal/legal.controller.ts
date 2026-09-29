@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import {
   getCurrentLegalDocument,
   getCurrentLegalVersions,

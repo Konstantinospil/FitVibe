@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import type { FeedScope, FeedSort } from "./feed.repository.js";
 import {
   blockUserByAlias,
@@ -122,13 +122,19 @@ export async function likeFeedItemHandler(req: Request, res: Response): Promise<
     userId,
     { feedItemId: readRouteParam(req.params.feedItemId, "feedItemId") },
     async () => {
-      const result = await likeFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"));
+      const result = await likeFeedItem(
+        userId,
+        readRouteParam(req.params.feedItemId, "feedItemId"),
+      );
       return { status: 200, body: result };
     },
   );
 
   if (!handled) {
-    const result = await likeFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"));
+    const result = await likeFeedItem(
+        userId,
+        readRouteParam(req.params.feedItemId, "feedItemId"),
+      );
     res.json(result);
   }
 }
@@ -145,13 +151,19 @@ export async function unlikeFeedItemHandler(req: Request, res: Response): Promis
     userId,
     { feedItemId: readRouteParam(req.params.feedItemId, "feedItemId") },
     async () => {
-      const result = await unlikeFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"));
+      const result = await unlikeFeedItem(
+        userId,
+        readRouteParam(req.params.feedItemId, "feedItemId"),
+      );
       return { status: 200, body: result };
     },
   );
 
   if (!handled) {
-    const result = await unlikeFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"));
+    const result = await unlikeFeedItem(
+      userId,
+      readRouteParam(req.params.feedItemId, "feedItemId"),
+    );
     res.json(result);
   }
 }
@@ -254,13 +266,21 @@ export async function createCommentHandler(req: Request, res: Response): Promise
     userId,
     { feedItemId: readRouteParam(req.params.feedItemId, "feedItemId"), body },
     async () => {
-      const comment = await createComment(userId, readRouteParam(req.params.feedItemId, "feedItemId"), body);
+      const comment = await createComment(
+        userId,
+        readRouteParam(req.params.feedItemId, "feedItemId"),
+        body,
+      );
       return { status: 201, body: comment };
     },
   );
 
   if (!handled) {
-    const comment = await createComment(userId, readRouteParam(req.params.feedItemId, "feedItemId"), body);
+    const comment = await createComment(
+      userId,
+      readRouteParam(req.params.feedItemId, "feedItemId"),
+      body,
+    );
     res.status(201).json(comment);
   }
 }
@@ -352,13 +372,23 @@ export async function reportFeedItemHandler(req: Request, res: Response): Promis
     userId,
     { feedItemId: readRouteParam(req.params.feedItemId, "feedItemId"), reason, details },
     async () => {
-      const body = await reportFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"), reason, details);
+      const body = await reportFeedItem(
+        userId,
+        readRouteParam(req.params.feedItemId, "feedItemId"),
+        reason,
+        details,
+      );
       return { status: 201, body };
     },
   );
 
   if (!handled) {
-    const body = await reportFeedItem(userId, readRouteParam(req.params.feedItemId, "feedItemId"), reason, details);
+    const body = await reportFeedItem(
+      userId,
+      readRouteParam(req.params.feedItemId, "feedItemId"),
+      reason,
+      details,
+    );
     res.status(201).json(body);
   }
 }
@@ -381,13 +411,23 @@ export async function reportCommentHandler(req: Request, res: Response): Promise
     userId,
     { commentId: readRouteParam(req.params.commentId, "commentId"), reason, details },
     async () => {
-      const body = await reportComment(userId, readRouteParam(req.params.commentId, "commentId"), reason, details);
+      const body = await reportComment(
+        userId,
+        readRouteParam(req.params.commentId, "commentId"),
+        reason,
+        details,
+      );
       return { status: 201, body };
     },
   );
 
   if (!handled) {
-    const body = await reportComment(userId, readRouteParam(req.params.commentId, "commentId"), reason, details);
+    const body = await reportComment(
+      userId,
+      readRouteParam(req.params.commentId, "commentId"),
+      reason,
+      details,
+    );
     res.status(201).json(body);
   }
 }
@@ -420,13 +460,21 @@ export async function cloneSessionFromFeedHandler(req: Request, res: Response): 
     userId,
     { sessionId: readRouteParam(req.params.sessionId, "sessionId"), ...payload },
     async () => {
-      const body = await cloneSessionFromFeed(userId, readRouteParam(req.params.sessionId, "sessionId"), payload);
+      const body = await cloneSessionFromFeed(
+        userId,
+        readRouteParam(req.params.sessionId, "sessionId"),
+        payload,
+      );
       return { status: 201, body };
     },
   );
 
   if (!handled) {
-    const body = await cloneSessionFromFeed(userId, readRouteParam(req.params.sessionId, "sessionId"), payload);
+    const body = await cloneSessionFromFeed(
+      userId,
+      readRouteParam(req.params.sessionId, "sessionId"),
+      payload,
+    );
     res.status(201).json(body);
   }
 }

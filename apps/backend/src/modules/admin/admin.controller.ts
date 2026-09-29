@@ -3,7 +3,7 @@
  */
 
 import type { Request, Response } from "express";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import * as service from "./admin.service.js";
 import type { ListReportsQuery, SearchUsersQuery } from "./admin.types.js";
 

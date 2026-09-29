@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import { getAll, getOne, createOne, updateOne, archiveOne } from "./exercise.service.js";
 import type { ExerciseQuery } from "./exercise.types.js";

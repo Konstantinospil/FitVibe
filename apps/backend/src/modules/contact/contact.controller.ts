@@ -4,7 +4,7 @@
 
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/async-handler.js";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import {
   submitContactMessage,
   getContactMessagesList,

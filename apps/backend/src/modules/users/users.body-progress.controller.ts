@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import sharp from "sharp";
 import { z } from "zod";
 import { scanBuffer } from "../../services/antivirus.service.js";

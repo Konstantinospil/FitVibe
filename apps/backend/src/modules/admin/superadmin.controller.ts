@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 import { beginSudo, changePrivilegedRole, listPrivilegedAdmins } from "./superadmin.service.js";
 
 export async function listPrivilegedAdminsHandler(_req: Request, res: Response): Promise<void> {

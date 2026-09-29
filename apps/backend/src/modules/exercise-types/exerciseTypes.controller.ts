@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 
 import { getAllTypes, getOneType, addType, editType, removeType } from "./exerciseTypes.service.js";

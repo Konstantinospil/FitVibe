@@ -9,7 +9,7 @@ import {
   deleteUserPlan,
   getUserPlanStats,
 } from "./plans.service.js";
-import { HttpError } from "../../utils/http.js";
+import { HttpError, readRouteParam } from "../../utils/http.js";
 
 /**
  * Helper to get authenticated user ID from request

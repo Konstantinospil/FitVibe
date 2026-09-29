@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import {
   getAll,
@@ -278,13 +279,21 @@ export async function applyRecurrenceHandler(req: Request, res: Response): Promi
     userId,
     { source_id: readRouteParam(req.params.id, "id"), ...parsed.data },
     async () => {
-      const sessions = await applyRecurrence(userId, readRouteParam(req.params.id, "id"), parsed.data);
+      const sessions = await applyRecurrence(
+        userId,
+        readRouteParam(req.params.id, "id"),
+        parsed.data,
+      );
       return { status: 201, body: { sessions } };
     },
   );
 
   if (!handled) {
-    const sessions = await applyRecurrence(userId, readRouteParam(req.params.id, "id"), parsed.data);
+    const sessions = await applyRecurrence(
+      userId,
+      readRouteParam(req.params.id, "id"),
+      parsed.data,
+    );
     res.status(201).json({ sessions });
   }
 }

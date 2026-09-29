@@ -21,7 +21,6 @@ export function createHttpError(
   return new HttpError(status, code, message, details);
 }
 
-
 /**
  * Read a named Express route parameter as a scalar string.
  *
@@ -29,17 +28,9 @@ export function createHttpError(
  * captures. FitVibe's named controller parameters are scalar, so arrays are
  * rejected instead of silently coerced.
  */
-export function readRouteParam(
-  value: string | string[] | undefined,
-  name: string,
-  fallback?: string,
-): string {
+export function readRouteParam(value: string | string[], name: string): string {
   if (typeof value === "string") {
     return value;
-  }
-
-  if (value === undefined && fallback !== undefined) {
-    return fallback;
   }
 
   throw new HttpError(
