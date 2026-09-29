@@ -715,7 +715,8 @@ const AuditLogsPage: React.FC = () => {
                       {log.actorDisplayName || log.actorUsername || log.actorUserId || "-"}
                     </td>
                     <td style={{ padding: "1rem" }}>
-                      <select
+                      <SelectControl
+                        controlSize="sm"
                         value={log.severity}
                         onChange={(e) =>
                           handleUpdateSeverity(log.id, e.target.value as AuditLogSeverity)
@@ -724,10 +725,6 @@ const AuditLogsPage: React.FC = () => {
                           updateLogMutation.isPending || bulkUpdateResolvedMutation.isPending
                         }
                         style={{
-                          padding: "0.4rem 0.6rem",
-                          borderRadius: "4px",
-                          border: `1px solid ${colors.border}`,
-                          background: colors.surface,
                           color: severityColors[log.severity],
                           fontWeight: 600,
                           textTransform: "uppercase",
@@ -739,7 +736,7 @@ const AuditLogsPage: React.FC = () => {
                             {severity}
                           </option>
                         ))}
-                      </select>
+                      </SelectControl>
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {formatAction(log.outcome)}
@@ -1037,20 +1034,14 @@ const AuditLogsPage: React.FC = () => {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={handleCloseModal}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "transparent",
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                }}
+                style={{ color: colors.text, border: `1px solid ${colors.border}` }}
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
