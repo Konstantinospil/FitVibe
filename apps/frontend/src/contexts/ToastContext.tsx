@@ -142,7 +142,16 @@ const ToastItem: React.FC<{
       }}
     >
       <Icon size={20} color={config.color} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
-      <p style={{ flex: 1, margin: 0, fontSize: "var(--font-size-toast)", color: "var(--toast-text)" }}>{toast.message}</p>
+      <p
+        style={{
+          flex: 1,
+          margin: 0,
+          fontSize: "var(--font-size-toast)",
+          color: "var(--toast-text)",
+        }}
+      >
+        {toast.message}
+      </p>
       <button
         onClick={() => onRemove(toast.id)}
         style={{
