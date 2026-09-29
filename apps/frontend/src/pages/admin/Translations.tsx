@@ -8,6 +8,7 @@ import {
   CardContent,
 } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 import {
   listTranslations,
   createTranslation,
@@ -225,8 +226,8 @@ const Translations: React.FC = () => {
                     color: "var(--color-text-secondary)",
                   }}
                 />
-                <input
-                  type="text"
+                <InputControl
+                  type="search"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -250,8 +251,8 @@ const Translations: React.FC = () => {
               >
                 Key Path
               </label>
-              <input
-                type="text"
+              <InputControl
+                type="search"
                 value={keyPath}
                 onChange={(e) => {
                   setKeyPath(e.target.value);
@@ -273,7 +274,7 @@ const Translations: React.FC = () => {
               >
                 Namespace
               </label>
-              <select
+              <SelectControl
                 value={selectedNamespace}
                 onChange={(e) => {
                   setSelectedNamespace(e.target.value);
@@ -287,7 +288,7 @@ const Translations: React.FC = () => {
                     {ns}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </div>
 
             <div style={{ minWidth: "150px" }}>
@@ -301,7 +302,7 @@ const Translations: React.FC = () => {
               >
                 Language
               </label>
-              <select
+              <SelectControl
                 value={selectedLanguage}
                 onChange={(e) => {
                   setSelectedLanguage(e.target.value);
@@ -314,7 +315,7 @@ const Translations: React.FC = () => {
                     {getLanguageLabel(lang)}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </div>
 
             <div style={{ display: "flex", alignItems: "flex-end" }}>
@@ -365,7 +366,7 @@ const Translations: React.FC = () => {
                     >
                       Namespace
                     </label>
-                    <select
+                    <SelectControl
                       value={newTranslation.namespace}
                       onChange={(e) =>
                         setNewTranslation({
@@ -380,7 +381,7 @@ const Translations: React.FC = () => {
                           {ns}
                         </option>
                       ))}
-                    </select>
+                    </SelectControl>
                   </div>
                   <div>
                     <label
@@ -388,7 +389,7 @@ const Translations: React.FC = () => {
                     >
                       Language
                     </label>
-                    <select
+                    <SelectControl
                       value={newTranslation.language}
                       onChange={(e) =>
                         setNewTranslation({
@@ -403,14 +404,14 @@ const Translations: React.FC = () => {
                           {getLanguageLabel(lang)}
                         </option>
                       ))}
-                    </select>
+                    </SelectControl>
                   </div>
                 </div>
                 <div style={{ marginTop: "1rem" }}>
                   <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}>
                     Key Path
                   </label>
-                  <input
+                  <InputControl
                     type="text"
                     value={newTranslation.key_path}
                     onChange={(e) =>
@@ -424,7 +425,7 @@ const Translations: React.FC = () => {
                   <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}>
                     Value
                   </label>
-                  <textarea
+                  <TextareaControl
                     value={newTranslation.value}
                     onChange={(e) =>
                       setNewTranslation({ ...newTranslation, value: e.target.value })
@@ -566,7 +567,7 @@ const Translations: React.FC = () => {
                           style={{
                             borderBottom: "1px solid var(--color-border)",
                             opacity: isDeleted ? 0.7 : 1,
-                            background: isDeleted ? "rgba(159, 36, 6, 0.05)" : "transparent",
+                            background: isDeleted ? "var(--surface-deleted-subtle)" : "transparent",
                           }}
                         >
                           <td style={{ padding: "0.75rem" }}>
@@ -584,7 +585,7 @@ const Translations: React.FC = () => {
                           </td>
                           <td style={{ padding: "0.75rem", maxWidth: "400px" }}>
                             {isEditing ? (
-                              <textarea
+                              <TextareaControl
                                 value={editValue}
                                 onChange={(e) => setEditValue(e.target.value)}
                                 className="form-input"
@@ -660,7 +661,7 @@ const Translations: React.FC = () => {
                               position: "sticky",
                               right: 0,
                               background: isDeleted
-                                ? "rgba(159, 36, 6, 0.05)"
+                                ? "var(--surface-deleted-subtle)"
                                 : "var(--color-background)",
                               zIndex: 5,
                               minWidth: "150px",

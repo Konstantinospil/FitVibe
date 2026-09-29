@@ -78,12 +78,12 @@ const ToastContainer: React.FC<{
     <div
       style={{
         position: "fixed",
-        top: "1rem",
-        right: "1rem",
+        top: "var(--space-md)",
+        right: "var(--space-md)",
         zIndex: 9999,
         display: "flex",
         flexDirection: "column",
-        gap: "0.75rem",
+        gap: "var(--space-sm)",
         maxWidth: "420px",
       }}
     >
@@ -101,27 +101,27 @@ const ToastItem: React.FC<{
   const config = {
     success: {
       icon: CheckCircle,
-      bg: "rgba(34, 197, 94, 0.15)",
-      border: "rgba(34, 197, 94, 0.3)",
-      color: "#22c55e",
+      bg: "var(--toast-success-bg)",
+      border: "var(--toast-success-border)",
+      color: "var(--toast-success-icon)",
     },
     error: {
       icon: XCircle,
-      bg: "rgba(239, 68, 68, 0.15)",
-      border: "rgba(239, 68, 68, 0.3)",
-      color: "#ef4444",
+      bg: "var(--toast-error-bg)",
+      border: "var(--toast-error-border)",
+      color: "var(--toast-error-icon)",
     },
     warning: {
       icon: AlertCircle,
-      bg: "rgba(251, 191, 36, 0.15)",
-      border: "rgba(251, 191, 36, 0.3)",
-      color: "#fbbf24",
+      bg: "var(--toast-warning-bg)",
+      border: "var(--toast-warning-border)",
+      color: "var(--toast-warning-icon)",
     },
     info: {
       icon: Info,
-      bg: "rgba(59, 130, 246, 0.15)",
-      border: "rgba(59, 130, 246, 0.3)",
-      color: "#3b82f6",
+      bg: "var(--toast-info-bg)",
+      border: "var(--toast-info-border)",
+      color: "var(--toast-info-icon)",
     },
   }[toast.type];
 
@@ -132,17 +132,26 @@ const ToastItem: React.FC<{
       style={{
         background: config.bg,
         border: `1px solid ${config.border}`,
-        borderRadius: "12px",
-        padding: "1rem",
+        borderRadius: "var(--radius-md)",
+        padding: "var(--space-md)",
         display: "flex",
         alignItems: "flex-start",
-        gap: "0.75rem",
-        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+        gap: "var(--space-sm)",
+        boxShadow: "var(--toast-shadow)",
         animation: "slideIn 0.2s ease-out",
       }}
     >
       <Icon size={20} color={config.color} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
-      <p style={{ flex: 1, margin: 0, fontSize: "0.95rem", color: "#ffffff" }}>{toast.message}</p>
+      <p
+        style={{
+          flex: 1,
+          margin: 0,
+          fontSize: "var(--font-size-toast)",
+          color: "var(--toast-text)",
+        }}
+      >
+        {toast.message}
+      </p>
       <button
         onClick={() => onRemove(toast.id)}
         style={{

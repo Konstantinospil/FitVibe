@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { translationsApi, type Translation } from "../services/api";
+import { Button } from "../components/ui/Button";
+import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 const TranslationsPage: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -392,56 +394,36 @@ const TranslationsPage: React.FC = () => {
       </div>
 
       <div style={{ marginBottom: "2rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-        <input
-          type="text"
+        <InputControl
+          type="search"
+          aria-label="Search translations"
           placeholder="Search..."
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(0);
           }}
-          style={{
-            padding: "0.75rem",
-            background: "var(--color-input-bg)",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "var(--radius-xs)",
-            color: "var(--color-text-primary)",
-            flex: "1",
-            minWidth: "200px",
-          }}
+          style={{ flex: "1", minWidth: "200px" }}
         />
-        <input
-          type="text"
+        <InputControl
+          type="search"
+          aria-label="Filter translations by key path"
           placeholder="Filter by key path..."
           value={keyPath}
           onChange={(e) => {
             setKeyPath(e.target.value);
             setPage(0);
           }}
-          style={{
-            padding: "0.75rem",
-            background: "var(--color-input-bg)",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "var(--radius-xs)",
-            color: "var(--color-text-primary)",
-            minWidth: "200px",
-          }}
+          style={{ minWidth: "200px" }}
         />
-        <select
+        <SelectControl
+          aria-label="Filter by language"
           value={language}
           onChange={(e) => {
             setLanguage(e.target.value);
             setPage(0);
           }}
-          style={{
-            padding: "0.75rem",
-            background: "var(--color-input-bg)",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "var(--radius-xs)",
-            color: "var(--color-text-primary)",
-            width: "150px",
-            cursor: "pointer",
-          }}
+          style={{ width: "150px" }}
         >
           <option value="">All Languages</option>
           {languages.map((lang) => (
@@ -449,22 +431,15 @@ const TranslationsPage: React.FC = () => {
               {getLanguageLabel(lang)}
             </option>
           ))}
-        </select>
-        <select
+        </SelectControl>
+        <SelectControl
+          aria-label="Filter by namespace"
           value={namespace}
           onChange={(e) => {
             setNamespace(e.target.value);
             setPage(0);
           }}
-          style={{
-            padding: "0.75rem",
-            background: "var(--color-input-bg)",
-            border: "1px solid var(--color-input-border)",
-            borderRadius: "var(--radius-xs)",
-            color: "var(--color-text-primary)",
-            width: "150px",
-            cursor: "pointer",
-          }}
+          style={{ width: "150px" }}
         >
           <option value="">All Namespaces</option>
           {namespaces.map((ns) => (
@@ -472,7 +447,7 @@ const TranslationsPage: React.FC = () => {
               {ns}
             </option>
           ))}
-        </select>
+        </SelectControl>
         <label
           style={{
             display: "flex",
@@ -493,19 +468,9 @@ const TranslationsPage: React.FC = () => {
           />
           Incomplete only
         </label>
-        <button
-          onClick={() => setShowCreate(true)}
-          style={{
-            padding: "0.75rem 1.5rem",
-            background: "var(--color-primary)",
-            color: "var(--color-primary-on)",
-            border: "none",
-            borderRadius: "var(--radius-xs)",
-            cursor: "pointer",
-          }}
-        >
+        <Button type="button" variant="primary" onClick={() => setShowCreate(true)}>
           Create New
-        </button>
+        </Button>
       </div>
 
       {showCreate && (
@@ -539,27 +504,18 @@ const TranslationsPage: React.FC = () => {
               >
                 Namespace
               </label>
-              <select
+              <SelectControl
                 value={newTranslation.namespace}
                 onChange={(e) =>
                   setNewTranslation({ ...newTranslation, namespace: e.target.value })
                 }
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  background: "var(--color-input-bg)",
-                  border: "1px solid var(--color-input-border)",
-                  borderRadius: "var(--radius-xs)",
-                  color: "var(--color-text-primary)",
-                  cursor: "pointer",
-                }}
               >
                 {namespaces.map((ns) => (
                   <option key={ns} value={ns}>
                     {ns}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </div>
             <div>
               <label
@@ -572,25 +528,16 @@ const TranslationsPage: React.FC = () => {
               >
                 Language
               </label>
-              <select
+              <SelectControl
                 value={newTranslation.language}
                 onChange={(e) => setNewTranslation({ ...newTranslation, language: e.target.value })}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  background: "var(--color-input-bg)",
-                  border: "1px solid var(--color-input-border)",
-                  borderRadius: "var(--radius-xs)",
-                  color: "var(--color-text-primary)",
-                  cursor: "pointer",
-                }}
               >
                 {languages.map((lang) => (
                   <option key={lang} value={lang}>
                     {getLanguageLabel(lang)}
                   </option>
                 ))}
-              </select>
+              </SelectControl>
             </div>
           </div>
           <div style={{ marginTop: "1rem" }}>
@@ -604,19 +551,11 @@ const TranslationsPage: React.FC = () => {
             >
               Key Path
             </label>
-            <input
+            <InputControl
               type="text"
               placeholder="e.g., navigation.home or errors.notFound"
               value={newTranslation.key_path}
               onChange={(e) => setNewTranslation({ ...newTranslation, key_path: e.target.value })}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                background: "var(--color-input-bg)",
-                border: "1px solid var(--color-input-border)",
-                borderRadius: "var(--radius-xs)",
-                color: "var(--color-text-primary)",
-              }}
             />
           </div>
           <div style={{ marginTop: "1rem" }}>
@@ -630,37 +569,26 @@ const TranslationsPage: React.FC = () => {
             >
               Value
             </label>
-            <textarea
+            <TextareaControl
               placeholder="Translation value"
               value={newTranslation.value}
               onChange={(e) => setNewTranslation({ ...newTranslation, value: e.target.value })}
               rows={3}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                background: "var(--color-input-bg)",
-                border: "1px solid var(--color-input-border)",
-                borderRadius: "var(--radius-xs)",
-                color: "var(--color-text-primary)",
-              }}
             />
           </div>
           <div style={{ display: "flex", gap: "1rem" }}>
-            <button
+            <Button
+              type="button"
+              variant="primary"
               onClick={() => createMutation.mutate()}
               disabled={createMutation.isPending}
-              style={{
-                padding: "0.75rem 1.5rem",
-                background: "var(--color-primary)",
-                color: "var(--color-primary-on)",
-                border: "none",
-                borderRadius: "var(--radius-xs)",
-                cursor: "pointer",
-              }}
+              isLoading={createMutation.isPending}
             >
               Create
-            </button>
-            <button
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
               onClick={() => {
                 setShowCreate(false);
                 setNewTranslation({
@@ -670,17 +598,10 @@ const TranslationsPage: React.FC = () => {
                   value: "",
                 });
               }}
-              style={{
-                padding: "0.75rem 1.5rem",
-                background: "transparent",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-xs)",
-                cursor: "pointer",
-              }}
+              style={{ border: "1px solid var(--color-border)" }}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -712,50 +633,32 @@ const TranslationsPage: React.FC = () => {
                 >
                   {getLanguageLabel(lang)}
                 </label>
-                <textarea
+                <TextareaControl
                   value={editValues[lang] || ""}
                   onChange={(e) => setEditValues({ ...editValues, [lang]: e.target.value })}
                   placeholder={`Translation for ${getLanguageLabel(lang)}...`}
                   rows={2}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    background: "var(--color-input-bg)",
-                    border: "1px solid var(--color-input-border)",
-                    borderRadius: "var(--radius-xs)",
-                    color: "var(--color-text-primary)",
-                  }}
                 />
               </div>
             ))}
             <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
-              <button
+              <Button
+                type="button"
+                variant="primary"
                 onClick={handleSave}
                 disabled={bulkUpdateMutation.isPending}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "var(--color-primary)",
-                  color: "var(--color-primary-on)",
-                  border: "none",
-                  borderRadius: "var(--radius-xs)",
-                  cursor: bulkUpdateMutation.isPending ? "not-allowed" : "pointer",
-                }}
+                isLoading={bulkUpdateMutation.isPending}
               >
-                {bulkUpdateMutation.isPending ? "Saving..." : "Save All Languages"}
-              </button>
-              <button
+                Save All Languages
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={handleCancelEdit}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "transparent",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "var(--radius-xs)",
-                  cursor: "pointer",
-                }}
+                style={{ border: "1px solid var(--color-border)" }}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1027,7 +930,10 @@ const TranslationsPage: React.FC = () => {
                             </div>
                           ) : (
                             <div style={{ display: "flex", gap: "0.5rem" }}>
-                              <button
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   handleEdit({
@@ -1036,18 +942,10 @@ const TranslationsPage: React.FC = () => {
                                   });
                                   setExpandedKeys({ [rowKey]: true });
                                 }}
-                                style={{
-                                  padding: "0.5rem 1rem",
-                                  background: "transparent",
-                                  color: "var(--color-text-primary)",
-                                  border: "1px solid var(--color-border)",
-                                  borderRadius: "var(--radius-xs)",
-                                  cursor: "pointer",
-                                  fontSize: "0.875rem",
-                                }}
+                                style={{ border: "1px solid var(--color-border)" }}
                               >
                                 Edit
-                              </button>
+                              </Button>
                             </div>
                           )}
                         </td>
@@ -1071,8 +969,10 @@ const TranslationsPage: React.FC = () => {
                               <div style={{ color: "var(--color-text-secondary)" }}>
                                 {group.namespace}.{group.key_path}
                               </div>
-                              <button
+                              <Button
                                 type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   setShowArchivedByKey((prev) => ({
@@ -1081,19 +981,14 @@ const TranslationsPage: React.FC = () => {
                                   }));
                                 }}
                                 style={{
-                                  padding: "0.4rem 0.9rem",
                                   background: showArchivedForKey
                                     ? "var(--color-accent)"
                                     : "transparent",
-                                  color: "var(--color-text-primary)",
                                   border: "1px solid var(--color-border)",
-                                  borderRadius: "var(--radius-xs)",
-                                  cursor: "pointer",
-                                  fontSize: "0.85rem",
                                 }}
                               >
                                 {showArchivedForKey ? "Hide Archive" : "Archive"}
-                              </button>
+                              </Button>
                             </div>
                             <div
                               style={{
@@ -1176,43 +1071,25 @@ const TranslationsPage: React.FC = () => {
 
           {filteredTranslations.length > limit && (
             <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: page === 0 ? "var(--color-border)" : "var(--color-accent)",
-                  color: "var(--color-text-primary)",
-                  border: "none",
-                  borderRadius: "var(--radius-xs)",
-                  cursor: page === 0 ? "not-allowed" : "pointer",
-                }}
               >
                 Previous
-              </button>
+              </Button>
               <span style={{ color: "var(--color-text-primary)" }}>
                 Page {page + 1} of {Math.ceil(filteredTranslations.length / limit)}
               </span>
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={(page + 1) * limit >= filteredTranslations.length}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background:
-                    (page + 1) * limit >= filteredTranslations.length
-                      ? "var(--color-border)"
-                      : "var(--color-accent)",
-                  color: "var(--color-text-primary)",
-                  border: "none",
-                  borderRadius: "var(--radius-xs)",
-                  cursor:
-                    (page + 1) * limit >= (data?.pagination.total ?? filteredTranslations.length)
-                      ? "not-allowed"
-                      : "pointer",
-                }}
               >
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </>

@@ -16,6 +16,7 @@ import { logger } from "../utils/logger";
 import { useToast } from "../contexts/ToastContext";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import type { SessionVisibility } from "@fitvibe/contracts";
+import { InputControl, SelectControl } from "@fitvibe/ui";
 
 interface LoggedSet {
   order: number;
@@ -441,22 +442,19 @@ const Logger: React.FC = () => {
                 </div>
                 <VisibilityBadge level={sessionVisibility} />
               </div>
-              <select
+              <SelectControl
                 value={sessionVisibility}
                 onChange={(e) => void handleVisibilityChange(e.target.value as SessionVisibility)}
                 disabled={isUpdatingVisibility}
                 className="form-input"
-                style={{
-                  background: "var(--color-surface)",
-                  minWidth: "150px",
-                }}
+                style={{ background: "var(--color-surface)", minWidth: "150px" }}
                 aria-label={t("logger.visibilityLabel")}
               >
                 <option value="private">{t("logger.visibilityPrivate")}</option>
                 <option value="followers">{t("visibility.labels.followers")}</option>
                 <option value="link">{t("logger.visibilityLink")}</option>
                 <option value="public">{t("logger.visibilityPublic")}</option>
-              </select>
+              </SelectControl>
             </div>
             <p className="mt-05 text-085 text-muted">{t("logger.visibilityHelp")}</p>
           </CardContent>
@@ -480,19 +478,21 @@ const Logger: React.FC = () => {
                     </div>
                   </div>
 
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => toggleExerciseCollapsed(exerciseIndex)}
                     aria-label={exerciseLog.collapsed ? "Expand" : "Collapse"}
-                    className="bg-transparent border-none"
                     style={{
                       color: "var(--color-text-secondary)",
-                      cursor: "pointer",
                       padding: "0.5rem",
                       lineHeight: 0,
+                      boxShadow: "none",
                     }}
                   >
                     {exerciseLog.collapsed ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-                  </button>
+                  </Button>
                 </div>
               </CardHeader>
 
@@ -529,16 +529,16 @@ const Logger: React.FC = () => {
                           gap: "0.75rem",
                           padding: "0.75rem",
                           background: set.completed
-                            ? "rgba(52, 211, 153, 0.08)"
+                            ? "var(--surface-accent-subtle)"
                             : "var(--color-surface-muted)",
                           borderRadius: "12px",
-                          border: `1px solid ${set.completed ? "rgba(52, 211, 153, 0.3)" : "var(--color-border)"}`,
+                          border: `1px solid ${set.completed ? "var(--border-accent-subtle)" : "var(--color-border)"}`,
                           alignItems: "center",
                         }}
                       >
                         <div style={{ fontWeight: 600, textAlign: "center" }}>{setIndex + 1}</div>
 
-                        <input
+                        <InputControl
                           type="number"
                           min="0"
                           value={set.reps ?? ""}
@@ -555,14 +555,14 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: "1px solid var(--color-border)",
                             background: set.completed
-                              ? "rgba(0, 0, 0, 0.2)"
+                              ? "var(--control-disabled-bg)"
                               : "var(--color-surface)",
                             color: "var(--color-text-primary)",
                             textAlign: "center",
                           }}
                         />
 
-                        <input
+                        <InputControl
                           type="number"
                           step="0.5"
                           min="0"
@@ -580,14 +580,14 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: "1px solid var(--color-border)",
                             background: set.completed
-                              ? "rgba(0, 0, 0, 0.2)"
+                              ? "var(--control-disabled-bg)"
                               : "var(--color-surface)",
                             color: "var(--color-text-primary)",
                             textAlign: "center",
                           }}
                         />
 
-                        <input
+                        <InputControl
                           type="number"
                           min="1"
                           max="10"
@@ -606,32 +606,35 @@ const Logger: React.FC = () => {
                             borderRadius: "8px",
                             border: "1px solid var(--color-border)",
                             background: set.completed
-                              ? "rgba(0, 0, 0, 0.2)"
+                              ? "var(--control-disabled-bg)"
                               : "var(--color-surface)",
                             color: "var(--color-text-primary)",
                             textAlign: "center",
                           }}
                         />
 
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => toggleSetCompleted(exerciseIndex, setIndex)}
                           aria-label={set.completed ? "Mark incomplete" : "Mark complete"}
+                          aria-pressed={set.completed}
                           style={{
                             width: "36px",
                             height: "36px",
+                            padding: 0,
                             borderRadius: "8px",
                             border: set.completed ? "none" : "2px solid var(--color-border)",
                             background: set.completed ? "var(--color-accent)" : "transparent",
-                            color: set.completed ? "#0f172a" : "var(--color-text-secondary)",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "all 150ms ease",
+                            color: set.completed
+                              ? "var(--color-accent-on)"
+                              : "var(--color-text-secondary)",
+                            boxShadow: "none",
                           }}
                         >
                           {set.completed && <Check size={18} />}
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>

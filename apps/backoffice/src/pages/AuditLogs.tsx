@@ -8,6 +8,8 @@ import {
 } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeColors } from "../hooks/useThemeColors";
+import { Button } from "../components/ui/Button";
+import { InputControl, SelectControl } from "@fitvibe/ui";
 
 const severityOptions: AuditLogSeverity[] = ["info", "warning", "error", "critical"];
 
@@ -338,20 +340,13 @@ const AuditLogsPage: React.FC = () => {
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
           Search by Request ID
-          <input
-            type="text"
+          <InputControl
+            type="search"
             value={requestIdInput}
             onChange={(e) => {
               setRequestIdInput(e.target.value);
             }}
             placeholder="Request ID"
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: `1px solid ${colors.border}`,
-              background: colors.surface,
-              color: colors.text,
-            }}
           />
         </label>
       </div>
@@ -361,18 +356,11 @@ const AuditLogsPage: React.FC = () => {
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
           Severity
-          <select
+          <SelectControl
             value={severityFilter}
             onChange={(e) => {
               setSeverityFilter(e.target.value as AuditLogSeverity | "all");
               setPage(0);
-            }}
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: `1px solid ${colors.border}`,
-              background: colors.surface,
-              color: colors.text,
             }}
           >
             <option value="all">All</option>
@@ -381,31 +369,24 @@ const AuditLogsPage: React.FC = () => {
                 {severity}
               </option>
             ))}
-          </select>
+          </SelectControl>
         </label>
 
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
           Resolved
-          <select
+          <SelectControl
             value={resolvedFilter}
             onChange={(e) => {
               setResolvedFilter(e.target.value as "all" | "resolved" | "unresolved");
               setPage(0);
             }}
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: `1px solid ${colors.border}`,
-              background: colors.surface,
-              color: colors.text,
-            }}
           >
             <option value="all">All</option>
             <option value="resolved">Resolved</option>
             <option value="unresolved">Unresolved</option>
-          </select>
+          </SelectControl>
         </label>
 
         <div
@@ -446,7 +427,7 @@ const AuditLogsPage: React.FC = () => {
                 border: `1px solid ${colors.border}`,
                 borderRadius: "6px",
                 padding: "0.75rem",
-                boxShadow: "0 12px 24px rgba(0, 0, 0, 0.18)",
+                boxShadow: "var(--shadow-popover)",
               }}
             >
               <div
@@ -458,25 +439,20 @@ const AuditLogsPage: React.FC = () => {
                 }}
               >
                 <span style={{ color: colors.textMuted, fontSize: "0.75rem" }}>Select actions</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     setActionFilter([]);
                     setPage(0);
                   }}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    color: colors.textMuted,
-                    cursor: "pointer",
-                    fontSize: "0.75rem",
-                    padding: 0,
-                  }}
+                  style={{ color: colors.textMuted, padding: 0, boxShadow: "none" }}
                 >
                   Clear
-                </button>
+                </Button>
               </div>
               {actionOptions.length === 0 ? (
                 <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>
@@ -520,19 +496,12 @@ const AuditLogsPage: React.FC = () => {
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
           From
-          <input
+          <InputControl
             type="datetime-local"
             value={createdFrom}
             onChange={(e) => {
               setCreatedFrom(e.target.value);
               setPage(0);
-            }}
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: `1px solid ${colors.border}`,
-              background: colors.surface,
-              color: colors.text,
             }}
           />
         </label>
@@ -541,19 +510,12 @@ const AuditLogsPage: React.FC = () => {
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
           To
-          <input
+          <InputControl
             type="datetime-local"
             value={createdTo}
             onChange={(e) => {
               setCreatedTo(e.target.value);
               setPage(0);
-            }}
-            style={{
-              padding: "0.5rem",
-              borderRadius: "4px",
-              border: `1px solid ${colors.border}`,
-              background: colors.surface,
-              color: colors.text,
             }}
           />
         </label>
@@ -586,50 +548,25 @@ const AuditLogsPage: React.FC = () => {
                 : "Select logs to resolve in bulk"}
             </span>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={handleResolveSelected}
                 disabled={resolvableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending}
-                style={{
-                  padding: "0.5rem 1rem",
-                  background:
-                    resolvableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending
-                      ? colors.border
-                      : colors.accent,
-                  color: colors.text,
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor:
-                    resolvableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending
-                      ? "not-allowed"
-                      : "pointer",
-                  fontSize: "0.875rem",
-                }}
               >
                 Mark Selected Resolved
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleReopenSelected}
                 disabled={reopenableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending}
-                style={{
-                  padding: "0.5rem 1rem",
-                  background:
-                    reopenableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending
-                      ? colors.border
-                      : colors.surfaceMuted,
-                  color: colors.text,
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor:
-                    reopenableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending
-                      ? "not-allowed"
-                      : "pointer",
-                  fontSize: "0.875rem",
-                }}
+                style={{ background: colors.surfaceMuted, color: colors.text }}
               >
                 Reopen Selected
-              </button>
+              </Button>
             </div>
           </div>
           <div
@@ -778,7 +715,8 @@ const AuditLogsPage: React.FC = () => {
                       {log.actorDisplayName || log.actorUsername || log.actorUserId || "-"}
                     </td>
                     <td style={{ padding: "1rem" }}>
-                      <select
+                      <SelectControl
+                        controlSize="sm"
                         value={log.severity}
                         onChange={(e) =>
                           handleUpdateSeverity(log.id, e.target.value as AuditLogSeverity)
@@ -787,10 +725,6 @@ const AuditLogsPage: React.FC = () => {
                           updateLogMutation.isPending || bulkUpdateResolvedMutation.isPending
                         }
                         style={{
-                          padding: "0.4rem 0.6rem",
-                          borderRadius: "4px",
-                          border: `1px solid ${colors.border}`,
-                          background: colors.surface,
                           color: severityColors[log.severity],
                           fontWeight: 600,
                           textTransform: "uppercase",
@@ -802,7 +736,7 @@ const AuditLogsPage: React.FC = () => {
                             {severity}
                           </option>
                         ))}
-                      </select>
+                      </SelectControl>
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {formatAction(log.outcome)}
@@ -819,41 +753,31 @@ const AuditLogsPage: React.FC = () => {
                     </td>
                     <td style={{ padding: "1rem" }}>
                       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setSelectedLog(log)}
                           style={{
-                            padding: "0.5rem 1rem",
                             background: colors.border,
                             color: colors.text,
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "0.875rem",
                             whiteSpace: "nowrap",
                           }}
                         >
                           View
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={log.resolvedAt ? "primary" : "secondary"}
+                          size="sm"
                           onClick={() => handleToggleResolved(log)}
                           disabled={
                             updateLogMutation.isPending || bulkUpdateResolvedMutation.isPending
                           }
-                          style={{
-                            padding: "0.5rem 1rem",
-                            background: log.resolvedAt
-                              ? "var(--color-primary)"
-                              : "var(--color-secondary)",
-                            color: colors.text,
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "0.875rem",
-                            whiteSpace: "nowrap",
-                          }}
+                          style={{ color: colors.text, whiteSpace: "nowrap" }}
                         >
                           {log.resolvedAt ? "Reopen" : "Mark Resolved"}
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -864,35 +788,23 @@ const AuditLogsPage: React.FC = () => {
 
           {data.logs.length >= limit && (
             <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: page === 0 ? colors.border : colors.accent,
-                  color: colors.text,
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: page === 0 ? "not-allowed" : "pointer",
-                }}
               >
                 Previous
-              </button>
+              </Button>
               <span style={{ color: colors.text }}>Page {page + 1}</span>
-              <button
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={data.logs.length < limit}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: data.logs.length < limit ? colors.border : colors.accent,
-                  color: colors.text,
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: data.logs.length < limit ? "not-allowed" : "pointer",
-                }}
               >
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -906,7 +818,7 @@ const AuditLogsPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.8)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -939,19 +851,16 @@ const AuditLogsPage: React.FC = () => {
               <h2 style={{ color: colors.text, fontSize: "1.5rem", margin: 0 }}>
                 Audit Log Details
               </h2>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label="Close audit log details"
                 onClick={handleCloseModal}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: colors.text,
-                  fontSize: "1.5rem",
-                  cursor: "pointer",
-                  padding: "0.25rem 0.5rem",
-                }}
+                style={{ color: colors.text, fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
               >
                 ×
-              </button>
+              </Button>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
@@ -1129,20 +1038,14 @@ const AuditLogsPage: React.FC = () => {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={handleCloseModal}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  background: "transparent",
-                  color: colors.text,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "1rem",
-                }}
+                style={{ color: colors.text, border: `1px solid ${colors.border}` }}
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>

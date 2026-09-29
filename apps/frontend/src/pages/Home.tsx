@@ -12,6 +12,8 @@ import {
   type Exercise,
 } from "../services/api";
 import { logger } from "../utils/logger";
+import { Button } from "../components/ui/Button";
+import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 type VibeKey =
   "strength" | "agility" | "endurance" | "explosivity" | "intelligence" | "regeneration";
@@ -22,6 +24,7 @@ type Vibe = {
   colorText: string; // Text/icon color for contrast
   colorBorder: string; // Border color
   icon: string; // SVG icon path
+  iconTone: "dark" | "light";
 };
 
 type Period = "day" | "week" | "month" | "quarter" | "semester" | "year";
@@ -37,39 +40,45 @@ type ExerciseHistoryItem = {
 const VIBES_BASE: Omit<Vibe, "icon">[] = [
   {
     key: "strength",
-    colorBg: "#FB951D",
-    colorText: "#0B0C10",
-    colorBorder: "#FB951D",
+    colorBg: "var(--vibe-strength)",
+    colorText: "var(--vibe-on-light)",
+    colorBorder: "var(--vibe-strength)",
+    iconTone: "dark",
   },
   {
     key: "agility",
-    colorBg: "#FAE919",
-    colorText: "#0B0C10",
-    colorBorder: "#FAE919",
+    colorBg: "var(--vibe-agility)",
+    colorText: "var(--vibe-on-light)",
+    colorBorder: "var(--vibe-agility)",
+    iconTone: "dark",
   },
   {
     key: "endurance",
-    colorBg: "#002322",
-    colorText: "#FFFFFF",
-    colorBorder: "#5CB2F5",
+    colorBg: "var(--vibe-endurance)",
+    colorText: "var(--vibe-on-dark)",
+    colorBorder: "var(--element-water-highlight)",
+    iconTone: "light",
   },
   {
     key: "explosivity",
-    colorBg: "#9F2406",
-    colorText: "#FFFFFF",
-    colorBorder: "#FDC54D",
+    colorBg: "var(--vibe-explosivity)",
+    colorText: "var(--vibe-on-dark)",
+    colorBorder: "var(--element-fire-highlight)",
+    iconTone: "light",
   },
   {
     key: "intelligence",
-    colorBg: "#001817",
-    colorText: "#FFFFFF",
-    colorBorder: "#5CB2F5",
+    colorBg: "var(--vibe-intelligence)",
+    colorText: "var(--vibe-on-dark)",
+    colorBorder: "var(--element-water-highlight)",
+    iconTone: "light",
   },
   {
     key: "regeneration",
-    colorBg: "#15523A",
-    colorText: "#FFFFFF",
-    colorBorder: "#4D7C62",
+    colorBg: "var(--vibe-regeneration)",
+    colorText: "var(--vibe-on-dark)",
+    colorBorder: "var(--element-earth-highlight)",
+    iconTone: "light",
   },
 ];
 
@@ -435,8 +444,9 @@ const Home: React.FC = () => {
             {vibes.length > 0 ? (
               vibes.map((vibe) => (
                 <div key={vibe.key} className="flex flex--column flex--align-center flex--gap-md">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => handleVibeClick(vibe.key)}
                     onMouseEnter={() => setHoveredVibe(vibe.key)}
                     onMouseLeave={() => setHoveredVibe(null)}
@@ -471,12 +481,10 @@ const Home: React.FC = () => {
                         width: "64px",
                         height: "64px",
                         filter:
-                          vibe.colorText === "#FFFFFF"
-                            ? "brightness(0) invert(1)"
-                            : "brightness(0)",
+                          vibe.iconTone === "light" ? "brightness(0) invert(1)" : "brightness(0)",
                       }}
                     />
-                  </button>
+                  </Button>
 
                   {/* Hover Info */}
                   <div
@@ -534,20 +542,11 @@ const Home: React.FC = () => {
             >
               {t("vibesHome.history.period")}
             </label>
-            <select
+            <SelectControl
               id="period-select"
               value={period}
               onChange={(e) => setPeriod(e.target.value as Period)}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "12px",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-bg)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--font-size-md)",
-                cursor: "pointer",
-              }}
+              style={{ background: "var(--color-bg)" }}
             >
               <option value="day">{t("vibesHome.history.day")}</option>
               <option value="week">{t("vibesHome.history.week")}</option>
@@ -555,7 +554,7 @@ const Home: React.FC = () => {
               <option value="quarter">{t("vibesHome.history.quarter")}</option>
               <option value="semester">{t("vibesHome.history.semester")}</option>
               <option value="year">{t("vibesHome.history.year")}</option>
-            </select>
+            </SelectControl>
           </div>
 
           {/* Exercise List */}
@@ -592,7 +591,8 @@ const Home: React.FC = () => {
               </div>
             ) : (
               exerciseHistory.map((exercise) => {
-                const vibeColor = vibes.find((v) => v.key === exercise.vibe)?.colorBg || "#ccc";
+                const vibeColor =
+                  vibes.find((v) => v.key === exercise.vibe)?.colorBg || "var(--vibe-fallback)";
                 return (
                   <div
                     key={exercise.id}
@@ -651,7 +651,7 @@ const Home: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.85)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -717,8 +717,9 @@ const Home: React.FC = () => {
                   marginBottom: "1.5rem",
                 }}
               >
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => {
                     setExerciseMode("select");
                     setExerciseName("");
@@ -740,9 +741,10 @@ const Home: React.FC = () => {
                   }}
                 >
                   {t("vibesHome.addExercise.selectExisting")}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => {
                     setExerciseMode("create");
                     setSelectedExerciseId("");
@@ -764,7 +766,7 @@ const Home: React.FC = () => {
                   }}
                 >
                   {t("vibesHome.addExercise.createNew")}
-                </button>
+                </Button>
               </div>
 
               {/* Exercise Input */}
@@ -781,7 +783,7 @@ const Home: React.FC = () => {
                   {t("vibesHome.addExercise.exerciseName")}
                 </label>
                 {exerciseMode === "select" ? (
-                  <select
+                  <SelectControl
                     id="exercise-name"
                     name="exercise-name"
                     value={selectedExerciseId}
@@ -789,13 +791,7 @@ const Home: React.FC = () => {
                     disabled={isSubmitting || filteredExercisesLoading}
                     required={exerciseMode === "select"}
                     style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "12px",
-                      border: "1px solid var(--color-border)",
                       background: "var(--color-bg)",
-                      color: "var(--color-text-primary)",
-                      fontSize: "var(--font-size-md)",
                       cursor: isLoading ? "wait" : "pointer",
                     }}
                   >
@@ -807,9 +803,9 @@ const Home: React.FC = () => {
                         {ex.name}
                       </option>
                     ))}
-                  </select>
+                  </SelectControl>
                 ) : (
-                  <input
+                  <InputControl
                     id="exercise-name"
                     name="exercise-name"
                     type="text"
@@ -818,15 +814,7 @@ const Home: React.FC = () => {
                     placeholder={t("vibesHome.addExercise.exerciseNamePlaceholder")}
                     disabled={isSubmitting || filteredExercisesLoading}
                     required={exerciseMode === "create"}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      borderRadius: "12px",
-                      border: "1px solid var(--color-border)",
-                      background: "var(--color-bg)",
-                      color: "var(--color-text-primary)",
-                      fontSize: "var(--font-size-md)",
-                    }}
+                    style={{ background: "var(--color-bg)" }}
                   />
                 )}
               </div>
@@ -872,7 +860,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.sets")}
                     </label>
-                    <input
+                    <InputControl
                       id="sets"
                       type="number"
                       min="0"
@@ -905,7 +893,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.reps")}
                     </label>
-                    <input
+                    <InputControl
                       id="reps"
                       type="number"
                       min="0"
@@ -938,7 +926,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.weight")}
                     </label>
-                    <input
+                    <InputControl
                       id="weight"
                       type="number"
                       min="0"
@@ -972,7 +960,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.rpe")}
                     </label>
-                    <input
+                    <InputControl
                       id="rpe"
                       type="number"
                       min="1"
@@ -1006,7 +994,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.duration")}
                     </label>
-                    <input
+                    <InputControl
                       id="duration"
                       type="number"
                       min="0"
@@ -1039,7 +1027,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.distance")}
                     </label>
-                    <input
+                    <InputControl
                       id="distance"
                       type="number"
                       min="0"
@@ -1073,7 +1061,7 @@ const Home: React.FC = () => {
                     >
                       {t("vibesHome.addExercise.resistance")}
                     </label>
-                    <input
+                    <InputControl
                       id="resistance"
                       type="text"
                       value={resistance}
@@ -1097,7 +1085,7 @@ const Home: React.FC = () => {
                     <label htmlFor="speed" className="form-label-text block mb-05">
                       {t("vibesHome.addExercise.speed")}
                     </label>
-                    <input
+                    <InputControl
                       id="speed"
                       type="text"
                       value={speed}
@@ -1115,7 +1103,7 @@ const Home: React.FC = () => {
                   <label htmlFor="notes" className="form-label-text block mb-05">
                     {t("vibesHome.addExercise.notes")}
                   </label>
-                  <textarea
+                  <TextareaControl
                     id="notes"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -1174,8 +1162,9 @@ const Home: React.FC = () => {
                   gap: "1rem",
                 }}
               >
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={handleCloseModal}
                   disabled={isSubmitting}
                   style={{
@@ -1192,10 +1181,12 @@ const Home: React.FC = () => {
                   }}
                 >
                   {t("vibesHome.addExercise.cancel")}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={!isFormValid || isSubmitting}
+                  isLoading={isSubmitting}
                   style={{
                     flex: 1,
                     padding: "0.75rem",
@@ -1214,8 +1205,8 @@ const Home: React.FC = () => {
                     fontWeight: 600,
                   }}
                 >
-                  {isSubmitting ? t("common.loading") : t("vibesHome.addExercise.add")}
-                </button>
+                  {t("vibesHome.addExercise.add")}
+                </Button>
               </div>
             </form>
           </div>
