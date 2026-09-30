@@ -7,22 +7,22 @@ type VisibilityLevel = SessionVisibility;
 const STYLE_MAP: Record<VisibilityLevel, { background: string; color: string; border: string }> = {
   private: {
     background: "rgba(248, 113, 113, 0.16)",
-    color: "#FFFFFF",
+    color: "var(--color-on-color)",
     border: "rgba(248, 113, 113, 0.35)",
   },
   followers: {
     background: "rgba(167, 139, 250, 0.14)",
-    color: "#FFFFFF",
+    color: "var(--color-on-color)",
     border: "rgba(167, 139, 250, 0.3)",
   },
   link: {
     background: "rgba(56, 189, 248, 0.12)",
-    color: "#FFFFFF",
+    color: "var(--color-on-color)",
     border: "rgba(56, 189, 248, 0.28)",
   },
   public: {
     background: "rgba(52, 211, 153, 0.16)",
-    color: "#FFFFFF",
+    color: "var(--color-on-color)",
     border: "rgba(52, 211, 153, 0.28)",
   },
 };
