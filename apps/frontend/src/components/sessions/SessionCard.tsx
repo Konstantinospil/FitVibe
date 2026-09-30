@@ -96,7 +96,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                       className="rounded-sm text-085 text-secondary"
                       style={{
                         padding: "0.35rem 0.75rem",
-                        background: "var(--tone-slate-400-a10)",
+                        background: "var(--border-subtle)",
                       }}
                     >
                       {ex.exercise_id || "Custom Exercise"}
@@ -124,7 +124,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                   className="rounded-sm"
                   style={{
                     padding: "0.5rem",
-                    background: "var(--tone-emerald-400-a15)",
+                    background: "var(--surface-success-subtle)",
                     color: "var(--color-accent)",
                     border: "none",
                     cursor: "pointer",
@@ -141,7 +141,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                   className="rounded-sm"
                   style={{
                     padding: "0.5rem",
-                    background: "var(--tone-slate-400-a10)",
+                    background: "var(--border-subtle)",
                     color: "var(--color-text-secondary)",
                     border: "none",
                     cursor: "pointer",
@@ -158,7 +158,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
                   className="rounded-sm"
                   style={{
                     padding: "0.5rem",
-                    background: "var(--tone-red-500-a10)",
+                    background: "var(--surface-danger-subtle)",
                     color: "var(--color-danger)",
                     border: "none",
                     cursor: "pointer",
