@@ -24,7 +24,7 @@ const sizeStyles: Record<"sm" | "md" | "lg" | "xl", React.CSSProperties> = {
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(11, 12, 16, 0.75)",
+  background: "var(--color-bg)",
   backdropFilter: "blur(4px)",
   display: "flex",
   alignItems: "center",
