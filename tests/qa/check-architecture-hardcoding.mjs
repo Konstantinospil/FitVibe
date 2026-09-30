@@ -173,6 +173,25 @@ async function checkFrontendTokens() {
   const sourceFiles = await frontendSourceFiles([".ts", ".tsx", ".js", ".jsx"]);
   const stylesheetFiles = await frontendSourceFiles([".css", ".scss"]);
   const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/g;
+  const figmaAuthorityDeclarations = new Map([
+    ["--radius-sm", "8px"], ["--radius-md", "12px"], ["--radius-lg", "16px"],
+    ["--radius-xl", "24px"], ["--radius-full", "999px"],
+    ["--opacity-full", "1"], ["--opacity-subtle", "0.7"], ["--opacity-disabled", "0.45"],
+    ["--transparency-full", "100%"], ["--transparency-subtle", "70%"], ["--transparency-disabled", "45%"],
+    ["--font-weight-regular", "400"], ["--font-weight-control-large", "582"], ["--font-weight-semibold", "600"],
+    ["--type-display-size", "3rem"], ["--type-display-line-height", "3.5rem"], ["--type-display-letter-spacing", "-0.01em"],
+    ["--type-page-title-size", "2rem"], ["--type-page-title-line-height", "2.5rem"], ["--type-page-title-letter-spacing", "-0.005em"],
+    ["--type-section-title-size", "1.5rem"], ["--type-section-title-line-height", "2rem"], ["--type-section-title-letter-spacing", "-0.005em"],
+    ["--type-card-title-size", "1.125rem"], ["--type-card-title-line-height", "1.5rem"], ["--type-card-title-letter-spacing", "0"],
+    ["--type-body-size", "1rem"], ["--type-body-line-height", "1.5rem"], ["--type-body-letter-spacing", "0"],
+    ["--type-supporting-size", "0.875rem"], ["--type-supporting-line-height", "1.25rem"], ["--type-supporting-letter-spacing", "0"],
+    ["--type-control-size", "0.875rem"], ["--type-control-line-height", "1.25rem"], ["--type-control-letter-spacing", "0"],
+    ["--type-control-large-size", "1rem"], ["--type-control-large-line-height", "1.5rem"], ["--type-control-large-letter-spacing", "0"],
+    ["--type-primary-metric-size", "2rem"], ["--type-primary-metric-line-height", "2.25rem"], ["--type-primary-metric-letter-spacing", "-0.005em"],
+    ["--type-secondary-metric-size", "1.5rem"], ["--type-secondary-metric-line-height", "1.75rem"], ["--type-secondary-metric-letter-spacing", "-0.005em"],
+    ["--type-metric-small-size", "0.875rem"], ["--type-metric-small-line-height", "0.75rem"], ["--type-metric-small-letter-spacing", "0.02em"],
+  ]);
+
 
   const sourceDesignPatterns = [
     {
@@ -221,6 +240,31 @@ async function checkFrontendTokens() {
 
   for (const file of stylesheetFiles) {
     const source = await fs.readFile(file, "utf8");
+    const rel = normalize(path.relative(ROOT, file));
+    if (rel.endsWith("/styles/global.css")) {
+      for (const [token, expected] of figmaAuthorityDeclarations) {
+        if (!source.includes(token + ": " + expected + ";")) {
+          report(file, source, 0, "Figma design authority drift: " + token + " must equal " + expected + ".");
+        }
+      }
+    }
+
+    const rawAlphaPattern = /rgba?\([^)]*?,\s*(0(?:\.\d+)?|1(?:\.0+)?)\s*\)/g;
+    for (const match of source.matchAll(rawAlphaPattern)) {
+      const alpha = Number(match[1]);
+      if (![1, 0.7, 0.45].includes(alpha)) {
+        report(file, source, match.index, "Transparency must use only Figma opacity levels: 100%, 70%, or 45%.");
+      }
+    }
+
+    const rawColorMixTransparency = /color-mix\([^)]*?\s(\d+(?:\.\d+)?)%,\s*transparent\)/g;
+    for (const match of source.matchAll(rawColorMixTransparency)) {
+      const percent = Number(match[1]);
+      if (![100, 70, 45].includes(percent)) {
+        report(file, source, match.index, "color-mix transparency must use a Figma transparency token (100%, 70%, or 45%).");
+      }
+    }
+
     const cssDesignPatterns = [
       {
         pattern: /\bborder-radius\s*:\s*(?!var\(--radius-)[^;]+;/g,
