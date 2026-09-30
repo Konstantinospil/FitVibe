@@ -3,6 +3,7 @@ import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "../components/ui/Button";
+import { InputControl } from "@fitvibe/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { login } from "../services/api";
 import { logger } from "../utils/logger.js";
@@ -134,7 +135,7 @@ const LoginFormContent: React.FC = () => {
     >
       <label className="form-label">
         <span className="form-label-text">{t("auth.login.emailLabel")}</span>
-        <input
+        <InputControl
           name="email"
           type="text"
           placeholder={t("auth.placeholders.email")}
@@ -151,7 +152,7 @@ const LoginFormContent: React.FC = () => {
           {t("auth.login.passwordLabel")}
         </label>
         <div className="form-input-wrapper">
-          <input
+          <InputControl
             id="login-password"
             name="password"
             type={showPassword ? "text" : "password"}
@@ -163,15 +164,17 @@ const LoginFormContent: React.FC = () => {
             autoComplete="current-password"
             disabled={isSubmitting}
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setShowPassword(!showPassword)}
             className="form-password-toggle"
             aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
             disabled={isSubmitting}
           >
             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
+          </Button>
         </div>
       </div>
       {error ? (
