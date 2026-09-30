@@ -3,6 +3,7 @@ import React, { forwardRef, useId, useState } from "react";
 export type FieldControlSize = "sm" | "md" | "lg";
 export type FieldControlVariant = "default" | "error";
 export type InputFieldState = "default" | "focus" | "error" | "disabled";
+export type SelectFieldState = "default" | "focus" | "error" | "disabled";
 
 const sizeStyles: Record<FieldControlSize, React.CSSProperties> = {
   sm: {
@@ -307,6 +308,8 @@ export const SelectControl = forwardRef<HTMLSelectElement, SelectControlProps>(
           WebkitAppearance: "none",
           MozAppearance: "none",
           cursor: disabled ? "not-allowed" : "pointer",
+          ...(invalid ? errorStyle : {}),
+          ...(disabled ? disabledStyle : {}),
           ...style,
         }}
         onFocus={(event) => {
@@ -325,6 +328,164 @@ export const SelectControl = forwardRef<HTMLSelectElement, SelectControlProps>(
   },
 );
 SelectControl.displayName = "SelectControl";
+
+export interface SelectFieldProps
+  extends Omit<
+    React.SelectHTMLAttributes<HTMLSelectElement>,
+    "size" | "style" | "className" | "disabled" | "aria-invalid"
+  > {
+  label: React.ReactNode;
+  helperText?: React.ReactNode;
+  error?: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+}
+
+export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
+  (
+    {
+      id,
+      label,
+      helperText,
+      error = false,
+      disabled = false,
+      children,
+      onFocus,
+      onBlur,
+      ...props
+    },
+    ref,
+  ) => {
+    const generatedId = useId();
+    const selectId = id ?? generatedId;
+    const helperId = helperText ? `${selectId}-helper` : undefined;
+    const [focused, setFocused] = useState(false);
+
+    const state: SelectFieldState = disabled
+      ? "disabled"
+      : error
+        ? "error"
+        : focused
+          ? "focus"
+          : "default";
+
+    const borderColor =
+      state === "focus"
+        ? "var(--color-highlight)"
+        : state === "error"
+          ? "var(--color-danger-border)"
+          : "var(--color-input-border)";
+
+    return (
+      <div
+        data-component="select-field"
+        data-state={state}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          width: "100%",
+          gap: "var(--space-xs)",
+          opacity: disabled ? "var(--opacity-disabled)" : "var(--opacity-full)",
+        }}
+      >
+        <label
+          htmlFor={selectId}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            minHeight: "20px",
+            color: "var(--color-text-secondary)",
+            fontFamily: "var(--font-family-body)",
+            fontWeight: "var(--font-weight-regular)",
+            fontSize: "var(--type-control-size)",
+            lineHeight: "var(--type-control-line-height)",
+            letterSpacing: "var(--type-control-letter-spacing)",
+          }}
+        >
+          {label}
+        </label>
+
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          <SelectControl
+            {...props}
+            id={selectId}
+            ref={ref}
+            disabled={disabled}
+            variant={error ? "error" : "default"}
+            aria-invalid={error ? "true" : undefined}
+            aria-describedby={helperId}
+            style={{
+              height: "38px",
+              minHeight: "38px",
+              padding: "var(--space-xs) calc(var(--space-xl) + var(--space-md)) var(--space-xs) var(--space-md)",
+              borderRadius: "var(--radius-md)",
+              borderColor,
+              background:
+                state === "disabled" ? "var(--color-surface-muted)" : "var(--color-input-bg)",
+              color: "var(--color-text-secondary)",
+              opacity: "var(--opacity-full)",
+            }}
+            onFocus={(event) => {
+              setFocused(true);
+              onFocus?.(event);
+            }}
+            onBlur={(event) => {
+              setFocused(false);
+              onBlur?.(event);
+            }}
+          >
+            {children}
+          </SelectControl>
+
+          <span
+            aria-hidden="true"
+            data-slot="select-chevron"
+            style={{
+              position: "absolute",
+              right: "var(--space-md)",
+              width: "var(--space-sm)",
+              height: "var(--space-sm)",
+              borderRight: "2px solid currentColor",
+              borderBottom: "2px solid currentColor",
+              color: "var(--color-text-secondary)",
+              transform: "translateY(calc(var(--space-xs) * -1)) rotate(45deg)",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+
+        {helperText ? (
+          <div
+            id={helperId}
+            style={{
+              width: "100%",
+              minHeight: "24px",
+              color: error ? "var(--color-danger-text)" : "var(--color-text-secondary)",
+              fontFamily: "var(--font-family-body)",
+              fontWeight: "var(--font-weight-control-large)",
+              fontSize: "var(--type-control-large-size)",
+              lineHeight: "var(--type-control-large-line-height)",
+              letterSpacing: "var(--type-control-large-letter-spacing)",
+            }}
+          >
+            {helperText}
+          </div>
+        ) : null}
+      </div>
+    );
+  },
+);
+SelectField.displayName = "SelectField";
+
 
 export interface TextareaControlProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
