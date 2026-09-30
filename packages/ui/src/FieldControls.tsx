@@ -40,7 +40,7 @@ const errorStyle: React.CSSProperties = {
 };
 
 const disabledStyle: React.CSSProperties = {
-  opacity: 0.6,
+  opacity: "var(--opacity-disabled)",
   cursor: "not-allowed",
 };
 
