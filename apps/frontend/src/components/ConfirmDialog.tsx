@@ -137,21 +137,17 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           {`
             @keyframes fadeIn {
               from {
-                opacity: 0;
               }
               to {
-                opacity: 1;
               }
             }
 
             @keyframes slideUp {
               from {
                 transform: translate(-50%, -40%);
-                opacity: 0;
               }
               to {
                 transform: translate(-50%, -50%);
-                opacity: 1;
               }
             }
           `}
