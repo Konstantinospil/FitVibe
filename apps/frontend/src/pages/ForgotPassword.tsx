@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { Button } from "../components/ui";
+import { InputControl } from "@fitvibe/ui";
 import { forgotPassword } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 
@@ -62,7 +63,7 @@ const ForgotPassword: React.FC = () => {
       >
         <label className="form-label">
           <span className="form-label-text">{t("forgotPassword.emailLabel")}</span>
-          <input
+          <InputControl
             name="email"
             type="email"
             placeholder={t("forgotPassword.emailPlaceholder")}
