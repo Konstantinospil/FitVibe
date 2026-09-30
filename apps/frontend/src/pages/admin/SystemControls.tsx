@@ -312,8 +312,8 @@ const SystemControls: React.FC = () => {
                 padding: "1rem",
                 marginBottom: "1rem",
                 borderRadius: "8px",
-                background: "rgba(239, 68, 68, 0.1)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
+                background: "var(--tone-red-500-a10)",
+                border: "1px solid var(--tone-red-500-a30)",
                 color: "var(--color-danger)",
               }}
             >
@@ -344,9 +344,9 @@ const SystemControls: React.FC = () => {
                   padding: "1rem",
                   marginBottom: "1rem",
                   borderRadius: "8px",
-                  background: "rgba(251, 191, 36, 0.1)",
-                  border: "1px solid rgba(251, 191, 36, 0.3)",
-                  color: "rgb(251, 191, 36)",
+                  background: "var(--tone-amber-400-a10)",
+                  border: "1px solid var(--tone-amber-400-a30)",
+                  color: "var(--tone-amber-400)",
                 }}
               >
                 <div
@@ -457,9 +457,9 @@ const SystemControls: React.FC = () => {
                   padding: "1rem",
                   marginBottom: "1rem",
                   borderRadius: "8px",
-                  background: "rgba(251, 191, 36, 0.1)",
-                  border: "1px solid rgba(251, 191, 36, 0.3)",
-                  color: "rgb(251, 191, 36)",
+                  background: "var(--tone-amber-400-a10)",
+                  border: "1px solid var(--tone-amber-400-a30)",
+                  color: "var(--tone-amber-400)",
                 }}
               >
                 <div
@@ -590,15 +590,15 @@ const SystemControls: React.FC = () => {
                               borderRadius: "4px",
                               background:
                                 entry.outcome === "success"
-                                  ? "rgba(34, 197, 94, 0.1)"
+                                  ? "var(--tone-green-500-a10)"
                                   : entry.outcome === "failure"
-                                    ? "rgba(239, 68, 68, 0.1)"
-                                    : "rgba(148, 163, 184, 0.1)",
+                                    ? "var(--tone-red-500-a10)"
+                                    : "var(--tone-slate-400-a10)",
                               color:
                                 entry.outcome === "success"
-                                  ? "rgb(34, 197, 94)"
+                                  ? "var(--tone-green-500)"
                                   : entry.outcome === "failure"
-                                    ? "rgb(239, 68, 68)"
+                                    ? "var(--tone-red-500)"
                                     : "var(--color-text-secondary)",
                             }}
                           >
