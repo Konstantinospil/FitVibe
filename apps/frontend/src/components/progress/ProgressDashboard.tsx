@@ -116,8 +116,8 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
       render: (value) => {
         const trend = value as "up" | "down" | "stable";
         const colors = {
-          up: "rgb(52, 211, 153)",
-          down: "rgb(248, 113, 113)",
+          up: "var(--tone-emerald-400)",
+          down: "var(--tone-red-400)",
           stable: "var(--color-text-secondary)",
         };
         const labels = {
@@ -179,7 +179,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           title={t("progress.volumeTrend")}
           data={volumeChartData}
           type="area"
-          color="rgba(52, 211, 153, 1)"
+          color="var(--tone-emerald-400)"
           valueFormatter={(value) => `${value}k kg`}
           loading={loading}
           dateRange={effectiveRange}
@@ -192,7 +192,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           title={t("progress.sessionsTrend")}
           data={sessionsChartData}
           type="bar"
-          color="rgba(56, 189, 248, 1)"
+          color="var(--tone-sky-400)"
           valueFormatter={(value) =>
             `${value} ${value === 1 ? t("progress.session") : t("progress.sessions")}`
           }
@@ -206,7 +206,7 @@ export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
           title={t("progress.intensityTrend")}
           data={intensityChartData}
           type="area"
-          color="rgba(251, 146, 60, 1)"
+          color="var(--tone-orange-400)"
           valueFormatter={(value) => `${value} RPE`}
           loading={loading}
         />
