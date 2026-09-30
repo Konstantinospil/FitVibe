@@ -30,7 +30,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   title,
   data,
   type = "area",
-  color = "rgba(52, 211, 153, 1)",
+  color = "var(--tone-emerald-400)",
   valueFormatter,
   height = 240,
   loading = false,
@@ -47,9 +47,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         padding: "2rem",
         textAlign: "center",
         color: "var(--color-text-secondary)",
-        background: "rgba(248, 113, 113, 0.1)",
+        background: "var(--tone-red-400-a10)",
         borderRadius: "12px",
-        border: "1px solid rgba(248, 113, 113, 0.3)",
+        border: "1px solid var(--tone-red-400-a30)",
       }}
     >
       <p style={{ margin: 0, marginBottom: "1rem" }}>
@@ -82,9 +82,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
               padding: "2rem",
               textAlign: "center",
               color: "var(--color-text-secondary)",
-              background: "rgba(248, 113, 113, 0.1)",
+              background: "var(--tone-red-400-a10)",
               borderRadius: "12px",
-              border: "1px solid rgba(248, 113, 113, 0.3)",
+              border: "1px solid var(--tone-red-400-a30)",
             }}
           >
             <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.failedToLoad")}</p>
