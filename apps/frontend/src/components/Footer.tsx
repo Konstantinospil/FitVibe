@@ -6,7 +6,7 @@ import { TextLink } from "@fitvibe/ui";
 
 /**
  * Footer component that appears on all pages.
- * Displays FitVibe branding, Terms and Conditions, and Privacy Policy links.
+ * Displays FitVibe branding, Contact, Terms and Conditions, and Privacy Policy links.
  * WCAG 2.1 AA compliant with proper semantic HTML and keyboard navigation.
  */
 export const Footer: React.FC = () => {
@@ -45,6 +45,17 @@ export const Footer: React.FC = () => {
         <BrandLogo size="sm" />
         <nav aria-label={t("footer.navigationLabel", { defaultValue: "Footer navigation" })}>
           <div style={linksContainerStyle}>
+            <TextLink
+              as={NavLink}
+              to="/contact"
+              aria-label={t("footer.contactAriaLabel", { defaultValue: "Contact us" })}
+              style={{
+                color: "var(--color-text-muted)",
+                fontSize: "var(--type-supporting-size)",
+              }}
+            >
+              {t("footer.contact", { defaultValue: "Contact" })}
+            </TextLink>
             <TextLink
               as={NavLink}
               to="/terms"
