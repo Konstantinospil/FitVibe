@@ -1,5 +1,5 @@
 import React, { forwardRef, useId, useState } from "react";
-import { Button } from "./Button";
+import { IconButton } from "./IconButton";
 import { InputControl } from "./FieldControls";
 
 export type PasswordFieldState = "default" | "focus" | "error" | "disabled";
@@ -149,12 +149,12 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             }}
           />
 
-          <Button
+          <IconButton
             type="button"
             variant="ghost"
-            size="sm"
+            icon={<VisibilityIcon visible={visible} />}
+            label={visible ? hidePasswordLabel : showPasswordLabel}
             disabled={disabled}
-            aria-label={visible ? hidePasswordLabel : showPasswordLabel}
             title={visible ? hidePasswordLabel : showPasswordLabel}
             data-slot="password-visibility-toggle"
             onMouseDown={(event) => {
@@ -182,16 +182,11 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             style={{
               position: "absolute",
               right: "var(--space-xs)",
-              minWidth: "34px",
-              minHeight: "34px",
-              padding: "var(--space-xs)",
               borderRadius: "var(--radius-md)",
               color:
                 state === "error" ? "var(--color-danger-text)" : "var(--color-text-secondary)",
             }}
-          >
-            <VisibilityIcon visible={visible} />
-          </Button>
+          />
         </div>
 
         {helperText ? (

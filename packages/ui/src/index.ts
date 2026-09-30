@@ -1,3 +1,4 @@
+export * from "./IconButton";
 export * from "./DropdownMenu";
 export * from "./CodeField";
 export * from "./PasswordField";
