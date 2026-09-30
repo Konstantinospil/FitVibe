@@ -93,8 +93,8 @@ const VerifyEmail: React.FC = () => {
             style={{
               width: "48px",
               height: "48px",
-              border: "4px solid var(--tone-indigo-600-a20)",
-              borderTopColor: "var(--tone-indigo-600)",
+              border: "4px solid var(--surface-focus-subtle)",
+              borderTopColor: "var(--color-focus)",
               margin: "0 auto",
               animation: "spin 1s linear infinite",
             }}
@@ -115,7 +115,7 @@ const VerifyEmail: React.FC = () => {
               width: "64px",
               height: "64px",
               margin: "0 auto 1rem",
-              backgroundColor: "var(--tone-green-500-a10)",
+              backgroundColor: "var(--surface-success-subtle)",
             }}
           >
             <svg
@@ -123,7 +123,7 @@ const VerifyEmail: React.FC = () => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="var(--tone-green-500)"
+              stroke="var(--color-success)"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -145,7 +145,7 @@ const VerifyEmail: React.FC = () => {
               width: "64px",
               height: "64px",
               margin: "0 auto 1rem",
-              backgroundColor: "var(--tone-red-500-a10)",
+              backgroundColor: "var(--surface-danger-subtle)",
             }}
           >
             <svg
@@ -153,7 +153,7 @@ const VerifyEmail: React.FC = () => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="var(--tone-red-500)"
+              stroke="var(--color-danger)"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -165,7 +165,7 @@ const VerifyEmail: React.FC = () => {
 
           {resendSuccess ? (
             <div className="mb-1">
-              <p style={{ color: "var(--tone-green-500)", marginBottom: "1rem" }}>
+              <p style={{ color: "var(--color-success)", marginBottom: "1rem" }}>
                 {t("verifyEmail.resendSuccess")}
               </p>
               <Button onClick={() => void navigate("/login")} className="mt-1">
@@ -260,7 +260,7 @@ const VerifyEmail: React.FC = () => {
                   style={{
                     width: "100%",
                     padding: "0.75rem",
-                    border: "1px solid var(--tone-gray-300)",
+                    border: "1px solid var(--color-border)",
                     borderRadius: "6px",
                     fontSize: "1rem",
                   }}
@@ -268,11 +268,11 @@ const VerifyEmail: React.FC = () => {
               </div>
               {resendError && (
                 <div style={{ marginBottom: "1rem" }}>
-                  <p style={{ color: "var(--tone-red-500)", fontSize: "0.875rem", marginBottom: "0.25rem" }}>
+                  <p style={{ color: "var(--color-danger)", fontSize: "0.875rem", marginBottom: "0.25rem" }}>
                     {resendError}
                   </p>
                   {retryAfter !== null && countdown > 0 && (
-                    <p style={{ color: "var(--tone-gray-600)", fontSize: "0.75rem" }}>
+                    <p style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
                       {t("verifyEmail.retryAfter", { seconds: countdown })}
                     </p>
                   )}
@@ -293,8 +293,8 @@ const VerifyEmail: React.FC = () => {
                 style={{
                   width: "100%",
                   backgroundColor: "transparent",
-                  color: "var(--tone-gray-500)",
-                  border: "1px solid var(--tone-gray-300)",
+                  color: "var(--color-text-muted)",
+                  border: "1px solid var(--color-border)",
                 }}
               >
                 {t("verifyEmail.backToRegister")}
@@ -312,7 +312,7 @@ const VerifyEmail: React.FC = () => {
               width: "64px",
               height: "64px",
               margin: "0 auto 1rem",
-              backgroundColor: "var(--tone-red-500-a10)",
+              backgroundColor: "var(--surface-danger-subtle)",
             }}
           >
             <svg
@@ -320,7 +320,7 @@ const VerifyEmail: React.FC = () => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="var(--tone-red-500)"
+              stroke="var(--color-danger)"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
