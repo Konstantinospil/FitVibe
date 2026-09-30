@@ -296,6 +296,7 @@ export async function renderPage(url: string): Promise<string> {
     <meta name="twitter:image" content="${baseUrl}/favicon.ico" />
     
     <!-- Additional SEO meta tags -->
+    <!-- architecture-token: data-value -- Browser theme-color metadata requires a concrete color and cannot consume a CSS custom property. -->
     <meta name="theme-color" content="#0B0C10" />
     <link rel="canonical" href="${baseUrl}${url}" />
   `;
