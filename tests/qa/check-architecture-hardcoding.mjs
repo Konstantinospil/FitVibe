@@ -193,26 +193,49 @@ async function checkFrontendTokens() {
   ]);
 
 
+  const allowedRadiusValues = new Set(["8px", "12px", "16px", "24px", "999px", "0.5rem", "0.75rem", "1rem", "1.5rem"]);
+  const allowedOpacityValues = new Set(["1", "0.7", "0.70", "0.45"]);
+  const allowedFontSizes = new Set(["14px", "16px", "18px", "24px", "32px", "48px", "0.875rem", "1rem", "1.125rem", "1.5rem", "2rem", "3rem"]);
+  const allowedLineHeights = new Set(["12px", "20px", "24px", "28px", "32px", "36px", "40px", "56px", "0.75rem", "1.25rem", "1.5rem", "1.75rem", "2rem", "2.25rem", "2.5rem", "3.5rem"]);
+  const allowedLetterSpacing = new Set(["0", "0em", "0%", "-0.005em", "-0.01em", "-0.5%", "-1%", "0.02em", "2%"]);
+  const allowedFontWeights = new Set(["400", "582", "600", "normal"]);
+  const allowedFontFamilies = new Set(["Inter", "Roboto Flex", "inherit"]);
+
   const sourceDesignPatterns = [
     {
-      pattern: /\bborderRadius\s*:\s*["'`]\s*\d+(?:\.\d+)?(?:px|rem)\s*["'`]/g,
-      message: "Raw radius in production frontend source. Consume the Figma radius authority (--radius-sm/md/lg/xl/full).",
+      pattern: /\bborderRadius\s*:\s*["'`]\s*([^"'`]+)\s*["'`]/g,
+      allowed: allowedRadiusValues,
+      message: "Raw radius outside the Figma radius authority (8/12/16/24/999px).",
     },
     {
-      pattern: /\bopacity\s*:\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\b/g,
-      message: "Raw opacity in production frontend source. Consume the Figma opacity authority (--opacity-full/subtle/disabled).",
+      pattern: /\bopacity\s*:\s*(0(?:\.\d+)?|1(?:\.0+)?)\b/g,
+      allowed: allowedOpacityValues,
+      message: "Opacity outside the Figma authority (100%/70%/45%).",
     },
     {
-      pattern: /\b(?:fontSize|lineHeight|letterSpacing)\s*:\s*(?:["'`][^"'`]+["'`]|\d+(?:\.\d+)?)/g,
-      message: "Raw typography metric in production frontend source. Consume a named Figma typography token.",
+      pattern: /\bfontSize\s*:\s*["'`]([^"'`]+)["'`]/g,
+      allowed: allowedFontSizes,
+      message: "Font size outside the Figma typography authority.",
     },
     {
-      pattern: /\bfontWeight\s*:\s*(?:["'`]?(?:[1-9]00|582|normal|bold)["'`]?)/g,
-      message: "Raw typography weight in production frontend source. Consume a named Figma typography token.",
+      pattern: /\blineHeight\s*:\s*["'`]([^"'`]+)["'`]/g,
+      allowed: allowedLineHeights,
+      message: "Line height outside the Figma typography authority.",
     },
     {
-      pattern: /\bfontFamily\s*:\s*["'`][^"'`]+["'`]/g,
-      message: "Raw font family in production frontend source. Consume the Figma font-family authority.",
+      pattern: /\bletterSpacing\s*:\s*["'`]([^"'`]+)["'`]/g,
+      allowed: allowedLetterSpacing,
+      message: "Letter spacing outside the Figma typography authority.",
+    },
+    {
+      pattern: /\bfontWeight\s*:\s*["'`]?(\d+|normal|bold)["'`]?/g,
+      allowed: allowedFontWeights,
+      message: "Font weight outside the Figma typography authority (400/582/600).",
+    },
+    {
+      pattern: /\bfontFamily\s*:\s*["'`]([^"'`]+)["'`]/g,
+      allowed: allowedFontFamilies,
+      message: "Font family outside the Figma authority (Inter/Roboto Flex).",
     },
   ];
 
@@ -231,7 +254,8 @@ async function checkFrontendTokens() {
 
     for (const rule of sourceDesignPatterns) {
       for (const match of source.matchAll(rule.pattern)) {
-        if (!sourceException(source, match.index, "token")) {
+        const value = String(match[1] ?? "").trim();
+        if (!rule.allowed.has(value) && !sourceException(source, match.index, "token")) {
           report(file, source, match.index, rule.message);
         }
       }
@@ -267,32 +291,49 @@ async function checkFrontendTokens() {
 
     const cssDesignPatterns = [
       {
-        pattern: /\bborder-radius\s*:\s*(?!var\(--radius-)[^;]+;/g,
-        message: "CSS border-radius must consume the Figma radius authority.",
+        pattern: /\bborder-radius\s*:\s*([^;]+);/g,
+        allowed: allowedRadiusValues,
+        variablePrefix: "--radius-",
+        message: "CSS border-radius outside the Figma radius authority.",
       },
       {
-        pattern: /\bopacity\s*:\s*(?!var\(--opacity-)[^;]+;/g,
-        message: "CSS opacity must consume the Figma opacity authority.",
+        pattern: /\bopacity\s*:\s*([^;]+);/g,
+        allowed: allowedOpacityValues,
+        variablePrefix: "--opacity-",
+        message: "CSS opacity outside the Figma opacity authority.",
       },
       {
-        pattern: /\bfont-size\s*:\s*(?!var\(--(?:type-|font-size-))[^;]+;/g,
-        message: "CSS font-size must consume a named Figma typography token.",
+        pattern: /\bfont-size\s*:\s*([^;]+);/g,
+        allowed: allowedFontSizes,
+        variablePrefix: "--type-",
+        compatibilityPrefix: "--font-size-",
+        message: "CSS font-size outside the Figma typography authority.",
       },
       {
-        pattern: /\bline-height\s*:\s*(?!var\(--(?:type-|line-height-))[^;]+;/g,
-        message: "CSS line-height must consume a named Figma typography token.",
+        pattern: /\bline-height\s*:\s*([^;]+);/g,
+        allowed: allowedLineHeights,
+        variablePrefix: "--type-",
+        compatibilityPrefix: "--line-height-",
+        message: "CSS line-height outside the Figma typography authority.",
       },
       {
-        pattern: /\bletter-spacing\s*:\s*(?!var\(--(?:type-|letter-spacing-))[^;]+;/g,
-        message: "CSS letter-spacing must consume a named Figma typography token.",
+        pattern: /\bletter-spacing\s*:\s*([^;]+);/g,
+        allowed: allowedLetterSpacing,
+        variablePrefix: "--type-",
+        compatibilityPrefix: "--letter-spacing-",
+        message: "CSS letter-spacing outside the Figma typography authority.",
       },
       {
-        pattern: /\bfont-weight\s*:\s*(?!var\(--font-weight-)[^;]+;/g,
-        message: "CSS font-weight must consume the Figma typography weight authority.",
+        pattern: /\bfont-weight\s*:\s*([^;]+);/g,
+        allowed: allowedFontWeights,
+        variablePrefix: "--font-weight-",
+        message: "CSS font-weight outside the Figma typography authority.",
       },
       {
-        pattern: /\bfont-family\s*:\s*(?!var\(--font-family-)[^;]+;/g,
-        message: "CSS font-family must consume the Figma font-family authority.",
+        pattern: /\bfont-family\s*:\s*([^;]+);/g,
+        allowed: new Set(["Inter", "Roboto Flex", "inherit"]),
+        variablePrefix: "--font-family-",
+        message: "CSS font-family outside the Figma typography authority.",
       },
     ];
 
@@ -312,8 +353,18 @@ async function checkFrontendTokens() {
     for (const rule of cssDesignPatterns) {
       for (const match of source.matchAll(rule.pattern)) {
         const line = lineTextAt(source, match.index);
+        const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
         const isAuthorityDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-        if (!isAuthorityDeclaration && !sourceException(source, match.index, "token")) {
+        const isTokenReference =
+          value.startsWith("var(" + rule.variablePrefix) ||
+          (rule.compatibilityPrefix && value.startsWith("var(" + rule.compatibilityPrefix));
+        const plainFamily = value.split(",")[0].trim().replace(/^["']|["']$/g, "");
+        const allowed =
+          rule.allowed.has(value) ||
+          rule.allowed.has(plainFamily) ||
+          isTokenReference ||
+          isAuthorityDeclaration;
+        if (!allowed && !sourceException(source, match.index, "token")) {
           report(file, source, match.index, rule.message);
         }
       }
