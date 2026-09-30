@@ -43,12 +43,12 @@ class ErrorBoundaryComponent extends Component<Props, State> {
             padding: "2rem",
             textAlign: "center",
             color: "var(--color-text-secondary)",
-            background: "var(--tone-red-400-a10)",
+            background: "var(--surface-danger-subtle)",
             borderRadius: "12px",
-            border: "1px solid var(--tone-red-400-a30)",
+            border: "1px solid var(--border-danger-subtle)",
           }}
         >
-          <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--tone-red-400)" }}>
+          <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-danger)" }}>
             {this.props.t("components.errorBoundary.title")}
           </strong>
           <p style={{ margin: 0, fontSize: "0.9rem" }}>
