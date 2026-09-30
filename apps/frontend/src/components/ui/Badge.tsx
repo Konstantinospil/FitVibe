@@ -50,12 +50,12 @@ const baseStyle: React.CSSProperties = {
 
 const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
   planned: {
-    background: "linear-gradient(90deg, #6366F1, #A855F7)",
-    color: "#FFFFFF",
+    background: "linear-gradient(90deg, var(--color-focus), var(--vibe-intelligence))",
+    color: "var(--color-on-color)",
   },
   completed: {
     background: "var(--color-completed)",
-    color: "#FFFFFF",
+    color: "var(--color-on-color)",
   },
   strength: {
     background: "rgba(251, 149, 29, 0.2)",
