@@ -19,7 +19,7 @@ const NotFound: React.FC = () => {
           style={{
             padding: "0.9rem 1.4rem",
             background: "var(--color-accent)",
-            color: "var(--tone-slate-900)",
+            color: "var(--color-primary-on)",
             letterSpacing: "0.02em",
           }}
         >
@@ -30,8 +30,8 @@ const NotFound: React.FC = () => {
           className="rounded-xl font-weight-600 text-secondary"
           style={{
             padding: "0.9rem 1.4rem",
-            background: "var(--tone-slate-900-a40)",
-            border: "1px solid var(--tone-slate-400-a20)",
+            background: "var(--surface-muted-subtle)",
+            border: "1px solid var(--color-border)",
             letterSpacing: "0.02em",
           }}
         >
