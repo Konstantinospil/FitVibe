@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { Button } from "../components/ui";
-import { InputField } from "@fitvibe/ui";
+import { CodeField } from "@fitvibe/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { verify2FALogin } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
@@ -128,13 +128,12 @@ const TwoFactorVerificationLogin: React.FC = () => {
           </span>
         </div>
 
-        <InputField
+        <CodeField
           label={t("auth.twoFactor.codeLabel") || "Authentication Code"}
           helperText={t("auth.twoFactor.codeHint") || "6-digit code or backup code"}
+          error={error ?? undefined}
           name="code"
-          type="text"
           inputMode="text"
-          placeholder={t("twoFactor.codePlaceholder")}
           required
           value={code}
           onChange={handleCodeChange}
@@ -143,12 +142,6 @@ const TwoFactorVerificationLogin: React.FC = () => {
           maxLength={9}
           autoFocus
         />
-
-        {error ? (
-          <div role="alert" className="form-error text-center">
-            {error}
-          </div>
-        ) : null}
 
         <Button
           type="submit"
