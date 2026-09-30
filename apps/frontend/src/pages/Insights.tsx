@@ -93,7 +93,7 @@ const selectStyle: React.CSSProperties = {
   padding: "0.5rem 1rem",
   borderRadius: "8px",
   border: "1px solid var(--color-border)",
-  background: "var(--tone-slate-900-a50)",
+  background: "var(--surface-muted-subtle)",
   color: "var(--color-text-primary)",
   fontSize: "0.9rem",
   cursor: "pointer",
@@ -254,9 +254,9 @@ const Insights: React.FC = () => {
         padding: "2rem",
         textAlign: "center",
         color: "var(--color-text-secondary)",
-        background: "var(--tone-red-400-a10)",
+        background: "var(--surface-danger-subtle)",
         borderRadius: "12px",
-        border: "1px solid var(--tone-red-400-a30)",
+        border: "1px solid var(--border-danger-subtle)",
       }}
     >
       <p style={{ margin: 0, marginBottom: "1rem" }}>
@@ -291,7 +291,7 @@ const Insights: React.FC = () => {
             padding: "0.75rem 1.5rem",
             borderRadius: "8px 8px 0 0",
             background: activeTab === "dashboard" ? "var(--color-accent)" : "transparent",
-            color: activeTab === "dashboard" ? "var(--tone-slate-900)" : "var(--color-text-secondary)",
+            color: activeTab === "dashboard" ? "var(--color-primary-on)" : "var(--color-text-secondary)",
             fontWeight: activeTab === "dashboard" ? 600 : 500,
             border: "none",
             cursor: "pointer",
@@ -307,7 +307,7 @@ const Insights: React.FC = () => {
             padding: "0.75rem 1.5rem",
             borderRadius: "8px 8px 0 0",
             background: activeTab === "progress" ? "var(--color-accent)" : "transparent",
-            color: activeTab === "progress" ? "var(--tone-slate-900)" : "var(--color-text-secondary)",
+            color: activeTab === "progress" ? "var(--color-primary-on)" : "var(--color-text-secondary)",
             fontWeight: activeTab === "progress" ? 600 : 500,
             border: "none",
             cursor: "pointer",
@@ -329,7 +329,7 @@ const Insights: React.FC = () => {
                 borderRadius: "12px",
                 border: "1px solid rgba(235, 87, 87, 0.35)",
                 background: "rgba(235, 87, 87, 0.12)",
-                color: "var(--tone-red-400)",
+                color: "var(--color-danger)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -439,7 +439,7 @@ const Insights: React.FC = () => {
                   value={dashboardRange}
                   onChange={(event) => setDashboardRange(event.target.value as DashboardRange)}
                   style={{
-                    background: "var(--tone-slate-900-a35)",
+                    background: "var(--surface-muted-subtle)",
                     color: "var(--color-text-primary)",
                     border: "1px solid var(--color-border)",
                     borderRadius: "12px",
@@ -611,9 +611,9 @@ const Insights: React.FC = () => {
                   padding: "2rem",
                   textAlign: "center",
                   color: "var(--color-text-secondary)",
-                  background: "var(--tone-red-400-a10)",
+                  background: "var(--surface-danger-subtle)",
                   borderRadius: "12px",
-                  border: "1px solid var(--tone-red-400-a30)",
+                  border: "1px solid var(--border-danger-subtle)",
                 }}
               >
                 <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -632,7 +632,7 @@ const Insights: React.FC = () => {
                   data={volumeChartData}
                   type="area"
                   height={240}
-                  color="var(--tone-emerald-400)"
+                  color="var(--color-success)"
                   valueFormatter={(value) => `${value}k kg`}
                 />
               </ErrorBoundary>
@@ -665,9 +665,9 @@ const Insights: React.FC = () => {
                   padding: "2rem",
                   textAlign: "center",
                   color: "var(--color-text-secondary)",
-                  background: "var(--tone-red-400-a10)",
+                  background: "var(--surface-danger-subtle)",
                   borderRadius: "12px",
-                  border: "1px solid var(--tone-red-400-a30)",
+                  border: "1px solid var(--border-danger-subtle)",
                 }}
               >
                 <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -686,7 +686,7 @@ const Insights: React.FC = () => {
                   data={sessionsChartData}
                   type="bar"
                   height={240}
-                  color="var(--tone-sky-400)"
+                  color="var(--color-focus)"
                   valueFormatter={(value) => `${value} ${value === 1 ? "session" : "sessions"}`}
                 />
               </ErrorBoundary>
@@ -719,9 +719,9 @@ const Insights: React.FC = () => {
                   padding: "2rem",
                   textAlign: "center",
                   color: "var(--color-text-secondary)",
-                  background: "var(--tone-red-400-a10)",
+                  background: "var(--surface-danger-subtle)",
                   borderRadius: "12px",
-                  border: "1px solid var(--tone-red-400-a30)",
+                  border: "1px solid var(--border-danger-subtle)",
                 }}
               >
                 <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -740,7 +740,7 @@ const Insights: React.FC = () => {
                   data={intensityChartData}
                   type="area"
                   height={240}
-                  color="var(--tone-orange-400)"
+                  color="var(--vibe-strength)"
                   valueFormatter={(value) => `${value} RPE`}
                 />
               </ErrorBoundary>
@@ -775,9 +775,9 @@ const Insights: React.FC = () => {
                   padding: "2rem",
                   textAlign: "center",
                   color: "var(--color-text-secondary)",
-                  background: "var(--tone-red-400-a10)",
+                  background: "var(--surface-danger-subtle)",
                   borderRadius: "12px",
-                  border: "1px solid var(--tone-red-400-a30)",
+                  border: "1px solid var(--border-danger-subtle)",
                 }}
               >
                 <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -824,7 +824,7 @@ const Insights: React.FC = () => {
                     {exerciseData.exercises.map((exercise) => (
                       <tr
                         key={exercise.exerciseId}
-                        style={{ borderBottom: "1px solid var(--tone-slate-400-a10)" }}
+                        style={{ borderBottom: "1px solid var(--border-subtle)" }}
                       >
                         <td style={{ padding: "1rem 0" }}>
                           <strong>{exercise.exerciseName}</strong>
@@ -842,9 +842,9 @@ const Insights: React.FC = () => {
                             style={{
                               color:
                                 exercise.trend === "up"
-                                  ? "var(--tone-emerald-400)"
+                                  ? "var(--color-success)"
                                   : exercise.trend === "down"
-                                    ? "var(--tone-red-400)"
+                                    ? "var(--color-danger)"
                                     : "var(--color-text-secondary)",
                             }}
                           >
