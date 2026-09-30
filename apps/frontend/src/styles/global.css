@@ -6,16 +6,16 @@
 :root {
 
   /* Derived effects may only mix Figma palette tokens with transparency. */
-  --surface-muted-subtle: color-mix(in srgb, var(--color-surface-muted) 55%, transparent);
-  --border-subtle: color-mix(in srgb, var(--color-border) 55%, transparent);
-  --surface-success-subtle: color-mix(in srgb, var(--color-success) 14%, transparent);
-  --border-success-subtle: color-mix(in srgb, var(--color-success) 35%, transparent);
-  --surface-danger-subtle: color-mix(in srgb, var(--color-danger) 14%, transparent);
-  --border-danger-subtle: color-mix(in srgb, var(--color-danger) 35%, transparent);
-  --surface-warning-subtle: color-mix(in srgb, var(--color-warning) 14%, transparent);
-  --border-warning-subtle: color-mix(in srgb, var(--color-warning) 35%, transparent);
-  --surface-focus-subtle: color-mix(in srgb, var(--color-focus) 14%, transparent);
-  --border-focus-subtle: color-mix(in srgb, var(--color-focus) 35%, transparent);
+  --surface-muted-subtle: color-mix(in srgb, var(--color-surface-muted) var(--transparency-disabled), transparent);
+  --border-subtle: color-mix(in srgb, var(--color-border) var(--transparency-disabled), transparent);
+  --surface-success-subtle: color-mix(in srgb, var(--color-success) var(--transparency-disabled), transparent);
+  --border-success-subtle: color-mix(in srgb, var(--color-success) var(--transparency-subtle), transparent);
+  --surface-danger-subtle: color-mix(in srgb, var(--color-danger) var(--transparency-disabled), transparent);
+  --border-danger-subtle: color-mix(in srgb, var(--color-danger) var(--transparency-subtle), transparent);
+  --surface-warning-subtle: color-mix(in srgb, var(--color-warning) var(--transparency-disabled), transparent);
+  --border-warning-subtle: color-mix(in srgb, var(--color-warning) var(--transparency-subtle), transparent);
+  --surface-focus-subtle: color-mix(in srgb, var(--color-focus) var(--transparency-disabled), transparent);
+  --border-focus-subtle: color-mix(in srgb, var(--color-focus) var(--transparency-subtle), transparent);
 
   color-scheme: dark;
 
@@ -85,6 +85,22 @@
   --transparency-full: 100%;
   --transparency-subtle: 70%;
   --transparency-disabled: 45%;
+
+  /* Compatibility aliases: every alias resolves to an existing Figma text style. */
+  --font-family-base: var(--font-family-body);
+  --font-size-xs: var(--type-supporting-size);
+  --font-size-sm: var(--type-supporting-size);
+  --font-size-md: var(--type-body-size);
+  --font-size-lg: var(--type-card-title-size);
+  --font-size-xl: var(--type-section-title-size);
+  --font-size-2xl: var(--type-page-title-size);
+  --font-size-3xl: var(--type-display-size);
+  --line-height-tight: var(--type-card-title-line-height);
+  --line-height-snug: var(--type-supporting-line-height);
+  --line-height-normal: var(--type-body-line-height);
+  --line-height-relaxed: var(--type-body-line-height);
+  --letter-spacing-wide: var(--type-metric-small-letter-spacing);
+  --letter-spacing-tight: var(--type-page-title-letter-spacing);
 
   /* Spacing */
   --space-xs: 0.5rem;
