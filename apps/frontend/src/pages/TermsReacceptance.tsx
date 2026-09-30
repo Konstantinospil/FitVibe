@@ -79,7 +79,7 @@ const TermsReacceptance: React.FC = () => {
           className="checkbox-wrapper"
           style={{
             padding: "0.75rem",
-            borderRadius: "8px",
+            borderRadius: "var(--radius-sm)",
             background: "var(--color-surface-glass)",
             border:
               error && !acceptedTerms
