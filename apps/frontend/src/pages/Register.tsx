@@ -174,7 +174,13 @@ const Register: React.FC = () => {
           <p className="mb-1 text-secondary">{t("auth.register.checkEmail", { email })}</p>
           {resendSuccess ? (
             <div className="mb-1">
-              <p style={{ color: "var(--color-success)", marginBottom: "1rem", fontSize: "var(--type-supporting-size)" }}>
+              <p
+                style={{
+                  color: "var(--color-success)",
+                  marginBottom: "1rem",
+                  fontSize: "var(--type-supporting-size)",
+                }}
+              >
                 {t("verifyEmail.resendSuccess")}
               </p>
             </div>
@@ -246,11 +252,17 @@ const Register: React.FC = () => {
           )}
           {resendError && (
             <div role="alert" style={{ marginBottom: "1rem" }}>
-              <p style={{ color: "var(--color-danger)", fontSize: "var(--type-supporting-size)", marginBottom: "0.25rem" }}>
+              <p
+                style={{
+                  color: "var(--color-danger)",
+                  fontSize: "var(--type-supporting-size)",
+                  marginBottom: "0.25rem",
+                }}
+              >
                 {resendError}
               </p>
               {retryAfter !== null && countdown > 0 && (
-                <p style={{ color: "#666", fontSize: "var(--type-supporting-size)" }}>
+                <p style={{ color: "var(--color-text-muted)", fontSize: "var(--type-supporting-size)" }}>
                   {t("verifyEmail.retryAfter", { seconds: countdown })}
                 </p>
               )}
@@ -332,7 +344,11 @@ const Register: React.FC = () => {
           />
           <small
             className="text-secondary"
-            style={{ fontSize: "var(--type-supporting-size)", marginTop: "0.25rem", display: "block" }}
+            style={{
+              fontSize: "var(--type-supporting-size)",
+              marginTop: "0.25rem",
+              display: "block",
+            }}
           >
             {t("auth.register.usernameHelp")}
           </small>
@@ -399,7 +415,7 @@ const Register: React.FC = () => {
             style={{
               border:
                 error && !termsAccepted
-                  ? "1px solid rgba(248, 113, 113, 0.5)"
+                  ? "1px solid var(--border-danger-subtle)"
                   : "1px solid var(--color-border)",
               borderRadius: "var(--radius-sm)",
               padding: "0.75rem",
