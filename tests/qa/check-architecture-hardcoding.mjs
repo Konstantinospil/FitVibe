@@ -27,6 +27,7 @@ function report(file, source, index, message) {
   const normalized = normalize(path.relative(ROOT, file));
   violations.push({ file: normalized, line, message });
   console.error("::error file=" + normalized + ",line=" + line + "::" + message);
+  console.error("ARCHITECTURE_FINDING " + normalized + ":" + line + " " + message);
 }
 
 async function walk(dir) {
