@@ -51,21 +51,21 @@ export const AttemptCounter: React.FC<AttemptCounterProps> = ({
   const getWarningColor = () => {
     if (isCritical) {
       return {
-        background: "var(--tone-red-500-a15)",
-        border: "1px solid var(--tone-red-500-a40)",
+        background: "var(--surface-danger-subtle)",
+        border: "1px solid var(--border-danger-subtle)",
         color: "var(--color-text-primary)",
       };
     }
     if (isWarning) {
       return {
-        background: "var(--tone-orange-400-a15)",
-        border: "1px solid var(--tone-orange-400-a40)",
+        background: "var(--surface-warning-subtle)",
+        border: "1px solid var(--border-warning-subtle)",
         color: "var(--color-text-primary)",
       };
     }
     return {
-      background: "var(--tone-blue-500-a10)",
-      border: "1px solid var(--tone-blue-500-a30)",
+      background: "var(--surface-focus-subtle)",
+      border: "1px solid var(--border-focus-subtle)",
       color: "var(--color-text-primary)",
     };
   };
