@@ -153,7 +153,7 @@ async function frontendSourceFiles(extensions) {
       const rel = normalize(path.relative(ROOT, file));
       if (
         extensions.some((extension) => rel.endsWith(extension)) &&
-        !/\\.(test|spec)\\.[^.]+$/.test(rel) &&
+        !/\.(test|spec)\.[^.]+$/.test(rel) &&
         !rel.includes("/__tests__/")
       ) {
         files.push(file);
@@ -171,7 +171,7 @@ function lineTextAt(source, index) {
 async function checkFrontendTokens() {
   const sourceFiles = await frontendSourceFiles([".ts", ".tsx", ".js", ".jsx"]);
   const stylesheetFiles = await frontendSourceFiles([".css", ".scss"]);
-  const rawColorPattern = /#[0-9a-fA-F]{3,8}\\b|rgba?\\s*\\([^)]*\\)|hsla?\\s*\\([^)]*\\)/g;
+  const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/g;
 
   for (const file of sourceFiles) {
     const source = await fs.readFile(file, "utf8");
@@ -191,7 +191,7 @@ async function checkFrontendTokens() {
     const source = await fs.readFile(file, "utf8");
     for (const match of source.matchAll(rawColorPattern)) {
       const line = lineTextAt(source, match.index);
-      const isTokenDeclaration = /^\\s*--[a-zA-Z0-9_-]+\\s*:/.test(line);
+      const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
       if (!isTokenDeclaration && !sourceException(source, match.index, "token")) {
         report(
           file,
@@ -226,7 +226,7 @@ async function checkFrontendReuse() {
   for (const file of pageFiles) {
     const rel = normalize(path.relative(ROOT, file));
     const source = await fs.readFile(file, "utf8");
-    const tagPattern = /<(button|select|textarea|input)\\b[\\s\\S]*?>/g;
+    const tagPattern = /<(button|select|textarea|input)\b[\s\S]*?>/g;
 
     for (const match of source.matchAll(tagPattern)) {
       const tagName = match[1].toLowerCase();
@@ -237,7 +237,7 @@ async function checkFrontendReuse() {
       }
 
       if (tagName === "button") {
-        const exception = tag.match(/\\bdata-native-ui\\s*=\\s*["']([^"']+)["']/);
+        const exception = tag.match(/\bdata-native-ui\s*=\s*["']([^"']+)["']/);
         if (
           exception &&
           allowedNativeButtons.get(rel) &&
