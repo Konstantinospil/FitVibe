@@ -104,7 +104,7 @@ const Login: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                 border: `1px solid ${colors.border}`,
                 borderRadius: "4px",
                 color: colors.text,
@@ -124,7 +124,7 @@ const Login: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                 border: `1px solid ${colors.border}`,
                 borderRadius: "4px",
                 color: colors.text,
@@ -144,7 +144,7 @@ const Login: React.FC = () => {
               width: "100%",
               padding: "0.75rem",
               background: loading ? colors.border : colors.accent,
-              color: "#FFFFFF",
+              color: "var(--color-on-color)",
               border: "none",
               borderRadius: "4px",
               fontSize: "1rem",
