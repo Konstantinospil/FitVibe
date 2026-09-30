@@ -490,7 +490,7 @@ const Home: React.FC = () => {
                   <div
                     className="text-center"
                     style={{
-                      opacity: hoveredVibe === vibe.key ? 1 : 0.6,
+                      opacity: hoveredVibe === vibe.key ? "var(--opacity-full)" : "var(--opacity-subtle)",
                       transition: "opacity 0.3s ease",
                       minHeight: "80px",
                     }}
@@ -502,7 +502,7 @@ const Home: React.FC = () => {
                       {t(`vibes.${vibe.key}.element`)}
                     </div>
                     {hoveredVibe === vibe.key && (
-                      <div className="text-sm text-muted" style={{ lineHeight: "1.4" }}>
+                      <div className="text-sm text-muted" style={{ lineHeight: "var(--type-body-line-height)" }}>
                         {t(`vibes.${vibe.key}.activities`)}
                       </div>
                     )}
@@ -737,7 +737,7 @@ const Home: React.FC = () => {
                     color: "var(--color-text-primary)",
                     fontSize: "var(--font-size-md)",
                     cursor: "pointer",
-                    fontWeight: exerciseMode === "select" ? 600 : 400,
+                    fontWeight: exerciseMode === "select" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
                   }}
                 >
                   {t("vibesHome.addExercise.selectExisting")}
@@ -762,7 +762,7 @@ const Home: React.FC = () => {
                     color: "var(--color-text-primary)",
                     fontSize: "var(--font-size-md)",
                     cursor: "pointer",
-                    fontWeight: exerciseMode === "create" ? 600 : 400,
+                    fontWeight: exerciseMode === "create" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
                   }}
                 >
                   {t("vibesHome.addExercise.createNew")}
@@ -1177,7 +1177,7 @@ const Home: React.FC = () => {
                     fontSize: "var(--font-size-md)",
                     cursor: isSubmitting ? "wait" : "pointer",
                     fontWeight: "var(--font-weight-control-large)",
-                    opacity: isSubmitting ? 0.5 : 1,
+                    opacity: isSubmitting ? "var(--opacity-disabled)" : "var(--opacity-full)",
                   }}
                 >
                   {t("vibesHome.addExercise.cancel")}
