@@ -123,11 +123,16 @@ describe("Register", () => {
     expect(passwordInput).toHaveAttribute("type", "password");
     expect(confirmPasswordInput).toHaveAttribute("type", "password");
 
-    fireEvent.click(passwordToggles[0]);
+    fireEvent.mouseDown(passwordToggles[0]);
     expect(passwordInput).toHaveAttribute("type", "text");
+    fireEvent.mouseUp(screen.getAllByLabelText(/hide password/i)[0]);
+    expect(passwordInput).toHaveAttribute("type", "password");
 
-    fireEvent.click(passwordToggles[1]);
+    const refreshedToggles = screen.getAllByLabelText(/show password/i);
+    fireEvent.mouseDown(refreshedToggles[1]);
     expect(confirmPasswordInput).toHaveAttribute("type", "text");
+    fireEvent.mouseUp(screen.getAllByLabelText(/hide password/i)[0]);
+    expect(confirmPasswordInput).toHaveAttribute("type", "password");
   });
 
   it("validates password match", async () => {
@@ -743,11 +748,15 @@ describe("Register", () => {
     expect(passwordToggle).toBeInTheDocument();
     expect(confirmPasswordToggle).toBeInTheDocument();
 
-    // Test that clicking toggles work (CSS hover states are tested via E2E)
-    fireEvent.click(passwordToggle);
-    fireEvent.click(confirmPasswordToggle);
-    expect(passwordToggle).toBeInTheDocument();
-    expect(confirmPasswordToggle).toBeInTheDocument();
+    fireEvent.mouseDown(passwordToggle);
+    expect(screen.getByPlaceholderText(/create a strong password/i)).toHaveAttribute("type", "text");
+    fireEvent.mouseLeave(passwordToggle);
+    expect(screen.getByPlaceholderText(/create a strong password/i)).toHaveAttribute("type", "password");
+
+    fireEvent.touchStart(confirmPasswordToggle);
+    expect(screen.getByPlaceholderText(/confirm your password/i)).toHaveAttribute("type", "text");
+    fireEvent.touchEnd(confirmPasswordToggle);
+    expect(screen.getByPlaceholderText(/confirm your password/i)).toHaveAttribute("type", "password");
   });
 
   it("shows error styling on terms checkbox when error exists", async () => {
