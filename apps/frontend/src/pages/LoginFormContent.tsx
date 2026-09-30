@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "../components/ui/Button";
-import { InputField, PasswordField } from "@fitvibe/ui";
+import { InputField, PasswordField, TextLink } from "@fitvibe/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { login } from "../services/api";
 import { logger } from "../utils/logger.js";
@@ -155,7 +155,6 @@ const LoginFormContent: React.FC = () => {
         showPasswordLabel={showPasswordLabel}
         hidePasswordLabel={hidePasswordLabel}
       />
-      </div>
       {error ? (
         <div role="alert" className="form-error">
           {error}
@@ -165,12 +164,12 @@ const LoginFormContent: React.FC = () => {
         {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
       </Button>
       <div className="form-links">
-        <NavLink to="/register" className="form-link">
+        <TextLink as={NavLink} to="/register">
           {t("auth.login.registerPrompt")}
-        </NavLink>
-        <NavLink to="/forgot-password" className="form-link">
+        </TextLink>
+        <TextLink as={NavLink} to="/forgot-password">
           {t("auth.login.forgot")}
-        </NavLink>
+        </TextLink>
       </div>
     </form>
   );
