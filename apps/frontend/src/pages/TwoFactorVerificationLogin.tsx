@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { Button } from "../components/ui";
+import { InputControl } from "@fitvibe/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { verify2FALogin } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
@@ -131,7 +132,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
           <span className="form-label-text text-center">
             {t("auth.twoFactor.codeLabel") || "Authentication Code"}
           </span>
-          <input
+          <InputControl
             name="code"
             type="text"
             inputMode="text"
@@ -168,9 +169,9 @@ const TwoFactorVerificationLogin: React.FC = () => {
         </Button>
 
         <div className="flex flex--justify-between text-09">
-          <button type="button" onClick={handleBackToLogin} className="form-link">
+          <Button type="button" variant="ghost" size="sm" onClick={handleBackToLogin} className="form-link">
             {t("auth.twoFactor.backToLogin") || "Back to login"}
-          </button>
+          </Button>
         </div>
       </form>
     </AuthPageLayout>
