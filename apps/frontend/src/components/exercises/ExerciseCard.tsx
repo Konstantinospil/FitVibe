@@ -140,7 +140,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   className="rounded-sm"
                   style={{
                     padding: "0.5rem",
-                    background: "var(--tone-slate-400-a10)",
+                    background: "var(--border-subtle)",
                     color: "var(--color-text-secondary)",
                     border: "none",
                     cursor: "pointer",
@@ -160,7 +160,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   className="rounded-sm"
                   style={{
                     padding: "0.5rem",
-                    background: "var(--tone-amber-400-a10)",
+                    background: "var(--surface-warning-subtle)",
                     color: "var(--color-warning-text)",
                     border: "none",
                     cursor: "pointer",
@@ -180,7 +180,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   className="rounded-sm"
                   style={{
                     padding: "0.5rem",
-                    background: "var(--tone-red-500-a10)",
+                    background: "var(--surface-danger-subtle)",
                     color: "var(--color-danger)",
                     border: "none",
                     cursor: "pointer",
