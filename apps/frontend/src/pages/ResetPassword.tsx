@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { Button } from "../components/ui";
+import { InputControl } from "@fitvibe/ui";
 import { resetPassword } from "../services/api";
 import { Eye, EyeOff } from "lucide-react";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
@@ -99,7 +100,7 @@ const ResetPassword: React.FC = () => {
         <label className="form-label">
           <span className="form-label-text">{t("resetPassword.newPasswordLabel")}</span>
           <div className="form-input-wrapper">
-            <input
+            <InputControl
               name="password"
               type={showPassword ? "text" : "password"}
               placeholder={t("resetPassword.newPasswordPlaceholder")}
@@ -111,8 +112,10 @@ const ResetPassword: React.FC = () => {
               autoComplete="new-password"
               disabled={isSubmitting}
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onMouseDown={() => setShowPassword(true)}
               onMouseUp={() => setShowPassword(false)}
               onMouseLeave={() => setShowPassword(false)}
@@ -122,13 +125,13 @@ const ResetPassword: React.FC = () => {
               aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            </Button>
           </div>
         </label>
         <label className="form-label">
           <span className="form-label-text">{t("resetPassword.confirmPasswordLabel")}</span>
           <div className="form-input-wrapper">
-            <input
+            <InputControl
               name="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               placeholder={t("resetPassword.confirmPasswordPlaceholder")}
@@ -140,8 +143,10 @@ const ResetPassword: React.FC = () => {
               autoComplete="new-password"
               disabled={isSubmitting}
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onMouseDown={() => setShowConfirmPassword(true)}
               onMouseUp={() => setShowConfirmPassword(false)}
               onMouseLeave={() => setShowConfirmPassword(false)}
@@ -151,7 +156,7 @@ const ResetPassword: React.FC = () => {
               aria-label={showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")}
             >
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            </Button>
           </div>
         </label>
         {error ? (
