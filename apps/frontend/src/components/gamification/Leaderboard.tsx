@@ -55,26 +55,26 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
 
   const getRankIcon = (rank: number) => {
     if (rank === 1) {
-      return <Trophy size={20} style={{ color: "#FFD700" }} />;
+      return <Trophy size={20} style={{ color: "var(--tone-gold)" }} />;
     }
     if (rank === 2) {
-      return <Medal size={20} style={{ color: "#C0C0C0" }} />;
+      return <Medal size={20} style={{ color: "var(--tone-silver)" }} />;
     }
     if (rank === 3) {
-      return <Award size={20} style={{ color: "#CD7F32" }} />;
+      return <Award size={20} style={{ color: "var(--tone-bronze)" }} />;
     }
     return null;
   };
 
   const getRankStyle = (rank: number) => {
     if (rank === 1) {
-      return { background: "rgba(255, 215, 0, 0.1)" };
+      return { background: "var(--tone-gold-a10)" };
     }
     if (rank === 2) {
-      return { background: "rgba(192, 192, 192, 0.1)" };
+      return { background: "var(--tone-silver-a10)" };
     }
     if (rank === 3) {
-      return { background: "rgba(205, 127, 50, 0.1)" };
+      return { background: "var(--tone-bronze-a10)" };
     }
     return {};
   };
