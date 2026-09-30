@@ -1,10 +1,22 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"],
+    "types": [
+      "vite/client",
+      "node",
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ],
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["tests/**/*.ts", "tests/**/*.tsx"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "archive/**"
+  ]
 }
