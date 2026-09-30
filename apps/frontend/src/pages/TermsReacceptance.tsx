@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { Button } from "../components/ui";
+import { Checkbox } from "@fitvibe/ui";
 import { acceptTerms } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
@@ -75,56 +76,36 @@ const TermsReacceptance: React.FC = () => {
           <p className="m-0 text-secondary text-095">{t("auth.termsReacceptance.notice")}</p>
         </div>
 
-        <label
-          className="checkbox-wrapper"
-          style={{
-            padding: "0.75rem",
-            borderRadius: "var(--radius-sm)",
-            background: "var(--color-surface-glass)",
-            border:
-              error && !acceptedTerms
-                ? "1px solid var(--color-danger)"
-                : "1px solid var(--color-border)",
-            transition: "border-color 150ms ease",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            required
-            disabled={isSubmitting}
-            style={{
-              marginTop: "0.2rem",
-              cursor: "pointer",
-              width: "18px",
-              height: "18px",
-              accentColor: "var(--color-accent)",
-            }}
-            aria-required="true"
-            aria-invalid={error && !acceptedTerms ? "true" : "false"}
-          />
-          <span className="checkbox-label">
-            {t("auth.termsReacceptance.acceptTerms")}{" "}
-            <NavLink
-              to="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {t("auth.termsReacceptance.termsLink")}
-            </NavLink>{" "}
-            {t("auth.termsReacceptance.and")}{" "}
-            <NavLink
-              to="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {t("auth.termsReacceptance.privacyLink")}
-            </NavLink>
-          </span>
-        </label>
+        <Checkbox
+          checked={acceptedTerms}
+          onChange={(event) => setAcceptedTerms(event.target.checked)}
+          required
+          disabled={isSubmitting}
+          error={error && !acceptedTerms ? t("auth.termsReacceptance.termsRequired") : undefined}
+          aria-required="true"
+          label={
+            <span>
+              {t("auth.termsReacceptance.acceptTerms")}{" "}
+              <NavLink
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {t("auth.termsReacceptance.termsLink")}
+              </NavLink>{" "}
+              {t("auth.termsReacceptance.and")}{" "}
+              <NavLink
+                to="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {t("auth.termsReacceptance.privacyLink")}
+              </NavLink>
+            </span>
+          }
+        />
 
         {error ? (
           <div role="alert" className="form-error">

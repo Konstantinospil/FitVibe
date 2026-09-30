@@ -3,7 +3,7 @@ import AuthPageLayout from "../components/AuthPageLayout";
 import { NavLink, useLocation } from "react-router-dom";
 import { register as registerAccount, resendVerificationEmail } from "../services/api";
 import { Button } from "../components/ui";
-import { InputControl } from "@fitvibe/ui";
+import { Checkbox, InputControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
@@ -417,64 +417,43 @@ const Register: React.FC = () => {
           </div>
         </div>
         <div className="password-requirements">
-          <label
-            className="checkbox-wrapper"
-            style={{
-              border:
-                error && !termsAccepted
-                  ? "1px solid var(--border-danger-subtle)"
-                  : "1px solid var(--color-border)",
-              borderRadius: "var(--radius-sm)",
-              padding: "0.75rem",
-              transition: "border-color 150ms ease",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              disabled={isSubmitting}
-              style={{
-                marginTop: "0.2rem",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-              aria-invalid={error && !termsAccepted ? "true" : "false"}
-            />
-            <span className="checkbox-label">
-              {t("auth.register.acceptTerms")}{" "}
-              <NavLink
-                to="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {t("auth.register.termsLink")}
-              </NavLink>
-            </span>
-          </label>
-          <label className="checkbox-wrapper">
-            <input
-              type="checkbox"
-              checked={privacyAccepted}
-              onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              disabled={isSubmitting}
-              style={{
-                marginTop: "0.2rem",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-            />
-            <span className="checkbox-label">
-              {t("auth.register.acceptTerms")}{" "}
-              <NavLink
-                to="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {t("auth.register.privacyLink")}
-              </NavLink>
-            </span>
-          </label>
+          <Checkbox
+            checked={termsAccepted}
+            onChange={(event) => setTermsAccepted(event.target.checked)}
+            disabled={isSubmitting}
+            error={error && !termsAccepted ? t("auth.register.termsRequired") : undefined}
+            label={
+              <span>
+                {t("auth.register.acceptTerms")}{" "}
+                <NavLink
+                  to="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {t("auth.register.termsLink")}
+                </NavLink>
+              </span>
+            }
+          />
+          <Checkbox
+            checked={privacyAccepted}
+            onChange={(event) => setPrivacyAccepted(event.target.checked)}
+            disabled={isSubmitting}
+            label={
+              <span>
+                {t("auth.register.acceptTerms")}{" "}
+                <NavLink
+                  to="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {t("auth.register.privacyLink")}
+                </NavLink>
+              </span>
+            }
+          />
         </div>
         {error ? (
           <div role="alert" className="form-error">
