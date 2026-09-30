@@ -155,7 +155,7 @@ const Register: React.FC = () => {
               height: "64px",
               margin: "0 auto 1rem",
               borderRadius: "50%",
-              backgroundColor: "rgba(34, 197, 94, 0.1)",
+              backgroundColor: "var(--tone-green-500-a10)",
             }}
           >
             <svg
@@ -262,7 +262,7 @@ const Register: React.FC = () => {
             style={{
               padding: "0.9rem 1.4rem",
               background: "var(--color-accent)",
-              color: "#0f172a",
+              color: "var(--tone-slate-900)",
               fontWeight: 600,
               letterSpacing: "0.02em",
               display: "inline-block",
