@@ -147,7 +147,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   <tr
                     key={rowIndex}
                     style={{
-                      borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
+                      borderBottom: "1px solid var(--tone-slate-400-a10)",
                     }}
                   >
                     {columns.map((column) => (
