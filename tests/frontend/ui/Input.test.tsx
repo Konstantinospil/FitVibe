@@ -233,7 +233,7 @@ describe("Input", () => {
       const input = screen.getByRole("textbox");
       expect(input).toBeDisabled();
       expect(input).toHaveStyle({
-        opacity: "0.6",
+        opacity: "var(--opacity-disabled)",
         cursor: "not-allowed",
       });
     });

@@ -94,6 +94,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || isLoading}
         aria-disabled={disabled || isLoading}
         aria-busy={isLoading}
+        aria-label={
+          isLoading && typeof children === "string" && !rest["aria-label"] ? children : undefined
+        }
         data-variant={variant}
         data-size={size}
         style={computedStyle}

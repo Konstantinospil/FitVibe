@@ -200,7 +200,7 @@ describe("Button Accessibility", () => {
 
       const button = container.querySelector("button");
       const styles = button?.getAttribute("style");
-      expect(styles).toContain("opacity: 0.6");
+      expect(styles).toContain("opacity: var(--opacity-disabled)");
     });
 
     it("should change cursor to not-allowed when disabled", () => {
