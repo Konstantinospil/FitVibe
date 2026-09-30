@@ -163,7 +163,7 @@ const Register: React.FC = () => {
               height="32"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#22c55e"
+              stroke="var(--color-success)"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -174,7 +174,7 @@ const Register: React.FC = () => {
           <p className="mb-1 text-secondary">{t("auth.register.checkEmail", { email })}</p>
           {resendSuccess ? (
             <div className="mb-1">
-              <p style={{ color: "#22c55e", marginBottom: "1rem", fontSize: "0.875rem" }}>
+              <p style={{ color: "var(--color-success)", marginBottom: "1rem", fontSize: "0.875rem" }}>
                 {t("verifyEmail.resendSuccess")}
               </p>
             </div>
@@ -246,7 +246,7 @@ const Register: React.FC = () => {
           )}
           {resendError && (
             <div role="alert" style={{ marginBottom: "1rem" }}>
-              <p style={{ color: "#ef4444", fontSize: "0.875rem", marginBottom: "0.25rem" }}>
+              <p style={{ color: "var(--color-danger)", fontSize: "0.875rem", marginBottom: "0.25rem" }}>
                 {resendError}
               </p>
               {retryAfter !== null && countdown > 0 && (
