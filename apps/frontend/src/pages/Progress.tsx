@@ -229,9 +229,9 @@ const Progress: React.FC = () => {
                 padding: "2rem",
                 textAlign: "center",
                 color: "var(--color-text-secondary)",
-                background: "var(--tone-red-400-a10)",
+                background: "var(--surface-danger-subtle)",
                 borderRadius: "12px",
-                border: "1px solid var(--tone-red-400-a30)",
+                border: "1px solid var(--border-danger-subtle)",
               }}
             >
               <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -250,7 +250,7 @@ const Progress: React.FC = () => {
                 data={volumeChartData}
                 type="area"
                 height={240}
-                color="var(--tone-emerald-400)}"
+                color="var(--color-success)}"
                 valueFormatter={(value) => `${value}k kg`}
               />
             </ErrorBoundary>
@@ -289,9 +289,9 @@ const Progress: React.FC = () => {
                 padding: "2rem",
                 textAlign: "center",
                 color: "var(--color-text-secondary)",
-                background: "var(--tone-red-400-a10)",
+                background: "var(--surface-danger-subtle)",
                 borderRadius: "12px",
-                border: "1px solid var(--tone-red-400-a30)",
+                border: "1px solid var(--border-danger-subtle)",
               }}
             >
               <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -310,7 +310,7 @@ const Progress: React.FC = () => {
                 data={sessionsChartData}
                 type="bar"
                 height={240}
-                color="var(--tone-sky-400)}"
+                color="var(--color-focus)}"
                 valueFormatter={(value) => `${value} ${value === 1 ? "session" : "sessions"}`}
               />
             </ErrorBoundary>
@@ -349,9 +349,9 @@ const Progress: React.FC = () => {
                 padding: "2rem",
                 textAlign: "center",
                 color: "var(--color-text-secondary)",
-                background: "var(--tone-red-400-a10)",
+                background: "var(--surface-danger-subtle)",
                 borderRadius: "12px",
-                border: "1px solid var(--tone-red-400-a30)",
+                border: "1px solid var(--border-danger-subtle)",
               }}
             >
               <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -370,7 +370,7 @@ const Progress: React.FC = () => {
                 data={intensityChartData}
                 type="area"
                 height={240}
-                color="var(--tone-orange-400)}"
+                color="var(--vibe-strength)}"
                 valueFormatter={(value) => `${value} RPE`}
               />
             </ErrorBoundary>
@@ -405,9 +405,9 @@ const Progress: React.FC = () => {
                 padding: "2rem",
                 textAlign: "center",
                 color: "var(--color-text-secondary)",
-                background: "var(--tone-red-400-a10)",
+                background: "var(--surface-danger-subtle)",
                 borderRadius: "12px",
-                border: "1px solid var(--tone-red-400-a30)",
+                border: "1px solid var(--border-danger-subtle)",
               }}
             >
               <p style={{ margin: 0, marginBottom: "1rem" }}>{t("progress.loadError")}</p>
@@ -460,7 +460,7 @@ const Progress: React.FC = () => {
                   {exerciseData.exercises.map((exercise) => (
                     <tr
                       key={exercise.exerciseId}
-                      style={{ borderBottom: "1px solid var(--tone-slate-400-a10)}" }}
+                      style={{ borderBottom: "1px solid var(--border-subtle)}" }}
                     >
                       <td style={{ padding: "1rem 0" }}>
                         <strong>{exercise.exerciseName}</strong>
@@ -478,9 +478,9 @@ const Progress: React.FC = () => {
                           style={{
                             color:
                               exercise.trend === "up"
-                                ? "var(--tone-emerald-400)}"
+                                ? "var(--color-success)}"
                                 : exercise.trend === "down"
-                                  ? "var(--tone-red-400)}"
+                                  ? "var(--color-danger)}"
                                   : "var(--color-text-secondary)}",
                           }}
                         >
