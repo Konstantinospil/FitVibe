@@ -190,8 +190,8 @@ const Sessions: React.FC = () => {
                             style={{
                               padding: "0.25rem 0.75rem",
                               borderRadius: "8px",
-                              background: "rgba(59, 130, 246, 0.15)",
-                              color: "rgb(59, 130, 246)",
+                              background: "var(--tone-blue-500-a15)",
+                              color: "var(--tone-blue-500)",
                               fontSize: "0.8rem",
                               fontWeight: 600,
                             }}
@@ -243,7 +243,7 @@ const Sessions: React.FC = () => {
                                   className="rounded-sm text-085 text-secondary"
                                   style={{
                                     padding: "0.35rem 0.75rem",
-                                    background: "rgba(148, 163, 184, 0.1)",
+                                    background: "var(--tone-slate-400-a10)",
                                   }}
                                 >
                                   {ex.exercise_id || "Custom Exercise"}
@@ -269,7 +269,7 @@ const Sessions: React.FC = () => {
                           className="rounded-sm"
                           style={{
                             padding: "0.5rem",
-                            background: "rgba(52, 211, 153, 0.15)",
+                            background: "var(--tone-emerald-400-a15)",
                             color: "var(--color-accent)",
                             border: "none",
                             cursor: "pointer",
@@ -284,7 +284,7 @@ const Sessions: React.FC = () => {
                           className="rounded-sm"
                           style={{
                             padding: "0.5rem",
-                            background: "rgba(148, 163, 184, 0.1)",
+                            background: "var(--tone-slate-400-a10)",
                             color: "var(--color-text-secondary)",
                             border: "none",
                             cursor: "pointer",
@@ -299,7 +299,7 @@ const Sessions: React.FC = () => {
                           className="rounded-sm"
                           style={{
                             padding: "0.5rem",
-                            background: "rgba(239, 68, 68, 0.1)",
+                            background: "var(--tone-red-500-a10)",
                             color: "var(--color-danger)",
                             border: "none",
                             cursor: "pointer",
@@ -374,7 +374,7 @@ const Sessions: React.FC = () => {
                             style={{
                               padding: "0.25rem 0.75rem",
                               borderRadius: "8px",
-                              background: "rgba(52, 211, 153, 0.15)",
+                              background: "var(--tone-emerald-400-a15)",
                               color: "var(--color-accent)",
                               fontSize: "0.8rem",
                               fontWeight: 600,
