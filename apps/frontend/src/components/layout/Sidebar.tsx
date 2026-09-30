@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ items, isOpen, onClose, logo }
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(11, 12, 16, 0.75)",
+          background: "var(--color-bg)",
           backdropFilter: "blur(4px)",
           zIndex: 999,
         }}
