@@ -3,6 +3,7 @@ import AuthPageLayout from "../components/AuthPageLayout";
 import { NavLink, useLocation } from "react-router-dom";
 import { register as registerAccount, resendVerificationEmail } from "../services/api";
 import { Button } from "../components/ui";
+import { InputControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
@@ -187,8 +188,10 @@ const Register: React.FC = () => {
           ) : (
             <p className="mb-1 text-secondary" style={{ fontSize: "var(--type-supporting-size)" }}>
               {t("auth.register.didntReceiveEmail")}{" "}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   void (async () => {
                     setIsResending(true);
@@ -247,7 +250,7 @@ const Register: React.FC = () => {
                 }}
               >
                 {isResending ? t("verifyEmail.resending") : t("auth.register.resendEmail")}
-              </button>
+              </Button>
             </p>
           )}
           {resendError && (
@@ -298,7 +301,7 @@ const Register: React.FC = () => {
       >
         <label className="form-label">
           <span className="form-label-text">{t("auth.register.nameLabel")}</span>
-          <input
+          <InputControl
             name="name"
             type="text"
             placeholder={t("auth.placeholders.name")}
@@ -312,7 +315,7 @@ const Register: React.FC = () => {
         </label>
         <label className="form-label">
           <span className="form-label-text">{t("auth.register.emailLabel")}</span>
-          <input
+          <InputControl
             name="email"
             type="email"
             placeholder={t("auth.placeholders.email")}
@@ -328,7 +331,7 @@ const Register: React.FC = () => {
           <label htmlFor="register-username" className="form-label-text">
             {t("auth.register.usernameLabel")}
           </label>
-          <input
+          <InputControl
             id="register-username"
             name="username"
             type="text"
@@ -358,7 +361,7 @@ const Register: React.FC = () => {
             {t("auth.register.passwordLabel")}
           </label>
           <div className="form-input-wrapper">
-            <input
+            <InputControl
               id="register-password"
               name="password"
               type={showPassword ? "text" : "password"}
@@ -370,15 +373,17 @@ const Register: React.FC = () => {
               autoComplete="new-password"
               disabled={isSubmitting}
             />
-            <button
+            <Button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPassword(!showPassword)
               className="form-password-toggle"
               aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               disabled={isSubmitting}
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            </Button>
           </div>
         </div>
         <div className="form-label">
@@ -386,7 +391,7 @@ const Register: React.FC = () => {
             {t("auth.register.confirmPasswordLabel")}
           </label>
           <div className="form-input-wrapper">
-            <input
+            <InputControl
               id="register-confirm-password"
               name="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
@@ -398,15 +403,17 @@ const Register: React.FC = () => {
               autoComplete="new-password"
               disabled={isSubmitting}
             />
-            <button
+            <Button
               type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)
               className="form-password-toggle"
               aria-label={showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               disabled={isSubmitting}
             >
               {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+            </Button>
           </div>
         </div>
         <div className="password-requirements">
