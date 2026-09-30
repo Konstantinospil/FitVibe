@@ -142,26 +142,38 @@ async function checkBackend() {
   }
 }
 
+async function frontendSourceFiles(extensions) {
+  const roots = [
+    path.join(ROOT, "apps/frontend/src"),
+    path.join(ROOT, "apps/backoffice/src"),
+  ];
+  const files = [];
+  for (const root of roots) {
+    for (const file of await walk(root)) {
+      const rel = normalize(path.relative(ROOT, file));
+      if (
+        extensions.some((extension) => rel.endsWith(extension)) &&
+        !/\\.(test|spec)\\.[^.]+$/.test(rel) &&
+        !rel.includes("/__tests__/")
+      ) {
+        files.push(file);
+      }
+    }
+  }
+  return files;
+}
+
+function lineTextAt(source, index) {
+  const line = lineNumber(source, index);
+  return source.split("\n")[line - 1] || "";
+}
+
 async function checkFrontendTokens() {
-  const auditedFiles = [
-    "apps/frontend/src/contexts/ToastContext.tsx",
-    "apps/frontend/src/components/ConfirmDialog.tsx",
-    "apps/frontend/src/components/ui/Card.tsx",
-    "apps/frontend/src/components/ui/Chart.tsx",
-    "apps/frontend/src/pages/Feed.tsx",
-    "apps/frontend/src/pages/Exercises.tsx",
-    "apps/frontend/src/pages/Logger.tsx",
-    "apps/frontend/src/pages/Planner.tsx",
-    "apps/frontend/src/pages/Home.tsx",
-    "apps/frontend/src/pages/admin/Translations.tsx",
-    "apps/backoffice/src/pages/Users.tsx",
-    "apps/backoffice/src/pages/AuditLogs.tsx",
-    "apps/backoffice/src/pages/Translations.tsx",
-  ].map((relative) => path.join(ROOT, relative));
+  const sourceFiles = await frontendSourceFiles([".ts", ".tsx", ".js", ".jsx"]);
+  const stylesheetFiles = await frontendSourceFiles([".css", ".scss"]);
+  const rawColorPattern = /#[0-9a-fA-F]{3,8}\\b|rgba?\\s*\\([^)]*\\)|hsla?\\s*\\([^)]*\\)/g;
 
-  const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\(|hsla?\s*\(/g;
-
-  for (const file of auditedFiles) {
+  for (const file of sourceFiles) {
     const source = await fs.readFile(file, "utf8");
     for (const match of source.matchAll(rawColorPattern)) {
       if (!sourceException(source, match.index, "token")) {
@@ -169,7 +181,23 @@ async function checkFrontendTokens() {
           file,
           source,
           match.index,
-          "Raw color literal in TSX feature/component code. Use a semantic token; true data-value colors require a narrow architecture-token comment with a concrete reason.",
+          "Raw color literal in production frontend source. Consume a design token; true data-value colors require a narrow architecture-token comment with a concrete reason.",
+        );
+      }
+    }
+  }
+
+  for (const file of stylesheetFiles) {
+    const source = await fs.readFile(file, "utf8");
+    for (const match of source.matchAll(rawColorPattern)) {
+      const line = lineTextAt(source, match.index);
+      const isTokenDeclaration = /^\\s*--[a-zA-Z0-9_-]+\\s*:/.test(line);
+      if (!isTokenDeclaration && !sourceException(source, match.index, "token")) {
+        report(
+          file,
+          source,
+          match.index,
+          "Raw color literal outside a CSS custom-property token declaration. Consume a canonical token instead.",
         );
       }
     }
@@ -182,17 +210,10 @@ function rawTagType(tag) {
 }
 
 async function checkFrontendReuse() {
-  const auditedFiles = [
-    "apps/frontend/src/pages/Feed.tsx",
-    "apps/frontend/src/pages/Exercises.tsx",
-    "apps/frontend/src/pages/Logger.tsx",
-    "apps/frontend/src/pages/Planner.tsx",
-    "apps/frontend/src/pages/Home.tsx",
-    "apps/frontend/src/pages/admin/Translations.tsx",
-    "apps/backoffice/src/pages/Users.tsx",
-    "apps/backoffice/src/pages/AuditLogs.tsx",
-    "apps/backoffice/src/pages/Translations.tsx",
-  ].map((relative) => path.join(ROOT, relative));
+  const allSourceFiles = await frontendSourceFiles([".tsx"]);
+  const pageFiles = allSourceFiles.filter((file) =>
+    normalize(path.relative(ROOT, file)).includes("/pages/"),
+  );
 
   const nativeInputTypes = new Set(["checkbox", "radio", "range", "file", "hidden", "color"]);
   const allowedNativeButtons = new Map([
@@ -202,10 +223,10 @@ async function checkFrontendReuse() {
     ],
   ]);
 
-  for (const file of auditedFiles) {
+  for (const file of pageFiles) {
     const rel = normalize(path.relative(ROOT, file));
     const source = await fs.readFile(file, "utf8");
-    const tagPattern = /<(button|select|textarea|input)\b[\s\S]*?>/g;
+    const tagPattern = /<(button|select|textarea|input)\\b[\\s\\S]*?>/g;
 
     for (const match of source.matchAll(tagPattern)) {
       const tagName = match[1].toLowerCase();
@@ -216,7 +237,7 @@ async function checkFrontendReuse() {
       }
 
       if (tagName === "button") {
-        const exception = tag.match(/\bdata-native-ui\s*=\s*["']([^"']+)["']/);
+        const exception = tag.match(/\\bdata-native-ui\\s*=\\s*["']([^"']+)["']/);
         if (
           exception &&
           allowedNativeButtons.get(rel) &&
