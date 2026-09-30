@@ -3,9 +3,8 @@ import AuthPageLayout from "../components/AuthPageLayout";
 import { NavLink, useLocation } from "react-router-dom";
 import { register as registerAccount, resendVerificationEmail } from "../services/api";
 import { Button } from "../components/ui";
-import { Checkbox, InputControl } from "@fitvibe/ui";
+import { Checkbox, InputControl, PasswordField } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
-import { Eye, EyeOff } from "lucide-react";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 import { useCountdown } from "../hooks/useCountdown";
 
@@ -36,8 +35,6 @@ const Register: React.FC = () => {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -356,66 +353,32 @@ const Register: React.FC = () => {
             {t("auth.register.usernameHelp")}
           </small>
         </div>
-        <div className="form-label">
-          <label htmlFor="register-password" className="form-label-text">
-            {t("auth.register.passwordLabel")}
-          </label>
-          <div className="form-input-wrapper">
-            <InputControl
-              id="register-password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder={t("auth.placeholders.password")}
-              className="form-input form-input--password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isSubmitting}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPassword(!showPassword)}
-              className="form-password-toggle"
-              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-              disabled={isSubmitting}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </Button>
-          </div>
-        </div>
-        <div className="form-label">
-          <label htmlFor="register-confirm-password" className="form-label-text">
-            {t("auth.register.confirmPasswordLabel")}
-          </label>
-          <div className="form-input-wrapper">
-            <InputControl
-              id="register-confirm-password"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder={t("auth.placeholders.confirmPassword")}
-              className="form-input form-input--password"
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isSubmitting}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="form-password-toggle"
-              aria-label={showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-              disabled={isSubmitting}
-            >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </Button>
-          </div>
-        </div>
+        <PasswordField
+          id="register-password"
+          label={t("auth.register.passwordLabel")}
+          name="password"
+          placeholder={t("auth.placeholders.password")}
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          showPasswordLabel={t("auth.showPassword")}
+          hidePasswordLabel={t("auth.hidePassword")}
+        />
+        <PasswordField
+          id="register-confirm-password"
+          label={t("auth.register.confirmPasswordLabel")}
+          name="confirmPassword"
+          placeholder={t("auth.placeholders.confirmPassword")}
+          required
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          showPasswordLabel={t("auth.showPassword")}
+          hidePasswordLabel={t("auth.hidePassword")}
+        />
         <div className="password-requirements">
           <Checkbox
             checked={termsAccepted}

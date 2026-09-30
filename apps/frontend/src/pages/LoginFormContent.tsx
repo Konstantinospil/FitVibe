@@ -1,9 +1,8 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Eye, EyeOff } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { InputControl, InputField } from "@fitvibe/ui";
+import { InputField, PasswordField } from "@fitvibe/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { login } from "../services/api";
 import { logger } from "../utils/logger.js";
@@ -26,7 +25,6 @@ const LoginFormContent: React.FC = () => {
       : "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -144,35 +142,19 @@ const LoginFormContent: React.FC = () => {
         autoComplete="username"
         disabled={isSubmitting}
       />
-      <div className="form-label">
-        <label htmlFor="login-password" className="form-label-text">
-          {t("auth.login.passwordLabel")}
-        </label>
-        <div className="form-input-wrapper">
-          <InputControl
-            id="login-password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder={t("auth.placeholders.password")}
-            className="form-input form-input--password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            disabled={isSubmitting}
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowPassword(!showPassword)}
-            className="form-password-toggle"
-            aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
-            disabled={isSubmitting}
-          >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </Button>
-        </div>
+      <PasswordField
+        id="login-password"
+        label={t("auth.login.passwordLabel")}
+        name="password"
+        placeholder={t("auth.placeholders.password")}
+        required
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+        disabled={isSubmitting}
+        showPasswordLabel={showPasswordLabel}
+        hidePasswordLabel={hidePasswordLabel}
+      />
       </div>
       {error ? (
         <div role="alert" className="form-error">
