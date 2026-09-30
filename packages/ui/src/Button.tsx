@@ -16,11 +16,11 @@ const baseStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "0.6rem",
-  borderRadius: "14px",
+  gap: "var(--space-xs)",
+  borderRadius: "var(--radius-md)",
   border: "none",
-  fontWeight: 600,
-  letterSpacing: "0.02em",
+  fontWeight: "var(--font-weight-semibold)",
+  letterSpacing: "var(--type-metric-small-letter-spacing)",
   color: "var(--color-text-primary)",
   cursor: "pointer",
   transition: "transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease",
@@ -51,7 +51,7 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
 };
 
 const disabledStyle: React.CSSProperties = {
-  opacity: 0.6,
+  opacity: "var(--opacity-disabled)",
   cursor: "not-allowed",
   boxShadow: "none",
 };
@@ -60,7 +60,7 @@ const iconStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "1rem",
+  fontSize: "var(--type-body-size)",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -108,9 +108,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               style={{
                 width: "18px",
                 height: "18px",
-                borderRadius: "50%",
-                border: "2px solid rgba(15, 23, 42, 0.2)",
-                borderTopColor: "rgba(15, 23, 42, 0.75)",
+                borderRadius: "var(--radius-full)",
+                border: "2px solid var(--border-subtle)",
+                borderTopColor: "var(--color-text-secondary)",
                 animation: "button-spin 0.6s linear infinite",
               }}
             />
@@ -121,8 +121,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             display: "inline-flex",
             alignItems: "center",
             gap: "0.6rem",
-            opacity: isLoading ? 0 : 1,
-            transition: "opacity 100ms ease",
+            visibility: isLoading ? "hidden" : "visible",
           }}
         >
           {leftIcon ? <span style={iconStyle}>{leftIcon}</span> : null}
