@@ -35,13 +35,19 @@ describe("Footer", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the FitVibe logo and exactly three footer links", () => {
+  it("renders the FitVibe logo, three page links, and four social icons", () => {
     renderFooter();
 
     expect(screen.getByRole("img", { name: "FitVibe" })).toBeInTheDocument();
 
     const navigation = screen.getByRole("navigation", { name: "Footer navigation" });
     expect(navigation.querySelectorAll("a")).toHaveLength(3);
+
+    const social = screen.getByRole("navigation", { name: "Social media" });
+    expect(social.querySelectorAll("[data-social-platform]")).toHaveLength(4);
+    for (const label of ["Instagram", "LinkedIn", "YouTube", "GitHub"]) {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    }
   });
 
   it.each([
@@ -51,5 +57,14 @@ describe("Footer", () => {
   ] as const)("renders %s with the correct route", (name, href) => {
     renderFooter();
     expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+  });
+
+  it("keeps social icons disabled until a URL is configured", () => {
+    renderFooter();
+
+    for (const label of ["Instagram", "LinkedIn", "YouTube", "GitHub"]) {
+      expect(screen.getByLabelText(label)).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByLabelText(label)).toHaveAttribute("data-size", "lg");
+    }
   });
 });

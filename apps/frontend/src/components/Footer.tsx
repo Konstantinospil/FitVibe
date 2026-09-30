@@ -3,10 +3,11 @@ import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import BrandLogo from "./BrandLogo";
 import { TextLink } from "@fitvibe/ui";
+import FooterSocialLinks from "./FooterSocialLinks";
 
 /**
  * Footer component that appears on all pages.
- * Displays FitVibe branding, Contact, Terms and Conditions, and Privacy Policy links.
+ * Displays FitVibe branding, page links, and social-media destinations.
  * WCAG 2.1 AA compliant with proper semantic HTML and keyboard navigation.
  */
 export const Footer: React.FC = () => {
@@ -80,6 +81,7 @@ export const Footer: React.FC = () => {
             </TextLink>
           </div>
         </nav>
+        <FooterSocialLinks />
       </div>
     </footer>
   );
