@@ -107,8 +107,7 @@ describe("MainLayout", () => {
     // The nav element also has aria-label="Home", so we need to get all and check NavLinks
     const homeLinks = screen.getAllByLabelText("Home");
     expect(homeLinks.length).toBeGreaterThan(0);
-    const profileLinks = screen.getAllByLabelText("Profile");
-    expect(profileLinks.length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText("Profile")).not.toBeInTheDocument();
   });
 
   it("should render theme toggle and language switcher", () => {

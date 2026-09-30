@@ -367,7 +367,7 @@ const LanguageSwitcher: React.FC = () => {
         aria-busy={isChanging}
       >
         <FlagIcon option={currentLanguage} size={24} />
-        <ChevronDown size={14} style={{ opacity: var(--opacity-subtle) }} />
+        <ChevronDown size={14} style={{ opacity: "var(--opacity-subtle)" }} />
       </button>
 
       {isOpen && (

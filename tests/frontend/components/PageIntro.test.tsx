@@ -68,7 +68,7 @@ describe("PageIntro", () => {
     const article = container.querySelector("article") as HTMLElement;
     expect(article.style.backdropFilter).toBe("none");
     const title = screen.getByText("Title") as HTMLElement;
-    expect(title.style.color).toBe("var(--color-text-primary, #FFFFFF)");
+    expect(title.style.color).toBe("var(--color-text-primary, var(--color-on-color))");
   });
 
   it("should render brand content above the eyebrow", () => {
