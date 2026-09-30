@@ -68,8 +68,8 @@ export const LockoutTimer: React.FC<LockoutTimerProps> = ({
         flexDirection: "column",
         gap: "0.5rem",
         padding: "1rem",
-        background: "rgba(239, 68, 68, 0.1)",
-        border: "1px solid rgba(239, 68, 68, 0.3)",
+        background: "var(--tone-red-500-a10)",
+        border: "1px solid var(--tone-red-500-a30)",
         borderRadius: "12px",
         color: "var(--color-text-primary)",
       }}
@@ -93,7 +93,7 @@ export const LockoutTimer: React.FC<LockoutTimerProps> = ({
         <span
           style={{
             padding: "0.5rem 0.75rem",
-            background: "rgba(239, 68, 68, 0.2)",
+            background: "var(--tone-red-500-a20)",
             borderRadius: "8px",
             minWidth: "4rem",
             textAlign: "center",
