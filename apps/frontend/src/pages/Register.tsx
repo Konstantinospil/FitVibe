@@ -377,7 +377,7 @@ const Register: React.FC = () => {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setShowPassword(!showPassword)
+              onClick={() => setShowPassword(!showPassword)}
               className="form-password-toggle"
               aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               disabled={isSubmitting}
@@ -407,7 +407,7 @@ const Register: React.FC = () => {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               className="form-password-toggle"
               aria-label={showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               disabled={isSubmitting}
