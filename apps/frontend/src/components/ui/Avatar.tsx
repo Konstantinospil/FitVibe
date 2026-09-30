@@ -39,7 +39,7 @@ export const Avatar: React.FC<AvatarProps> = ({ name, src, size = 48, status, st
         height: dimension,
         borderRadius: "50%",
         overflow: "hidden",
-        background: "linear-gradient(135deg, var(--tone-emerald-400-a35), var(--tone-sky-400-a35))",
+        background: "linear-gradient(135deg, var(--border-success-subtle), var(--border-focus-subtle))",
         border: "1px solid var(--color-border)",
         display: "grid",
         placeItems: "center",
@@ -78,7 +78,7 @@ export const Avatar: React.FC<AvatarProps> = ({ name, src, size = 48, status, st
             borderRadius: "50%",
             background: statusColors[status],
             border: "2px solid var(--color-bg-card)",
-            boxShadow: "0 0 0 2px var(--tone-slate-900-a35)",
+            boxShadow: "0 0 0 2px var(--surface-muted-subtle)",
           }}
         />
       ) : null}
