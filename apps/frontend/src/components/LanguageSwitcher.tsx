@@ -67,7 +67,7 @@ const FrFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
   >
     <rect width="1" height="2" fill="#002654" />
-    <rect width="1" height="2" x="1" fill="#FFFFFF" />
+    <rect width="1" height="2" x="1" fill="var(--color-on-color)" />
     <rect width="1" height="2" x="2" fill="#ED2939" />
   </svg>
 );
@@ -97,13 +97,13 @@ const ElFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
   >
     <rect width="27" height="18" fill="#0D5EAF" />
-    <rect y="2" width="27" height="2" fill="#FFFFFF" />
-    <rect y="6" width="27" height="2" fill="#FFFFFF" />
-    <rect y="10" width="27" height="2" fill="#FFFFFF" />
-    <rect y="14" width="27" height="2" fill="#FFFFFF" />
+    <rect y="2" width="27" height="2" fill="var(--color-on-color)" />
+    <rect y="6" width="27" height="2" fill="var(--color-on-color)" />
+    <rect y="10" width="27" height="2" fill="var(--color-on-color)" />
+    <rect y="14" width="27" height="2" fill="var(--color-on-color)" />
     <rect width="10" height="10" fill="#0D5EAF" />
-    <rect x="4" width="2" height="10" fill="#FFFFFF" />
-    <rect y="4" width="10" height="2" fill="#FFFFFF" />
+    <rect x="4" width="2" height="10" fill="var(--color-on-color)" />
+    <rect y="4" width="10" height="2" fill="var(--color-on-color)" />
   </svg>
 );
 
