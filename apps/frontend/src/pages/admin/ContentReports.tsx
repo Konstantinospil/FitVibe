@@ -130,7 +130,7 @@ const ContentReports: React.FC = () => {
                   onClick={() => setFilterStatus(status)}
                   style={{
                     padding: "0.5rem 1rem",
-                    borderRadius: "8px",
+                    borderRadius: "var(--radius-sm)",
                     border: `1px solid ${filterStatus === status ? "var(--color-accent)" : "var(--color-border)"}`,
                     background:
                       filterStatus === status ? "var(--surface-success-subtle)" : "transparent",
@@ -138,8 +138,8 @@ const ContentReports: React.FC = () => {
                       filterStatus === status
                         ? "var(--color-accent)"
                         : "var(--color-text-secondary)",
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
+                    fontSize: "var(--type-body-size)",
+                    fontWeight: "var(--font-weight-semibold)",
                     cursor: "pointer",
                     textTransform: "capitalize",
                   }}
@@ -156,7 +156,7 @@ const ContentReports: React.FC = () => {
               style={{
                 padding: "1rem",
                 marginBottom: "1rem",
-                borderRadius: "8px",
+                borderRadius: "var(--radius-sm)",
                 background: "var(--surface-danger-subtle)",
                 border: "1px solid var(--border-danger-subtle)",
                 color: "var(--color-danger)",
@@ -188,7 +188,7 @@ const ContentReports: React.FC = () => {
                   key={report.id}
                   style={{
                     padding: "1.25rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid var(--color-border)",
                     background: "var(--surface-muted-subtle)",
                   }}
@@ -213,9 +213,9 @@ const ContentReports: React.FC = () => {
                         <span
                           style={{
                             padding: "0.25rem 0.75rem",
-                            borderRadius: "8px",
-                            fontSize: "0.8rem",
-                            fontWeight: 600,
+                            borderRadius: "var(--radius-sm)",
+                            fontSize: "var(--type-supporting-size)",
+                            fontWeight: "var(--font-weight-semibold)",
                             background: `${getStatusColor(report.status)}33`,
                             color: getStatusColor(report.status),
                           }}
@@ -234,7 +234,7 @@ const ContentReports: React.FC = () => {
                             style={{
                               margin: "0.5rem 0 0",
                               color: "var(--color-text-secondary)",
-                              fontSize: "0.9rem",
+                              fontSize: "var(--type-body-size)",
                             }}
                           >
                             {report.details}
@@ -245,7 +245,7 @@ const ContentReports: React.FC = () => {
                       <div
                         style={{
                           padding: "1rem",
-                          borderRadius: "8px",
+                          borderRadius: "var(--radius-sm)",
                           background: "var(--surface-muted-subtle)",
                           marginBottom: "0.75rem",
                         }}

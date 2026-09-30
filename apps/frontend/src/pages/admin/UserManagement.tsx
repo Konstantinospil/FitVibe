@@ -147,7 +147,7 @@ const UserManagement: React.FC = () => {
               style={{
                 padding: "1rem",
                 marginBottom: "1rem",
-                borderRadius: "8px",
+                borderRadius: "var(--radius-sm)",
                 background: "var(--surface-danger-subtle)",
                 border: "1px solid var(--border-danger-subtle)",
                 color: "var(--color-danger)",
@@ -183,11 +183,11 @@ const UserManagement: React.FC = () => {
                   style={{
                     width: "100%",
                     padding: "0.75rem 1rem 0.75rem 3rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid var(--color-border)",
                     background: "var(--color-surface)",
                     color: "var(--color-text-primary)",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 />
               </div>
@@ -217,7 +217,7 @@ const UserManagement: React.FC = () => {
                   : "Use the search bar to find users by email, username, or ID."}
               </p>
               <p
-                style={{ color: "var(--color-text-muted)", fontSize: "0.9rem", marginTop: "1rem" }}
+                style={{ color: "var(--color-text-muted)", fontSize: "var(--type-body-size)", marginTop: "1rem" }}
               >
                 API integration pending - admin user management endpoints
               </p>
@@ -229,7 +229,7 @@ const UserManagement: React.FC = () => {
                   key={user.id}
                   style={{
                     padding: "1.25rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid var(--color-border)",
                     background: "var(--surface-muted-subtle)",
                   }}
@@ -250,15 +250,15 @@ const UserManagement: React.FC = () => {
                           marginBottom: "0.5rem",
                         }}
                       >
-                        <h3 style={{ fontSize: "1.1rem", fontWeight: 600, margin: 0 }}>
+                        <h3 style={{ fontSize: "var(--type-card-title-size)", fontWeight: "var(--font-weight-semibold)", margin: 0 }}>
                           @{user.username}
                         </h3>
                         <span
                           style={{
                             padding: "0.25rem 0.75rem",
-                            borderRadius: "8px",
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
+                            borderRadius: "var(--radius-sm)",
+                            fontSize: "var(--type-supporting-size)",
+                            fontWeight: "var(--font-weight-semibold)",
                             background: `${getRoleBadgeColor(user.roleCode)}33`,
                             color: getRoleBadgeColor(user.roleCode),
                             textTransform: "uppercase",
@@ -269,9 +269,9 @@ const UserManagement: React.FC = () => {
                         <span
                           style={{
                             padding: "0.25rem 0.75rem",
-                            borderRadius: "8px",
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
+                            borderRadius: "var(--radius-sm)",
+                            fontSize: "var(--type-supporting-size)",
+                            fontWeight: "var(--font-weight-semibold)",
                             background: `${getStatusColor(user.status)}33`,
                             color: getStatusColor(user.status),
                             textTransform: "capitalize",
@@ -283,7 +283,7 @@ const UserManagement: React.FC = () => {
 
                       <div
                         style={{
-                          fontSize: "0.9rem",
+                          fontSize: "var(--type-body-size)",
                           color: "var(--color-text-secondary)",
                           marginBottom: "0.75rem",
                         }}
@@ -307,8 +307,8 @@ const UserManagement: React.FC = () => {
                           <div className="text-08 text-muted">Reports</div>
                           <div
                             style={{
-                              fontSize: "1.1rem",
-                              fontWeight: 600,
+                              fontSize: "var(--type-card-title-size)",
+                              fontWeight: "var(--font-weight-semibold)",
                               color: user.reportCount > 0 ? "var(--color-warning)" : undefined,
                             }}
                           >
@@ -317,7 +317,7 @@ const UserManagement: React.FC = () => {
                         </div>
                         <div>
                           <div className="text-08 text-muted">Last Login</div>
-                          <div style={{ fontSize: "0.9rem" }}>
+                          <div style={{ fontSize: "var(--type-body-size)" }}>
                             {user.lastLoginAt
                               ? new Date(user.lastLoginAt).toLocaleDateString()
                               : "Never"}

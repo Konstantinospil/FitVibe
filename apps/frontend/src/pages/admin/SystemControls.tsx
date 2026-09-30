@@ -240,7 +240,7 @@ const SystemControls: React.FC = () => {
                   style={{
                     width: "12px",
                     height: "12px",
-                    borderRadius: "50%",
+                    borderRadius: "var(--radius-full)",
                     background:
                       healthStatus?.status === "ok" ? "var(--color-accent)" : "var(--color-danger)",
                   }}
@@ -278,8 +278,8 @@ const SystemControls: React.FC = () => {
               </div>
               <div
                 style={{
-                  fontSize: "1.25rem",
-                  fontWeight: 600,
+                  fontSize: "var(--type-card-title-size)",
+                  fontWeight: "var(--font-weight-semibold)",
                   color: readOnlyStatus?.readOnlyMode ? "orange" : "var(--color-accent)",
                 }}
               >
@@ -311,7 +311,7 @@ const SystemControls: React.FC = () => {
               style={{
                 padding: "1rem",
                 marginBottom: "1rem",
-                borderRadius: "8px",
+                borderRadius: "var(--radius-sm)",
                 background: "var(--surface-danger-subtle)",
                 border: "1px solid var(--border-danger-subtle)",
                 color: "var(--color-danger)",
@@ -343,7 +343,7 @@ const SystemControls: React.FC = () => {
                 style={{
                   padding: "1rem",
                   marginBottom: "1rem",
-                  borderRadius: "8px",
+                  borderRadius: "var(--radius-sm)",
                   background: "var(--surface-warning-subtle)",
                   border: "1px solid var(--border-warning-subtle)",
                   color: "var(--color-warning)",
@@ -371,8 +371,8 @@ const SystemControls: React.FC = () => {
                     style={{
                       display: "block",
                       marginBottom: "0.5rem",
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
+                      fontSize: "var(--type-body-size)",
+                      fontWeight: "var(--font-weight-semibold)",
                     }}
                   >
                     Reason (optional)
@@ -386,11 +386,11 @@ const SystemControls: React.FC = () => {
                     style={{
                       width: "100%",
                       padding: "0.75rem 1rem",
-                      borderRadius: "12px",
+                      borderRadius: "var(--radius-md)",
                       border: "1px solid var(--color-border)",
                       background: "var(--color-surface)",
                       color: "var(--color-text-primary)",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   />
                 </div>
@@ -401,8 +401,8 @@ const SystemControls: React.FC = () => {
                     style={{
                       display: "block",
                       marginBottom: "0.5rem",
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
+                      fontSize: "var(--type-body-size)",
+                      fontWeight: "var(--font-weight-semibold)",
                     }}
                   >
                     Estimated Duration (optional)
@@ -416,11 +416,11 @@ const SystemControls: React.FC = () => {
                     style={{
                       width: "100%",
                       padding: "0.75rem 1rem",
-                      borderRadius: "12px",
+                      borderRadius: "var(--radius-md)",
                       border: "1px solid var(--color-border)",
                       background: "var(--color-surface)",
                       color: "var(--color-text-primary)",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   />
                 </div>
@@ -456,7 +456,7 @@ const SystemControls: React.FC = () => {
                 style={{
                   padding: "1rem",
                   marginBottom: "1rem",
-                  borderRadius: "8px",
+                  borderRadius: "var(--radius-sm)",
                   background: "var(--surface-warning-subtle)",
                   border: "1px solid var(--border-warning-subtle)",
                   color: "var(--color-warning)",
@@ -485,8 +485,8 @@ const SystemControls: React.FC = () => {
                   style={{
                     display: "block",
                     marginBottom: "0.5rem",
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
+                    fontSize: "var(--type-body-size)",
+                    fontWeight: "var(--font-weight-semibold)",
                   }}
                 >
                   Notes (optional)
@@ -500,11 +500,11 @@ const SystemControls: React.FC = () => {
                   style={{
                     width: "100%",
                     padding: "0.75rem 1rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid var(--color-border)",
                     background: "var(--color-surface)",
                     color: "var(--color-text-primary)",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 />
               </div>
@@ -551,7 +551,7 @@ const SystemControls: React.FC = () => {
                   key={entry.id}
                   style={{
                     padding: "0.875rem 1rem",
-                    borderRadius: "8px",
+                    borderRadius: "var(--radius-sm)",
                     border: "1px solid var(--color-border)",
                     background: "var(--color-bg-card)",
                   }}
@@ -575,8 +575,8 @@ const SystemControls: React.FC = () => {
                       >
                         <span
                           style={{
-                            fontSize: "0.9rem",
-                            fontWeight: 600,
+                            fontSize: "var(--type-body-size)",
+                            fontWeight: "var(--font-weight-semibold)",
                             color: "var(--color-text-primary)",
                           }}
                         >
@@ -585,9 +585,9 @@ const SystemControls: React.FC = () => {
                         {entry.outcome && (
                           <span
                             style={{
-                              fontSize: "0.75rem",
+                              fontSize: "var(--type-supporting-size)",
                               padding: "0.125rem 0.5rem",
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               background:
                                 entry.outcome === "success"
                                   ? "var(--surface-success-subtle)"
@@ -619,7 +619,7 @@ const SystemControls: React.FC = () => {
                     </div>
                     <div
                       style={{
-                        fontSize: "0.8rem",
+                        fontSize: "var(--type-supporting-size)",
                         color: "var(--color-text-secondary)",
                         whiteSpace: "nowrap",
                       }}
