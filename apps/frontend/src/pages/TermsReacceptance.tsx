@@ -68,8 +68,8 @@ const TermsReacceptance: React.FC = () => {
         <div
           className="p-md rounded-md mb-1"
           style={{
-            background: "rgba(251, 191, 36, 0.1)",
-            border: "1px solid rgba(251, 191, 36, 0.3)",
+            background: "var(--tone-amber-400-a10)",
+            border: "1px solid var(--tone-amber-400-a30)",
           }}
         >
           <p className="m-0 text-secondary text-095">{t("auth.termsReacceptance.notice")}</p>
@@ -83,7 +83,7 @@ const TermsReacceptance: React.FC = () => {
             background: "var(--color-surface-glass)",
             border:
               error && !acceptedTerms
-                ? "1px solid rgba(248, 113, 113, 0.5)"
+                ? "1px solid var(--tone-red-400-a50)"
                 : "1px solid var(--color-border)",
             transition: "border-color 150ms ease",
           }}
