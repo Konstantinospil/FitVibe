@@ -174,6 +174,29 @@ async function checkFrontendTokens() {
   const stylesheetFiles = await frontendSourceFiles([".css", ".scss"]);
   const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/g;
 
+  const sourceDesignPatterns = [
+    {
+      pattern: /\bborderRadius\s*:\s*["'`]\s*\d+(?:\.\d+)?(?:px|rem)\s*["'`]/g,
+      message: "Raw radius in production frontend source. Consume the Figma radius authority (--radius-sm/md/lg/xl/full).",
+    },
+    {
+      pattern: /\bopacity\s*:\s*(?:0(?:\.\d+)?|1(?:\.0+)?)\b/g,
+      message: "Raw opacity in production frontend source. Consume the Figma opacity authority (--opacity-full/subtle/disabled).",
+    },
+    {
+      pattern: /\b(?:fontSize|lineHeight|letterSpacing)\s*:\s*(?:["'`][^"'`]+["'`]|\d+(?:\.\d+)?)/g,
+      message: "Raw typography metric in production frontend source. Consume a named Figma typography token.",
+    },
+    {
+      pattern: /\bfontWeight\s*:\s*(?:["'`]?(?:[1-9]00|582|normal|bold)["'`]?)/g,
+      message: "Raw typography weight in production frontend source. Consume a named Figma typography token.",
+    },
+    {
+      pattern: /\bfontFamily\s*:\s*["'`][^"'`]+["'`]/g,
+      message: "Raw font family in production frontend source. Consume the Figma font-family authority.",
+    },
+  ];
+
   for (const file of sourceFiles) {
     const source = await fs.readFile(file, "utf8");
     for (const match of source.matchAll(rawColorPattern)) {
@@ -186,10 +209,49 @@ async function checkFrontendTokens() {
         );
       }
     }
+
+    for (const rule of sourceDesignPatterns) {
+      for (const match of source.matchAll(rule.pattern)) {
+        if (!sourceException(source, match.index, "token")) {
+          report(file, source, match.index, rule.message);
+        }
+      }
+    }
   }
 
   for (const file of stylesheetFiles) {
     const source = await fs.readFile(file, "utf8");
+    const cssDesignPatterns = [
+      {
+        pattern: /\bborder-radius\s*:\s*(?!var\(--radius-)[^;]+;/g,
+        message: "CSS border-radius must consume the Figma radius authority.",
+      },
+      {
+        pattern: /\bopacity\s*:\s*(?!var\(--opacity-)[^;]+;/g,
+        message: "CSS opacity must consume the Figma opacity authority.",
+      },
+      {
+        pattern: /\bfont-size\s*:\s*(?!var\(--(?:type-|font-size-))[^;]+;/g,
+        message: "CSS font-size must consume a named Figma typography token.",
+      },
+      {
+        pattern: /\bline-height\s*:\s*(?!var\(--(?:type-|line-height-))[^;]+;/g,
+        message: "CSS line-height must consume a named Figma typography token.",
+      },
+      {
+        pattern: /\bletter-spacing\s*:\s*(?!var\(--(?:type-|letter-spacing-))[^;]+;/g,
+        message: "CSS letter-spacing must consume a named Figma typography token.",
+      },
+      {
+        pattern: /\bfont-weight\s*:\s*(?!var\(--font-weight-)[^;]+;/g,
+        message: "CSS font-weight must consume the Figma typography weight authority.",
+      },
+      {
+        pattern: /\bfont-family\s*:\s*(?!var\(--font-family-)[^;]+;/g,
+        message: "CSS font-family must consume the Figma font-family authority.",
+      },
+    ];
+
     for (const match of source.matchAll(rawColorPattern)) {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
@@ -200,6 +262,16 @@ async function checkFrontendTokens() {
           match.index,
           "Raw color literal outside a CSS custom-property token declaration. Consume a canonical token instead.",
         );
+      }
+    }
+
+    for (const rule of cssDesignPatterns) {
+      for (const match of source.matchAll(rule.pattern)) {
+        const line = lineTextAt(source, match.index);
+        const isAuthorityDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+        if (!isAuthorityDeclaration && !sourceException(source, match.index, "token")) {
+          report(file, source, match.index, rule.message);
+        }
       }
     }
   }
