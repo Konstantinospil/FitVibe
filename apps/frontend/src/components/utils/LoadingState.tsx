@@ -28,7 +28,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         alignItems: "center",
         justifyContent: "center",
         gap: "var(--space-md)",
-        background: "var(--tone-black-a50)",
+        background: "var(--modal-backdrop)",
         zIndex: 9999,
       }
     : {
