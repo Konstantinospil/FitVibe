@@ -3,7 +3,7 @@ import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "../components/ui/Button";
-import { InputControl } from "@fitvibe/ui";
+import { InputControl, InputField } from "@fitvibe/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { login } from "../services/api";
 import { logger } from "../utils/logger.js";
@@ -133,20 +133,17 @@ const LoginFormContent: React.FC = () => {
       }}
       className="form"
     >
-      <label className="form-label">
-        <span className="form-label-text">{t("auth.login.emailLabel")}</span>
-        <InputControl
-          name="email"
-          type="text"
-          placeholder={t("auth.placeholders.email")}
-          className="form-input"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="username"
-          disabled={isSubmitting}
-        />
-      </label>
+      <InputField
+        label={t("auth.login.emailLabel")}
+        name="email"
+        type="text"
+        placeholder={t("auth.placeholders.email")}
+        required
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        autoComplete="username"
+        disabled={isSubmitting}
+      />
       <div className="form-label">
         <label htmlFor="login-password" className="form-label-text">
           {t("auth.login.passwordLabel")}
