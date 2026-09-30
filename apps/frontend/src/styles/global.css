@@ -958,11 +958,11 @@ small {
 }
 
 .text-125 {
-  font-size: 1.25rem;
+  font-size: var(--type-section-title-size);
 }
 
 .text-11 {
-  font-size: 1.1rem;
+  font-size: var(--type-card-title-size);
 }
 
 .text-09 {
@@ -1208,75 +1208,4 @@ small {
   gap: var(--space-md);
 }
 
-.user-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.user-card-body {
-  flex: 1;
-}
-
-.user-card-title {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-  margin: 0;
-}
-
-.user-card-meta {
-  font-size: var(--type-supporting-size);
-  color: var(--color-text-muted);
-}
-
-.user-card-stats {
-  display: flex;
-  gap: var(--space-lg);
-}
-
-.user-card-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.user-card-stat-label {
-  font-size: var(--type-supporting-size);
-  color: var(--color-text-muted);
-}
-
-.user-card-stat-value {
-  font-size: 1.1rem;
-  font-weight: var(--font-weight-semibold);
-}
-
-.user-card-footer {
-  font-size: var(--type-supporting-size);
-  color: var(--color-text-muted);
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-full);
-  font-size: var(--type-supporting-size);
-  font-weight: var(--font-weight-control-large);
-}
-
-.status-badge--active {
-  background: var(--surface-success-subtle);
-  color: var(--color-success);
-}
-
-.status-badge--inactive {
-  background: rgba(148, 163, 184, 0.16);
-  color: var(--color-text-muted);
-}
-
-.status-badge--admin {
-  background: var(--surface-focus-subtle);
-  color: #a5b4fc;
-}
 
