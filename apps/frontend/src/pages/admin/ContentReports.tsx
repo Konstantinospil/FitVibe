@@ -58,7 +58,7 @@ const ContentReports: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "var(--tone-amber-400)";
+        return "var(--color-warning)";
       case "reviewed":
         return "var(--color-accent)";
       case "dismissed":
@@ -133,7 +133,7 @@ const ContentReports: React.FC = () => {
                     borderRadius: "8px",
                     border: `1px solid ${filterStatus === status ? "var(--color-accent)" : "var(--color-border)"}`,
                     background:
-                      filterStatus === status ? "var(--tone-emerald-400-a15)" : "transparent",
+                      filterStatus === status ? "var(--surface-success-subtle)" : "transparent",
                     color:
                       filterStatus === status
                         ? "var(--color-accent)"
@@ -157,8 +157,8 @@ const ContentReports: React.FC = () => {
                 padding: "1rem",
                 marginBottom: "1rem",
                 borderRadius: "8px",
-                background: "var(--tone-red-500-a10)",
-                border: "1px solid var(--tone-red-500-a30)",
+                background: "var(--surface-danger-subtle)",
+                border: "1px solid var(--border-danger-subtle)",
                 color: "var(--color-danger)",
               }}
             >
@@ -190,7 +190,7 @@ const ContentReports: React.FC = () => {
                     padding: "1.25rem",
                     borderRadius: "12px",
                     border: "1px solid var(--color-border)",
-                    background: "var(--tone-slate-900-a40)",
+                    background: "var(--surface-muted-subtle)",
                   }}
                 >
                   <div
@@ -246,7 +246,7 @@ const ContentReports: React.FC = () => {
                         style={{
                           padding: "1rem",
                           borderRadius: "8px",
-                          background: "var(--tone-black-a20)",
+                          background: "var(--surface-muted-subtle)",
                           marginBottom: "0.75rem",
                         }}
                       >
