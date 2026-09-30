@@ -158,7 +158,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           text-left
           transition-colors
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-var(--color-bg-tertiary, #ebebeb)"}
-          focus:outline-none focus:ring-2 focus:ring-var(--color-primary, #3b82f6) focus:ring-offset-2
+          focus:outline-none focus:ring-2 focus:ring-var(--color-primary, var(--color-focus)) focus:ring-offset-2
         `}
       >
         <span className="flex-1 truncate">{displayValue}</span>
@@ -201,7 +201,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("common.exercises.searchPlaceholder", "Search exercises...")}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-var(--color-primary, #3b82f6) bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-var(--color-primary, var(--color-focus)) bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 aria-label={t("common.exercises.searchLabel", "Search exercises")}
               />
             </div>
@@ -236,7 +236,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                         px-4 py-2 cursor-pointer transition-colors
                         ${
                           isSelected
-                            ? "bg-var(--color-primary, #3b82f6) text-white"
+                            ? "bg-var(--color-primary, var(--color-focus)) text-white"
                             : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
                         }
                       `}
