@@ -175,7 +175,7 @@ const MessagesPage: React.FC = () => {
       {isLoading ? (
         <div style={{ color: colors.text }}>Loading...</div>
       ) : error ? (
-        <div style={{ color: "#9F2406", padding: "2rem" }}>
+        <div style={{ color: "var(--vibe-explosivity)", padding: "2rem" }}>
           Error loading messages: {error instanceof Error ? error.message : String(error)}
         </div>
       ) : !data || !data.messages || data.messages.length === 0 ? (
@@ -197,7 +197,7 @@ const MessagesPage: React.FC = () => {
           >
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1200px" }}>
               <thead>
-                <tr style={{ background: theme === "light" ? "#F5F5F5" : "#1A1A1A" }}>
+                <tr style={{ background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A" }}>
                   <th
                     style={{
                       padding: "1rem",
@@ -315,7 +315,7 @@ const MessagesPage: React.FC = () => {
                       {message.readAt ? (
                         <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>Read</span>
                       ) : (
-                        <span style={{ color: "#FB951D" }}>Unread</span>
+                        <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem" }}>
@@ -371,7 +371,7 @@ const MessagesPage: React.FC = () => {
                               disabled={markRespondedMutation.isPending}
                               style={{
                                 padding: "0.5rem 1rem",
-                                background: "#15523A",
+                                background: "var(--vibe-regeneration)",
                                 color: colors.text,
                                 border: "none",
                                 borderRadius: "4px",
@@ -391,7 +391,7 @@ const MessagesPage: React.FC = () => {
                             disabled={markReadMutation.isPending}
                             style={{
                               padding: "0.5rem 1rem",
-                              background: "#FB951D",
+                              background: "var(--vibe-strength)",
                               color: colors.text,
                               border: "none",
                               borderRadius: "4px",
@@ -456,7 +456,7 @@ const MessagesPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.8)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -561,7 +561,7 @@ const MessagesPage: React.FC = () => {
                 {selectedMessage.readAt ? (
                   <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>Read</span>
                 ) : (
-                  <span style={{ color: "#FB951D" }}>Unread</span>
+                  <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
                 )}
               </div>
             </div>
@@ -614,7 +614,7 @@ const MessagesPage: React.FC = () => {
                     lineHeight: "1.6",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
-                    background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                    background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                     padding: "1rem",
                     borderRadius: "4px",
                     border: `1px solid ${colors.border}`,
@@ -647,7 +647,7 @@ const MessagesPage: React.FC = () => {
                   style={{
                     width: "100%",
                     padding: "1rem",
-                    background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                    background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                     border: `1px solid ${colors.border}`,
                     borderRadius: "4px",
                     color: colors.text,
@@ -776,7 +776,7 @@ const MessagesPage: React.FC = () => {
                   }
                   style={{
                     padding: "0.75rem 1.5rem",
-                    background: "#15523A",
+                    background: "var(--vibe-regeneration)",
                     color: colors.text,
                     border: "none",
                     borderRadius: "4px",
@@ -796,7 +796,7 @@ const MessagesPage: React.FC = () => {
                   disabled={markReadMutation.isPending}
                   style={{
                     padding: "0.75rem 1.5rem",
-                    background: "#FB951D",
+                    background: "var(--vibe-strength)",
                     color: colors.text,
                     border: "none",
                     borderRadius: "4px",
