@@ -77,6 +77,20 @@ describe("Vibeform rendering boundary", () => {
     expect(svg.props.children[0].props.children).toContain("prefers-reduced-motion");
   });
 
+  it("enables the flow animation only when the profile opts into motion", () => {
+    const animatedProfile = {
+      ...profile,
+      preferences: { ...profile.preferences, motionEnabled: true },
+    };
+
+    const container = VibeformRenderer({ profile: animatedProfile });
+    const template = container.props.children;
+    const svg = template.type(template.props);
+
+    expect(svg.props["data-motion-enabled"]).toBe(true);
+    expect(svg.props.children[1].props.className).toBe("vibeform-pulse");
+  });
+
   it("falls back safely when a stale profile names an unavailable template", () => {
     const staleProfile = {
       ...profile,
