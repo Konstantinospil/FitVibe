@@ -8,7 +8,7 @@ const buttonStyle: React.CSSProperties = {
   justifyContent: "center",
   background: "var(--color-surface-glass)",
   border: "1px solid var(--color-border)",
-  borderRadius: "999px",
+  borderRadius: "var(--radius-full)",
   color: "var(--color-text-secondary)",
   fontSize: "var(--font-size-sm)",
   padding: "0.5rem 0.85rem",
