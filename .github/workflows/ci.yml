@@ -28,6 +28,73 @@ env:
   PNPM_STORE_DIR: "/tmp/pnpm-store"
 
 jobs:
+  architecture_hardcoding:
+    name: Architecture & Hardcoding
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Backend constants and policy authority
+        id: architecture_backend
+        continue-on-error: true
+        run: node tests/qa/check-architecture-hardcoding.mjs backend
+
+      - name: Frontend design-token compliance
+        id: architecture_frontend_tokens
+        continue-on-error: true
+        run: node tests/qa/check-architecture-hardcoding.mjs frontend-tokens
+
+      - name: Frontend component reuse
+        id: architecture_frontend_reuse
+        continue-on-error: true
+        run: node tests/qa/check-architecture-hardcoding.mjs frontend-reuse
+
+      - name: Enforce zero-tolerance result
+        if: always()
+        env:
+          BACKEND_OUTCOME: ${{ steps.architecture_backend.outcome }}
+          FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
+          FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
+        run: |
+          failed=0
+          if [ "$BACKEND_OUTCOME" != "success" ]; then
+            echo "::error::Backend policy-authority diagnostic failed."
+            failed=1
+          fi
+          if [ "$FRONTEND_TOKENS_OUTCOME" != "success" ]; then
+            echo "::error::Frontend design-token diagnostic failed."
+            failed=1
+          fi
+          if [ "$FRONTEND_REUSE_OUTCOME" != "success" ]; then
+            echo "::error::Frontend component-reuse diagnostic failed."
+            failed=1
+          fi
+          if [ "$failed" -ne 0 ]; then
+            exit 1
+          fi
+          echo "Architecture & Hardcoding gate passed with zero violations."
+
+      - name: Job summary
+        if: always()
+        env:
+          BACKEND_OUTCOME: ${{ steps.architecture_backend.outcome }}
+          FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
+          FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
+        run: |
+          echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Backend policy authority: $BACKEND_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend design tokens: $FRONTEND_TOKENS_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Frontend component reuse: $FRONTEND_REUSE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest

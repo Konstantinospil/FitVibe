@@ -2027,3 +2027,29 @@ The guide is **production-ready** and provides excellent guidance for maintainin
 **Last Updated:** 2025-01-20  
 **Maintained By:** FitVibe Development Team  
 **Review Status:** ✅ State-of-the-Art (Above Industry Average)
+
+
+## Architecture & Hardcoding Zero-Tolerance Gate
+
+The repository enforces the #302 authority decisions through the required **Architecture & Hardcoding** CI status.
+
+The zero-tolerance scope is the set of backend/frontend authority surfaces explicitly classified and remediated by #302–#306. This is a governed-surface list, not a grandfather baseline: every listed surface must remain at zero violations, and newly remediated surfaces must be added to the checker when they become governed.
+
+The gate has three independent diagnostics and deliberately has **no grandfather/baseline file**:
+
+1. **Backend policy authority** — business modules must not bypass validated configuration with direct `process.env`, direct rate-limiter construction is centralized, and security/gamification-sensitive services may not reintroduce policy literals that belong to governed, deployment, coded-invariant, or persisted authorities.
+2. **Frontend design-token compliance** — TSX code must use semantic tokens instead of raw hex/RGB/HSL color literals. A true data-value color may be retained only with a narrow inline `architecture-token: data-value -- <reason>` explanation.
+3. **Frontend component reuse** — feature pages use canonical UI primitives for buttons and ordinary text/select/textarea inputs. Native checkbox/radio/range/file/hidden/color inputs remain allowed while no shared primitive exists. Any other exception must be explicitly enumerated by the checker and documented.
+
+Backend implementation constants in sensitive policy files are exceptional. If a literal is genuinely algorithmic rather than runtime/product/security policy, the preceding or same line must contain `architecture-policy: implementation-constant -- <concrete reason>`. This is a narrow code-local exception, not a blanket suppression.
+
+Local reproduction:
+
+```bash
+pnpm architecture:backend
+pnpm architecture:frontend-tokens
+pnpm architecture:frontend-reuse
+pnpm architecture:check
+```
+
+New violations must be fixed at their authority layer; do not weaken the checker, add a baseline, or create meaningless constants merely to make CI green.

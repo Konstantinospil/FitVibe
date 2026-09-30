@@ -39,7 +39,11 @@
     "clean": "rimraf node_modules .turbo && pnpm install",
     "prepare": "husky install",
     "fmt": "prettier \"**/*.{ts,tsx,js,jsx,cjs,mjs,json,md,yml,yaml}\" --write",
-    "test:visual:update:linux": "node tests/frontend/visual/scripts/update-linux-baselines.mjs --update"
+    "test:visual:update:linux": "node tests/frontend/visual/scripts/update-linux-baselines.mjs --update",
+    "architecture:backend": "node tests/qa/check-architecture-hardcoding.mjs backend",
+    "architecture:frontend-tokens": "node tests/qa/check-architecture-hardcoding.mjs frontend-tokens",
+    "architecture:frontend-reuse": "node tests/qa/check-architecture-hardcoding.mjs frontend-reuse",
+    "architecture:check": "node tests/qa/check-architecture-hardcoding.mjs all"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
