@@ -6,7 +6,7 @@ import LanguageSwitcher from "../components/LanguageSwitcher";
 import ThemeToggle from "../components/ThemeToggle";
 import Footer from "../components/Footer";
 import { useTranslation } from "react-i18next";
-import { LogOut, Home, User, type LucideIcon } from "lucide-react";
+import { LogOut, Home, type LucideIcon } from "lucide-react";
 import logoFull from "../assets/logo_full.ico";
 
 type NavItem = {
@@ -15,13 +15,7 @@ type NavItem = {
   icon: LucideIcon;
 };
 
-const NAV_ITEMS: NavItem[] = [
-  { to: "/", labelKey: "navigation.home", icon: Home },
-  // Commented out until features are implemented
-  // { to: "/sessions", labelKey: "navigation.sessions", icon: CalendarDays },
-  // { to: "/insights", labelKey: "navigation.insights", icon: BarChart3 },
-  { to: "/profile", labelKey: "navigation.profile", icon: User },
-];
+const NAV_ITEMS: NavItem[] = [{ to: "/", labelKey: "navigation.home", icon: Home }];
 
 const MainLayout: React.FC = () => {
   const { signOut } = useAuth();
