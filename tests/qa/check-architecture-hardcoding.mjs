@@ -147,6 +147,7 @@ async function frontendSourceFiles(extensions) {
   const roots = [
     path.join(ROOT, "apps/frontend/src"),
     path.join(ROOT, "apps/backoffice/src"),
+    path.join(ROOT, "packages/ui/src"),
   ];
   const files = [];
   for (const root of roots) {
@@ -193,49 +194,41 @@ async function checkFrontendTokens() {
   ]);
 
 
-  const allowedRadiusValues = new Set(["8px", "12px", "16px", "24px", "999px", "0.5rem", "0.75rem", "1rem", "1.5rem"]);
-  const allowedOpacityValues = new Set(["1", "0.7", "0.70", "0.45"]);
-  const allowedFontSizes = new Set(["14px", "16px", "18px", "24px", "32px", "48px", "0.875rem", "1rem", "1.125rem", "1.5rem", "2rem", "3rem"]);
-  const allowedLineHeights = new Set(["12px", "20px", "24px", "28px", "32px", "36px", "40px", "56px", "0.75rem", "1.25rem", "1.5rem", "1.75rem", "2rem", "2.25rem", "2.5rem", "3.5rem"]);
-  const allowedLetterSpacing = new Set(["0", "0em", "0%", "-0.005em", "-0.01em", "-0.5%", "-1%", "0.02em", "2%"]);
-  const allowedFontWeights = new Set(["400", "582", "600", "normal"]);
-  const allowedFontFamilies = new Set(["Inter", "Roboto Flex", "inherit"]);
-
   const sourceDesignPatterns = [
     {
-      pattern: /\bborderRadius\s*:\s*["'`]\s*([^"'`]+)\s*["'`]/g,
-      allowed: allowedRadiusValues,
-      message: "Raw radius outside the Figma radius authority (8/12/16/24/999px).",
+      pattern: /\bborderRadius\s*:\s*["'`]([^"'`]+)["'`]/g,
+      allowedValue: (value) => value.startsWith("var(--radius-") || value.startsWith("var(--card-radius"),
+      message: "Frontend radius must reference the canonical Figma radius token authority; manual values are forbidden.",
     },
     {
-      pattern: /\bopacity\s*:\s*(0(?:\.\d+)?|1(?:\.0+)?)\b/g,
-      allowed: allowedOpacityValues,
-      message: "Opacity outside the Figma authority (100%/70%/45%).",
+      pattern: /\bopacity\s*:\s*([^,}\n]+)/g,
+      allowedValue: (value) => value.startsWith("var(--opacity-"),
+      message: "Frontend opacity must reference a canonical Figma opacity token; manual values are forbidden.",
     },
     {
       pattern: /\bfontSize\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowed: allowedFontSizes,
-      message: "Font size outside the Figma typography authority.",
+      allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--font-size-"),
+      message: "Frontend font size must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\blineHeight\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowed: allowedLineHeights,
-      message: "Line height outside the Figma typography authority.",
+      allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--line-height-"),
+      message: "Frontend line height must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\bletterSpacing\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowed: allowedLetterSpacing,
-      message: "Letter spacing outside the Figma typography authority.",
+      allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--letter-spacing-"),
+      message: "Frontend letter spacing must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
-      pattern: /\bfontWeight\s*:\s*["'`]?(\d+|normal|bold)["'`]?/g,
-      allowed: allowedFontWeights,
-      message: "Font weight outside the Figma typography authority (400/582/600).",
+      pattern: /\bfontWeight\s*:\s*([^,}\n]+)/g,
+      allowedValue: (value) => value.startsWith("var(--font-weight-"),
+      message: "Frontend font weight must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\bfontFamily\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowed: allowedFontFamilies,
-      message: "Font family outside the Figma authority (Inter/Roboto Flex).",
+      allowedValue: (value) => value.startsWith("var(--font-family-"),
+      message: "Frontend font family must reference the canonical Figma font-family authority; manual values are forbidden.",
     },
   ];
 
@@ -254,8 +247,8 @@ async function checkFrontendTokens() {
 
     for (const rule of sourceDesignPatterns) {
       for (const match of source.matchAll(rule.pattern)) {
-        const value = String(match[1] ?? "").trim();
-        if (!rule.allowed.has(value) && !sourceException(source, match.index, "token")) {
+        const value = String(match[1] ?? "").trim().replace(/^["'`]|["'`]$/g, "");
+        if (!rule.allowedValue(value) && !sourceException(source, match.index, "token")) {
           report(file, source, match.index, rule.message);
         }
       }
@@ -292,48 +285,38 @@ async function checkFrontendTokens() {
     const cssDesignPatterns = [
       {
         pattern: /\bborder-radius\s*:\s*([^;]+);/g,
-        allowed: allowedRadiusValues,
-        variablePrefix: "--radius-",
-        message: "CSS border-radius outside the Figma radius authority.",
+        allowedValue: (value) => value.startsWith("var(--radius-") || value.startsWith("var(--card-radius"),
+        message: "CSS border-radius must reference the canonical Figma radius token authority.",
       },
       {
         pattern: /\bopacity\s*:\s*([^;]+);/g,
-        allowed: allowedOpacityValues,
-        variablePrefix: "--opacity-",
-        message: "CSS opacity outside the Figma opacity authority.",
+        allowedValue: (value) => value.startsWith("var(--opacity-"),
+        message: "CSS opacity must reference the canonical Figma opacity token authority.",
       },
       {
         pattern: /\bfont-size\s*:\s*([^;]+);/g,
-        allowed: allowedFontSizes,
-        variablePrefix: "--type-",
-        compatibilityPrefix: "--font-size-",
-        message: "CSS font-size outside the Figma typography authority.",
+        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--font-size-"),
+        message: "CSS font-size must reference a canonical Figma typography token.",
       },
       {
         pattern: /\bline-height\s*:\s*([^;]+);/g,
-        allowed: allowedLineHeights,
-        variablePrefix: "--type-",
-        compatibilityPrefix: "--line-height-",
-        message: "CSS line-height outside the Figma typography authority.",
+        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--line-height-"),
+        message: "CSS line-height must reference a canonical Figma typography token.",
       },
       {
         pattern: /\bletter-spacing\s*:\s*([^;]+);/g,
-        allowed: allowedLetterSpacing,
-        variablePrefix: "--type-",
-        compatibilityPrefix: "--letter-spacing-",
-        message: "CSS letter-spacing outside the Figma typography authority.",
+        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--letter-spacing-"),
+        message: "CSS letter-spacing must reference a canonical Figma typography token.",
       },
       {
         pattern: /\bfont-weight\s*:\s*([^;]+);/g,
-        allowed: allowedFontWeights,
-        variablePrefix: "--font-weight-",
-        message: "CSS font-weight outside the Figma typography authority.",
+        allowedValue: (value) => value.startsWith("var(--font-weight-"),
+        message: "CSS font-weight must reference a canonical Figma typography token.",
       },
       {
         pattern: /\bfont-family\s*:\s*([^;]+);/g,
-        allowed: new Set(["Inter", "Roboto Flex", "inherit"]),
-        variablePrefix: "--font-family-",
-        message: "CSS font-family outside the Figma typography authority.",
+        allowedValue: (value) => value.startsWith("var(--font-family-"),
+        message: "CSS font-family must reference the canonical Figma font-family authority.",
       },
     ];
 
@@ -355,16 +338,7 @@ async function checkFrontendTokens() {
         const line = lineTextAt(source, match.index);
         const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
         const isAuthorityDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-        const isTokenReference =
-          value.startsWith("var(" + rule.variablePrefix) ||
-          (rule.compatibilityPrefix && value.startsWith("var(" + rule.compatibilityPrefix));
-        const plainFamily = value.split(",")[0].trim().replace(/^["']|["']$/g, "");
-        const allowed =
-          rule.allowed.has(value) ||
-          rule.allowed.has(plainFamily) ||
-          isTokenReference ||
-          isAuthorityDeclaration;
-        if (!allowed && !sourceException(source, match.index, "token")) {
+        if (!isAuthorityDeclaration && !rule.allowedValue(value) && !sourceException(source, match.index, "token")) {
           report(file, source, match.index, rule.message);
         }
       }
