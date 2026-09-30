@@ -172,7 +172,7 @@ const Dashboard: React.FC = () => {
                 value={range}
                 onChange={(event) => setRange(event.target.value as DashboardRange)}
                 style={{
-                  background: "rgba(15, 23, 42, 0.35)}",
+                  background: "var(--tone-slate-900-a35)}",
                   color: "var(--color-text-primary)}",
                   border: "1px solid var(--color-border)}",
                   borderRadius: "12px",
