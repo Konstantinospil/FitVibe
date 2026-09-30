@@ -1,23 +1,48 @@
 import React from "react";
 
+export type CardVariant = "surface" | "muted";
+
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   as?: keyof React.JSX.IntrinsicElements;
+  variant?: CardVariant;
 }
 
-const cardBaseStyle: React.CSSProperties = {
-  background: "var(--card-background, var(--color-bg-card))",
-  borderRadius: "var(--card-radius, var(--radius-xl))",
-  border: "1px solid var(--color-border)",
-  boxShadow: "var(--card-shadow, var(--shadow-e2))",
-  backdropFilter: "var(--card-backdrop-filter, none)",
-  display: "flex",
-  flexDirection: "column",
+const cardVariants: Record<CardVariant, React.CSSProperties> = {
+  surface: {
+    background: "var(--color-surface)",
+    borderColor: "var(--color-border)",
+    boxShadow: "var(--shadow-e1)",
+  },
+  muted: {
+    background: "var(--color-surface-muted)",
+    borderColor: "var(--color-border)",
+    boxShadow: "none",
+  },
 };
 
-export const Card: React.FC<CardProps> = ({ children, as = "div", style, ...rest }) => {
+export const Card: React.FC<CardProps> = ({
+  children,
+  as = "div",
+  variant = "surface",
+  style,
+  ...rest
+}) => {
   const Component = as as React.ElementType;
   return (
-    <Component style={{ ...cardBaseStyle, ...style }} {...rest}>
+    <Component
+      data-component="card"
+      data-variant={variant}
+      style={{
+        borderRadius: "var(--radius-lg)",
+        border: "1px solid",
+        display: "flex",
+        flexDirection: "column",
+        color: "var(--color-text-primary)",
+        ...cardVariants[variant],
+        ...style,
+      }}
+      {...rest}
+    >
       {children}
     </Component>
   );
@@ -30,10 +55,9 @@ export const CardHeader: React.FC<React.HTMLAttributes<HTMLElement>> = ({
 }) => (
   <header
     style={{
-      padding: "var(--space-lg) var(--space-xl) var(--space-sm)",
+      padding: "var(--space-md) var(--space-md) var(--space-sm)",
       display: "grid",
-      gap: "var(--space-sm)",
-      borderBottom: "1px solid var(--card-header-divider-color, var(--color-border-strong))",
+      gap: "var(--space-xs)",
       ...style,
     }}
     {...rest}
@@ -50,11 +74,12 @@ export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({
   <h3
     style={{
       margin: 0,
-      fontSize: "var(--font-size-lg)",
       fontFamily: "var(--font-family-heading)",
-      fontWeight: 600,
-      letterSpacing: "var(--letter-spacing-tight)",
-      lineHeight: "var(--line-height-snug)",
+      fontWeight: "var(--font-weight-semibold)",
+      fontSize: "var(--type-card-title-size)",
+      lineHeight: "var(--type-card-title-line-height)",
+      letterSpacing: "var(--type-card-title-letter-spacing)",
+      color: "var(--color-text-primary)",
       ...style,
     }}
     {...rest}
@@ -71,9 +96,12 @@ export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement
   <p
     style={{
       margin: 0,
-      fontSize: "var(--font-size-sm)",
+      fontFamily: "var(--font-family-body)",
+      fontWeight: "var(--font-weight-regular)",
+      fontSize: "var(--type-supporting-size)",
+      lineHeight: "var(--type-supporting-line-height)",
+      letterSpacing: "var(--type-supporting-letter-spacing)",
       color: "var(--color-text-muted)",
-      lineHeight: "var(--line-height-relaxed)",
       ...style,
     }}
     {...rest}
@@ -89,9 +117,9 @@ export const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 }) => (
   <div
     style={{
-      padding: "var(--space-lg) var(--space-xl)",
+      padding: "var(--space-sm) var(--space-md) var(--space-md)",
       display: "grid",
-      gap: "var(--space-md)",
+      gap: "var(--space-sm)",
       ...style,
     }}
     {...rest}
@@ -107,9 +135,9 @@ export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
 }) => (
   <div
     style={{
-      padding: "var(--space-md) var(--space-xl) calc(var(--space-xl) - 0.25rem)",
-      borderTop: "1px solid var(--card-footer-divider-color, var(--color-border-strong))",
+      padding: "var(--space-sm) var(--space-md) var(--space-md)",
       display: "flex",
+      alignItems: "center",
       justifyContent: "flex-end",
       gap: "var(--space-sm)",
       ...style,
