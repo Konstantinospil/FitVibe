@@ -405,7 +405,7 @@ input:focus-visible {
 }
 
 button {
-  font-family: inherit;
+  font-family: var(--font-family-body);
   border: none;
   cursor: pointer;
 }
@@ -417,7 +417,7 @@ h4,
 h5,
 h6 {
   font-family: var(--font-family-heading);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   letter-spacing: var(--letter-spacing-tight);
   color: var(--color-text-primary);
   margin: 0;
@@ -446,13 +446,13 @@ small {
   background: #0b0c10;
   color: var(--color-text-primary);
   font-family: var(--font-family-base);
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
 }
 
 .login-fallback__card {
   max-width: 640px;
   width: 100%;
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   border: 1px solid rgba(255, 255, 255, 0.08);
   padding: clamp(1.5rem, 4vw, 3rem);
   background: rgba(11, 12, 16, 0.9);
@@ -461,8 +461,8 @@ small {
 
 .login-fallback__eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
+  letter-spacing: var(--type-metric-small-letter-spacing);
+  font-size: var(--type-supporting-size);
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -474,7 +474,7 @@ small {
 .login-fallback__desc {
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 2rem;
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
 }
 
 .login-fallback__form {
@@ -485,18 +485,18 @@ small {
 .login-fallback__label {
   display: grid;
   gap: 0.5rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
   color: rgba(255, 255, 255, 0.8);
 }
 
 .login-fallback__field {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-input-border);
   background: var(--color-input-bg);
   color: var(--color-text-primary);
   padding: 0.9rem 1rem;
-  font-size: 1rem;
+  font-size: var(--type-body-size);
   transition: border 0.2s ease;
 }
 
@@ -522,11 +522,11 @@ small {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
+  font-size: var(--type-supporting-size);
   min-width: 24px;
   min-height: 24px;
   padding: 0.35rem 0.6rem;
-  line-height: 1;
+  line-height: var(--type-metric-small-line-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -534,24 +534,24 @@ small {
 }
 
 .login-fallback__error {
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255, 0, 76, 0.6);
   background: rgba(255, 0, 76, 0.1);
   color: #ffb3c7;
   padding: 0.75rem 1rem;
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
 }
 
 .login-fallback__button {
   height: 52px;
   min-height: 44px;
   min-width: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: none;
   background: linear-gradient(90deg, #fb951d, #fdd835);
   color: #0b0c10;
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--type-body-size);
   cursor: pointer;
   transition: opacity 0.2s ease;
   display: inline-flex;
@@ -560,7 +560,7 @@ small {
 }
 
 .login-fallback__button[disabled] {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -572,7 +572,7 @@ small {
 .login-fallback__links {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
   gap: 1rem;
 }
 
@@ -600,7 +600,7 @@ small {
   color: var(--color-primary-on);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   z-index: 50;
   transition: left 180ms ease;
 }
@@ -676,7 +676,7 @@ small {
 }
 
 .form-label-text {
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-secondary);
 }
 
@@ -699,7 +699,7 @@ small {
 }
 
 .form-input:disabled {
-  opacity: 0.6;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -755,7 +755,7 @@ small {
   color: var(--color-text-primary);
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
 }
 
 .form-success {
@@ -763,13 +763,13 @@ small {
   color: #86efac;
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
 }
 
 .form-links {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
   gap: var(--space-md);
   flex-wrap: wrap;
 }
@@ -802,7 +802,7 @@ small {
   display: block;
   text-align: center;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
 }
 
 /* Layout Utilities */
@@ -966,19 +966,19 @@ small {
 }
 
 .text-09 {
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
 }
 
 .text-085 {
-  font-size: 0.85rem;
+  font-size: var(--type-supporting-size);
 }
 
 .text-08 {
-  font-size: 0.8rem;
+  font-size: var(--type-supporting-size);
 }
 
 .font-weight-600 {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .text-primary {
@@ -998,7 +998,7 @@ small {
 }
 
 .line-height-15 {
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
 }
 
 /* Icon Styles */
@@ -1042,7 +1042,7 @@ small {
 .alert {
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
 }
 
 .alert--error {
@@ -1085,7 +1085,7 @@ small {
 
 .section-title {
   font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-sm);
   color: var(--color-text-primary);
 }
@@ -1099,8 +1099,8 @@ small {
 /* Eyebrow/Header Styles */
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
+  letter-spacing: var(--type-metric-small-letter-spacing);
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
   margin-bottom: 0.5rem;
 }
@@ -1129,7 +1129,7 @@ small {
 }
 
 .opacity-05 {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
 }
 
 /* Border Radius Utilities */
@@ -1169,9 +1169,9 @@ small {
 }
 
 .checkbox-label {
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
   cursor: pointer;
 }
 
@@ -1220,12 +1220,12 @@ small {
 
 .user-card-title {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   margin: 0;
 }
 
 .user-card-meta {
-  font-size: 0.8rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
 }
 
@@ -1241,17 +1241,17 @@ small {
 }
 
 .user-card-stat-label {
-  font-size: 0.8rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
 }
 
 .user-card-stat-value {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .user-card-footer {
-  font-size: 0.85rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
 }
 
@@ -1261,8 +1261,8 @@ small {
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: var(--type-supporting-size);
+  font-weight: var(--font-weight-control-large);
 }
 
 .status-badge--active {
@@ -1285,7 +1285,7 @@ small {
   display: grid;
   gap: 0.75rem;
   background: var(--color-surface-glass);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 1.6rem;
   border: 1px solid var(--color-border);
 }
@@ -1298,7 +1298,7 @@ small {
   flex: 1 1 200px;
   min-width: 200px;
   background: var(--color-surface-glass);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 1.4rem;
   border: 1px solid var(--color-border);
   display: grid;
@@ -1324,7 +1324,7 @@ small {
 }
 
 .text-2xl {
-  font-size: 2rem;
+  font-size: var(--type-page-title-size);
 }
 
 /* Tab Navigation */
@@ -1341,7 +1341,7 @@ small {
   border-radius: 8px 8px 0 0;
   background: transparent;
   color: var(--color-text-secondary);
-  font-weight: 500;
+  font-weight: var(--font-weight-control-large);
   border: none;
   cursor: pointer;
   transition: all 150ms ease;
@@ -1350,7 +1350,7 @@ small {
 .tab--active {
   background: var(--color-accent);
   color: #0f172a;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .mt-075 {
