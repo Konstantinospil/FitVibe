@@ -1,3 +1,5 @@
+export * from "./CodeField";
+export * from "./PasswordField";
 export * from "./Switch";
 export * from "./Checkbox";
 export * from "./Avatar";
