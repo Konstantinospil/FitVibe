@@ -20,7 +20,7 @@ const Skeleton: React.FC<SkeletonProps> = ({
       height,
       borderRadius: radius,
       background:
-        "linear-gradient(90deg, rgba(148, 163, 184, 0.15), rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.15))",
+        "linear-gradient(90deg, var(--tone-slate-400-a15), var(--tone-slate-400-a35), var(--tone-slate-400-a15))",
       backgroundSize: "200px 100%",
       animation: "skeleton-shimmer 1.6s ease-in-out infinite",
       ...style,
