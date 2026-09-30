@@ -1,7 +1,8 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useId, useState } from "react";
 
 export type FieldControlSize = "sm" | "md" | "lg";
 export type FieldControlVariant = "default" | "error";
+export type InputFieldState = "default" | "focus" | "error" | "disabled";
 
 const sizeStyles: Record<FieldControlSize, React.CSSProperties> = {
   sm: {
@@ -26,13 +27,21 @@ const selectPaddingRight: Record<FieldControlSize, string> = {
 
 const baseStyle: React.CSSProperties = {
   width: "100%",
-  borderRadius: "var(--field-radius, var(--radius-xl))",
-  border: "1px solid var(--color-input-border, var(--color-border))",
+  height: "38px",
+  minHeight: "38px",
+  padding: "var(--space-xs) var(--space-md)",
+  borderRadius: "var(--radius-md)",
+  border: "1px solid var(--color-input-border)",
   background: "var(--color-input-bg)",
-  color: "var(--color-text-primary)",
-  fontFamily: "var(--font-family-base)",
-  transition: "border-color 150ms ease, box-shadow 150ms ease",
+  color: "var(--color-text-secondary)",
+  fontFamily: "var(--font-family-body)",
+  fontWeight: "var(--font-weight-regular)",
+  fontSize: "var(--type-control-size)",
+  lineHeight: "var(--type-control-line-height)",
+  letterSpacing: "var(--type-control-letter-spacing)",
+  transition: "border-color 150ms ease",
   outline: "none",
+  boxShadow: "none",
 };
 
 const errorStyle: React.CSSProperties = {
@@ -40,6 +49,7 @@ const errorStyle: React.CSSProperties = {
 };
 
 const disabledStyle: React.CSSProperties = {
+  background: "var(--color-surface-muted)",
   opacity: "var(--opacity-disabled)",
   cursor: "not-allowed",
 };
@@ -51,13 +61,11 @@ const focusControl = (
 ) => {
   if (!invalid && !disabled) {
     element.style.borderColor = "var(--color-highlight)";
-    element.style.boxShadow = "var(--focus-glow)";
   }
 };
 
 const blurControl = (element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) => {
   element.style.borderColor = "";
-  element.style.boxShadow = "";
 };
 
 export interface InputControlProps
@@ -108,6 +116,160 @@ export const InputControl = forwardRef<HTMLInputElement, InputControlProps>(
   },
 );
 InputControl.displayName = "InputControl";
+
+export interface InputFieldProps
+  extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    "size" | "style" | "className" | "disabled" | "aria-invalid"
+  > {
+  label: React.ReactNode;
+  helperText?: React.ReactNode;
+  error?: boolean;
+  disabled?: boolean;
+  endAdornment?: React.ReactNode;
+}
+
+export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
+  (
+    {
+      id,
+      label,
+      helperText,
+      error = false,
+      disabled = false,
+      endAdornment,
+      onFocus,
+      onBlur,
+      ...props
+    },
+    ref,
+  ) => {
+    const generatedId = useId();
+    const inputId = id ?? generatedId;
+    const helperId = helperText ? `${inputId}-helper` : undefined;
+    const [focused, setFocused] = useState(false);
+
+    const state: InputFieldState = disabled
+      ? "disabled"
+      : error
+        ? "error"
+        : focused
+          ? "focus"
+          : "default";
+
+    const borderColor =
+      state === "focus"
+        ? "var(--color-highlight)"
+        : state === "error"
+          ? "var(--color-danger-border)"
+          : "var(--color-input-border)";
+
+    return (
+      <div
+        data-component="input-field"
+        data-state={state}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          width: "100%",
+          gap: "var(--space-xs)",
+          opacity: disabled ? "var(--opacity-disabled)" : "var(--opacity-full)",
+        }}
+      >
+        <label
+          htmlFor={inputId}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            minHeight: "32px",
+            color: "var(--color-text-secondary)",
+            fontFamily: "var(--font-family-body)",
+            fontWeight: "var(--font-weight-regular)",
+            fontSize: "var(--type-control-size)",
+            lineHeight: "var(--type-control-line-height)",
+            letterSpacing: "var(--type-control-letter-spacing)",
+            textAlign: "center",
+          }}
+        >
+          {label}
+        </label>
+
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
+          <InputControl
+            {...props}
+            id={inputId}
+            ref={ref}
+            disabled={disabled}
+            variant={error ? "error" : "default"}
+            aria-invalid={error ? "true" : undefined}
+            aria-describedby={helperId}
+            style={{
+              borderColor,
+              background:
+                state === "disabled" ? "var(--color-surface-muted)" : "var(--color-input-bg)",
+              opacity: "var(--opacity-full)",
+              paddingRight: endAdornment
+                ? "calc(var(--space-md) + var(--space-xl))"
+                : "var(--space-md)",
+            }}
+            onFocus={(event) => {
+              setFocused(true);
+              onFocus?.(event);
+            }}
+            onBlur={(event) => {
+              setFocused(false);
+              onBlur?.(event);
+            }}
+          />
+          {endAdornment ? (
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                right: "var(--space-sm)",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {endAdornment}
+            </span>
+          ) : null}
+        </div>
+
+        {helperText ? (
+          <div
+            id={helperId}
+            style={{
+              width: "100%",
+              minHeight: "24px",
+              color: "var(--color-text-secondary)",
+              fontFamily: "var(--font-family-body)",
+              fontWeight: "var(--font-weight-control-large)",
+              fontSize: "var(--type-control-large-size)",
+              lineHeight: "var(--type-control-large-line-height)",
+              letterSpacing: "var(--type-control-large-letter-spacing)",
+            }}
+          >
+            {helperText}
+          </div>
+        ) : null}
+      </div>
+    );
+  },
+);
+InputField.displayName = "InputField";
+
 
 export interface SelectControlProps
   extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size"> {
