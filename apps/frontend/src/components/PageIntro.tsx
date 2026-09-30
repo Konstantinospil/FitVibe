@@ -92,7 +92,7 @@ const PageIntro: React.FC<PageIntroProps> = ({
             letterSpacing: "-0.015em",
             ...(priorityLcp
               ? {
-                  color: "var(--color-text-primary, #FFFFFF)",
+                  color: "var(--color-text-primary, var(--color-on-color))",
                   fontFamily:
                     '"Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                 }
