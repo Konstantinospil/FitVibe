@@ -229,7 +229,7 @@ export const SessionManagement: React.FC = () => {
                           </span>
                         </div>
                         <div
-                          style={{ fontSize: "0.875rem", color: "#6b7280", marginTop: "0.25rem" }}
+                          style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}
                         >
                           {currentSession.ip && (
                             <span>
@@ -242,7 +242,7 @@ export const SessionManagement: React.FC = () => {
                           </span>
                         </div>
                         <div
-                          style={{ fontSize: "0.875rem", color: "#6b7280", marginTop: "0.25rem" }}
+                          style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}
                         >
                           {t("auth.sessions.expires") || "Expires"}:{" "}
                           {formatDate(currentSession.expiresAt)}
@@ -297,7 +297,7 @@ export const SessionManagement: React.FC = () => {
                             <div
                               style={{
                                 fontSize: "0.875rem",
-                                color: "#6b7280",
+                                color: "var(--color-text-muted)",
                                 marginTop: "0.25rem",
                               }}
                             >
@@ -314,7 +314,7 @@ export const SessionManagement: React.FC = () => {
                             <div
                               style={{
                                 fontSize: "0.875rem",
-                                color: "#6b7280",
+                                color: "var(--color-text-muted)",
                                 marginTop: "0.25rem",
                               }}
                             >
@@ -350,7 +350,7 @@ export const SessionManagement: React.FC = () => {
                 >
                   {t("auth.sessions.revokeAll") || "Revoke All Sessions"}
                 </Button>
-                <p style={{ fontSize: "0.875rem", color: "#6b7280", marginTop: "0.5rem" }}>
+                <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
                   {t("auth.sessions.revokeAllWarning") ||
                     "This will log you out from all devices. You will need to log in again."}
                 </p>
