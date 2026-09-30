@@ -19,31 +19,72 @@
 
   color-scheme: dark;
 
-  /* Typography - FitVibe Design System v1.0 */
-  --font-family-base: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-    system-ui, sans-serif;
-  --font-family-heading: "Roboto Flex", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont,
-    "Helvetica Neue", system-ui, sans-serif;
-  --font-family-mono: "IBM Plex Mono", "Menlo", "Consolas", monospace;
+  /* Typography authority — FitVibe Figma Design System v2 */
+  --font-family-body: "Inter", system-ui, sans-serif;
+  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
 
-  /* Font Sizes - Design System Scale */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-md: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2.0rem;
-  --font-size-3xl: 3.0rem;
+  --font-weight-regular: 400;
+  --font-weight-control-large: 582;
+  --font-weight-semibold: 600;
 
-  /* Line Heights */
-  --line-height-tight: 1.2;
-  --line-height-snug: 1.35;
-  --line-height-normal: 1.6;
-  --line-height-relaxed: 1.65;
+  --type-display-size: 3rem;
+  --type-display-line-height: 3.5rem;
+  --type-display-letter-spacing: -0.01em;
 
-  /* Letter Spacing */
-  --letter-spacing-wide: 0.08em;
-  --letter-spacing-tight: -0.01em;
+  --type-page-title-size: 2rem;
+  --type-page-title-line-height: 2.5rem;
+  --type-page-title-letter-spacing: -0.005em;
+
+  --type-section-title-size: 1.5rem;
+  --type-section-title-line-height: 2rem;
+  --type-section-title-letter-spacing: -0.005em;
+
+  --type-card-title-size: 1.125rem;
+  --type-card-title-line-height: 1.5rem;
+  --type-card-title-letter-spacing: 0;
+
+  --type-body-size: 1rem;
+  --type-body-line-height: 1.5rem;
+  --type-body-letter-spacing: 0;
+
+  --type-supporting-size: 0.875rem;
+  --type-supporting-line-height: 1.25rem;
+  --type-supporting-letter-spacing: 0;
+
+  --type-control-size: 0.875rem;
+  --type-control-line-height: 1.25rem;
+  --type-control-letter-spacing: 0;
+
+  --type-control-large-size: 1rem;
+  --type-control-large-line-height: 1.5rem;
+  --type-control-large-letter-spacing: 0;
+
+  --type-primary-metric-size: 2rem;
+  --type-primary-metric-line-height: 2.25rem;
+  --type-primary-metric-letter-spacing: -0.005em;
+
+  --type-secondary-metric-size: 1.5rem;
+  --type-secondary-metric-line-height: 1.75rem;
+  --type-secondary-metric-letter-spacing: -0.005em;
+
+  --type-metric-small-size: 0.875rem;
+  --type-metric-small-line-height: 0.75rem;
+  --type-metric-small-letter-spacing: 0.02em;
+
+  /* Radius authority — Figma Layout variables */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* Transparency authority — Figma Layout variables */
+  --opacity-full: 1;
+  --opacity-subtle: 0.7;
+  --opacity-disabled: 0.45;
+  --transparency-full: 100%;
+  --transparency-subtle: 70%;
+  --transparency-disabled: 45%;
 
   /* Spacing */
   --space-xs: 0.5rem;
@@ -182,14 +223,6 @@
 
   /* Dark Mode Focus Glow */
   --focus-glow: 0 0 0 2px rgba(99, 102, 241, 0.35);
-
-  /* === BORDER RADIUS === */
-
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
 
   /* Shared UI primitive semantics */
   --card-background: var(--color-bg-card);
