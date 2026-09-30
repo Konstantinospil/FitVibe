@@ -243,7 +243,7 @@ const VerifyEmail: React.FC = () => {
                   style={{
                     display: "block",
                     marginBottom: "0.5rem",
-                    fontWeight: "500",
+                    fontWeight: "var(--font-weight-regular)",
                     textAlign: "left",
                   }}
                 >
@@ -261,18 +261,24 @@ const VerifyEmail: React.FC = () => {
                     width: "100%",
                     padding: "0.75rem",
                     border: "1px solid var(--color-border)",
-                    borderRadius: "6px",
-                    fontSize: "1rem",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: "var(--type-body-size)",
                   }}
                 />
               </div>
               {resendError && (
                 <div style={{ marginBottom: "1rem" }}>
-                  <p style={{ color: "var(--color-danger)", fontSize: "0.875rem", marginBottom: "0.25rem" }}>
+                  <p
+                    style={{
+                      color: "var(--color-danger)",
+                      fontSize: "var(--type-supporting-size)",
+                      marginBottom: "0.25rem",
+                    }}
+                  >
                     {resendError}
                   </p>
                   {retryAfter !== null && countdown > 0 && (
-                    <p style={{ color: "var(--color-text-muted)", fontSize: "0.75rem" }}>
+                    <p style={{ color: "var(--color-text-muted)", fontSize: "var(--type-supporting-size)" }}>
                       {t("verifyEmail.retryAfter", { seconds: countdown })}
                     </p>
                   )}
