@@ -66,12 +66,30 @@ describe("IconButton", () => {
     },
   );
 
-  it("provides the canonical 44px interaction target", () => {
+  it("uses the predefined large control size by default", () => {
     render(<IconButton icon={<CloseIcon />} label="Close" data-testid="button" />);
+    expect(screen.getByTestId("button")).toHaveAttribute("data-size", "lg");
     expect(screen.getByTestId("button")).toHaveStyle({
-      width: "44px",
-      height: "44px",
+      width: "48px",
+      height: "48px",
     });
+  });
+
+  it("renders an external icon link without changing the sizing API", () => {
+    render(
+      <IconButton
+        icon={<CloseIcon />}
+        label="Social"
+        href="https://example.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        size="lg"
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "Social" });
+    expect(link).toHaveAttribute("href", "https://example.com");
+    expect(link).toHaveAttribute("data-size", "lg");
   });
 
   it("fires click through the accessible icon-only control", () => {

@@ -35,7 +35,7 @@ const baseStyle: React.CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
+export const BUTTON_SIZE_STYLES: Record<ButtonSize, React.CSSProperties> = {
   sm: {
     minHeight: "34px",
     padding: "var(--space-xs) var(--space-sm)",
@@ -100,7 +100,7 @@ const hoverVariantStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
 };
 
-const iconSizes: Record<ButtonSize, string> = {
+export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
   sm: "14px",
   md: "16px",
   lg: "20px",
@@ -138,7 +138,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const computedStyle: React.CSSProperties = {
       ...baseStyle,
-      ...sizeStyles[size],
+      ...BUTTON_SIZE_STYLES[size],
       ...(state === "hover" ? hoverVariantStyles[variant] : activeVariantStyles[variant]),
       ...(fullWidth ? { width: "100%" } : {}),
       ...(state === "disabled"
@@ -189,8 +189,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               aria-hidden="true"
               data-testid="button-spinner"
               style={{
-                width: iconSizes[size],
-                height: iconSizes[size],
+                width: BUTTON_ICON_SIZES[size],
+                height: BUTTON_ICON_SIZES[size],
                 flex: "none",
                 borderRadius: "var(--radius-full)",
                 border: "2px solid currentColor",
@@ -203,8 +203,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               aria-hidden="true"
               data-slot="leading-icon"
               style={{
-                width: iconSizes[size],
-                height: iconSizes[size],
+                width: BUTTON_ICON_SIZES[size],
+                height: BUTTON_ICON_SIZES[size],
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -222,8 +222,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               aria-hidden="true"
               data-slot="trailing-icon"
               style={{
-                width: iconSizes[size],
-                height: iconSizes[size],
+                width: BUTTON_ICON_SIZES[size],
+                height: BUTTON_ICON_SIZES[size],
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
