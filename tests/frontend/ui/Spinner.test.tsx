@@ -30,6 +30,13 @@ describe("Spinner", () => {
       const spinner = screen.getByRole("status");
       expect(spinner).toHaveAttribute("aria-label", "Processing");
     });
+
+    it("should expose a visible label to assistive technology and render its sr-only text", () => {
+      render(<Spinner label="Saving changes" />);
+      const spinner = screen.getByRole("status", { name: "Saving changes" });
+      expect(spinner).toHaveAttribute("aria-label", "Saving changes");
+      expect(screen.getByText("Saving changes")).toHaveClass("sr-only");
+    });
   });
 
   describe("Size variants", () => {
