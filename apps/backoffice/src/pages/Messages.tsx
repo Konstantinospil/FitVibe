@@ -197,7 +197,11 @@ const MessagesPage: React.FC = () => {
           >
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1200px" }}>
               <thead>
-                <tr style={{ background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A" }}>
+                <tr
+                  style={{
+                    background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
+                  }}
+                >
                   <th
                     style={{
                       padding: "1rem",
