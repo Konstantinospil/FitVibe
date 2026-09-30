@@ -41,7 +41,7 @@ const UserManagement: React.FC = () => {
       case "active":
         return "var(--color-accent)";
       case "suspended":
-        return "var(--tone-amber-400)";
+        return "var(--color-warning)";
       case "banned":
         return "var(--color-danger)";
       default:
@@ -52,11 +52,11 @@ const UserManagement: React.FC = () => {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "admin":
-        return "var(--tone-red-500)";
+        return "var(--color-danger)";
       case "coach":
-        return "var(--tone-blue-500)";
+        return "var(--color-focus)";
       case "support":
-        return "var(--tone-amber-400)";
+        return "var(--color-warning)";
       default:
         return "var(--color-text-secondary)";
     }
@@ -148,8 +148,8 @@ const UserManagement: React.FC = () => {
                 padding: "1rem",
                 marginBottom: "1rem",
                 borderRadius: "8px",
-                background: "var(--tone-red-500-a10)",
-                border: "1px solid var(--tone-red-500-a30)",
+                background: "var(--surface-danger-subtle)",
+                border: "1px solid var(--border-danger-subtle)",
                 color: "var(--color-danger)",
               }}
             >
@@ -231,7 +231,7 @@ const UserManagement: React.FC = () => {
                     padding: "1.25rem",
                     borderRadius: "12px",
                     border: "1px solid var(--color-border)",
-                    background: "var(--tone-slate-900-a40)",
+                    background: "var(--surface-muted-subtle)",
                   }}
                 >
                   <div
@@ -309,7 +309,7 @@ const UserManagement: React.FC = () => {
                             style={{
                               fontSize: "1.1rem",
                               fontWeight: 600,
-                              color: user.reportCount > 0 ? "var(--tone-amber-400)" : undefined,
+                              color: user.reportCount > 0 ? "var(--color-warning)" : undefined,
                             }}
                           >
                             {user.reportCount}
