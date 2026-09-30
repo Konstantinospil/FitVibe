@@ -312,8 +312,8 @@ const SystemControls: React.FC = () => {
                 padding: "1rem",
                 marginBottom: "1rem",
                 borderRadius: "8px",
-                background: "var(--tone-red-500-a10)",
-                border: "1px solid var(--tone-red-500-a30)",
+                background: "var(--surface-danger-subtle)",
+                border: "1px solid var(--border-danger-subtle)",
                 color: "var(--color-danger)",
               }}
             >
@@ -344,9 +344,9 @@ const SystemControls: React.FC = () => {
                   padding: "1rem",
                   marginBottom: "1rem",
                   borderRadius: "8px",
-                  background: "var(--tone-amber-400-a10)",
-                  border: "1px solid var(--tone-amber-400-a30)",
-                  color: "var(--tone-amber-400)",
+                  background: "var(--surface-warning-subtle)",
+                  border: "1px solid var(--border-warning-subtle)",
+                  color: "var(--color-warning)",
                 }}
               >
                 <div
@@ -457,9 +457,9 @@ const SystemControls: React.FC = () => {
                   padding: "1rem",
                   marginBottom: "1rem",
                   borderRadius: "8px",
-                  background: "var(--tone-amber-400-a10)",
-                  border: "1px solid var(--tone-amber-400-a30)",
-                  color: "var(--tone-amber-400)",
+                  background: "var(--surface-warning-subtle)",
+                  border: "1px solid var(--border-warning-subtle)",
+                  color: "var(--color-warning)",
                 }}
               >
                 <div
@@ -590,15 +590,15 @@ const SystemControls: React.FC = () => {
                               borderRadius: "4px",
                               background:
                                 entry.outcome === "success"
-                                  ? "var(--tone-green-500-a10)"
+                                  ? "var(--surface-success-subtle)"
                                   : entry.outcome === "failure"
-                                    ? "var(--tone-red-500-a10)"
-                                    : "var(--tone-slate-400-a10)",
+                                    ? "var(--surface-danger-subtle)"
+                                    : "var(--border-subtle)",
                               color:
                                 entry.outcome === "success"
-                                  ? "var(--tone-green-500)"
+                                  ? "var(--color-success)"
                                   : entry.outcome === "failure"
-                                    ? "var(--tone-red-500)"
+                                    ? "var(--color-danger)"
                                     : "var(--color-text-secondary)",
                             }}
                           >
