@@ -7,14 +7,30 @@
     "moduleResolution": "bundler",
     "baseUrl": "src",
     "paths": {
-      "@fitvibe/types": ["../../../packages/types/src/vibeform.d.ts"],
-      "@fitvibe/contracts": ["../../../packages/types/src/contracts.d.ts"]
+      "@fitvibe/types": [
+        "../../../packages/types/src/vibeform.d.ts"
+      ],
+      "@fitvibe/contracts": [
+        "../../../packages/types/src/contracts.d.ts"
+      ]
     },
     "esModuleInterop": true,
     "skipLibCheck": true,
     "strict": true,
-    "types": ["vite/client", "node", "vitest/globals", "@testing-library/jest-dom"]
+    "types": [
+      "vite/client",
+      "node",
+      "vitest/globals",
+      "@testing-library/jest-dom"
+    ]
   },
-  "include": ["src", "tests", "vite.config.ts"],
-  "exclude": ["**/vitest.config.ts"]
+  "include": [
+    "src",
+    "tests",
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "**/vitest.config.ts",
+    "archive/**"
+  ]
 }

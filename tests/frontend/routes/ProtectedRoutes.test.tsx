@@ -49,29 +49,11 @@ vi.mock("../../../apps/frontend/src/pages/Dashboard", () => ({
   default: () => <div>Dashboard Page</div>,
 }));
 
-vi.mock("../../../apps/frontend/src/pages/Sessions", () => ({
-  default: () => <div>Sessions Page</div>,
-}));
 
-vi.mock("../../../apps/frontend/src/pages/Planner", () => ({
-  default: () => <div>Planner Page</div>,
-}));
 
-vi.mock("../../../apps/frontend/src/pages/Logger", () => ({
-  default: () => <div>Logger Page</div>,
-}));
 
-vi.mock("../../../apps/frontend/src/pages/Feed", () => ({
-  default: () => <div>Feed Page</div>,
-}));
 
-vi.mock("../../../apps/frontend/src/pages/Insights", () => ({
-  default: () => <div>Insights Page</div>,
-}));
 
-vi.mock("../../../apps/frontend/src/pages/Profile", () => ({
-  default: () => <div>Profile Page</div>,
-}));
 
 vi.mock("../../../apps/frontend/src/pages/Settings", () => ({
   default: () => <div>Settings Page</div>,
@@ -179,95 +161,11 @@ describe("ProtectedRoutes", () => {
     );
   });
 
-  it("should render Sessions page at /sessions", async () => {
-    render(
-      <MemoryRouter initialEntries={["/sessions"]}>
-        <ProtectedRoutes />
-      </MemoryRouter>,
-    );
 
-    await waitFor(
-      () => {
-        expect(screen.getByText("Sessions Page")).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-  });
 
-  it("should render Planner page at /planner", async () => {
-    render(
-      <MemoryRouter initialEntries={["/planner"]}>
-        <ProtectedRoutes />
-      </MemoryRouter>,
-    );
 
-    await waitFor(
-      () => {
-        expect(screen.getByText("Planner Page")).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-  });
 
-  it("should render Logger page at /logger/:sessionId", async () => {
-    render(
-      <MemoryRouter initialEntries={["/logger/session-123"]}>
-        <ProtectedRoutes />
-      </MemoryRouter>,
-    );
 
-    await waitFor(
-      () => {
-        expect(screen.getByText("Logger Page")).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-  });
-
-  it("should render Feed page at /feed", async () => {
-    render(
-      <MemoryRouter initialEntries={["/feed"]}>
-        <ProtectedRoutes />
-      </MemoryRouter>,
-    );
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("Feed Page")).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-  });
-
-  it("should render Insights page at /insights", async () => {
-    render(
-      <MemoryRouter initialEntries={["/insights"]}>
-        <ProtectedRoutes />
-      </MemoryRouter>,
-    );
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("Insights Page")).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-  });
-
-  it("should render Profile page at /profile", async () => {
-    render(
-      <MemoryRouter initialEntries={["/profile"]}>
-        <ProtectedRoutes />
-      </MemoryRouter>,
-    );
-
-    await waitFor(
-      () => {
-        expect(screen.getByText("Profile Page")).toBeInTheDocument();
-      },
-      { timeout: 5000 },
-    );
-  });
 
   it("should render Settings page at /settings", async () => {
     render(
@@ -283,6 +181,21 @@ describe("ProtectedRoutes", () => {
       { timeout: 5000 },
     );
   });
+
+
+  it.each(["/sessions", "/planner", "/logger/session-123", "/feed", "/insights", "/profile", "/exercises"])(
+    "does not expose archived legacy route %s",
+    async (route) => {
+      render(
+        <MemoryRouter initialEntries={[route]}>
+          <ProtectedRoutes />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Not Found")).toBeInTheDocument();
+      });
+    },
+  );
 
   it("should render Terms page at /terms", async () => {
     render(

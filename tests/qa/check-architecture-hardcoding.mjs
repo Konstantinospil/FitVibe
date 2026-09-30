@@ -346,6 +346,34 @@ async function checkFrontendTokens() {
   }
 }
 
+
+async function checkFrontendArchiveBoundary() {
+  const roots = [
+    path.join(ROOT, "apps/frontend/src"),
+    path.join(ROOT, "apps/backoffice/src"),
+    path.join(ROOT, "packages/ui/src"),
+  ];
+  const importPattern =
+    /(?:from\s*["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']\s*\)|require\s*\(\s*["']([^"']+)["']\s*\)|import\s*["']([^"']+)["'])/g;
+
+  for (const root of roots) {
+    for (const file of await walk(root)) {
+      const rel = normalize(path.relative(ROOT, file));
+      if (!/\.(?:ts|tsx|js|jsx)$/.test(rel) || /\.(?:test|spec)\.[^.]+$/.test(rel)) {
+        continue;
+      }
+      const source = await fs.readFile(file, "utf8");
+      for (const match of source.matchAll(importPattern)) {
+        const specifier = String(match[1] ?? match[2] ?? match[3] ?? match[4] ?? "").replaceAll("\\", "/");
+        if (/(^|\/)archive(?:\/|$)/.test(specifier)) {
+          report(file, source, match.index,
+            "Active production code must not import from the frontend archive. Archive code is reference-only.");
+        }
+      }
+    }
+  }
+}
+
 function rawTagType(tag) {
   const typeMatch = tag.match(/\btype\s*=\s*["']([^"']+)["']/i);
   return typeMatch ? typeMatch[1].toLowerCase() : "text";
@@ -408,6 +436,7 @@ if (mode === "all" || mode === "frontend-tokens") {
   await checkFrontendTokens();
 }
 if (mode === "all" || mode === "frontend-reuse") {
+  await checkFrontendArchiveBoundary();
   await checkFrontendReuse();
 }
 

@@ -102,6 +102,7 @@ export default defineConfig(() => {
         "../../tests/frontend/**/*.spec.{ts,tsx}",
         "../../tests/frontend/visual/**",
         "../../tests/frontend/e2e/**",
+        "archive/**",
       ],
       css: true,
       // Vitest 4 defaults to forks; use it explicitly because it is more robust
@@ -160,6 +161,7 @@ export default defineConfig(() => {
         exclude: [
           ...(configDefaults.coverage.exclude || []),
           "src/main.tsx",
+          "archive/**",
           "src/components/admin/AdminStats.tsx",
         ],
         reportsDirectory: pathResolve(root, "coverage"),
