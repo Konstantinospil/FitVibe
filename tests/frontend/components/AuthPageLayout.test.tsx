@@ -1,8 +1,9 @@
 import React from "react";
-import { render, screen, cleanup } from "@testing-library/react";
+import { act, render, screen, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import AuthPageLayout from "../../src/components/AuthPageLayout";
+import { useThemeStore } from "../../src/store/theme.store";
 
 vi.mock("../../src/i18n/config", () => ({
   loadLanguageTranslations: vi.fn().mockResolvedValue(undefined),
@@ -34,6 +35,7 @@ vi.mock("../../src/utils/idleScheduler", () => ({
 describe("AuthPageLayout", () => {
   afterEach(() => {
     cleanup();
+    useThemeStore.setState({ theme: "dark" });
   });
 
   it("should render with title and description", () => {
@@ -53,6 +55,27 @@ describe("AuthPageLayout", () => {
     expect(logos[0]).toHaveAttribute("fetchpriority", "high");
     expect(logos[0]).toHaveAttribute("loading", "eager");
     expect(logos[1]).toHaveAttribute("loading", "lazy");
+  });
+
+  it("should switch brand artwork when the application theme changes", () => {
+    useThemeStore.setState({ theme: "dark" });
+
+    render(
+      <MemoryRouter>
+        <AuthPageLayout title="Test Title" description="Test Description">
+          <div>Content</div>
+        </AuthPageLayout>
+      </MemoryRouter>,
+    );
+
+    const logo = screen.getAllByRole("img", { name: "FitVibe" })[0];
+    const darkSource = logo.getAttribute("src");
+
+    act(() => {
+      useThemeStore.setState({ theme: "light" });
+    });
+
+    expect(logo.getAttribute("src")).not.toBe(darkSource);
   });
 
   it("should render footer links", () => {
