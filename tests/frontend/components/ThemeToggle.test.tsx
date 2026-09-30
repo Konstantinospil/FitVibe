@@ -31,7 +31,7 @@ describe("ThemeToggle", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("should display sun icon when theme is dark", () => {
+  it("should expose the switch-to-light action when theme is dark", () => {
     vi.mocked(useThemeStore).mockReturnValue({
       theme: "dark" as const,
       setTheme: mockSetTheme,
@@ -45,7 +45,7 @@ describe("ThemeToggle", () => {
     expect(button).toHaveAttribute("title", "Switch to light mode");
   });
 
-  it("should display moon icon when theme is light", () => {
+  it("should expose the switch-to-dark action when theme is light", () => {
     vi.mocked(useThemeStore).mockReturnValue({
       theme: "light" as const,
       setTheme: mockSetTheme,

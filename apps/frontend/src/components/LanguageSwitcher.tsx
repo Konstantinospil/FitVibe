@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
+import { Button } from "@fitvibe/ui";
 import { loadLanguageTranslations } from "../i18n/config";
 
 /**
@@ -13,6 +14,7 @@ type LangCode = "en" | "de" | "fr" | "es" | "el";
 
 type LanguageOption = {
   code: LangCode;
+  displayCode: string;
   labelKey: string;
   // Either emoji or inline SVG renderer (fallback)
   emoji: string;
@@ -233,13 +235,20 @@ function FlagIcon({ option, size = 20 }: { option: LanguageOption; size?: number
   );
 }
 
-const LanguageSwitcher: React.FC = () => {
+export type LanguageSwitcherVariant = "default" | "header";
+
+type LanguageSwitcherProps = {
+  variant?: LanguageSwitcherVariant;
+};
+
+const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default" }) => {
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [isChanging, setIsChanging] = useState(false);
+  const [triggerHovered, setTriggerHovered] = useState(false);
   const activeLanguage = (i18n.language?.slice(0, 2) || "en") as LangCode;
 
   // Fallback to 'en' if language is not in LANGUAGES
@@ -365,30 +374,58 @@ const LanguageSwitcher: React.FC = () => {
         display: "inline-flex",
       }}
     >
-      <button
+      <Button
         ref={buttonRef}
+        variant="ghost"
+        size="sm"
         type="button"
+        disabled={isChanging}
         onClick={() => {
           setIsOpen(!isOpen);
-          // Don't auto-focus menu item on mouse click - keep focus on button
           setFocusedIndex(-1);
         }}
         onKeyDown={handleKeyDown}
-        style={buttonStyle}
+        onMouseEnter={() => setTriggerHovered(true)}
+        onMouseLeave={() => setTriggerHovered(false)}
+        className={variant === "header" ? "app-header__language-control" : undefined}
+        style={{
+          ...buttonStyle,
+          minHeight: variant === "header" ? "44px" : "40px",
+          padding: "var(--space-xs) var(--space-sm)",
+          borderRadius: variant === "header" ? "var(--radius-md)" : "var(--radius-full)",
+          border: variant === "header" ? "none" : "1px solid var(--color-border)",
+          background: triggerHovered
+            ? "var(--color-surface-muted)"
+            : variant === "header"
+              ? "none"
+              : "var(--color-surface-glass)",
+          color: "var(--color-text-secondary)",
+          fontFamily: "var(--font-family-body)",
+          fontWeight: "var(--font-weight-regular)",
+          fontSize: "var(--type-control-size)",
+          lineHeight: "var(--type-control-line-height)",
+          letterSpacing: "var(--type-control-letter-spacing)",
+        }}
         aria-label={t("language.label")}
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-busy={isChanging}
       >
-        <FlagIcon option={currentLanguage} size={24} />
-        <ChevronDown size={14} style={{ opacity: "var(--opacity-subtle)" }} />
-      </button>
+        <FlagIcon option={currentLanguage} size={variant === "header" ? 26 : 24} />
+        {variant === "header" ? (
+          <span className="language-switcher__code">{currentLanguage.displayCode}</span>
+        ) : null}
+        <ChevronDown size={16} style={{ opacity: "var(--opacity-subtle)" }} />
+      </Button>
 
       {isOpen && (
         <div style={dropdownStyle} role="menu" aria-label={t("language.select")}>
           {LANGUAGES.map((option, index) => (
-            <button
+            <Button
               key={option.code}
+              variant="ghost"
+              size="sm"
+              fullWidth
               onClick={() => handleLanguageChange(option.code)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -417,7 +454,7 @@ const LanguageSwitcher: React.FC = () => {
             >
               <FlagIcon option={option} size={20} />
               <span>{t(option.labelKey)}</span>
-            </button>
+            </Button>
           ))}
         </div>
       )}
