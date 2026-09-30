@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
 import { Button } from "../components/ui";
+import { InputControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { rawHttpClient, resendVerificationEmail } from "../services/api";
 import { useCountdown } from "../hooks/useCountdown";
@@ -249,7 +250,7 @@ const VerifyEmail: React.FC = () => {
                 >
                   {t("verifyEmail.resendEmailLabel")}
                 </label>
-                <input
+                <InputControl
                   id="resend-email"
                   type="email"
                   value={resendEmail}
