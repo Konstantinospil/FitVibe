@@ -68,26 +68,6 @@
   overscroll-behavior: contain;
   padding: var(--space-md) var(--space-lg);
   color: var(--color-text-secondary);
-  scrollbar-width: auto;
-  scrollbar-color: var(--color-info-text) var(--color-surface-muted);
-}
-
-.legal-document-shell__content::-webkit-scrollbar {
-  width: 20px;
-}
-
-.legal-document-shell__content::-webkit-scrollbar-track {
-  background: var(--color-surface-muted);
-  border-left: var(--space-xs) solid transparent;
-  border-right: var(--space-xs) solid transparent;
-  background-clip: padding-box;
-}
-
-.legal-document-shell__content::-webkit-scrollbar-thumb {
-  background: var(--color-info-text);
-  border: 6px solid transparent;
-  border-radius: var(--radius-full);
-  background-clip: padding-box;
 }
 
 .legal-document-shell__content .section {

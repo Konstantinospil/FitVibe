@@ -41,7 +41,7 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
     </header>
 
     <div className="legal-document-shell__viewport">
-      <div className="legal-document-shell__content">{children}</div>
+      <div className="legal-document-shell__content fitvibe-scrollbar">{children}</div>
     </div>
 
     {footerAction ? (
