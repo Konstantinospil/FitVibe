@@ -41,7 +41,7 @@ const ContentReportsV2: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "rgb(251, 191, 36)";
+        return "var(--color-warning)";
       case "reviewed":
         return "var(--color-accent)";
       case "dismissed":
@@ -99,7 +99,7 @@ const ContentReportsV2: React.FC = () => {
                     borderRadius: "8px",
                     border: `1px solid ${filterStatus === status ? "var(--color-accent)" : "var(--color-border)"}`,
                     background:
-                      filterStatus === status ? "rgba(52, 211, 153, 0.15)" : "transparent",
+                      filterStatus === status ? "var(--surface-success-subtle)" : "transparent",
                     color:
                       filterStatus === status
                         ? "var(--color-accent)"
@@ -149,7 +149,7 @@ const ContentReportsV2: React.FC = () => {
                     padding: "1.25rem",
                     borderRadius: "12px",
                     border: "1px solid var(--color-border)",
-                    background: "rgba(15, 23, 42, 0.4)",
+                    background: "var(--surface-muted-subtle)",
                   }}
                 >
                   <div
