@@ -57,8 +57,8 @@ const AdminDashboard: React.FC = () => {
                     borderRadius: "12px",
                     border: `2px solid ${isActive(item.path) ? "var(--color-accent)" : "var(--color-border)"}`,
                     background: isActive(item.path)
-                      ? "var(--tone-emerald-400-a08)"
-                      : "var(--tone-slate-900-a40)",
+                      ? "var(--surface-success-subtle)"
+                      : "var(--surface-muted-subtle)",
                     color: "var(--color-text-primary)",
                     cursor: "pointer",
                     textAlign: "left",
@@ -66,12 +66,12 @@ const AdminDashboard: React.FC = () => {
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive(item.path)) {
-                      e.currentTarget.style.background = "var(--tone-slate-900-a60)";
+                      e.currentTarget.style.background = "var(--color-surface-muted)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive(item.path)) {
-                      e.currentTarget.style.background = "var(--tone-slate-900-a40)";
+                      e.currentTarget.style.background = "var(--surface-muted-subtle)";
                     }
                   }}
                 >
