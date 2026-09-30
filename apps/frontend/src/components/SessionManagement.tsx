@@ -200,7 +200,7 @@ export const SessionManagement: React.FC = () => {
                   style={{
                     padding: "1rem",
                     border: "1px solid #e5e7eb",
-                    borderRadius: "0.5rem",
+                    borderRadius: "var(--radius-sm)",
                     backgroundColor: "#f9fafb",
                   }}
                 >
@@ -218,18 +218,18 @@ export const SessionManagement: React.FC = () => {
                           <strong>{formatUserAgent(currentSession.userAgent)}</strong>
                           <span
                             style={{
-                              fontSize: "0.75rem",
+                              fontSize: "var(--type-supporting-size)",
                               padding: "0.125rem 0.5rem",
                               backgroundColor: "#10b981",
                               color: "white",
-                              borderRadius: "0.25rem",
+                              borderRadius: "var(--radius-sm)",
                             }}
                           >
                             {t("auth.sessions.current") || "Current"}
                           </span>
                         </div>
                         <div
-                          style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}
+                          style={{ fontSize: "var(--type-supporting-size)", color: "var(--color-text-muted)", marginTop: "0.25rem" }}
                         >
                           {currentSession.ip && (
                             <span>
@@ -242,7 +242,7 @@ export const SessionManagement: React.FC = () => {
                           </span>
                         </div>
                         <div
-                          style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.25rem" }}
+                          style={{ fontSize: "var(--type-supporting-size)", color: "var(--color-text-muted)", marginTop: "0.25rem" }}
                         >
                           {t("auth.sessions.expires") || "Expires"}:{" "}
                           {formatDate(currentSession.expiresAt)}
@@ -263,7 +263,7 @@ export const SessionManagement: React.FC = () => {
                       marginBottom: "0.75rem",
                     }}
                   >
-                    <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>
+                    <h3 style={{ fontSize: "var(--type-body-size)", fontWeight: "var(--font-weight-semibold)" }}>
                       {t("auth.sessions.otherSessions") || "Other Sessions"}
                     </h3>
                     <Button
@@ -282,7 +282,7 @@ export const SessionManagement: React.FC = () => {
                         style={{
                           padding: "1rem",
                           border: "1px solid #e5e7eb",
-                          borderRadius: "0.5rem",
+                          borderRadius: "var(--radius-sm)",
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "start",
@@ -291,12 +291,12 @@ export const SessionManagement: React.FC = () => {
                         <div style={{ display: "flex", gap: "0.75rem", flex: 1 }}>
                           {getDeviceIcon(session.userAgent)}
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 500 }}>
+                            <div style={{ fontWeight: "var(--font-weight-control-large)" }}>
                               {formatUserAgent(session.userAgent)}
                             </div>
                             <div
                               style={{
-                                fontSize: "0.875rem",
+                                fontSize: "var(--type-supporting-size)",
                                 color: "var(--color-text-muted)",
                                 marginTop: "0.25rem",
                               }}
@@ -313,7 +313,7 @@ export const SessionManagement: React.FC = () => {
                             </div>
                             <div
                               style={{
-                                fontSize: "0.875rem",
+                                fontSize: "var(--type-supporting-size)",
                                 color: "var(--color-text-muted)",
                                 marginTop: "0.25rem",
                               }}
@@ -350,7 +350,7 @@ export const SessionManagement: React.FC = () => {
                 >
                   {t("auth.sessions.revokeAll") || "Revoke All Sessions"}
                 </Button>
-                <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
+                <p style={{ fontSize: "var(--type-supporting-size)", color: "var(--color-text-muted)", marginTop: "0.5rem" }}>
                   {t("auth.sessions.revokeAllWarning") ||
                     "This will log you out from all devices. You will need to log in again."}
                 </p>

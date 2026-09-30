@@ -154,7 +154,7 @@ const buttonStyle: React.CSSProperties = {
   gap: "0.4rem",
   background: "var(--color-surface-glass)",
   border: "1px solid var(--color-border)",
-  borderRadius: "999px",
+  borderRadius: "var(--radius-full)",
   color: "var(--color-text-secondary)",
   fontSize: "var(--font-size-sm)",
   padding: "0.35rem 0.75rem",
@@ -169,7 +169,7 @@ const dropdownStyle: React.CSSProperties = {
   right: 0,
   background: "var(--color-surface)",
   border: "1px solid var(--color-border)",
-  borderRadius: "12px",
+  borderRadius: "var(--radius-md)",
   boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
   minWidth: "160px",
   zIndex: 1000,
@@ -367,7 +367,7 @@ const LanguageSwitcher: React.FC = () => {
         aria-busy={isChanging}
       >
         <FlagIcon option={currentLanguage} size={24} />
-        <ChevronDown size={14} style={{ opacity: 0.7 }} />
+        <ChevronDown size={14} style={{ opacity: var(--opacity-subtle) }} />
       </button>
 
       {isOpen && (

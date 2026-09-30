@@ -70,7 +70,7 @@ const Login: React.FC = () => {
           maxWidth: "400px",
           padding: "2rem",
           background: colors.surface,
-          borderRadius: "8px",
+          borderRadius: "var(--radius-sm)",
           border: `1px solid ${colors.border}`,
         }}
       >
@@ -81,7 +81,7 @@ const Login: React.FC = () => {
           style={{
             color: colors.text,
             marginBottom: "1.5rem",
-            fontSize: "1.5rem",
+            fontSize: "var(--type-section-title-size)",
             textAlign: "center",
           }}
         >
@@ -106,9 +106,9 @@ const Login: React.FC = () => {
                 padding: "0.75rem",
                 background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                 border: `1px solid ${colors.border}`,
-                borderRadius: "4px",
+                borderRadius: "var(--radius-sm)",
                 color: colors.text,
-                fontSize: "1rem",
+                fontSize: "var(--type-body-size)",
               }}
             />
           </div>
@@ -126,14 +126,14 @@ const Login: React.FC = () => {
                 padding: "0.75rem",
                 background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                 border: `1px solid ${colors.border}`,
-                borderRadius: "4px",
+                borderRadius: "var(--radius-sm)",
                 color: colors.text,
-                fontSize: "1rem",
+                fontSize: "var(--type-body-size)",
               }}
             />
           </div>
           {error && (
-            <div style={{ color: colors.error, marginBottom: "1rem", fontSize: "0.875rem" }}>
+            <div style={{ color: colors.error, marginBottom: "1rem", fontSize: "var(--type-supporting-size)" }}>
               {error}
             </div>
           )}
@@ -146,8 +146,8 @@ const Login: React.FC = () => {
               background: loading ? colors.border : colors.accent,
               color: "var(--color-on-color)",
               border: "none",
-              borderRadius: "4px",
-              fontSize: "1rem",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "var(--type-body-size)",
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >

@@ -143,7 +143,7 @@ const MessagesPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "2rem" }}>User Messages</h1>
+      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "var(--type-page-title-size)" }}>User Messages</h1>
 
       <div style={{ marginBottom: "2rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
         <label style={{ color: colors.text, display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -189,7 +189,7 @@ const MessagesPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               overflowX: "auto",
               overflowY: "visible",
               border: `1px solid ${colors.border}`,
@@ -338,9 +338,9 @@ const MessagesPage: React.FC = () => {
                             background: colors.border,
                             color: colors.text,
                             border: "none",
-                            borderRadius: "4px",
+                            borderRadius: "var(--radius-sm)",
                             cursor: "pointer",
-                            fontSize: "0.875rem",
+                            fontSize: "var(--type-supporting-size)",
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -362,9 +362,9 @@ const MessagesPage: React.FC = () => {
                                 background: colors.border,
                                 color: colors.text,
                                 border: "none",
-                                borderRadius: "4px",
+                                borderRadius: "var(--radius-sm)",
                                 cursor: "pointer",
-                                fontSize: "0.875rem",
+                                fontSize: "var(--type-supporting-size)",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -378,9 +378,9 @@ const MessagesPage: React.FC = () => {
                                 background: "var(--vibe-regeneration)",
                                 color: colors.text,
                                 border: "none",
-                                borderRadius: "4px",
+                                borderRadius: "var(--radius-sm)",
                                 cursor: "pointer",
-                                fontSize: "0.875rem",
+                                fontSize: "var(--type-supporting-size)",
                                 whiteSpace: "nowrap",
                               }}
                               title="Mark as responded after sending reply"
@@ -398,9 +398,9 @@ const MessagesPage: React.FC = () => {
                               background: "var(--vibe-strength)",
                               color: colors.text,
                               border: "none",
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               cursor: "pointer",
-                              fontSize: "0.875rem",
+                              fontSize: "var(--type-supporting-size)",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -425,7 +425,7 @@ const MessagesPage: React.FC = () => {
                   background: page === 0 ? colors.border : colors.accent,
                   color: colors.text,
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   cursor: page === 0 ? "not-allowed" : "pointer",
                 }}
               >
@@ -440,7 +440,7 @@ const MessagesPage: React.FC = () => {
                   background: data.messages.length < limit ? colors.border : colors.accent,
                   color: colors.text,
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   cursor: data.messages.length < limit ? "not-allowed" : "pointer",
                 }}
               >
@@ -472,7 +472,7 @@ const MessagesPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               border: `1px solid ${colors.border}`,
               maxWidth: "800px",
               width: "100%",
@@ -490,14 +490,14 @@ const MessagesPage: React.FC = () => {
                 marginBottom: "1.5rem",
               }}
             >
-              <h2 style={{ color: colors.text, fontSize: "1.5rem", margin: 0 }}>Message Details</h2>
+              <h2 style={{ color: colors.text, fontSize: "var(--type-section-title-size)", margin: 0 }}>Message Details</h2>
               <button
                 onClick={handleCloseModal}
                 style={{
                   background: "transparent",
                   border: "none",
                   color: colors.text,
-                  fontSize: "1.5rem",
+                  fontSize: "var(--type-section-title-size)",
                   cursor: "pointer",
                   padding: "0.25rem 0.5rem",
                 }}
@@ -510,13 +510,13 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
                 From:
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem", marginBottom: "1rem" }}>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)", marginBottom: "1rem" }}>
                 {selectedMessage.email}
               </div>
             </div>
@@ -525,13 +525,13 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
                 Topic:
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem", marginBottom: "1rem" }}>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)", marginBottom: "1rem" }}>
                 {selectedMessage.topic}
               </div>
             </div>
@@ -540,13 +540,13 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
                 Date:
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem", marginBottom: "1rem" }}>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)", marginBottom: "1rem" }}>
                 {new Date(selectedMessage.createdAt).toLocaleString()}
               </div>
             </div>
@@ -555,7 +555,7 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
@@ -574,7 +574,7 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.5rem",
                 }}
               >
@@ -583,13 +583,13 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: colors.text,
-                  fontSize: "1rem",
+                  fontSize: "var(--type-body-size)",
                   lineHeight: "1.6",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
                   background: "#0D1A15",
                   padding: "1rem",
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   border: `1px solid ${colors.border}`,
                   minHeight: "200px",
                   maxHeight: "400px",
@@ -605,7 +605,7 @@ const MessagesPage: React.FC = () => {
                 <div
                   style={{
                     color: "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.875rem",
+                    fontSize: "var(--type-supporting-size)",
                     marginBottom: "0.5rem",
                   }}
                 >
@@ -614,13 +614,13 @@ const MessagesPage: React.FC = () => {
                 <div
                   style={{
                     color: colors.text,
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                     lineHeight: "1.6",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
                     background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                     padding: "1rem",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     border: `1px solid ${colors.border}`,
                     minHeight: "100px",
                     maxHeight: "300px",
@@ -637,7 +637,7 @@ const MessagesPage: React.FC = () => {
                 <div
                   style={{
                     color: "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.875rem",
+                    fontSize: "var(--type-supporting-size)",
                     marginBottom: "0.5rem",
                   }}
                 >
@@ -653,10 +653,10 @@ const MessagesPage: React.FC = () => {
                     padding: "1rem",
                     background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
                     border: `1px solid ${colors.border}`,
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     color: colors.text,
-                    fontSize: "1rem",
-                    fontFamily: "inherit",
+                    fontSize: "var(--type-body-size)",
+                    fontFamily: "var(--font-family-body)",
                     resize: "vertical",
                   }}
                 />
@@ -672,12 +672,12 @@ const MessagesPage: React.FC = () => {
                           : colors.border,
                       color: colors.text,
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor:
                         responseText.trim() && !saveResponseMutation.isPending
                           ? "pointer"
                           : "not-allowed",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     {saveResponseMutation.isPending ? "Saving..." : "Save & Send Email"}
@@ -693,12 +693,12 @@ const MessagesPage: React.FC = () => {
                           : "#1a3d2e",
                       color: colors.text,
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor:
                         responseText.trim() && !saveResponseMutation.isPending
                           ? "pointer"
                           : "not-allowed",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     {saveResponseMutation.isPending ? "Saving..." : "Save Only"}
@@ -713,9 +713,9 @@ const MessagesPage: React.FC = () => {
                       background: "transparent",
                       color: colors.text,
                       border: `1px solid ${colors.border}`,
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor: "pointer",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     Cancel
@@ -743,9 +743,9 @@ const MessagesPage: React.FC = () => {
                       background: colors.border,
                       color: colors.text,
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor: "pointer",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     Reply via Email
@@ -760,9 +760,9 @@ const MessagesPage: React.FC = () => {
                     background: colors.border,
                     color: colors.text,
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 >
                   Record Response
@@ -783,9 +783,9 @@ const MessagesPage: React.FC = () => {
                     background: "var(--vibe-regeneration)",
                     color: colors.text,
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 >
                   Send Email with Recorded Response
@@ -803,9 +803,9 @@ const MessagesPage: React.FC = () => {
                     background: "var(--vibe-strength)",
                     color: colors.text,
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 >
                   Mark as Read
@@ -818,9 +818,9 @@ const MessagesPage: React.FC = () => {
                   background: "transparent",
                   color: colors.text,
                   border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   cursor: "pointer",
-                  fontSize: "1rem",
+                  fontSize: "var(--type-body-size)",
                 }}
               >
                 Close

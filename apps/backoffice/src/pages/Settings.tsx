@@ -119,10 +119,10 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "2rem" }}>Settings</h1>
+      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "var(--type-page-title-size)" }}>Settings</h1>
 
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "1.5rem" }}>
+        <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "var(--type-section-title-size)" }}>
           System Controls
         </h2>
         <div
@@ -131,7 +131,7 @@ const SettingsPage: React.FC = () => {
             gap: "1rem",
             padding: "1.5rem",
             background: colors.surface,
-            borderRadius: "12px",
+            borderRadius: "var(--radius-md)",
             border: `1px solid ${colors.border}`,
           }}
         >
@@ -145,7 +145,7 @@ const SettingsPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: colors.text, fontWeight: 600 }}>Read-only mode</div>
+              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>Read-only mode</div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
                 Status: {isSystemConfigLoading ? "Loading..." : isReadOnly ? "Enabled" : "Disabled"}
               </div>
@@ -171,7 +171,7 @@ const SettingsPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: colors.text, fontWeight: 600 }}>Maintenance mode</div>
+              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>Maintenance mode</div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
                 Status:{" "}
                 {isSystemConfigLoading ? "Loading..." : isMaintenance ? "Enabled" : "Disabled"}
@@ -198,7 +198,7 @@ const SettingsPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: colors.text, fontWeight: 600 }}>ClamAV scanning</div>
+              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>ClamAV scanning</div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
                 Status:{" "}
                 {isOpsStatusLoading
@@ -222,7 +222,7 @@ const SettingsPage: React.FC = () => {
       </div>
 
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "1.5rem" }}>
+        <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "var(--type-section-title-size)" }}>
           Action Labels
         </h2>
         <input
@@ -234,7 +234,7 @@ const SettingsPage: React.FC = () => {
             padding: "0.75rem",
             background: colors.surface,
             border: `1px solid ${colors.border}`,
-            borderRadius: "4px",
+            borderRadius: "var(--radius-sm)",
             color: colors.text,
             width: "100%",
             maxWidth: "420px",
@@ -256,7 +256,7 @@ const SettingsPage: React.FC = () => {
         <div
           style={{
             background: colors.surface,
-            borderRadius: "8px",
+            borderRadius: "var(--radius-sm)",
             overflowX: "auto",
             border: `1px solid ${colors.border}`,
           }}
@@ -303,7 +303,7 @@ const SettingsPage: React.FC = () => {
                               padding: "0.5rem 0.75rem",
                               background: colors.surface,
                               border: `1px solid ${colors.border}`,
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               color: colors.text,
                               minWidth: "240px",
                             }}
@@ -316,7 +316,7 @@ const SettingsPage: React.FC = () => {
                               background: "var(--color-secondary)",
                               color: colors.text,
                               border: "none",
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               cursor: "pointer",
                             }}
                           >
@@ -329,7 +329,7 @@ const SettingsPage: React.FC = () => {
                               background: "transparent",
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               cursor: "pointer",
                             }}
                           >
@@ -348,7 +348,7 @@ const SettingsPage: React.FC = () => {
                               background: colors.border,
                               color: colors.text,
                               border: "none",
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               cursor: "pointer",
                             }}
                           >

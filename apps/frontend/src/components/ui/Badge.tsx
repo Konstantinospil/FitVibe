@@ -42,8 +42,8 @@ const baseStyle: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   borderRadius: "var(--radius-lg)",
-  fontWeight: 600,
-  letterSpacing: "0.02em",
+  fontWeight: "var(--font-weight-semibold)",
+  letterSpacing: "var(--type-metric-small-letter-spacing)",
   whiteSpace: "nowrap",
   boxShadow: "var(--shadow-e1)",
 };

@@ -432,7 +432,7 @@ const Home: React.FC = () => {
           <div>
             <h1
               className="text-3xl font-weight-600 text-primary mb-05"
-              style={{ fontFamily: "var(--font-family-heading)" }}
+              style={{ fontFamily: "var(--font-family-body)" }}
             >
               {t("vibesHome.title")}
             </h1>
@@ -453,7 +453,7 @@ const Home: React.FC = () => {
                     style={{
                       width: "140px",
                       height: "140px",
-                      borderRadius: "50%",
+                      borderRadius: "var(--radius-full)",
                       border: `4px solid ${vibe.colorBorder}`,
                       background: vibe.colorBg,
                       cursor: "pointer",
@@ -598,7 +598,7 @@ const Home: React.FC = () => {
                     key={exercise.id}
                     style={{
                       padding: "1rem",
-                      borderRadius: "12px",
+                      borderRadius: "var(--radius-md)",
                       background: "var(--color-bg)",
                       border: `1px solid ${vibeColor}44`,
                       display: "flex",
@@ -610,7 +610,7 @@ const Home: React.FC = () => {
                       <div
                         style={{
                           fontSize: "var(--font-size-md)",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           color: "var(--color-text-primary)",
                           marginBottom: "0.25rem",
                         }}
@@ -663,7 +663,7 @@ const Home: React.FC = () => {
           <div
             style={{
               background: "var(--color-surface)",
-              borderRadius: "18px",
+              borderRadius: "var(--radius-xl)",
               border: `2px solid ${vibes.find((v) => v.key === selectedVibe)?.colorBorder}`,
               padding: "2rem",
               maxWidth: "700px",
@@ -684,7 +684,7 @@ const Home: React.FC = () => {
               <h3
                 style={{
                   fontSize: "var(--font-size-2xl)",
-                  fontWeight: 600,
+                  fontWeight: "var(--font-weight-semibold)",
                   color: "var(--color-text-primary)",
                   marginBottom: "1.5rem",
                 }}
@@ -697,7 +697,7 @@ const Home: React.FC = () => {
                 <div
                   style={{
                     padding: "0.75rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     background: "var(--color-error-bg)",
                     border: "1px solid var(--color-error-border)",
                     color: "var(--color-error-text)",
@@ -728,7 +728,7 @@ const Home: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: "0.75rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: `2px solid ${exerciseMode === "select" ? vibes.find((v) => v.key === selectedVibe)?.colorBorder : "var(--color-border)"}`,
                     background:
                       exerciseMode === "select"
@@ -753,7 +753,7 @@ const Home: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: "0.75rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: `2px solid ${exerciseMode === "create" ? vibes.find((v) => v.key === selectedVibe)?.colorBorder : "var(--color-border)"}`,
                     background:
                       exerciseMode === "create"
@@ -824,7 +824,7 @@ const Home: React.FC = () => {
                 style={{
                   marginBottom: "1.5rem",
                   padding: "1.5rem",
-                  borderRadius: "12px",
+                  borderRadius: "var(--radius-md)",
                   background: "var(--color-bg)",
                   border: "1px solid var(--color-border)",
                 }}
@@ -832,7 +832,7 @@ const Home: React.FC = () => {
                 <h4
                   style={{
                     fontSize: "var(--font-size-md)",
-                    fontWeight: 600,
+                    fontWeight: "var(--font-weight-semibold)",
                     color: "var(--color-text-primary)",
                     marginBottom: "1rem",
                   }}
@@ -871,7 +871,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -904,7 +904,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -938,7 +938,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -972,7 +972,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -1005,7 +1005,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -1039,7 +1039,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -1071,7 +1071,7 @@ const Home: React.FC = () => {
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        borderRadius: "12px",
+                        borderRadius: "var(--radius-md)",
                         border: "1px solid var(--color-border)",
                         background: "var(--color-surface)",
                         color: "var(--color-text-primary)",
@@ -1113,12 +1113,12 @@ const Home: React.FC = () => {
                     style={{
                       width: "100%",
                       padding: "0.75rem",
-                      borderRadius: "12px",
+                      borderRadius: "var(--radius-md)",
                       border: "1px solid var(--color-border)",
                       background: "var(--color-surface)",
                       color: "var(--color-text-primary)",
                       fontSize: "var(--font-size-md)",
-                      fontFamily: "inherit",
+                      fontFamily: "var(--font-family-body)",
                       resize: "vertical",
                     }}
                   />
@@ -1129,7 +1129,7 @@ const Home: React.FC = () => {
               <div
                 style={{
                   padding: "1rem",
-                  borderRadius: "12px",
+                  borderRadius: "var(--radius-md)",
                   background: `${vibes.find((v) => v.key === selectedVibe)?.colorBg}22`,
                   border: `1px solid ${vibes.find((v) => v.key === selectedVibe)?.colorBorder}`,
                   marginBottom: "1.5rem",
@@ -1147,7 +1147,7 @@ const Home: React.FC = () => {
                 <div
                   style={{
                     fontSize: "var(--font-size-lg)",
-                    fontWeight: 600,
+                    fontWeight: "var(--font-weight-semibold)",
                     color: vibes.find((v) => v.key === selectedVibe)?.colorBg,
                   }}
                 >
@@ -1170,13 +1170,13 @@ const Home: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: "0.75rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid var(--color-border)",
                     background: "transparent",
                     color: "var(--color-text-primary)",
                     fontSize: "var(--font-size-md)",
                     cursor: isSubmitting ? "wait" : "pointer",
-                    fontWeight: 500,
+                    fontWeight: "var(--font-weight-control-large)",
                     opacity: isSubmitting ? 0.5 : 1,
                   }}
                 >
@@ -1190,7 +1190,7 @@ const Home: React.FC = () => {
                   style={{
                     flex: 1,
                     padding: "0.75rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "none",
                     background:
                       isFormValid && !isSubmitting
@@ -1202,7 +1202,7 @@ const Home: React.FC = () => {
                         : "var(--color-text-muted)",
                     fontSize: "var(--font-size-md)",
                     cursor: isFormValid && !isSubmitting ? "pointer" : "not-allowed",
-                    fontWeight: 600,
+                    fontWeight: "var(--font-weight-semibold)",
                   }}
                 >
                   {t("vibesHome.addExercise.add")}

@@ -209,8 +209,8 @@ const Translations: React.FC = () => {
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
+                  fontSize: "var(--type-supporting-size)",
+                  fontWeight: "var(--font-weight-control-large)",
                 }}
               >
                 Search
@@ -245,8 +245,8 @@ const Translations: React.FC = () => {
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
+                  fontSize: "var(--type-supporting-size)",
+                  fontWeight: "var(--font-weight-control-large)",
                 }}
               >
                 Key Path
@@ -268,8 +268,8 @@ const Translations: React.FC = () => {
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
+                  fontSize: "var(--type-supporting-size)",
+                  fontWeight: "var(--font-weight-control-large)",
                 }}
               >
                 Namespace
@@ -296,8 +296,8 @@ const Translations: React.FC = () => {
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
+                  fontSize: "var(--type-supporting-size)",
+                  fontWeight: "var(--font-weight-control-large)",
                 }}
               >
                 Language
@@ -325,8 +325,8 @@ const Translations: React.FC = () => {
                   alignItems: "center",
                   gap: "0.5rem",
                   cursor: "pointer",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
+                  fontSize: "var(--type-supporting-size)",
+                  fontWeight: "var(--font-weight-control-large)",
                 }}
               >
                 <input
@@ -362,7 +362,7 @@ const Translations: React.FC = () => {
                 >
                   <div>
                     <label
-                      style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}
+                      style={{ display: "block", marginBottom: "0.5rem", fontSize: "var(--type-supporting-size)" }}
                     >
                       Namespace
                     </label>
@@ -385,7 +385,7 @@ const Translations: React.FC = () => {
                   </div>
                   <div>
                     <label
-                      style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}
+                      style={{ display: "block", marginBottom: "0.5rem", fontSize: "var(--type-supporting-size)" }}
                     >
                       Language
                     </label>
@@ -408,7 +408,7 @@ const Translations: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ marginTop: "1rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "var(--type-supporting-size)" }}>
                     Key Path
                   </label>
                   <InputControl
@@ -422,7 +422,7 @@ const Translations: React.FC = () => {
                   />
                 </div>
                 <div style={{ marginTop: "1rem" }}>
-                  <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}>
+                  <label style={{ display: "block", marginBottom: "0.5rem", fontSize: "var(--type-supporting-size)" }}>
                     Value
                   </label>
                   <TextareaControl
@@ -467,7 +467,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           width: "100px",
                         }}
                       >
@@ -477,7 +477,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           width: "120px",
                         }}
                       >
@@ -487,7 +487,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           minWidth: "150px",
                         }}
                       >
@@ -497,7 +497,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           minWidth: "200px",
                         }}
                       >
@@ -507,7 +507,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           whiteSpace: "nowrap",
                           width: "160px",
                         }}
@@ -518,7 +518,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           whiteSpace: "nowrap",
                           width: "160px",
                         }}
@@ -529,7 +529,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "left",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           whiteSpace: "nowrap",
                           width: "160px",
                         }}
@@ -540,7 +540,7 @@ const Translations: React.FC = () => {
                         style={{
                           padding: "0.75rem",
                           textAlign: "right",
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           position: "sticky",
                           right: 0,
                           background: "var(--color-background)",
@@ -577,8 +577,8 @@ const Translations: React.FC = () => {
                           <td
                             style={{
                               padding: "0.75rem",
-                              fontFamily: "monospace",
-                              fontSize: "0.875rem",
+                              fontFamily: "var(--font-family-body)",
+                              fontSize: "var(--type-supporting-size)",
                             }}
                           >
                             {translation.key_path}
@@ -601,7 +601,7 @@ const Translations: React.FC = () => {
                           <td
                             style={{
                               padding: "0.75rem",
-                              fontSize: "0.8rem",
+                              fontSize: "var(--type-supporting-size)",
                               color: "var(--color-text-secondary)",
                               whiteSpace: "nowrap",
                             }}
@@ -619,7 +619,7 @@ const Translations: React.FC = () => {
                           <td
                             style={{
                               padding: "0.75rem",
-                              fontSize: "0.8rem",
+                              fontSize: "var(--type-supporting-size)",
                               color: "var(--color-text-secondary)",
                               whiteSpace: "nowrap",
                             }}
@@ -637,7 +637,7 @@ const Translations: React.FC = () => {
                           <td
                             style={{
                               padding: "0.75rem",
-                              fontSize: "0.8rem",
+                              fontSize: "var(--type-supporting-size)",
                               color: isDeleted
                                 ? "var(--color-error)"
                                 : "var(--color-text-secondary)",
