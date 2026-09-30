@@ -105,7 +105,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 margin: 0,
                 marginBottom: "var(--space-xs)",
                 fontSize: "var(--font-size-lg)",
-                fontWeight: 600,
+                fontWeight: "var(--font-weight-semibold)",
                 color: "var(--color-text-primary)",
               }}
             >
@@ -114,7 +114,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             <p
               style={{
                 margin: 0,
-                fontSize: "0.95rem",
+                fontSize: "var(--type-body-size)",
                 color: "var(--color-text-secondary)",
                 lineHeight: 1.5,
               }}

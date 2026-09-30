@@ -42,12 +42,12 @@ const AdminRoute: React.FC = () => {
             <div style={{ padding: "2rem", textAlign: "center" }}>
               <Shield
                 size={64}
-                style={{ margin: "0 auto 1rem", opacity: 0.2, color: "var(--color-danger)" }}
+                style={{ margin: "0 auto 1rem", opacity: var(--opacity-disabled), color: "var(--color-danger)" }}
               />
               <p style={{ color: "var(--color-text-secondary)", marginBottom: "1.5rem" }}>
                 You need administrator privileges to access the admin dashboard.
               </p>
-              <p style={{ fontSize: "0.9rem", color: "var(--color-text-muted)" }}>
+              <p style={{ fontSize: "var(--type-body-size)", color: "var(--color-text-muted)" }}>
                 If you believe you should have access, please contact your system administrator.
               </p>
             </div>

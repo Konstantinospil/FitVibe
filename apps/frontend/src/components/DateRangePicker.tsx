@@ -14,11 +14,11 @@ interface DateRangePickerProps {
 
 const inputStyle: React.CSSProperties = {
   padding: "0.5rem 0.75rem",
-  borderRadius: "8px",
+  borderRadius: "var(--radius-sm)",
   border: "1px solid var(--color-border)",
   background: "var(--surface-muted-subtle)",
   color: "var(--color-text-primary)",
-  fontSize: "0.9rem",
+  fontSize: "var(--type-body-size)",
   cursor: "pointer",
 };
 
@@ -30,7 +30,7 @@ const containerStyle: React.CSSProperties = {
 };
 
 const labelStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
+  fontSize: "var(--type-body-size)",
   color: "var(--color-text-secondary)",
 };
 

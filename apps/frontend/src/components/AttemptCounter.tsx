@@ -92,11 +92,11 @@ export const AttemptCounter: React.FC<AttemptCounterProps> = ({
       style={{
         ...getWarningColor(),
         padding: "0.75rem 1rem",
-        borderRadius: "12px",
-        fontSize: "0.9rem",
+        borderRadius: "var(--radius-md)",
+        fontSize: "var(--type-body-size)",
       }}
     >
-      <div style={{ fontWeight: 500, marginBottom: "0.25rem" }}>
+      <div style={{ fontWeight: "var(--font-weight-control-large)", marginBottom: "0.25rem" }}>
         {isCritical
           ? t("auth.lockout.criticalWarning", {
               defaultValue: "⚠️ Last attempt before lockout",
@@ -121,7 +121,7 @@ export const AttemptCounter: React.FC<AttemptCounterProps> = ({
         <div
           style={{
             marginTop: "0.5rem",
-            fontSize: "0.8rem",
+            fontSize: "var(--type-supporting-size)",
             color: "var(--color-text-secondary)",
             display: "flex",
             flexDirection: "column",

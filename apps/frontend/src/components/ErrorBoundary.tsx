@@ -44,14 +44,14 @@ class ErrorBoundaryComponent extends Component<Props, State> {
             textAlign: "center",
             color: "var(--color-text-secondary)",
             background: "var(--surface-danger-subtle)",
-            borderRadius: "12px",
+            borderRadius: "var(--radius-md)",
             border: "1px solid var(--border-danger-subtle)",
           }}
         >
           <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-danger)" }}>
             {this.props.t("components.errorBoundary.title")}
           </strong>
-          <p style={{ margin: 0, fontSize: "0.9rem" }}>
+          <p style={{ margin: 0, fontSize: "var(--type-body-size)" }}>
             {this.state.error?.message || this.props.t("components.errorBoundary.message")}
           </p>
           <button
@@ -59,7 +59,7 @@ class ErrorBoundaryComponent extends Component<Props, State> {
             style={{
               marginTop: "1rem",
               padding: "0.5rem 1rem",
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               border: "1px solid var(--color-border)",
               background: "var(--color-surface-glass)",
               color: "var(--color-text-primary)",

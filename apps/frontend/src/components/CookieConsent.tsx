@@ -146,7 +146,7 @@ const CookieConsent: React.FC = () => {
   };
 
   const toggleInputStyle: React.CSSProperties = {
-    opacity: 0,
+    opacity: var(--opacity-disabled),
     width: 0,
     height: 0,
   };
@@ -173,7 +173,7 @@ const CookieConsent: React.FC = () => {
     bottom: "3px",
     backgroundColor: "var(--color-surface)",
     transition: "0.3s",
-    borderRadius: "50%",
+    borderRadius: "var(--radius-full)",
     boxShadow: "var(--shadow-e1)",
   });
 
@@ -234,7 +234,7 @@ const CookieConsent: React.FC = () => {
                       style={{
                         margin: 0,
                         fontSize: "var(--font-size-md)",
-                        fontWeight: 600,
+                        fontWeight: "var(--font-weight-semibold)",
                         color: "var(--color-text-primary)",
                       }}
                     >

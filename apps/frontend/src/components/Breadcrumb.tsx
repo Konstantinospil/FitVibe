@@ -105,7 +105,7 @@ const Breadcrumb: React.FC = () => {
                 className="text-primary"
                 style={{
                   color: "var(--color-text-primary)",
-                  fontWeight: 500,
+                  fontWeight: "var(--font-weight-control-large)",
                 }}
                 aria-current="page"
               >
