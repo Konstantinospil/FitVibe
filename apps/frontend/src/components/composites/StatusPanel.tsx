@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2, CircleAlert, LoaderCircle, XCircle } from "lucide-react";
-import { BUTTON_ICON_SIZES } from "@fitvibe/ui";
+import { BUTTON_ICON_SIZES, Button } from "@fitvibe/ui";
 import { FormFeedback, type FeedbackTone } from "./FormStack";
 
 export type StatusKind = "loading" | "success" | "warning" | "error";
@@ -9,6 +9,13 @@ export interface StatusPanelProps {
   kind: StatusKind;
   children?: React.ReactNode;
   actions?: React.ReactNode;
+}
+
+export interface RetryErrorPanelProps {
+  message: React.ReactNode;
+  retryLabel: string;
+  onRetry: () => void;
+  isRetrying?: boolean;
 }
 
 const toneByKind: Record<StatusKind, FeedbackTone> = {
@@ -81,3 +88,28 @@ export const StatusPanel: React.FC<StatusPanelProps> = ({ kind, children, action
     </div>
   );
 };
+
+export const RetryErrorPanel: React.FC<RetryErrorPanelProps> = ({
+  message,
+  retryLabel,
+  onRetry,
+  isRetrying = false,
+}) => (
+  <StatusPanel
+    kind="error"
+    actions={
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={onRetry}
+        isLoading={isRetrying}
+        disabled={isRetrying}
+      >
+        {retryLabel}
+      </Button>
+    }
+  >
+    {message}
+  </StatusPanel>
+);
