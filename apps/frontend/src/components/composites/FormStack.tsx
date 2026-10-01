@@ -1,26 +1,53 @@
 import React from "react";
 
-export type FormStackProps = React.FormHTMLAttributes<HTMLFormElement> & {
-  as?: "form" | "div";
+type FormStackBaseProps = {
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
 };
+
+type FormStackFormProps = FormStackBaseProps &
+  Omit<React.FormHTMLAttributes<HTMLFormElement>, "children" | "style"> & {
+    as?: "form";
+  };
+
+type FormStackDivProps = FormStackBaseProps &
+  Omit<React.HTMLAttributes<HTMLDivElement>, "children" | "style"> & {
+    as: "div";
+  };
+
+export type FormStackProps = FormStackFormProps | FormStackDivProps;
 
 export const FormStack = React.forwardRef<HTMLFormElement | HTMLDivElement, FormStackProps>(
   ({ as = "form", children, style, ...props }, ref) => {
-    const Component = as;
+    const stackStyle: React.CSSProperties = {
+      width: "100%",
+      display: "grid",
+      gap: "var(--space-md)",
+      ...style,
+    };
+
+    if (as === "div") {
+      return (
+        <div
+          {...(props as React.HTMLAttributes<HTMLDivElement>)}
+          ref={ref as React.Ref<HTMLDivElement>}
+          data-component="form-stack"
+          style={stackStyle}
+        >
+          {children}
+        </div>
+      );
+    }
+
     return (
-      <Component
-        {...props}
-        ref={ref as never}
+      <form
+        {...(props as React.FormHTMLAttributes<HTMLFormElement>)}
+        ref={ref as React.Ref<HTMLFormElement>}
         data-component="form-stack"
-        style={{
-          width: "100%",
-          display: "grid",
-          gap: "var(--space-md)",
-          ...style,
-        }}
+        style={stackStyle}
       >
         {children}
-      </Component>
+      </form>
     );
   },
 );
