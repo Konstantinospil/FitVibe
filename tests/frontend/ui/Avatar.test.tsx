@@ -58,12 +58,13 @@ describe("Avatar", () => {
       />,
     );
 
-    const surface = screen.getByTestId("avatar").querySelector("[data-slot='avatar-surface']");
-    expect(surface).toHaveStyle({
-      borderWidth: "3px",
-      borderStyle: "solid",
-      borderColor: color,
-    });
+    const surface = screen
+      .getByTestId("avatar")
+      .querySelector<HTMLElement>("[data-slot='avatar-surface']");
+    expect(surface).not.toBeNull();
+    expect(surface?.style.borderWidth).toBe("3px");
+    expect(surface?.style.borderStyle).toBe("solid");
+    expect(surface?.getAttribute("style")).toContain(`border-color: ${color}`);
   });
 
   it.each([
