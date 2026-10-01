@@ -1013,5 +1013,8 @@
       "save": "Das Workout konnte nicht gespeichert werden.",
       "exercises": "Übungen konnten nicht geladen werden."
     }
+  },
+  "actions": {
+    "retry": "Erneut versuchen"
   }
 }
