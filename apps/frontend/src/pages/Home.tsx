@@ -496,7 +496,10 @@ const Home: React.FC = () => {
                       minHeight: "80px",
                     }}
                   >
-                    <div className="text-lg font-weight-600 mb-025" style={{ color: vibe.colorBg }}>
+                    <div
+                      className="text-lg font-weight-600 mb-025"
+                      style={{ color: "var(--color-text-primary)" }}
+                    >
                       {t(`vibes.${vibe.key}.name`)}
                     </div>
                     <div className="text-xs text-secondary mb-05" style={{ fontStyle: "italic" }}>
