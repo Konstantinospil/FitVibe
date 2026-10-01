@@ -61,21 +61,23 @@ describe("Contact", () => {
   it("validates required fields and email format", async () => {
     render(<Contact />);
     const submit = screen.getByRole("button", { name: "Send Message" });
+    const form = submit.closest("form");
+    expect(form).not.toBeNull();
 
-    fireEvent.click(submit);
+    fireEvent.submit(form!);
     expect(await screen.findByText("Email is required")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "user@example.com" } });
-    fireEvent.click(submit);
+    fireEvent.submit(form!);
     expect(await screen.findByText("Topic is required")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Topic"), { target: { value: "Support" } });
-    fireEvent.click(submit);
+    fireEvent.submit(form!);
     expect(await screen.findByText("Message is required")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Message"), { target: { value: "Hello" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "invalid-email" } });
-    fireEvent.click(submit);
+    fireEvent.submit(form!);
     expect(await screen.findByText("Please enter a valid email address")).toBeInTheDocument();
     expect(rawHttpClient.post).not.toHaveBeenCalled();
   });
