@@ -805,7 +805,7 @@ const TranslationsPage: React.FC = () => {
                             : isDeleted
                               ? "var(--color-danger-bg)"
                               : "var(--color-surface)",
-                          opacity: isDeleted ? 0.7 : 1,
+                          opacity: isDeleted ? "var(--opacity-subtle)" : "var(--opacity-full)",
                           cursor: "pointer",
                         }}
                       >
