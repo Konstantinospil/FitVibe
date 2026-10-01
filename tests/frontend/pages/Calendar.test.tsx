@@ -18,6 +18,7 @@ vi.mock("../../src/services/api", async () => {
   return {
     ...actual,
     listSessions: vi.fn(),
+    listExercises: vi.fn(),
   };
 });
 
@@ -27,6 +28,7 @@ vi.mock("../../src/utils/logger", () => ({
 }));
 
 const mockedListSessions = vi.mocked(api.listSessions);
+const mockedListExercises = vi.mocked(api.listExercises);
 
 const response: api.SessionsListResponse = {
   data: [
@@ -63,6 +65,12 @@ describe("Calendar", () => {
     vi.setSystemTime(new Date("2026-01-15T12:00:00.000Z"));
     queryClient = createTestQueryClient();
     mockedListSessions.mockResolvedValue(response);
+    mockedListExercises.mockResolvedValue({
+      data: [],
+      total: 0,
+      limit: 250,
+      offset: 0,
+    });
     apiErrorSpy.mockClear();
   });
 
@@ -120,6 +128,45 @@ describe("Calendar", () => {
       }),
     );
     expect(screen.getByText("2027")).toBeInTheDocument();
+  });
+
+  it("opens Plan and Start as scoped transient workout workflows", async () => {
+    renderCalendar();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "calendarSurface.actions.plan",
+      }),
+    );
+
+    expect(await screen.findByText("workoutEditor.title")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "workoutEditor.actions.plan" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "workoutEditor.close",
+      }),
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "calendarSurface.actions.start",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "workoutEditor.actions.start",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "workoutEditor.actions.plan" }),
+    ).not.toBeInTheDocument();
   });
 
   it("logs and renders session loading errors", async () => {
