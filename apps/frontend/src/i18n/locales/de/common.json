@@ -1007,7 +1007,7 @@
     "summary": {
       "sets": "{{count}} Satz",
       "sets_other": "{{count}} Sätze",
-      "repetitions": "{{count}} Wiederholungen"
+      "repetitions": "{{value}} Wiederholungen"
     },
     "errors": {
       "save": "Das Workout konnte nicht gespeichert werden.",
