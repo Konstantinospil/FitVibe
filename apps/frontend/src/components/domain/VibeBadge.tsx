@@ -53,6 +53,8 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
   const [hovered, setHovered] = useState(false);
   const [showLevel, setShowLevel] = useState(false);
   const canRevealLevel = level !== undefined && level !== null;
+  const accessibleLevel =
+    typeof level === "string" || typeof level === "number" ? String(level) : "level";
   const vibeColor = colorByVibe[vibe];
   const controlSize = BUTTON_SIZE_STYLES[size].minHeight;
   const iconSize = BUTTON_ICON_SIZES[size];
@@ -68,7 +70,7 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
       aria-label={
         canRevealLevel
           ? showLevel
-            ? `${label}: ${String(level)}. Show vibe icon`
+            ? `${label}: ${accessibleLevel}. Show vibe icon`
             : `${label}. Show level`
           : label
       }
@@ -78,7 +80,9 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
       data-state={visualState}
       data-content={showLevel ? "level" : "icon"}
       onClick={() => {
-        if (canRevealLevel) setShowLevel((current) => !current);
+        if (canRevealLevel) {
+          setShowLevel((current) => !current);
+        }
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
