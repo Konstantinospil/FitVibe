@@ -75,7 +75,10 @@ describe("MainLayout", () => {
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("href", "/calendar");
     expect(screen.getByRole("link", { name: "Library" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-disabled", "true");
   });
 

@@ -105,18 +105,15 @@ describe("WorkoutEditor", () => {
     renderEditor();
     await addExercise();
 
-    fireEvent.change(
-      screen.getByLabelText("workoutEditor.fields.name"),
-      { target: { value: "Upper body" } },
-    );
-    fireEvent.change(
-      screen.getByLabelText("workoutEditor.fields.repetitions"),
-      { target: { value: "12" } },
-    );
-    fireEvent.change(
-      screen.getByLabelText("workoutEditor.fields.weight"),
-      { target: { value: "40" } },
-    );
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.name"), {
+      target: { value: "Upper body" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.repetitions"), {
+      target: { value: "12" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.weight"), {
+      target: { value: "40" },
+    });
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -185,9 +182,7 @@ describe("WorkoutEditor", () => {
     };
     renderEditor(existing);
 
-    expect(
-      await screen.findByDisplayValue("Existing workout"),
-    ).toBeInTheDocument();
+    expect(await screen.findByDisplayValue("Existing workout")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -207,9 +202,7 @@ describe("WorkoutEditor", () => {
   it("keeps derived metrics unavailable instead of reimplementing #338", async () => {
     renderEditor();
 
-    const unavailable = await screen.findAllByText(
-      "workoutEditor.metrics.unavailable",
-    );
+    const unavailable = await screen.findAllByText("workoutEditor.metrics.unavailable");
     expect(unavailable).toHaveLength(3);
   });
 
@@ -224,9 +217,7 @@ describe("WorkoutEditor", () => {
       }),
     );
 
-    expect(
-      await screen.findByText("workoutEditor.errors.save"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("workoutEditor.errors.save")).toBeInTheDocument();
     expect(apiErrorSpy).toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });

@@ -39,10 +39,7 @@ const statusFor = (sessions: SessionWithExercises[]): TrainingStatus => {
   if (sessions.some((session) => session.status === "completed")) {
     return "success";
   }
-  if (
-    sessions.length > 0 &&
-    sessions.every((session) => session.status === "canceled")
-  ) {
+  if (sessions.length > 0 && sessions.every((session) => session.status === "canceled")) {
     return "danger";
   }
   return "default";
@@ -57,16 +54,10 @@ const CalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
 
   const range = useMemo(() => {
-    const first = new Date(
-      visibleMonth.getFullYear(),
-      visibleMonth.getMonth(),
-      1,
-    );
+    const first = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
     const gridStart = startOfWeek(first);
     const gridEnd = new Date(gridStart);
-    gridEnd.setDate(
-      gridEnd.getDate() + TRAINING_DATA_CONFIG.calendarGridDayCount - 1,
-    );
+    gridEnd.setDate(gridEnd.getDate() + TRAINING_DATA_CONFIG.calendarGridDayCount - 1);
     gridEnd.setHours(23, 59, 59, 999);
     return { gridStart, gridEnd };
   }, [visibleMonth]);
@@ -115,9 +106,7 @@ const CalendarPage: React.FC = () => {
         }).format(labelDate),
         dates: Array.from({ length: weekCount }, (_, weekIndex) => {
           const date = new Date(range.gridStart);
-          date.setDate(
-            range.gridStart.getDate() + weekIndex * 7 + weekdayIndex,
-          );
+          date.setDate(range.gridStart.getDate() + weekIndex * 7 + weekdayIndex);
           return date;
         }),
       };
@@ -126,10 +115,7 @@ const CalendarPage: React.FC = () => {
 
   const selectedSessions = sessionsByDay.get(dateKey(selectedDate)) ?? [];
   const history = [...(sessions.data?.data ?? [])]
-    .filter(
-      (session) =>
-        session.status === "completed" || Boolean(session.completed_at),
-    )
+    .filter((session) => session.status === "completed" || Boolean(session.completed_at))
     .sort(
       (a, b) =>
         new Date(b.completed_at ?? b.planned_at).getTime() -
@@ -143,16 +129,9 @@ const CalendarPage: React.FC = () => {
   const weeklyPlan = [...(sessions.data?.data ?? [])]
     .filter((session) => {
       const planned = new Date(session.planned_at);
-      return (
-        session.status === "planned" &&
-        planned >= selectedDayStart &&
-        planned <= weekEnd
-      );
+      return session.status === "planned" && planned >= selectedDayStart && planned <= weekEnd;
     })
-    .sort(
-      (a, b) =>
-        new Date(a.planned_at).getTime() - new Date(b.planned_at).getTime(),
-    );
+    .sort((a, b) => new Date(a.planned_at).getTime() - new Date(b.planned_at).getTime());
 
   const formatDateTime = (value: string) =>
     new Intl.DateTimeFormat(i18n.language, {
@@ -161,17 +140,11 @@ const CalendarPage: React.FC = () => {
     }).format(new Date(value));
 
   const moveMonth = (delta: number) => {
-    setVisibleMonth(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() + delta, 1),
-    );
+    setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
   };
 
   const moveYear = (delta: number) => {
-    setVisibleMonth(
-      (current) =>
-        new Date(current.getFullYear() + delta, current.getMonth(), 1),
-    );
+    setVisibleMonth((current) => new Date(current.getFullYear() + delta, current.getMonth(), 1));
   };
 
   return (
@@ -237,9 +210,7 @@ const CalendarPage: React.FC = () => {
           </div>
 
           {sessions.isError ? (
-            <div className="training-error">
-              {t("calendarSurface.errors.load")}
-            </div>
+            <div className="training-error">{t("calendarSurface.errors.load")}</div>
           ) : null}
 
           <div
@@ -248,19 +219,13 @@ const CalendarPage: React.FC = () => {
             aria-label={t("calendarSurface.gridLabel")}
           >
             {matrix.flatMap(({ weekday, dates }) => [
-              <div
-                className="calendar-month__weekday"
-                role="rowheader"
-                key={weekday}
-              >
+              <div className="calendar-month__weekday" role="rowheader" key={weekday}>
                 {weekday}
               </div>,
               ...dates.map((date) => {
                 const daySessions = sessionsByDay.get(dateKey(date)) ?? [];
-                const outside =
-                  date.getMonth() !== visibleMonth.getMonth();
-                const selected =
-                  dateKey(date) === dateKey(selectedDate);
+                const outside = date.getMonth() !== visibleMonth.getMonth();
+                const selected = dateKey(date) === dateKey(selectedDate);
                 const dayStatus = statusFor(daySessions);
 
                 return (
@@ -270,9 +235,7 @@ const CalendarPage: React.FC = () => {
                       "calendar-month__cell",
                       outside ? "calendar-month__cell--outside" : "",
                       selected ? "calendar-month__selected" : "",
-                      daySessions.length > 0
-                        ? `calendar-month__cell--${dayStatus}`
-                        : "",
+                      daySessions.length > 0 ? `calendar-month__cell--${dayStatus}` : "",
                     ].join(" ")}
                     role="gridcell"
                     data-status={dayStatus}
@@ -306,17 +269,12 @@ const CalendarPage: React.FC = () => {
             </div>
 
             {selectedSessions.length === 0 ? (
-              <div className="training-empty">
-                {t("calendarSurface.empty.selectedDay")}
-              </div>
+              <div className="training-empty">{t("calendarSurface.empty.selectedDay")}</div>
             ) : (
               selectedSessions.map((session) => (
                 <TrainingSummaryCard
                   key={session.id}
-                  title={
-                    session.title ||
-                    t("homeSurface.session.workout")
-                  }
+                  title={session.title || t("homeSurface.session.workout")}
                   meta={new Intl.DateTimeFormat(i18n.language, {
                     timeStyle: "short",
                   }).format(new Date(session.planned_at))}
@@ -335,20 +293,13 @@ const CalendarPage: React.FC = () => {
         >
           <div className="training-scroll">
             {history.length === 0 ? (
-              <div className="training-empty">
-                {t("calendarSurface.empty.history")}
-              </div>
+              <div className="training-empty">{t("calendarSurface.empty.history")}</div>
             ) : (
               history.map((session) => (
                 <TrainingSummaryCard
                   key={session.id}
-                  title={
-                    session.title ||
-                    t("homeSurface.session.workoutSummary")
-                  }
-                  meta={formatDateTime(
-                    session.completed_at ?? session.planned_at,
-                  )}
+                  title={session.title || t("homeSurface.session.workoutSummary")}
+                  meta={formatDateTime(session.completed_at ?? session.planned_at)}
                   supporting={
                     session.notes ||
                     t("homeSurface.session.exercises", {
@@ -367,17 +318,12 @@ const CalendarPage: React.FC = () => {
         >
           <div className="training-scroll">
             {weeklyPlan.length === 0 ? (
-              <div className="training-empty">
-                {t("calendarSurface.empty.week")}
-              </div>
+              <div className="training-empty">{t("calendarSurface.empty.week")}</div>
             ) : (
               weeklyPlan.map((session) => (
                 <TrainingSummaryCard
                   key={session.id}
-                  title={
-                    session.title ||
-                    t("homeSurface.session.workout")
-                  }
+                  title={session.title || t("homeSurface.session.workout")}
                   meta={formatDateTime(session.planned_at)}
                   supporting={
                     session.notes ||

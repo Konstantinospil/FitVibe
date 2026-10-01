@@ -20,10 +20,7 @@ import {
 import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
 import { logger } from "../../utils/logger";
 import { Modal } from "./Modal";
-import {
-  TrainingPanel,
-  TrainingSummaryCard,
-} from "./TrainingSurface";
+import { TrainingPanel, TrainingSummaryCard } from "./TrainingSurface";
 
 export type WorkoutExerciseDraft = {
   id: string;
@@ -68,31 +65,12 @@ const toDraftExercise = (
   id: sessionExercise.id,
   exerciseId: sessionExercise.exercise_id ?? "",
   name,
-  sets:
-    sessionExercise.sets.length ||
-    sessionExercise.planned?.sets ||
-    1,
-  repetitions: String(
-    sessionExercise.planned?.reps ??
-      sessionExercise.sets[0]?.reps ??
-      "",
-  ),
-  weight: String(
-    sessionExercise.planned?.load ??
-      sessionExercise.sets[0]?.weight_kg ??
-      "",
-  ),
-  duration: String(
-    sessionExercise.sets[0]?.duration_sec ?? "",
-  ),
-  targetExertion: String(
-    sessionExercise.planned?.rpe ??
-      sessionExercise.sets[0]?.rpe ??
-      "",
-  ),
-  restSet: String(
-    sessionExercise.sets[0]?.rest_sec ?? "",
-  ),
+  sets: sessionExercise.sets.length || sessionExercise.planned?.sets || 1,
+  repetitions: String(sessionExercise.planned?.reps ?? sessionExercise.sets[0]?.reps ?? ""),
+  weight: String(sessionExercise.planned?.load ?? sessionExercise.sets[0]?.weight_kg ?? ""),
+  duration: String(sessionExercise.sets[0]?.duration_sec ?? ""),
+  targetExertion: String(sessionExercise.planned?.rpe ?? sessionExercise.sets[0]?.rpe ?? ""),
+  restSet: String(sessionExercise.sets[0]?.rest_sec ?? ""),
   restExercise: String(
     typeof sessionExercise.planned?.extras?.rest_after_exercise_sec === "number"
       ? sessionExercise.planned.extras.rest_after_exercise_sec
@@ -126,13 +104,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const exerciseNames = useMemo(
-    () =>
-      new Map(
-        (exercises.data?.data ?? []).map((exercise) => [
-          exercise.id,
-          exercise.name,
-        ]),
-      ),
+    () => new Map((exercises.data?.data ?? []).map((exercise) => [exercise.id, exercise.name])),
     [exercises.data],
   );
 
@@ -159,8 +131,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         .map((exercise) =>
           toDraftExercise(
             exercise,
-            exerciseNames.get(exercise.exercise_id ?? "") ??
-              t("workoutEditor.exerciseFallback"),
+            exerciseNames.get(exercise.exercise_id ?? "") ?? t("workoutEditor.exerciseFallback"),
           ),
         ),
     );
@@ -177,9 +148,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     }
   }, [exercises.error]);
 
-  const selectedExercise = exercises.data?.data.find(
-    (item) => item.id === selectedExerciseId,
-  );
+  const selectedExercise = exercises.data?.data.find((item) => item.id === selectedExerciseId);
 
   const addExercise = () => {
     if (!selectedExercise) {
@@ -203,15 +172,8 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setDrafts((current) => [...current, draft]);
   };
 
-  const updateDraft = (
-    id: string,
-    patch: Partial<WorkoutExerciseDraft>,
-  ) => {
-    setDrafts((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, ...patch } : item,
-      ),
-    );
+  const updateDraft = (id: string, patch: Partial<WorkoutExerciseDraft>) => {
+    setDrafts((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   };
 
   const toSessionExercise = (
@@ -233,10 +195,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         reps: repetitions,
         load: weight,
         rpe: exertion,
-        extras:
-          restExercise === null
-            ? undefined
-            : { rest_after_exercise_sec: restExercise },
+        extras: restExercise === null ? undefined : { rest_after_exercise_sec: restExercise },
       },
       sets: Array.from({ length: exercise.sets }, (_, setIndex) => ({
         order: setIndex + 1,
@@ -267,10 +226,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
             notes: notes.trim() || null,
             planned_at: plannedAt,
             status: mode === "start" ? "in_progress" : "planned",
-            started_at:
-              mode === "start"
-                ? session.started_at ?? new Date().toISOString()
-                : null,
+            started_at: mode === "start" ? (session.started_at ?? new Date().toISOString()) : null,
             exercises: exercisesPayload,
           })
         : await createSession({
@@ -296,9 +252,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
       logger.apiError(
         "Failed to persist workout editor session",
         error,
-        session
-          ? `/api/v1/sessions/${session.id}`
-          : "/api/v1/sessions",
+        session ? `/api/v1/sessions/${session.id}` : "/api/v1/sessions",
         session ? "PATCH" : "POST",
       );
     } finally {
@@ -357,9 +311,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         <TrainingPanel title={t("workoutEditor.sections.general")}>
           <div className="workout-editor__general">
             <label className="form-label">
-              <span className="form-label-text">
-                {t("workoutEditor.fields.name")}
-              </span>
+              <span className="form-label-text">{t("workoutEditor.fields.name")}</span>
               <InputControl
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -397,9 +349,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
           </div>
 
           <label className="form-label">
-            <span className="form-label-text">
-              {t("workoutEditor.fields.notes")}
-            </span>
+            <span className="form-label-text">{t("workoutEditor.fields.notes")}</span>
             <TextareaControl
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
@@ -414,24 +364,15 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
           <TrainingPanel title={t("workoutEditor.sections.activity")}>
             <div className="workout-editor__activity-toolbar">
               <label className="form-label">
-                <span className="form-label-text">
-                  {t("workoutEditor.fields.exercise")}
-                </span>
+                <span className="form-label-text">{t("workoutEditor.fields.exercise")}</span>
                 <div className="workout-editor__search-control">
-                  <Search
-                    aria-hidden="true"
-                    size={BUTTON_ICON_SIZES.md}
-                  />
+                  <Search aria-hidden="true" size={BUTTON_ICON_SIZES.md} />
                   <SelectControl
                     value={selectedExerciseId}
-                    onChange={(event) =>
-                      setSelectedExerciseId(event.target.value)
-                    }
+                    onChange={(event) => setSelectedExerciseId(event.target.value)}
                     disabled={isBusy || exercises.isLoading}
                   >
-                    <option value="">
-                      {t("workoutEditor.placeholders.exercise")}
-                    </option>
+                    <option value="">{t("workoutEditor.placeholders.exercise")}</option>
                     {exercises.data?.data.map((exercise) => (
                       <option key={exercise.id} value={exercise.id}>
                         {exercise.name}
@@ -461,9 +402,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
               <>
                 <div className="workout-editor__activity-fields">
                   <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.sets")}
-                    </span>
+                    <span className="form-label-text">{t("workoutEditor.fields.sets")}</span>
                     <InputControl
                       type="number"
                       min="1"
@@ -471,19 +410,14 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                       disabled={isBusy}
                       onChange={(event) =>
                         updateDraft(active.id, {
-                          sets: Math.max(
-                            1,
-                            Number(event.target.value) || 1,
-                          ),
+                          sets: Math.max(1, Number(event.target.value) || 1),
                         })
                       }
                     />
                   </label>
 
                   <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.repetitions")}
-                    </span>
+                    <span className="form-label-text">{t("workoutEditor.fields.repetitions")}</span>
                     <InputControl
                       type="number"
                       min="0"
@@ -498,9 +432,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                   </label>
 
                   <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.weight")}
-                    </span>
+                    <span className="form-label-text">{t("workoutEditor.fields.weight")}</span>
                     <InputControl
                       type="number"
                       min="0"
@@ -515,9 +447,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                   </label>
 
                   <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.duration")}
-                    </span>
+                    <span className="form-label-text">{t("workoutEditor.fields.duration")}</span>
                     <InputControl
                       type="number"
                       min="0"
@@ -532,9 +462,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                   </label>
 
                   <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.exertion")}
-                    </span>
+                    <span className="form-label-text">{t("workoutEditor.fields.exertion")}</span>
                     <InputControl
                       type="number"
                       min="0"
@@ -551,9 +479,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 
                 <div className="workout-editor__rest-row">
                   <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.restSet")}
-                    </span>
+                    <span className="form-label-text">{t("workoutEditor.fields.restSet")}</span>
                     <InputControl
                       type="number"
                       min="0"
@@ -586,18 +512,14 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                 </div>
               </>
             ) : (
-              <div className="training-empty">
-                {t("workoutEditor.empty.activity")}
-              </div>
+              <div className="training-empty">{t("workoutEditor.empty.activity")}</div>
             )}
           </TrainingPanel>
 
           <TrainingPanel title={t("workoutEditor.sections.overview")}>
             <div className="training-scroll workout-editor__overview-list">
               {drafts.length === 0 ? (
-                <div className="training-empty">
-                  {t("workoutEditor.empty.overview")}
-                </div>
+                <div className="training-empty">{t("workoutEditor.empty.overview")}</div>
               ) : (
                 drafts.map((exerciseDraft) => (
                   <TrainingSummaryCard
@@ -628,9 +550,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
               <IconButton
                 icon={<Minus />}
                 label={t("workoutEditor.actions.removeLast")}
-                onClick={() =>
-                  setDrafts((current) => current.slice(0, -1))
-                }
+                onClick={() => setDrafts((current) => current.slice(0, -1))}
                 disabled={drafts.length === 0 || isBusy}
               />
             </div>

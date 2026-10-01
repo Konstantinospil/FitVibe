@@ -21,10 +21,7 @@ export const TrainingPanel: React.FC<TrainingPanelProps> = ({
   <Card className={`training-panel ${className}`} variant="muted">
     <div className="training-panel__header">
       <CardTitle>{title}</CardTitle>
-      <span
-        className={`training-status-dot training-status-dot--${status}`}
-        aria-hidden="true"
-      />
+      <span className={`training-status-dot training-status-dot--${status}`} aria-hidden="true" />
     </div>
     <div className="training-panel__body">{children}</div>
     {footer ? <div className="training-panel__footer">{footer}</div> : null}

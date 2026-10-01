@@ -83,12 +83,8 @@ describe("Calendar", () => {
     renderCalendar();
 
     expect(screen.getByText("January")).toBeInTheDocument();
-    expect(
-      screen.getByText("calendarSurface.sections.history"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("calendarSurface.sections.weekPlan"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("calendarSurface.sections.history")).toBeInTheDocument();
+    expect(screen.getByText("calendarSurface.sections.weekPlan")).toBeInTheDocument();
 
     expect(await screen.findByText("Completed Strength")).toBeInTheDocument();
     expect(await screen.findByText("Friday Plan")).toBeInTheDocument();
@@ -98,9 +94,7 @@ describe("Calendar", () => {
     renderCalendar();
     await screen.findByText("Friday Plan");
 
-    const dayButton = screen
-      .getAllByRole("button")
-      .find((button) => button.textContent === "16");
+    const dayButton = screen.getAllByRole("button").find((button) => button.textContent === "16");
     expect(dayButton).toBeDefined();
 
     fireEvent.click(dayButton as HTMLButtonElement);
@@ -132,9 +126,7 @@ describe("Calendar", () => {
     mockedListSessions.mockRejectedValueOnce(new Error("calendar failed"));
     renderCalendar();
 
-    expect(
-      await screen.findByText("calendarSurface.errors.load"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("calendarSurface.errors.load")).toBeInTheDocument();
     await waitFor(() => {
       expect(apiErrorSpy).toHaveBeenCalled();
     });

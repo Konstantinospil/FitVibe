@@ -2,11 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import nodIcon from "../../assets/nod.svg";
-import {
-  likeFeedItem,
-  unlikeFeedItem,
-  type FeedItem,
-} from "../../services/api";
+import { likeFeedItem, unlikeFeedItem, type FeedItem } from "../../services/api";
 import { logger } from "../../utils/logger";
 import { TrainingSummaryCard } from "./TrainingSurface";
 
@@ -91,11 +87,7 @@ const HomeFeedCard: React.FC<HomeFeedCardProps> = ({ item }) => {
             size="sm"
             leadingIcon={<img className="home-feed-card__nod-icon" src={nodIcon} alt="" />}
             aria-pressed={nodded}
-            aria-label={
-              nodded
-                ? t("homeSurface.news.removeNod")
-                : t("homeSurface.news.addNod")
-            }
+            aria-label={nodded ? t("homeSurface.news.removeNod") : t("homeSurface.news.addNod")}
             disabled={pending}
             onClick={() => {
               void toggleNod();

@@ -119,28 +119,16 @@ describe("Home", () => {
   it("renders the production Home contract", async () => {
     renderHome();
 
-    expect(
-      screen.getByText("homeSurface.sections.recentActivity"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("homeSurface.sections.trending"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("homeSurface.sections.newsFeed"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("homeSurface.sections.previousActivities"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("homeSurface.sections.recentActivity")).toBeInTheDocument();
+    expect(screen.getByText("homeSurface.sections.trending")).toBeInTheDocument();
+    expect(screen.getByText("homeSurface.sections.newsFeed")).toBeInTheDocument();
+    expect(screen.getByText("homeSurface.sections.previousActivities")).toBeInTheDocument();
 
     expect(await screen.findAllByText("Tempo Strength")).not.toHaveLength(0);
     expect(await screen.findByText("Morning Strength")).toBeInTheDocument();
 
-    expect(mockedApi.getFeed).toHaveBeenCalledWith(
-      expect.objectContaining({ sort: "date" }),
-    );
-    expect(mockedApi.getFeed).toHaveBeenCalledWith(
-      expect.objectContaining({ sort: "popularity" }),
-    );
+    expect(mockedApi.getFeed).toHaveBeenCalledWith(expect.objectContaining({ sort: "date" }));
+    expect(mockedApi.getFeed).toHaveBeenCalledWith(expect.objectContaining({ sort: "popularity" }));
   });
 
   it("recovers nod interaction from the feed behavior", async () => {
@@ -165,9 +153,7 @@ describe("Home", () => {
     });
     fireEvent.click(nodButtons[0]);
 
-    expect(
-      await screen.findByText("homeSurface.news.nodError"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.news.nodError")).toBeInTheDocument();
     expect(apiErrorSpy).toHaveBeenCalled();
   });
 
@@ -177,15 +163,9 @@ describe("Home", () => {
 
     renderHome();
 
-    expect(
-      await screen.findByText("homeSurface.errors.news"),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText("homeSurface.errors.trending"),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText("homeSurface.errors.activities"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.errors.news")).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.errors.trending")).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.errors.activities")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(apiErrorSpy).toHaveBeenCalledTimes(3);
@@ -208,14 +188,8 @@ describe("Home", () => {
 
     renderHome();
 
-    expect(
-      await screen.findByText("homeSurface.empty.news"),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText("homeSurface.empty.trending"),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByText("homeSurface.empty.activities"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.empty.news")).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.empty.trending")).toBeInTheDocument();
+    expect(await screen.findByText("homeSurface.empty.activities")).toBeInTheDocument();
   });
 });
