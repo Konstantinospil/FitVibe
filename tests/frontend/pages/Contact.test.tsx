@@ -145,6 +145,51 @@ describe("Contact", () => {
     expect(toastError).toHaveBeenCalledWith(error.textContent);
   });
 
+  it("retries CSRF failures with a fresh token before surfacing an error", async () => {
+    vi.mocked(rawHttpClient.get)
+      .mockResolvedValueOnce({ data: { csrfToken: "prefetch" } } as never)
+      .mockResolvedValueOnce({ data: { csrfToken: "csrf-1" } } as never)
+      .mockResolvedValueOnce({ data: { csrfToken: "csrf-2" } } as never);
+
+    vi.mocked(rawHttpClient.post)
+      .mockRejectedValueOnce({
+        response: { data: { error: { code: "CSRF_TOKEN_INVALID" } } },
+      })
+      .mockResolvedValueOnce({ data: { success: true } } as never);
+
+    render(<Contact />);
+    fillValidForm();
+    fireEvent.click(screen.getByRole("button", { name: "Send Message" }));
+
+    await waitFor(() => {
+      expect(rawHttpClient.post).toHaveBeenCalledTimes(2);
+    });
+    expect(rawHttpClient.post).toHaveBeenLastCalledWith(
+      "/api/v1/contact",
+      expect.objectContaining({ _csrf: "csrf-2" }),
+      expect.objectContaining({
+        headers: { "x-csrf-token": "csrf-2" },
+        withCredentials: true,
+      }),
+    );
+    expect(toastSuccess).toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("shows the dedicated network error from the archived resilience behavior", async () => {
+    vi.mocked(rawHttpClient.post).mockRejectedValueOnce({ code: "ERR_NETWORK" });
+    render(<Contact />);
+    fillValidForm();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send Message" }));
+
+    const error = await screen.findByText(
+      "Cannot connect to server. Please check your connection and try again.",
+    );
+    expect(error).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith(error.textContent);
+  });
+
   it("uses an API error message when one is supplied", async () => {
     vi.mocked(rawHttpClient.post).mockRejectedValue({
       response: { data: { error: { code: "CONTACT_REJECTED", message: "Try later" } } },
