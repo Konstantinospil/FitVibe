@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fitvibe/ui";
 
 interface PageIntroProps {
   eyebrow?: string;

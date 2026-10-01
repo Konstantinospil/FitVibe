@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import PublishedLegalDocument from "../components/PublishedLegalDocument";
-import { Button } from "../components/ui";
+import { Button } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 import { useToast } from "../contexts/ToastContext";
 import {

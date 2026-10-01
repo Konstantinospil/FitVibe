@@ -12,7 +12,7 @@ import {
   type Exercise,
 } from "../services/api";
 import { logger } from "../utils/logger";
-import { Button } from "../components/ui/Button";
+import { Button } from "@fitvibe/ui";
 import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 type VibeKey =

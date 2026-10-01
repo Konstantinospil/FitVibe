@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Button } from "../../src/components/ui/Button";
+import { Button } from "../../../packages/ui/src/Button";
 
 describe("Button Accessibility", () => {
   describe("ARIA attributes", () => {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PublishedLegalDocument from "../components/PublishedLegalDocument";
-import { Button } from "../components/ui";
+import { Button } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 import { useToast } from "../contexts/ToastContext";
 import {
