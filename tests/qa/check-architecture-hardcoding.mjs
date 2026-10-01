@@ -258,7 +258,18 @@ async function checkFrontendTokens() {
     for (const rule of sourceDesignPatterns) {
       for (const match of source.matchAll(rule.pattern)) {
         const value = String(match[1] ?? "").trim().replace(/^["'`]|["'`]$/g, "");
-        if (!rule.allowedValue(value) && !sourceException(source, match.index, "token")) {
+        const commaIndex = source.indexOf(",", match.index);
+        const braceIndex = source.indexOf("}", match.index);
+        const expressionEnd =
+          commaIndex >= 0 && (braceIndex < 0 || commaIndex < braceIndex) ? commaIndex : braceIndex;
+        const formattedExpression =
+          expressionEnd >= 0 ? source.slice(match.index, expressionEnd) : match[0];
+
+        if (
+          !rule.allowedValue(value) &&
+          !rule.allowedValue(formattedExpression) &&
+          !sourceException(source, match.index, "token")
+        ) {
           report(file, source, match.index, rule.message);
         }
       }
