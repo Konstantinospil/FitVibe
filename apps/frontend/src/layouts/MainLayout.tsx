@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import Footer from "../components/Footer";
 import AppHeader from "../components/AppHeader";
 import { useTranslation } from "react-i18next";
+import { PageShell } from "./PageShell";
 
 const ACTIVE_APP_PATHS = ["/"] as const;
 
@@ -21,22 +22,20 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
+    <PageShell
+      mainId="main-content"
+      skipLinkLabel={t("navigation.skipToContent")}
+      header={
+        <AppHeader
+          variant="writing"
+          availablePaths={ACTIVE_APP_PATHS}
+          onSignOut={handleSignOut}
+        />
+      }
+      footer={<Footer />}
     >
-      <a href="#main-content" className="skip-link">
-        {t("navigation.skipToContent")}
-      </a>
-      <AppHeader variant="writing" availablePaths={ACTIVE_APP_PATHS} onSignOut={handleSignOut} />
-      <main id="main-content" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
+      <Outlet />
+    </PageShell>
   );
 };
 
