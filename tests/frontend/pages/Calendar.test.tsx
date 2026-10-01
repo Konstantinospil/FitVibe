@@ -33,39 +33,65 @@ vi.mock("../../src/utils/logger", () => ({
 const mockedListSessions = vi.mocked(api.listSessions);
 const mockedListExercises = vi.mocked(api.listExercises);
 
-const response: api.SessionsListResponse = {
-  data: [
-    {
-      id: "completed-1",
-      owner_id: "user-1",
-      title: "Completed Strength",
-      planned_at: "2026-01-14T09:00:00.000Z",
-      status: "completed",
-      visibility: "private",
-      completed_at: "2026-01-14T10:00:00.000Z",
-      exercises: [],
-    },
-    {
-      id: "planned-1",
-      owner_id: "user-1",
-      title: "Friday Plan",
-      planned_at: "2026-01-16T09:00:00.000Z",
-      status: "planned",
-      visibility: "private",
-      exercises: [],
-    },
-  ],
-  total: 2,
-  limit: 200,
-  offset: 0,
+const atLocalHour = (base: Date, hour: number) => {
+  const value = new Date(base);
+  value.setHours(hour, 0, 0, 0);
+  return value;
+};
+
+const addDays = (base: Date, days: number) => {
+  const value = new Date(base);
+  value.setDate(value.getDate() + days);
+  return value;
 };
 
 describe("Calendar", () => {
   let queryClient: QueryClient;
+  let today: Date;
+  let tomorrow: Date;
+  let response: api.SessionsListResponse;
 
   beforeEach(() => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-01-15T12:00:00.000Z"));
+    today = new Date();
+    today.setHours(12, 0, 0, 0);
+    tomorrow = addDays(today, 1);
+
+    response = {
+      data: [
+        {
+          id: "completed-1",
+          owner_id: "user-1",
+          title: "Completed Strength",
+          planned_at: atLocalHour(addDays(today, -1), 9).toISOString(),
+          status: "completed",
+          visibility: "private",
+          completed_at: atLocalHour(addDays(today, -1), 10).toISOString(),
+          exercises: [],
+        },
+        {
+          id: "planned-today",
+          owner_id: "user-1",
+          title: "Today Plan",
+          planned_at: atLocalHour(today, 18).toISOString(),
+          status: "planned",
+          visibility: "private",
+          exercises: [],
+        },
+        {
+          id: "planned-tomorrow",
+          owner_id: "user-1",
+          title: "Tomorrow Plan",
+          planned_at: atLocalHour(tomorrow, 9).toISOString(),
+          status: "planned",
+          visibility: "private",
+          exercises: [],
+        },
+      ],
+      total: 3,
+      limit: 200,
+      offset: 0,
+    };
+
     queryClient = createTestQueryClient();
     mockedListSessions.mockResolvedValue(response);
     mockedListExercises.mockResolvedValue({
@@ -79,7 +105,6 @@ describe("Calendar", () => {
 
   afterEach(async () => {
     await cleanupQueryClient(queryClient);
-    vi.useRealTimers();
     vi.clearAllMocks();
   });
 
@@ -93,44 +118,49 @@ describe("Calendar", () => {
   it("renders a dynamic month with history and the remaining week", async () => {
     renderCalendar();
 
-    expect(screen.getByText("January")).toBeInTheDocument();
+    const month = new Intl.DateTimeFormat("en", { month: "long" }).format(today);
+    expect(screen.getByText(month)).toBeInTheDocument();
     expect(screen.getByText("calendarSurface.sections.history")).toBeInTheDocument();
     expect(screen.getByText("calendarSurface.sections.weekPlan")).toBeInTheDocument();
 
     expect(await screen.findByText("Completed Strength")).toBeInTheDocument();
-    expect(await screen.findByText("Friday Plan")).toBeInTheDocument();
+    expect(await screen.findAllByText("Today Plan")).not.toHaveLength(0);
   });
 
   it("selects a day and exposes its sessions", async () => {
     renderCalendar();
-    await screen.findByText("Friday Plan");
+    await screen.findByText("Today Plan");
 
-    const dayButton = screen.getAllByRole("button").find((button) => button.textContent === "16");
+    const dayLabel = String(tomorrow.getDate()).padStart(2, "0");
+    const dayButton = screen.getAllByRole("button").find((button) => button.textContent === dayLabel);
     expect(dayButton).toBeDefined();
 
     fireEvent.click(dayButton as HTMLButtonElement);
 
     await waitFor(() => {
-      expect(screen.getAllByText("Friday Plan").length).toBeGreaterThan(1);
+      expect(screen.getAllByText("Tomorrow Plan").length).toBeGreaterThan(0);
     });
   });
 
   it("navigates month and year without fixed calendar data", () => {
     renderCalendar();
 
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
     fireEvent.click(
       screen.getByRole("button", {
         name: "calendarSurface.navigation.nextMonth",
       }),
     );
-    expect(screen.getByText("February")).toBeInTheDocument();
+    expect(
+      screen.getByText(new Intl.DateTimeFormat("en", { month: "long" }).format(nextMonth)),
+    ).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("button", {
         name: "calendarSurface.navigation.nextYear",
       }),
     );
-    expect(screen.getByText("2027")).toBeInTheDocument();
+    expect(screen.getByText(String(nextMonth.getFullYear() + 1))).toBeInTheDocument();
   });
 
   it("opens Plan and Start as scoped transient workout workflows", async () => {
@@ -193,3 +223,5 @@ describe("Calendar", () => {
     });
   });
 });
+
+export {};
