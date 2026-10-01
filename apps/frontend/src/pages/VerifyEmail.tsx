@@ -278,7 +278,12 @@ const VerifyEmail: React.FC = () => {
                     {resendError}
                   </p>
                   {retryAfter !== null && countdown > 0 && (
-                    <p style={{ color: "var(--color-text-muted)", fontSize: "var(--type-supporting-size)" }}>
+                    <p
+                      style={{
+                        color: "var(--color-text-muted)",
+                        fontSize: "var(--type-supporting-size)",
+                      }}
+                    >
                       {t("verifyEmail.retryAfter", { seconds: countdown })}
                     </p>
                   )}
