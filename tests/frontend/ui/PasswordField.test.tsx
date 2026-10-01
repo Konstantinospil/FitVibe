@@ -22,7 +22,7 @@ describe("PasswordField", () => {
     expect(field).toHaveStyle({ opacity: "var(--opacity-disabled)" });
   });
 
-  it("toggles password visibility on activation", () => {
+  it("reveals only while the visibility control is held", () => {
     render(
       <PasswordField
         label="Password"
@@ -34,23 +34,27 @@ describe("PasswordField", () => {
     const input = screen.getByLabelText("Password") as HTMLInputElement;
     const show = screen.getByRole("button", { name: "Show password" });
 
-    fireEvent.click(show);
+    fireEvent.mouseDown(show);
     expect(input.type).toBe("text");
 
     const hide = screen.getByRole("button", { name: "Hide password" });
-    fireEvent.click(hide);
+    fireEvent.mouseUp(hide);
     expect(input.type).toBe("password");
   });
 
-  it("keeps the selected visibility state across pointer movement", () => {
+  it("masks on mouse leave and touch end", () => {
     render(<PasswordField label="Password" />);
     const input = screen.getByLabelText("Password") as HTMLInputElement;
     const toggle = screen.getByRole("button", { name: "Show password" });
 
-    fireEvent.click(toggle);
+    fireEvent.mouseDown(toggle);
     expect(input.type).toBe("text");
-
     fireEvent.mouseLeave(toggle);
+    expect(input.type).toBe("password");
+
+    fireEvent.touchStart(toggle);
     expect(input.type).toBe("text");
+    fireEvent.touchEnd(toggle);
+    expect(input.type).toBe("password");
   });
 });
