@@ -271,15 +271,22 @@ export default defineConfig(() => {
       // Enable tree shaking with more aggressive settings
       treeshake: {
         moduleSideEffects: (id: string) => {
-          // Allow side effects for CSS and JSON imports
+          // Preserve third-party package side effects. Some dependencies perform
+          // runtime feature detection and adapter setup during module evaluation.
+          if (id.includes("node_modules")) {
+            return true;
+          }
+          // CSS and JSON imports are also intentionally side-effectful.
           if (id.includes(".css") || id.includes(".json")) {
             return true;
           }
           return false;
         },
         preset: "recommended",
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false,
+        // Keep Rollup's safe defaults for property reads and try/catch blocks.
+        // Over-aggressive deoptimization settings broke Axios in the production bundle.
+        propertyReadSideEffects: true,
+        tryCatchDeoptimization: true,
       },
       // Enable compression reporting for monitoring
       reportCompressedSize: true,
