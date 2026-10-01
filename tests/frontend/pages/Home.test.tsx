@@ -24,7 +24,10 @@ vi.mock("../../src/services/api", async () => {
   };
 });
 
-const apiErrorSpy = vi.fn();
+const { apiErrorSpy } = vi.hoisted(() => ({
+  apiErrorSpy: vi.fn(),
+}));
+
 vi.mock("../../src/utils/logger", () => ({
   logger: { apiError: apiErrorSpy },
 }));
