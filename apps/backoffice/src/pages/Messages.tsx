@@ -707,7 +707,7 @@ const MessagesPage: React.FC = () => {
                       background:
                         responseText.trim() && !saveResponseMutation.isPending
                           ? colors.border
-                          : "#1a3d2e",
+                          : "var(--color-secondary-active)",
                       color: colors.text,
                       border: "none",
                       borderRadius: "var(--radius-sm)",
