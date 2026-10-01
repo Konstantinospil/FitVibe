@@ -80,19 +80,20 @@ const Contact: React.FC = () => {
             defaultValue: "Your message has been sent successfully!",
           }),
         );
-        if (!user?.email) setEmail("");
+        if (!user?.email) {
+          setEmail("");
+        }
         setTopic("");
         setMessage("");
       }
     } catch (err: unknown) {
-      const responseError =
-        err && typeof err === "object" && "response" in err
-          ? (err as {
-              response?: {
-                data?: { error?: { code?: string; message?: string } };
-              };
-            }).response?.data?.error
-          : undefined;
+      let responseError: { code?: string; message?: string } | undefined;
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: { data?: { error?: { code?: string; message?: string } } };
+        };
+        responseError = axiosError.response?.data?.error;
+      }
 
       const messageValue =
         responseError?.code === "CSRF_TOKEN_INVALID"
