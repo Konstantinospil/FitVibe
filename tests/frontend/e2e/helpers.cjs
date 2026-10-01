@@ -128,13 +128,13 @@ async function waitForApp(page) {
     .catch(() => undefined);
 }
 
-const emailInput = (page) => page.locator("form.form input[name='email']");
-const passwordInput = (page) => page.locator("form.form input[name='password']");
-const confirmPasswordInput = (page) => page.locator("form.form input[name='confirmPassword']");
-const displayNameInput = (page) => page.locator("form.form input[name='name']");
+const emailInput = (page) => page.locator("form input[name='email']");
+const passwordInput = (page) => page.locator("form input[name='password']");
+const confirmPasswordInput = (page) => page.locator("form input[name='confirmPassword']");
+const displayNameInput = (page) => page.locator("form input[name='name']");
 
 async function acceptRegisterLegal(page) {
-  const checkboxes = page.locator("form.form input[type='checkbox']");
+  const checkboxes = page.locator("form input[type='checkbox']");
   await checkboxes.nth(0).check();
   await checkboxes.nth(1).check();
 }
