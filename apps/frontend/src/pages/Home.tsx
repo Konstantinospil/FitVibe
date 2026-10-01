@@ -490,7 +490,8 @@ const Home: React.FC = () => {
                   <div
                     className="text-center"
                     style={{
-                      opacity: hoveredVibe === vibe.key ? "var(--opacity-full)" : "var(--opacity-subtle)",
+                      opacity:
+                        hoveredVibe === vibe.key ? "var(--opacity-full)" : "var(--opacity-subtle)",
                       transition: "opacity 0.3s ease",
                       minHeight: "80px",
                     }}
@@ -502,7 +503,10 @@ const Home: React.FC = () => {
                       {t(`vibes.${vibe.key}.element`)}
                     </div>
                     {hoveredVibe === vibe.key && (
-                      <div className="text-sm text-muted" style={{ lineHeight: "var(--type-body-line-height)" }}>
+                      <div
+                        className="text-sm text-muted"
+                        style={{ lineHeight: "var(--type-body-line-height)" }}
+                      >
                         {t(`vibes.${vibe.key}.activities`)}
                       </div>
                     )}
@@ -737,7 +741,10 @@ const Home: React.FC = () => {
                     color: "var(--color-text-primary)",
                     fontSize: "var(--font-size-md)",
                     cursor: "pointer",
-                    fontWeight: exerciseMode === "select" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
+                    fontWeight:
+                      exerciseMode === "select"
+                        ? "var(--font-weight-semibold)"
+                        : "var(--font-weight-regular)",
                   }}
                 >
                   {t("vibesHome.addExercise.selectExisting")}
@@ -762,7 +769,10 @@ const Home: React.FC = () => {
                     color: "var(--color-text-primary)",
                     fontSize: "var(--font-size-md)",
                     cursor: "pointer",
-                    fontWeight: exerciseMode === "create" ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
+                    fontWeight:
+                      exerciseMode === "create"
+                        ? "var(--font-weight-semibold)"
+                        : "var(--font-weight-regular)",
                   }}
                 >
                   {t("vibesHome.addExercise.createNew")}
