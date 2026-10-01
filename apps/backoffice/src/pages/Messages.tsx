@@ -289,7 +289,9 @@ const MessagesPage: React.FC = () => {
                     key={message.id}
                     style={{
                       borderBottom: `1px solid ${colors.border}`,
-                      background: !message.readAt ? "color-mix(in srgb, var(--vibe-strength) var(--transparency-disabled), transparent)" : "transparent",
+                      background: !message.readAt
+                        ? "color-mix(in srgb, var(--vibe-strength) var(--transparency-disabled), transparent)"
+                        : "transparent",
                     }}
                   >
                     <td style={{ padding: "1rem", color: colors.text }}>{message.email}</td>
@@ -533,7 +535,13 @@ const MessagesPage: React.FC = () => {
               >
                 From:
               </div>
-              <div style={{ color: colors.text, fontSize: "var(--type-body-size)", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-body-size)",
+                  marginBottom: "1rem",
+                }}
+              >
                 {selectedMessage.email}
               </div>
             </div>
@@ -548,7 +556,13 @@ const MessagesPage: React.FC = () => {
               >
                 Topic:
               </div>
-              <div style={{ color: colors.text, fontSize: "var(--type-body-size)", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-body-size)",
+                  marginBottom: "1rem",
+                }}
+              >
                 {selectedMessage.topic}
               </div>
             </div>
@@ -563,7 +577,13 @@ const MessagesPage: React.FC = () => {
               >
                 Date:
               </div>
-              <div style={{ color: colors.text, fontSize: "var(--type-body-size)", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-body-size)",
+                  marginBottom: "1rem",
+                }}
+              >
                 {new Date(selectedMessage.createdAt).toLocaleString()}
               </div>
             </div>
