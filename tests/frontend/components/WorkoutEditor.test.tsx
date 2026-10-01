@@ -209,6 +209,19 @@ describe("WorkoutEditor", () => {
     expect(unavailable).toHaveLength(3);
   });
 
+  it("retries exercise catalog loading through the active error composite", async () => {
+    mockedApi.listExercises.mockRejectedValueOnce(new Error("catalog failed"));
+    renderEditor();
+
+    const retry = await screen.findByRole("button", { name: "actions.retry" });
+    mockedApi.listExercises.mockResolvedValue(exerciseResponse);
+    fireEvent.click(retry);
+
+    await waitFor(() => {
+      expect(mockedApi.listExercises).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("surfaces persistence errors", async () => {
     mockedApi.createSession.mockRejectedValueOnce(new Error("save failed"));
     renderEditor();
