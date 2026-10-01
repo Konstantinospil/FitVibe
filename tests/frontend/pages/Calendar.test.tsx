@@ -170,6 +170,19 @@ describe("Calendar", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("retries a failed session load from the calendar error state", async () => {
+    mockedListSessions.mockRejectedValueOnce(new Error("calendar failed"));
+    renderCalendar();
+
+    const retry = await screen.findByRole("button", { name: "actions.retry" });
+    mockedListSessions.mockResolvedValue(response);
+    fireEvent.click(retry);
+
+    await waitFor(() => {
+      expect(mockedListSessions).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("logs and renders session loading errors", async () => {
     mockedListSessions.mockRejectedValueOnce(new Error("calendar failed"));
     renderCalendar();
