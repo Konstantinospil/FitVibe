@@ -4,12 +4,7 @@ export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
   as?: "section" | "div" | "article";
 }
 
-export const Section: React.FC<SectionProps> = ({
-  as = "section",
-  children,
-  style,
-  ...props
-}) => {
+export const Section: React.FC<SectionProps> = ({ as = "section", children, style, ...props }) => {
   const Component = as;
   return (
     <Component
