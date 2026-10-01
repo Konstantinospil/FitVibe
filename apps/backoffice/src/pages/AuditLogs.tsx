@@ -333,7 +333,15 @@ const AuditLogsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "var(--type-page-title-size)" }}>Audit Logs</h1>
+      <h1
+        style={{
+          color: colors.text,
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
+        Audit Logs
+      </h1>
 
       <div style={{ marginBottom: "1.5rem", maxWidth: "360px" }}>
         <label
@@ -438,7 +446,9 @@ const AuditLogsPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Select actions</span>
+                <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                  Select actions
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -483,7 +493,9 @@ const AuditLogsPage: React.FC = () => {
                         checked={actionFilter.includes(option.value)}
                         onChange={() => handleToggleAction(option.value)}
                       />
-                      <span style={{ fontSize: "var(--type-supporting-size)" }}>{option.label}</span>
+                      <span style={{ fontSize: "var(--type-supporting-size)" }}>
+                        {option.label}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -848,7 +860,13 @@ const AuditLogsPage: React.FC = () => {
                 marginBottom: "1.5rem",
               }}
             >
-              <h2 style={{ color: colors.text, fontSize: "var(--type-section-title-size)", margin: 0 }}>
+              <h2
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-section-title-size)",
+                  margin: 0,
+                }}
+              >
                 Audit Log Details
               </h2>
               <Button
@@ -857,42 +875,56 @@ const AuditLogsPage: React.FC = () => {
                 size="sm"
                 aria-label="Close audit log details"
                 onClick={handleCloseModal}
-                style={{ color: colors.text, fontSize: "var(--type-section-title-size)", padding: "0.25rem 0.5rem" }}
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-section-title-size)",
+                  padding: "0.25rem 0.5rem",
+                }}
               >
                 ×
               </Button>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Created</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Created
+              </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {new Date(selectedLog.createdAt).toLocaleString()}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Action</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Action
+              </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {getActionLabel(selectedLog.action)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Entity</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Entity
+              </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatLabel(selectedLog.entityType, entityLabelMap)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Actor</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Actor
+              </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.actorUsername || selectedLog.actorUserId || "-"}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Severity</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Severity
+              </div>
               <div
                 style={{
                   color: severityColors[selectedLog.severity],
@@ -905,14 +937,18 @@ const AuditLogsPage: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Outcome</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Outcome
+              </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatAction(selectedLog.outcome)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>Resolved</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Resolved
+              </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.resolvedAt
                   ? new Date(selectedLog.resolvedAt).toLocaleString()
@@ -986,7 +1022,11 @@ const AuditLogsPage: React.FC = () => {
                               style={{ borderBottom: `1px solid ${colors.border}` }}
                             >
                               <td
-                                style={{ padding: "0.5rem", color: colors.text, fontWeight: "var(--font-weight-semibold)" }}
+                                style={{
+                                  padding: "0.5rem",
+                                  color: colors.text,
+                                  fontWeight: "var(--font-weight-semibold)",
+                                }}
                               >
                                 {formatLabel(change.field, fieldLabelMap)}
                               </td>
