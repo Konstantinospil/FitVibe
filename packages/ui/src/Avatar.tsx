@@ -68,10 +68,9 @@ export const Avatar: React.FC<AvatarProps> = ({
     resolvedFormat === "initials" && statusColor
       ? "var(--color-secondary-on)"
       : "var(--color-text-primary)";
-  const embeddedBorder =
-    resolvedFormat === "photo" && statusColor
-      ? `3px solid ${statusColor}`
-      : "1px solid var(--color-border)";
+  const hasEmbeddedStatusRing = resolvedFormat === "photo" && Boolean(statusColor);
+  const embeddedBorderWidth = hasEmbeddedStatusRing ? "3px" : "1px";
+  const embeddedBorderColor = statusColor && hasEmbeddedStatusRing ? statusColor : "var(--color-border)";
 
   return (
     <div
@@ -99,10 +98,13 @@ export const Avatar: React.FC<AvatarProps> = ({
           borderRadius: "var(--radius-full)",
           background:
             resolvedStatusDisplay === "embedded" ? embeddedBackground : "var(--color-surface)",
-          border:
+          borderWidth:
+            resolvedStatusDisplay === "embedded" ? embeddedBorderWidth : "1px",
+          borderStyle: "solid",
+          borderColor:
             resolvedStatusDisplay === "embedded"
-              ? embeddedBorder
-              : "1px solid var(--color-border)",
+              ? embeddedBorderColor
+              : "var(--color-border)",
           display: "grid",
           placeItems: "center",
           color:
