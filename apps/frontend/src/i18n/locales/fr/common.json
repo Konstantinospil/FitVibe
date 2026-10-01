@@ -1013,5 +1013,8 @@
       "save": "L’entraînement n’a pas pu être enregistré.",
       "exercises": "Les exercices n’ont pas pu être chargés."
     }
+  },
+  "actions": {
+    "retry": "Réessayer"
   }
 }
