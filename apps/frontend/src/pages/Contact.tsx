@@ -44,7 +44,7 @@ const Contact: React.FC = () => {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError(
         t("contact.form.invalidEmail", { defaultValue: "Please enter a valid email address" }),
@@ -55,38 +55,74 @@ const Contact: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const csrfResponse = await rawHttpClient.get<{ csrfToken: string }>("/api/v1/csrf-token", {
-        withCredentials: true,
-      });
-      const csrfToken = csrfResponse.data.csrfToken;
+      const maxCsrfRetries = 2;
+      let attempt = 0;
 
-      const response = await rawHttpClient.post<SubmitContactResponse>(
-        "/api/v1/contact",
-        {
-          email: email.trim(),
-          topic: topic.trim(),
-          message: message.trim(),
-          _csrf: csrfToken,
-        },
-        {
-          headers: { "x-csrf-token": csrfToken },
-          withCredentials: true,
-        },
-      );
+      while (attempt <= maxCsrfRetries) {
+        try {
+          const csrfResponse = await rawHttpClient.get<{ csrfToken: string }>(
+            "/api/v1/csrf-token",
+            { withCredentials: true },
+          );
+          const csrfToken = csrfResponse.data.csrfToken;
 
-      if (response.data.success) {
-        toast.success(
-          t("contact.form.success", {
-            defaultValue: "Your message has been sent successfully!",
-          }),
-        );
-        if (!user?.email) {
-          setEmail("");
+          if (!csrfToken || typeof csrfToken !== "string") {
+            throw new Error("Invalid CSRF token received");
+          }
+
+          const response = await rawHttpClient.post<SubmitContactResponse>(
+            "/api/v1/contact",
+            {
+              email: email.trim(),
+              topic: topic.trim(),
+              message: message.trim(),
+              _csrf: csrfToken,
+            },
+            {
+              headers: { "x-csrf-token": csrfToken },
+              withCredentials: true,
+            },
+          );
+
+          if (response.data.success) {
+            toast.success(
+              t("contact.form.success", {
+                defaultValue: "Your message has been sent successfully!",
+              }),
+            );
+            if (!user?.email) {
+              setEmail("");
+            }
+            setTopic("");
+            setMessage("");
+          }
+          return;
+        } catch (submitError: unknown) {
+          const csrfError =
+            submitError &&
+            typeof submitError === "object" &&
+            "response" in submitError &&
+            (submitError as { response?: { data?: { error?: { code?: string } } } }).response?.data
+              ?.error?.code === "CSRF_TOKEN_INVALID";
+
+          if (csrfError && attempt < maxCsrfRetries) {
+            attempt += 1;
+            continue;
+          }
+
+          throw submitError;
         }
-        setTopic("");
-        setMessage("");
       }
     } catch (err: unknown) {
+      if (err && typeof err === "object" && "code" in err && err.code === "ERR_NETWORK") {
+        const networkError = t("contact.form.networkError", {
+          defaultValue: "Cannot connect to server. Please check your connection and try again.",
+        });
+        setError(networkError);
+        toast.error(networkError);
+        return;
+      }
+
       let responseError: { code?: string; message?: string } | undefined;
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
