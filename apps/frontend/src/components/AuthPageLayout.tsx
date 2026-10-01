@@ -13,12 +13,7 @@ interface AuthPageLayoutProps {
 
 const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({ title, description, children }) => (
   <PageShell header={<HeaderUtilitiesBar />} footer={<Footer />}>
-    <PageIntro
-      title={title}
-      description={description}
-      priorityLcp
-      brand={<BrandLogo priority />}
-    >
+    <PageIntro title={title} description={description} priorityLcp brand={<BrandLogo priority />}>
       {children}
     </PageIntro>
   </PageShell>
