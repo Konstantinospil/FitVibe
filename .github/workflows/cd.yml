@@ -266,8 +266,8 @@ jobs:
                 exit 1
               fi
             done <<EOF_IMAGES
-${resolved_images}
-EOF_IMAGES
+            ${resolved_images}
+            EOF_IMAGES
 
             if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKEND_IMAGE}" >/dev/null; then
               echo "compose.yml does not resolve backend to ${BACKEND_IMAGE}." >&2
