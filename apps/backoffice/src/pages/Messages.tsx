@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
+import { Button, InputControl, TextareaControl } from "@fitvibe/ui";
 import { messagesApi, type ContactMessage } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
-import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
 
 const MessagesPage: React.FC = () => {
-  const theme = useThemeStore((state) => state.theme);
   const colors = useThemeColors();
   const [page, setPage] = useState(0);
   const [unreadOnly, setUnreadOnly] = useState(false);
