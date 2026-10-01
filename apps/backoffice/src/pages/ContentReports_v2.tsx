@@ -104,7 +104,7 @@ const ContentReportsV2: React.FC = () => {
                       filterStatus === status
                         ? "var(--color-accent)"
                         : "var(--color-text-secondary)",
-                    fontSize: "0.9rem",
+                    fontSize: "var(--type-supporting-size)",
                     fontWeight: "var(--font-weight-semibold)",
                     cursor: "pointer",
                     textTransform: "capitalize",
@@ -173,7 +173,7 @@ const ContentReportsV2: React.FC = () => {
                           style={{
                             padding: "0.25rem 0.75rem",
                             borderRadius: "var(--radius-sm)",
-                            fontSize: "0.8rem",
+                            fontSize: "var(--type-supporting-size)",
                             fontWeight: "var(--font-weight-semibold)",
                             background: `${getStatusColor(report.status)}33`,
                             color: getStatusColor(report.status),
@@ -185,7 +185,7 @@ const ContentReportsV2: React.FC = () => {
                           Reported by @{report.reporterUsername}
                         </span>
                       </div>
-                      <h4 style={{ margin: 0, fontSize: "1.05rem" }}>
+                      <h4 style={{ margin: 0, fontSize: "var(--type-card-title-size)" }}>
                         {report.contentPreview || "Reported content"}
                       </h4>
                       <p className="text-secondary" style={{ margin: "0.25rem 0 0" }}>
