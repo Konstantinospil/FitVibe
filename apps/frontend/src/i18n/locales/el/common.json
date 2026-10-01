@@ -1017,7 +1017,7 @@
     "summary": {
       "sets": "{{count}} σετ",
       "sets_other": "{{count}} σετ",
-      "repetitions": "{{count}} επαναλήψεις"
+      "repetitions": "{{value}} επαναλήψεις"
     },
     "errors": {
       "save": "Δεν ήταν δυνατή η αποθήκευση της προπόνησης.",
