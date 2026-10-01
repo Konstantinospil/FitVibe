@@ -4,6 +4,7 @@ export type FieldControlSize = "sm" | "md" | "lg";
 export type FieldControlVariant = "default" | "error";
 export type InputFieldState = "default" | "focus" | "error" | "disabled";
 export type SelectFieldState = "default" | "focus" | "error" | "disabled";
+export type TextareaFieldState = "default" | "focus" | "error" | "disabled";
 
 const sizeStyles: Record<FieldControlSize, React.CSSProperties> = {
   sm: {
@@ -536,3 +537,128 @@ export const TextareaControl = forwardRef<HTMLTextAreaElement, TextareaControlPr
   },
 );
 TextareaControl.displayName = "TextareaControl";
+
+
+export interface TextareaFieldProps
+  extends Omit<
+    React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+    "style" | "className" | "disabled" | "aria-invalid"
+  > {
+  label: React.ReactNode;
+  helperText?: React.ReactNode;
+  error?: boolean;
+  disabled?: boolean;
+}
+
+export const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>(
+  (
+    {
+      id,
+      label,
+      helperText,
+      error = false,
+      disabled = false,
+      onFocus,
+      onBlur,
+      ...props
+    },
+    ref,
+  ) => {
+    const generatedId = useId();
+    const textareaId = id ?? generatedId;
+    const helperId = helperText ? `${textareaId}-helper` : undefined;
+    const [focused, setFocused] = useState(false);
+
+    const state: TextareaFieldState = disabled
+      ? "disabled"
+      : error
+        ? "error"
+        : focused
+          ? "focus"
+          : "default";
+
+    const borderColor =
+      state === "focus"
+        ? "var(--color-highlight)"
+        : state === "error"
+          ? "var(--color-danger-border)"
+          : "var(--color-input-border)";
+
+    return (
+      <div
+        data-component="textarea-field"
+        data-state={state}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          width: "100%",
+          gap: "var(--space-xs)",
+          opacity: disabled ? "var(--opacity-disabled)" : "var(--opacity-full)",
+        }}
+      >
+        <label
+          htmlFor={textareaId}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            width: "100%",
+            minHeight: "20px",
+            color: "var(--color-text-secondary)",
+            fontFamily: "var(--font-family-body)",
+            fontWeight: "var(--font-weight-regular)",
+            fontSize: "var(--type-control-size)",
+            lineHeight: "var(--type-control-line-height)",
+            letterSpacing: "var(--type-control-letter-spacing)",
+          }}
+        >
+          {label}
+        </label>
+
+        <TextareaControl
+          {...props}
+          id={textareaId}
+          ref={ref}
+          disabled={disabled}
+          variant={error ? "error" : "default"}
+          aria-invalid={error ? "true" : undefined}
+          aria-describedby={helperId}
+          style={{
+            minHeight: "var(--textarea-min-height, 10rem)",
+            borderColor,
+            background:
+              state === "disabled" ? "var(--color-surface-muted)" : "var(--color-input-bg)",
+            opacity: "var(--opacity-full)",
+          }}
+          onFocus={(event) => {
+            setFocused(true);
+            onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            setFocused(false);
+            onBlur?.(event);
+          }}
+        />
+
+        {helperText ? (
+          <div
+            id={helperId}
+            style={{
+              width: "100%",
+              minHeight: "24px",
+              color: error ? "var(--color-danger-text)" : "var(--color-text-secondary)",
+              fontFamily: "var(--font-family-body)",
+              fontWeight: "var(--font-weight-control-large)",
+              fontSize: "var(--type-control-large-size)",
+              lineHeight: "var(--type-control-large-line-height)",
+              letterSpacing: "var(--type-control-large-letter-spacing)",
+            }}
+          >
+            {helperText}
+          </div>
+        ) : null}
+      </div>
+    );
+  },
+);
+TextareaField.displayName = "TextareaField";
