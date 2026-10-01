@@ -98,7 +98,9 @@ const AdminDashboardV2: React.FC = () => {
                 padding: isExpanded ? "1rem" : "0.8rem",
                 borderRadius: "var(--radius-md)",
                 border: `1px solid ${isActive ? "var(--color-accent)" : "var(--color-border)"}`,
-                background: isActive ? "var(--surface-success-subtle)" : "var(--color-surface-glass)",
+                background: isActive
+                  ? "var(--surface-success-subtle)"
+                  : "var(--color-surface-glass)",
                 color: "inherit",
                 display: "grid",
                 gap: "0.5rem",
