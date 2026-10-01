@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { VibeBadge } from "../../src/components/ui/VibeBadge";
+import { VibeBadge } from "../../src/components/domain/VibeBadge";
 
 describe("VibeBadge", () => {
   it("uses default and hover as the only visual states", () => {

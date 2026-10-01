@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import "../../src/styles/global.css";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../src/components/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../packages/ui/src";
 
 describe("Card", () => {
   it("renders header, title, description, and content", () => {
