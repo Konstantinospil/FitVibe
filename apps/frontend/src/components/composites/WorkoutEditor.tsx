@@ -543,7 +543,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                     supporting={
                       exerciseDraft.repetitions
                         ? t("workoutEditor.summary.repetitions", {
-                            count: exerciseDraft.repetitions,
+                            value: exerciseDraft.repetitions,
                           })
                         : undefined
                     }
