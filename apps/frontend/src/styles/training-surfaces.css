@@ -1,0 +1,416 @@
+.training-page {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-lg);
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.training-grid {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-md);
+  align-items: stretch;
+}
+
+.training-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.training-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.training-panel__body {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+}
+
+.training-panel__footer {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.training-panel__footer > * {
+  flex: 1;
+}
+
+.training-status-dot {
+  width: var(--space-sm);
+  height: var(--space-sm);
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--color-info-text);
+}
+
+.training-status-dot--success {
+  background: var(--color-success);
+}
+
+.training-status-dot--warning {
+  background: var(--color-warning-text);
+}
+
+.training-status-dot--danger {
+  background: var(--color-danger);
+}
+
+.training-summary-card {
+  min-width: 0;
+  padding: var(--space-sm);
+  gap: var(--space-xs);
+}
+
+.training-summary-card__top {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.training-summary-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.training-summary-card__meta,
+.training-summary-card__supporting,
+.training-summary-card__trailing {
+  color: var(--color-text-muted);
+  font-family: var(--font-family-body);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+  letter-spacing: var(--type-supporting-letter-spacing);
+}
+
+.training-summary-card__title {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  letter-spacing: var(--type-card-title-letter-spacing);
+  font-weight: var(--font-weight-semibold);
+}
+
+.training-summary-card__icon {
+  flex: none;
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.training-empty,
+.training-error {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.training-error {
+  color: var(--color-danger-text);
+  background: var(--surface-danger-subtle);
+  border: 1px solid var(--border-danger-subtle);
+  border-radius: var(--radius-md);
+}
+
+.training-scroll {
+  min-height: 0;
+  max-height: 68vh;
+  overflow: auto;
+  padding-right: var(--space-xs);
+}
+
+.training-action-bar {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.training-action-bar > * {
+  flex: 1;
+}
+
+.home-surface__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 2fr);
+}
+
+.home-surface__metric {
+  align-self: start;
+}
+
+.home-surface__feed-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.home-surface__feed-card {
+  min-height: 100%;
+}
+
+.home-surface__feed-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.home-surface__avatar {
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--color-secondary-on);
+  background: var(--color-secondary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.home-surface__feed-stats {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.home-surface__metric-value {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-primary-metric-size);
+  line-height: var(--type-primary-metric-line-height);
+  letter-spacing: var(--type-primary-metric-letter-spacing);
+  font-weight: var(--font-weight-semibold);
+}
+
+.calendar-surface__grid {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.calendar-month__heading,
+.calendar-month__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.calendar-month__heading {
+  flex-wrap: wrap;
+}
+
+.calendar-month__title {
+  display: grid;
+  gap: var(--space-xs);
+  text-align: center;
+}
+
+.calendar-month__matrix {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.calendar-month__weekday,
+.calendar-month__cell {
+  min-width: 0;
+  min-height: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-month__weekday {
+  padding: var(--space-xs);
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.calendar-month__cell {
+  background: var(--color-surface);
+}
+
+.calendar-month__cell > * {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-month__cell--outside {
+  background: var(--color-surface-muted);
+}
+
+.calendar-month__selected {
+  outline: 2px solid var(--color-highlight);
+  outline-offset: -2px;
+}
+
+.calendar-surface__selected-day {
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.calendar-surface__selected-title {
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.workout-editor {
+  max-width: 100%;
+}
+
+.workout-editor__shell {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.workout-editor__titlebar,
+.workout-editor__general,
+.workout-editor__metric-row,
+.workout-editor__activity-toolbar,
+.workout-editor__activity-fields,
+.workout-editor__rest-row,
+.workout-editor__bottom-actions {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.workout-editor__titlebar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.workout-editor__general {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.workout-editor__metric-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workout-editor__metric {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.workout-editor__metric-label {
+  color: var(--color-text-secondary);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.workout-editor__metric-value {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-secondary-metric-size);
+  line-height: var(--type-secondary-metric-line-height);
+  letter-spacing: var(--type-secondary-metric-letter-spacing);
+  font-weight: var(--font-weight-semibold);
+}
+
+.workout-editor__main {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 3fr);
+}
+
+.workout-editor__activity-toolbar {
+  grid-template-columns: minmax(0, 1fr) minmax(max-content, 1fr);
+}
+
+.workout-editor__activity-fields,
+.workout-editor__rest-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workout-editor__rest-row {
+  padding: var(--space-sm);
+  background: var(--color-info-text);
+  color: var(--color-info-bg);
+  border-radius: var(--radius-md);
+}
+
+.workout-editor__overview-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.workout-editor__overview-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.workout-editor__bottom-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+@media (max-width: 80rem) {
+  .home-surface__grid,
+  .calendar-surface__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+
+  .home-surface__feed,
+  .calendar-surface__month {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 56rem) {
+  .training-page {
+    padding: var(--space-md);
+  }
+
+  .home-surface__grid,
+  .calendar-surface__grid,
+  .workout-editor__main,
+  .workout-editor__general {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-surface__feed-list,
+  .workout-editor__metric-row,
+  .workout-editor__activity-fields,
+  .workout-editor__rest-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-month__matrix {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 40rem) {
+  .training-action-bar,
+  .workout-editor__bottom-actions,
+  .workout-editor__activity-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    flex-direction: column;
+  }
+}
