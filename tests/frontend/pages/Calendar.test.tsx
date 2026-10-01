@@ -129,7 +129,7 @@ describe("Calendar", () => {
 
   it("selects a day and exposes its sessions", async () => {
     renderCalendar();
-    await screen.findByText("Today Plan");
+    expect(await screen.findAllByText("Today Plan")).not.toHaveLength(0);
 
     const dayLabel = String(tomorrow.getDate()).padStart(2, "0");
     const dayButton = screen.getAllByRole("button").find((button) => button.textContent === dayLabel);
