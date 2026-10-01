@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button, InputControl } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
@@ -96,7 +97,7 @@ const Login: React.FC = () => {
             <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
               Email
             </label>
-            <input
+            <InputControl
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -104,7 +105,7 @@ const Login: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
+                background: "var(--color-input-bg)",
                 border: `1px solid ${colors.border}`,
                 borderRadius: "var(--radius-sm)",
                 color: colors.text,
@@ -116,7 +117,7 @@ const Login: React.FC = () => {
             <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
               Password
             </label>
-            <input
+            <InputControl
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -124,7 +125,7 @@ const Login: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
+                background: "var(--color-input-bg)",
                 border: `1px solid ${colors.border}`,
                 borderRadius: "var(--radius-sm)",
                 color: colors.text,
@@ -133,11 +134,17 @@ const Login: React.FC = () => {
             />
           </div>
           {error && (
-            <div style={{ color: colors.error, marginBottom: "1rem", fontSize: "var(--type-supporting-size)" }}>
+            <div
+              style={{
+                color: colors.error,
+                marginBottom: "1rem",
+                fontSize: "var(--type-supporting-size)",
+              }}
+            >
               {error}
             </div>
           )}
-          <button
+          <Button
             type="submit"
             disabled={loading}
             style={{
@@ -152,7 +159,7 @@ const Login: React.FC = () => {
             }}
           >
             {loading ? "Logging in..." : "Login"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>
