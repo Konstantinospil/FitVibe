@@ -8,7 +8,10 @@ import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryC
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, options?: { date?: string }) =>
+      key === "calendarSurface.dayLabel" && options?.date
+        ? `${key}:${options.date}`
+        : key,
     i18n: { language: "en" },
   }),
 }));
@@ -135,16 +138,10 @@ describe("Calendar", () => {
       dateStyle: "full",
     }).format(tomorrow);
     const dayButton = screen.getByRole("button", {
-      name: "calendarSurface.dayLabel",
+      name: `calendarSurface.dayLabel:${fullDate}`,
     });
-    const matchingDayButton = screen
-      .getAllByRole("button", { name: "calendarSurface.dayLabel" })
-      .find((button) => button.getAttribute("aria-label")?.includes(fullDate));
 
-    expect(dayButton).toBeInTheDocument();
-    expect(matchingDayButton).toBeDefined();
-
-    fireEvent.click(matchingDayButton as HTMLButtonElement);
+    fireEvent.click(dayButton);
 
     await waitFor(() => {
       expect(screen.getAllByText("Tomorrow Plan").length).toBeGreaterThan(0);
