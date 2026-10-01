@@ -51,7 +51,7 @@ const CloseIcon = () => (
   </svg>
 );
 
-export interface MessageCardProps extends Omit<CardProps, "children"> {
+export interface MessageCardProps extends Omit<CardProps, "children" | "title"> {
   tone?: MessageTone;
   title: React.ReactNode;
   description?: React.ReactNode;
@@ -152,7 +152,7 @@ export const MessageCard: React.FC<MessageCardProps> = ({
   );
 };
 
-export interface WorkoutSummaryCardProps extends Omit<CardProps, "children"> {
+export interface WorkoutSummaryCardProps extends Omit<CardProps, "children" | "title"> {
   title: React.ReactNode;
   timestamp?: React.ReactNode;
   metricLabel?: React.ReactNode;
@@ -292,7 +292,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   </Card>
 );
 
-export interface EventCardProps extends Omit<CardProps, "children"> {
+export interface EventCardProps extends Omit<CardProps, "children" | "title"> {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   icon?: React.ReactNode;
@@ -363,7 +363,7 @@ export const EventCard: React.FC<EventCardProps> = ({
   </Card>
 );
 
-export interface ConsentCardProps extends Omit<CardProps, "children"> {
+export interface ConsentCardProps extends Omit<CardProps, "children" | "title" | "onChange"> {
   category?: React.ReactNode;
   requiredLabel?: React.ReactNode;
   title: React.ReactNode;
