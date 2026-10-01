@@ -8,6 +8,7 @@ export interface TextLinkProps extends React.HTMLAttributes<HTMLElement> {
   to?: string;
   target?: string;
   rel?: string;
+  type?: "button" | "submit" | "reset";
   inactive?: boolean;
   children: React.ReactNode;
 }
