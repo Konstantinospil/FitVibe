@@ -1007,7 +1007,7 @@
     "summary": {
       "sets": "{{count}} serie",
       "sets_other": "{{count}} series",
-      "repetitions": "{{count}} repeticiones"
+      "repetitions": "{{value}} repeticiones"
     },
     "errors": {
       "save": "No se pudo guardar el entrenamiento.",
