@@ -46,8 +46,7 @@ export const TextLink = forwardRef<HTMLElement, TextLinkProps>(
       <Component
         {...props}
         ref={ref}
-        href={Component === "a" ? href : undefined}
-        to={Component !== "a" ? to : undefined}
+        {...(Component === "a" ? { href } : { to })}
         target={target}
         rel={rel}
         aria-disabled={inactive || undefined}
