@@ -113,9 +113,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="app-header__inner">
         <div className="app-header__brand">
           <BrandLogo size="sm" priority />
-          {variant === "writing" ? (
-            <span className="app-header__slogan">{brandSlogan}</span>
-          ) : null}
+          {variant === "writing" ? <span className="app-header__slogan">{brandSlogan}</span> : null}
         </div>
 
         <nav
