@@ -220,9 +220,9 @@ export const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
               background:
                 state === "disabled" ? "var(--color-surface-muted)" : "var(--color-input-bg)",
               opacity: "var(--opacity-full)",
-              paddingRight: endAdornment
-                ? "calc(var(--space-md) + var(--space-xl))"
-                : "var(--space-md)",
+              padding: endAdornment
+                ? "var(--space-xs) calc(var(--space-md) + var(--space-xl)) var(--space-xs) var(--space-md)"
+                : "var(--space-xs) var(--space-md)",
             }}
             onFocus={(event) => {
               setFocused(true);
