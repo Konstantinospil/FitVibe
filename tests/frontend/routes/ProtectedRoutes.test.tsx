@@ -26,6 +26,10 @@ vi.mock("../../../apps/frontend/src/pages/Home", () => ({
   default: () => <div>Home Page</div>,
 }));
 
+vi.mock("../../../apps/frontend/src/pages/Calendar", () => ({
+  default: () => <div>Calendar Page</div>,
+}));
+
 vi.mock("../../../apps/frontend/src/pages/Terms", () => ({
   default: () => <div>Terms Page</div>,
 }));
@@ -75,6 +79,11 @@ describe("ProtectedRoutes", () => {
   it("renders Home at the authenticated root", async () => {
     renderRoute("/");
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
+  });
+
+  it("renders Calendar at the active calendar route", async () => {
+    renderRoute("/calendar");
+    expect(await screen.findByText("Calendar Page")).toBeInTheDocument();
   });
 
   it.each([
