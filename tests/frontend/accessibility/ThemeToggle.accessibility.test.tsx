@@ -184,9 +184,8 @@ describe("ThemeToggle Accessibility", () => {
       const styles = button?.getAttribute("style");
 
       // Should use semantic color variables
-      expect(styles).toContain("--color-surface-glass");
-      expect(styles).toContain("--color-border");
-      expect(styles).toContain("--color-text-secondary");
+      expect(styles).toContain("--color-secondary");
+      expect(styles).toContain("--color-secondary-on");
     });
 
     it("should have minimum touch target size", () => {
