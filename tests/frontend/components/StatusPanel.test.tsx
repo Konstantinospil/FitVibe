@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { StatusPanel } from "../../src/components/composites/StatusPanel";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { RetryErrorPanel, StatusPanel } from "../../src/components/composites/StatusPanel";
 
 describe("StatusPanel", () => {
   it.each([
@@ -35,5 +35,19 @@ describe("StatusPanel", () => {
     rerender(<StatusPanel kind="success" />);
     expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
     expect(container.querySelector("[data-component='form-feedback']")).not.toBeInTheDocument();
+  });
+  it("exposes retry behavior through the active composite", () => {
+    const onRetry = vi.fn();
+    render(
+      <RetryErrorPanel
+        message="Could not load data"
+        retryLabel="Retry"
+        onRetry={onRetry}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Could not load data")).toBeInTheDocument();
   });
 });
