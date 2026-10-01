@@ -44,7 +44,7 @@ const Contact: React.FC = () => {
       return;
     }
 
-    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError(
         t("contact.form.invalidEmail", { defaultValue: "Please enter a valid email address" }),
