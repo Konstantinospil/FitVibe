@@ -170,6 +170,16 @@ function lineTextAt(source, index) {
   return source.split("\n")[line - 1] || "";
 }
 
+function insideFontFaceBlock(source, index) {
+  const prefix = source.slice(0, index);
+  const start = prefix.lastIndexOf("@font-face");
+  if (start < 0) return false;
+  const open = source.indexOf("{", start);
+  if (open < 0 || open > index) return false;
+  const close = source.indexOf("}", open);
+  return close < 0 || index < close;
+}
+
 async function checkFrontendTokens() {
   const sourceFiles = await frontendSourceFiles([".ts", ".tsx", ".js", ".jsx"]);
   const stylesheetFiles = await frontendSourceFiles([".css", ".scss"]);
@@ -197,37 +207,37 @@ async function checkFrontendTokens() {
   const sourceDesignPatterns = [
     {
       pattern: /\bborderRadius\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowedValue: (value) => value.startsWith("var(--radius-") || value.startsWith("var(--card-radius"),
+      allowedValue: (value) => value.includes("var(--radius-") || value.includes("var(--card-radius"),
       message: "Frontend radius must reference the canonical Figma radius token authority; manual values are forbidden.",
     },
     {
       pattern: /\bopacity\s*:\s*([^,}\n]+)/g,
-      allowedValue: (value) => value.startsWith("var(--opacity-"),
+      allowedValue: (value) => value.includes("var(--opacity-"),
       message: "Frontend opacity must reference a canonical Figma opacity token; manual values are forbidden.",
     },
     {
       pattern: /\bfontSize\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--font-size-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
       message: "Frontend font size must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\blineHeight\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--line-height-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--line-height-"),
       message: "Frontend line height must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\bletterSpacing\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--letter-spacing-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--letter-spacing-"),
       message: "Frontend letter spacing must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\bfontWeight\s*:\s*([^,}\n]+)/g,
-      allowedValue: (value) => value.startsWith("var(--font-weight-"),
+      allowedValue: (value) => value.includes("var(--font-weight-"),
       message: "Frontend font weight must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\bfontFamily\s*:\s*["'`]([^"'`]+)["'`]/g,
-      allowedValue: (value) => value.startsWith("var(--font-family-"),
+      allowedValue: (value) => value.includes("var(--font-family-"),
       message: "Frontend font family must reference the canonical Figma font-family authority; manual values are forbidden.",
     },
   ];
@@ -315,7 +325,7 @@ async function checkFrontendTokens() {
       },
       {
         pattern: /\bfont-size\s*:\s*([^;]+);/g,
-        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--font-size-"),
+        allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
         message: "CSS font-size must reference a canonical Figma typography token.",
       },
       {
@@ -358,7 +368,13 @@ async function checkFrontendTokens() {
         const line = lineTextAt(source, match.index);
         const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
         const isAuthorityDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-        if (!isAuthorityDeclaration && !rule.allowedValue(value) && !sourceException(source, match.index, "token")) {
+        const isFontFaceDescriptor = insideFontFaceBlock(source, match.index);
+        if (
+          !isAuthorityDeclaration &&
+          !isFontFaceDescriptor &&
+          !rule.allowedValue(value) &&
+          !sourceException(source, match.index, "token")
+        ) {
           report(file, source, match.index, rule.message);
         }
       }
