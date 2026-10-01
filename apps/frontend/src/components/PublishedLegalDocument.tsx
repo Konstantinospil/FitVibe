@@ -30,10 +30,18 @@ function compareNatural(a: string, b: string): number {
   for (let index = 0; index < length; index += 1) {
     const l = left[index];
     const r = right[index];
-    if (l === undefined) return -1;
-    if (r === undefined) return 1;
-    if (l === r) continue;
-    if (typeof l === "number" && typeof r === "number") return l - r;
+    if (l === undefined) {
+      return -1;
+    }
+    if (r === undefined) {
+      return 1;
+    }
+    if (l === r) {
+      continue;
+    }
+    if (typeof l === "number" && typeof r === "number") {
+      return l - r;
+    }
     return String(l).localeCompare(String(r));
   }
   return 0;
@@ -47,7 +55,9 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
   const headers = isRecord(value.headers) ? Object.values(value.headers) : [];
   const rows = isRecord(value.rows) ? Object.values(value.rows) : [];
 
-  if (headers.length === 0 || rows.length === 0) return null;
+  if (headers.length === 0 || rows.length === 0) {
+    return null;
+  }
 
   return (
     <div key={key} style={{ overflowX: "auto", marginBottom: "var(--space-md)" }}>
@@ -131,7 +141,9 @@ function renderObject(
   key: string,
   section: boolean,
 ): React.ReactNode {
-  if ("headers" in value && "rows" in value) return renderTable(value, key);
+  if ("headers" in value && "rows" in value) {
+    return renderTable(value, key);
+  }
 
   const itemTitle = typeof value.title === "string" ? value.title : null;
   const entries = Object.entries(value)
@@ -155,9 +167,15 @@ function renderObject(
 }
 
 function renderValue(value: unknown, key: string, sourceKey: string): React.ReactNode {
-  if (value === null || value === undefined) return null;
-  if (Array.isArray(value)) return renderArray(value, key);
-  if (isRecord(value)) return renderObject(value, key, /^section\d+$/i.test(sourceKey));
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (Array.isArray(value)) {
+    return renderArray(value, key);
+  }
+  if (isRecord(value)) {
+    return renderObject(value, key, /^section\d+$/i.test(sourceKey));
+  }
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
     return (
       <p key={key} className="section-text">
@@ -210,12 +228,16 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
       setLoadFailed(false);
       try {
         const current = await getPublishedLegalDocument(documentType, language);
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         setPublication(current);
 
         if (current.legacyWithoutSnapshot || !current.content) {
           await ensureLegalTranslationsLoaded();
-          if (cancelled) return;
+          if (cancelled) {
+            return;
+          }
           const bundle = i18n.getResourceBundle(language, documentType) as unknown;
           setLegacyContent(isRecord(bundle) ? bundle : null);
         } else {
@@ -228,7 +250,9 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
           setLoadFailed(true);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
