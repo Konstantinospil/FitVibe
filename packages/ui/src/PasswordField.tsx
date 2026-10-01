@@ -75,11 +75,6 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
           ? "var(--color-danger-border)"
           : "var(--color-input-border)";
 
-    const show = () => {
-      if (!disabled) setVisible(true);
-    };
-    const hide = () => setVisible(false);
-
     return (
       <div
         data-component="password-field"
@@ -157,25 +152,9 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             disabled={disabled}
             title={visible ? hidePasswordLabel : showPasswordLabel}
             data-slot="password-visibility-toggle"
-            onMouseDown={(event) => {
-              event.preventDefault();
-              show();
-            }}
-            onMouseUp={hide}
-            onMouseLeave={hide}
-            onTouchStart={show}
-            onTouchEnd={hide}
-            onTouchCancel={hide}
-            onKeyDown={(event) => {
-              if (event.key === " " || event.key === "Enter") {
-                event.preventDefault();
-                show();
-              }
-            }}
-            onKeyUp={(event) => {
-              if (event.key === " " || event.key === "Enter") {
-                event.preventDefault();
-                hide();
+            onClick={() => {
+              if (!disabled) {
+                setVisible((current) => !current);
               }
             }}
             onBlur={hide}
