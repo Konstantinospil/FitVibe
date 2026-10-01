@@ -268,17 +268,37 @@ async function checkFrontendTokens() {
 
     const rawAlphaPattern = /rgba?\([^)]*?,\s*(0(?:\.\d+)?|1(?:\.0+)?)\s*\)/g;
     for (const match of source.matchAll(rawAlphaPattern)) {
+      const line = lineTextAt(source, match.index);
+      const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+      if (isTokenDeclaration) {
+        continue;
+      }
       const alpha = Number(match[1]);
       if (![1, 0.7, 0.45].includes(alpha)) {
-        report(file, source, match.index, "Transparency must use only Figma opacity levels: 100%, 70%, or 45%.");
+        report(
+          file,
+          source,
+          match.index,
+          "Transparency must use only Figma opacity levels: 100%, 70%, or 45%.",
+        );
       }
     }
 
     const rawColorMixTransparency = /color-mix\([^)]*?\s(\d+(?:\.\d+)?)%,\s*transparent\)/g;
     for (const match of source.matchAll(rawColorMixTransparency)) {
+      const line = lineTextAt(source, match.index);
+      const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+      if (isTokenDeclaration) {
+        continue;
+      }
       const percent = Number(match[1]);
       if (![100, 70, 45].includes(percent)) {
-        report(file, source, match.index, "color-mix transparency must use a Figma transparency token (100%, 70%, or 45%).");
+        report(
+          file,
+          source,
+          match.index,
+          "color-mix transparency must use a Figma transparency token (100%, 70%, or 45%).",
+        );
       }
     }
 
