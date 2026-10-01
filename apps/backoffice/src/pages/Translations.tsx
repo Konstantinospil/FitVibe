@@ -346,7 +346,13 @@ const TranslationsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: "var(--color-text-primary)", marginBottom: "2rem", fontSize: "var(--type-page-title-size)" }}>
+      <h1
+        style={{
+          color: "var(--color-text-primary)",
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
         Translations
       </h1>
 
@@ -926,7 +932,12 @@ const TranslationsPage: React.FC = () => {
                           }}
                         >
                           {isEditingThisKey ? (
-                            <div style={{ color: "var(--color-accent)", fontSize: "var(--type-supporting-size)" }}>
+                            <div
+                              style={{
+                                color: "var(--color-accent)",
+                                fontSize: "var(--type-supporting-size)",
+                              }}
+                            >
                               Editing...
                             </div>
                           ) : (
