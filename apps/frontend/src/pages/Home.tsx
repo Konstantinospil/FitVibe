@@ -423,10 +423,7 @@ const Home: React.FC = () => {
       className="flex flex--column p-xl flex--gap-xl"
       style={{ flex: 1, background: "var(--color-bg)" }}
     >
-      <div
-        className="grid flex--gap-xl w-full"
-        style={{ gridTemplateColumns: "1fr 400px", maxWidth: "1400px", margin: "0 auto" }}
-      >
+      <div className="grid flex--gap-xl w-full home-vibe-layout">
         {/* Left Side - Vibe Buttons */}
         <div className="flex flex--column flex--gap-xl">
           <div>
@@ -440,7 +437,7 @@ const Home: React.FC = () => {
           </div>
 
           {/* Vibe Buttons Grid */}
-          <div className="grid p-xl flex--gap-xl" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          <div className="grid p-xl flex--gap-xl home-vibe-grid">
             {vibes.length > 0 ? (
               vibes.map((vibe) => (
                 <div key={vibe.key} className="flex flex--column flex--align-center flex--gap-md">
