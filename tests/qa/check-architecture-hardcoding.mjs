@@ -374,6 +374,86 @@ async function checkFrontendArchiveBoundary() {
   }
 }
 
+async function checkFrontendPyramid() {
+  const frontendRoot = path.join(ROOT, "apps/frontend/src");
+  const sourceFiles = (await walk(frontendRoot)).filter((file) => /\.(?:ts|tsx|js|jsx)$/.test(file));
+
+  const forbiddenAliasRoot = normalize(path.join("apps/frontend/src/components/ui"));
+  const importPattern =
+    /(?:from\s*["']([^"']+)["']|import\s*\(\s*["']([^"']+)["']\s*\)|require\s*\(\s*["']([^"']+)["']\s*\)|import\s*["']([^"']+)["'])/g;
+
+  for (const file of sourceFiles) {
+    const rel = normalize(path.relative(ROOT, file));
+    const source = await fs.readFile(file, "utf8");
+
+    if (rel.startsWith(forbiddenAliasRoot + "/")) {
+      report(
+        file,
+        source,
+        0,
+        "Alias-only app UI layers are forbidden. Generic primitives belong in @fitvibe/ui; app-specific behavior belongs in composites or domain components.",
+      );
+    }
+
+    for (const match of source.matchAll(importPattern)) {
+      const specifier = String(match[1] ?? match[2] ?? match[3] ?? match[4] ?? "").replaceAll("\\", "/");
+
+      if (specifier.includes("/components/ui") || specifier.endsWith("/components/ui")) {
+        report(
+          file,
+          source,
+          match.index,
+          "Do not import through an app-local UI alias. Import generic primitives from @fitvibe/ui or a real composite/domain component.",
+        );
+      }
+
+      if (rel.includes("/components/composites/") && /(?:^|\/)pages(?:\/|$)/.test(specifier)) {
+        report(
+          file,
+          source,
+          match.index,
+          "Composite components must not depend on pages. Pyramid direction is primitives -> composites -> sections/layouts -> pages.",
+        );
+      }
+
+      if (rel.includes("/components/domain/") && /(?:^|\/)(?:pages|layouts|composites)(?:\/|$)/.test(specifier)) {
+        report(
+          file,
+          source,
+          match.index,
+          "Domain components must stay below layouts/pages and may not depend upward on composites, layouts, or pages.",
+        );
+      }
+
+      if (rel.includes("/layouts/") && /(?:^|\/)pages(?:\/|$)/.test(specifier)) {
+        report(
+          file,
+          source,
+          match.index,
+          "Layouts must not import pages. Pages compose through routes/outlets, not upward imports.",
+        );
+      }
+    }
+  }
+
+  const packageUiRoot = path.join(ROOT, "packages/ui/src");
+  for (const file of await walk(packageUiRoot)) {
+    if (!/\.(?:ts|tsx|js|jsx)$/.test(file)) continue;
+    const source = await fs.readFile(file, "utf8");
+    for (const match of source.matchAll(importPattern)) {
+      const specifier = String(match[1] ?? match[2] ?? match[3] ?? match[4] ?? "").replaceAll("\\", "/");
+      if (specifier.includes("apps/frontend")) {
+        report(
+          file,
+          source,
+          match.index,
+          "@fitvibe/ui is the base of the frontend pyramid and must never depend on the application layer.",
+        );
+      }
+    }
+  }
+}
+
 function rawTagType(tag) {
   const typeMatch = tag.match(/\btype\s*=\s*["']([^"']+)["']/i);
   return typeMatch ? typeMatch[1].toLowerCase() : "text";
@@ -437,6 +517,7 @@ if (mode === "all" || mode === "frontend-tokens") {
 }
 if (mode === "all" || mode === "frontend-reuse") {
   await checkFrontendArchiveBoundary();
+  await checkFrontendPyramid();
   await checkFrontendReuse();
 }
 
