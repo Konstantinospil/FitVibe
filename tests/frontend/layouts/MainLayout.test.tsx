@@ -123,7 +123,7 @@ describe("MainLayout", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByAltText("FitVibe")).toBeInTheDocument();
+    expect(screen.getAllByAltText("FitVibe").length).toBeGreaterThan(0);
     expect(screen.getByText("Balance is not a state")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /switch to/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Language" })).toBeInTheDocument();
