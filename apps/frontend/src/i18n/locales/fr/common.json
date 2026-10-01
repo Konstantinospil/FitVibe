@@ -1007,7 +1007,7 @@
     "summary": {
       "sets": "{{count}} série",
       "sets_other": "{{count}} séries",
-      "repetitions": "{{count}} répétitions"
+      "repetitions": "{{value}} répétitions"
     },
     "errors": {
       "save": "L’entraînement n’a pas pu être enregistré.",
