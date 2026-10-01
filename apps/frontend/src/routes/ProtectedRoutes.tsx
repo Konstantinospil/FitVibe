@@ -1,10 +1,10 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import {
-  QueryClientProvider,
   HydrationBoundary,
-  type QueryClient,
+  QueryClientProvider,
   type DehydratedState,
+  type QueryClient,
 } from "@tanstack/react-query";
 import { queryClient as defaultQueryClient } from "../lib/queryClient";
 import { ensurePrivateTranslationsLoaded } from "../i18n/config";
@@ -13,7 +13,6 @@ const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
 const MainLayout = lazy(() => import("../layouts/MainLayout"));
 const Home = lazy(() => import("../pages/Home"));
 const Calendar = lazy(() => import("../pages/Calendar"));
-const WorkoutEditor = lazy(() => import("../pages/WorkoutEditor"));
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
@@ -35,7 +34,9 @@ type ProtectedRoutesProps = {
 
 function getDehydratedState(): DehydratedState | undefined {
   if (typeof window !== "undefined") {
-    const windowWithState = window as unknown as { __REACT_QUERY_STATE__?: DehydratedState };
+    const windowWithState = window as unknown as {
+      __REACT_QUERY_STATE__?: DehydratedState;
+    };
     if (windowWithState.__REACT_QUERY_STATE__) {
       const state = windowWithState.__REACT_QUERY_STATE__;
       delete windowWithState.__REACT_QUERY_STATE__;
@@ -71,7 +72,6 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
           <Route element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="calendar" element={<Calendar />} />
-            <Route path="workout-editor" element={<WorkoutEditor />} />
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="terms-reacceptance" element={<TermsReacceptance />} />
