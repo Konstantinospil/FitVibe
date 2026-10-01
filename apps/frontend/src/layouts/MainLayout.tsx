@@ -6,7 +6,7 @@ import AppHeader from "../components/AppHeader";
 import { useTranslation } from "react-i18next";
 import { PageShell } from "./PageShell";
 
-const ACTIVE_APP_PATHS = ["/", "/calendar"] as const;
+const ACTIVE_APP_PATHS = ["/"] as const;
 
 const MainLayout: React.FC = () => {
   const { signOut } = useAuth();
