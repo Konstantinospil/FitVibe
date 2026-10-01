@@ -208,7 +208,7 @@ const MessagesPage: React.FC = () => {
               <thead>
                 <tr
                   style={{
-                    background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
+                    background: "var(--color-surface-muted)",
                   }}
                 >
                   <th
@@ -289,7 +289,7 @@ const MessagesPage: React.FC = () => {
                     key={message.id}
                     style={{
                       borderBottom: `1px solid ${colors.border}`,
-                      background: !message.readAt ? "rgba(251, 149, 29, 0.05)" : "transparent",
+                      background: !message.readAt ? "color-mix(in srgb, var(--vibe-strength) var(--transparency-disabled), transparent)" : "transparent",
                     }}
                   >
                     <td style={{ padding: "1rem", color: colors.text }}>{message.email}</td>
@@ -321,12 +321,12 @@ const MessagesPage: React.FC = () => {
                       {message.respondedAt ? (
                         new Date(message.respondedAt).toLocaleString()
                       ) : (
-                        <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>-</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>-</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {message.readAt ? (
-                        <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>Read</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Read</span>
                       ) : (
                         <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
                       )}
@@ -526,7 +526,7 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: "var(--color-text-muted)",
                   fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
@@ -541,7 +541,7 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: "var(--color-text-muted)",
                   fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
@@ -556,7 +556,7 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: "var(--color-text-muted)",
                   fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
@@ -571,7 +571,7 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: "var(--color-text-muted)",
                   fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
@@ -580,7 +580,7 @@ const MessagesPage: React.FC = () => {
               </div>
               <div style={{ marginBottom: "1rem" }}>
                 {selectedMessage.readAt ? (
-                  <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>Read</span>
+                  <span style={{ color: "var(--color-text-muted)" }}>Read</span>
                 ) : (
                   <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
                 )}
@@ -590,7 +590,7 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1.5rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
+                  color: "var(--color-text-muted)",
                   fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.5rem",
                 }}
@@ -601,10 +601,10 @@ const MessagesPage: React.FC = () => {
                 style={{
                   color: colors.text,
                   fontSize: "var(--type-body-size)",
-                  lineHeight: "1.6",
+                  lineHeight: "var(--type-body-line-height)",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
-                  background: "#0D1A15",
+                  background: "var(--color-input-bg)",
                   padding: "1rem",
                   borderRadius: "var(--radius-sm)",
                   border: `1px solid ${colors.border}`,
@@ -621,7 +621,7 @@ const MessagesPage: React.FC = () => {
               <div style={{ marginBottom: "1.5rem" }}>
                 <div
                   style={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--color-text-muted)",
                     fontSize: "var(--type-supporting-size)",
                     marginBottom: "0.5rem",
                   }}
@@ -632,10 +632,10 @@ const MessagesPage: React.FC = () => {
                   style={{
                     color: colors.text,
                     fontSize: "var(--type-body-size)",
-                    lineHeight: "1.6",
+                    lineHeight: "var(--type-body-line-height)",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
-                    background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
+                    background: "var(--color-surface-muted)",
                     padding: "1rem",
                     borderRadius: "var(--radius-sm)",
                     border: `1px solid ${colors.border}`,
@@ -653,7 +653,7 @@ const MessagesPage: React.FC = () => {
               <div style={{ marginBottom: "1.5rem" }}>
                 <div
                   style={{
-                    color: "rgba(255, 255, 255, 0.7)",
+                    color: "var(--color-text-muted)",
                     fontSize: "var(--type-supporting-size)",
                     marginBottom: "0.5rem",
                   }}
@@ -668,7 +668,7 @@ const MessagesPage: React.FC = () => {
                   style={{
                     width: "100%",
                     padding: "1rem",
-                    background: theme === "light" ? "var(--color-surface-muted)" : "#1A1A1A",
+                    background: "var(--color-surface-muted)",
                     border: `1px solid ${colors.border}`,
                     borderRadius: "var(--radius-sm)",
                     color: colors.text,
