@@ -439,7 +439,10 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
                   option.code === validLanguage || index === focusedIndex
                     ? "var(--color-surface-muted)"
                     : "transparent",
-                fontWeight: option.code === validLanguage ? "var(--font-weight-semibold)" : "var(--font-weight-regular)",
+                fontWeight:
+                  option.code === validLanguage
+                    ? "var(--font-weight-semibold)"
+                    : "var(--font-weight-regular)",
               }}
               onMouseEnter={() => {
                 setFocusedIndex(index);
