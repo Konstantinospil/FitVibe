@@ -12,6 +12,7 @@ import {
 import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 import { logger } from "../utils/logger";
 import WorkoutEditor, { type WorkoutEditorAction } from "../components/composites/WorkoutEditor";
+import { RetryErrorPanel } from "../components/composites/StatusPanel";
 
 const startOfWeek = (date: Date) => {
   const copy = new Date(date);
@@ -210,7 +211,14 @@ const CalendarPage: React.FC = () => {
           </div>
 
           {sessions.isError ? (
-            <div className="training-error">{t("calendarSurface.errors.load")}</div>
+            <RetryErrorPanel
+              message={t("calendarSurface.errors.load")}
+              retryLabel={t("actions.retry")}
+              onRetry={() => {
+                void sessions.refetch();
+              }}
+              isRetrying={sessions.isFetching}
+            />
           ) : null}
 
           <div
