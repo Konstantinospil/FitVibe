@@ -95,8 +95,7 @@ const Register: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const finalUsername =
-        username.trim() || email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_");
+      const finalUsername = username.trim() || email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_");
 
       await registerAccount({
         email: email.trim(),
