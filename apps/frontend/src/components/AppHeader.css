@@ -120,13 +120,16 @@
     flex-basis: 160px;
   }
 
+  .app-header__slogan {
+    display: none;
+  }
+
   .app-header--writing .app-header__nav-item {
     padding-inline: var(--space-xs);
   }
 }
 
 @media (max-width: 920px) {
-  .app-header__slogan,
   .app-header__nav-label,
   .app-header__logout-label,
   .app-header .language-switcher__code {
