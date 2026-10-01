@@ -1,16 +1,16 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
+import { useTranslation } from "react-i18next";
 import { listSessions, type SessionWithExercises } from "../services/api";
 import {
   TrainingPanel,
   TrainingSummaryCard,
   type TrainingStatus,
 } from "../components/composites/TrainingSurface";
-import "../styles/training-surfaces.css";
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
+import { logger } from "../utils/logger";
 
 const startOfWeek = (date: Date) => {
   const copy = new Date(date);
@@ -39,13 +39,17 @@ const statusFor = (sessions: SessionWithExercises[]): TrainingStatus => {
   if (sessions.some((session) => session.status === "completed")) {
     return "success";
   }
-  if (sessions.length > 0 && sessions.every((session) => session.status === "cancelled")) {
+  if (
+    sessions.length > 0 &&
+    sessions.every((session) => session.status === "canceled")
+  ) {
     return "danger";
   }
   return "default";
 };
 
 const CalendarPage: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -53,10 +57,16 @@ const CalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
 
   const range = useMemo(() => {
-    const first = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+    const first = new Date(
+      visibleMonth.getFullYear(),
+      visibleMonth.getMonth(),
+      1,
+    );
     const gridStart = startOfWeek(first);
     const gridEnd = new Date(gridStart);
-    gridEnd.setDate(gridEnd.getDate() + 41);
+    gridEnd.setDate(
+      gridEnd.getDate() + TRAINING_DATA_CONFIG.calendarGridDayCount - 1,
+    );
     gridEnd.setHours(23, 59, 59, 999);
     return { gridStart, gridEnd };
   }, [visibleMonth]);
@@ -67,10 +77,21 @@ const CalendarPage: React.FC = () => {
       listSessions({
         planned_from: range.gridStart.toISOString(),
         planned_to: range.gridEnd.toISOString(),
-        limit: 200,
+        limit: TRAINING_DATA_CONFIG.calendarSessionLimit,
       }),
-    staleTime: 60_000,
+    staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
   });
+
+  useEffect(() => {
+    if (sessions.error) {
+      logger.apiError(
+        "Failed to load calendar sessions",
+        sessions.error,
+        "/api/v1/sessions",
+        "GET",
+      );
+    }
+  }, [sessions.error]);
 
   const sessionsByDay = useMemo(() => {
     const map = new Map<string, SessionWithExercises[]>();
@@ -83,24 +104,38 @@ const CalendarPage: React.FC = () => {
     return map;
   }, [sessions.data]);
 
-  const matrix = useMemo(
-    () =>
-      WEEKDAYS.map((weekday, weekdayIndex) => ({
-        weekday,
-        dates: Array.from({ length: 6 }, (_, weekIndex) => {
+  const matrix = useMemo(() => {
+    const weekCount = TRAINING_DATA_CONFIG.calendarGridDayCount / 7;
+    return Array.from({ length: 7 }, (_, weekdayIndex) => {
+      const labelDate = new Date(range.gridStart);
+      labelDate.setDate(range.gridStart.getDate() + weekdayIndex);
+      return {
+        weekday: new Intl.DateTimeFormat(i18n.language, {
+          weekday: "short",
+        }).format(labelDate),
+        dates: Array.from({ length: weekCount }, (_, weekIndex) => {
           const date = new Date(range.gridStart);
-          date.setDate(range.gridStart.getDate() + weekIndex * 7 + weekdayIndex);
+          date.setDate(
+            range.gridStart.getDate() + weekIndex * 7 + weekdayIndex,
+          );
           return date;
         }),
-      })),
-    [range.gridStart],
-  );
+      };
+    });
+  }, [i18n.language, range.gridStart]);
 
   const selectedSessions = sessionsByDay.get(dateKey(selectedDate)) ?? [];
   const history = [...(sessions.data?.data ?? [])]
-    .filter((session) => new Date(session.planned_at) < new Date())
-    .sort((a, b) => new Date(b.planned_at).getTime() - new Date(a.planned_at).getTime())
-    .slice(0, 6);
+    .filter(
+      (session) =>
+        session.status === "completed" || Boolean(session.completed_at),
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.completed_at ?? b.planned_at).getTime() -
+        new Date(a.completed_at ?? a.planned_at).getTime(),
+    )
+    .slice(0, TRAINING_DATA_CONFIG.homePreviousActivitiesLimit);
 
   const weekEnd = endOfWeek(selectedDate);
   const selectedDayStart = new Date(selectedDate);
@@ -108,42 +143,57 @@ const CalendarPage: React.FC = () => {
   const weeklyPlan = [...(sessions.data?.data ?? [])]
     .filter((session) => {
       const planned = new Date(session.planned_at);
-      return planned >= selectedDayStart && planned <= weekEnd;
+      return (
+        session.status === "planned" &&
+        planned >= selectedDayStart &&
+        planned <= weekEnd
+      );
     })
-    .sort((a, b) => new Date(a.planned_at).getTime() - new Date(b.planned_at).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.planned_at).getTime() - new Date(b.planned_at).getTime(),
+    );
+
+  const formatDateTime = (value: string) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
 
   const moveMonth = (delta: number) => {
     setVisibleMonth(
-      (current) => new Date(current.getFullYear(), current.getMonth() + delta, 1),
+      (current) =>
+        new Date(current.getFullYear(), current.getMonth() + delta, 1),
     );
   };
 
   const moveYear = (delta: number) => {
     setVisibleMonth(
-      (current) => new Date(current.getFullYear() + delta, current.getMonth(), 1),
+      (current) =>
+        new Date(current.getFullYear() + delta, current.getMonth(), 1),
     );
   };
 
   return (
     <main className="training-page calendar-surface" aria-labelledby="calendar-title">
       <h1 id="calendar-title" className="sr-only">
-        Calendar
+        {t("calendarSurface.title")}
       </h1>
 
       <div className="training-grid calendar-surface__grid">
         <TrainingPanel
-          title="Calendar"
+          title={t("calendarSurface.sections.calendar")}
           className="calendar-surface__month"
           footer={
             <>
               <Button variant="secondary" size="sm">
-                Plan a workout
+                {t("calendarSurface.actions.plan")}
               </Button>
               <Button variant="primary" size="sm">
-                Start a workout
+                {t("calendarSurface.actions.start")}
               </Button>
               <Button variant="secondary" size="sm">
-                Log a workout
+                {t("calendarSurface.actions.log")}
               </Button>
             </>
           }
@@ -152,16 +202,18 @@ const CalendarPage: React.FC = () => {
             <div className="calendar-month__nav">
               <IconButton
                 icon={<ChevronLeft />}
-                label="Previous month"
+                label={t("calendarSurface.navigation.previousMonth")}
                 size="sm"
                 onClick={() => moveMonth(-1)}
               />
               <strong>
-                {visibleMonth.toLocaleDateString(undefined, { month: "long" })}
+                {new Intl.DateTimeFormat(i18n.language, {
+                  month: "long",
+                }).format(visibleMonth)}
               </strong>
               <IconButton
                 icon={<ChevronRight />}
-                label="Next month"
+                label={t("calendarSurface.navigation.nextMonth")}
                 size="sm"
                 onClick={() => moveMonth(1)}
               />
@@ -170,14 +222,14 @@ const CalendarPage: React.FC = () => {
             <div className="calendar-month__nav">
               <IconButton
                 icon={<ChevronLeft />}
-                label="Previous year"
+                label={t("calendarSurface.navigation.previousYear")}
                 size="sm"
                 onClick={() => moveYear(-1)}
               />
               <strong>{visibleMonth.getFullYear()}</strong>
               <IconButton
                 icon={<ChevronRight />}
-                label="Next year"
+                label={t("calendarSurface.navigation.nextYear")}
                 size="sm"
                 onClick={() => moveYear(1)}
               />
@@ -185,22 +237,30 @@ const CalendarPage: React.FC = () => {
           </div>
 
           {sessions.isError ? (
-            <div className="training-error">Calendar data could not be loaded.</div>
+            <div className="training-error">
+              {t("calendarSurface.errors.load")}
+            </div>
           ) : null}
 
           <div
             className="calendar-month__matrix"
             role="grid"
-            aria-label="Monthly workout calendar"
+            aria-label={t("calendarSurface.gridLabel")}
           >
             {matrix.flatMap(({ weekday, dates }) => [
-              <div className="calendar-month__weekday" role="rowheader" key={weekday}>
+              <div
+                className="calendar-month__weekday"
+                role="rowheader"
+                key={weekday}
+              >
                 {weekday}
               </div>,
               ...dates.map((date) => {
                 const daySessions = sessionsByDay.get(dateKey(date)) ?? [];
-                const outside = date.getMonth() !== visibleMonth.getMonth();
-                const selected = dateKey(date) === dateKey(selectedDate);
+                const outside =
+                  date.getMonth() !== visibleMonth.getMonth();
+                const selected =
+                  dateKey(date) === dateKey(selectedDate);
                 const dayStatus = statusFor(daySessions);
 
                 return (
@@ -215,11 +275,17 @@ const CalendarPage: React.FC = () => {
                         : "",
                     ].join(" ")}
                     role="gridcell"
+                    data-status={dayStatus}
                   >
                     <Button
                       variant="ghost"
                       size="sm"
-                      aria-label={`${date.toDateString()}, ${daySessions.length} workouts`}
+                      aria-label={t("calendarSurface.dayLabel", {
+                        date: new Intl.DateTimeFormat(i18n.language, {
+                          dateStyle: "full",
+                        }).format(date),
+                        count: daySessions.length,
+                      })}
                       onClick={() => setSelectedDate(date)}
                     >
                       {String(date.getDate()).padStart(2, "0")}
@@ -232,63 +298,97 @@ const CalendarPage: React.FC = () => {
 
           <div className="calendar-surface__selected-day">
             <div className="calendar-surface__selected-title">
-              {selectedDate.toLocaleDateString(undefined, {
+              {new Intl.DateTimeFormat(i18n.language, {
                 weekday: "long",
                 month: "long",
                 day: "numeric",
-              })}
+              }).format(selectedDate)}
             </div>
 
             {selectedSessions.length === 0 ? (
-              <div className="training-empty">No workouts on this day.</div>
+              <div className="training-empty">
+                {t("calendarSurface.empty.selectedDay")}
+              </div>
             ) : (
               selectedSessions.map((session) => (
                 <TrainingSummaryCard
                   key={session.id}
-                  title={session.title || "Workout"}
-                  meta={new Date(session.planned_at).toLocaleTimeString(undefined, {
-                    hour: "2-digit",
-                    minute: "2-digit",
+                  title={
+                    session.title ||
+                    t("homeSurface.session.workout")
+                  }
+                  meta={new Intl.DateTimeFormat(i18n.language, {
+                    timeStyle: "short",
+                  }).format(new Date(session.planned_at))}
+                  supporting={t("homeSurface.session.exercises", {
+                    count: session.exercises.length,
                   })}
-                  supporting={`${session.exercises.length} exercise${session.exercises.length === 1 ? "" : "s"}`}
                 />
               ))
             )}
           </div>
         </TrainingPanel>
 
-        <TrainingPanel title="History" className="calendar-surface__history">
+        <TrainingPanel
+          title={t("calendarSurface.sections.history")}
+          className="calendar-surface__history"
+        >
           <div className="training-scroll">
             {history.length === 0 ? (
-              <div className="training-empty">No workout history yet.</div>
+              <div className="training-empty">
+                {t("calendarSurface.empty.history")}
+              </div>
             ) : (
               history.map((session) => (
                 <TrainingSummaryCard
                   key={session.id}
-                  title={session.title || "Workout summary"}
-                  meta={new Date(session.planned_at).toLocaleString()}
-                  supporting={session.notes || `${session.exercises.length} exercises`}
+                  title={
+                    session.title ||
+                    t("homeSurface.session.workoutSummary")
+                  }
+                  meta={formatDateTime(
+                    session.completed_at ?? session.planned_at,
+                  )}
+                  supporting={
+                    session.notes ||
+                    t("homeSurface.session.exercises", {
+                      count: session.exercises.length,
+                    })
+                  }
                 />
               ))
             )}
           </div>
         </TrainingPanel>
 
-        <TrainingPanel title="Weekly workout plan" className="calendar-surface__week">
+        <TrainingPanel
+          title={t("calendarSurface.sections.weekPlan")}
+          className="calendar-surface__week"
+        >
           <div className="training-scroll">
             {weeklyPlan.length === 0 ? (
-              <div className="training-empty">No workouts planned for the rest of this week.</div>
+              <div className="training-empty">
+                {t("calendarSurface.empty.week")}
+              </div>
             ) : (
               weeklyPlan.map((session) => (
                 <TrainingSummaryCard
                   key={session.id}
-                  title={session.title || "Workout"}
-                  meta={new Date(session.planned_at).toLocaleString()}
-                  supporting={session.notes || `${session.exercises.length} exercises`}
+                  title={
+                    session.title ||
+                    t("homeSurface.session.workout")
+                  }
+                  meta={formatDateTime(session.planned_at)}
+                  supporting={
+                    session.notes ||
+                    t("homeSurface.session.exercises", {
+                      count: session.exercises.length,
+                    })
+                  }
                   trailing={
                     <IconButton
                       icon={<MoreHorizontal />}
-                      label="Workout options"
+                      label={t("calendarSurface.actions.options")}
                       size="sm"
                       variant="ghost"
                     />
