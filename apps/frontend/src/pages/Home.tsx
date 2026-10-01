@@ -6,7 +6,7 @@ import {
   listSessions,
   type SessionWithExercises,
 } from "../services/api";
-import HomeFeedCard from "../components/domain/HomeFeedCard";
+import HomeFeedCard from "../components/composites/HomeFeedCard";
 import {
   TrainingPanel,
   TrainingSummaryCard,
