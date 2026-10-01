@@ -1,5 +1,5 @@
 import React from "react";
-import { Github, Instagram, Linkedin, Youtube } from "lucide-react";
+import { Briefcase, Camera, Code2, Play } from "lucide-react";
 import { IconButton } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 
@@ -15,25 +15,25 @@ const socialPlatforms = (): SocialPlatform[] => [
     key: "instagram",
     label: "Instagram",
     href: import.meta.env.VITE_SOCIAL_INSTAGRAM_URL,
-    icon: <Instagram aria-hidden="true" />,
+    icon: <Camera aria-hidden="true" />,
   },
   {
     key: "linkedin",
     label: "LinkedIn",
     href: import.meta.env.VITE_SOCIAL_LINKEDIN_URL,
-    icon: <Linkedin aria-hidden="true" />,
+    icon: <Briefcase aria-hidden="true" />,
   },
   {
     key: "youtube",
     label: "YouTube",
     href: import.meta.env.VITE_SOCIAL_YOUTUBE_URL,
-    icon: <Youtube aria-hidden="true" />,
+    icon: <Play aria-hidden="true" />,
   },
   {
     key: "github",
     label: "GitHub",
     href: import.meta.env.VITE_SOCIAL_GITHUB_URL,
-    icon: <Github aria-hidden="true" />,
+    icon: <Code2 aria-hidden="true" />,
   },
 ];
 
