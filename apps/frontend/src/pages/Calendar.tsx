@@ -162,18 +162,10 @@ const CalendarPage: React.FC = () => {
           className="calendar-surface__month"
           footer={
             <>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setEditorAction("plan")}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setEditorAction("plan")}>
                 {t("calendarSurface.actions.plan")}
               </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setEditorAction("start")}
-              >
+              <Button variant="primary" size="sm" onClick={() => setEditorAction("start")}>
                 {t("calendarSurface.actions.start")}
               </Button>
             </>
@@ -339,7 +331,6 @@ const CalendarPage: React.FC = () => {
                       count: session.exercises.length,
                     })
                   }
-
                 />
               ))
             )}

@@ -140,9 +140,7 @@ describe("Calendar", () => {
     );
 
     expect(await screen.findByText("workoutEditor.title")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "workoutEditor.actions.plan" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "workoutEditor.actions.plan" })).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
     ).not.toBeInTheDocument();
