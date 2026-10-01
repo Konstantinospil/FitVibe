@@ -414,3 +414,62 @@
     flex-direction: column;
   }
 }
+
+.home-surface__news-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.home-surface__feed-stats > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.home-surface__feed-stats svg,
+.workout-editor__search-control > svg {
+  width: var(--space-md);
+  height: var(--space-md);
+}
+
+.calendar-month__cell--success {
+  background: var(--color-success-bg);
+}
+
+.calendar-month__cell--warning {
+  background: var(--color-warning-bg);
+}
+
+.calendar-month__cell--danger {
+  background: var(--color-danger-bg);
+}
+
+.calendar-month__cell--success button {
+  color: var(--color-success-text);
+}
+
+.calendar-month__cell--warning button {
+  color: var(--color-warning-text);
+}
+
+.calendar-month__cell--danger button {
+  color: var(--color-danger-text);
+}
+
+.workout-editor__search-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.workout-editor__search-control > svg {
+  position: absolute;
+  left: var(--space-md);
+  z-index: 1;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.workout-editor__search-control select {
+  padding-left: var(--space-2xl);
+}
