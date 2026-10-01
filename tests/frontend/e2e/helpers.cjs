@@ -122,10 +122,7 @@ async function preparePage(page, { authenticated = false } = {}) {
 }
 
 async function waitForApp(page) {
-  await page
-    .locator("#login-shell")
-    .waitFor({ state: "detached", timeout: 15_000 })
-    .catch(() => undefined);
+  await page.locator("#login-shell").waitFor({ state: "detached", timeout: 15_000 });
 }
 
 const emailInput = (page) => page.locator("form input[name='email']");
