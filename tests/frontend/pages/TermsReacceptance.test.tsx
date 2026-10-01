@@ -107,10 +107,9 @@ describe("TermsReacceptance page", () => {
 
     await waitFor(
       () => {
-        const errorElement = screen.queryByText("You must accept the terms");
-        const alert = screen.queryByRole("alert");
-        // Either the error text or an alert should be present
-        expect(errorElement || alert).toBeTruthy();
+        const errorElements = screen.queryAllByText("You must accept the terms");
+        const alerts = screen.queryAllByRole("alert");
+        expect(errorElements.length + alerts.length).toBeGreaterThan(0);
       },
       { timeout: 3000 },
     );
@@ -290,10 +289,14 @@ describe("TermsReacceptance page", () => {
 
     await waitFor(
       () => {
-        const termsLink = screen.getByText("Terms");
-        const privacyLink = screen.getByText("Privacy Policy");
-        expect(termsLink.closest("a")).toHaveAttribute("href", "/terms");
-        expect(privacyLink.closest("a")).toHaveAttribute("href", "/privacy");
+        const termsLinks = screen.getAllByRole("link").filter(
+          (link) => link.getAttribute("href") === "/terms",
+        );
+        const privacyLinks = screen.getAllByRole("link").filter(
+          (link) => link.getAttribute("href") === "/privacy",
+        );
+        expect(termsLinks.length).toBeGreaterThan(0);
+        expect(privacyLinks.length).toBeGreaterThan(0);
       },
       { timeout: 5000 },
     );
