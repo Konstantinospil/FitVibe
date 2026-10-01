@@ -93,7 +93,7 @@ describe("PageIntro Accessibility", () => {
       const title = container.querySelector("h1, h2, h3, h4, h5, h6");
       const styles = title?.getAttribute("style");
 
-      expect(styles).toContain("clamp(2rem, 4vw, 2.8rem)");
+      expect(styles).toContain("clamp(var(--type-page-title-size), 4vw, var(--type-display-size))");
     });
 
     it("should maintain logical reading order", () => {
@@ -240,7 +240,7 @@ describe("PageIntro Accessibility", () => {
       // Find the eyebrow text span (has font-size style, not the container)
       const eyebrowText = Array.from(container.querySelectorAll("span")).find(
         (el) =>
-          el.textContent === "Welcome" && el.getAttribute("style")?.includes("font-size: 0.9rem"),
+          el.textContent === "Welcome" && el.getAttribute("style")?.includes("font-size: var(--type-supporting-size)"),
       );
       expect(eyebrowText).toBeDefined();
       const eyebrowStyles = eyebrowText?.getAttribute("style");
@@ -252,13 +252,13 @@ describe("PageIntro Accessibility", () => {
       const descriptionStyles = description?.getAttribute("style");
 
       // Eyebrow should be small
-      expect(eyebrowStyles).toContain("font-size: 0.9rem");
+      expect(eyebrowStyles).toContain("font-size: var(--type-supporting-size)");
 
       // Title should be large and responsive
-      expect(titleStyles).toContain("clamp(2rem, 4vw, 2.8rem)");
+      expect(titleStyles).toContain("clamp(var(--type-page-title-size), 4vw, var(--type-display-size))");
 
       // Description should be standard size
-      expect(descriptionStyles).toContain("font-size: 1rem");
+      expect(descriptionStyles).toContain("font-size: var(--type-body-size)");
     });
 
     it("should have adequate line height for readability", () => {
@@ -270,8 +270,8 @@ describe("PageIntro Accessibility", () => {
       const description = container.querySelector("p");
       const descriptionStyles = description?.getAttribute("style");
 
-      expect(titleStyles).toContain("line-height: 1.15");
-      expect(descriptionStyles).toContain("line-height: 1.6");
+      expect(titleStyles).toContain("line-height: var(--type-page-title-line-height)");
+      expect(descriptionStyles).toContain("line-height: var(--type-body-line-height)");
     });
 
     it("should use proper letter spacing for readability", () => {
@@ -281,7 +281,7 @@ describe("PageIntro Accessibility", () => {
       const eyebrowText = Array.from(container.querySelectorAll("span")).find(
         (el) =>
           el.textContent === "Welcome" &&
-          el.getAttribute("style")?.includes("letter-spacing: 0.08em"),
+          el.getAttribute("style")?.includes("letter-spacing: var(--type-metric-small-letter-spacing)"),
       );
       expect(eyebrowText).toBeDefined();
       const eyebrowStyles = eyebrowText?.getAttribute("style");
@@ -290,10 +290,10 @@ describe("PageIntro Accessibility", () => {
       const titleStyles = title?.getAttribute("style");
 
       // Eyebrow has wider spacing for uppercase
-      expect(eyebrowStyles).toContain("letter-spacing: 0.08em");
+      expect(eyebrowStyles).toContain("letter-spacing: var(--type-metric-small-letter-spacing)");
 
       // Title has tight spacing for large text
-      expect(titleStyles).toContain("letter-spacing: -0.015em");
+      expect(titleStyles).toContain("letter-spacing: var(--type-page-title-letter-spacing)");
     });
 
     it("should have visual accent indicator", () => {
@@ -322,7 +322,7 @@ describe("PageIntro Accessibility", () => {
       const titleStyles = title?.getAttribute("style");
 
       // Title uses fluid typography
-      expect(titleStyles).toContain("clamp(2rem, 4vw, 2.8rem)");
+      expect(titleStyles).toContain("clamp(var(--type-page-title-size), 4vw, var(--type-display-size))");
     });
 
     it("should use responsive padding with clamp", () => {
@@ -585,12 +585,12 @@ describe("PageIntro Accessibility", () => {
       // Find the eyebrow text span (has font-weight style, not the container)
       const eyebrowText = Array.from(container.querySelectorAll("span")).find(
         (el) =>
-          el.textContent === "Welcome" && el.getAttribute("style")?.includes("font-weight: 600"),
+          el.textContent === "Welcome" && el.getAttribute("style")?.includes("font-weight: var(--font-weight-semibold)"),
       );
       expect(eyebrowText).toBeDefined();
       const eyebrowStyles = eyebrowText?.getAttribute("style");
 
-      expect(eyebrowStyles).toContain("font-weight: 600");
+      expect(eyebrowStyles).toContain("font-weight: var(--font-weight-semibold)");
     });
 
     it("should use semantic color for secondary text", () => {
