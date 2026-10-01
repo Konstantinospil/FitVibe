@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { InputControl } from "@fitvibe/ui";
 import {
   actionMappingsApi,
   disableClamav,
@@ -119,10 +120,24 @@ const SettingsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "var(--type-page-title-size)" }}>Settings</h1>
+      <h1
+        style={{
+          color: colors.text,
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
+        Settings
+      </h1>
 
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "var(--type-section-title-size)" }}>
+        <h2
+          style={{
+            color: colors.text,
+            marginBottom: "1rem",
+            fontSize: "var(--type-section-title-size)",
+          }}
+        >
           System Controls
         </h2>
         <div
@@ -145,7 +160,9 @@ const SettingsPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>Read-only mode</div>
+              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>
+                Read-only mode
+              </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
                 Status: {isSystemConfigLoading ? "Loading..." : isReadOnly ? "Enabled" : "Disabled"}
               </div>
@@ -171,7 +188,9 @@ const SettingsPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>Maintenance mode</div>
+              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>
+                Maintenance mode
+              </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
                 Status:{" "}
                 {isSystemConfigLoading ? "Loading..." : isMaintenance ? "Enabled" : "Disabled"}
@@ -198,7 +217,9 @@ const SettingsPage: React.FC = () => {
             }}
           >
             <div>
-              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>ClamAV scanning</div>
+              <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>
+                ClamAV scanning
+              </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
                 Status:{" "}
                 {isOpsStatusLoading
@@ -225,7 +246,7 @@ const SettingsPage: React.FC = () => {
         <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "var(--type-section-title-size)" }}>
           Action Labels
         </h2>
-        <input
+        <InputControl
           type="text"
           placeholder="Search actions..."
           value={search}
@@ -295,7 +316,7 @@ const SettingsPage: React.FC = () => {
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {isEditing ? (
                         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                          <input
+                          <InputControl
                             type="text"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
@@ -308,7 +329,7 @@ const SettingsPage: React.FC = () => {
                               minWidth: "240px",
                             }}
                           />
-                          <button
+                          <Button
                             onClick={() => handleSave(mapping.action)}
                             disabled={updateMutation.isPending}
                             style={{
@@ -321,8 +342,8 @@ const SettingsPage: React.FC = () => {
                             }}
                           >
                             Save
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={handleCancel}
                             style={{
                               padding: "0.5rem 1rem",
@@ -334,14 +355,14 @@ const SettingsPage: React.FC = () => {
                             }}
                           >
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       ) : (
                         <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
                           <span style={{ color: colors.textSecondary }}>
                             {mapping.uiName || "—"}
                           </span>
-                          <button
+                          <Button
                             onClick={() => handleEdit(mapping)}
                             style={{
                               padding: "0.35rem 0.75rem",
@@ -353,7 +374,7 @@ const SettingsPage: React.FC = () => {
                             }}
                           >
                             Edit
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </td>
