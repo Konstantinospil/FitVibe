@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { listSessions, type SessionWithExercises } from "../services/api";
@@ -11,6 +11,7 @@ import {
 } from "../components/composites/TrainingSurface";
 import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 import { logger } from "../utils/logger";
+import WorkoutEditor, { type WorkoutEditorAction } from "../components/composites/WorkoutEditor";
 
 const startOfWeek = (date: Date) => {
   const copy = new Date(date);
@@ -47,6 +48,8 @@ const statusFor = (sessions: SessionWithExercises[]): TrainingStatus => {
 
 const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
+  const [editorAction, setEditorAction] = useState<WorkoutEditorAction | null>(null);
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -159,14 +162,19 @@ const CalendarPage: React.FC = () => {
           className="calendar-surface__month"
           footer={
             <>
-              <Button variant="secondary" size="sm">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setEditorAction("plan")}
+              >
                 {t("calendarSurface.actions.plan")}
               </Button>
-              <Button variant="primary" size="sm">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setEditorAction("start")}
+              >
                 {t("calendarSurface.actions.start")}
-              </Button>
-              <Button variant="secondary" size="sm">
-                {t("calendarSurface.actions.log")}
               </Button>
             </>
           }
@@ -331,20 +339,23 @@ const CalendarPage: React.FC = () => {
                       count: session.exercises.length,
                     })
                   }
-                  trailing={
-                    <IconButton
-                      icon={<MoreHorizontal />}
-                      label={t("calendarSurface.actions.options")}
-                      size="sm"
-                      variant="ghost"
-                    />
-                  }
+
                 />
               ))
             )}
           </div>
         </TrainingPanel>
       </div>
+
+      <WorkoutEditor
+        open={editorAction !== null}
+        onClose={() => setEditorAction(null)}
+        plannedAt={selectedDayStart.toISOString()}
+        actions={editorAction ? [editorAction] : []}
+        onSaved={() => {
+          void queryClient.invalidateQueries({ queryKey: ["calendar"] });
+        }}
+      />
     </main>
   );
 };
