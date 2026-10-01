@@ -444,12 +444,11 @@ const Home: React.FC = () => {
                   <Button
                     type="button"
                     variant="ghost"
+                    className="home-vibe-button"
                     onClick={() => handleVibeClick(vibe.key)}
                     onMouseEnter={() => setHoveredVibe(vibe.key)}
                     onMouseLeave={() => setHoveredVibe(null)}
                     style={{
-                      width: "140px",
-                      height: "140px",
                       borderRadius: "var(--radius-full)",
                       border: `4px solid ${vibe.colorBorder}`,
                       background: vibe.colorBg,

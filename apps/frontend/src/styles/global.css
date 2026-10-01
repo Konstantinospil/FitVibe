@@ -936,6 +936,12 @@ small {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.home-vibe-button {
+  width: min(140px, 100%);
+  height: auto;
+  aspect-ratio: 1;
+}
+
 @media (max-width: 768px) {
   .home-vibe-layout {
     grid-template-columns: minmax(0, 1fr);
