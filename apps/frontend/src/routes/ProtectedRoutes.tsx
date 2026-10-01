@@ -12,6 +12,8 @@ import { ensurePrivateTranslationsLoaded } from "../i18n/config";
 const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
 const MainLayout = lazy(() => import("../layouts/MainLayout"));
 const Home = lazy(() => import("../pages/Home"));
+const Calendar = lazy(() => import("../pages/Calendar"));
+const WorkoutEditor = lazy(() => import("../pages/WorkoutEditor"));
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
@@ -68,6 +70,8 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
             <Route index element={<Home />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="workout-editor" element={<WorkoutEditor />} />
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
             <Route path="terms-reacceptance" element={<TermsReacceptance />} />
