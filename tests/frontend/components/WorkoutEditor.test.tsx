@@ -97,11 +97,13 @@ describe("WorkoutEditor", () => {
   const addExercise = async () => {
     const select = await screen.findByLabelText("workoutEditor.fields.exercise");
     fireEvent.change(select, { target: { value: "exercise-1" } });
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "workoutEditor.actions.addExercise",
-      }),
-    );
+
+    const addButton = screen
+      .getAllByRole("button", { name: "workoutEditor.actions.addExercise" })
+      .find((button) => button.textContent === "workoutEditor.actions.addExercise");
+
+    expect(addButton).toBeDefined();
+    fireEvent.click(addButton as HTMLButtonElement);
   };
 
   it("creates a planned session using canonical session fields", async () => {
