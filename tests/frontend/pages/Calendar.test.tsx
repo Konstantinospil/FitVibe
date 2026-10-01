@@ -64,7 +64,7 @@ describe("Calendar", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-01-15T12:00:00.000Z"));
     queryClient = createTestQueryClient();
     mockedListSessions.mockResolvedValue(response);
