@@ -1023,7 +1023,7 @@ describe("Register", () => {
 
     expect(
       screen.getByRole("button", {
-        name: /Didn't receive the email?s*Resend verification email/i,
+        name: /resend verification email/i,
       }),
     ).toBeInTheDocument();
   });
