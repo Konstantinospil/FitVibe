@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
-import { Button } from "../components/ui";
-import { InputControl } from "@fitvibe/ui";
+import { Button, InputControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { rawHttpClient, resendVerificationEmail } from "../services/api";
 import { useCountdown } from "../hooks/useCountdown";
