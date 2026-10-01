@@ -60,7 +60,6 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-endurance)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-water-highlight)",
-    colorLabel: "var(--vibe-label-intelligence)",
     colorLabel: "var(--vibe-label-endurance)",
     iconTone: "light",
   },
@@ -77,6 +76,7 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-intelligence)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-water-highlight)",
+    colorLabel: "var(--vibe-label-intelligence)",
     iconTone: "light",
   },
   {
