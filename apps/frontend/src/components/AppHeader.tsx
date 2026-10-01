@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   CalendarDays,
   Home,
@@ -9,12 +9,13 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
-import { Button } from "@fitvibe/ui";
+import { Button, IconButton } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import BrandLogo from "./BrandLogo";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import { useThemeStore } from "../store/theme.store";
+import { AppNavigationItem } from "./composites/AppNavigationItem";
 import "./AppHeader.css";
 
 export type AppHeaderVariant = "standard" | "writing";
@@ -76,7 +77,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const location = useLocation();
   const theme = useThemeStore((state) => state.theme);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [logoutHovered, setLogoutHovered] = useState(false);
 
   const enabledPaths = useMemo(() => new Set(availablePaths), [availablePaths]);
 
@@ -128,43 +128,16 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             const enabled = enabledPaths.has(item.to);
             const active = enabled && isActivePath(location.pathname, item.to);
 
-            const content = (
-              <>
-                <Icon className="app-header__nav-icon" aria-hidden="true" />
-                {variant === "writing" ? (
-                  <span className="app-header__nav-label">{label}</span>
-                ) : null}
-              </>
-            );
-
-            if (!enabled) {
-              return (
-                <span
-                  key={item.to}
-                  className="app-header__nav-item"
-                  role="link"
-                  aria-label={label}
-                  aria-disabled="true"
-                  data-state="disabled"
-                  title={label}
-                >
-                  {content}
-                </span>
-              );
-            }
-
             return (
-              <Link
+              <AppNavigationItem
                 key={item.to}
                 to={item.to}
-                className="app-header__nav-item"
-                aria-label={label}
-                aria-current={active ? "page" : undefined}
-                data-state={active ? "active" : "default"}
-                title={label}
-              >
-                {content}
-              </Link>
+                label={label}
+                icon={<Icon />}
+                active={active}
+                disabled={!enabled}
+                showLabel={variant === "writing"}
+              />
             );
           })}
         </nav>
@@ -172,38 +145,32 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         <div className="app-header__utilities">
           <ThemeToggle variant="header" />
           <LanguageSwitcher variant="header" />
-          <Button
-            variant="ghost"
-            size="sm"
-            isLoading={isSigningOut}
-            onClick={() => {
-              void handleSignOut();
-            }}
-            onMouseEnter={() => setLogoutHovered(true)}
-            onMouseLeave={() => setLogoutHovered(false)}
-            className="app-header__logout"
-            aria-label={signOutLabel}
-            title={signOutLabel}
-            style={{
-              minHeight: "44px",
-              minWidth: variant === "standard" ? "44px" : "auto",
-              padding:
-                variant === "standard" ? "var(--space-xs)" : "var(--space-xs) var(--space-sm)",
-              borderRadius: "var(--radius-md)",
-              background: logoutHovered ? "var(--color-surface-muted)" : "none",
-              color: "var(--color-text-secondary)",
-              fontFamily: "var(--font-family-body)",
-              fontWeight: "var(--font-weight-semibold)",
-              fontSize: "var(--type-control-size)",
-              lineHeight: "var(--type-control-line-height)",
-              letterSpacing: "var(--type-control-letter-spacing)",
-            }}
-          >
-            <LogOut className="app-header__logout-icon" aria-hidden="true" />
-            {variant === "writing" ? (
-              <span className="app-header__logout-label">{signOutLabel}</span>
-            ) : null}
-          </Button>
+          {variant === "standard" ? (
+            <IconButton
+              icon={<LogOut aria-hidden="true" />}
+              label={signOutLabel}
+              variant="ghost"
+              size="lg"
+              disabled={isSigningOut}
+              onClick={() => {
+                void handleSignOut();
+              }}
+              className="app-header__logout"
+            />
+          ) : (
+            <Button
+              variant="ghost"
+              size="lg"
+              isLoading={isSigningOut}
+              onClick={() => {
+                void handleSignOut();
+              }}
+              className="app-header__logout"
+              leftIcon={<LogOut aria-hidden="true" />}
+            >
+              {signOutLabel}
+            </Button>
+          )}
         </div>
       </div>
     </header>

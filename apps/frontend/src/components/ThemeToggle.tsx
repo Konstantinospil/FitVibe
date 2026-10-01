@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Moon, Sun } from "lucide-react";
-import { Button } from "@fitvibe/ui";
+import { Button, IconButton } from "@fitvibe/ui";
 import { useThemeStore } from "../store/theme.store";
 
 export type ThemeToggleVariant = "default" | "header";
@@ -11,40 +11,36 @@ type ThemeToggleProps = {
 
 const ThemeToggle: React.FC<ThemeToggleProps> = ({ variant = "default" }) => {
   const { theme, toggleTheme } = useThemeStore();
-  const [hovered, setHovered] = useState(false);
   const isHeader = variant === "header";
   const actionLabel = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
 
+  if (isHeader) {
+    return (
+      <IconButton
+        icon={theme === "dark" ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
+        label={actionLabel}
+        variant="ghost"
+        size="lg"
+        onClick={toggleTheme}
+        data-control="theme-toggle"
+        data-theme={theme}
+      />
+    );
+  }
+
   return (
     <Button
-      variant="ghost"
-      size="sm"
+      variant="secondary"
+      size="md"
       type="button"
       onClick={toggleTheme}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       aria-label={actionLabel}
       title={actionLabel}
       data-control="theme-toggle"
       data-theme={theme}
-      style={{
-        minWidth: isHeader ? "44px" : "auto",
-        minHeight: isHeader ? "44px" : "40px",
-        padding: isHeader ? "var(--space-xs)" : "var(--space-xs) var(--space-sm)",
-        borderRadius: isHeader ? "var(--radius-md)" : "var(--radius-full)",
-        border: isHeader ? "none" : "1px solid var(--color-border)",
-        background: hovered
-          ? "var(--color-surface-muted)"
-          : isHeader
-            ? "none"
-            : "var(--color-surface-glass)",
-        color: "var(--color-text-secondary)",
-        fontFamily: "var(--font-family-body)",
-        fontSize: "var(--type-control-size)",
-        lineHeight: "var(--type-control-line-height)",
-      }}
+      leftIcon={theme === "dark" ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
     >
-      {theme === "dark" ? <Moon size={22} /> : <Sun size={22} />}
+      {actionLabel}
     </Button>
   );
 };

@@ -2,8 +2,8 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
-import { Button } from "../components/ui";
-import { Checkbox } from "@fitvibe/ui";
+import { Button, Checkbox, TextLink } from "@fitvibe/ui";
+import { FormActions, FormFeedback, FormStack } from "../components/composites/FormStack";
 import { acceptTerms } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
@@ -59,22 +59,15 @@ const TermsReacceptance: React.FC = () => {
       title={t("auth.termsReacceptance.title")}
       description={t("auth.termsReacceptance.description")}
     >
-      <form
+      <FormStack
         ref={formRef}
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="form"
       >
-        <div
-          className="p-md rounded-md mb-1"
-          style={{
-            background: "var(--surface-warning-subtle)",
-            border: "1px solid var(--border-warning-subtle)",
-          }}
-        >
-          <p className="m-0 text-secondary text-095">{t("auth.termsReacceptance.notice")}</p>
-        </div>
+        <FormFeedback tone="warning">
+          {t("auth.termsReacceptance.notice")}
+        </FormFeedback>
 
         <Checkbox
           checked={acceptedTerms}
@@ -86,34 +79,32 @@ const TermsReacceptance: React.FC = () => {
           label={
             <span>
               {t("auth.termsReacceptance.acceptTerms")}{" "}
-              <NavLink
+              <TextLink
+                as={NavLink}
                 to="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(event) => event.stopPropagation()}
               >
                 {t("auth.termsReacceptance.termsLink")}
-              </NavLink>{" "}
+              </TextLink>{" "}
               {t("auth.termsReacceptance.and")}{" "}
-              <NavLink
+              <TextLink
+                as={NavLink}
                 to="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(event) => event.stopPropagation()}
               >
                 {t("auth.termsReacceptance.privacyLink")}
-              </NavLink>
+              </TextLink>
             </span>
           }
         />
 
-        {error ? (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        ) : null}
+        {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
 
-        <div className="flex flex--gap-md flex--wrap">
+        <FormActions>
           <Button
             type="submit"
             fullWidth
@@ -135,8 +126,8 @@ const TermsReacceptance: React.FC = () => {
           >
             {t("auth.termsReacceptance.signOut")}
           </Button>
-        </div>
-      </form>
+        </FormActions>
+      </FormStack>
     </AuthPageLayout>
   );
 };

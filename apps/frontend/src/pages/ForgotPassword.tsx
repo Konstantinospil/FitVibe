@@ -2,8 +2,8 @@ import React, { useState, useRef } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
-import { Button } from "../components/ui";
-import { InputField } from "@fitvibe/ui";
+import { Button, InputField, TextLink } from "@fitvibe/ui";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { forgotPassword } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 
@@ -42,24 +42,23 @@ const ForgotPassword: React.FC = () => {
         title={t("forgotPassword.titleSuccess")}
         description={t("forgotPassword.descSuccess")}
       >
-        <div className="form">
-          <div className="form-success">{t("forgotPassword.successMessage")}</div>
-          <NavLink to="/login" className="form-link form-link--block">
+        <FormStack as="div">
+          <FormFeedback tone="success">{t("forgotPassword.successMessage")}</FormFeedback>
+          <TextLink as={NavLink} to="/login">
             {t("forgotPassword.backToLogin")}
-          </NavLink>
-        </div>
+          </TextLink>
+        </FormStack>
       </AuthPageLayout>
     );
   }
 
   return (
     <AuthPageLayout title={t("forgotPassword.title")} description={t("forgotPassword.description")}>
-      <form
+      <FormStack
         ref={formRef}
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="form"
       >
         <InputField
           label={t("forgotPassword.emailLabel")}
@@ -72,18 +71,14 @@ const ForgotPassword: React.FC = () => {
           autoComplete="email"
           disabled={isSubmitting}
         />
-        {error ? (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        ) : null}
+        {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
           {isSubmitting ? t("forgotPassword.sending") : t("forgotPassword.sendLink")}
         </Button>
-        <NavLink to="/login" className="form-link form-link--block">
+        <TextLink as={NavLink} to="/login">
           {t("forgotPassword.backToLogin")}
-        </NavLink>
-      </form>
+        </TextLink>
+      </FormStack>
     </AuthPageLayout>
   );
 };

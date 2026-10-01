@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "../components/ui/Button";
-import { InputField, PasswordField, TextLink } from "@fitvibe/ui";
+import { Button, InputField, PasswordField, TextLink } from "@fitvibe/ui";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { useAuth } from "../contexts/AuthContext";
 import { login } from "../services/api";
 import { logger } from "../utils/logger.js";
@@ -124,12 +124,11 @@ const LoginFormContent: React.FC = () => {
   };
 
   return (
-    <form
+    <FormStack
       ref={formRef}
       onSubmit={(e) => {
         void handleSubmit(e);
       }}
-      className="form"
     >
       <InputField
         label={t("auth.login.emailLabel")}
@@ -155,11 +154,7 @@ const LoginFormContent: React.FC = () => {
         showPasswordLabel={showPasswordLabel}
         hidePasswordLabel={hidePasswordLabel}
       />
-      {error ? (
-        <div role="alert" className="form-error">
-          {error}
-        </div>
-      ) : null}
+      {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
       <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
         {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
       </Button>
@@ -171,7 +166,7 @@ const LoginFormContent: React.FC = () => {
           {t("auth.login.forgot")}
         </TextLink>
       </div>
-    </form>
+    </FormStack>
   );
 };
 
