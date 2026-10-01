@@ -36,7 +36,9 @@ export const Modal: React.FC<ModalProps> = ({
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
     const previous = document.activeElement as HTMLElement | null;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -55,7 +57,9 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
   return (
     <div
@@ -70,7 +74,9 @@ export const Modal: React.FC<ModalProps> = ({
         background: "var(--dialog-backdrop)",
       }}
       onMouseDown={(event) => {
-        if (closeOnBackdrop && event.target === event.currentTarget) onClose();
+        if (closeOnBackdrop && event.target === event.currentTarget) {
+          onClose();
+        }
       }}
     >
       <div
@@ -135,7 +141,12 @@ export const Modal: React.FC<ModalProps> = ({
               </p>
             ) : null}
           </div>
-          <IconButton icon={<X aria-hidden="true" />} label={closeLabel} size="md" onClick={onClose} />
+          <IconButton
+            icon={<X aria-hidden="true" />}
+            label={closeLabel}
+            size="md"
+            onClick={onClose}
+          />
         </header>
 
         <div
