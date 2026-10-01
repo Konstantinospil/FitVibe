@@ -2,7 +2,7 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import WorkoutEditor from "../../src/components/domain/WorkoutEditor";
+import WorkoutEditor from "../../src/components/composites/WorkoutEditor";
 import * as api from "../../src/services/api";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
 
