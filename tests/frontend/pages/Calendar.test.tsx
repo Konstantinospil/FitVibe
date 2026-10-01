@@ -131,11 +131,20 @@ describe("Calendar", () => {
     renderCalendar();
     expect(await screen.findAllByText("Today Plan")).not.toHaveLength(0);
 
-    const dayLabel = String(tomorrow.getDate()).padStart(2, "0");
-    const dayButton = screen.getAllByRole("button").find((button) => button.textContent === dayLabel);
-    expect(dayButton).toBeDefined();
+    const fullDate = new Intl.DateTimeFormat("en", {
+      dateStyle: "full",
+    }).format(tomorrow);
+    const dayButton = screen.getByRole("button", {
+      name: "calendarSurface.dayLabel",
+    });
+    const matchingDayButton = screen
+      .getAllByRole("button", { name: "calendarSurface.dayLabel" })
+      .find((button) => button.getAttribute("aria-label")?.includes(fullDate));
 
-    fireEvent.click(dayButton as HTMLButtonElement);
+    expect(dayButton).toBeInTheDocument();
+    expect(matchingDayButton).toBeDefined();
+
+    fireEvent.click(matchingDayButton as HTMLButtonElement);
 
     await waitFor(() => {
       expect(screen.getAllByText("Tomorrow Plan").length).toBeGreaterThan(0);
