@@ -27,10 +27,14 @@ const Privacy: React.FC = () => {
     let cancelled = false;
     void getLegalDocumentsStatus()
       .then((result) => {
-        if (!cancelled) setStatus(result.privacy);
+        if (!cancelled) {
+          setStatus(result.privacy);
+        }
       })
       .catch(() => {
-        if (!cancelled) setStatus(null);
+        if (!cancelled) {
+          setStatus(null);
+        }
       });
 
     return () => {
