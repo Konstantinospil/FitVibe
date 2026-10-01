@@ -22,7 +22,7 @@ export const Section: React.FC<SectionProps> = ({ as = "section", children, styl
   );
 };
 
-export interface SectionHeaderProps extends React.HTMLAttributes<HTMLElement> {
+export interface SectionHeaderProps extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
   title: React.ReactNode;
   description?: React.ReactNode;
   actions?: React.ReactNode;
