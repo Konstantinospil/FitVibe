@@ -23,6 +23,7 @@ type Vibe = {
   colorBg: string; // Background color for button
   colorText: string; // Text/icon color for contrast
   colorBorder: string; // Border color
+  colorLabel: string; // Figma-backed accessible label color
   icon: string; // SVG icon path
   iconTone: "dark" | "light";
 };
@@ -43,6 +44,7 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-strength)",
     colorText: "var(--vibe-on-light)",
     colorBorder: "var(--vibe-strength)",
+    colorLabel: "var(--vibe-label-strength)",
     iconTone: "dark",
   },
   {
@@ -50,6 +52,7 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-agility)",
     colorText: "var(--vibe-on-light)",
     colorBorder: "var(--vibe-agility)",
+    colorLabel: "var(--vibe-label-agility)",
     iconTone: "dark",
   },
   {
@@ -57,6 +60,8 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-endurance)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-water-highlight)",
+    colorLabel: "var(--vibe-label-intelligence)",
+    colorLabel: "var(--vibe-label-endurance)",
     iconTone: "light",
   },
   {
@@ -64,6 +69,7 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-explosivity)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-fire-highlight)",
+    colorLabel: "var(--vibe-label-explosivity)",
     iconTone: "light",
   },
   {
@@ -78,6 +84,7 @@ const VIBES_BASE: Omit<Vibe, "icon">[] = [
     colorBg: "var(--vibe-regeneration)",
     colorText: "var(--vibe-on-dark)",
     colorBorder: "var(--element-earth-highlight)",
+    colorLabel: "var(--vibe-label-regeneration)",
     iconTone: "light",
   },
 ];
@@ -494,7 +501,7 @@ const Home: React.FC = () => {
                   >
                     <div
                       className="text-lg font-weight-600 mb-025"
-                      style={{ color: "var(--color-text-primary)" }}
+                      style={{ color: vibe.colorLabel }}
                     >
                       {t(`vibes.${vibe.key}.name`)}
                     </div>

@@ -153,6 +153,14 @@
   --vibe-intelligence: #001817;  /* Shadow - Almost Black */
   --vibe-regeneration: #15523A;  /* Aether - Forest Green */
 
+  /* Figma Design System v2 — accessible Vibe label colors, dark theme */
+  --vibe-label-strength: #D6A36D;
+  --vibe-label-agility: #73BDD0;
+  --vibe-label-endurance: #739CE0;
+  --vibe-label-explosivity: #E48491;
+  --vibe-label-intelligence: #B49ADC;
+  --vibe-label-regeneration: #BED17A;
+
   /* === PRIMARY/SECONDARY BUTTON ROLES === */
 
   /* Primary (Fire - CTA buttons) */
@@ -343,6 +351,14 @@
   --color-text-primary: #000000;
   --color-text-secondary: rgba(0, 0, 0, 0.90);
   --color-text-muted: rgba(0, 0, 0, 0.70); /* Increased from 0.55 to 0.70 for better contrast */
+
+  /* Figma Design System v2 — accessible Vibe label colors, light theme */
+  --vibe-label-strength: #946129;
+  --vibe-label-agility: #23748E;
+  --vibe-label-endurance: #315C9A;
+  --vibe-label-explosivity: #A94654;
+  --vibe-label-intelligence: #7757A7;
+  --vibe-label-regeneration: #65772D;
 
   /* Primary (Fire - CTA buttons) - Adjusted for light background */
   --color-primary: #9F2406;
