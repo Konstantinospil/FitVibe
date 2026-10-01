@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, InputField, TextareaControl } from "@fitvibe/ui";
+import { Button, InputField, TextareaField } from "@fitvibe/ui";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import PageIntro from "../components/PageIntro";
 import { rawHttpClient, type SubmitContactResponse } from "../services/api";
 import { useToast } from "../contexts/ToastContext";
@@ -118,12 +119,11 @@ const Contact: React.FC = () => {
         defaultValue: "Get in touch with the FitVibe team.",
       })}
     >
-      <form
+      <FormStack
         ref={formRef}
         onSubmit={(event) => {
           void handleSubmit(event);
         }}
-        className="form"
       >
         <InputField
           label={t("contact.form.emailLabel", { defaultValue: "Email" })}
@@ -148,53 +148,29 @@ const Contact: React.FC = () => {
           error={Boolean(error)}
         />
 
-        <label
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--space-xs)",
-            color: "var(--color-text-secondary)",
-            fontFamily: "var(--font-family-body)",
-            fontSize: "var(--type-control-size)",
-            lineHeight: "var(--type-control-line-height)",
-          }}
-        >
-          <span>{t("contact.form.messageLabel", { defaultValue: "Message" })}</span>
-          <TextareaControl
-            name="message"
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            disabled={isSubmitting}
-            required
-            rows={8}
-            maxLength={5000}
-            variant={error ? "error" : "default"}
-            style={{ minHeight: "160px" }}
-          />
-          <span
-            style={{
-              color: "var(--color-text-muted)",
-              fontSize: "var(--type-supporting-size)",
-              lineHeight: "var(--type-supporting-line-height)",
-            }}
-          >
-            {message.length} / 5000{" "}
-            {t("contact.form.characters", { defaultValue: "characters" })}
-          </span>
-        </label>
+        <TextareaField
+          label={t("contact.form.messageLabel", { defaultValue: "Message" })}
+          name="message"
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          disabled={isSubmitting}
+          required
+          rows={8}
+          maxLength={5000}
+          error={Boolean(error)}
+          helperText={`${message.length} / 5000 ${t("contact.form.characters", {
+            defaultValue: "characters",
+          })}`}
+        />
 
-        {error ? (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        ) : null}
+        {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
 
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
           {isSubmitting
             ? t("contact.form.submitting", { defaultValue: "Sending..." })
             : t("contact.form.submit", { defaultValue: "Send Message" })}
         </Button>
-      </form>
+      </FormStack>
     </PageIntro>
   );
 };

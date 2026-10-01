@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Shield } from "lucide-react";
 import AuthPageLayout from "../components/AuthPageLayout";
-import { Button } from "../components/ui";
-import { CodeField } from "@fitvibe/ui";
+import { Button, CodeField, TextLink } from "@fitvibe/ui";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { useAuth } from "../contexts/AuthContext";
 import { verify2FALogin } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
@@ -110,23 +110,27 @@ const TwoFactorVerificationLogin: React.FC = () => {
         "Enter the 6-digit code from your authenticator app or use a backup code."
       }
     >
-      <form
+      <FormStack
         ref={formRef}
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="form form--gap-lg"
       >
-        <div
-          className="flex flex--align-center flex--center p-md rounded-md flex--gap-075"
-          style={{ background: "var(--color-surface-glass)" }}
-        >
-          <Shield size={24} className="icon--accent" />
-          <span className="text-09 text-secondary">
-            {t("auth.twoFactor.securityNotice") ||
-              "This extra step ensures it's really you signing in"}
+        <FormFeedback tone="info">
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "var(--space-sm)",
+            }}
+          >
+            <Shield aria-hidden="true" />
+            <span>
+              {t("auth.twoFactor.securityNotice") ||
+                "This extra step ensures it's really you signing in"}
+            </span>
           </span>
-        </div>
+        </FormFeedback>
 
         <CodeField
           label={t("auth.twoFactor.codeLabel") || "Authentication Code"}
@@ -154,12 +158,14 @@ const TwoFactorVerificationLogin: React.FC = () => {
             : t("auth.twoFactor.verify") || "Verify and Continue"}
         </Button>
 
-        <div className="flex flex--justify-between text-09">
-          <Button type="button" variant="ghost" size="sm" onClick={handleBackToLogin} className="form-link">
-            {t("auth.twoFactor.backToLogin") || "Back to login"}
-          </Button>
-        </div>
-      </form>
+        <TextLink
+          as="button"
+          type="button"
+          onClick={handleBackToLogin}
+        >
+          {t("auth.twoFactor.backToLogin") || "Back to login"}
+        </TextLink>
+      </FormStack>
     </AuthPageLayout>
   );
 };
