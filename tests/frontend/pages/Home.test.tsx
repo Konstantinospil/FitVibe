@@ -175,6 +175,25 @@ describe("Home", () => {
     });
   });
 
+  it("refetches a failed Home source from its retry action", async () => {
+    mockedApi.getFeed.mockRejectedValueOnce(new Error("feed failed"));
+    renderHome();
+
+    const retryButtons = await screen.findAllByRole("button", { name: "actions.retry" });
+    mockedApi.getFeed.mockResolvedValue({
+      items: [feedItem],
+      total: 1,
+      limit: 12,
+      offset: 0,
+    });
+
+    fireEvent.click(retryButtons[0]);
+
+    await waitFor(() => {
+      expect(mockedApi.getFeed.mock.calls.length).toBeGreaterThan(2);
+    });
+  });
+
   it("shows empty states without fabricating data", async () => {
     mockedApi.getFeed.mockResolvedValue({
       items: [],
