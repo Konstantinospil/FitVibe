@@ -1,176 +1,254 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BUTTON_ICON_SIZES } from "@fitvibe/ui";
-import nodIcon from "../assets/nod.svg";
+import { useTranslation } from "react-i18next";
 import {
   getFeed,
   listSessions,
-  type FeedItem,
   type SessionWithExercises,
 } from "../services/api";
+import HomeFeedCard from "../components/domain/HomeFeedCard";
 import {
   TrainingPanel,
   TrainingSummaryCard,
 } from "../components/composites/TrainingSurface";
-import "../styles/training-surfaces.css";
+import {
+  TRAINING_DATA_CONFIG,
+  TRAINING_TIME_UNITS,
+} from "../config/trainingSurfaces";
+import { logger } from "../utils/logger";
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-
-const activityAge = (value?: string | null) => {
-  if (!value) {
-    return "No recorded activity yet";
-  }
-
-  const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
-  const totalMinutes = Math.floor(elapsed / 60_000);
-  const days = Math.floor(totalMinutes / 1_440);
-  const hours = Math.floor((totalMinutes % 1_440) / 60);
-  const minutes = totalMinutes % 60;
-
-  return `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-};
-
-const sessionSummary = (session: SessionWithExercises) =>
+const sessionSummary = (
+  session: SessionWithExercises,
+  t: ReturnType<typeof useTranslation>["t"],
+) =>
   session.notes ||
-  `${session.exercises.length} exercise${session.exercises.length === 1 ? "" : "s"}`;
-
-const FeedCard: React.FC<{ item: FeedItem }> = ({ item }) => {
-  const name = item.user.displayName || item.user.username;
-  const initial = name.trim().charAt(0).toUpperCase() || "A";
-
-  return (
-    <TrainingSummaryCard
-      className="home-surface__feed-card"
-      meta={item.publishedAt ? formatDate(item.publishedAt) : "Not published"}
-      title={
-        <div className="home-surface__feed-identity">
-          <span className="home-surface__avatar" aria-hidden="true">
-            {initial}
-          </span>
-          <span>{item.session.title || "Workout"}</span>
-        </div>
-      }
-      supporting={item.session.notes || `Shared by ${name}`}
-      trailing={
-        <div className="home-surface__nod-count" aria-label="Nods">
-          <img
-            src={nodIcon}
-            alt=""
-            width={BUTTON_ICON_SIZES.md}
-            height={BUTTON_ICON_SIZES.md}
-          />
-          <span>{item.likesCount}</span>
-        </div>
-      }
-    />
-  );
-};
+  t("homeSurface.session.exercises", {
+    count: session.exercises.length,
+  });
 
 const Home: React.FC = () => {
+  const { t, i18n } = useTranslation();
+
   const recentFeed = useQuery({
     queryKey: ["home", "feed", "date"],
-    queryFn: () => getFeed({ limit: 12, sort: "date" }),
-    staleTime: 60_000,
+    queryFn: () =>
+      getFeed({
+        limit: TRAINING_DATA_CONFIG.homeRecentFeedLimit,
+        sort: "date",
+      }),
+    staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
   });
 
   const trendingFeed = useQuery({
     queryKey: ["home", "feed", "popularity"],
-    queryFn: () => getFeed({ limit: 10, sort: "popularity" }),
-    staleTime: 60_000,
+    queryFn: () =>
+      getFeed({
+        limit: TRAINING_DATA_CONFIG.homeTrendingFeedLimit,
+        sort: "popularity",
+      }),
+    staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
   });
 
   const sessions = useQuery({
     queryKey: ["home", "recent-sessions"],
-    queryFn: () => listSessions({ limit: 12 }),
-    staleTime: 60_000,
+    queryFn: () =>
+      listSessions({
+        limit: TRAINING_DATA_CONFIG.homeRecentFeedLimit,
+      }),
+    staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
   });
 
-  const recentSessions = [...(sessions.data?.data ?? [])].sort(
-    (a, b) =>
-      new Date(b.completed_at ?? b.planned_at).getTime() -
-      new Date(a.completed_at ?? a.planned_at).getTime(),
+  useEffect(() => {
+    if (recentFeed.error) {
+      logger.apiError("Failed to load Home news feed", recentFeed.error, "/api/v1/feed", "GET");
+    }
+  }, [recentFeed.error]);
+
+  useEffect(() => {
+    if (trendingFeed.error) {
+      logger.apiError(
+        "Failed to load Home trending workouts",
+        trendingFeed.error,
+        "/api/v1/feed",
+        "GET",
+      );
+    }
+  }, [trendingFeed.error]);
+
+  useEffect(() => {
+    if (sessions.error) {
+      logger.apiError(
+        "Failed to load Home activities",
+        sessions.error,
+        "/api/v1/sessions",
+        "GET",
+      );
+    }
+  }, [sessions.error]);
+
+  const completedSessions = useMemo(
+    () =>
+      [...(sessions.data?.data ?? [])]
+        .filter(
+          (session) =>
+            session.status === "completed" || Boolean(session.completed_at),
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.completed_at ?? b.planned_at).getTime() -
+            new Date(a.completed_at ?? a.planned_at).getTime(),
+        ),
+    [sessions.data],
   );
-  const latest = recentSessions[0];
+
+  const latest = completedSessions[0];
+
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+
+  const activityAge = (value?: string | null) => {
+    if (!value) {
+      return t("homeSurface.activity.noActivity");
+    }
+
+    const elapsed = Math.max(0, Date.now() - new Date(value).getTime());
+    const totalMinutes = Math.floor(
+      elapsed / TRAINING_TIME_UNITS.millisecondsPerMinute,
+    );
+    const days = Math.floor(
+      totalMinutes / TRAINING_TIME_UNITS.minutesPerDay,
+    );
+    const hours = Math.floor(
+      (totalMinutes % TRAINING_TIME_UNITS.minutesPerDay) /
+        TRAINING_TIME_UNITS.minutesPerHour,
+    );
+    const minutes = totalMinutes % TRAINING_TIME_UNITS.minutesPerHour;
+
+    return `${String(days).padStart(2, "0")}:${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  };
 
   return (
     <main className="training-page home-surface" aria-labelledby="home-title">
       <h1 id="home-title" className="sr-only">
-        Home
+        {t("homeSurface.title")}
       </h1>
 
       <div className="training-grid home-surface__grid">
-        <TrainingPanel title="Recent activity" className="home-surface__metric">
-          <div className="training-summary-card__meta">Time since last activity</div>
+        <TrainingPanel
+          title={t("homeSurface.sections.recentActivity")}
+          className="home-surface__metric"
+        >
+          <div className="training-summary-card__meta">
+            {t("homeSurface.activity.timeSinceLast")}
+          </div>
           <div className="home-surface__metric-value">
             {activityAge(latest?.completed_at ?? latest?.planned_at)}
           </div>
           <p>
             {latest
-              ? `Last activity: ${latest.title || "Workout"}`
-              : "Log a workout to start your activity history."}
+              ? t("homeSurface.activity.lastActivity", {
+                  name: latest.title || t("homeSurface.session.workout"),
+                })
+              : t("homeSurface.activity.startHint")}
           </p>
         </TrainingPanel>
 
-        <TrainingPanel title="Trending workouts" className="home-surface__billboard">
+        <TrainingPanel
+          title={t("homeSurface.sections.trending")}
+          className="home-surface__trending"
+        >
           {trendingFeed.isError ? (
-            <div className="training-error">Trending workouts could not be loaded.</div>
+            <div className="training-error">
+              {t("homeSurface.errors.trending")}
+            </div>
           ) : trendingFeed.isLoading ? (
-            <div className="training-empty">Loading trending workouts…</div>
+            <div className="training-empty">
+              {t("homeSurface.loading.trending")}
+            </div>
           ) : (trendingFeed.data?.items.length ?? 0) === 0 ? (
-            <div className="training-empty">No trending workouts yet.</div>
+            <div className="training-empty">
+              {t("homeSurface.empty.trending")}
+            </div>
           ) : (
-            <div className="home-surface__feed-list">
+            <div className="home-surface__trending-list">
               {trendingFeed.data?.items.map((item) => (
-                <FeedCard key={item.feedItemId} item={item} />
+                <HomeFeedCard key={item.feedItemId} item={item} />
               ))}
             </div>
           )}
         </TrainingPanel>
 
-        <TrainingPanel title="News feed" className="home-surface__feed">
+        <TrainingPanel
+          title={t("homeSurface.sections.newsFeed")}
+          className="home-surface__feed"
+        >
           <div className="training-scroll" aria-live="polite">
             {recentFeed.isError ? (
-              <div className="training-error">The news feed could not be loaded.</div>
+              <div className="training-error">
+                {t("homeSurface.errors.news")}
+              </div>
             ) : recentFeed.isLoading ? (
-              <div className="training-empty">Loading news feed…</div>
+              <div className="training-empty">
+                {t("homeSurface.loading.news")}
+              </div>
             ) : (recentFeed.data?.items.length ?? 0) === 0 ? (
-              <div className="training-empty">No shared workouts yet.</div>
+              <div className="training-empty">
+                {t("homeSurface.empty.news")}
+              </div>
             ) : (
               <div className="home-surface__news-list">
                 {recentFeed.data?.items.map((item) => (
-                  <FeedCard key={item.feedItemId} item={item} />
+                  <HomeFeedCard key={item.feedItemId} item={item} />
                 ))}
               </div>
             )}
           </div>
         </TrainingPanel>
 
-        <TrainingPanel title="Previous activities" className="home-surface__activities">
+        <TrainingPanel
+          title={t("homeSurface.sections.previousActivities")}
+          className="home-surface__activities"
+        >
           {sessions.isError ? (
-            <div className="training-error">Previous activities could not be loaded.</div>
+            <div className="training-error">
+              {t("homeSurface.errors.activities")}
+            </div>
           ) : sessions.isLoading ? (
-            <div className="training-empty">Loading previous activities…</div>
-          ) : recentSessions.length === 0 ? (
-            <div className="training-empty">No previous activities yet.</div>
+            <div className="training-empty">
+              {t("homeSurface.loading.activities")}
+            </div>
+          ) : completedSessions.length === 0 ? (
+            <div className="training-empty">
+              {t("homeSurface.empty.activities")}
+            </div>
           ) : (
             <div className="home-surface__activity-list">
-              {recentSessions.slice(0, 6).map((session) => (
-                <TrainingSummaryCard
-                  key={session.id}
-                  meta={formatDate(session.completed_at ?? session.planned_at)}
-                  title={session.title || "Workout summary"}
-                  supporting={sessionSummary(session)}
-                  trailing={
-                    session.points !== null && session.points !== undefined
-                      ? `${session.points} points`
-                      : undefined
-                  }
-                />
-              ))}
+              {completedSessions
+                .slice(0, TRAINING_DATA_CONFIG.homePreviousActivitiesLimit)
+                .map((session) => (
+                  <TrainingSummaryCard
+                    key={session.id}
+                    meta={formatDate(
+                      session.completed_at ?? session.planned_at,
+                    )}
+                    title={
+                      session.title ||
+                      t("homeSurface.session.workoutSummary")
+                    }
+                    supporting={sessionSummary(session, t)}
+                    trailing={
+                      session.points !== null &&
+                      session.points !== undefined
+                        ? t("homeSurface.session.points", {
+                            count: session.points,
+                          })
+                        : undefined
+                    }
+                  />
+                ))}
             </div>
           )}
         </TrainingPanel>
