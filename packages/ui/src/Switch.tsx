@@ -66,15 +66,13 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       >
         <label
           htmlFor={switchId}
-          onMouseEnter={(event) => {
+          onMouseEnter={() => {
             if (!disabled) {
               setHovered(true);
             }
-            onMouseEnter?.(event);
           }}
-          onMouseLeave={(event) => {
+          onMouseLeave={() => {
             setHovered(false);
-            onMouseLeave?.(event);
           }}
           style={{
             display: "inline-flex",
@@ -132,6 +130,8 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             disabled={disabled}
             aria-checked={isChecked}
             aria-describedby={helperId}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             onChange={(event) => {
               if (!isControlled) {
                 setUncontrolledChecked(event.target.checked);
