@@ -157,7 +157,6 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
                 setVisible((current) => !current);
               }
             }}
-            onBlur={hide}
             style={{
               position: "absolute",
               right: "var(--space-xs)",
