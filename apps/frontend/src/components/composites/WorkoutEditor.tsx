@@ -20,6 +20,7 @@ import {
 import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
 import { logger } from "../../utils/logger";
 import { Modal } from "./Modal";
+import { RetryErrorPanel } from "./StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "./TrainingSurface";
 
 export type WorkoutExerciseDraft = {
@@ -405,9 +406,14 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
             </div>
 
             {exercises.isError ? (
-              <div className="training-error" role="alert">
-                {t("workoutEditor.errors.exercises")}
-              </div>
+              <RetryErrorPanel
+                message={t("workoutEditor.errors.exercises")}
+                retryLabel={t("actions.retry")}
+                onRetry={() => {
+                  void exercises.refetch();
+                }}
+                isRetrying={exercises.isFetching}
+              />
             ) : null}
 
             {active ? (
