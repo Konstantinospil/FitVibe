@@ -114,6 +114,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     () => new Map((exercises.data?.data ?? []).map((exercise) => [exercise.id, exercise.name])),
     [exercises.data],
   );
+  const exerciseFallbackName = t("workoutEditor.exerciseFallback");
 
   useEffect(() => {
     if (!open) {
@@ -135,14 +136,28 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setDrafts(
       session.exercises
         .filter((exercise) => Boolean(exercise.exercise_id))
-        .map((exercise) =>
-          toDraftExercise(
-            exercise,
-            exerciseNames.get(exercise.exercise_id ?? "") ?? t("workoutEditor.exerciseFallback"),
-          ),
-        ),
+        .map((exercise) => toDraftExercise(exercise, exerciseFallbackName)),
     );
-  }, [exerciseNames, open, session, t]);
+  }, [exerciseFallbackName, open, session]);
+
+  useEffect(() => {
+    if (!open || !session || exerciseNames.size === 0) {
+      return;
+    }
+
+    setDrafts((current) => {
+      let changed = false;
+      const next = current.map((draft) => {
+        const resolvedName = exerciseNames.get(draft.exerciseId);
+        if (!resolvedName || resolvedName === draft.name) {
+          return draft;
+        }
+        changed = true;
+        return { ...draft, name: resolvedName };
+      });
+      return changed ? next : current;
+    });
+  }, [exerciseNames, open, session]);
 
   useEffect(() => {
     if (exercises.error) {
