@@ -65,9 +65,7 @@ const TermsReacceptance: React.FC = () => {
           void handleSubmit(e);
         }}
       >
-        <FormFeedback tone="warning">
-          {t("auth.termsReacceptance.notice")}
-        </FormFeedback>
+        <FormFeedback tone="warning">{t("auth.termsReacceptance.notice")}</FormFeedback>
 
         <Checkbox
           checked={acceptedTerms}
