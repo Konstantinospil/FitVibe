@@ -261,7 +261,13 @@ const UsersPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "var(--type-page-title-size)" }}>
+      <h1
+        style={{
+          color: colors.text,
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
         User Management
       </h1>
 
@@ -522,7 +528,12 @@ const UsersPage: React.FC = () => {
                         <div style={{ display: "flex", flexDirection: "column" }}>
                           <span>{displayName}</span>
                           {showUsername && (
-                            <span style={{ color: colors.textSecondary, fontSize: "var(--type-supporting-size)" }}>
+                            <span
+                              style={{
+                                color: colors.textSecondary,
+                                fontSize: "var(--type-supporting-size)",
+                              }}
+                            >
                               @{user.username}
                             </span>
                           )}
@@ -711,7 +722,13 @@ const UsersPage: React.FC = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ color: colors.text, marginBottom: "1.5rem", fontSize: "var(--type-section-title-size)" }}>
+            <h2
+              style={{
+                color: colors.text,
+                marginBottom: "1.5rem",
+                fontSize: "var(--type-section-title-size)",
+              }}
+            >
               Change Role for {selectedUser.display_name || selectedUser.username}
             </h2>
             <div style={{ marginBottom: "1.5rem" }}>
