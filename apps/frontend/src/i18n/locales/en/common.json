@@ -1007,7 +1007,7 @@
     "summary": {
       "sets": "{{count}} set",
       "sets_other": "{{count}} sets",
-      "repetitions": "{{count}} repetitions"
+      "repetitions": "{{value}} repetitions"
     },
     "errors": {
       "save": "The workout could not be saved.",
