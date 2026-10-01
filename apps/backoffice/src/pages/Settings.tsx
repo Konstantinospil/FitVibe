@@ -243,7 +243,13 @@ const SettingsPage: React.FC = () => {
       </div>
 
       <div style={{ marginBottom: "2rem" }}>
-        <h2 style={{ color: colors.text, marginBottom: "1rem", fontSize: "var(--type-section-title-size)" }}>
+        <h2
+          style={{
+            color: colors.text,
+            marginBottom: "1rem",
+            fontSize: "var(--type-section-title-size)",
+          }}
+        >
           Action Labels
         </h2>
         <InputControl
