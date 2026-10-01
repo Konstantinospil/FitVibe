@@ -1,13 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  Button,
-  Checkbox,
-  InputField,
-  PasswordField,
-  TextLink,
-} from "@fitvibe/ui";
+import { Button, Checkbox, InputField, PasswordField, TextLink } from "@fitvibe/ui";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
@@ -39,7 +33,9 @@ const Register: React.FC = () => {
 
   useEffect(() => {
     const state = location.state as { email?: string; resendVerification?: boolean } | null;
-    if (state?.email) setEmail(state.email);
+    if (state?.email) {
+      setEmail(state.email);
+    }
   }, [location.state]);
 
   useEffect(() => {
@@ -68,11 +64,21 @@ const Register: React.FC = () => {
     }
 
     const passwordErrors: string[] = [];
-    if (password.length < 12) passwordErrors.push(t("validation.passwordMinLength"));
-    if (!/[a-z]/.test(password)) passwordErrors.push(t("validation.passwordLowercase"));
-    if (!/[A-Z]/.test(password)) passwordErrors.push(t("validation.passwordUppercase"));
-    if (!/\d/.test(password)) passwordErrors.push(t("validation.passwordDigit"));
-    if (!/[^\w\s]/.test(password)) passwordErrors.push(t("validation.passwordSymbol"));
+    if (password.length < 12) {
+      passwordErrors.push(t("validation.passwordMinLength"));
+    }
+    if (!/[a-z]/.test(password)) {
+      passwordErrors.push(t("validation.passwordLowercase"));
+    }
+    if (!/[A-Z]/.test(password)) {
+      passwordErrors.push(t("validation.passwordUppercase"));
+    }
+    if (!/\d/.test(password)) {
+      passwordErrors.push(t("validation.passwordDigit"));
+    }
+    if (!/[^\w\s]/.test(password)) {
+      passwordErrors.push(t("validation.passwordSymbol"));
+    }
 
     if (passwordErrors.length > 0) {
       setError(t("errors.WEAK_PASSWORD") + ": " + passwordErrors.join(", "));
