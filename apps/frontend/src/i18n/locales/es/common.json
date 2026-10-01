@@ -1013,5 +1013,8 @@
       "save": "No se pudo guardar el entrenamiento.",
       "exercises": "No se pudieron cargar los ejercicios."
     }
+  },
+  "actions": {
+    "retry": "Reintentar"
   }
 }
