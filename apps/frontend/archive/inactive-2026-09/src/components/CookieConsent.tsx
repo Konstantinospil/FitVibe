@@ -146,7 +146,7 @@ const CookieConsent: React.FC = () => {
   };
 
   const toggleInputStyle: React.CSSProperties = {
-    opacity: var(--opacity-disabled),
+    opacity: "var(--opacity-disabled)",
     width: 0,
     height: 0,
   };
