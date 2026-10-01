@@ -60,6 +60,13 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
     const [focused, setFocused] = useState(false);
     const [visible, setVisible] = useState(false);
 
+    const reveal = () => {
+      if (!disabled) {
+        setVisible(true);
+      }
+    };
+    const mask = () => setVisible(false);
+
     const state: PasswordFieldState = disabled
       ? "disabled"
       : error
@@ -152,11 +159,28 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             disabled={disabled}
             title={visible ? hidePasswordLabel : showPasswordLabel}
             data-slot="password-visibility-toggle"
-            onClick={() => {
-              if (!disabled) {
-                setVisible((current) => !current);
+            onMouseDown={(event) => {
+              event.preventDefault();
+              reveal();
+            }}
+            onMouseUp={mask}
+            onMouseLeave={mask}
+            onTouchStart={reveal}
+            onTouchEnd={mask}
+            onTouchCancel={mask}
+            onKeyDown={(event) => {
+              if (event.key === " " || event.key === "Enter") {
+                event.preventDefault();
+                reveal();
               }
             }}
+            onKeyUp={(event) => {
+              if (event.key === " " || event.key === "Enter") {
+                event.preventDefault();
+                mask();
+              }
+            }}
+            onBlur={mask}
             style={{
               position: "absolute",
               right: "var(--space-xs)",
