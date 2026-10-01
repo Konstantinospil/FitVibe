@@ -1013,5 +1013,8 @@
       "save": "The workout could not be saved.",
       "exercises": "Exercises could not be loaded."
     }
+  },
+  "actions": {
+    "retry": "Retry"
   }
 }
