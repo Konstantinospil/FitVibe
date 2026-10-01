@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getFeed, listSessions, type SessionWithExercises } from "../services/api";
 import HomeFeedCard from "../components/composites/HomeFeedCard";
+import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import { TRAINING_DATA_CONFIG, TRAINING_TIME_UNITS } from "../config/trainingSurfaces";
 import { logger } from "../utils/logger";
@@ -135,7 +136,14 @@ const Home: React.FC = () => {
           className="home-surface__trending"
         >
           {trendingFeed.isError ? (
-            <div className="training-error">{t("homeSurface.errors.trending")}</div>
+            <RetryErrorPanel
+              message={t("homeSurface.errors.trending")}
+              retryLabel={t("actions.retry")}
+              onRetry={() => {
+                void trendingFeed.refetch();
+              }}
+              isRetrying={trendingFeed.isFetching}
+            />
           ) : trendingFeed.isLoading ? (
             <div className="training-empty">{t("homeSurface.loading.trending")}</div>
           ) : (trendingFeed.data?.items.length ?? 0) === 0 ? (
@@ -152,7 +160,14 @@ const Home: React.FC = () => {
         <TrainingPanel title={t("homeSurface.sections.newsFeed")} className="home-surface__feed">
           <div className="training-scroll" aria-live="polite">
             {recentFeed.isError ? (
-              <div className="training-error">{t("homeSurface.errors.news")}</div>
+              <RetryErrorPanel
+                message={t("homeSurface.errors.news")}
+                retryLabel={t("actions.retry")}
+                onRetry={() => {
+                  void recentFeed.refetch();
+                }}
+                isRetrying={recentFeed.isFetching}
+              />
             ) : recentFeed.isLoading ? (
               <div className="training-empty">{t("homeSurface.loading.news")}</div>
             ) : (recentFeed.data?.items.length ?? 0) === 0 ? (
@@ -172,7 +187,14 @@ const Home: React.FC = () => {
           className="home-surface__activities"
         >
           {sessions.isError ? (
-            <div className="training-error">{t("homeSurface.errors.activities")}</div>
+            <RetryErrorPanel
+              message={t("homeSurface.errors.activities")}
+              retryLabel={t("actions.retry")}
+              onRetry={() => {
+                void sessions.refetch();
+              }}
+              isRetrying={sessions.isFetching}
+            />
           ) : sessions.isLoading ? (
             <div className="training-empty">{t("homeSurface.loading.activities")}</div>
           ) : completedSessions.length === 0 ? (
