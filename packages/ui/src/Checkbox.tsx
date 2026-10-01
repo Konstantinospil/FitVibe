@@ -77,15 +77,13 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       >
         <label
           htmlFor={checkboxId}
-          onMouseEnter={(event) => {
+          onMouseEnter={() => {
             if (!disabled) {
               setHovered(true);
             }
-            onMouseEnter?.(event);
           }}
-          onMouseLeave={(event) => {
+          onMouseLeave={() => {
             setHovered(false);
-            onMouseLeave?.(event);
           }}
           style={{
             display: "inline-flex",
@@ -147,6 +145,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             disabled={disabled}
             aria-invalid={error ? "true" : undefined}
             aria-describedby={[helperId, errorId].filter(Boolean).join(" ") || undefined}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             aria-errormessage={errorId}
             onChange={(event) => {
               if (!isControlled) {
