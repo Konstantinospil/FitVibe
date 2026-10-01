@@ -125,11 +125,41 @@ const ElFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
 
 // --- Language list ---
 const LANGUAGES: LanguageOption[] = [
-  { code: "en", displayCode: "EN", labelKey: "language.english", emoji: "\uD83C\uDDEC\uD83C\uDDE7", Svg: GbFlag },
-  { code: "de", displayCode: "DE", labelKey: "language.german", emoji: "\uD83C\uDDE9\uD83C\uDDEA", Svg: DeFlag },
-  { code: "fr", displayCode: "FR", labelKey: "language.french", emoji: "\uD83C\uDDEB\uD83C\uDDF7", Svg: FrFlag },
-  { code: "es", displayCode: "ES", labelKey: "language.spanish", emoji: "\uD83C\uDDEA\uD83C\uDDF8", Svg: EsFlag },
-  { code: "el", displayCode: "EL", labelKey: "language.greek", emoji: "\uD83C\uDDEC\uD83C\uDDF7", Svg: ElFlag },
+  {
+    code: "en",
+    displayCode: "EN",
+    labelKey: "language.english",
+    emoji: "\uD83C\uDDEC\uD83C\uDDE7",
+    Svg: GbFlag,
+  },
+  {
+    code: "de",
+    displayCode: "DE",
+    labelKey: "language.german",
+    emoji: "\uD83C\uDDE9\uD83C\uDDEA",
+    Svg: DeFlag,
+  },
+  {
+    code: "fr",
+    displayCode: "FR",
+    labelKey: "language.french",
+    emoji: "\uD83C\uDDEB\uD83C\uDDF7",
+    Svg: FrFlag,
+  },
+  {
+    code: "es",
+    displayCode: "ES",
+    labelKey: "language.spanish",
+    emoji: "\uD83C\uDDEA\uD83C\uDDF8",
+    Svg: EsFlag,
+  },
+  {
+    code: "el",
+    displayCode: "EL",
+    labelKey: "language.greek",
+    emoji: "\uD83C\uDDEC\uD83C\uDDF7",
+    Svg: ElFlag,
+  },
 ];
 
 // --- Emoji-support detection (fast heuristic) ---
