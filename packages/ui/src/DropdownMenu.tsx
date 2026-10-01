@@ -88,14 +88,14 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
     if (last !== undefined) focusItem(last);
   };
 
-  const focusRelative = (direction: 1 | -1) => {
-    if (enabledIndexes.length === 0) return;
-    const currentPosition = enabledIndexes.indexOf(focusedIndex);
+  const focusRelative = (direction: 1 | -1, fromIndex = focusedIndex) => {
+    if (enabledIndexes.length === 0) {
+      return;
+    }
+    const currentPosition = enabledIndexes.indexOf(fromIndex);
     const fallback = direction === 1 ? -1 : 0;
-    const nextPosition =
-      (currentPosition === -1 ? fallback : currentPosition) + direction;
-    const normalized =
-      (nextPosition + enabledIndexes.length) % enabledIndexes.length;
+    const nextPosition = (currentPosition === -1 ? fallback : currentPosition) + direction;
+    const normalized = (nextPosition + enabledIndexes.length) % enabledIndexes.length;
     focusItem(enabledIndexes[normalized]);
   };
 
@@ -276,11 +276,11 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                   switch (event.key) {
                     case "ArrowDown":
                       event.preventDefault();
-                      focusRelative(1);
+                      focusRelative(1, index);
                       break;
                     case "ArrowUp":
                       event.preventDefault();
-                      focusRelative(-1);
+                      focusRelative(-1, index);
                       break;
                     case "Home":
                       event.preventDefault();
