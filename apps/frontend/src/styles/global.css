@@ -1303,4 +1303,450 @@ small {
   gap: var(--space-md);
 }
 
+/* === TRAINING SURFACES === */
+
+.training-page {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-lg);
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.training-grid {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-md);
+  align-items: stretch;
+}
+
+.training-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.training-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.training-panel__body {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+}
+
+.training-panel__footer {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.training-panel__footer > * {
+  flex: 1;
+}
+
+.training-status-dot {
+  width: var(--space-sm);
+  height: var(--space-sm);
+  flex: none;
+  border-radius: var(--radius-full);
+  background: var(--color-info-text);
+}
+
+.training-status-dot--success {
+  background: var(--color-success);
+}
+
+.training-status-dot--warning {
+  background: var(--color-warning-text);
+}
+
+.training-status-dot--danger {
+  background: var(--color-danger);
+}
+
+.training-summary-card {
+  min-width: 0;
+  padding: var(--space-sm);
+  gap: var(--space-xs);
+}
+
+.training-summary-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.training-summary-card__meta,
+.training-summary-card__supporting,
+.training-summary-card__trailing {
+  color: var(--color-text-muted);
+  font-family: var(--font-family-body);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+  letter-spacing: var(--type-supporting-letter-spacing);
+}
+
+.training-summary-card__title {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  letter-spacing: var(--type-card-title-letter-spacing);
+  font-weight: var(--font-weight-semibold);
+}
+
+.training-empty,
+.training-error {
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.training-error,
+.training-inline-error {
+  color: var(--color-danger-text);
+}
+
+.training-error {
+  background: var(--surface-danger-subtle);
+  border: 1px solid var(--border-danger-subtle);
+  border-radius: var(--radius-md);
+}
+
+.training-inline-error {
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.training-scroll {
+  min-height: 0;
+  max-height: calc(100vh - var(--space-3xl));
+  overflow: auto;
+  padding-right: var(--space-xs);
+}
+
+.home-surface__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 2fr);
+  grid-template-areas:
+    "metric feed trending"
+    "activities feed trending";
+}
+
+.home-surface__metric {
+  grid-area: metric;
+  align-self: start;
+}
+
+.home-surface__feed {
+  grid-area: feed;
+}
+
+.home-surface__trending {
+  grid-area: trending;
+}
+
+.home-surface__activities {
+  grid-area: activities;
+}
+
+.home-surface__news-list,
+.home-surface__trending-list,
+.home-surface__activity-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.home-surface__trending-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.home-surface__metric-value {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-primary-metric-size);
+  line-height: var(--type-primary-metric-line-height);
+  letter-spacing: var(--type-primary-metric-letter-spacing);
+  font-weight: var(--font-weight-semibold);
+}
+
+.home-feed-card {
+  min-height: 100%;
+}
+
+.home-feed-card__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.home-feed-card__avatar {
+  width: var(--space-2xl);
+  height: var(--space-2xl);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--color-secondary-on);
+  background: var(--color-secondary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.home-feed-card__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.home-feed-card__nod-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.home-feed-card__comments {
+  color: var(--color-text-muted);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.calendar-surface__grid {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.calendar-month__heading,
+.calendar-month__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.calendar-month__heading {
+  flex-wrap: wrap;
+}
+
+.calendar-month__matrix {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) repeat(6, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.calendar-month__weekday,
+.calendar-month__cell {
+  min-width: 0;
+  min-height: var(--space-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-month__weekday {
+  padding: var(--space-xs);
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.calendar-month__cell {
+  background: var(--color-surface);
+}
+
+.calendar-month__cell > * {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-month__cell--outside {
+  background: var(--color-surface-muted);
+}
+
+.calendar-month__cell--success {
+  background: var(--color-success-bg);
+}
+
+.calendar-month__cell--warning {
+  background: var(--color-warning-bg);
+}
+
+.calendar-month__cell--danger {
+  background: var(--color-danger-bg);
+}
+
+.calendar-month__cell--success button {
+  color: var(--color-success-text);
+}
+
+.calendar-month__cell--warning button {
+  color: var(--color-warning-text);
+}
+
+.calendar-month__cell--danger button {
+  color: var(--color-danger-text);
+}
+
+.calendar-month__selected {
+  outline: 2px solid var(--color-highlight);
+  outline-offset: -2px;
+}
+
+.calendar-surface__selected-day {
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+
+.calendar-surface__selected-title {
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  font-weight: var(--font-weight-semibold);
+}
+
+.workout-editor__shell,
+.workout-editor__general,
+.workout-editor__metric-row,
+.workout-editor__activity-toolbar,
+.workout-editor__activity-fields,
+.workout-editor__rest-row,
+.workout-editor__bottom-actions {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.workout-editor__general {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.workout-editor__metric-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.workout-editor__metric {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.workout-editor__metric-label {
+  color: var(--color-text-secondary);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.workout-editor__metric-value {
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-secondary-metric-size);
+  line-height: var(--type-secondary-metric-line-height);
+  letter-spacing: var(--type-secondary-metric-letter-spacing);
+  font-weight: var(--font-weight-semibold);
+}
+
+.workout-editor__main {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 3fr);
+}
+
+.workout-editor__activity-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.workout-editor__activity-fields,
+.workout-editor__rest-row {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workout-editor__rest-row {
+  padding: var(--space-sm);
+  background: var(--color-info-text);
+  color: var(--color-info-bg);
+  border-radius: var(--radius-md);
+}
+
+.workout-editor__overview-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.workout-editor__overview-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.workout-editor__bottom-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.workout-editor__search-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.workout-editor__search-control > svg {
+  position: absolute;
+  left: var(--space-md);
+  z-index: 1;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.workout-editor__search-control select {
+  padding-left: var(--space-2xl);
+}
+
+@media (max-width: 768px) {
+  .training-page {
+    padding: var(--space-md);
+  }
+
+  .home-surface__grid,
+  .calendar-surface__grid,
+  .workout-editor__main,
+  .workout-editor__general,
+  .workout-editor__metric-row,
+  .workout-editor__activity-toolbar,
+  .workout-editor__activity-fields,
+  .workout-editor__rest-row,
+  .workout-editor__bottom-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .home-surface__grid {
+    grid-template-areas:
+      "feed"
+      "metric"
+      "trending"
+      "activities";
+  }
+
+  .home-surface__trending-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendar-month__matrix {
+    overflow-x: auto;
+  }
+}
 
