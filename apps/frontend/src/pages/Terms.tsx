@@ -32,10 +32,14 @@ const Terms: React.FC = () => {
     let cancelled = false;
     void getLegalDocumentsStatus()
       .then((result) => {
-        if (!cancelled) setStatus(result.terms);
+        if (!cancelled) {
+          setStatus(result.terms);
+        }
       })
       .catch(() => {
-        if (!cancelled) setStatus(null);
+        if (!cancelled) {
+          setStatus(null);
+        }
       });
 
     return () => {
@@ -77,11 +81,7 @@ const Terms: React.FC = () => {
         {isWorking ? t("terms.consent.accepting") : t("terms.consent.accept")}
       </Button>
     ) : isAuthenticated && status && !status.needsAcceptance ? (
-      <Button
-        variant="danger"
-        onClick={() => setShowRevokeConfirm(true)}
-        disabled={isWorking}
-      >
+      <Button variant="danger" onClick={() => setShowRevokeConfirm(true)} disabled={isWorking}>
         {t("terms.consent.revoke")}
       </Button>
     ) : undefined;
