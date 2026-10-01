@@ -229,10 +229,9 @@ export default defineConfig(() => {
               if (id.includes("i18next") || id.includes("react-i18next")) {
                 return "i18n-vendor";
               }
-              // HTTP client - needed for login, but can be separate chunk
-              if (id.includes("axios")) {
-                return "http-vendor";
-              }
+              // Keep the HTTP client in the shared vendor graph. Splitting axios into a
+              // dedicated chunk caused the production preview bundle to execute an
+              // incomplete vendor dependency before the SPA mounted.
               // Date utilities - lazy load (not needed for login)
               if (id.includes("date-fns") || id.includes("dayjs") || id.includes("moment")) {
                 return "date-vendor";
