@@ -41,14 +41,18 @@ export type WorkoutDraft = {
   exercises: WorkoutExerciseDraft[];
 };
 
+export type WorkoutEditorAction = "plan" | "start";
+
 export type WorkoutEditorProps = {
   open: boolean;
   onClose: () => void;
   session?: SessionWithExercises | null;
+  plannedAt?: string;
+  actions?: readonly WorkoutEditorAction[];
   onSaved?: (session: SessionWithExercises) => void;
 };
 
-type PersistMode = "plan" | "start";
+type PersistMode = WorkoutEditorAction;
 
 const optionalNumber = (value: string): number | null => {
   if (!value.trim()) {
@@ -82,6 +86,8 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   open,
   onClose,
   session = null,
+  plannedAt,
+  actions = ["start", "plan"],
   onSaved,
 }) => {
   const { t } = useTranslation();
@@ -216,7 +222,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setPersisting(mode);
     setSaveError(null);
 
-    const plannedAt = session?.planned_at ?? new Date().toISOString();
+    const resolvedPlannedAt = session?.planned_at ?? plannedAt ?? new Date().toISOString();
     const exercisesPayload = drafts.map(toSessionExercise);
 
     try {
@@ -224,7 +230,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         ? await updateSession(session.id, {
             title: name.trim() || null,
             notes: notes.trim() || null,
-            planned_at: plannedAt,
+            planned_at: resolvedPlannedAt,
             status: mode === "start" ? "in_progress" : "planned",
             started_at: mode === "start" ? (session.started_at ?? new Date().toISOString()) : null,
             exercises: exercisesPayload,
@@ -232,7 +238,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         : await createSession({
             title: name.trim() || null,
             notes: notes.trim() || null,
-            planned_at: plannedAt,
+            planned_at: resolvedPlannedAt,
             visibility: "private",
             exercises: exercisesPayload,
           });
@@ -262,6 +268,8 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 
   const active = drafts[drafts.length - 1];
   const isBusy = persisting !== null;
+  const canStart = actions.includes("start");
+  const canPlan = actions.includes("plan");
 
   return (
     <Modal
@@ -273,31 +281,35 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
       width="lg"
       footer={
         <div className="workout-editor__bottom-actions">
-          <Button
-            variant="secondary"
-            size="lg"
-            leadingIcon={<Play />}
-            fullWidth
-            disabled={drafts.length === 0 || isBusy}
-            isLoading={persisting === "start"}
-            onClick={() => {
-              void persist("start");
-            }}
-          >
-            {t("workoutEditor.actions.start")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="lg"
-            leadingIcon={<CalendarDays />}
-            disabled={drafts.length === 0 || isBusy}
-            isLoading={persisting === "plan"}
-            onClick={() => {
-              void persist("plan");
-            }}
-          >
-            {t("workoutEditor.actions.plan")}
-          </Button>
+          {canStart ? (
+            <Button
+              variant="secondary"
+              size="lg"
+              leadingIcon={<Play />}
+              fullWidth
+              disabled={drafts.length === 0 || isBusy}
+              isLoading={persisting === "start"}
+              onClick={() => {
+                void persist("start");
+              }}
+            >
+              {t("workoutEditor.actions.start")}
+            </Button>
+          ) : null}
+          {canPlan ? (
+            <Button
+              variant="ghost"
+              size="lg"
+              leadingIcon={<CalendarDays />}
+              disabled={drafts.length === 0 || isBusy}
+              isLoading={persisting === "plan"}
+              onClick={() => {
+                void persist("plan");
+              }}
+            >
+              {t("workoutEditor.actions.plan")}
+            </Button>
+          ) : null}
         </div>
       }
     >
