@@ -424,6 +424,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
           padding: "var(--space-xs) var(--space-sm)",
           borderRadius: variant === "header" ? "var(--radius-md)" : "var(--radius-full)",
           border: variant === "header" ? "none" : "1px solid var(--color-border)",
+          borderColor: variant === "header" ? "transparent" : "var(--color-border)",
           background: triggerHovered
             ? "var(--color-surface-muted)"
             : variant === "header"
