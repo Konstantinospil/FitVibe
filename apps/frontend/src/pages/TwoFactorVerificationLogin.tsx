@@ -158,11 +158,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
             : t("auth.twoFactor.verify") || "Verify and Continue"}
         </Button>
 
-        <TextLink
-          as="button"
-          type="button"
-          onClick={handleBackToLogin}
-        >
+        <TextLink as="button" type="button" onClick={handleBackToLogin}>
           {t("auth.twoFactor.backToLogin") || "Back to login"}
         </TextLink>
       </FormStack>
