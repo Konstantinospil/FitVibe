@@ -73,7 +73,7 @@ export const Modal: React.FC<ModalProps> = ({
         padding: "var(--space-md)",
         background: "var(--dialog-backdrop)",
       }}
-      onMouseDown={(event) => {
+      onClick={(event) => {
         if (closeOnBackdrop && event.target === event.currentTarget) {
           onClose();
         }
