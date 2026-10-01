@@ -74,7 +74,13 @@ const Layout: React.FC = () => {
             background: colors.surface,
           }}
         >
-          <div style={{ color: colors.textSecondary, marginBottom: "1rem", fontSize: "var(--type-supporting-size)" }}>
+          <div
+            style={{
+              color: colors.textSecondary,
+              marginBottom: "1rem",
+              fontSize: "var(--type-supporting-size)",
+            }}
+          >
             Logged in as: {user?.displayName || user?.username}
           </div>
           <div style={{ marginBottom: "1rem" }}>
