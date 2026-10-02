@@ -1287,7 +1287,7 @@ jobs:
         with:
           target: http://127.0.0.1:4173
           rules_file_name: .zap/rules.tsv
-          cmd_options: -a -j --client-spider
+          cmd_options: -j --client-spider
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
