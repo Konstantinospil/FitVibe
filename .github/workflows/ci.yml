@@ -1037,7 +1037,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     needs:
       - quality
     permissions:
@@ -1050,7 +1050,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0 # Full history for secret scanning
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -1075,11 +1075,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Dependency audit (fail on high severity)
+      - name: Dependency audit
+        id: dependency_audit
+        continue-on-error: true
         timeout-minutes: 5
         run: pnpm audit --prod --audit-level=high
 
       - name: Scan for CVEs (OSV)
+        id: osv
+        continue-on-error: true
         timeout-minutes: 10
         uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
         with:
@@ -1098,9 +1102,11 @@ jobs:
           if-no-files-found: ignore
 
       - name: Snyk scan
+        id: snyk
         if: env.SNYK_TOKEN != ''
+        continue-on-error: true
         timeout-minutes: 10
-        uses: snyk/actions/node@12140f4059e244892ae643824a95459a102120dd # master pinned 2026-09-06
+        uses: snyk/actions/node@12140f4059e244892ae643824a95459a102120dd
         with:
           command: test
           args: --all-projects --severity-threshold=high
@@ -1108,6 +1114,8 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: TruffleHog OSS scan
+        id: trufflehog
+        continue-on-error: true
         timeout-minutes: 5
         uses: trufflesecurity/trufflehog@f714bf454f350590f4a24c3ddb1aef02c35bf5b6 # v3.97.5
         with:
@@ -1116,12 +1124,16 @@ jobs:
           extra_args: "--results=verified --fail-on-scan-errors"
 
       - name: Static secret scan
+        id: static_secrets
+        continue-on-error: true
         timeout-minutes: 5
         run: node tests/security/secret-scan.cjs
 
-      - name: Container vulnerability scan
+      - name: Filesystem vulnerability scan
+        id: trivy
+        continue-on-error: true
         timeout-minutes: 10
-        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.35.0; SHA-pinned after GHSA-69fq-xp46-6x23
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.35.0
         with:
           scan-type: fs
           scan-ref: .
@@ -1134,14 +1146,41 @@ jobs:
             infra/docker/keys
             node_modules
 
-      - name: Job summary
+      - name: Aggregate required security outcomes
         if: always()
+        env:
+          DEPENDENCY_AUDIT: ${{ steps.dependency_audit.outcome }}
+          OSV: ${{ steps.osv.outcome }}
+          TRUFFLEHOG: ${{ steps.trufflehog.outcome }}
+          STATIC_SECRETS: ${{ steps.static_secrets.outcome }}
+          TRIVY: ${{ steps.trivy.outcome }}
+          SNYK: ${{ steps.snyk.outcome }}
         run: |
-          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Dependency audit completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ OSV scan completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Secret scan completed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Container scan completed" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Security Scan Summary"
+            echo "- pnpm audit: $DEPENDENCY_AUDIT"
+            echo "- OSV: $OSV"
+            echo "- TruffleHog: $TRUFFLEHOG"
+            echo "- Static secret scan: $STATIC_SECRETS"
+            echo "- Trivy: $TRIVY"
+            echo "- Snyk (supplementary external service): ${SNYK:-skipped}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failed=0
+          for outcome in "$DEPENDENCY_AUDIT" "$OSV" "$TRUFFLEHOG" "$STATIC_SECRETS" "$TRIVY"; do
+            if [ "$outcome" != "success" ]; then
+              failed=1
+            fi
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::One or more required deterministic security controls failed."
+            exit 1
+          fi
+
+          if [ -n "${SNYK:-}" ] && [ "$SNYK" != "success" ] && [ "$SNYK" != "skipped" ]; then
+            echo "::warning::Snyk was unavailable or failed. Repository-native security controls still completed; investigate the external scanner separately."
+          fi
 
   codeql_compatibility:
     name: CodeQL Compatibility (javascript)
@@ -1176,25 +1215,62 @@ jobs:
   zap_baseline:
     name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: security
+    timeout-minutes: 25
+    needs:
+      - quality
+      - frontend_tests
     permissions:
       contents: read
-      security-events: write
-    env:
-      ZAP_TARGET_URL: ${{ secrets.ZAP_TARGET_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --no-offline
+
+      - name: Build frontend
+        run: pnpm --filter @fitvibe/frontend run build
+
+      - name: Start production-like frontend
+        run: |
+          pnpm --filter @fitvibe/frontend exec vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/fitvibe-zap-preview.log 2>&1 &
+          echo $! > /tmp/fitvibe-zap-preview.pid
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              echo "Frontend ready for ZAP"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/fitvibe-zap-preview.log || true
+          echo "Frontend did not become ready for ZAP" >&2
+          exit 1
+
       - name: Run ZAP baseline scan
-        if: env.ZAP_TARGET_URL != ''
         timeout-minutes: 12
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
-          target: ${{ env.ZAP_TARGET_URL }}
+          target: http://127.0.0.1:4173
           rules_file_name: .zap/rules.tsv
-          cmd_options: -a -I
+          cmd_options: -a
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-baseline-${{ github.run_id }}
+
+      - name: Stop frontend
+        if: always()
+        run: |
+          if [ -f /tmp/fitvibe-zap-preview.pid ]; then
+            kill "$(cat /tmp/fitvibe-zap-preview.pid)" 2>/dev/null || true
+          fi
 
   performance:
     name: Performance Budgets
