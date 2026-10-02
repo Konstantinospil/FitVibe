@@ -103,7 +103,8 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --radius-full: 999px;\n  --radius-none: 0;
+  --radius-full: 999px;
+  --radius-none: 0;
 
   /* Transparency authority — Figma Layout variables */
   --opacity-full: 1;
@@ -137,6 +138,9 @@
   --space-xl: 2rem;
   --space-2xl: 2.5rem;
   --space-3xl: 3.5rem;
+
+  /* Shared primitive dimension authority */
+  --textarea-min-height: 10rem;
 
   /* === DARK MODE COLORS (Primary) === */
 

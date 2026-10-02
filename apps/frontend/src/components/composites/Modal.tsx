@@ -15,9 +15,9 @@ export interface ModalProps {
 }
 
 const maxWidthBySize = {
-  sm: "var(--modal-width-sm, 28rem)",
-  md: "var(--modal-width-md, 40rem)",
-  lg: "var(--modal-width-lg, 56rem)",
+  sm: "var(--modal-width-sm)",
+  md: "var(--modal-width-md)",
+  lg: "var(--modal-width-lg)",
 } as const;
 
 export const Modal: React.FC<ModalProps> = ({

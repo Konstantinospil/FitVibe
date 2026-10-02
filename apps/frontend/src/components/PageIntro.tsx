@@ -93,7 +93,7 @@ const PageIntro: React.FC<PageIntroProps> = ({
             ...(priorityLcp
               ? {
                   color: "var(--color-text-primary, var(--color-on-color))",
-                  fontFamily: "var(--font-family-priority-lcp)",
+                  fontFamily: "var(--font-family-body)",
                 }
               : {}),
           }}

@@ -624,7 +624,7 @@ export const TextareaField = forwardRef<HTMLTextAreaElement, TextareaFieldProps>
           aria-invalid={error ? "true" : undefined}
           aria-describedby={helperId}
           style={{
-            minHeight: "var(--textarea-min-height, 10rem)",
+            minHeight: "var(--textarea-min-height)",
             borderColor,
             background:
               state === "disabled" ? "var(--color-surface-muted)" : "var(--color-input-bg)",

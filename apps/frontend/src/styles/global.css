@@ -21,7 +21,7 @@
 
   /* Typography authority — FitVibe Figma Design System v2 */
   --font-family-body: "Inter", system-ui, sans-serif;
-  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;\n  --font-family-priority-lcp: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
 
   --font-weight-regular: 400;
   --font-weight-control-large: 582;
@@ -76,7 +76,8 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --radius-full: 999px;\n  --radius-none: 0;
+  --radius-full: 999px;
+  --radius-none: 0;
 
   /* Transparency authority — Figma Layout variables */
   --opacity-full: 1;
@@ -120,6 +121,12 @@
   --space-xl: 2rem;
   --space-2xl: 2.5rem;
   --space-3xl: 3.5rem;
+
+  /* Component dimension authority */
+  --modal-width-sm: 28rem;
+  --modal-width-md: 40rem;
+  --modal-width-lg: 56rem;
+  --textarea-min-height: 10rem;
 
   /* === DARK MODE COLORS (Primary) === */
 

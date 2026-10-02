@@ -184,6 +184,10 @@ async function checkFrontendTokens() {
   const sourceFiles = await frontendSourceFiles([".ts", ".tsx", ".js", ".jsx"]);
   const stylesheetFiles = await frontendSourceFiles([".css", ".scss"]);
   const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/g;
+  const namedColorPattern =
+    /\b(?:color|background|backgroundColor|borderColor|outlineColor|textDecorationColor|fill|stroke)\s*:\s*["'`](?:white|black|red|blue|green|gray|grey|yellow|orange|purple|pink)["'`]/gi;
+  const namedCssColorPattern =
+    /\b(?:color|background(?:-color)?|border(?:-[a-z-]+)?-color|outline-color|fill|stroke)\s*:\s*(?:white|black|red|blue|green|gray|grey|yellow|orange|purple|pink)\b/gi;
   const figmaAuthorityDeclarations = new Map([
     ["--radius-sm", "8px"], ["--radius-md", "12px"], ["--radius-lg", "16px"],
     ["--radius-xl", "24px"], ["--radius-full", "999px"], ["--radius-none", "0"],
@@ -209,7 +213,7 @@ async function checkFrontendTokens() {
     "apps/backoffice/src/styles/global.css",
   ]);
   const literalTokenFallbackPattern =
-    /var\(--[a-zA-Z0-9_-]+,\s*(?:#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)|-?\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw)?\b)/g;
+    /var\(--[a-zA-Z0-9_-]+,\s*(?:#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)|(?:white|black|red|blue|green|gray|grey|yellow|orange|purple|pink)\b|-?\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw)?\b)/gi;
 
   const arbitraryVisualUtilityPattern =
     /\b(?:rounded|opacity|text|leading|tracking|font)-\[[^\]]+\]/g;
@@ -265,6 +269,17 @@ async function checkFrontendTokens() {
       }
     }
 
+    for (const match of source.matchAll(namedColorPattern)) {
+      if (!sourceException(source, match.index, "token")) {
+        report(
+          file,
+          source,
+          match.index,
+          "Named color literal in production frontend source. Consume a canonical design token instead.",
+        );
+      }
+    }
+
     for (const match of source.matchAll(literalTokenFallbackPattern)) {
       if (!sourceException(source, match.index, "token")) {
         report(
@@ -297,7 +312,10 @@ async function checkFrontendTokens() {
         const formattedExpression =
           expressionEnd >= 0 ? source.slice(match.index, expressionEnd) : match[0];
 
-        const directLiteral = /^(?:["'`]|-?\d)/.test(String(match[1] ?? "").trim());
+        const rawExpression = String(match[1] ?? "").trim();
+        const directLiteral =
+          /^(?:["'`]|-?\d)/.test(rawExpression) ||
+          /\b(?:calc|clamp|min|max)\s*\(/.test(rawExpression);
         if (
           directLiteral &&
           !rule.allowedValue(value) &&
@@ -317,6 +335,20 @@ async function checkFrontendTokens() {
       for (const [token, expected] of figmaAuthorityDeclarations) {
         if (!source.includes(token + ": " + expected + ";")) {
           report(file, source, 0, "Figma design authority drift: " + token + " must equal " + expected + ".");
+        }
+      }
+      if (!source.includes("--textarea-min-height: 10rem;")) {
+        report(file, source, 0, "Shared UI dimension authority drift: --textarea-min-height must equal 10rem.");
+      }
+      if (rel === "apps/frontend/src/styles/global.css") {
+        for (const [token, expected] of [
+          ["--modal-width-sm", "28rem"],
+          ["--modal-width-md", "40rem"],
+          ["--modal-width-lg", "56rem"],
+        ]) {
+          if (!source.includes(token + ": " + expected + ";")) {
+            report(file, source, 0, "Frontend modal dimension authority drift: " + token + " must equal " + expected + ".");
+          }
         }
       }
     }
@@ -407,6 +439,19 @@ async function checkFrontendTokens() {
         message: "CSS font-family must reference the canonical Figma font-family authority.",
       },
     ];
+
+    for (const match of source.matchAll(namedCssColorPattern)) {
+      const line = lineTextAt(source, match.index);
+      const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+      if (!(isAuthorityFile && isTokenDeclaration) && !sourceException(source, match.index, "token")) {
+        report(
+          file,
+          source,
+          match.index,
+          "Named CSS color literal outside the visual authority. Consume a canonical token instead.",
+        );
+      }
+    }
 
     for (const match of source.matchAll(rawColorPattern)) {
       const line = lineTextAt(source, match.index);
