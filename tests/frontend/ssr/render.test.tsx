@@ -7,6 +7,7 @@ import React from "react";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type * as NodeFs from "node:fs";
 import { renderPage } from "../../src/ssr/render.js";
+import * as servicesApi from "../../src/services/api.js";
 
 // Mock dependencies
 vi.mock("react-dom/server", () => ({
@@ -251,4 +252,132 @@ describe("SSR render", () => {
     expect(html).toContain("Rendered App");
     mockI18n.language = "en";
   });
+
+  it("prefetches insight data for insight and progress routes", async () => {
+    vi.mocked(servicesApi.getProgressTrends).mockResolvedValue({} as never);
+    vi.mocked(servicesApi.getExerciseBreakdown).mockResolvedValue({} as never);
+
+    await renderPage("/insights");
+    await renderPage("/progress?period=30");
+
+    expect(servicesApi.getProgressTrends).toHaveBeenCalledTimes(2);
+    expect(servicesApi.getProgressTrends).toHaveBeenCalledWith({
+      period: 30,
+      group_by: "week",
+    });
+    expect(servicesApi.getExerciseBreakdown).toHaveBeenCalledTimes(2);
+  });
+
+  it("prefetches public feed data only for the feed route", async () => {
+    vi.mocked(servicesApi.getFeed).mockResolvedValue({ data: [], total: 0 } as never);
+
+    await renderPage("/feed");
+    await renderPage("/profile");
+
+    expect(servicesApi.getFeed).toHaveBeenCalledTimes(1);
+    expect(servicesApi.getFeed).toHaveBeenCalledWith({
+      scope: "public",
+      limit: 20,
+      offset: 0,
+    });
+  });
+
+  it("selects a manifest entry by main chunk name when the source key is absent", async () => {
+    process.env.NODE_ENV = "production";
+    const fs = await import("node:fs");
+    vi.mocked(fs.existsSync).mockReset();
+    vi.mocked(fs.existsSync).mockImplementation((path) => {
+      const value = String(path);
+      return value.includes("manifest.json") || value.endsWith(".css");
+    });
+    vi.mocked(fs.readFileSync).mockReset();
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      const value = String(path);
+      if (value.includes("manifest.json")) {
+        return JSON.stringify({
+          "entry-client": {
+            name: "main",
+            file: "assets/js/main-by-name.js",
+            css: ["assets/css/main.css"],
+          },
+        });
+      }
+      if (value.endsWith(".css")) {
+        return ".main{display:block}";
+      }
+      return '<html><head></head><body><div id="root"><div>fallback</div></div></body></html>';
+    });
+
+    const html = await renderPage("/login");
+
+    expect(html).toContain('/assets/js/main-by-name.js');
+    expect(html).toContain('data-href="/assets/css/main.css"');
+  });
+
+  it("falls back to the first entry chunk and traverses imported CSS once", async () => {
+    process.env.NODE_ENV = "production";
+    const fs = await import("node:fs");
+    vi.mocked(fs.existsSync).mockReset();
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReset();
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      const value = String(path);
+      if (value.includes("manifest.json")) {
+        return JSON.stringify({
+          entry: {
+            isEntry: true,
+            file: "assets/js/entry.js",
+            css: ["assets/css/shared.css"],
+            imports: ["shared"],
+          },
+          shared: {
+            file: "assets/js/shared.js",
+            css: ["assets/css/shared.css", "assets/css/imported.css"],
+            imports: ["entry"],
+          },
+        });
+      }
+      if (value.endsWith(".css")) {
+        return value.includes("imported.css") ? ".imported{display:grid}" : ".shared{display:flex}";
+      }
+      return '<html><head></head><body><div id="root"></div></body></html>';
+    });
+
+    const html = await renderPage("/login");
+
+    expect(html).toContain('/assets/js/entry.js');
+    expect((html.match(/data-href="\/assets\/css\/shared.css"/g) ?? [])).toHaveLength(1);
+    expect(html).toContain('data-href="/assets/css/imported.css"');
+  });
+
+  it("preserves a template without a root marker instead of corrupting it", async () => {
+    const fs = await import("node:fs");
+    vi.mocked(fs.existsSync).mockReset();
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readFileSync).mockReset();
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      '<html><head></head><body><main id="static">Static shell</main></body></html>',
+    );
+
+    const html = await renderPage("/login");
+
+    expect(html).toContain('<main id="static">Static shell</main>');
+    expect(html).not.toContain('<div id="root">Rendered App</div>');
+  });
+
+  it("replaces nested fallback root content without leaving nested shell markup behind", async () => {
+    const fs = await import("node:fs");
+    vi.mocked(fs.existsSync).mockReset();
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readFileSync).mockReset();
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      '<html><head></head><body><div id="root"><div><div>Old shell</div></div></div></body></html>',
+    );
+
+    const html = await renderPage("/login");
+
+    expect(html).toContain('<div id="root"><div>Rendered App</div></div>');
+    expect(html).not.toContain("Old shell");
+  });
+
 });
