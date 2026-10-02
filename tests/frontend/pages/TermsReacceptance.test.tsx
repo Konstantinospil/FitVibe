@@ -230,9 +230,13 @@ describe("TermsReacceptance page", () => {
     );
   });
 
-  it("should disable form while submitting", async () => {
+  it("should disable form while submitting and settle the request before teardown", async () => {
+    let resolveRequest!: (value: { message: string }) => void;
     vi.mocked(api.acceptTerms).mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100)),
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
     );
 
     render(
@@ -244,19 +248,24 @@ describe("TermsReacceptance page", () => {
     const checkbox = screen.getByRole("checkbox");
     const submitButton = screen.getByRole("button", { name: "Accept" });
 
-    act(() => {
-      fireEvent.click(checkbox);
-      fireEvent.click(submitButton);
+    fireEvent.click(checkbox);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(submitButton).toBeDisabled();
+      expect(checkbox).toBeDisabled();
+      expect(api.acceptTerms).toHaveBeenCalled();
     });
 
-    await waitFor(
-      () => {
-        expect(submitButton).toBeDisabled();
-        expect(checkbox).toBeDisabled();
-        expect(api.acceptTerms).toHaveBeenCalled();
-      },
-      { timeout: 1000 },
-    );
+    await act(async () => {
+      resolveRequest({ message: "Terms accepted" });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(submitButton).not.toBeDisabled();
+      expect(checkbox).not.toBeDisabled();
+    });
   });
 
   it("should allow signing out", async () => {
