@@ -1,8 +1,7 @@
 # RuleId	Action	Reason
-# Security headers are enforced by the production SSR server and must not be suppressed here.
-10024	IGNORE	ZAP injects synthetic email query parameters; FitVibe does not generate sensitive credentials in URLs.
-10049	IGNORE	Non-storable responses are intentional for dynamic/private content and are not a vulnerability.
-10094	IGNORE	Base64 content inside compiled static JavaScript is build output, not credential material.
-10111	IGNORE	Authentication request identification is informational and expected for auth routes.
-90004	IGNORE	Cross-origin embedder isolation is not required by the current application architecture.
-90005	IGNORE	Sec-Fetch-Dest is a browser request header, not an application response security control.
+# Actionable security controls remain WARN/FAIL by default. INFO preserves verified observations without hiding them.
+10049	INFO	Intentional cache policy is route-specific; private/dynamic HTML remains non-storable.
+10094	INFO	Bundled Base64 is permitted only after the compiled client passes the post-build secret scan.
+10109	INFO	FitVibe is a modern web application; CI also runs the ZAP Client Spider for browser-driven discovery.
+10111	INFO	Authentication request detection is expected and retained as evidence for future authenticated DAST.
+90005	INFO	Fetch Metadata headers originate from real browsers; traditional-spider requests may not contain them.
