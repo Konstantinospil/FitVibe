@@ -65,7 +65,7 @@ describe("MainLayout", () => {
     });
   });
 
-  it("renders the current navigation contract and disables archived destinations", () => {
+  it("renders the canonical application navigation contract", () => {
     render(
       <MemoryRouter>
         <MainLayout />
@@ -74,12 +74,9 @@ describe("MainLayout", () => {
 
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("href", "/calendar");
-    expect(screen.getByRole("link", { name: "Library" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
   });
 
   it("renders the skip-to-content link", () => {
