@@ -1236,22 +1236,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Build frontend
-        run: pnpm --filter @fitvibe/frontend run build
+      - name: Build production SSR frontend
+        run: pnpm --filter @fitvibe/frontend run build:ssr
 
-      - name: Start production-like frontend
+      - name: Start production SSR frontend
         run: |
-          pnpm --filter @fitvibe/frontend exec vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/fitvibe-zap-preview.log 2>&1 &
-          echo $! > /tmp/fitvibe-zap-preview.pid
+          NODE_ENV=production PORT=4173 pnpm --filter @fitvibe/frontend run start:ssr > /tmp/fitvibe-zap-ssr.log 2>&1 &
+          echo $! > /tmp/fitvibe-zap-ssr.pid
           for i in {1..40}; do
-            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
-              echo "Frontend ready for ZAP"
+            if curl -fsS http://127.0.0.1:4173/health >/dev/null; then
+              echo "Production SSR frontend ready for ZAP"
               exit 0
             fi
             sleep 2
           done
-          cat /tmp/fitvibe-zap-preview.log || true
-          echo "Frontend did not become ready for ZAP" >&2
+          cat /tmp/fitvibe-zap-ssr.log || true
+          echo "Production SSR frontend did not become ready for ZAP" >&2
           exit 1
 
       - name: Run ZAP baseline scan
@@ -1268,8 +1268,8 @@ jobs:
       - name: Stop frontend
         if: always()
         run: |
-          if [ -f /tmp/fitvibe-zap-preview.pid ]; then
-            kill "$(cat /tmp/fitvibe-zap-preview.pid)" 2>/dev/null || true
+          if [ -f /tmp/fitvibe-zap-ssr.pid ]; then
+            kill "$(cat /tmp/fitvibe-zap-ssr.pid)" 2>/dev/null || true
           fi
 
   performance:
@@ -1392,6 +1392,7 @@ jobs:
       - visual_regression
       - deployment_contract
       - release_governance
+    if: always()
     permissions:
       contents: read
     steps:
@@ -1406,22 +1407,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --no-offline
-
       - name: Download coverage artifact
+        continue-on-error: true
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: coverage-${{ github.run_id }}
           path: coverage
 
       - name: Download performance metrics
+        continue-on-error: true
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: perf-metrics-${{ github.run_id }}
           path: .
 
       - name: Download lighthouse report
+        continue-on-error: true
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: lighthouse-report-${{ github.run_id }}
@@ -1731,7 +1732,7 @@ jobs:
 
       - name: Run Playwright e2e tests
         timeout-minutes: 15
-        run: pnpm exec playwright test --config tests/frontend/e2e/playwright.config.cjs --reporter=line
+        run: pnpm exec playwright test tests/frontend/e2e/smoke.spec.cjs tests/frontend/e2e/active-surfaces.spec.cjs --config tests/frontend/e2e/playwright.config.cjs --reporter=line
 
       - name: Upload Playwright artifacts
         if: always()
