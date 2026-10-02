@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: ["main", "dev", "feature"]
+    branches: ["main", "dev"]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
