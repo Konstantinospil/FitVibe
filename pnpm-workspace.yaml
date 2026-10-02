@@ -73,3 +73,7 @@ overrides:
   '@humanfs/node': '>=0.16.8'
   'jest': '^30.5.2'
   '@jest/transform': '^30.5.2'
+  'expect': '^30.5.2'
+  'jest-message-util': '^30.5.1'
+  '@jest/types': '^30.5.1'
+  'jest-util': '^30.5.1'
