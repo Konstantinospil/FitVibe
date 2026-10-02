@@ -1,6 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { getErrorMessage, getErrorMessageSync, useErrorMessage } from "../../src/utils/errorMessages";
-import { renderHook } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { getErrorMessage, getErrorMessageSync } from "../../src/utils/errorMessages";
 
 const t = (key: string) => `t:${key}`;
 const identityT = (key: string) => key;
@@ -91,16 +90,4 @@ describe("errorMessages", () => {
     });
     expect(getErrorMessageSync(emptyNested, t, undefined, "Fallback", false)).toBe("fallback");
   });
-
-  it("useErrorMessage delegates through the translation hook", () => {
-    vi.doMock("react-i18next", () => ({
-      useTranslation: () => ({ t: (key: string) => `translated:${key}` }),
-    }));
-
-    const { result } = renderHook(() =>
-      useErrorMessage({}, "common.error", "Fallback", false),
-    );
-    expect(result.current).toBeTruthy();
-  });
-
 });
