@@ -1239,6 +1239,9 @@ jobs:
       - name: Build production SSR frontend
         run: pnpm --filter @fitvibe/frontend run build:ssr
 
+      - name: Scan compiled client for secrets
+        run: node tests/security/secret-scan.cjs apps/frontend/dist/client
+
       - name: Start production SSR frontend
         run: |
           NODE_ENV=production PORT=4173 pnpm --filter @fitvibe/frontend run start:ssr > /tmp/fitvibe-zap-ssr.log 2>&1 &
@@ -1254,13 +1257,37 @@ jobs:
           echo "Production SSR frontend did not become ready for ZAP" >&2
           exit 1
 
+      - name: Verify SSR security headers
+        run: |
+          headers="$(curl -fsSI http://127.0.0.1:4173/)"
+          printf '%s\n' "$headers"
+          printf '%s\n' "$headers" | grep -qi '^content-security-policy:'
+          printf '%s\n' "$headers" | grep -qi '^cross-origin-embedder-policy: require-corp'
+          printf '%s\n' "$headers" | grep -qi '^cross-origin-opener-policy: same-origin'
+          printf '%s\n' "$headers" | grep -qi '^x-frame-options: DENY'
+          printf '%s\n' "$headers" | grep -qi '^x-content-type-options: nosniff'
+          if printf '%s\n' "$headers" | grep -qi '^x-powered-by:'; then
+            echo "::error::SSR leaks X-Powered-By"
+            exit 1
+          fi
+          csp="$(printf '%s\n' "$headers" | sed -n 's/^[Cc]ontent-[Ss]ecurity-[Pp]olicy:[[:space:]]*//p')"
+          printf '%s\n' "$csp" | grep -q "script-src 'self'"
+          if printf '%s\n' "$csp" | grep -Eq "script-src[^;]*'unsafe-inline'"; then
+            echo "::error::SSR CSP permits inline scripts"
+            exit 1
+          fi
+          if printf '%s\n' "$csp" | grep -Eq "style-src[^-][^;]*'unsafe-inline'"; then
+            echo "::error::SSR CSP broadly permits inline style blocks"
+            exit 1
+          fi
+
       - name: Run ZAP baseline scan
         timeout-minutes: 12
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://127.0.0.1:4173
           rules_file_name: .zap/rules.tsv
-          cmd_options: -a
+          cmd_options: -a -j --client-spider
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
