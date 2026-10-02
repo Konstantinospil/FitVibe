@@ -116,6 +116,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Validate package manifests
+        run: node tests/qa/check-package-json.cjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
