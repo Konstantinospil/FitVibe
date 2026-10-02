@@ -7,9 +7,12 @@ import React from "react";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import type * as NodeFs from "node:fs";
 import { renderPage } from "../../src/ssr/render.js";
-import * as servicesApi from "../../src/services/api.js";
 
 // Mock dependencies
+const { prefetchQuery } = vi.hoisted(() => ({
+  prefetchQuery: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("react-dom/server", () => ({
   renderToString: vi.fn(() => "<div>Rendered App</div>"),
 }));
@@ -33,7 +36,7 @@ vi.mock("../../src/contexts/ToastContext.js", () => ({
 
 vi.mock("../../src/lib/queryClient.js", () => ({
   createQueryClient: vi.fn(() => ({
-    prefetchQuery: vi.fn(),
+    prefetchQuery,
   })),
 }));
 
@@ -253,33 +256,31 @@ describe("SSR render", () => {
     mockI18n.language = "en";
   });
 
-  it("prefetches insight data for insight and progress routes", async () => {
-    vi.mocked(servicesApi.getProgressTrends).mockResolvedValue({} as never);
-    vi.mocked(servicesApi.getExerciseBreakdown).mockResolvedValue({} as never);
-
+  it("schedules insight queries for insight and progress routes", async () => {
     await renderPage("/insights");
     await renderPage("/progress?period=30");
 
-    expect(servicesApi.getProgressTrends).toHaveBeenCalledTimes(2);
-    expect(servicesApi.getProgressTrends).toHaveBeenCalledWith({
-      period: 30,
-      group_by: "week",
-    });
-    expect(servicesApi.getExerciseBreakdown).toHaveBeenCalledTimes(2);
+    const queryKeys = prefetchQuery.mock.calls.map(([options]) => options.queryKey);
+    expect(queryKeys).toEqual(
+      expect.arrayContaining([
+        ["progress-trends", { period: 30, group_by: "week" }, "week"],
+        ["exercise-breakdown", { period: 30 }],
+      ]),
+    );
+    expect(prefetchQuery).toHaveBeenCalledTimes(4);
   });
 
-  it("prefetches public feed data only for the feed route", async () => {
-    vi.mocked(servicesApi.getFeed).mockResolvedValue({ data: [], total: 0 } as never);
+  it("schedules public feed prefetch only for the feed route", async () => {
+    prefetchQuery.mockClear();
 
     await renderPage("/feed");
     await renderPage("/profile");
 
-    expect(servicesApi.getFeed).toHaveBeenCalledTimes(1);
-    expect(servicesApi.getFeed).toHaveBeenCalledWith({
-      scope: "public",
-      limit: 20,
-      offset: 0,
-    });
+    expect(prefetchQuery).toHaveBeenCalledTimes(1);
+    expect(prefetchQuery.mock.calls[0]?.[0]?.queryKey).toEqual([
+      "feed",
+      { scope: "public", limit: 20, offset: 0 },
+    ]);
   });
 
   it("selects a manifest entry by main chunk name when the source key is absent", async () => {
