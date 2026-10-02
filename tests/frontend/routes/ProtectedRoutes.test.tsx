@@ -4,6 +4,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter, Outlet } from "react-router-dom";
 import ProtectedRoutes from "../../../apps/frontend/src/routes/ProtectedRoutes";
 import { useAuth } from "../../../apps/frontend/src/contexts/AuthContext";
+import {
+  DEHYDRATED_STATE_ELEMENT_ID,
+  serializeDehydratedState,
+} from "../../../apps/frontend/src/ssr/dehydratedState";
 
 vi.mock("../../../apps/frontend/src/contexts/AuthContext");
 vi.mock("../../../apps/frontend/src/i18n/config", () => ({
@@ -137,29 +141,39 @@ describe("ProtectedRoutes", () => {
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
   });
 
-  it("consumes dehydrated state from window when no prop is supplied", async () => {
-    const dehydratedState = { queries: [{ queryKey: ["test"], state: { data: "test" } }] };
-    (window as unknown as { __REACT_QUERY_STATE__?: unknown }).__REACT_QUERY_STATE__ =
-      dehydratedState;
+  it("consumes inert dehydrated state from the document when no prop is supplied", async () => {
+    const dehydratedState = {
+      queries: [{ queryKey: ["test"], state: { data: "test" } }],
+      mutations: [],
+    };
+    const template = document.createElement("template");
+    template.id = DEHYDRATED_STATE_ELEMENT_ID;
+    template.content.textContent = serializeDehydratedState(dehydratedState as never);
+    document.body.appendChild(template);
 
     renderRoute("/");
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
-    expect((window as unknown as { __REACT_QUERY_STATE__?: unknown }).__REACT_QUERY_STATE__).toBe(
-      undefined,
-    );
+    expect(document.getElementById(DEHYDRATED_STATE_ELEMENT_ID)).toBeNull();
   });
 
-  it("prefers prop dehydrated state over window state", async () => {
-    const propState = { queries: [{ queryKey: ["prop"], state: { data: "prop" } }] };
-    const windowState = { queries: [{ queryKey: ["window"], state: { data: "window" } }] };
-    (window as unknown as { __REACT_QUERY_STATE__?: unknown }).__REACT_QUERY_STATE__ = windowState;
+  it("prefers prop dehydrated state without consuming document state", async () => {
+    const propState = {
+      queries: [{ queryKey: ["prop"], state: { data: "prop" } }],
+      mutations: [],
+    };
+    const documentState = {
+      queries: [{ queryKey: ["document"], state: { data: "document" } }],
+      mutations: [],
+    };
+    const template = document.createElement("template");
+    template.id = DEHYDRATED_STATE_ELEMENT_ID;
+    template.content.textContent = serializeDehydratedState(documentState as never);
+    document.body.appendChild(template);
 
     renderRoute("/", propState);
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
-    expect((window as unknown as { __REACT_QUERY_STATE__?: unknown }).__REACT_QUERY_STATE__).toBe(
-      windowState,
-    );
+    expect(document.getElementById(DEHYDRATED_STATE_ELEMENT_ID)).not.toBeNull();
 
-    delete (window as unknown as { __REACT_QUERY_STATE__?: unknown }).__REACT_QUERY_STATE__;
+    template.remove();
   });
 });
