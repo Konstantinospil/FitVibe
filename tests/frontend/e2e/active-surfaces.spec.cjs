@@ -39,7 +39,7 @@ test.describe("Active application surfaces", () => {
     await calendarLink.click();
 
     await page.waitForURL((url) => url.pathname === "/calendar");
-    await expect(page.getByRole("heading", { name: /^calendar$/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^calendar$/i, level: 1 })).toBeVisible();
     await expect(page.getByRole("grid")).toBeVisible();
   });
 
