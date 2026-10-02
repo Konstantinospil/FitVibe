@@ -210,8 +210,6 @@ export default defineConfig(() => {
           assetFileNames: isSSR
             ? "assets/[ext]/[name]-[hash].[ext]"
             : "assets/[ext]/[name]-[hash].[ext]",
-          // Compact output to reduce whitespace and file size
-          compact: true,
         },
       },
       // Enable tree shaking with more aggressive settings
