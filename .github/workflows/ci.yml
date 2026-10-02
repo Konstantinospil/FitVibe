@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: ["main", "dev", "stage"]
+    branches: ["main", "dev", "feature"]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
@@ -121,7 +121,7 @@ jobs:
 
       - name: Verify dependency integrity
         run: |
-          pnpm audit --prod --audit-level=moderate || true
+          pnpm audit --prod --audit-level=moderate
           echo "Dependency integrity check completed"
 
       - name: Lint
@@ -1103,15 +1103,14 @@ jobs:
           args: --all-projects --severity-threshold=high
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
       - name: TruffleHog OSS scan
         timeout-minutes: 5
         uses: trufflesecurity/trufflehog@f714bf454f350590f4a24c3ddb1aef02c35bf5b6 # v3.97.5
         with:
           path: "./"
-          base: ${{ github.event.repository.default_branch || 'main' }}
-          extra_args: "--results=verified"
+          version: "3.97.5"
+          extra_args: "--results=verified --fail-on-scan-errors"
 
       - name: Static secret scan
         timeout-minutes: 5
@@ -1613,7 +1612,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: integration
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
     permissions:
       contents: read
     steps:
@@ -1691,7 +1690,7 @@ jobs:
       - visual_regression
       - deployment_contract
       - release_governance
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -1789,7 +1788,7 @@ jobs:
     timeout-minutes: 20
     needs:
       - build-platform
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
       packages: write
@@ -1999,7 +1998,7 @@ jobs:
     timeout-minutes: 20
     needs:
       - build
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/stage')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: read
