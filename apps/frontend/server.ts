@@ -41,7 +41,7 @@ const sha256Source = (value: string) =>
 const contentSecurityPolicyForHtml = (html: string) => {
   const styleHashes = [
     ...new Set(
-      Array.from(html.matchAll(/<style(?:\\s[^>]*)?>([\\s\\S]*?)<\\/style>/gi), (match) =>
+      Array.from(html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi), (match) =>
         sha256Source(match[1] ?? ""),
       ),
     ),
