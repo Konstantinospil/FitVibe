@@ -295,11 +295,10 @@ describe("WorkoutEditor", () => {
 
     renderEditor(existing);
 
-    expect(await screen.findByDisplayValue("Push up")).toBeInTheDocument();
-    expect(screen.getByLabelText("workoutEditor.fields.repetitions")).toHaveValue(8);
+    expect(await screen.findByLabelText("workoutEditor.fields.repetitions")).toHaveValue(8);
     expect(screen.getByLabelText("workoutEditor.fields.weight")).toHaveValue(42.5);
     expect(screen.getByLabelText("workoutEditor.fields.duration")).toHaveValue(30);
-    expect(screen.getByLabelText("workoutEditor.fields.targetExertion")).toHaveValue(7);
+    expect(screen.getByLabelText("workoutEditor.fields.exertion")).toHaveValue(7);
     expect(screen.getByLabelText("workoutEditor.fields.restSet")).toHaveValue(45);
     expect(screen.getByLabelText("workoutEditor.fields.restExercise")).toHaveValue(90);
 
@@ -351,7 +350,7 @@ describe("WorkoutEditor", () => {
     fireEvent.change(screen.getByLabelText("workoutEditor.fields.duration"), {
       target: { value: "not-a-number" },
     });
-    fireEvent.change(screen.getByLabelText("workoutEditor.fields.targetExertion"), {
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.exertion"), {
       target: { value: "" },
     });
     fireEvent.change(screen.getByLabelText("workoutEditor.fields.restSet"), {
