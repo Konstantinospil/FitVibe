@@ -1,3 +1,8 @@
-# RuleId\tRisk\tConfidence\tAction
-# Add suppressions as needed, e.g.:
-# 10061\t1\t1\tIGNORE
+# RuleId	Action	Reason
+# Security headers are enforced by the production SSR server and must not be suppressed here.
+10024	IGNORE	ZAP injects synthetic email query parameters; FitVibe does not generate sensitive credentials in URLs.
+10049	IGNORE	Non-storable responses are intentional for dynamic/private content and are not a vulnerability.
+10094	IGNORE	Base64 content inside compiled static JavaScript is build output, not credential material.
+10111	IGNORE	Authentication request identification is informational and expected for auth routes.
+90004	IGNORE	Cross-origin embedder isolation is not required by the current application architecture.
+90005	IGNORE	Sec-Fetch-Dest is a browser request header, not an application response security control.
