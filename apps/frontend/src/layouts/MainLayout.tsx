@@ -28,10 +28,10 @@ const MainLayout: React.FC = () => {
         skipLinkLabel={t("navigation.skipToContent")}
         header={
           <AppHeader
-          variant="writing"
-          availablePaths={ACTIVE_APP_PATHS}
-          onSignOut={handleSignOut}
-        />
+            variant="writing"
+            availablePaths={ACTIVE_APP_PATHS}
+            onSignOut={handleSignOut}
+          />
         }
         footer={<Footer />}
       >
