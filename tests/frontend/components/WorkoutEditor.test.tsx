@@ -247,4 +247,207 @@ describe("WorkoutEditor", () => {
     expect(apiErrorSpy).toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it("normalizes existing exercise data and preserves planned exercise details on save", async () => {
+    const existing = {
+      ...savedSession,
+      id: "existing-rich",
+      title: null,
+      notes: null,
+      planned_at: "2026-03-01T10:00:00.000Z",
+      started_at: "2026-03-01T10:05:00.000Z",
+      exercises: [
+        {
+          id: "session-ex-rich",
+          session_id: "existing-rich",
+          exercise_id: "exercise-1",
+          order_index: 0,
+          planned: {
+            sets: 3,
+            reps: 8,
+            load: 42.5,
+            rpe: 7,
+            extras: { rest_after_exercise_sec: 90 },
+          },
+          sets: [
+            {
+              id: "set-1",
+              session_exercise_id: "session-ex-rich",
+              order_index: 0,
+              reps: 7,
+              weight_kg: 40,
+              duration_sec: 30,
+              rpe: 6,
+              rest_sec: 45,
+            },
+          ],
+        },
+        {
+          id: "invalid-exercise",
+          session_id: "existing-rich",
+          exercise_id: null,
+          order_index: 1,
+          planned: null,
+          sets: [],
+        },
+      ],
+    } as unknown as api.SessionWithExercises;
+
+    renderEditor(existing);
+
+    expect(await screen.findByDisplayValue("Push up")).toBeInTheDocument();
+    expect(screen.getByLabelText("workoutEditor.fields.repetitions")).toHaveValue(8);
+    expect(screen.getByLabelText("workoutEditor.fields.weight")).toHaveValue(42.5);
+    expect(screen.getByLabelText("workoutEditor.fields.duration")).toHaveValue(30);
+    expect(screen.getByLabelText("workoutEditor.fields.targetExertion")).toHaveValue(7);
+    expect(screen.getByLabelText("workoutEditor.fields.restSet")).toHaveValue(45);
+    expect(screen.getByLabelText("workoutEditor.fields.restExercise")).toHaveValue(90);
+
+    fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+    await waitFor(() => {
+      expect(mockedApi.updateSession).toHaveBeenCalledWith(
+        "existing-rich",
+        expect.objectContaining({
+          title: null,
+          notes: null,
+          planned_at: "2026-03-01T10:00:00.000Z",
+          status: "planned",
+          exercises: [
+            expect.objectContaining({
+              planned: expect.objectContaining({
+                sets: 3,
+                reps: 8,
+                load: 42.5,
+                rpe: 7,
+                extras: { rest_after_exercise_sec: 90 },
+              }),
+              sets: expect.arrayContaining([
+                expect.objectContaining({
+                  reps: 8,
+                  weight_kg: 42.5,
+                  duration_sec: 30,
+                  rpe: 7,
+                  rest_sec: 45,
+                }),
+              ]),
+            }),
+          ],
+        }),
+      );
+    });
+  });
+
+  it("converts invalid or blank optional numeric fields to null and omits exercise rest extras", async () => {
+    renderEditor();
+    await addExercise();
+
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.repetitions"), {
+      target: { value: "-1" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.weight"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.duration"), {
+      target: { value: "not-a-number" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.targetExertion"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.restSet"), {
+      target: { value: "" },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.restExercise"), {
+      target: { value: "" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+    await waitFor(() => {
+      expect(mockedApi.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          exercises: [
+            expect.objectContaining({
+              planned: expect.objectContaining({
+                reps: null,
+                load: null,
+                rpe: null,
+                extras: undefined,
+              }),
+              sets: [
+                expect.objectContaining({
+                  reps: null,
+                  weight_kg: null,
+                  duration_sec: null,
+                  rpe: null,
+                  rest_sec: null,
+                }),
+              ],
+            }),
+          ],
+        }),
+      );
+    });
+  });
+
+  it("uses explicit plannedAt and reports the saved session through onSaved", async () => {
+    const onSaved = vi.fn();
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkoutEditor
+          open
+          onClose={onClose}
+          plannedAt="2026-04-02T08:30:00.000Z"
+          onSaved={onSaved}
+        />
+      </QueryClientProvider>,
+    );
+    await addExercise();
+
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.name"), {
+      target: { value: "  Morning session  " },
+    });
+    fireEvent.change(screen.getByLabelText("workoutEditor.fields.notes"), {
+      target: { value: "  Controlled tempo  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+    await waitFor(() => {
+      expect(mockedApi.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Morning session",
+          notes: "Controlled tempo",
+          planned_at: "2026-04-02T08:30:00.000Z",
+        }),
+      );
+      expect(onSaved).toHaveBeenCalledWith(savedSession);
+    });
+  });
+
+  it("renders only the configured persistence action", async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkoutEditor open onClose={onClose} actions={["plan"]} />
+      </QueryClientProvider>,
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "workoutEditor.actions.plan" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not initialize or load editor content while closed", () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkoutEditor open={false} onClose={onClose} />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByText("workoutEditor.title")).not.toBeInTheDocument();
+  });
+
 });
