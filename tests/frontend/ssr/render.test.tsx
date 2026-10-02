@@ -94,7 +94,8 @@ describe("SSR render", () => {
     const html = await renderPage("/");
 
     expect(html).toContain("Rendered App");
-    expect(html).toContain("__REACT_QUERY_STATE__");
+    expect(html).toContain('id="fitvibe-react-query-state"');
+    expect(html).not.toContain("window.__REACT_QUERY_STATE__");
   });
 
   it("should render page for sessions route", async () => {
