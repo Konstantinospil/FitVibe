@@ -263,7 +263,7 @@ describe("WorkoutEditor", () => {
           exercise_id: "exercise-1",
           order_index: 0,
           planned: {
-            sets: 3,
+            sets: 1,
             reps: 8,
             load: 42.5,
             rpe: 7,
@@ -315,7 +315,7 @@ describe("WorkoutEditor", () => {
           exercises: [
             expect.objectContaining({
               planned: expect.objectContaining({
-                sets: 3,
+                sets: 1,
                 reps: 8,
                 load: 42.5,
                 rpe: 7,
