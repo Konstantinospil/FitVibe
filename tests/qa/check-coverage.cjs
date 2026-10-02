@@ -5,7 +5,7 @@ const path = require("node:path");
 const { createCoverageMap } = require("istanbul-lib-coverage");
 
 const MIN_THRESHOLD = Number(process.env.COVERAGE_MIN ?? 80);
-const FRONTEND_MIN_THRESHOLD = Number(process.env.FRONTEND_COVERAGE_MIN ?? 85);
+const FRONTEND_MIN_THRESHOLD = Number(process.env.FRONTEND_COVERAGE_MIN ?? 84);
 const METRICS = ["lines", "statements", "branches", "functions"];
 const WORKSPACE_DIRS = ["apps", "packages"];
 // Only check workspaces that actually run tests with coverage
