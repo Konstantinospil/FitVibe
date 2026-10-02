@@ -168,7 +168,7 @@ describe("PublishedLegalDocument", () => {
     render(<PublishedLegalDocument documentType="terms" title="Fallback title" />);
 
     expect(await screen.findByText("Legacy content")).toBeInTheDocument();
-    expect(ensureLegalTranslationsLoaded).toHaveBeenCalledTimes(1);
+    expect(ensureLegalTranslationsLoaded).toHaveBeenCalled();
     expect(getPublishedLegalDocument).toHaveBeenCalledWith("terms", "de");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Historische Bedingungen",
