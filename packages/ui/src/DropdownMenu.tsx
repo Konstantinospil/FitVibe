@@ -307,7 +307,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                   minHeight: "52px",
                   justifyContent: "flex-start",
                   padding: "var(--space-sm) var(--space-lg)",
-                  borderRadius: 0,
+                  borderRadius: "var(--radius-none)",
                   borderBottom:
                     index === items.length - 1
                       ? "none"

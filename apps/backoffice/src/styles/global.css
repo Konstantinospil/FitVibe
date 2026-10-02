@@ -103,7 +103,7 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  --radius-full: 999px;
+  --radius-full: 999px;\n  --radius-none: 0;
 
   /* Transparency authority — Figma Layout variables */
   --opacity-full: 1;

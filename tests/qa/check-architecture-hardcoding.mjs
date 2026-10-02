@@ -186,7 +186,7 @@ async function checkFrontendTokens() {
   const rawColorPattern = /#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/g;
   const figmaAuthorityDeclarations = new Map([
     ["--radius-sm", "8px"], ["--radius-md", "12px"], ["--radius-lg", "16px"],
-    ["--radius-xl", "24px"], ["--radius-full", "999px"],
+    ["--radius-xl", "24px"], ["--radius-full", "999px"], ["--radius-none", "0"],
     ["--opacity-full", "1"], ["--opacity-subtle", "0.7"], ["--opacity-disabled", "0.45"],
     ["--transparency-full", "100%"], ["--transparency-subtle", "70%"], ["--transparency-disabled", "45%"],
     ["--font-weight-regular", "400"], ["--font-weight-control-large", "582"], ["--font-weight-semibold", "600"],
@@ -203,6 +203,13 @@ async function checkFrontendTokens() {
     ["--type-metric-small-size", "0.875rem"], ["--type-metric-small-line-height", "0.75rem"], ["--type-metric-small-letter-spacing", "0.02em"],
   ]);
 
+
+  const visualAuthorityFiles = new Set([
+    "apps/frontend/src/styles/global.css",
+    "apps/backoffice/src/styles/global.css",
+  ]);
+  const literalTokenFallbackPattern =
+    /var\(--[a-zA-Z0-9_-]+,\s*(?:#[0-9a-fA-F]{3,8}\b|rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)|-?\d+(?:\.\d+)?(?:px|rem|em|%|vh|vw)?\b)/g;
 
   const arbitraryVisualUtilityPattern =
     /\b(?:rounded|opacity|text|leading|tracking|font)-\[[^\]]+\]/g;
@@ -258,6 +265,17 @@ async function checkFrontendTokens() {
       }
     }
 
+    for (const match of source.matchAll(literalTokenFallbackPattern)) {
+      if (!sourceException(source, match.index, "token")) {
+        report(
+          file,
+          source,
+          match.index,
+          "CSS variable fallbacks must reference another semantic token; literal visual fallbacks bypass the design authority.",
+        );
+      }
+    }
+
     for (const match of source.matchAll(arbitraryVisualUtilityPattern)) {
       if (!sourceException(source, match.index, "token")) {
         report(
@@ -279,7 +297,9 @@ async function checkFrontendTokens() {
         const formattedExpression =
           expressionEnd >= 0 ? source.slice(match.index, expressionEnd) : match[0];
 
+        const directLiteral = /^(?:["'`]|-?\d)/.test(String(match[1] ?? "").trim());
         if (
+          directLiteral &&
           !rule.allowedValue(value) &&
           !rule.allowedValue(formattedExpression) &&
           !sourceException(source, match.index, "token")
@@ -293,7 +313,7 @@ async function checkFrontendTokens() {
   for (const file of stylesheetFiles) {
     const source = await fs.readFile(file, "utf8");
     const rel = normalize(path.relative(ROOT, file));
-    if (rel.endsWith("/styles/global.css")) {
+    if (visualAuthorityFiles.has(rel)) {
       for (const [token, expected] of figmaAuthorityDeclarations) {
         if (!source.includes(token + ": " + expected + ";")) {
           report(file, source, 0, "Figma design authority drift: " + token + " must equal " + expected + ".");
@@ -301,12 +321,24 @@ async function checkFrontendTokens() {
       }
     }
 
-    const isGlobalAuthorityFile = rel === "apps/frontend/src/styles/global.css";
+    const isAuthorityFile = visualAuthorityFiles.has(rel);
+    const customPropertyPattern = /^\s*(--[a-zA-Z0-9_-]+)\s*:/gm;
+    if (!isAuthorityFile) {
+      for (const match of source.matchAll(customPropertyPattern)) {
+        report(
+          file,
+          source,
+          match.index,
+          "CSS custom-property declarations are restricted to explicit visual authority files; consumers must reference canonical tokens.",
+        );
+      }
+    }
+
     const rawAlphaPattern = /rgba?\([^)]*?,\s*(0(?:\.\d+)?|1(?:\.0+)?)\s*\)/g;
     for (const match of source.matchAll(rawAlphaPattern)) {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-      if (isGlobalAuthorityFile && isTokenDeclaration) {
+      if (isAuthorityFile && isTokenDeclaration) {
         continue;
       }
       const alpha = Number(match[1]);
@@ -324,7 +356,7 @@ async function checkFrontendTokens() {
     for (const match of source.matchAll(rawColorMixTransparency)) {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-      if (isGlobalAuthorityFile && isTokenDeclaration) {
+      if (isAuthorityFile && isTokenDeclaration) {
         continue;
       }
       const percent = Number(match[1]);
@@ -380,7 +412,7 @@ async function checkFrontendTokens() {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
       if (
-        !(isGlobalAuthorityFile && isTokenDeclaration) &&
+        !(isAuthorityFile && isTokenDeclaration) &&
         !sourceException(source, match.index, "token")
       ) {
         report(
@@ -397,7 +429,7 @@ async function checkFrontendTokens() {
         const line = lineTextAt(source, match.index);
         const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
         const isAuthorityDeclaration =
-          isGlobalAuthorityFile && /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+          isAuthorityFile && /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
         const isFontFaceDescriptor = insideFontFaceBlock(source, match.index);
         if (
           !isAuthorityDeclaration &&

@@ -93,8 +93,7 @@ const PageIntro: React.FC<PageIntroProps> = ({
             ...(priorityLcp
               ? {
                   color: "var(--color-text-primary, var(--color-on-color))",
-                  fontFamily:
-                    '"Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                  fontFamily: "var(--font-family-priority-lcp)",
                 }
               : {}),
           }}

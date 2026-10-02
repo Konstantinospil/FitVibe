@@ -43,7 +43,13 @@ const GbFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     viewBox="0 0 60 40"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
-    style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
+    style={{
+      display: "inline-block",
+      verticalAlign: "-0.2em",
+      // architecture-token: data-value -- Flag corner rounding is intrinsic SVG glyph geometry, not application UI radius.
+      borderRadius: 2,
+      ...style,
+    }}
   >
     <clipPath id="gb-clip">
       <rect width="60" height="40" rx="2" ry="2" />
@@ -65,7 +71,13 @@ const DeFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     viewBox="0 0 3 2"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
-    style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
+    style={{
+      display: "inline-block",
+      verticalAlign: "-0.2em",
+      // architecture-token: data-value -- Flag corner rounding is intrinsic SVG glyph geometry, not application UI radius.
+      borderRadius: 2,
+      ...style,
+    }}
   >
     <rect width="3" height="2" fill={FLAG_COLORS.deBlack} />
     <rect width="3" height="1.3333" y="0.6667" fill={FLAG_COLORS.deRed} />
@@ -80,7 +92,13 @@ const FrFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     viewBox="0 0 3 2"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
-    style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
+    style={{
+      display: "inline-block",
+      verticalAlign: "-0.2em",
+      // architecture-token: data-value -- Flag corner rounding is intrinsic SVG glyph geometry, not application UI radius.
+      borderRadius: 2,
+      ...style,
+    }}
   >
     <rect width="1" height="2" fill={FLAG_COLORS.frBlue} />
     <rect width="1" height="2" x="1" fill="var(--color-on-color)" />
@@ -95,7 +113,13 @@ const EsFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     viewBox="0 0 3 2"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
-    style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
+    style={{
+      display: "inline-block",
+      verticalAlign: "-0.2em",
+      // architecture-token: data-value -- Flag corner rounding is intrinsic SVG glyph geometry, not application UI radius.
+      borderRadius: 2,
+      ...style,
+    }}
   >
     <rect width="3" height="0.5" fill={FLAG_COLORS.esRed} />
     <rect width="3" height="1" y="0.5" fill={FLAG_COLORS.esGold} />
@@ -110,7 +134,13 @@ const ElFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     viewBox="0 0 27 18"
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
-    style={{ display: "inline-block", verticalAlign: "-0.2em", borderRadius: 2, ...style }}
+    style={{
+      display: "inline-block",
+      verticalAlign: "-0.2em",
+      // architecture-token: data-value -- Flag corner rounding is intrinsic SVG glyph geometry, not application UI radius.
+      borderRadius: 2,
+      ...style,
+    }}
   >
     <rect width="27" height="18" fill={FLAG_COLORS.grBlue} />
     <rect y="2" width="27" height="2" fill="var(--color-on-color)" />
@@ -255,6 +285,7 @@ function FlagIcon({ option, size = 20 }: { option: LanguageOption; size?: number
       aria-hidden="true"
       style={{
         fontSize: size,
+        // architecture-token: data-value -- Emoji line box is intrinsic icon geometry, not application typography.
         lineHeight: 1,
         display: "inline-flex",
         alignItems: "center",

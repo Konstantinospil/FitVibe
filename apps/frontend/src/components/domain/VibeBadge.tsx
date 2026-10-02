@@ -95,7 +95,7 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
         minWidth: controlSize,
         minHeight: controlSize,
         padding: 0,
-        borderRadius: 0,
+        borderRadius: "var(--radius-none)",
         background: "transparent",
         boxShadow: visualState === "hover" ? "var(--shadow-e2)" : "none",
         opacity: disabled ? "var(--opacity-disabled)" : "var(--opacity-full)",
