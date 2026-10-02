@@ -11,6 +11,10 @@ allowBuilds:
   protobufjs: true
   snyk: true
   esbuild: true
+  # Jest 30.5 uses Parcel's native watcher in jest-haste-map.
+  '@parcel/watcher': true
+  # Jest 30.5 uses the native-backed resolver via jest-resolve.
+  unrs-resolver: true
   msgpackr-extract: false
 
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
