@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { styleTagsFor } from "./inlineStyles.js";
+import { DEHYDRATED_STATE_ELEMENT_ID, serializeDehydratedState } from "./dehydratedState.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -261,9 +262,9 @@ export async function renderPage(url: string): Promise<string> {
   // Remove the bootstrap script (not needed for SSR - we hydrate directly)
   html = html.replace(/<script type="module" src="\/src\/bootstrap\.ts"><\/script>/g, "");
 
-  // Inject dehydrated query state as a script tag
-  // This allows the client to hydrate the QueryClient with prefetched data
-  const dehydratedStateScript = `<script>window.__REACT_QUERY_STATE__ = ${JSON.stringify(dehydratedState)};</script>`;
+  // Serialize dehydrated React Query state into an inert template element.
+  // The client reads textContent and parses JSON, so no server-derived data is executable.
+  const dehydratedStateMarkup = `<template id="${DEHYDRATED_STATE_ELEMENT_ID}">${serializeDehydratedState(dehydratedState)}</template>`;
 
   const isProduction = process.env.NODE_ENV === "production";
   const { scripts, styles } = getClientAssets();
@@ -303,7 +304,7 @@ export async function renderPage(url: string): Promise<string> {
 
   // Inject resource hints and SEO meta tags in head
   html = html.replace("</head>", `${resourceHints}${ogMetaTags}</head>`);
-  html = html.replace("</body>", `${dehydratedStateScript}${hydrationScript}</body>`);
+  html = html.replace("</body>", `${dehydratedStateMarkup}${hydrationScript}</body>`);
 
   return html;
 }
