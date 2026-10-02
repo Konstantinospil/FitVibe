@@ -204,9 +204,12 @@ async function checkFrontendTokens() {
   ]);
 
 
+  const arbitraryVisualUtilityPattern =
+    /\b(?:rounded|opacity|text|leading|tracking|font)-\[[^\]]+\]/g;
+
   const sourceDesignPatterns = [
     {
-      pattern: /\bborderRadius\s*:\s*["'`]([^"'`]+)["'`]/g,
+      pattern: /\bborderRadius\s*:\s*([^,}\n]+)/g,
       allowedValue: (value) => value.includes("var(--radius-") || value.includes("var(--card-radius"),
       message: "Frontend radius must reference the canonical Figma radius token authority; manual values are forbidden.",
     },
@@ -216,17 +219,17 @@ async function checkFrontendTokens() {
       message: "Frontend opacity must reference a canonical Figma opacity token; manual values are forbidden.",
     },
     {
-      pattern: /\bfontSize\s*:\s*["'`]([^"'`]+)["'`]/g,
+      pattern: /\bfontSize\s*:\s*([^,}\n]+)/g,
       allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
       message: "Frontend font size must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
-      pattern: /\blineHeight\s*:\s*["'`]([^"'`]+)["'`]/g,
+      pattern: /\blineHeight\s*:\s*([^,}\n]+)/g,
       allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--line-height-"),
       message: "Frontend line height must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
-      pattern: /\bletterSpacing\s*:\s*["'`]([^"'`]+)["'`]/g,
+      pattern: /\bletterSpacing\s*:\s*([^,}\n]+)/g,
       allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--letter-spacing-"),
       message: "Frontend letter spacing must reference a canonical Figma typography token; manual values are forbidden.",
     },
@@ -236,7 +239,7 @@ async function checkFrontendTokens() {
       message: "Frontend font weight must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
-      pattern: /\bfontFamily\s*:\s*["'`]([^"'`]+)["'`]/g,
+      pattern: /\bfontFamily\s*:\s*([^,}\n]+)/g,
       allowedValue: (value) => value.includes("var(--font-family-"),
       message: "Frontend font family must reference the canonical Figma font-family authority; manual values are forbidden.",
     },
@@ -251,6 +254,17 @@ async function checkFrontendTokens() {
           source,
           match.index,
           "Raw color literal in production frontend source. Consume a design token; true data-value colors require a narrow architecture-token comment with a concrete reason.",
+        );
+      }
+    }
+
+    for (const match of source.matchAll(arbitraryVisualUtilityPattern)) {
+      if (!sourceException(source, match.index, "token")) {
+        report(
+          file,
+          source,
+          match.index,
+          "Arbitrary visual utility values bypass the Figma authority. Use a canonical token-backed primitive or semantic class instead.",
         );
       }
     }
@@ -287,11 +301,12 @@ async function checkFrontendTokens() {
       }
     }
 
+    const isGlobalAuthorityFile = rel === "apps/frontend/src/styles/global.css";
     const rawAlphaPattern = /rgba?\([^)]*?,\s*(0(?:\.\d+)?|1(?:\.0+)?)\s*\)/g;
     for (const match of source.matchAll(rawAlphaPattern)) {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-      if (isTokenDeclaration) {
+      if (isGlobalAuthorityFile && isTokenDeclaration) {
         continue;
       }
       const alpha = Number(match[1]);
@@ -309,7 +324,7 @@ async function checkFrontendTokens() {
     for (const match of source.matchAll(rawColorMixTransparency)) {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-      if (isTokenDeclaration) {
+      if (isGlobalAuthorityFile && isTokenDeclaration) {
         continue;
       }
       const percent = Number(match[1]);
@@ -364,7 +379,10 @@ async function checkFrontendTokens() {
     for (const match of source.matchAll(rawColorPattern)) {
       const line = lineTextAt(source, match.index);
       const isTokenDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
-      if (!isTokenDeclaration && !sourceException(source, match.index, "token")) {
+      if (
+        !(isGlobalAuthorityFile && isTokenDeclaration) &&
+        !sourceException(source, match.index, "token")
+      ) {
         report(
           file,
           source,
@@ -378,7 +396,8 @@ async function checkFrontendTokens() {
       for (const match of source.matchAll(rule.pattern)) {
         const line = lineTextAt(source, match.index);
         const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
-        const isAuthorityDeclaration = /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+        const isAuthorityDeclaration =
+          isGlobalAuthorityFile && /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
         const isFontFaceDescriptor = insideFontFaceBlock(source, match.index);
         if (
           !isAuthorityDeclaration &&
