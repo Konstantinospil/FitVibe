@@ -79,19 +79,79 @@ async function waitForVisualAssets(page: Page): Promise<void> {
     await page.locator("#async-fonts-app").waitFor({ state: "attached", timeout: 10_000 });
   }
   await page.evaluate(async (loadHeadings: boolean) => {
-    const loadOrTimeout = (spec: string) =>
-      Promise.race([
-        document.fonts.load(spec).then(() => undefined),
-        new Promise<void>((resolve) => {
-          window.setTimeout(resolve, 5_000);
-        }),
-      ]);
-    await document.fonts.ready;
-    await loadOrTimeout("16px Inter");
+    const root = document.documentElement;
+
+    const primaryFontUrl = (styleId: string, family: string): string => {
+      const css = document.getElementById(styleId)?.textContent;
+      if (!css) {
+        throw new Error(`Visual font stylesheet #${styleId} is missing`);
+      }
+      const familyIndex = css.indexOf(`font-family: "${family}"`);
+      const blockStart = css.lastIndexOf("@font-face", familyIndex);
+      const blockEnd = css.indexOf("}", familyIndex);
+      if (familyIndex < 0 || blockStart < 0 || blockEnd < 0) {
+        throw new Error(`Visual font face for ${family} was not found in #${styleId}`);
+      }
+      const fontFaceBlock = css.slice(blockStart, blockEnd + 1);
+      const source = fontFaceBlock.match(/src:\\s*url\\("([^"]+)"\\)/)?.[1];
+      if (!source) {
+        throw new Error(`Visual font source for ${family} was not found in #${styleId}`);
+      }
+      return new URL(source, document.baseURI).href;
+    };
+
+    const ensureVisualFont = async (
+      alias: string,
+      styleId: string,
+      family: string,
+      weight: string,
+    ): Promise<void> => {
+      if (document.fonts.check(`400 16px "${alias}"`)) {
+        return;
+      }
+      const source = primaryFontUrl(styleId, family);
+      const face = new FontFace(alias, `url("${source}") format("woff2-variations")`, {
+        style: "normal",
+        weight,
+        display: "block",
+      });
+      await face.load();
+      document.fonts.add(face);
+    };
+
+    // Production keeps font-display: optional/swap for performance. Visual tests
+    // load the exact same font files under deterministic aliases so screenshots
+    // never race fallback-font layout against the final webfont layout.
+    await ensureVisualFont("FitVibe Visual Inter", "async-fonts", "Inter", "100 900");
+    root.style.setProperty(
+      "--font-family-body",
+      '"FitVibe Visual Inter", system-ui, sans-serif',
+    );
+    root.style.setProperty("--font-family-base", "var(--font-family-body)");
+
     if (loadHeadings) {
-      await loadOrTimeout('700 24px "Roboto Flex"');
+      await ensureVisualFont(
+        "FitVibe Visual Heading",
+        "async-fonts-app",
+        "Roboto Flex",
+        "100 1000",
+      );
+      root.style.setProperty(
+        "--font-family-heading",
+        '"FitVibe Visual Heading", "FitVibe Visual Inter", system-ui, sans-serif',
+      );
+    } else {
+      root.style.setProperty(
+        "--font-family-heading",
+        '"FitVibe Visual Inter", system-ui, sans-serif',
+      );
     }
+
     await document.fonts.ready;
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+
     await Promise.all(
       [...document.images].map((img) =>
         img.complete

@@ -1,6 +1,7 @@
 name: Refresh Visual Linux Baselines
 
 on:
+  workflow_dispatch:
   push:
     branches: ["feature"]
     paths:
@@ -64,7 +65,9 @@ jobs:
           DISABLE_WEBSERVER: "true"
           CI: "true"
         run: |
-          pnpm exec playwright test             --config tests/frontend/visual/config/playwright.config.ts             --update-snapshots=changed
+          pnpm exec playwright test \
+            --config tests/frontend/visual/config/playwright.config.ts \
+            --update-snapshots=changed
 
       - name: Commit refreshed Linux baselines via GitHub API
         shell: bash
@@ -121,6 +124,11 @@ jobs:
 
           const ref = await request(`/git/ref/heads/${branch}`);
           const headSha = ref.object.sha;
+          if (headSha !== process.env.GITHUB_SHA) {
+            throw new Error(
+              `Feature moved from tested commit ${process.env.GITHUB_SHA} to ${headSha}; refusing to commit stale visual baselines.`,
+            );
+          }
           const headCommit = await request(`/git/commits/${headSha}`);
           const treeEntries = [];
 
