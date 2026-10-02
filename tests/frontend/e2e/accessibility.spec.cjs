@@ -1,12 +1,15 @@
 const { test, expect } = require("@playwright/test");
 const { AxeBuilder } = require("@axe-core/playwright");
-const { preparePage, waitForApp, jsonResponse } = require("./helpers.cjs");
+const { preparePage, waitForApp } = require("./helpers.cjs");
 
 const accessibilityPages = [
   { name: "Login", path: "/login" },
   { name: "Register", path: "/register" },
-  { name: "Dashboard", path: "/", requiresAuth: true },
-  { name: "Sessions", path: "/sessions", requiresAuth: true },
+  { name: "Home", path: "/", requiresAuth: true },
+  { name: "Calendar", path: "/calendar", requiresAuth: true },
+  { name: "Library", path: "/library", requiresAuth: true },
+  { name: "Dashboard", path: "/dashboard", requiresAuth: true },
+  { name: "Settings", path: "/settings", requiresAuth: true },
 ];
 
 const formatViolations = (violations) =>
@@ -27,24 +30,12 @@ test.describe("Accessibility (axe)", () => {
     test(`has no serious or critical violations on ${scenario.name}`, async ({ page }) => {
       await preparePage(page, { authenticated: Boolean(scenario.requiresAuth) });
 
-      if (scenario.path === "/sessions") {
-        await page.route("**/api/v1/sessions**", async (route) => {
-          if (route.request().url().includes("/auth/sessions")) {
-            await route.continue();
-            return;
-          }
-          await route.fulfill(
-            jsonResponse({ data: [], total: 0, limit: 50, offset: 0 }),
-          );
-        });
-      }
-
       await page.goto(scenario.path);
       await waitForApp(page);
       await page.locator("h1, h2, h3").first().waitFor({ state: "visible" });
 
       const axe = new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]);
-      if (scenario.name === "Dashboard") {
+      if (scenario.name === "Home") {
         // Brand vibe colours on Home fail WCAG contrast; tracked separately from this suite.
         axe.disableRules(["color-contrast"]);
       }

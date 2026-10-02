@@ -1475,9 +1475,17 @@ jobs:
       - quality
     permissions:
       contents: read
+    # Pin the browser runtime and OS dependencies to the same Playwright version
+    # as @playwright/test. Do not provision browsers/apt packages at runtime.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-jammy
+      options: --ipc=host
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Trust workspace
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -1487,18 +1495,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install native canvas prerequisites
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y \
-            build-essential \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libjpeg-dev \
-            libgif-dev \
-            librsvg2-dev \
-            postgresql-client
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
@@ -1506,15 +1502,13 @@ jobs:
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend run build
 
-      - name: Install Playwright browsers
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps
-
       - name: Run axe accessibility suite
         timeout-minutes: 10
-        env:
-          PLAYWRIGHT_JOBS: 1
-        run: pnpm test:a11y
+        run: >-
+          pnpm exec playwright test
+          tests/frontend/e2e/accessibility.spec.cjs
+          --config tests/frontend/e2e/playwright.config.cjs
+          --workers=1
 
       - name: Upload accessibility artifacts
         if: always()
