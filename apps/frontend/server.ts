@@ -25,6 +25,30 @@ const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4173;
 const isProduction = process.env.NODE_ENV === "production";
 
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'self'",
+  "img-src 'self' data:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+].join("; ");
+
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("Content-Security-Policy", contentSecurityPolicy);
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  next();
+});
+
 // Enable compression for all responses (gzip/brotli)
 // This improves Lighthouse "uses-text-compression" score
 app.use(
@@ -192,11 +216,6 @@ const ssrHandler: RequestHandler = async (req: Request, res: Response, next: Nex
     } else {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     }
-    // Security headers
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.send(html);
   } catch (err) {
     const renderTime = Date.now() - startTime;
