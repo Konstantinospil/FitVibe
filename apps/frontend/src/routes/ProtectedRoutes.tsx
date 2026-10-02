@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { queryClient as defaultQueryClient } from "../lib/queryClient";
 import { ensurePrivateTranslationsLoaded } from "../i18n/config";
+import { readDehydratedStateFromDocument } from "../ssr/dehydratedState";
 
 const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
 const MainLayout = lazy(() => import("../layouts/MainLayout"));
@@ -33,17 +34,10 @@ type ProtectedRoutesProps = {
 };
 
 function getDehydratedState(): DehydratedState | undefined {
-  if (typeof window !== "undefined") {
-    const windowWithState = window as unknown as {
-      __REACT_QUERY_STATE__?: DehydratedState;
-    };
-    if (windowWithState.__REACT_QUERY_STATE__) {
-      const state = windowWithState.__REACT_QUERY_STATE__;
-      delete windowWithState.__REACT_QUERY_STATE__;
-      return state;
-    }
+  if (typeof document === "undefined") {
+    return undefined;
   }
-  return undefined;
+  return readDehydratedStateFromDocument(document);
 }
 
 const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
