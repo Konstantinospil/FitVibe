@@ -76,4 +76,26 @@ describe("SSR Hydration", () => {
     expect(readDehydratedStateFromDocument(document)).toEqual(dehydratedState);
     expect(document.getElementById(DEHYDRATED_STATE_ELEMENT_ID)).toBeNull();
   });
+
+  it("reads inert state from a non-template element", () => {
+    const dehydratedState = { queries: [], mutations: [] } as never;
+    const element = document.createElement("div");
+    element.id = DEHYDRATED_STATE_ELEMENT_ID;
+    element.textContent = serializeDehydratedState(dehydratedState);
+    document.body.appendChild(element);
+
+    expect(readDehydratedStateFromDocument(document)).toEqual(dehydratedState);
+    expect(document.getElementById(DEHYDRATED_STATE_ELEMENT_ID)).toBeNull();
+  });
+
+  it("rejects malformed inert state and still removes the element", () => {
+    const template = document.createElement("template");
+    template.id = DEHYDRATED_STATE_ELEMENT_ID;
+    template.content.textContent = "{not-json";
+    document.body.appendChild(template);
+
+    expect(readDehydratedStateFromDocument(document)).toBeUndefined();
+    expect(document.getElementById(DEHYDRATED_STATE_ELEMENT_ID)).toBeNull();
+  });
+
 });
