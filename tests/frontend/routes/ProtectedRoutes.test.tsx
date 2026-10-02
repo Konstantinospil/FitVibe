@@ -34,6 +34,10 @@ vi.mock("../../../apps/frontend/src/pages/Calendar", () => ({
   default: () => <div>Calendar Page</div>,
 }));
 
+vi.mock("../../../apps/frontend/src/pages/AppSurfacePlaceholder", () => ({
+  default: ({ title }: { title: string }) => <div>{title} Page</div>,
+}));
+
 vi.mock("../../../apps/frontend/src/pages/Terms", () => ({
   default: () => <div>Terms Page</div>,
 }));
@@ -91,8 +95,15 @@ describe("ProtectedRoutes", () => {
   });
 
   it.each([
-    "/dashboard",
-    "/settings",
+    ["/library", "Library Page"],
+    ["/dashboard", "Dashboard Page"],
+    ["/settings", "Settings Page"],
+  ])("renders canonical app route %s", async (route, expectedText) => {
+    renderRoute(route);
+    expect(await screen.findByText(expectedText)).toBeInTheDocument();
+  });
+
+  it.each([
     "/sessions",
     "/planner",
     "/logger/session-123",
@@ -105,7 +116,7 @@ describe("ProtectedRoutes", () => {
     "/admin/users",
     "/admin/system",
     "/unknown-route",
-  ])("redirects inactive route %s to Home", async (route) => {
+  ])("redirects retired route %s to Home", async (route) => {
     renderRoute(route);
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
   });
