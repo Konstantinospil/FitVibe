@@ -6,7 +6,7 @@ import AppHeader from "../components/AppHeader";
 import { useTranslation } from "react-i18next";
 import { PageShell } from "./PageShell";
 
-const ACTIVE_APP_PATHS = ["/", "/calendar"] as const;
+const ACTIVE_APP_PATHS = ["/", "/calendar", "/library", "/dashboard", "/settings"] as const;
 
 const MainLayout: React.FC = () => {
   const { signOut } = useAuth();
@@ -22,16 +22,19 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <PageShell
-      mainId="main-content"
-      skipLinkLabel={t("navigation.skipToContent")}
-      header={
-        <AppHeader variant="writing" availablePaths={ACTIVE_APP_PATHS} onSignOut={handleSignOut} />
-      }
-      footer={<Footer />}
-    >
-      <Outlet />
-    </PageShell>
+    <>
+      <PageShell
+        mainId="main-content"
+        skipLinkLabel={t("navigation.skipToContent")}
+        header={
+          <AppHeader variant="writing" availablePaths={ACTIVE_APP_PATHS} onSignOut={handleSignOut} />
+        }
+        footer={<Footer />}
+      >
+        <Outlet />
+      </PageShell>
+      <div id="transient-workflow-root" data-transient-workflow-root />
+    </>
   );
 };
 
