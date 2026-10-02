@@ -1558,6 +1558,10 @@ small {
   overflow: hidden;
 }
 
+.calendar-month__row {
+  display: contents;
+}
+
 .calendar-month__weekday,
 .calendar-month__cell {
   min-width: 0;

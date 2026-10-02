@@ -226,45 +226,48 @@ const CalendarPage: React.FC = () => {
             role="grid"
             aria-label={t("calendarSurface.gridLabel")}
           >
-            {matrix.flatMap(({ weekday, dates }) => [
-              <div className="calendar-month__weekday" role="rowheader" key={weekday}>
-                {weekday}
-              </div>,
-              ...dates.map((date) => {
-                const daySessions = sessionsByDay.get(dateKey(date)) ?? [];
-                const outside = date.getMonth() !== visibleMonth.getMonth();
-                const selected = dateKey(date) === dateKey(selectedDate);
-                const dayStatus = statusFor(daySessions);
+            {matrix.map(({ weekday, dates }) => (
+              <div className="calendar-month__row" role="row" key={weekday}>
+                <div className="calendar-month__weekday" role="rowheader">
+                  {weekday}
+                </div>
+                {dates.map((date) => {
+                  const daySessions = sessionsByDay.get(dateKey(date)) ?? [];
+                  const outside = date.getMonth() !== visibleMonth.getMonth();
+                  const selected = dateKey(date) === dateKey(selectedDate);
+                  const dayStatus = statusFor(daySessions);
 
-                return (
-                  <div
-                    key={date.toISOString()}
-                    className={[
-                      "calendar-month__cell",
-                      outside ? "calendar-month__cell--outside" : "",
-                      selected ? "calendar-month__selected" : "",
-                      daySessions.length > 0 ? `calendar-month__cell--${dayStatus}` : "",
-                    ].join(" ")}
-                    role="gridcell"
-                    data-status={dayStatus}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      aria-label={t("calendarSurface.dayLabel", {
-                        date: new Intl.DateTimeFormat(i18n.language, {
-                          dateStyle: "full",
-                        }).format(date),
-                        count: daySessions.length,
-                      })}
-                      onClick={() => setSelectedDate(date)}
+                  return (
+                    <div
+                      key={date.toISOString()}
+                      className={[
+                        "calendar-month__cell",
+                        outside ? "calendar-month__cell--outside" : "",
+                        selected ? "calendar-month__selected" : "",
+                        daySessions.length > 0 ? `calendar-month__cell--${dayStatus}` : "",
+                      ].join(" ")}
+                      role="gridcell"
+                      aria-selected={selected}
+                      data-status={dayStatus}
                     >
-                      {String(date.getDate()).padStart(2, "0")}
-                    </Button>
-                  </div>
-                );
-              }),
-            ])}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={t("calendarSurface.dayLabel", {
+                          date: new Intl.DateTimeFormat(i18n.language, {
+                            dateStyle: "full",
+                          }).format(date),
+                          count: daySessions.length,
+                        })}
+                        onClick={() => setSelectedDate(date)}
+                      >
+                        {String(date.getDate()).padStart(2, "0")}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           <div className="calendar-surface__selected-day">
