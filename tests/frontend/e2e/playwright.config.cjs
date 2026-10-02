@@ -6,7 +6,6 @@ const frontendDir = path.resolve(__dirname, "../../../apps/frontend");
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: ["smoke.spec.cjs", "active-surfaces.spec.cjs"],
   timeout: 30_000,
   expect: { timeout: 8_000 },
   retries: process.env.CI ? 1 : 0,
