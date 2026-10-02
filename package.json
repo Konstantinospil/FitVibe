@@ -43,7 +43,8 @@
     "architecture:backend": "node tests/qa/check-architecture-hardcoding.mjs backend",
     "architecture:frontend-tokens": "node tests/qa/check-architecture-hardcoding.mjs frontend-tokens",
     "architecture:frontend-reuse": "node tests/qa/check-architecture-hardcoding.mjs frontend-reuse",
-    "architecture:check": "node tests/qa/check-architecture-hardcoding.mjs all"
+    "architecture:check": "node tests/qa/check-architecture-hardcoding.mjs all",
+    "quality:package-json": "node tests/qa/check-package-json.cjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
