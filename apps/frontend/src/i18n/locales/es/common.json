@@ -1016,5 +1016,74 @@
   },
   "actions": {
     "retry": "Reintentar"
+  },
+  "librarySurface": {
+    "title": "Biblioteca",
+    "description": "Descubre ejercicios, gestiona tu propia biblioteca y crea entrenamientos.",
+    "sections": {
+      "search": "Búsqueda y filtros",
+      "exercises": "Ejercicios"
+    },
+    "actions": {
+      "createExercise": "Nuevo ejercicio",
+      "createWorkout": "Crear entrenamiento",
+      "addToWorkout": "Añadir al entrenamiento",
+      "details": "Ver detalles",
+      "edit": "Editar",
+      "archive": "Archivar",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "close": "Cerrar",
+      "confirmArchive": "Archivar ejercicio"
+    },
+    "filters": {
+      "search": "Buscar ejercicios",
+      "type": "Tipo",
+      "allTypes": "Todos los tipos",
+      "muscleGroup": "Grupo muscular",
+      "equipment": "Equipamiento",
+      "tags": "Etiquetas"
+    },
+    "states": {
+      "loading": "Cargando ejercicios…",
+      "error": "No se pudieron cargar los ejercicios.",
+      "noResults": "Ningún ejercicio coincide con estos filtros."
+    },
+    "source": {
+      "global": "Global",
+      "mine": "Mi ejercicio",
+      "public": "Público de la comunidad"
+    },
+    "details": {
+      "noDescription": "No se ha proporcionado ninguna descripción."
+    },
+    "archive": {
+      "title": "Archivar ejercicio",
+      "description": "¿Archivar {{name}}? Desaparecerá de los selectores activos, pero permanecerá en el historial."
+    },
+    "creator": {
+      "titleCreate": "Crear ejercicio",
+      "titleEdit": "Editar ejercicio",
+      "description": "Crea o actualiza un ejercicio propio del atleta.",
+      "fields": {
+        "name": "Nombre",
+        "type": "Tipo",
+        "selectType": "Selecciona un tipo",
+        "muscleGroup": "Grupo muscular principal",
+        "equipment": "Equipamiento",
+        "tags": "Etiquetas",
+        "tagsPlaceholder": "fuerza, barra, piernas",
+        "description": "Descripción",
+        "public": "Hacer público este ejercicio"
+      },
+      "errors": {
+        "required": "El nombre y el tipo son obligatorios.",
+        "create": "No se pudo crear el ejercicio.",
+        "update": "No se pudo actualizar el ejercicio.",
+        "types": "No se pudieron cargar los tipos de ejercicio."
+      }
+    }
   }
 }

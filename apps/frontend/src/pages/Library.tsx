@@ -111,7 +111,7 @@ const Library: React.FC = () => {
   const hasNext = offset + data.length < total;
 
   return (
-    <main className="training-page" aria-labelledby="library-title">
+    <main className="training-page" aria-labelledby="library-title" data-app-surface="library">
       <div
         style={{
           display: "flex",
