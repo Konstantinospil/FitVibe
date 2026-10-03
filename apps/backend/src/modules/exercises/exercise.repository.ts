@@ -83,6 +83,8 @@ export async function listExercises(
       "is_public",
       db.raw("description as description_en"),
       db.raw("NULL as description_de"),
+      "met_value",
+      "seconds_per_rep",
       "created_at",
       "updated_at",
       "archived_at",
