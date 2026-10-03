@@ -1076,7 +1076,9 @@
         "tags": "Tags",
         "tagsPlaceholder": "kraft, langhantel, beine",
         "description": "Beschreibung",
-        "public": "Diese Übung öffentlich machen"
+        "public": "Diese Übung öffentlich machen",
+        "metValue": "MET-Wert",
+        "secondsPerRep": "Sekunden pro Wiederholung"
       },
       "errors": {
         "required": "Name und Typ sind erforderlich.",
