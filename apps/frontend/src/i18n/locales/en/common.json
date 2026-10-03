@@ -1076,7 +1076,9 @@
         "tags": "Tags",
         "tagsPlaceholder": "strength, barbell, legs",
         "description": "Description",
-        "public": "Make this exercise public"
+        "public": "Make this exercise public",
+        "metValue": "MET value",
+        "secondsPerRep": "Seconds per repetition"
       },
       "errors": {
         "required": "Name and type are required.",
