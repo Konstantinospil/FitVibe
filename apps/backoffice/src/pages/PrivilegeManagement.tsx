@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { InputControl, TextareaControl } from "@fitvibe/ui";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
 import { superadminApi, type PrivilegedAdmin } from "../services/api";
@@ -76,7 +77,7 @@ const PrivilegeManagementPage: React.FC = () => {
         <CardContent>
           <label>
             Sudo password
-            <input
+            <InputControl
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -141,7 +142,7 @@ const PrivilegeManagementPage: React.FC = () => {
           <CardContent>
             <label>
               Justification
-              <textarea
+              <TextareaControl
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
                 rows={4}
@@ -149,7 +150,7 @@ const PrivilegeManagementPage: React.FC = () => {
             </label>
             <label>
               Fresh authenticator code
-              <input
+              <InputControl
                 value={totpCode}
                 onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
                 inputMode="numeric"

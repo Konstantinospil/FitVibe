@@ -79,7 +79,7 @@ describe("Login", () => {
     expect(screen.getByRole("button", { name: /^sign in$/i })).toBeInTheDocument();
   });
 
-  it("shows password visibility toggle", () => {
+  it("shows password visibility while the control is held", () => {
     renderWithProviders(<Login />);
 
     const toggleButton = screen.getByLabelText(/show password/i);
@@ -88,9 +88,14 @@ describe("Login", () => {
     const passwordInput = screen.getByPlaceholderText(/enter your password/i);
     expect(passwordInput).toHaveAttribute("type", "password");
 
-    fireEvent.click(toggleButton);
+    fireEvent.mouseDown(toggleButton);
     expect(passwordInput).toHaveAttribute("type", "text");
-    expect(screen.getByLabelText(/hide password/i)).toBeInTheDocument();
+
+    const hideButton = screen.getByLabelText(/hide password/i);
+    expect(hideButton).toBeInTheDocument();
+
+    fireEvent.mouseUp(hideButton);
+    expect(passwordInput).toHaveAttribute("type", "password");
   });
 
   it("handles form submission successfully without 2FA", async () => {

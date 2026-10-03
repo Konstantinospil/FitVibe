@@ -1,0 +1,81 @@
+.vibeform-constellation {
+  position: relative;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  isolation: isolate;
+}
+
+.vibeform-constellation__frame {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  pointer-events: none;
+}
+
+.vibeform-constellation__frame-surface {
+  fill: var(--color-surface);
+  stroke: var(--color-border);
+  stroke-width: 8;
+  stroke-linejoin: round;
+}
+
+.vibeform-constellation__center {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  inline-size: 36%;
+  block-size: 62%;
+  transform: translate(-50%, -48%);
+  z-index: 1;
+}
+
+.vibeform-constellation__renderer,
+.vibeform-constellation__renderer > svg {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+.vibeform-constellation__renderer > svg {
+  display: block;
+}
+
+.vibeform-constellation__slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.vibeform-constellation__slot[data-selected="true"] {
+  z-index: 3;
+}
+
+.vibeform-constellation__slot[data-vibe="regeneration"] {
+  inset-inline-start: 32%;
+  inset-block-start: 15%;
+}
+
+.vibeform-constellation__slot[data-vibe="intelligence"] {
+  inset-inline-start: 68%;
+  inset-block-start: 15%;
+}
+
+.vibeform-constellation__slot[data-vibe="agility"] {
+  inset-inline-start: 15%;
+  inset-block-start: 50%;
+}
+
+.vibeform-constellation__slot[data-vibe="endurance"] {
+  inset-inline-start: 85%;
+  inset-block-start: 50%;
+}
+
+.vibeform-constellation__slot[data-vibe="strength"] {
+  inset-inline-start: 32%;
+  inset-block-start: 85%;
+}
+
+.vibeform-constellation__slot[data-vibe="explosivity"] {
+  inset-inline-start: 68%;
+  inset-block-start: 85%;
+}

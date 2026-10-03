@@ -1,39 +1,52 @@
-import { createRef } from "react";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Switch } from "../../src/components/ui/Switch";
+import { Switch } from "../../../packages/ui/src/Switch";
 
 describe("Switch", () => {
-  it("renders a labelled switch and forwards a ref", () => {
-    const ref = createRef<HTMLInputElement>();
-    render(<Switch ref={ref} label="Allow followers" checked={false} onChange={vi.fn()} />);
+  it("renders inactive and active positions", () => {
+    const { rerender } = render(<Switch label="Notifications" checked={false} onChange={vi.fn()} />);
+    const toggle = screen.getByRole("switch", { name: "Notifications" });
+    const root = toggle.closest("[data-component='switch']");
+    const thumb = root?.querySelector("[data-slot='switch-thumb']") as HTMLElement;
 
-    const toggle = screen.getByRole("switch", { name: "Allow followers" });
-    expect(toggle).toHaveAttribute("aria-checked", "false");
-    expect(ref.current).toBe(toggle);
+    expect(root).toHaveAttribute("data-state", "inactive");
+    expect(thumb.style.left).toBe("3px");
+
+    rerender(<Switch label="Notifications" checked onChange={vi.fn()} />);
+    expect(root).toHaveAttribute("data-state", "active");
+    expect(thumb.style.left).toBe("27px");
   });
 
-  it("shows helper text unless an error is present", () => {
-    const { rerender } = render(
-      <Switch helperText="Optional" checked={false} onChange={vi.fn()} />,
-    );
-    expect(screen.getByText("Optional")).toBeInTheDocument();
+  it("uses hover state without toggling the switch", () => {
+    render(<Switch label="Notifications" checked={false} onChange={vi.fn()} />);
+    const toggle = screen.getByRole("switch", { name: "Notifications" });
+    const root = toggle.closest("[data-component='switch']");
+    const label = screen.getByText("Notifications").closest("label");
 
-    rerender(<Switch helperText="Optional" error="Required" checked={false} onChange={vi.fn()} />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Required");
-    expect(screen.queryByText("Optional")).not.toBeInTheDocument();
+    fireEvent.mouseEnter(label!);
+    expect(root).toHaveAttribute("data-state", "hover");
+    expect(toggle).not.toBeChecked();
+
+    fireEvent.mouseLeave(label!);
+    expect(root).toHaveAttribute("data-state", "inactive");
   });
 
-  it("toggles via click and supports disabled styling", async () => {
-    const onChange = vi.fn();
-    const { rerender } = render(<Switch label="Notify" checked={false} onChange={onChange} />);
+  it("uses disabled opacity and semantics", () => {
+    render(<Switch label="Notifications" checked disabled onChange={vi.fn()} />);
+    const toggle = screen.getByRole("switch", { name: "Notifications" });
+    const root = toggle.closest("[data-component='switch']");
 
-    await userEvent.click(screen.getByRole("switch", { name: "Notify" }));
-    expect(onChange).toHaveBeenCalled();
+    expect(toggle).toBeDisabled();
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    expect(root).toHaveAttribute("data-state", "disabled");
+    expect(root).toHaveStyle({ opacity: "var(--opacity-disabled)" });
+  });
 
-    rerender(<Switch label="Notify" checked disabled onChange={vi.fn()} />);
-    expect(screen.getByRole("switch")).toBeDisabled();
-    expect(screen.getByRole("switch")).toHaveAttribute("aria-checked", "true");
+  it("supports uncontrolled interaction", () => {
+    render(<Switch label="Notifications" />);
+    const toggle = screen.getByRole("switch", { name: "Notifications" });
+
+    fireEvent.click(toggle);
+    expect(toggle).toBeChecked();
   });
 });

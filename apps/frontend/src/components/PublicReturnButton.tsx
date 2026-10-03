@@ -2,7 +2,7 @@ import React from "react";
 import { Home, LogIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./ui";
+import { Button } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 
 const PublicReturnButton: React.FC = () => {

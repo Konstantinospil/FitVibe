@@ -41,7 +41,7 @@ const ContentReportsV2: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "rgb(251, 191, 36)";
+        return "var(--color-warning)";
       case "reviewed":
         return "var(--color-accent)";
       case "dismissed":
@@ -91,27 +91,27 @@ const ContentReportsV2: React.FC = () => {
 
             <div className="flex flex--gap-sm">
               {(["all", "pending", "reviewed", "dismissed"] as const).map((status) => (
-                <button
+                <Button
                   key={status}
                   onClick={() => setFilterStatus(status)}
                   style={{
                     padding: "0.5rem 1rem",
-                    borderRadius: "8px",
+                    borderRadius: "var(--radius-sm)",
                     border: `1px solid ${filterStatus === status ? "var(--color-accent)" : "var(--color-border)"}`,
                     background:
-                      filterStatus === status ? "rgba(52, 211, 153, 0.15)" : "transparent",
+                      filterStatus === status ? "var(--surface-success-subtle)" : "transparent",
                     color:
                       filterStatus === status
                         ? "var(--color-accent)"
                         : "var(--color-text-secondary)",
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
+                    fontSize: "var(--type-supporting-size)",
+                    fontWeight: "var(--font-weight-semibold)",
                     cursor: "pointer",
                     textTransform: "capitalize",
                   }}
                 >
                   {status}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -147,9 +147,9 @@ const ContentReportsV2: React.FC = () => {
                   key={report.id}
                   style={{
                     padding: "1.25rem",
-                    borderRadius: "12px",
+                    borderRadius: "var(--radius-md)",
                     border: "1px solid var(--color-border)",
-                    background: "rgba(15, 23, 42, 0.4)",
+                    background: "var(--surface-muted-subtle)",
                   }}
                 >
                   <div
@@ -172,9 +172,9 @@ const ContentReportsV2: React.FC = () => {
                         <span
                           style={{
                             padding: "0.25rem 0.75rem",
-                            borderRadius: "8px",
-                            fontSize: "0.8rem",
-                            fontWeight: 600,
+                            borderRadius: "var(--radius-sm)",
+                            fontSize: "var(--type-supporting-size)",
+                            fontWeight: "var(--font-weight-semibold)",
                             background: `${getStatusColor(report.status)}33`,
                             color: getStatusColor(report.status),
                           }}
@@ -185,7 +185,7 @@ const ContentReportsV2: React.FC = () => {
                           Reported by @{report.reporterUsername}
                         </span>
                       </div>
-                      <h4 style={{ margin: 0, fontSize: "1.05rem" }}>
+                      <h4 style={{ margin: 0, fontSize: "var(--type-card-title-size)" }}>
                         {report.contentPreview || "Reported content"}
                       </h4>
                       <p className="text-secondary" style={{ margin: "0.25rem 0 0" }}>

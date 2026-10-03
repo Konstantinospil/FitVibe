@@ -133,7 +133,9 @@ const App: React.FC = () => {
   }, [signIn]);
 
   const colors =
-    theme === "light" ? { bg: "#FFFFFF", text: "#000000" } : { bg: "#000000", text: "#FFFFFF" };
+    theme === "light"
+      ? { bg: "var(--color-on-color)", text: "var(--color-text-primary)" }
+      : { bg: "var(--color-text-primary)", text: "var(--color-on-color)" };
 
   return (
     <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text }}>

@@ -8,7 +8,11 @@
     "you": "You",
     "activeSession": "Active session",
     "skipToContent": "Skip to main content",
-    "back": "Back"
+    "back": "Back",
+    "calendar": "Calendar",
+    "library": "Library",
+    "dashboard": "Dashboard",
+    "settings": "Settings"
   },
   "language": {
     "label": "Language",
@@ -882,5 +886,135 @@
         "all": "All time"
       }
     }
+  },
+  "homeSurface": {
+    "title": "Home",
+    "sections": {
+      "recentActivity": "Recent activity",
+      "trending": "Trending workouts",
+      "newsFeed": "News feed",
+      "previousActivities": "Previous activities"
+    },
+    "activity": {
+      "timeSinceLast": "Time since last activity",
+      "noActivity": "No recorded activity yet",
+      "lastActivity": "Last activity: {{name}}",
+      "startHint": "Log a workout to start your activity history."
+    },
+    "session": {
+      "workout": "Workout",
+      "workoutSummary": "Workout summary",
+      "exercises": "{{count}} exercise",
+      "exercises_other": "{{count}} exercises",
+      "points": "{{count}} points"
+    },
+    "news": {
+      "unpublished": "Not published",
+      "sharedBy": "Shared by {{name}}",
+      "addNod": "Give a nod",
+      "removeNod": "Remove nod",
+      "comments": "{{count}} comments",
+      "nodError": "The nod could not be updated."
+    },
+    "loading": {
+      "trending": "Loading trending workouts…",
+      "news": "Loading news feed…",
+      "activities": "Loading previous activities…"
+    },
+    "empty": {
+      "trending": "No trending workouts yet.",
+      "news": "No shared workouts yet.",
+      "activities": "No previous activities yet."
+    },
+    "errors": {
+      "trending": "Trending workouts could not be loaded.",
+      "news": "The news feed could not be loaded.",
+      "activities": "Previous activities could not be loaded."
+    }
+  },
+  "calendarSurface": {
+    "title": "Calendar",
+    "sections": {
+      "calendar": "Calendar",
+      "history": "History",
+      "weekPlan": "Weekly workout plan"
+    },
+    "actions": {
+      "plan": "Plan a workout",
+      "start": "Start a workout",
+      "log": "Log a workout",
+      "options": "Workout options"
+    },
+    "navigation": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "previousYear": "Previous year",
+      "nextYear": "Next year"
+    },
+    "gridLabel": "Monthly workout calendar",
+    "dayLabel": "{{date}}, {{count}} workouts",
+    "empty": {
+      "selectedDay": "No workouts on this day.",
+      "history": "No workout history yet.",
+      "week": "No workouts planned for the rest of this week."
+    },
+    "errors": {
+      "load": "Calendar data could not be loaded."
+    }
+  },
+  "workoutEditor": {
+    "title": "Workout Editor",
+    "close": "Close workout editor",
+    "exerciseFallback": "Exercise",
+    "sections": {
+      "general": "General Information",
+      "activity": "Activity",
+      "overview": "Overview"
+    },
+    "actions": {
+      "start": "Start",
+      "plan": "Plan",
+      "addExercise": "Add exercise",
+      "removeLast": "Remove last exercise"
+    },
+    "fields": {
+      "name": "Workout name",
+      "notes": "Notes",
+      "exercise": "Exercise",
+      "sets": "Sets",
+      "repetitions": "Repetitions",
+      "weight": "Resistance / weight",
+      "duration": "Duration (seconds)",
+      "exertion": "Target exertion",
+      "restSet": "Rest after each set (seconds)",
+      "restExercise": "Rest after exercise (seconds)"
+    },
+    "placeholders": {
+      "name": "A name for the workout",
+      "notes": "Describe the workout",
+      "exercise": "Select an exercise"
+    },
+    "metrics": {
+      "caloriesPerMinute": "Calories / minute",
+      "duration": "Duration",
+      "calories": "Calories",
+      "unavailable": "Unavailable"
+    },
+    "empty": {
+      "activity": "Choose an exercise to start building the workout.",
+      "overview": "No exercises added."
+    },
+    "summary": {
+      "sets": "{{count}} set",
+      "sets_other": "{{count}} sets",
+      "repetitions": "{{value}} repetitions"
+    },
+    "errors": {
+      "save": "The workout could not be saved.",
+      "exercises": "Exercises could not be loaded."
+    }
+  },
+  "actions": {
+    "retry": "Retry"
   }
 }

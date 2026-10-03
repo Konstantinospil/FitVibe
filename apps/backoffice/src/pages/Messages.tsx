@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button, InputControl, TextareaControl } from "@fitvibe/ui";
 import { messagesApi, type ContactMessage } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
-import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
 
 const MessagesPage: React.FC = () => {
-  const theme = useThemeStore((state) => state.theme);
   const colors = useThemeColors();
   const [page, setPage] = useState(0);
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -143,11 +142,19 @@ const MessagesPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "2rem" }}>User Messages</h1>
+      <h1
+        style={{
+          color: colors.text,
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
+        User Messages
+      </h1>
 
       <div style={{ marginBottom: "2rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
         <label style={{ color: colors.text, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <input
+          <InputControl
             type="checkbox"
             checked={unreadOnly}
             onChange={(e) => {
@@ -159,7 +166,7 @@ const MessagesPage: React.FC = () => {
           Show unread only
         </label>
         <label style={{ color: colors.text, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <input
+          <InputControl
             type="checkbox"
             checked={openOnly}
             onChange={(e) => {
@@ -175,7 +182,7 @@ const MessagesPage: React.FC = () => {
       {isLoading ? (
         <div style={{ color: colors.text }}>Loading...</div>
       ) : error ? (
-        <div style={{ color: "#9F2406", padding: "2rem" }}>
+        <div style={{ color: "var(--vibe-explosivity)", padding: "2rem" }}>
           Error loading messages: {error instanceof Error ? error.message : String(error)}
         </div>
       ) : !data || !data.messages || data.messages.length === 0 ? (
@@ -189,7 +196,7 @@ const MessagesPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               overflowX: "auto",
               overflowY: "visible",
               border: `1px solid ${colors.border}`,
@@ -197,7 +204,11 @@ const MessagesPage: React.FC = () => {
           >
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "1200px" }}>
               <thead>
-                <tr style={{ background: theme === "light" ? "#F5F5F5" : "#1A1A1A" }}>
+                <tr
+                  style={{
+                    background: "var(--color-surface-muted)",
+                  }}
+                >
                   <th
                     style={{
                       padding: "1rem",
@@ -276,13 +287,15 @@ const MessagesPage: React.FC = () => {
                     key={message.id}
                     style={{
                       borderBottom: `1px solid ${colors.border}`,
-                      background: !message.readAt ? "rgba(251, 149, 29, 0.05)" : "transparent",
+                      background: !message.readAt
+                        ? "color-mix(in srgb, var(--vibe-strength) var(--transparency-disabled), transparent)"
+                        : "transparent",
                     }}
                   >
                     <td style={{ padding: "1rem", color: colors.text }}>{message.email}</td>
                     <td style={{ padding: "1rem", color: colors.text }}>{message.topic}</td>
                     <td style={{ padding: "1rem", color: colors.text, maxWidth: "400px" }}>
-                      <button
+                      <Button
                         onClick={() => handleViewMessage(message)}
                         style={{
                           background: "transparent",
@@ -299,7 +312,7 @@ const MessagesPage: React.FC = () => {
                         title="Click to view full message"
                       >
                         {message.message}
-                      </button>
+                      </Button>
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {new Date(message.createdAt).toLocaleString()}
@@ -308,14 +321,14 @@ const MessagesPage: React.FC = () => {
                       {message.respondedAt ? (
                         new Date(message.respondedAt).toLocaleString()
                       ) : (
-                        <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>-</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>-</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {message.readAt ? (
-                        <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>Read</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>Read</span>
                       ) : (
-                        <span style={{ color: "#FB951D" }}>Unread</span>
+                        <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem" }}>
@@ -327,24 +340,24 @@ const MessagesPage: React.FC = () => {
                           flexWrap: "wrap",
                         }}
                       >
-                        <button
+                        <Button
                           onClick={() => handleViewMessage(message)}
                           style={{
                             padding: "0.5rem 1rem",
                             background: colors.border,
                             color: colors.text,
                             border: "none",
-                            borderRadius: "4px",
+                            borderRadius: "var(--radius-sm)",
                             cursor: "pointer",
-                            fontSize: "0.875rem",
+                            fontSize: "var(--type-supporting-size)",
                             whiteSpace: "nowrap",
                           }}
                         >
                           View
-                        </button>
+                        </Button>
                         {!message.respondedAt && (
                           <>
-                            <button
+                            <Button
                               onClick={() =>
                                 handleReply(
                                   message.email,
@@ -358,50 +371,50 @@ const MessagesPage: React.FC = () => {
                                 background: colors.border,
                                 color: colors.text,
                                 border: "none",
-                                borderRadius: "4px",
+                                borderRadius: "var(--radius-sm)",
                                 cursor: "pointer",
-                                fontSize: "0.875rem",
+                                fontSize: "var(--type-supporting-size)",
                                 whiteSpace: "nowrap",
                               }}
                             >
                               Reply
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={() => handleMarkResponded(message.id)}
                               disabled={markRespondedMutation.isPending}
                               style={{
                                 padding: "0.5rem 1rem",
-                                background: "#15523A",
+                                background: "var(--vibe-regeneration)",
                                 color: colors.text,
                                 border: "none",
-                                borderRadius: "4px",
+                                borderRadius: "var(--radius-sm)",
                                 cursor: "pointer",
-                                fontSize: "0.875rem",
+                                fontSize: "var(--type-supporting-size)",
                                 whiteSpace: "nowrap",
                               }}
                               title="Mark as responded after sending reply"
                             >
                               Mark Responded
-                            </button>
+                            </Button>
                           </>
                         )}
                         {!message.readAt && (
-                          <button
+                          <Button
                             onClick={() => handleMarkRead(message.id)}
                             disabled={markReadMutation.isPending}
                             style={{
                               padding: "0.5rem 1rem",
-                              background: "#FB951D",
+                              background: "var(--vibe-strength)",
                               color: colors.text,
                               border: "none",
-                              borderRadius: "4px",
+                              borderRadius: "var(--radius-sm)",
                               cursor: "pointer",
-                              fontSize: "0.875rem",
+                              fontSize: "var(--type-supporting-size)",
                               whiteSpace: "nowrap",
                             }}
                           >
                             Mark Read
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -413,7 +426,7 @@ const MessagesPage: React.FC = () => {
 
           {data.messages.length >= limit && (
             <div style={{ marginTop: "2rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-              <button
+              <Button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
                 style={{
@@ -421,14 +434,14 @@ const MessagesPage: React.FC = () => {
                   background: page === 0 ? colors.border : colors.accent,
                   color: colors.text,
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   cursor: page === 0 ? "not-allowed" : "pointer",
                 }}
               >
                 Previous
-              </button>
+              </Button>
               <span style={{ color: colors.text }}>Page {page + 1}</span>
-              <button
+              <Button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={data.messages.length < limit}
                 style={{
@@ -436,12 +449,12 @@ const MessagesPage: React.FC = () => {
                   background: data.messages.length < limit ? colors.border : colors.accent,
                   color: colors.text,
                   border: "none",
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   cursor: data.messages.length < limit ? "not-allowed" : "pointer",
                 }}
               >
                 Next
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -456,7 +469,7 @@ const MessagesPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: "rgba(0, 0, 0, 0.8)",
+            background: "var(--modal-backdrop)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -468,7 +481,7 @@ const MessagesPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               border: `1px solid ${colors.border}`,
               maxWidth: "800px",
               width: "100%",
@@ -486,33 +499,47 @@ const MessagesPage: React.FC = () => {
                 marginBottom: "1.5rem",
               }}
             >
-              <h2 style={{ color: colors.text, fontSize: "1.5rem", margin: 0 }}>Message Details</h2>
-              <button
+              <h2
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-section-title-size)",
+                  margin: 0,
+                }}
+              >
+                Message Details
+              </h2>
+              <Button
                 onClick={handleCloseModal}
                 style={{
                   background: "transparent",
                   border: "none",
                   color: colors.text,
-                  fontSize: "1.5rem",
+                  fontSize: "var(--type-section-title-size)",
                   cursor: "pointer",
                   padding: "0.25rem 0.5rem",
                 }}
               >
                 ×
-              </button>
+              </Button>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  color: "var(--color-text-muted)",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
                 From:
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-body-size)",
+                  marginBottom: "1rem",
+                }}
+              >
                 {selectedMessage.email}
               </div>
             </div>
@@ -520,14 +547,20 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  color: "var(--color-text-muted)",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
                 Topic:
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-body-size)",
+                  marginBottom: "1rem",
+                }}
+              >
                 {selectedMessage.topic}
               </div>
             </div>
@@ -535,14 +568,20 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  color: "var(--color-text-muted)",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
                 Date:
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem", marginBottom: "1rem" }}>
+              <div
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-body-size)",
+                  marginBottom: "1rem",
+                }}
+              >
                 {new Date(selectedMessage.createdAt).toLocaleString()}
               </div>
             </div>
@@ -550,8 +589,8 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  color: "var(--color-text-muted)",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.25rem",
                 }}
               >
@@ -559,9 +598,9 @@ const MessagesPage: React.FC = () => {
               </div>
               <div style={{ marginBottom: "1rem" }}>
                 {selectedMessage.readAt ? (
-                  <span style={{ color: "rgba(255, 255, 255, 0.55)" }}>Read</span>
+                  <span style={{ color: "var(--color-text-muted)" }}>Read</span>
                 ) : (
-                  <span style={{ color: "#FB951D" }}>Unread</span>
+                  <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
                 )}
               </div>
             </div>
@@ -569,8 +608,8 @@ const MessagesPage: React.FC = () => {
             <div style={{ marginBottom: "1.5rem" }}>
               <div
                 style={{
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.875rem",
+                  color: "var(--color-text-muted)",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.5rem",
                 }}
               >
@@ -579,13 +618,13 @@ const MessagesPage: React.FC = () => {
               <div
                 style={{
                   color: colors.text,
-                  fontSize: "1rem",
-                  lineHeight: "1.6",
+                  fontSize: "var(--type-body-size)",
+                  lineHeight: "var(--type-body-line-height)",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",
-                  background: "#0D1A15",
+                  background: "var(--color-input-bg)",
                   padding: "1rem",
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   border: `1px solid ${colors.border}`,
                   minHeight: "200px",
                   maxHeight: "400px",
@@ -600,8 +639,8 @@ const MessagesPage: React.FC = () => {
               <div style={{ marginBottom: "1.5rem" }}>
                 <div
                   style={{
-                    color: "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.875rem",
+                    color: "var(--color-text-muted)",
+                    fontSize: "var(--type-supporting-size)",
                     marginBottom: "0.5rem",
                   }}
                 >
@@ -610,13 +649,13 @@ const MessagesPage: React.FC = () => {
                 <div
                   style={{
                     color: colors.text,
-                    fontSize: "1rem",
-                    lineHeight: "1.6",
+                    fontSize: "var(--type-body-size)",
+                    lineHeight: "var(--type-body-line-height)",
                     whiteSpace: "pre-wrap",
                     wordBreak: "break-word",
-                    background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                    background: "var(--color-surface-muted)",
                     padding: "1rem",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     border: `1px solid ${colors.border}`,
                     minHeight: "100px",
                     maxHeight: "300px",
@@ -632,14 +671,14 @@ const MessagesPage: React.FC = () => {
               <div style={{ marginBottom: "1.5rem" }}>
                 <div
                   style={{
-                    color: "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.875rem",
+                    color: "var(--color-text-muted)",
+                    fontSize: "var(--type-supporting-size)",
                     marginBottom: "0.5rem",
                   }}
                 >
                   Add Response:
                 </div>
-                <textarea
+                <TextareaControl
                   value={responseText}
                   onChange={(e) => setResponseText(e.target.value)}
                   placeholder="Enter your response to this message..."
@@ -647,17 +686,17 @@ const MessagesPage: React.FC = () => {
                   style={{
                     width: "100%",
                     padding: "1rem",
-                    background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                    background: "var(--color-surface-muted)",
                     border: `1px solid ${colors.border}`,
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     color: colors.text,
-                    fontSize: "1rem",
-                    fontFamily: "inherit",
+                    fontSize: "var(--type-body-size)",
+                    fontFamily: "var(--font-family-body)",
                     resize: "vertical",
                   }}
                 />
                 <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", flexWrap: "wrap" }}>
-                  <button
+                  <Button
                     onClick={() => handleSaveResponse(selectedMessage.id, true)}
                     disabled={!responseText.trim() || saveResponseMutation.isPending}
                     style={{
@@ -668,17 +707,17 @@ const MessagesPage: React.FC = () => {
                           : colors.border,
                       color: colors.text,
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor:
                         responseText.trim() && !saveResponseMutation.isPending
                           ? "pointer"
                           : "not-allowed",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     {saveResponseMutation.isPending ? "Saving..." : "Save & Send Email"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => handleSaveResponse(selectedMessage.id, false)}
                     disabled={!responseText.trim() || saveResponseMutation.isPending}
                     style={{
@@ -686,20 +725,20 @@ const MessagesPage: React.FC = () => {
                       background:
                         responseText.trim() && !saveResponseMutation.isPending
                           ? colors.border
-                          : "#1a3d2e",
+                          : "var(--color-secondary-active)",
                       color: colors.text,
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor:
                         responseText.trim() && !saveResponseMutation.isPending
                           ? "pointer"
                           : "not-allowed",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     {saveResponseMutation.isPending ? "Saving..." : "Save Only"}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => {
                       setShowResponseInput(false);
                       setResponseText("");
@@ -709,13 +748,13 @@ const MessagesPage: React.FC = () => {
                       background: "transparent",
                       color: colors.text,
                       border: `1px solid ${colors.border}`,
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor: "pointer",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -725,7 +764,7 @@ const MessagesPage: React.FC = () => {
             >
               {!selectedMessage.respondedAt && (
                 <>
-                  <button
+                  <Button
                     onClick={() =>
                       handleReply(
                         selectedMessage.email,
@@ -739,33 +778,33 @@ const MessagesPage: React.FC = () => {
                       background: colors.border,
                       color: colors.text,
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "var(--radius-sm)",
                       cursor: "pointer",
-                      fontSize: "1rem",
+                      fontSize: "var(--type-body-size)",
                     }}
                   >
                     Reply via Email
-                  </button>
+                  </Button>
                 </>
               )}
               {!selectedMessage.response && !showResponseInput && (
-                <button
+                <Button
                   onClick={handleShowResponseInput}
                   style={{
                     padding: "0.75rem 1.5rem",
                     background: colors.border,
                     color: colors.text,
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 >
                   Record Response
-                </button>
+                </Button>
               )}
               {selectedMessage.response && (
-                <button
+                <Button
                   onClick={() =>
                     handleReply(
                       selectedMessage.email,
@@ -776,19 +815,19 @@ const MessagesPage: React.FC = () => {
                   }
                   style={{
                     padding: "0.75rem 1.5rem",
-                    background: "#15523A",
+                    background: "var(--vibe-regeneration)",
                     color: colors.text,
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 >
                   Send Email with Recorded Response
-                </button>
+                </Button>
               )}
               {!selectedMessage.readAt && (
-                <button
+                <Button
                   onClick={() => {
                     handleMarkRead(selectedMessage.id);
                     handleCloseModal();
@@ -796,31 +835,31 @@ const MessagesPage: React.FC = () => {
                   disabled={markReadMutation.isPending}
                   style={{
                     padding: "0.75rem 1.5rem",
-                    background: "#FB951D",
+                    background: "var(--vibe-strength)",
                     color: colors.text,
                     border: "none",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     cursor: "pointer",
-                    fontSize: "1rem",
+                    fontSize: "var(--type-body-size)",
                   }}
                 >
                   Mark as Read
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 onClick={handleCloseModal}
                 style={{
                   padding: "0.75rem 1.5rem",
                   background: "transparent",
                   color: colors.text,
                   border: `1px solid ${colors.border}`,
-                  borderRadius: "4px",
+                  borderRadius: "var(--radius-sm)",
                   cursor: "pointer",
-                  fontSize: "1rem",
+                  fontSize: "var(--type-body-size)",
                 }}
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>

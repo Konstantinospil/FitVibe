@@ -8,7 +8,11 @@
     "you": "Tú",
     "activeSession": "Sesión activa",
     "skipToContent": "Saltar al contenido principal",
-    "back": "Atrás"
+    "back": "Atrás",
+    "calendar": "Calendario",
+    "library": "Biblioteca",
+    "dashboard": "Panel",
+    "settings": "Ajustes"
   },
   "language": {
     "label": "Idioma",
@@ -882,5 +886,135 @@
         "all": "Todo"
       }
     }
+  },
+  "homeSurface": {
+    "title": "Inicio",
+    "sections": {
+      "recentActivity": "Actividad reciente",
+      "trending": "Entrenamientos populares",
+      "newsFeed": "Noticias",
+      "previousActivities": "Actividades anteriores"
+    },
+    "activity": {
+      "timeSinceLast": "Tiempo desde la última actividad",
+      "noActivity": "Aún no hay actividad registrada",
+      "lastActivity": "Última actividad: {{name}}",
+      "startHint": "Registra un entrenamiento para iniciar tu historial de actividad."
+    },
+    "session": {
+      "workout": "Entrenamiento",
+      "workoutSummary": "Resumen del entrenamiento",
+      "exercises": "{{count}} ejercicio",
+      "exercises_other": "{{count}} ejercicios",
+      "points": "{{count}} puntos"
+    },
+    "news": {
+      "unpublished": "No publicado",
+      "sharedBy": "Compartido por {{name}}",
+      "addNod": "Dar un nod",
+      "removeNod": "Quitar nod",
+      "comments": "{{count}} comentarios",
+      "nodError": "No se pudo actualizar el nod."
+    },
+    "loading": {
+      "trending": "Cargando entrenamientos populares…",
+      "news": "Cargando noticias…",
+      "activities": "Cargando actividades anteriores…"
+    },
+    "empty": {
+      "trending": "Aún no hay entrenamientos populares.",
+      "news": "Aún no hay entrenamientos compartidos.",
+      "activities": "Aún no hay actividades anteriores."
+    },
+    "errors": {
+      "trending": "No se pudieron cargar los entrenamientos populares.",
+      "news": "No se pudieron cargar las noticias.",
+      "activities": "No se pudieron cargar las actividades anteriores."
+    }
+  },
+  "calendarSurface": {
+    "title": "Calendario",
+    "sections": {
+      "calendar": "Calendario",
+      "history": "Historial",
+      "weekPlan": "Plan semanal de entrenamiento"
+    },
+    "actions": {
+      "plan": "Planificar entrenamiento",
+      "start": "Iniciar entrenamiento",
+      "log": "Registrar entrenamiento",
+      "options": "Opciones del entrenamiento"
+    },
+    "navigation": {
+      "previousMonth": "Mes anterior",
+      "nextMonth": "Mes siguiente",
+      "previousYear": "Año anterior",
+      "nextYear": "Año siguiente"
+    },
+    "gridLabel": "Calendario mensual de entrenamientos",
+    "dayLabel": "{{date}}, {{count}} entrenamientos",
+    "empty": {
+      "selectedDay": "No hay entrenamientos este día.",
+      "history": "Aún no hay historial de entrenamientos.",
+      "week": "No hay entrenamientos planificados para el resto de esta semana."
+    },
+    "errors": {
+      "load": "No se pudieron cargar los datos del calendario."
+    }
+  },
+  "workoutEditor": {
+    "title": "Editor de entrenamiento",
+    "close": "Cerrar editor de entrenamiento",
+    "exerciseFallback": "Ejercicio",
+    "sections": {
+      "general": "Información general",
+      "activity": "Actividad",
+      "overview": "Resumen"
+    },
+    "actions": {
+      "start": "Iniciar",
+      "plan": "Planificar",
+      "addExercise": "Añadir ejercicio",
+      "removeLast": "Quitar último ejercicio"
+    },
+    "fields": {
+      "name": "Nombre del entrenamiento",
+      "notes": "Notas",
+      "exercise": "Ejercicio",
+      "sets": "Series",
+      "repetitions": "Repeticiones",
+      "weight": "Resistencia / peso",
+      "duration": "Duración (segundos)",
+      "exertion": "Esfuerzo objetivo",
+      "restSet": "Descanso tras cada serie (segundos)",
+      "restExercise": "Descanso tras el ejercicio (segundos)"
+    },
+    "placeholders": {
+      "name": "Nombre del entrenamiento",
+      "notes": "Describe el entrenamiento",
+      "exercise": "Selecciona un ejercicio"
+    },
+    "metrics": {
+      "caloriesPerMinute": "Calorías / minuto",
+      "duration": "Duración",
+      "calories": "Calorías",
+      "unavailable": "No disponible"
+    },
+    "empty": {
+      "activity": "Selecciona un ejercicio para empezar a crear el entrenamiento.",
+      "overview": "No se han añadido ejercicios."
+    },
+    "summary": {
+      "sets": "{{count}} serie",
+      "sets_other": "{{count}} series",
+      "repetitions": "{{value}} repeticiones"
+    },
+    "errors": {
+      "save": "No se pudo guardar el entrenamiento.",
+      "exercises": "No se pudieron cargar los ejercicios."
+    }
+  },
+  "actions": {
+    "retry": "Reintentar"
   }
 }

@@ -6,11 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTestQueryClient } from "../helpers/testQueryClient";
 import { ToastProvider } from "../../src/contexts/ToastContext";
-import { AuthProvider } from "../../src/contexts/AuthContext";
-import { useAuthStore } from "../../src/store/auth.store";
+import { useAuth } from "../../src/contexts/AuthContext";
 import MainLayout from "../../src/layouts/MainLayout";
 
-vi.mock("../../src/store/auth.store");
+vi.mock("../../src/contexts/AuthContext", () => ({
+  useAuth: vi.fn(),
+}));
 vi.mock("../../src/components/ThemeToggle", () => ({
   default: () => <div data-testid="theme-toggle">ThemeToggle</div>,
 }));
@@ -58,13 +59,11 @@ const wrapper = ({ children }: { children: React.ReactNode }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="*" element={children} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="*" element={children} />
+          </Routes>
+        </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
   );
@@ -81,15 +80,12 @@ describe("MainLayout", () => {
     vi.clearAllMocks();
     mockNavigate.mockClear();
 
-    vi.mocked(useAuthStore).mockImplementation((selector: any) => {
-      const state = {
-        isAuthenticated: true,
-        user: { id: "user-1", username: "test", email: "test@test.com", role: "user" },
-        signIn: mockSignIn,
-        signOut: mockSignOut,
-        updateUser: mockUpdateUser,
-      };
-      return selector(state);
+    vi.mocked(useAuth).mockReturnValue({
+      isAuthenticated: true,
+      user: { id: "user-1", username: "test", email: "test@test.com", role: "user" },
+      signIn: mockSignIn,
+      signOut: mockSignOut,
+      updateUser: mockUpdateUser,
     });
   });
 
@@ -107,8 +103,7 @@ describe("MainLayout", () => {
     // The nav element also has aria-label="Home", so we need to get all and check NavLinks
     const homeLinks = screen.getAllByLabelText("Home");
     expect(homeLinks.length).toBeGreaterThan(0);
-    const profileLinks = screen.getAllByLabelText("Profile");
-    expect(profileLinks.length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText("Profile")).not.toBeInTheDocument();
   });
 
   it("should render theme toggle and language switcher", () => {
@@ -129,7 +124,7 @@ describe("MainLayout", () => {
     const { container } = render(<MainLayout />, { wrapper });
 
     // Footer uses i18n translations - use getAllByText and filter by container
-    const fitvibe = screen.getByRole("img", { name: "FitVibe" });
+    const fitvibe = screen.getAllByRole("img", { name: "FitVibe" })[0];
     const termsTexts = screen.getAllByText("Terms");
     const privacyTexts = screen.getAllByText("Privacy");
 
@@ -153,26 +148,7 @@ describe("MainLayout", () => {
       { timeout: 3000 },
     );
 
-    // Find button by role and aria-label - button has aria-label="Sign out"
-    await waitFor(
-      () => {
-        const buttons = screen.getAllByRole("button");
-        expect(buttons.length).toBeGreaterThan(0);
-      },
-      { timeout: 3000 },
-    );
-
-    const allButtons = screen.getAllByRole("button");
-    const signOutButtons = allButtons.filter((btn) => {
-      const ariaLabel = btn.getAttribute("aria-label");
-      return ariaLabel && /sign out/i.test(ariaLabel);
-    });
-
-    expect(signOutButtons.length).toBeGreaterThan(0);
-    const signOutButton =
-      Array.from(signOutButtons).find((btn) => container.contains(btn)) || signOutButtons[0];
-
-    expect(signOutButton).toBeInTheDocument();
+    const signOutButton = screen.getByRole("button", { name: "Sign out" });
     expect(signOutButton).not.toBeDisabled();
 
     fireEvent.click(signOutButton);
@@ -192,7 +168,7 @@ describe("MainLayout", () => {
     // Logo is an img with alt="FitVibe Logo", not a link
     // The logo div doesn't have click handler, so this test may need to be updated
     // For now, we'll test that the logo is present
-    const logos = screen.getAllByAltText("FitVibe Logo");
+    const logos = screen.getAllByAltText("FitVibe");
     const logo = Array.from(logos).find((img) => container.contains(img)) || logos[0];
     expect(logo).toBeInTheDocument();
     // Note: Logo clicking navigation is not implemented in MainLayout
@@ -218,7 +194,7 @@ describe("MainLayout", () => {
     const navElements = screen.getAllByRole("navigation");
     expect(navElements.length).toBeGreaterThan(0);
 
-    const fitvibe = screen.getByRole("img", { name: "FitVibe" });
-    expect(fitvibe).toBeInTheDocument(); // Footer
+    expect(container.querySelector("#main-content")).toBeInTheDocument();
+    expect(screen.getAllByRole("img", { name: "FitVibe" }).length).toBeGreaterThan(0);
   });
 });

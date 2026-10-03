@@ -333,7 +333,15 @@ const AuditLogsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "2rem" }}>Audit Logs</h1>
+      <h1
+        style={{
+          color: colors.text,
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
+        Audit Logs
+      </h1>
 
       <div style={{ marginBottom: "1.5rem", maxWidth: "360px" }}>
         <label
@@ -404,7 +412,7 @@ const AuditLogsPage: React.FC = () => {
               style={{
                 cursor: "pointer",
                 padding: "0.5rem",
-                borderRadius: "4px",
+                borderRadius: "var(--radius-sm)",
                 border: `1px solid ${colors.border}`,
                 background: colors.surface,
                 color: colors.text,
@@ -425,7 +433,7 @@ const AuditLogsPage: React.FC = () => {
                 minWidth: "260px",
                 background: colors.surface,
                 border: `1px solid ${colors.border}`,
-                borderRadius: "6px",
+                borderRadius: "var(--radius-sm)",
                 padding: "0.75rem",
                 boxShadow: "var(--shadow-popover)",
               }}
@@ -438,7 +446,9 @@ const AuditLogsPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                <span style={{ color: colors.textMuted, fontSize: "0.75rem" }}>Select actions</span>
+                <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                  Select actions
+                </span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -455,7 +465,7 @@ const AuditLogsPage: React.FC = () => {
                 </Button>
               </div>
               {actionOptions.length === 0 ? (
-                <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>
+                <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
                   No actions available
                 </div>
               ) : (
@@ -483,7 +493,9 @@ const AuditLogsPage: React.FC = () => {
                         checked={actionFilter.includes(option.value)}
                         onChange={() => handleToggleAction(option.value)}
                       />
-                      <span style={{ fontSize: "0.875rem" }}>{option.label}</span>
+                      <span style={{ fontSize: "var(--type-supporting-size)" }}>
+                        {option.label}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -542,7 +554,7 @@ const AuditLogsPage: React.FC = () => {
               flexWrap: "wrap",
             }}
           >
-            <span style={{ color: colors.textMuted, fontSize: "0.875rem" }}>
+            <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
               {selectedLogIds.size > 0
                 ? `${selectedLogIds.size} selected`
                 : "Select logs to resolve in bulk"}
@@ -572,7 +584,7 @@ const AuditLogsPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               overflowX: "auto",
               overflowY: "visible",
               border: `1px solid ${colors.border}`,
@@ -726,9 +738,9 @@ const AuditLogsPage: React.FC = () => {
                         }
                         style={{
                           color: severityColors[log.severity],
-                          fontWeight: 600,
+                          fontWeight: "var(--font-weight-semibold)",
                           textTransform: "uppercase",
-                          fontSize: "0.75rem",
+                          fontSize: "var(--type-supporting-size)",
                         }}
                       >
                         {severityOptions.map((severity) => (
@@ -830,7 +842,7 @@ const AuditLogsPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               border: `1px solid ${colors.border}`,
               maxWidth: "800px",
               width: "100%",
@@ -848,7 +860,13 @@ const AuditLogsPage: React.FC = () => {
                 marginBottom: "1.5rem",
               }}
             >
-              <h2 style={{ color: colors.text, fontSize: "1.5rem", margin: 0 }}>
+              <h2
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-section-title-size)",
+                  margin: 0,
+                }}
+              >
                 Audit Log Details
               </h2>
               <Button
@@ -857,47 +875,61 @@ const AuditLogsPage: React.FC = () => {
                 size="sm"
                 aria-label="Close audit log details"
                 onClick={handleCloseModal}
-                style={{ color: colors.text, fontSize: "1.5rem", padding: "0.25rem 0.5rem" }}
+                style={{
+                  color: colors.text,
+                  fontSize: "var(--type-section-title-size)",
+                  padding: "0.25rem 0.5rem",
+                }}
               >
                 ×
               </Button>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Created</div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Created
+              </div>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {new Date(selectedLog.createdAt).toLocaleString()}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Action</div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Action
+              </div>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {getActionLabel(selectedLog.action)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Entity</div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Entity
+              </div>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatLabel(selectedLog.entityType, entityLabelMap)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Actor</div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Actor
+              </div>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.actorUsername || selectedLog.actorUserId || "-"}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Severity</div>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Severity
+              </div>
               <div
                 style={{
                   color: severityColors[selectedLog.severity],
-                  fontSize: "1rem",
-                  fontWeight: 600,
+                  fontSize: "var(--type-body-size)",
+                  fontWeight: "var(--font-weight-semibold)",
                 }}
               >
                 {selectedLog.severity.toUpperCase()}
@@ -905,15 +937,19 @@ const AuditLogsPage: React.FC = () => {
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Outcome</div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Outcome
+              </div>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatAction(selectedLog.outcome)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ color: colors.textMuted, fontSize: "0.875rem" }}>Resolved</div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
+                Resolved
+              </div>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.resolvedAt
                   ? new Date(selectedLog.resolvedAt).toLocaleString()
                   : "Open"}
@@ -924,13 +960,13 @@ const AuditLogsPage: React.FC = () => {
               <div
                 style={{
                   color: colors.textMuted,
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.5rem",
                 }}
               >
                 Summary
               </div>
-              <div style={{ color: colors.text, fontSize: "1rem" }}>
+              <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {buildSummary(selectedLog, getActionLabel)}
               </div>
             </div>
@@ -939,7 +975,7 @@ const AuditLogsPage: React.FC = () => {
               <div
                 style={{
                   color: colors.textMuted,
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   marginBottom: "0.5rem",
                 }}
               >
@@ -950,7 +986,7 @@ const AuditLogsPage: React.FC = () => {
                   style={{
                     background: colors.surfaceMuted,
                     padding: "1rem",
-                    borderRadius: "4px",
+                    borderRadius: "var(--radius-sm)",
                     border: `1px solid ${colors.border}`,
                     maxHeight: "300px",
                     overflow: "auto",
@@ -986,7 +1022,11 @@ const AuditLogsPage: React.FC = () => {
                               style={{ borderBottom: `1px solid ${colors.border}` }}
                             >
                               <td
-                                style={{ padding: "0.5rem", color: colors.text, fontWeight: 600 }}
+                                style={{
+                                  padding: "0.5rem",
+                                  color: colors.text,
+                                  fontWeight: "var(--font-weight-semibold)",
+                                }}
                               >
                                 {formatLabel(change.field, fieldLabelMap)}
                               </td>
@@ -1016,7 +1056,7 @@ const AuditLogsPage: React.FC = () => {
                                   style={{
                                     padding: "0.5rem",
                                     color: colors.text,
-                                    fontWeight: 600,
+                                    fontWeight: "var(--font-weight-semibold)",
                                     width: "35%",
                                   }}
                                 >

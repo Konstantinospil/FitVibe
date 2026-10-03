@@ -116,8 +116,7 @@ describe("Terms page", () => {
     expect(
       screen.getByText(
         (_, element) =>
-          element?.tagName === "DIV" &&
-          element.classList.contains("text-muted") &&
+          element?.classList.contains("legal-document-shell__version") === true &&
           element.textContent?.includes("2026-09-25.1") === true,
       ),
     ).toBeInTheDocument();

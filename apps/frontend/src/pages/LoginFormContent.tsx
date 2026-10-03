@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Eye, EyeOff } from "lucide-react";
-import { Button } from "../components/ui/Button";
+import { Button, InputField, PasswordField, TextLink } from "@fitvibe/ui";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { useAuth } from "../contexts/AuthContext";
 import { login } from "../services/api";
 import { logger } from "../utils/logger.js";
@@ -25,7 +25,6 @@ const LoginFormContent: React.FC = () => {
       : "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -125,72 +124,49 @@ const LoginFormContent: React.FC = () => {
   };
 
   return (
-    <form
+    <FormStack
       ref={formRef}
       onSubmit={(e) => {
         void handleSubmit(e);
       }}
-      className="form"
     >
-      <label className="form-label">
-        <span className="form-label-text">{t("auth.login.emailLabel")}</span>
-        <input
-          name="email"
-          type="text"
-          placeholder={t("auth.placeholders.email")}
-          className="form-input"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="username"
-          disabled={isSubmitting}
-        />
-      </label>
-      <div className="form-label">
-        <label htmlFor="login-password" className="form-label-text">
-          {t("auth.login.passwordLabel")}
-        </label>
-        <div className="form-input-wrapper">
-          <input
-            id="login-password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            placeholder={t("auth.placeholders.password")}
-            className="form-input form-input--password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            disabled={isSubmitting}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="form-password-toggle"
-            aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
-            disabled={isSubmitting}
-          >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
-        </div>
-      </div>
-      {error ? (
-        <div role="alert" className="form-error">
-          {error}
-        </div>
-      ) : null}
+      <InputField
+        label={t("auth.login.emailLabel")}
+        name="email"
+        type="text"
+        placeholder={t("auth.placeholders.email")}
+        required
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        autoComplete="username"
+        disabled={isSubmitting}
+      />
+      <PasswordField
+        id="login-password"
+        label={t("auth.login.passwordLabel")}
+        name="password"
+        placeholder={t("auth.placeholders.password")}
+        required
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        autoComplete="current-password"
+        disabled={isSubmitting}
+        showPasswordLabel={showPasswordLabel}
+        hidePasswordLabel={hidePasswordLabel}
+      />
+      {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
       <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
         {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
       </Button>
       <div className="form-links">
-        <NavLink to="/register" className="form-link">
+        <TextLink as={NavLink} to="/register">
           {t("auth.login.registerPrompt")}
-        </NavLink>
-        <NavLink to="/forgot-password" className="form-link">
+        </TextLink>
+        <TextLink as={NavLink} to="/forgot-password">
           {t("auth.login.forgot")}
-        </NavLink>
+        </TextLink>
       </div>
-    </form>
+    </FormStack>
   );
 };
 

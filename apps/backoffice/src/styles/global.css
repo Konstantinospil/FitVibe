@@ -31,33 +31,104 @@
 }
 
 :root {
+
+  /* Derived effects may only mix Figma palette tokens with transparency. */
+  --surface-muted-subtle: color-mix(in srgb, var(--color-surface-muted) var(--transparency-disabled), transparent);
+  --border-subtle: color-mix(in srgb, var(--color-border) var(--transparency-disabled), transparent);
+  --surface-success-subtle: color-mix(in srgb, var(--color-success) var(--transparency-disabled), transparent);
+  --border-success-subtle: color-mix(in srgb, var(--color-success) var(--transparency-subtle), transparent);
+  --surface-danger-subtle: color-mix(in srgb, var(--color-danger) var(--transparency-disabled), transparent);
+  --border-danger-subtle: color-mix(in srgb, var(--color-danger) var(--transparency-subtle), transparent);
+  --surface-warning-subtle: color-mix(in srgb, var(--color-warning) var(--transparency-disabled), transparent);
+  --border-warning-subtle: color-mix(in srgb, var(--color-warning) var(--transparency-subtle), transparent);
+  --surface-focus-subtle: color-mix(in srgb, var(--color-focus) var(--transparency-disabled), transparent);
+  --border-focus-subtle: color-mix(in srgb, var(--color-focus) var(--transparency-subtle), transparent);
+
   color-scheme: dark;
 
-  /* Typography - FitVibe Design System v1.0 */
-  --font-family-base: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-    system-ui, sans-serif;
-  --font-family-heading: "Roboto Flex", "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont,
-    "Helvetica Neue", system-ui, sans-serif;
-  --font-family-mono: "IBM Plex Mono", "Menlo", "Consolas", monospace;
+  /* Typography authority — FitVibe Figma Design System v2 */
+  --font-family-body: "Inter", system-ui, sans-serif;
+  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
 
-  /* Font Sizes - Design System Scale */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-md: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2.0rem;
-  --font-size-3xl: 3.0rem;
+  --font-weight-regular: 400;
+  --font-weight-control-large: 582;
+  --font-weight-semibold: 600;
 
-  /* Line Heights */
-  --line-height-tight: 1.2;
-  --line-height-snug: 1.35;
-  --line-height-normal: 1.6;
-  --line-height-relaxed: 1.65;
+  --type-display-size: 3rem;
+  --type-display-line-height: 3.5rem;
+  --type-display-letter-spacing: -0.01em;
 
-  /* Letter Spacing */
-  --letter-spacing-wide: 0.08em;
-  --letter-spacing-tight: -0.01em;
+  --type-page-title-size: 2rem;
+  --type-page-title-line-height: 2.5rem;
+  --type-page-title-letter-spacing: -0.005em;
+
+  --type-section-title-size: 1.5rem;
+  --type-section-title-line-height: 2rem;
+  --type-section-title-letter-spacing: -0.005em;
+
+  --type-card-title-size: 1.125rem;
+  --type-card-title-line-height: 1.5rem;
+  --type-card-title-letter-spacing: 0;
+
+  --type-body-size: 1rem;
+  --type-body-line-height: 1.5rem;
+  --type-body-letter-spacing: 0;
+
+  --type-supporting-size: 0.875rem;
+  --type-supporting-line-height: 1.25rem;
+  --type-supporting-letter-spacing: 0;
+
+  --type-control-size: 0.875rem;
+  --type-control-line-height: 1.25rem;
+  --type-control-letter-spacing: 0;
+
+  --type-control-large-size: 1rem;
+  --type-control-large-line-height: 1.5rem;
+  --type-control-large-letter-spacing: 0;
+
+  --type-primary-metric-size: 2rem;
+  --type-primary-metric-line-height: 2.25rem;
+  --type-primary-metric-letter-spacing: -0.005em;
+
+  --type-secondary-metric-size: 1.5rem;
+  --type-secondary-metric-line-height: 1.75rem;
+  --type-secondary-metric-letter-spacing: -0.005em;
+
+  --type-metric-small-size: 0.875rem;
+  --type-metric-small-line-height: 0.75rem;
+  --type-metric-small-letter-spacing: 0.02em;
+
+  /* Radius authority — Figma Layout variables */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --radius-none: 0;
+
+  /* Transparency authority — Figma Layout variables */
+  --opacity-full: 1;
+  --opacity-subtle: 0.7;
+  --opacity-disabled: 0.45;
+  --transparency-full: 100%;
+  --transparency-subtle: 70%;
+  --transparency-disabled: 45%;
+
+  /* Compatibility aliases: every alias resolves to an existing Figma text style. */
+  --font-family-base: var(--font-family-body);
+  --font-size-xs: var(--type-supporting-size);
+  --font-size-sm: var(--type-supporting-size);
+  --font-size-md: var(--type-body-size);
+  --font-size-lg: var(--type-card-title-size);
+  --font-size-xl: var(--type-section-title-size);
+  --font-size-2xl: var(--type-page-title-size);
+  --font-size-3xl: var(--type-display-size);
+  --line-height-tight: var(--type-card-title-line-height);
+  --line-height-snug: var(--type-supporting-line-height);
+  --line-height-normal: var(--type-body-line-height);
+  --line-height-relaxed: var(--type-body-line-height);
+  --letter-spacing-wide: var(--type-metric-small-letter-spacing);
+  --letter-spacing-tight: var(--type-page-title-letter-spacing);
 
   /* Spacing */
   --space-xs: 0.5rem;
@@ -67,6 +138,9 @@
   --space-xl: 2rem;
   --space-2xl: 2.5rem;
   --space-3xl: 3.5rem;
+
+  /* Shared primitive dimension authority */
+  --textarea-min-height: 10rem;
 
   /* === DARK MODE COLORS (Primary) === */
 
@@ -199,19 +273,9 @@
   /* Dark Mode Focus Glow */
   --focus-glow: 0 0 0 2px rgba(99, 102, 241, 0.35);
 
-  /* === BORDER RADIUS === */
-
-  --radius-sm: 8px;
-  --radius-2xs: 6px;
-  --radius-xs: 4px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-full: 9999px;
-
   /* Shared UI primitive semantics */
   --card-background: var(--color-surface-glass);
-  --card-radius: 18px;
+  --card-radius: var(--radius-lg);
   --card-shadow: var(--shadow-e2);
   --card-backdrop-filter: none;
   --card-header-divider-color: var(--color-border-strong);
@@ -351,7 +415,7 @@ input:focus-visible {
 }
 
 button {
-  font-family: inherit;
+  font-family: var(--font-family-body);
   border: none;
   cursor: pointer;
 }
@@ -363,7 +427,7 @@ h4,
 h5,
 h6 {
   font-family: var(--font-family-heading);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   letter-spacing: var(--letter-spacing-tight);
   color: var(--color-text-primary);
   margin: 0;
@@ -396,10 +460,10 @@ small {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: #0b0c10;
+  background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-family-base);
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
   /* Priority 3: CSS containment to isolate layout recalculations */
   contain: layout paint;
 }
@@ -407,11 +471,11 @@ small {
 .login-fallback__card {
   max-width: 640px;
   width: 100%;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
   padding: clamp(1.5rem, 4vw, 3rem);
-  background: rgba(11, 12, 16, 0.9);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-e3);
   /* Priority 2: Reserve min-height to prevent layout shift */
   min-height: 420px;
   /* Priority 3: CSS containment for better layout isolation */
@@ -420,20 +484,20 @@ small {
 
 .login-fallback__eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: var(--type-metric-small-letter-spacing);
+  font-size: var(--type-supporting-size);
+  color: var(--color-text-muted);
 }
 
 .login-fallback__title {
-  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-size: clamp(var(--type-page-title-size), 4vw, var(--type-display-size));
   margin: 0.5rem 0;
 }
 
 .login-fallback__desc {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
   margin-bottom: 2rem;
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
 }
 
 .login-fallback__form {
@@ -444,18 +508,18 @@ small {
 .login-fallback__label {
   display: grid;
   gap: 0.5rem;
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--type-supporting-size);
+  color: var(--color-text-secondary);
 }
 
 .login-fallback__field {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-input-border);
   background: var(--color-input-bg);
   color: var(--color-text-primary);
   padding: 0.9rem 1rem;
-  font-size: 1rem;
+  font-size: var(--type-body-size);
   transition: border 0.2s ease;
 }
 
@@ -476,12 +540,12 @@ small {
   transform: translateY(-50%);
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-size: var(--type-supporting-size);
   min-width: 24px;
   min-height: 24px;
   padding: 0.35rem 0.6rem;
-  line-height: 1;
+  line-height: var(--type-metric-small-line-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -489,24 +553,24 @@ small {
 }
 
 .login-fallback__error {
-  border-radius: 12px;
-  border: 1px solid rgba(255, 0, 76, 0.6);
-  background: rgba(255, 0, 76, 0.1);
-  color: #ffb3c7;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
   padding: 0.75rem 1rem;
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
 }
 
 .login-fallback__button {
   height: 52px;
   min-height: 44px;
   min-width: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: none;
-  background: linear-gradient(90deg, #fb951d, #fdd835);
-  color: #0b0c10;
-  font-weight: 600;
-  font-size: 1rem;
+  background: var(--gradient-fire-air);
+  color: var(--color-primary-on);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--type-body-size);
   cursor: pointer;
   transition: opacity 0.2s ease;
   display: inline-flex;
@@ -515,7 +579,7 @@ small {
 }
 
 .login-fallback__button[disabled] {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -527,7 +591,7 @@ small {
 .login-fallback__links {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
   gap: 1rem;
 }
 
@@ -555,7 +619,7 @@ small {
   color: var(--color-primary-on);
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-md);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   z-index: 50;
   transition: left 180ms ease;
 }
@@ -581,13 +645,13 @@ small {
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.3);
+    box-shadow: 0 0 0 0 var(--color-success-border);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 8px transparent;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    box-shadow: 0 0 0 0 transparent;
   }
 }
 
@@ -631,7 +695,7 @@ small {
 }
 
 .form-label-text {
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-secondary);
 }
 
@@ -654,7 +718,7 @@ small {
 }
 
 .form-input:disabled {
-  opacity: 0.6;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -663,9 +727,9 @@ small {
 }
 
 .form-input--code {
-  font-size: 1.2rem;
+  font-size: var(--type-card-title-size);
   text-align: center;
-  letter-spacing: 0.5rem;
+  letter-spacing: var(--type-metric-small-letter-spacing);
   font-family: var(--font-family-mono);
 }
 
@@ -699,7 +763,7 @@ small {
   border: 1px solid var(--color-danger-border);
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
 }
 
 .form-success {
@@ -708,13 +772,13 @@ small {
   border: 1px solid var(--color-success-border);
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
 }
 
 .form-links {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
   gap: var(--space-md);
 }
 
@@ -738,7 +802,7 @@ small {
   display: block;
   text-align: center;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
 }
 
 /* Layout Utilities */
@@ -894,27 +958,27 @@ small {
 }
 
 .text-125 {
-  font-size: 1.25rem;
+  font-size: var(--type-card-title-size);
 }
 
 .text-11 {
-  font-size: 1.1rem;
+  font-size: var(--type-card-title-size);
 }
 
 .text-09 {
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
 }
 
 .text-085 {
-  font-size: 0.85rem;
+  font-size: var(--type-supporting-size);
 }
 
 .text-08 {
-  font-size: 0.8rem;
+  font-size: var(--type-supporting-size);
 }
 
 .font-weight-600 {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .text-primary {
@@ -934,7 +998,7 @@ small {
 }
 
 .line-height-15 {
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
 }
 
 /* Icon Styles */
@@ -949,7 +1013,7 @@ small {
 }
 
 .icon--muted {
-  opacity: 0.3;
+  opacity: var(--opacity-disabled);
 }
 
 .icon--orange {
@@ -978,7 +1042,7 @@ small {
 .alert {
   border-radius: var(--radius-md);
   padding: 0.75rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--type-supporting-size);
 }
 
 .alert--error {
@@ -1024,7 +1088,7 @@ small {
 
 .section-title {
   font-size: var(--font-size-lg);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-sm);
   color: var(--color-text-primary);
 }
@@ -1038,8 +1102,8 @@ small {
 /* Eyebrow/Header Styles */
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.85rem;
+  letter-spacing: var(--type-metric-small-letter-spacing);
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
   margin-bottom: 0.5rem;
 }
@@ -1064,11 +1128,11 @@ small {
 
 /* Opacity Utilities */
 .opacity-03 {
-  opacity: 0.3;
+  opacity: var(--opacity-disabled);
 }
 
 .opacity-05 {
-  opacity: 0.5;
+  opacity: var(--opacity-disabled);
 }
 
 /* Border Radius Utilities */
@@ -1090,7 +1154,7 @@ small {
 
 /* Responsive Utilities */
 .clamp-title {
-  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-size: clamp(var(--type-page-title-size), 4vw, var(--type-display-size));
   margin: 0.5rem 0;
 }
 
@@ -1108,9 +1172,9 @@ small {
 }
 
 .checkbox-label {
-  font-size: 0.9rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: var(--type-body-line-height);
   cursor: pointer;
 }
 
@@ -1158,13 +1222,13 @@ small {
 }
 
 .user-card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: var(--type-card-title-size);
+  font-weight: var(--font-weight-semibold);
   margin: 0;
 }
 
 .user-card-meta {
-  font-size: 0.8rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
 }
 
@@ -1180,17 +1244,17 @@ small {
 }
 
 .user-card-stat-label {
-  font-size: 0.8rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
 }
 
 .user-card-stat-value {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: var(--type-card-title-size);
+  font-weight: var(--font-weight-semibold);
 }
 
 .user-card-footer {
-  font-size: 0.85rem;
+  font-size: var(--type-supporting-size);
   color: var(--color-text-muted);
 }
 
@@ -1221,8 +1285,8 @@ small {
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   border-radius: var(--radius-full);
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: var(--type-supporting-size);
+  font-weight: var(--font-weight-control-large);
 }
 
 .status-badge--active {
@@ -1231,7 +1295,7 @@ small {
 }
 
 .status-badge--inactive {
-  background: rgba(148, 163, 184, 0.16);
+  background: var(--color-surface-muted);
   color: var(--color-text-muted);
 }
 
@@ -1245,7 +1309,7 @@ small {
   display: grid;
   gap: 0.75rem;
   background: var(--color-surface-glass);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 1.6rem;
   border: 1px solid var(--color-border);
 }
@@ -1258,7 +1322,7 @@ small {
   flex: 1 1 200px;
   min-width: 200px;
   background: var(--color-surface-glass);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   padding: 1.4rem;
   border: 1px solid var(--color-border);
   display: grid;
@@ -1280,11 +1344,11 @@ small {
 }
 
 .text-105 {
-  font-size: 1.05rem;
+  font-size: var(--type-card-title-size);
 }
 
 .text-2xl {
-  font-size: 2rem;
+  font-size: var(--type-page-title-size);
 }
 
 /* Tab Navigation */
@@ -1298,10 +1362,10 @@ small {
 
 .tab {
   padding: 0.75rem 1.5rem;
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   background: transparent;
   color: var(--color-text-secondary);
-  font-weight: 500;
+  font-weight: var(--font-weight-control-large);
   border: none;
   cursor: pointer;
   transition: all 150ms ease;
@@ -1310,7 +1374,7 @@ small {
 .tab--active {
   background: var(--color-accent);
   color: var(--color-text-primary);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .mt-075 {

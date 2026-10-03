@@ -261,7 +261,13 @@ const UsersPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: colors.text, marginBottom: "2rem", fontSize: "2rem" }}>
+      <h1
+        style={{
+          color: colors.text,
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
         User Management
       </h1>
 
@@ -311,7 +317,7 @@ const UsersPage: React.FC = () => {
             background: "var(--color-danger-bg)",
             color: "var(--color-danger-text)",
             padding: "1rem",
-            borderRadius: "4px",
+            borderRadius: "var(--radius-sm)",
             marginBottom: "1rem",
             display: "flex",
             justifyContent: "space-between",
@@ -343,7 +349,7 @@ const UsersPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               overflow: "hidden",
               border: `1px solid ${colors.border}`,
             }}
@@ -471,7 +477,7 @@ const UsersPage: React.FC = () => {
                             style={{
                               width: "40px",
                               height: "40px",
-                              borderRadius: "50%",
+                              borderRadius: "var(--radius-full)",
                               objectFit: "cover",
                             }}
                             onError={(e) => {
@@ -486,14 +492,14 @@ const UsersPage: React.FC = () => {
                                 initialsDiv.style.cssText = `
                                 width: 40px;
                                 height: 40px;
-                                borderRadius: 50%;
+                                borderRadius: var(--radius-full);
                                 display: flex;
                                 alignItems: center;
                                 justifyContent: center;
                                 background: ${colors.border};
                                 color: ${colors.text};
-                                fontSize: 0.875rem;
-                                fontWeight: 600;
+                                fontSize: var(--type-supporting-size);
+                                fontWeight: var(--font-weight-semibold);
                               `;
                                 parent.appendChild(initialsDiv);
                               }
@@ -504,14 +510,14 @@ const UsersPage: React.FC = () => {
                             style={{
                               width: "40px",
                               height: "40px",
-                              borderRadius: "50%",
+                              borderRadius: "var(--radius-full)",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               background: colors.border,
                               color: colors.text,
-                              fontSize: "0.875rem",
-                              fontWeight: "600",
+                              fontSize: "var(--type-supporting-size)",
+                              fontWeight: "var(--font-weight-semibold)",
                             }}
                           >
                             {initials}
@@ -522,7 +528,12 @@ const UsersPage: React.FC = () => {
                         <div style={{ display: "flex", flexDirection: "column" }}>
                           <span>{displayName}</span>
                           {showUsername && (
-                            <span style={{ color: colors.textSecondary, fontSize: "0.8rem" }}>
+                            <span
+                              style={{
+                                color: colors.textSecondary,
+                                fontSize: "var(--type-supporting-size)",
+                              }}
+                            >
                               @{user.username}
                             </span>
                           )}
@@ -703,7 +714,7 @@ const UsersPage: React.FC = () => {
           <div
             style={{
               background: colors.surface,
-              borderRadius: "8px",
+              borderRadius: "var(--radius-sm)",
               border: `1px solid ${colors.border}`,
               maxWidth: "500px",
               width: "100%",
@@ -711,7 +722,13 @@ const UsersPage: React.FC = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ color: colors.text, marginBottom: "1.5rem", fontSize: "1.5rem" }}>
+            <h2
+              style={{
+                color: colors.text,
+                marginBottom: "1.5rem",
+                fontSize: "var(--type-section-title-size)",
+              }}
+            >
               Change Role for {selectedUser.display_name || selectedUser.username}
             </h2>
             <div style={{ marginBottom: "1.5rem" }}>
@@ -720,7 +737,7 @@ const UsersPage: React.FC = () => {
                   display: "block",
                   marginBottom: "0.5rem",
                   color: colors.text,
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                 }}
               >
                 Select Role
@@ -743,7 +760,7 @@ const UsersPage: React.FC = () => {
                   display: "block",
                   marginBottom: "0.5rem",
                   color: colors.text,
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                 }}
               >
                 Reason (optional)

@@ -245,10 +245,14 @@ describe("LoginFormContent", () => {
 
     expect(passwordInput.type).toBe("password");
 
-    fireEvent.click(toggleButton);
+    fireEvent.mouseDown(toggleButton);
 
     expect(passwordInput.type).toBe("text");
-    expect(screen.getByLabelText("Hide password")).toBeInTheDocument();
+    const hideButton = screen.getByLabelText("Hide password");
+    expect(hideButton).toBeInTheDocument();
+
+    fireEvent.mouseUp(hideButton);
+    expect(passwordInput.type).toBe("password");
   });
 
   it("should render register and forgot password links", () => {

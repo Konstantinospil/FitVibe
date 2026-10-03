@@ -1,98 +1,129 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DropdownMenu } from "../../src/components/ui/DropdownMenu";
+import { DropdownMenu } from "../../../packages/ui/src/DropdownMenu";
+
+const SearchIcon = () => <span data-testid="search-icon">Q</span>;
+
+const items = [
+  { value: "a", label: "First", leadingIcon: <SearchIcon />, trailingIcon: <SearchIcon /> },
+  { value: "b", label: "Second", leadingIcon: <SearchIcon />, trailingIcon: <SearchIcon /> },
+  { value: "c", label: "Disabled", disabled: true },
+] as const;
 
 describe("DropdownMenu", () => {
-  it("renders items and calls onSelect", () => {
-    const onSelect = vi.fn();
+  it("renders the clicked/open Figma composition", () => {
     render(
       <DropdownMenu
-        items={[
-          { label: "First", value: "first" },
-          { label: "Divider", value: "divider", divider: true },
-          { label: "Second", value: "second" },
-        ]}
-        onSelect={onSelect}
+        label="Label"
+        items={items}
+        defaultOpen
+        ariaLabel="Example menu"
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByText("First")).toBeInTheDocument();
-    expect(screen.getByText("Second")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByText("First"));
-    expect(onSelect).toHaveBeenCalledWith("first");
+    expect(screen.getByRole("button", { name: "Example menu" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(screen.getByRole("menu", { name: "Example menu" })).toBeInTheDocument();
+    expect(screen.getAllByRole("menuitemradio")).toHaveLength(3);
   });
 
-  it("does not call onSelect for disabled items", () => {
-    const onSelect = vi.fn();
-    render(
+  it("can toggle the leading-icon column off", () => {
+    const { rerender } = render(
       <DropdownMenu
-        items={[{ label: "Disabled", value: "disabled", disabled: true }]}
-        onSelect={onSelect}
+        label="Label"
+        items={items}
+        defaultOpen
+        showLeadingIcons
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    fireEvent.click(screen.getByText("Disabled"));
-    expect(onSelect).not.toHaveBeenCalled();
-  });
+    expect(
+      document.querySelectorAll("[data-slot='dropdown-leading-icon']"),
+    ).toHaveLength(3);
 
-  it("supports a custom trigger, divider items, and icons", () => {
-    render(
+    rerender(
       <DropdownMenu
-        trigger={<button type="button">Actions</button>}
-        items={[
-          { label: "First", value: "first", icon: <span data-testid="icon" /> },
-          { label: "Divider", value: "divider", divider: true },
-          { label: "Second", value: "second" },
-        ]}
+        label="Label"
+        items={items}
+        defaultOpen
+        showLeadingIcons={false}
       />,
     );
 
-    const trigger = screen.getByRole("button", { name: "Actions" });
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-
-    fireEvent.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByTestId("icon")).toBeInTheDocument();
-    expect(screen.getAllByRole("button")).toHaveLength(3);
+    expect(
+      document.querySelectorAll("[data-slot='dropdown-leading-icon']"),
+    ).toHaveLength(0);
   });
 
-  it("closes the menu when clicking outside", () => {
-    render(<DropdownMenu items={[{ label: "Item", value: "item" }]} />);
-
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    expect(screen.getByText("Item")).toBeInTheDocument();
-
-    fireEvent.mouseDown(document.body);
-    expect(screen.queryByText("Item")).not.toBeInTheDocument();
-  });
-
-  it("updates hover styles only for enabled items", () => {
+  it("supports optional trailing icons independently", () => {
     render(
       <DropdownMenu
-        items={[
-          { label: "Enabled", value: "enabled" },
-          { label: "Disabled", value: "disabled", disabled: true },
-        ]}
+        label="Label"
+        items={items}
+        defaultOpen
+        showTrailingIcons={false}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
+    expect(
+      document.querySelectorAll("[data-slot='dropdown-trailing-icon']"),
+    ).toHaveLength(0);
+  });
 
-    const enabledItem = screen.getByText("Enabled").closest("button");
-    const disabledItem = screen.getByText("Disabled").closest("button");
+  it("exposes selected and disabled item states", () => {
+    render(
+      <DropdownMenu label="Label" items={items} value="b" defaultOpen />,
+    );
 
-    expect(enabledItem).toBeTruthy();
-    expect(disabledItem).toBeTruthy();
+    expect(screen.getByRole("menuitemradio", { name: "Second" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("menuitemradio", { name: "Disabled" })).toBeDisabled();
+  });
 
-    fireEvent.mouseEnter(enabledItem!);
-    expect(enabledItem!.style.background).toBe("var(--color-bg-secondary)");
-    fireEvent.mouseLeave(enabledItem!);
-    expect(enabledItem!.style.background).toBe("transparent");
+  it("selects an item and closes the menu", () => {
+    const onValueChange = vi.fn();
+    render(
+      <DropdownMenu
+        label="Label"
+        items={items}
+        defaultOpen
+        onValueChange={onValueChange}
+        ariaLabel="Example menu"
+      />,
+    );
 
-    fireEvent.mouseEnter(disabledItem!);
-    expect(disabledItem!.style.background).toBe("transparent");
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Second" }));
+
+    expect(onValueChange).toHaveBeenCalledWith("b");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Example menu" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("supports keyboard navigation and escape", () => {
+    render(
+      <DropdownMenu label="Label" items={items} ariaLabel="Example menu" />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Example menu" });
+    fireEvent.keyDown(trigger, { key: "ArrowDown" });
+
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    const first = screen.getByRole("menuitemradio", { name: "First" });
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    expect(screen.getByRole("menuitemradio", { name: "Second" })).toHaveFocus();
+
+    fireEvent.keyDown(screen.getByRole("menuitemradio", { name: "Second" }), {
+      key: "Escape",
+    });
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 });

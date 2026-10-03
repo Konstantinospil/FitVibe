@@ -3,6 +3,7 @@ import PageIntro from "./PageIntro";
 import Footer from "./Footer";
 import BrandLogo from "./BrandLogo";
 import HeaderUtilitiesBar from "./HeaderUtilities";
+import { PageShell } from "../layouts/PageShell";
 
 interface AuthPageLayoutProps {
   title: string;
@@ -10,25 +11,12 @@ interface AuthPageLayoutProps {
   children?: React.ReactNode;
 }
 
-const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({ title, description, children }) => {
-  return (
-    <div
-      style={{ position: "relative", minHeight: "100vh", display: "flex", flexDirection: "column" }}
-    >
-      <HeaderUtilitiesBar />
-      <div style={{ flex: 1 }}>
-        <PageIntro
-          title={title}
-          description={description}
-          priorityLcp
-          brand={<BrandLogo priority />}
-        >
-          {children}
-        </PageIntro>
-      </div>
-      <Footer />
-    </div>
-  );
-};
+const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({ title, description, children }) => (
+  <PageShell header={<HeaderUtilitiesBar />} footer={<Footer />}>
+    <PageIntro title={title} description={description} priorityLcp brand={<BrandLogo priority />}>
+      {children}
+    </PageIntro>
+  </PageShell>
+);
 
 export default AuthPageLayout;

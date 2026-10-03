@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ensureLegalTranslationsLoaded } from "../i18n/config";
 import { getPublishedLegalDocument, type PublishedLegalDocumentContent } from "../services/api";
+import LegalDocumentShell from "./LegalDocumentShell";
 
 type LegalDocumentType = "terms" | "privacy" | "cookie";
 
 interface PublishedLegalDocumentProps {
   documentType: LegalDocumentType;
+  title: React.ReactNode;
+  footerAction?: React.ReactNode;
 }
 
 function naturalKeyParts(value: string): Array<string | number> {
@@ -66,7 +69,7 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
                 key={index}
                 style={{
                   textAlign: "left",
-                  padding: "0.75rem",
+                  padding: "var(--space-sm)",
                   borderBottom: "1px solid var(--color-border)",
                 }}
               >
@@ -84,7 +87,7 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
                   <td
                     key={cellIndex}
                     style={{
-                      padding: "0.75rem",
+                      padding: "var(--space-sm)",
                       borderBottom: "1px solid var(--color-border)",
                       verticalAlign: "top",
                     }}
@@ -106,13 +109,13 @@ function renderArray(value: unknown[], key: string): React.ReactNode {
     <ul key={key} className="list">
       {value.map((item, index) => {
         if (isRecord(item)) {
-          const title = typeof item.title === "string" ? item.title : null;
+          const itemTitle = typeof item.title === "string" ? item.title : null;
           const content = typeof item.content === "string" ? item.content : null;
-          if (title || content) {
+          if (itemTitle || content) {
             return (
               <li key={index} className="list-item">
-                {title ? <strong>{title}</strong> : null}
-                {title && content ? " " : null}
+                {itemTitle ? <strong>{itemTitle}</strong> : null}
+                {itemTitle && content ? " " : null}
                 {content}
               </li>
             );
@@ -142,7 +145,7 @@ function renderObject(
     return renderTable(value, key);
   }
 
-  const title = typeof value.title === "string" ? value.title : null;
+  const itemTitle = typeof value.title === "string" ? value.title : null;
   const entries = Object.entries(value)
     .filter(([childKey]) => childKey !== "title")
     .sort(([a], [b]) => compareNatural(a, b));
@@ -151,10 +154,10 @@ function renderObject(
     renderValue(childValue, `${key}-${childKey}`, childKey),
   );
 
-  if (section || title) {
+  if (section || itemTitle) {
     return (
       <section key={key} className="section">
-        {title ? <h2 className="section-title">{title}</h2> : null}
+        {itemTitle ? <h2 className="section-title">{itemTitle}</h2> : null}
         {body}
       </section>
     );
@@ -191,7 +194,24 @@ function documentBody(content: Record<string, unknown>): React.ReactNode {
     .map(([key, value]) => renderValue(value, `legal-${key}`, key));
 }
 
-export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({ documentType }) => {
+const resolveEffectiveDate = (
+  publication: PublishedLegalDocumentContent | null,
+  content: Record<string, unknown> | null,
+  language: string,
+): string | null => {
+  if (publication?.effectiveAt) {
+    return new Date(publication.effectiveAt).toLocaleDateString(language);
+  }
+
+  const fallback = content?.effectiveDateValue ?? content?.effectiveDate;
+  return typeof fallback === "string" || typeof fallback === "number" ? String(fallback) : null;
+};
+
+export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
+  documentType,
+  title,
+  footerAction,
+}) => {
   const { i18n, t } = useTranslation();
   const [publication, setPublication] = useState<PublishedLegalDocumentContent | null>(null);
   const [legacyContent, setLegacyContent] = useState<Record<string, unknown> | null>(null);
@@ -242,38 +262,45 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({ 
     };
   }, [documentType, i18n, language]);
 
+  const content = publication?.content ?? legacyContent;
+  const effectiveDate = resolveEffectiveDate(publication, content, language);
+
+  const legacyNotice = publication?.legacyWithoutSnapshot
+    ? t("common.legacyLegalDocument", {
+        defaultValue:
+          "This pre-publication legacy version is displayed from the retained localized source.",
+      })
+    : undefined;
+
   if (loading) {
-    return <p role="status">{t("common.loading", { defaultValue: "Loading..." })}</p>;
+    return (
+      <LegalDocumentShell title={title}>
+        <p role="status">{t("common.loading", { defaultValue: "Loading..." })}</p>
+      </LegalDocumentShell>
+    );
   }
 
-  const content = publication?.content ?? legacyContent;
   if (loadFailed || !content) {
-    return <p role="alert">{t("common.error", { defaultValue: "Document unavailable." })}</p>;
+    return (
+      <LegalDocumentShell title={title}>
+        <p role="alert">{t("common.error", { defaultValue: "Document unavailable." })}</p>
+      </LegalDocumentShell>
+    );
   }
+
+  const authoritativeTitle =
+    typeof content.title === "string" && content.title.trim() ? content.title : title;
 
   return (
-    <>
-      <div className="mb-1 text-muted text-09">
-        <strong>{t("common.version", { defaultValue: "Version" })}:</strong>{" "}
-        {publication?.version ?? "legacy"}
-        {publication?.effectiveAt ? (
-          <>
-            {" · "}
-            <strong>{t("common.effective", { defaultValue: "Effective" })}:</strong>{" "}
-            {new Date(publication.effectiveAt).toLocaleDateString(language)}
-          </>
-        ) : null}
-      </div>
-      {publication?.legacyWithoutSnapshot ? (
-        <p className="text-muted text-08">
-          {t("common.legacyLegalDocument", {
-            defaultValue:
-              "This pre-publication legacy version is displayed from the retained localized source.",
-          })}
-        </p>
-      ) : null}
+    <LegalDocumentShell
+      title={authoritativeTitle}
+      effectiveDate={effectiveDate}
+      version={publication?.version ?? (publication?.legacyWithoutSnapshot ? "legacy" : undefined)}
+      legacyNotice={legacyNotice}
+      footerAction={footerAction}
+    >
       {documentBody(content)}
-    </>
+    </LegalDocumentShell>
   );
 };
 

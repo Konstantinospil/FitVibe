@@ -22,6 +22,7 @@ const previewCommand =
 export default defineConfig({
   testDir: "../",
   testMatch: ["pages/**/*.spec.ts", "components/**/*.spec.ts"],
+  testIgnore: ["**/archive/**"],
   outputDir: "../__screenshots__",
   // OS suffix (win32 / linux) so Windows local runs and Ubuntu Actions do not
   // compare against each other's font-rasterized pixels.

@@ -11,7 +11,7 @@ const statusColors: Record<OpsLightStatus, string> = {
 const dotStyle = (status: OpsLightStatus): React.CSSProperties => ({
   width: "10px",
   height: "10px",
-  borderRadius: "999px",
+  borderRadius: "var(--radius-full)",
   background: statusColors[status],
 });
 
@@ -93,7 +93,7 @@ const AdminStatusHeader: React.FC = () => {
               style={{
                 minWidth: "140px",
                 padding: "0.75rem 1rem",
-                borderRadius: "12px",
+                borderRadius: "var(--radius-md)",
                 border: "1px solid var(--color-border)",
                 background: "var(--color-surface-glass)",
               }}

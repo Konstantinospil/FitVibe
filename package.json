@@ -43,7 +43,9 @@
     "architecture:backend": "node tests/qa/check-architecture-hardcoding.mjs backend",
     "architecture:frontend-tokens": "node tests/qa/check-architecture-hardcoding.mjs frontend-tokens",
     "architecture:frontend-reuse": "node tests/qa/check-architecture-hardcoding.mjs frontend-reuse",
-    "architecture:check": "node tests/qa/check-architecture-hardcoding.mjs all"
+    "architecture:check": "node tests/qa/check-architecture-hardcoding.mjs all",
+    "quality:package-json": "node tests/qa/check-package-json.cjs",
+    "test:backoffice": "pnpm --filter @fitvibe/backoffice run build && playwright test --config tests/backoffice/e2e/playwright.config.cjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
@@ -66,7 +68,7 @@
     "eslint-plugin-testing-library": "^7.6.3",
     "globals": "^17.12.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "^17.6.0",
     "pnpm": "12.7.0",
     "prettier": "3.9.9",
     "rimraf": "^6.1.3",

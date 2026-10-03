@@ -1,3 +1,8 @@
-# RuleId\tRisk\tConfidence\tAction
-# Add suppressions as needed, e.g.:
-# 10061\t1\t1\tIGNORE
+# RuleId	Action	Reason
+# Actionable security controls remain WARN/FAIL by default. INFO preserves verified observations without hiding them.
+10049	INFO	Intentional cache policy is route-specific; private/dynamic HTML remains non-storable.
+10050	INFO	Only explicitly public SSR pages are cached; authenticated and dynamic content remains non-storable.
+10094	INFO	Bundled Base64 is permitted only after the compiled client passes the post-build secret scan.
+10109	INFO	FitVibe is a modern web application; CI also runs the ZAP Client Spider for browser-driven discovery.
+10111	INFO	Authentication request detection is expected and retained as evidence for future authenticated DAST.
+90005	INFO	Fetch Metadata headers originate from real browsers; traditional-spider requests may not contain them.

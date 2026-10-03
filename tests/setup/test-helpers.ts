@@ -274,6 +274,7 @@ export async function ensureUsernameColumnExists(): Promise<void> {
 export async function truncateAll(): Promise<void> {
   const db = await getDb();
   const tables = [
+    "audit_outbox",
     "idempotency_keys",
     "audit_log",
     "cookie_consents",

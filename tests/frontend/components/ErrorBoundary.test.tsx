@@ -1,204 +1,114 @@
 import React from "react";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { ErrorBoundary } from "../../src/components/ErrorBoundary";
-
-// Mock i18next
-const mockT = (key: string) => {
-  const translations: Record<string, string> = {
-    "components.errorBoundary.title": "Something went wrong",
-    "components.errorBoundary.message": "An unexpected error occurred",
-    "components.errorBoundary.tryAgain": "Try Again",
-  };
-  return translations[key] || key;
-};
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("react-i18next", () => ({
-  withTranslation: () => (Component: React.ComponentType<any>) => {
-    return (props: any) => <Component {...props} t={mockT} i18n={{}} tReady={true} />;
-  },
-  useTranslation: () => ({
-    t: mockT,
-    i18n: {},
-    ready: true,
-  }),
+  withTranslation:
+    () =>
+    (Component: React.ComponentType<any>) =>
+    (props: Record<string, unknown>) => (
+      <Component
+        {...props}
+        t={(key: string) => key}
+        i18n={{}}
+        tReady={true}
+      />
+    ),
 }));
 
-const ThrowError = ({ shouldThrow }: { shouldThrow: boolean }) => {
-  if (shouldThrow) {
-    throw new Error("Test error");
-  }
-  return <div>Normal Content</div>;
+vi.mock("../../src/utils/logger.js", () => ({
+  logger: {
+    error: vi.fn(),
+  },
+}));
+
+import ErrorBoundary from "../../src/components/ErrorBoundary";
+import { logger } from "../../src/utils/logger.js";
+
+const Broken: React.FC<{ message?: string }> = ({ message = "Boom" }) => {
+  throw new Error(message);
 };
 
 describe("ErrorBoundary", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Suppress error console logs during tests
-    vi.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    cleanup();
-  });
-
-  it("should render children when no error occurs", () => {
+  it("renders children while no descendant has failed", () => {
     render(
       <ErrorBoundary>
-        <div>Child Component</div>
+        <div>Healthy child</div>
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText("Child Component")).toBeInTheDocument();
+    expect(screen.getByText("Healthy child")).toBeInTheDocument();
   });
 
-  it("should render error UI when child throws error", () => {
-    render(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={true} />
-      </ErrorBoundary>,
-    );
-
-    expect(screen.getByText("Something went wrong")).toBeInTheDocument();
-    expect(screen.getByText("Test error")).toBeInTheDocument();
-    const tryAgainText = screen.getByText(/try again/i);
-    expect(tryAgainText).toBeInTheDocument();
-    const button = tryAgainText.closest("button");
-    expect(button).toBeInTheDocument();
-  });
-
-  it("should render fallback UI when provided", () => {
-    const fallback = <div>Custom Error Fallback</div>;
-    const { container } = render(
-      <ErrorBoundary fallback={fallback}>
-        <ThrowError shouldThrow={true} />
-      </ErrorBoundary>,
-    );
-
-    expect(screen.getByText("Custom Error Fallback")).toBeInTheDocument();
-    // Check that default error UI is not in the container
-    const defaultErrorTexts = screen.queryAllByText("Something went wrong");
-    const defaultErrorInContainer = defaultErrorTexts.find((el) => container.contains(el));
-    expect(defaultErrorInContainer).toBeUndefined();
-  });
-
-  it("should call onError callback when error is caught", () => {
+  it("reports descendant errors and renders the default recovery UI", () => {
     const onError = vi.fn();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     render(
       <ErrorBoundary onError={onError}>
-        <ThrowError shouldThrow={true} />
+        <Broken message="Workout card failed" />
       </ErrorBoundary>,
     );
 
+    expect(screen.getByText("components.errorBoundary.title")).toBeInTheDocument();
+    expect(screen.getByText("Workout card failed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "components.errorBoundary.tryAgain" })).toBeInTheDocument();
     expect(onError).toHaveBeenCalled();
-    expect(onError).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Test error" }),
-      expect.any(Object),
+    expect(logger.error).toHaveBeenCalledWith(
+      "ErrorBoundary caught an error",
+      expect.any(Error),
+      expect.objectContaining({ context: "errorBoundary" }),
     );
   });
 
-  it("should reset error state when Try Again is clicked", () => {
-    const { rerender, container } = render(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={true} />
+  it("renders a caller-provided fallback instead of the default recovery UI", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    render(
+      <ErrorBoundary fallback={<div>Feature temporarily unavailable</div>}>
+        <Broken />
       </ErrorBoundary>,
     );
 
-    // Initial error state - find button by text
-    const tryAgainButtons = screen.getAllByText(/try again/i);
-    const tryAgainButton = tryAgainButtons
-      .find((btn) => {
-        const button = btn.closest("button");
-        return button && container.contains(button);
-      })
-      ?.closest("button");
-    expect(tryAgainButton).toBeInTheDocument();
-
-    const errorTexts = screen.getAllByText("Something went wrong");
-    const errorText = Array.from(errorTexts).find((el) => container.contains(el)) || errorTexts[0];
-    expect(errorText).toBeInTheDocument();
-
-    // First, update the child to not throw anymore
-    rerender(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={false} />
-      </ErrorBoundary>,
-    );
-
-    // Error UI should still be showing because error boundary caught the initial error
-    const errorTexts2 = screen.getAllByText("Something went wrong");
-    const errorText2 =
-      Array.from(errorTexts2).find((el) => container.contains(el)) || errorTexts2[0];
-    expect(errorText2).toBeInTheDocument();
-
-    // Click Try Again to reset and render the (now non-throwing) child
-    const tryAgainBtns = screen.getAllByText(/try again/i);
-    const tryAgainBtn = tryAgainBtns
-      .find((btn) => {
-        const button = btn.closest("button");
-        return button && container.contains(button);
-      })
-      ?.closest("button");
-    if (tryAgainBtn) {
-      fireEvent.click(tryAgainBtn);
-    }
-
-    // Now the child should render normally
-    expect(screen.getByText("Normal Content")).toBeInTheDocument();
+    expect(screen.getByText("Feature temporarily unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("components.errorBoundary.title")).not.toBeInTheDocument();
   });
 
-  it("should display default error message when error has no message", () => {
-    const ThrowErrorWithoutMessage = () => {
-      const error = new Error();
-      error.message = "";
-      throw error;
+  it("uses translated fallback copy when an error has no message", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    render(
+      <ErrorBoundary>
+        <Broken message="" />
+      </ErrorBoundary>,
+    );
+
+    expect(screen.getByText("components.errorBoundary.message")).toBeInTheDocument();
+  });
+
+  it("can retry rendering after the failing condition is cleared", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    let shouldThrow = true;
+
+    const Recoverable: React.FC = () => {
+      if (shouldThrow) {
+        throw new Error("Temporary failure");
+      }
+      return <div>Recovered child</div>;
     };
 
     render(
       <ErrorBoundary>
-        <ThrowErrorWithoutMessage />
+        <Recoverable />
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText("An unexpected error occurred")).toBeInTheDocument();
-  });
+    expect(screen.getByText("Temporary failure")).toBeInTheDocument();
 
-  it("should apply correct styling to error container", () => {
-    render(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={true} />
-      </ErrorBoundary>,
-    );
+    shouldThrow = false;
+    fireEvent.click(screen.getByRole("button", { name: "components.errorBoundary.tryAgain" }));
 
-    const errorContainer = screen.getByText("Test error").closest("div");
-    expect((errorContainer as HTMLElement).style.padding).toBe("2rem");
-    expect((errorContainer as HTMLElement).style.textAlign).toBe("center");
-  });
-
-  it("should not call onError when no error occurs", () => {
-    const onError = vi.fn();
-
-    render(
-      <ErrorBoundary onError={onError}>
-        <div>Normal Content</div>
-      </ErrorBoundary>,
-    );
-
-    expect(onError).not.toHaveBeenCalled();
-  });
-
-  it("should render multiple children correctly", () => {
-    render(
-      <ErrorBoundary>
-        <div>Child 1</div>
-        <div>Child 2</div>
-        <div>Child 3</div>
-      </ErrorBoundary>,
-    );
-
-    expect(screen.getByText("Child 1")).toBeInTheDocument();
-    expect(screen.getByText("Child 2")).toBeInTheDocument();
-    expect(screen.getByText("Child 3")).toBeInTheDocument();
+    expect(screen.getByText("Recovered child")).toBeInTheDocument();
+    expect(screen.queryByText("Temporary failure")).not.toBeInTheDocument();
   });
 });

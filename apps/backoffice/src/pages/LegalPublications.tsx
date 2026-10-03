@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, InputControl, SelectControl } from "@fitvibe/ui";
 import {
   legalPublicationsApi,
   type LegalChangeClass,
@@ -82,7 +83,7 @@ const LegalPublicationsPage: React.FC = () => {
 
           <label className="grid grid--gap-xs">
             <span>Document</span>
-            <select
+            <SelectControl
               className="form-select"
               value={documentType}
               onChange={(event) => handleDocumentType(event.target.value as LegalDocumentType)}
@@ -90,12 +91,12 @@ const LegalPublicationsPage: React.FC = () => {
               <option value="terms">Terms and Conditions</option>
               <option value="privacy">Privacy Policy</option>
               <option value="cookie">Cookie Policy</option>
-            </select>
+            </SelectControl>
           </label>
 
           <label className="grid grid--gap-xs">
             <span>Change classification</span>
-            <select
+            <SelectControl
               className="form-select"
               value={changeClass}
               onChange={(event) =>
@@ -104,12 +105,12 @@ const LegalPublicationsPage: React.FC = () => {
             >
               <option value="editorial">Editorial — existing user action remains valid</option>
               <option value="material">Material — renewed user action is required</option>
-            </select>
+            </SelectControl>
           </label>
 
           <label className="grid grid--gap-xs">
             <span>User effect</span>
-            <select
+            <SelectControl
               className="form-select"
               value={userAction}
               onChange={(event) => setUserAction(event.target.value as LegalUserAction)}
@@ -120,12 +121,12 @@ const LegalPublicationsPage: React.FC = () => {
                   {action}
                 </option>
               ))}
-            </select>
+            </SelectControl>
           </label>
 
           <label className="grid grid--gap-xs">
             <span>Effective from</span>
-            <input
+            <InputControl
               className="form-input"
               type="datetime-local"
               value={effectiveAt}
@@ -138,14 +139,14 @@ const LegalPublicationsPage: React.FC = () => {
 
           {error ? <div className="alert alert--error">{error}</div> : null}
 
-          <button
+          <Button
             type="button"
             className="button button--primary"
             disabled={publishMutation.isPending}
             onClick={() => publishMutation.mutate()}
           >
             {publishMutation.isPending ? "Publishing…" : "Publish immutable snapshot"}
-          </button>
+          </Button>
         </div>
       </section>
 

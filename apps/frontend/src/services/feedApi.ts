@@ -71,36 +71,40 @@ export async function getFeed(
 
   // Transform backend response to frontend format
   return {
-    items: res.data.items.map((item) => ({
-      id: item.feedItemId,
-      feedItemId: item.feedItemId,
-      user: {
-        id: item.ownerId,
-        username: item.ownerUsername,
-        displayName: item.ownerDisplayName || undefined,
-      },
-      session: item.session
-        ? {
-            id: item.session.id,
-            title: item.session.title || undefined,
-            plannedAt: item.publishedAt || new Date().toISOString(),
-            completedAt: item.session.completedAt || undefined,
-            exerciseCount: 0, // Not provided by backend, would need to fetch separately
-            totalVolume: undefined,
-          }
-        : {
-            id: "",
-            plannedAt: item.publishedAt || new Date().toISOString(),
-            exerciseCount: 0,
-          },
-      visibility: item.visibility,
-      createdAt: item.publishedAt || new Date().toISOString(),
-      publishedAt: item.publishedAt,
-      likesCount: item.stats.likes,
-      commentsCount: item.stats.comments,
-      isLiked: item.stats.viewerHasLiked,
-      isBookmarked: item.stats.viewerHasBookmarked,
-    })),
+    items: res.data.items.map((item) => {
+      const sourceTimestamp: string = item.publishedAt ?? item.session?.completedAt ?? "";
+
+      return {
+        id: item.feedItemId,
+        feedItemId: item.feedItemId,
+        user: {
+          id: item.ownerId,
+          username: item.ownerUsername,
+          displayName: item.ownerDisplayName || undefined,
+        },
+        session: item.session
+          ? {
+              id: item.session.id,
+              title: item.session.title || undefined,
+              plannedAt: sourceTimestamp,
+              completedAt: item.session.completedAt || undefined,
+              exerciseCount: 0, // Not provided by backend, would need to fetch separately
+              totalVolume: undefined,
+            }
+          : {
+              id: "",
+              plannedAt: sourceTimestamp,
+              exerciseCount: 0,
+            },
+        visibility: item.visibility,
+        createdAt: sourceTimestamp,
+        publishedAt: item.publishedAt,
+        likesCount: item.stats.likes,
+        commentsCount: item.stats.comments,
+        isLiked: item.stats.viewerHasLiked,
+        isBookmarked: item.stats.viewerHasBookmarked,
+      };
+    }),
     total: res.data.total,
     limit: res.data.limit,
     offset: res.data.offset,

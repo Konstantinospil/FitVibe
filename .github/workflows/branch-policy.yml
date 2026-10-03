@@ -1,0 +1,55 @@
+name: Enforce Branch Policy
+
+on:
+  create:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: branch-policy
+  cancel-in-progress: false
+
+jobs:
+  enforce:
+    name: Keep only main, dev, and feature
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete unauthorized branches
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const allowed = new Set(["main", "dev", "feature"]);
+            const { owner, repo } = context.repo;
+
+            const branches = await github.paginate(
+              github.rest.repos.listBranches,
+              { owner, repo, per_page: 100 },
+            );
+
+            const unauthorized = branches
+              .map((branch) => branch.name)
+              .filter((name) => !allowed.has(name));
+
+            if (unauthorized.length === 0) {
+              core.info("Branch policy satisfied: only main, dev, and feature exist.");
+              return;
+            }
+
+            for (const branch of unauthorized) {
+              core.warning(`Deleting unauthorized branch: ${branch}`);
+              await github.rest.git.deleteRef({
+                owner,
+                repo,
+                ref: `heads/${branch}`,
+              });
+            }
+
+            core.info(`Deleted ${unauthorized.length} unauthorized branch(es).`);

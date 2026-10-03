@@ -8,7 +8,11 @@
     "you": "Du",
     "activeSession": "Aktive Einheit",
     "skipToContent": "Zum Hauptinhalt springen",
-    "back": "Zurück"
+    "back": "Zurück",
+    "calendar": "Kalender",
+    "library": "Bibliothek",
+    "dashboard": "Dashboard",
+    "settings": "Einstellungen"
   },
   "language": {
     "label": "Sprache",
@@ -882,5 +886,135 @@
         "all": "Gesamt"
       }
     }
+  },
+  "homeSurface": {
+    "title": "Startseite",
+    "sections": {
+      "recentActivity": "Letzte Aktivität",
+      "trending": "Trend-Workouts",
+      "newsFeed": "Newsfeed",
+      "previousActivities": "Frühere Aktivitäten"
+    },
+    "activity": {
+      "timeSinceLast": "Zeit seit der letzten Aktivität",
+      "noActivity": "Noch keine Aktivität erfasst",
+      "lastActivity": "Letzte Aktivität: {{name}}",
+      "startHint": "Erfasse ein Workout, um deine Aktivitätshistorie zu starten."
+    },
+    "session": {
+      "workout": "Workout",
+      "workoutSummary": "Workout-Zusammenfassung",
+      "exercises": "{{count}} Übung",
+      "exercises_other": "{{count}} Übungen",
+      "points": "{{count}} Punkte"
+    },
+    "news": {
+      "unpublished": "Nicht veröffentlicht",
+      "sharedBy": "Geteilt von {{name}}",
+      "addNod": "Nod geben",
+      "removeNod": "Nod zurücknehmen",
+      "comments": "{{count}} Kommentare",
+      "nodError": "Der Nod konnte nicht aktualisiert werden."
+    },
+    "loading": {
+      "trending": "Trend-Workouts werden geladen…",
+      "news": "Newsfeed wird geladen…",
+      "activities": "Frühere Aktivitäten werden geladen…"
+    },
+    "empty": {
+      "trending": "Noch keine Trend-Workouts.",
+      "news": "Noch keine geteilten Workouts.",
+      "activities": "Noch keine früheren Aktivitäten."
+    },
+    "errors": {
+      "trending": "Trend-Workouts konnten nicht geladen werden.",
+      "news": "Der Newsfeed konnte nicht geladen werden.",
+      "activities": "Frühere Aktivitäten konnten nicht geladen werden."
+    }
+  },
+  "calendarSurface": {
+    "title": "Kalender",
+    "sections": {
+      "calendar": "Kalender",
+      "history": "Historie",
+      "weekPlan": "Wöchentlicher Trainingsplan"
+    },
+    "actions": {
+      "plan": "Workout planen",
+      "start": "Workout starten",
+      "log": "Workout erfassen",
+      "options": "Workout-Optionen"
+    },
+    "navigation": {
+      "previousMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat",
+      "previousYear": "Vorheriges Jahr",
+      "nextYear": "Nächstes Jahr"
+    },
+    "gridLabel": "Monatlicher Workout-Kalender",
+    "dayLabel": "{{date}}, {{count}} Workouts",
+    "empty": {
+      "selectedDay": "Keine Workouts an diesem Tag.",
+      "history": "Noch keine Workout-Historie.",
+      "week": "Für den Rest dieser Woche sind keine Workouts geplant."
+    },
+    "errors": {
+      "load": "Kalenderdaten konnten nicht geladen werden."
+    }
+  },
+  "workoutEditor": {
+    "title": "Workout-Editor",
+    "close": "Workout-Editor schließen",
+    "exerciseFallback": "Übung",
+    "sections": {
+      "general": "Allgemeine Informationen",
+      "activity": "Aktivität",
+      "overview": "Übersicht"
+    },
+    "actions": {
+      "start": "Starten",
+      "plan": "Planen",
+      "addExercise": "Übung hinzufügen",
+      "removeLast": "Letzte Übung entfernen"
+    },
+    "fields": {
+      "name": "Workout-Name",
+      "notes": "Notizen",
+      "exercise": "Übung",
+      "sets": "Sätze",
+      "repetitions": "Wiederholungen",
+      "weight": "Widerstand / Gewicht",
+      "duration": "Dauer (Sekunden)",
+      "exertion": "Zielanstrengung",
+      "restSet": "Pause nach jedem Satz (Sekunden)",
+      "restExercise": "Pause nach der Übung (Sekunden)"
+    },
+    "placeholders": {
+      "name": "Name für das Workout",
+      "notes": "Workout beschreiben",
+      "exercise": "Übung auswählen"
+    },
+    "metrics": {
+      "caloriesPerMinute": "Kalorien / Minute",
+      "duration": "Dauer",
+      "calories": "Kalorien",
+      "unavailable": "Nicht verfügbar"
+    },
+    "empty": {
+      "activity": "Wähle eine Übung aus, um das Workout aufzubauen.",
+      "overview": "Keine Übungen hinzugefügt."
+    },
+    "summary": {
+      "sets": "{{count}} Satz",
+      "sets_other": "{{count}} Sätze",
+      "repetitions": "{{value}} Wiederholungen"
+    },
+    "errors": {
+      "save": "Das Workout konnte nicht gespeichert werden.",
+      "exercises": "Übungen konnten nicht geladen werden."
+    }
+  },
+  "actions": {
+    "retry": "Erneut versuchen"
   }
 }

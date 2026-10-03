@@ -102,6 +102,7 @@ export default defineConfig(() => {
         "../../tests/frontend/**/*.spec.{ts,tsx}",
         "../../tests/frontend/visual/**",
         "../../tests/frontend/e2e/**",
+        "archive/**",
       ],
       css: true,
       // Vitest 4 defaults to forks; use it explicitly because it is more robust
@@ -160,6 +161,7 @@ export default defineConfig(() => {
         exclude: [
           ...(configDefaults.coverage.exclude || []),
           "src/main.tsx",
+          "archive/**",
           "src/components/admin/AdminStats.tsx",
         ],
         reportsDirectory: pathResolve(root, "coverage"),
@@ -198,64 +200,9 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           // Optimize chunk splitting for better caching and loading
-          manualChunks: (id: string) => {
-            // Vendor chunks - prioritize critical chunks for faster initial load
-            if (id.includes("node_modules")) {
-              // Large charting library - MUST be lazy loaded (only used in Insights)
-              if (id.includes("recharts")) {
-                return "charts-vendor";
-              }
-              // Keep React, React DOM, and Preact in the shared vendor graph.
-              // Splitting them into react-core/preact-* chunks created a circular
-              // vendor <-> react-core import that crashed the production bundle
-              // (`Cannot access 'mp' before initialization`) and left the static
-              // login fallback on screen.
-              // React Router - needed for initial routing but can be separate
-              if (id.includes("react-router")) {
-                return "router-vendor";
-              }
-              // State management - split for better caching
-              // Zustand is small, keep in main bundle for login
-              if (id.includes("zustand")) {
-                return "state-vendor";
-              }
-              // React Query - only needed for protected routes, lazy load
-              if (id.includes("@tanstack/react-query")) {
-                return "query-vendor";
-              }
-              // i18n libraries - can be loaded on demand
-              if (id.includes("i18next") || id.includes("react-i18next")) {
-                return "i18n-vendor";
-              }
-              // HTTP client - needed for login, but can be separate chunk
-              if (id.includes("axios")) {
-                return "http-vendor";
-              }
-              // Date utilities - lazy load (not needed for login)
-              if (id.includes("date-fns") || id.includes("dayjs") || id.includes("moment")) {
-                return "date-vendor";
-              }
-              // Default vendor chunk for other dependencies
-              return "vendor";
-            }
-            // Split i18n locale files into separate chunks for lazy loading
-            // IMPORTANT: Only minimal auth translations in initial bundle
-            if (id.includes("/locales/")) {
-              // Only auth.json for login - other translations lazy-loaded
-              if (id.includes("/locales/en/auth.json")) {
-                return "locale-en-auth";
-              }
-              // All other locale files are lazy-loaded
-              if (id.includes("/locales/en/")) {
-                return "locale-en-full";
-              }
-              // All other locales are lazy-loaded
-              const match = id.match(/locales\/([^/]+)\//);
-              if (match) {
-                return `locale-${match[1]}`;
-              }
-            }
-          },
+          // Let Rollup derive dependency chunks from the actual module graph.
+          // Manually forcing interdependent runtime packages into named vendor
+          // chunks caused circular initialization order failures in production.
           // Optimize chunk file names for better caching
           // For SSR, output to server directory structure
           chunkFileNames: isSSR ? "[name]-[hash].js" : "assets/js/[name]-[hash].js",
@@ -263,22 +210,27 @@ export default defineConfig(() => {
           assetFileNames: isSSR
             ? "assets/[ext]/[name]-[hash].[ext]"
             : "assets/[ext]/[name]-[hash].[ext]",
-          // Compact output to reduce whitespace and file size
-          compact: true,
         },
       },
       // Enable tree shaking with more aggressive settings
       treeshake: {
         moduleSideEffects: (id: string) => {
-          // Allow side effects for CSS and JSON imports
+          // Preserve third-party package side effects. Some dependencies perform
+          // runtime feature detection and adapter setup during module evaluation.
+          if (id.includes("node_modules")) {
+            return true;
+          }
+          // CSS and JSON imports are also intentionally side-effectful.
           if (id.includes(".css") || id.includes(".json")) {
             return true;
           }
           return false;
         },
         preset: "recommended",
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false,
+        // Keep Rollup's safe defaults for property reads and try/catch blocks.
+        // Over-aggressive deoptimization settings broke Axios in the production bundle.
+        propertyReadSideEffects: true,
+        tryCatchDeoptimization: true,
       },
       // Enable compression reporting for monitoring
       reportCompressedSize: true,

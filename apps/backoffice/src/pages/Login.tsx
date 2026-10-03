@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button, InputControl } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
@@ -70,7 +71,7 @@ const Login: React.FC = () => {
           maxWidth: "400px",
           padding: "2rem",
           background: colors.surface,
-          borderRadius: "8px",
+          borderRadius: "var(--radius-sm)",
           border: `1px solid ${colors.border}`,
         }}
       >
@@ -81,7 +82,7 @@ const Login: React.FC = () => {
           style={{
             color: colors.text,
             marginBottom: "1.5rem",
-            fontSize: "1.5rem",
+            fontSize: "var(--type-section-title-size)",
             textAlign: "center",
           }}
         >
@@ -96,7 +97,7 @@ const Login: React.FC = () => {
             <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
               Email
             </label>
-            <input
+            <InputControl
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -104,11 +105,11 @@ const Login: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                background: "var(--color-input-bg)",
                 border: `1px solid ${colors.border}`,
-                borderRadius: "4px",
+                borderRadius: "var(--radius-sm)",
                 color: colors.text,
-                fontSize: "1rem",
+                fontSize: "var(--type-body-size)",
               }}
             />
           </div>
@@ -116,7 +117,7 @@ const Login: React.FC = () => {
             <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
               Password
             </label>
-            <input
+            <InputControl
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -124,35 +125,41 @@ const Login: React.FC = () => {
               style={{
                 width: "100%",
                 padding: "0.75rem",
-                background: theme === "light" ? "#F5F5F5" : "#1A1A1A",
+                background: "var(--color-input-bg)",
                 border: `1px solid ${colors.border}`,
-                borderRadius: "4px",
+                borderRadius: "var(--radius-sm)",
                 color: colors.text,
-                fontSize: "1rem",
+                fontSize: "var(--type-body-size)",
               }}
             />
           </div>
           {error && (
-            <div style={{ color: colors.error, marginBottom: "1rem", fontSize: "0.875rem" }}>
+            <div
+              style={{
+                color: colors.error,
+                marginBottom: "1rem",
+                fontSize: "var(--type-supporting-size)",
+              }}
+            >
               {error}
             </div>
           )}
-          <button
+          <Button
             type="submit"
             disabled={loading}
             style={{
               width: "100%",
               padding: "0.75rem",
               background: loading ? colors.border : colors.accent,
-              color: "#FFFFFF",
+              color: "var(--color-on-color)",
               border: "none",
-              borderRadius: "4px",
-              fontSize: "1rem",
+              borderRadius: "var(--radius-sm)",
+              fontSize: "var(--type-body-size)",
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
             {loading ? "Logging in..." : "Login"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

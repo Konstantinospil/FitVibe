@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import PageIntro from "../components/PageIntro";
-import PublicReturnButton from "../components/PublicReturnButton";
 import PublishedLegalDocument from "../components/PublishedLegalDocument";
-import { Card, CardContent, Button } from "../components/ui";
+import { Button } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 import { useToast } from "../contexts/ToastContext";
 import {
@@ -25,6 +23,7 @@ const Privacy: React.FC = () => {
       setStatus(null);
       return;
     }
+
     let cancelled = false;
     void getLegalDocumentsStatus()
       .then((result) => {
@@ -37,6 +36,7 @@ const Privacy: React.FC = () => {
           setStatus(null);
         }
       });
+
     return () => {
       cancelled = true;
     };
@@ -72,38 +72,23 @@ const Privacy: React.FC = () => {
     }
   };
 
+  const footerAction =
+    isAuthenticated && status?.needsAcceptance ? (
+      <Button variant="primary" onClick={() => void handleAcknowledge()} isLoading={isWorking}>
+        {t("privacy.consent.acknowledge", { defaultValue: "Acknowledge" })}
+      </Button>
+    ) : isAuthenticated && status && !status.needsAcceptance && status.acceptedVersion ? (
+      <Button variant="danger" onClick={() => void handleRevoke()} isLoading={isWorking}>
+        {t("privacy.consent.revoke", { defaultValue: "Revoke acknowledgement" })}
+      </Button>
+    ) : undefined;
+
   return (
-    <PageIntro
+    <PublishedLegalDocument
+      documentType="privacy"
       title={t("privacy.title")}
-      description={t("privacy.description")}
-      actions={<PublicReturnButton />}
-    >
-      <Card style={{ maxWidth: "900px", width: "100%", margin: "0 auto" }}>
-        <CardContent style={{ padding: "2rem", lineHeight: 1.8 }}>
-          <PublishedLegalDocument documentType="privacy" />
-
-          {isAuthenticated && status?.needsAcceptance ? (
-            <div className="flex flex--center mt-xl">
-              <Button
-                variant="primary"
-                onClick={() => void handleAcknowledge()}
-                disabled={isWorking}
-              >
-                {t("privacy.consent.acknowledge", { defaultValue: "Acknowledge" })}
-              </Button>
-            </div>
-          ) : null}
-
-          {isAuthenticated && status && !status.needsAcceptance && status.acceptedVersion ? (
-            <div className="flex flex--center mt-xl">
-              <Button variant="secondary" onClick={() => void handleRevoke()} disabled={isWorking}>
-                {t("privacy.consent.revoke", { defaultValue: "Revoke acknowledgement" })}
-              </Button>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
-    </PageIntro>
+      footerAction={footerAction}
+    />
   );
 };
 

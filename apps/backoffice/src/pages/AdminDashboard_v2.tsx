@@ -96,9 +96,11 @@ const AdminDashboardV2: React.FC = () => {
               onMouseLeave={() => setHoveredPath(null)}
               style={{
                 padding: isExpanded ? "1rem" : "0.8rem",
-                borderRadius: "12px",
+                borderRadius: "var(--radius-md)",
                 border: `1px solid ${isActive ? "var(--color-accent)" : "var(--color-border)"}`,
-                background: isActive ? "rgba(52, 211, 153, 0.12)" : "var(--color-surface-glass)",
+                background: isActive
+                  ? "var(--surface-success-subtle)"
+                  : "var(--color-surface-glass)",
                 color: "inherit",
                 display: "grid",
                 gap: "0.5rem",
@@ -119,7 +121,7 @@ const AdminDashboardV2: React.FC = () => {
                 className="text-08 text-secondary"
                 style={{
                   maxHeight: isExpanded ? "120px" : "0",
-                  opacity: isExpanded ? 1 : 0,
+                  opacity: isExpanded ? "var(--opacity-full)" : "var(--opacity-disabled)",
                   overflow: "hidden",
                   transition: "max-height 160ms ease, opacity 160ms ease",
                 }}

@@ -167,6 +167,10 @@ function ensureThreshold(metricName, threshold) {
 
 ensureThreshold("http_req_duration", "p(95)<300");
 ensureThreshold("http_req_failed", "rate<0.01");
+ensureThreshold("http_req_duration_health", "p(95)<200");
+ensureThreshold("http_req_duration_governance", "p(95)<250");
+ensureThreshold("http_req_duration_exercise_types", "p(95)<300");
+ensureThreshold("http_req_duration_translations", "p(95)<300");
 
 const baselinePath = path.resolve("tests/perf/baseline/p95-benchmark.json");
 if (fs.existsSync(baselinePath)) {
@@ -199,7 +203,7 @@ if (fs.existsSync(baselinePath)) {
     );
   }
 } else {
-  console.warn(`Baseline file not found at ${baselinePath}. Skipping regression comparison.`);
+  console.warn(`No calibrated real-stack regression baseline at ${baselinePath}; absolute endpoint budgets remain enforced.`);
 }
 
 console.log("k6 performance budgets satisfied.");

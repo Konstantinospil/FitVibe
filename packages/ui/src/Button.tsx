@@ -1,13 +1,18 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState } from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonState = "active" | "hover" | "disabled" | "loading";
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;
+  leadingIcon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
+  /** @deprecated Use leadingIcon. */
   leftIcon?: React.ReactNode;
+  /** @deprecated Use trailingIcon. */
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
 };
@@ -16,51 +21,89 @@ const baseStyle: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "0.6rem",
-  borderRadius: "14px",
-  border: "none",
-  fontWeight: 600,
-  letterSpacing: "0.02em",
-  color: "var(--color-text-primary)",
+  gap: "var(--space-xs)",
+  borderRadius: "var(--radius-md)",
+  border: "1px solid transparent",
+  fontFamily: "var(--font-family-body)",
+  fontWeight: "var(--font-weight-regular)",
+  letterSpacing: "var(--type-control-letter-spacing)",
   cursor: "pointer",
-  transition: "transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease",
+  transition:
+    "background 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease",
   boxShadow: "var(--button-shadow, none)",
   position: "relative",
+  whiteSpace: "nowrap",
 };
 
-const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
-  sm: { padding: "0.5rem 1.1rem", fontSize: "var(--font-size-sm)" },
-  md: { padding: "0.9rem 1.4rem", fontSize: "var(--font-size-md)" },
-  lg: { padding: "1.1rem 1.6rem", fontSize: "var(--font-size-lg)" },
+export const BUTTON_SIZE_STYLES: Record<ButtonSize, React.CSSProperties> = {
+  sm: {
+    minHeight: "34px",
+    padding: "var(--space-xs) var(--space-sm)",
+    fontSize: "var(--type-control-size)",
+    lineHeight: "var(--type-control-line-height)",
+  },
+  md: {
+    minHeight: "40px",
+    padding: "var(--space-xs) var(--space-md)",
+    fontSize: "var(--type-control-size)",
+    lineHeight: "var(--type-control-line-height)",
+  },
+  lg: {
+    minHeight: "48px",
+    padding: "var(--space-sm) var(--space-lg)",
+    fontSize: "var(--type-control-large-size)",
+    lineHeight: "var(--type-control-large-line-height)",
+    fontWeight: "var(--font-weight-control-large)",
+  },
 };
 
-const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
-  primary: { background: "var(--color-primary)", color: "var(--color-primary-on)" },
+const activeVariantStyles: Record<ButtonVariant, React.CSSProperties> = {
+  primary: {
+    background: "var(--color-primary)",
+    color: "var(--color-primary-on)",
+  },
   secondary: {
-    background: "var(--color-surface)",
-    color: "var(--color-secondary)",
-    border: "1px solid var(--color-border)",
+    background: "var(--color-secondary)",
+    color: "var(--color-secondary-on)",
+  },
+  danger: {
+    background: "var(--color-danger)",
+    color: "var(--color-primary-on)",
   },
   ghost: {
     background: "transparent",
     color: "var(--color-text-secondary)",
-    border: "1px solid transparent",
+    borderColor: "transparent",
     boxShadow: "none",
   },
-  danger: { background: "var(--color-danger)", color: "var(--color-primary-on)" },
 };
 
-const disabledStyle: React.CSSProperties = {
-  opacity: 0.6,
-  cursor: "not-allowed",
-  boxShadow: "none",
+const hoverVariantStyles: Record<ButtonVariant, React.CSSProperties> = {
+  primary: {
+    background: "var(--color-primary-hover)",
+    color: "var(--color-primary-on)",
+  },
+  secondary: {
+    background: "var(--color-secondary-hover)",
+    color: "var(--color-secondary-on)",
+  },
+  danger: {
+    background:
+      "color-mix(in srgb, var(--color-danger) var(--transparency-subtle), var(--color-danger-text))",
+    color: "var(--color-primary-on)",
+  },
+  ghost: {
+    background: "var(--color-surface-muted)",
+    color: "var(--color-text-primary)",
+    borderColor: "transparent",
+    boxShadow: "none",
+  },
 };
 
-const iconStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "1rem",
+export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
+  sm: "14px",
+  md: "16px",
+  lg: "20px",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -70,64 +113,126 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       isLoading = false,
+      leadingIcon,
+      trailingIcon,
       leftIcon,
       rightIcon,
       fullWidth = false,
       style,
       disabled,
+      onMouseEnter,
+      onMouseLeave,
       ...rest
     },
     ref,
   ) => {
+    const [hovered, setHovered] = useState(false);
+    const isDisabled = Boolean(disabled);
+    const state: ButtonState = isLoading
+      ? "loading"
+      : isDisabled
+        ? "disabled"
+        : hovered
+          ? "hover"
+          : "active";
+
     const computedStyle: React.CSSProperties = {
       ...baseStyle,
-      ...sizeStyles[size],
-      ...variantStyles[variant],
+      ...BUTTON_SIZE_STYLES[size],
+      ...(state === "hover" ? hoverVariantStyles[variant] : activeVariantStyles[variant]),
       ...(fullWidth ? { width: "100%" } : {}),
-      ...(disabled || isLoading ? disabledStyle : {}),
+      ...(state === "disabled"
+        ? {
+            opacity: "var(--opacity-disabled)",
+            cursor: "not-allowed",
+            boxShadow: "none",
+          }
+        : {}),
       ...style,
     };
+
+    const resolvedLeadingIcon = isLoading ? null : (leadingIcon ?? leftIcon);
+    const resolvedTrailingIcon = isLoading ? null : (trailingIcon ?? rightIcon);
 
     return (
       <button
         ref={ref}
-        disabled={disabled || isLoading}
-        aria-disabled={disabled || isLoading}
+        disabled={isDisabled || isLoading}
+        aria-disabled={isDisabled || isLoading}
         aria-busy={isLoading}
         data-variant={variant}
         data-size={size}
+        data-state={state}
         style={computedStyle}
+        onMouseEnter={(event) => {
+          if (!isDisabled && !isLoading) {
+            setHovered(true);
+          }
+          onMouseEnter?.(event);
+        }}
+        onMouseLeave={(event) => {
+          setHovered(false);
+          onMouseLeave?.(event);
+        }}
         {...rest}
       >
-        {isLoading ? (
-          <span
-            aria-hidden="true"
-            style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}
-          >
-            <span
-              style={{
-                width: "18px",
-                height: "18px",
-                borderRadius: "50%",
-                border: "2px solid rgba(15, 23, 42, 0.2)",
-                borderTopColor: "rgba(15, 23, 42, 0.75)",
-                animation: "button-spin 0.6s linear infinite",
-              }}
-            />
-          </span>
-        ) : null}
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "0.6rem",
-            opacity: isLoading ? 0 : 1,
-            transition: "opacity 100ms ease",
+            justifyContent: "center",
+            gap: "var(--space-xs)",
           }}
         >
-          {leftIcon ? <span style={iconStyle}>{leftIcon}</span> : null}
+          {isLoading ? (
+            <span
+              aria-hidden="true"
+              data-testid="button-spinner"
+              style={{
+                width: BUTTON_ICON_SIZES[size],
+                height: BUTTON_ICON_SIZES[size],
+                flex: "none",
+                borderRadius: "var(--radius-full)",
+                border: "2px solid currentColor",
+                borderTopColor: "transparent",
+                animation: "button-spin 0.6s linear infinite",
+              }}
+            />
+          ) : resolvedLeadingIcon ? (
+            <span
+              aria-hidden="true"
+              data-slot="leading-icon"
+              style={{
+                width: BUTTON_ICON_SIZES[size],
+                height: BUTTON_ICON_SIZES[size],
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: "none",
+              }}
+            >
+              {resolvedLeadingIcon}
+            </span>
+          ) : null}
+
           <span>{children}</span>
-          {rightIcon ? <span style={iconStyle}>{rightIcon}</span> : null}
+
+          {resolvedTrailingIcon ? (
+            <span
+              aria-hidden="true"
+              data-slot="trailing-icon"
+              style={{
+                width: BUTTON_ICON_SIZES[size],
+                height: BUTTON_ICON_SIZES[size],
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flex: "none",
+              }}
+            >
+              {resolvedTrailingIcon}
+            </span>
+          ) : null}
         </span>
       </button>
     );

@@ -1,7 +1,7 @@
 # Current GitHub Backlog
 
-**Baseline date:** 2026-09-25  
-**Branch:** `dev`  
+**Baseline date:** 2026-10-03  
+**Branch:** `feature` (PR #362 integration) / `dev`  
 **Purpose:** Authoritative mapping from reconciled product documentation and the vNext engineering/design roadmap to GitHub execution issues.
 
 ## Rules
@@ -12,6 +12,7 @@
 4. GitHub issue text is an execution aid, not product SSOT.
 5. Historical closed issues are not reopened merely to preserve old numbering.
 6. A story is not Done because code exists; its canonical ACs must be verified with the required evidence.
+7. **False-positive remap (2026-10-03):** newer open issues are authoritative. Old closed false-positive issues are obsolete; missing parameters were absorbed into the open hosts or into new hosts #366–#372. Do not reopen the obsolete numbers.
 
 ## Recommended GitHub Project
 
@@ -47,6 +48,31 @@
 - **Roadmap** — grouped by Workstream, ordered by dependency
 
 ## Current workstreams
+
+### Profile & Settings (E1) — frontend hosts
+
+Historical #2–#4 are obsolete false-positive closes. Execution:
+
+- [#349](https://github.com/Konstantinospil/FitVibe_demo/issues/349) — Settings production surface (absorbs US-1.1–US-1.3 profile edit/avatar/tests + US-21.2 values / US-21.3 discovery selection)
+- [#348](https://github.com/Konstantinospil/FitVibe_demo/issues/348) — Dashboard and Vibeform (US-21.3 presentation portion)
+- [#271](https://github.com/Konstantinospil/FitVibe_demo/issues/271) — Mount Vibeform in user-facing profile experience
+
+### Exercise Library (E2) — frontend / backoffice hosts
+
+Historical #5–#6, #8–#10 are obsolete (except genuinely done #7 snapshots). Execution:
+
+- [#347](https://github.com/Konstantinospil/FitVibe_demo/issues/347) — Library production surface (public search/list; absorbs #6 + library test share)
+- [#351](https://github.com/Konstantinospil/FitVibe_demo/issues/351) — Exercise Creator (personal CRUD; absorbs #5 + test share)
+- [#350](https://github.com/Konstantinospil/FitVibe_demo/issues/350) / [#289](https://github.com/Konstantinospil/FitVibe_demo/issues/289) — Workout Editor / Plan·Log selector consumers (absorbs #9)
+- [#367](https://github.com/Konstantinospil/FitVibe_demo/issues/367) — Backoffice admin global exercise management (absorbs #8)
+- [#338](https://github.com/Konstantinospil/FitVibe_demo/issues/338) — Workout duration/intensity estimation and library filtering (additive)
+
+### Sharing & Community (E3)
+
+Historical #12–#18 are obsolete false-positive closes. #11 (public feed browse) remains done. Execution:
+
+- [#366](https://github.com/Konstantinospil/FitVibe_demo/issues/366) — E3 Social surfaces — visibility, engagement, clone, report, tests
+- [#361](https://github.com/Konstantinospil/FitVibe_demo/issues/361) — Workout Nods and monthly Home Billboard (distinct from feed likes/bookmarks/comments/follow)
 
 ### Planner Completion (E4)
 
@@ -143,10 +169,13 @@
 
 ### Profile Measurements (E21)
 
-- [#256](https://github.com/Konstantinospil/FitVibe_demo/issues/256) — US-21.1 Measurement Definition Catalogue
-- [#257](https://github.com/Konstantinospil/FitVibe_demo/issues/257) — US-21.2 User Measurement Values
-- [#258](https://github.com/Konstantinospil/FitVibe_demo/issues/258) — US-21.3 Measurement Discovery & Profile Presentation
+Historical #256–#258 are obsolete false-positive closes. Authoritative open hosts:
+
+- [#368](https://github.com/Konstantinospil/FitVibe_demo/issues/368) — US-21.1 Measurement Definition Catalogue (replaces closed #256)
+- [#349](https://github.com/Konstantinospil/FitVibe_demo/issues/349) — US-21.2 values + US-21.3 discovery/selection (Settings host; replaces closed #257/#258 entry paths)
+- [#348](https://github.com/Konstantinospil/FitVibe_demo/issues/348) / [#271](https://github.com/Konstantinospil/FitVibe_demo/issues/271) — US-21.3 profile/Dashboard presentation
 - [#259](https://github.com/Konstantinospil/FitVibe_demo/issues/259) — US-21.4 Derived Measurements
+- [#260](https://github.com/Konstantinospil/FitVibe_demo/issues/260) — Phase 23 Measurements Completion (tracker)
 
 ## vNext engineering, design and roadmap work
 
@@ -169,6 +198,12 @@ The canonical product-story catalogue is supplemented by the following current d
 - [#267](https://github.com/Konstantinospil/FitVibe_demo/issues/267) — Phase 20 Cross-stack test quality and flakiness audit
 - [#268](https://github.com/Konstantinospil/FitVibe_demo/issues/268) — Phase 21 Architecture and documentation conformance review
 - [#269](https://github.com/Konstantinospil/FitVibe_demo/issues/269) — Phase 22 CI quality gate and deployment-contract enforcement
+- [#369](https://github.com/Konstantinospil/FitVibe_demo/issues/369) — Application settings governance completion (absorbs obsolete #303)
+- [#370](https://github.com/Konstantinospil/FitVibe_demo/issues/370) — Superadmin sudo, TOTP step-up, privilege management (absorbs obsolete #304)
+- [#371](https://github.com/Konstantinospil/FitVibe_demo/issues/371) — Inventory skipped tests — fix, justify, or remove (absorbs obsolete #63)
+- [#372](https://github.com/Konstantinospil/FitVibe_demo/issues/372) — Public API JSDoc coverage ≥80% (absorbs obsolete #66)
+- [#339](https://github.com/Konstantinospil/FitVibe_demo/issues/339) — Make frontend hardcoding enforcement repository-wide
+- [#363](https://github.com/Konstantinospil/FitVibe_demo/issues/363) — Make quality and security validation self-contained and product-authoritative
 
 ### Deployment & Release
 
@@ -184,13 +219,13 @@ The complete sequencing and release gate are defined in [VNEXT_DELIVERY_ROADMAP.
 
 ## Current/open issue invariant
 
-At the current vNext baseline:
+After the 2026-10-03 false-positive remap:
 
-- Open canonical `[Current]` product-story issues: **61**
-- Open roadmap/engineering/design delivery issues: **16** (#260–#275)
-- Total open vNext delivery issues: **77**
-- Completed E19 issues retained in the Project for traceability: **3** (#251–#253)
-- Historical obsolete issues are not part of the Project.
+- Open E4–E13 / E12 / E20 `[Current]` product-story issues remain as listed above (#84–#144, #247–#250, #254–#255, #259).
+- Open E1–E3 / E21 execution hosts include #271, #347–#351, #361, #366–#368 (plus Settings/Dashboard #349/#348).
+- New engineering hosts from remap: #367, #369–#372.
+- Completed E19 issues retained for traceability: **3** (#251–#253).
+- Historical obsolete false-positive closes (#2–#66 remapped set, #256–#258, #303–#304) are **not** part of the Project; comments point at authoritative opens.
 
 Future product issues must reference canonical requirement/story/AC scope. Engineering, design and roadmap issues must reference the concrete verified gap or phase they close and must not fabricate a product Epic solely for Project metadata.
 
@@ -198,9 +233,9 @@ Future product issues must reference canonical requirement/story/AC scope. Engin
 
 The former duplicate imports and obsolete namespaces have been closed as not planned rather than silently rewritten into different requirements:
 
-- old completed E1–E3 duplicates;
-- stale technical-debt issues using the canonical `US-11.*` namespace;
+- old completed E1–E3 duplicates (#67–#83 and related);
+- stale technical-debt issues using the canonical `US-11.*` namespace (#127–#131) — engineering debt re-hosted as #371/#372 without colliding with auth US-11.*;
 - obsolete E12 decomposition;
 - verification-only `US-13.9` issue after E13 was normalized to eight canonical product stories.
 
-They remain in GitHub history for traceability but are not part of the current backlog.
+**2026-10-03 false-positive remap:** Issues #2–#66 (historical first import), #256–#258, #303, and #304 that were closed as completed without meeting live-app / AC gates remain closed as obsolete. Authoritative work is on open Current/delivery issues (#84–#125, #347–#351, #349/#348/#271, #366–#372, #260). They remain in GitHub history for traceability but are not part of the current backlog.

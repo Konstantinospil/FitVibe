@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { renderToString } from "react-dom/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
@@ -51,6 +52,19 @@ vi.mock("react-router-dom/server", () => ({
 vi.mock("react-router-dom", () => ({
   BrowserRouter: ({ children, basename }: { children: React.ReactNode; basename?: string }) => (
     <div data-testid="browser-router" data-basename={basename}>
+      {children}
+    </div>
+  ),
+  StaticRouter: ({
+    children,
+    location,
+    basename,
+  }: {
+    children: React.ReactNode;
+    location: string;
+    basename?: string;
+  }) => (
+    <div data-testid="static-router" data-location={location} data-basename={basename}>
       {children}
     </div>
   ),
@@ -267,4 +281,19 @@ describe("Router", () => {
     // Just verify the router renders correctly
     expect(browserRouter).toBeInTheDocument();
   });
+
+  it("uses StaticRouter during real server-side rendering", () => {
+    const originalWindow = global.window;
+    // @ts-expect-error intentional SSR simulation
+    delete global.window;
+    try {
+      const html = renderToString(<Router location="/login" basename="/app" />);
+      expect(html).toContain('data-testid="static-router"');
+      expect(html).toContain('data-location="/login"');
+      expect(html).toContain('data-basename="/app"');
+    } finally {
+      global.window = originalWindow;
+    }
+  });
+
 });

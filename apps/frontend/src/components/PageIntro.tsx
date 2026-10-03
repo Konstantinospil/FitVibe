@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fitvibe/ui";
 
 interface PageIntroProps {
   eyebrow?: string;
@@ -20,10 +20,10 @@ const eyebrowContainerStyle: React.CSSProperties = {
 };
 
 const eyebrowTextStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
-  letterSpacing: "0.08em",
+  fontSize: "var(--type-supporting-size)",
+  letterSpacing: "var(--type-metric-small-letter-spacing)",
   textTransform: "uppercase",
-  fontWeight: 600,
+  fontWeight: "var(--font-weight-semibold)",
   color: "var(--color-text-secondary)",
 };
 
@@ -87,14 +87,13 @@ const PageIntro: React.FC<PageIntroProps> = ({
         ) : null}
         <CardTitle
           style={{
-            fontSize: "clamp(2rem, 4vw, 2.8rem)",
-            lineHeight: 1.15,
-            letterSpacing: "-0.015em",
+            fontSize: "clamp(var(--type-page-title-size), 4vw, var(--type-display-size))",
+            lineHeight: "var(--type-page-title-line-height)",
+            letterSpacing: "var(--type-page-title-letter-spacing)",
             ...(priorityLcp
               ? {
-                  color: "var(--color-text-primary, #FFFFFF)",
-                  fontFamily:
-                    '"Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+                  color: "var(--color-text-primary, var(--color-on-color))",
+                  fontFamily: "var(--font-family-body)",
                 }
               : {}),
           }}
@@ -103,8 +102,8 @@ const PageIntro: React.FC<PageIntroProps> = ({
         </CardTitle>
         <CardDescription
           style={{
-            fontSize: "1rem",
-            lineHeight: 1.6,
+            fontSize: "var(--type-body-size)",
+            lineHeight: "var(--type-body-line-height)",
           }}
         >
           {description}

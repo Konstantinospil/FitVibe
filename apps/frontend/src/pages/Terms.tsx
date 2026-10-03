@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import PageIntro from "../components/PageIntro";
-import PublicReturnButton from "../components/PublicReturnButton";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import PublishedLegalDocument from "../components/PublishedLegalDocument";
-import { Card, CardContent, Button } from "../components/ui";
+import { Button } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
 import { useToast } from "../contexts/ToastContext";
 import {
@@ -30,6 +28,7 @@ const Terms: React.FC = () => {
       setStatus(null);
       return;
     }
+
     let cancelled = false;
     void getLegalDocumentsStatus()
       .then((result) => {
@@ -42,6 +41,7 @@ const Terms: React.FC = () => {
           setStatus(null);
         }
       });
+
     return () => {
       cancelled = true;
     };
@@ -75,37 +75,24 @@ const Terms: React.FC = () => {
     }
   };
 
+  const footerAction =
+    isAuthenticated && status?.needsAcceptance ? (
+      <Button variant="primary" onClick={() => void handleAccept()} isLoading={isWorking}>
+        {isWorking ? t("terms.consent.accepting") : t("terms.consent.accept")}
+      </Button>
+    ) : isAuthenticated && status && !status.needsAcceptance ? (
+      <Button variant="danger" onClick={() => setShowRevokeConfirm(true)} disabled={isWorking}>
+        {t("terms.consent.revoke")}
+      </Button>
+    ) : undefined;
+
   return (
-    <PageIntro
-      title={t("terms.title")}
-      description={t("terms.description")}
-      actions={<PublicReturnButton />}
-    >
-      <Card style={{ maxWidth: "900px", width: "100%", margin: "0 auto" }}>
-        <CardContent style={{ padding: "2rem", lineHeight: 1.8 }}>
-          <PublishedLegalDocument documentType="terms" />
-
-          {isAuthenticated && status?.needsAcceptance ? (
-            <div className="flex flex--center mt-xl">
-              <Button variant="primary" onClick={() => void handleAccept()} disabled={isWorking}>
-                {isWorking ? t("terms.consent.accepting") : t("terms.consent.accept")}
-              </Button>
-            </div>
-          ) : null}
-
-          {isAuthenticated && status && !status.needsAcceptance ? (
-            <div className="flex flex--center mt-xl">
-              <Button
-                variant="secondary"
-                onClick={() => setShowRevokeConfirm(true)}
-                disabled={isWorking}
-              >
-                {t("terms.consent.revoke")}
-              </Button>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+    <>
+      <PublishedLegalDocument
+        documentType="terms"
+        title={t("terms.title")}
+        footerAction={footerAction}
+      />
 
       <ConfirmDialog
         isOpen={showRevokeConfirm}
@@ -117,7 +104,7 @@ const Terms: React.FC = () => {
         onConfirm={() => void handleRevoke()}
         onCancel={() => setShowRevokeConfirm(false)}
       />
-    </PageIntro>
+    </>
   );
 };
 

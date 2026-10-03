@@ -11,6 +11,10 @@ allowBuilds:
   protobufjs: true
   snyk: true
   esbuild: true
+  # Jest 30.5 uses Parcel's native watcher in jest-haste-map.
+  '@parcel/watcher': true
+  # Jest 30.5 uses the native-backed resolver via jest-resolve.
+  unrs-resolver: true
   msgpackr-extract: false
 
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
@@ -23,7 +27,7 @@ overrides:
   'lodash': '>=4.18.1'
   'handlebars': '>=4.7.9'
   'immutable': '4.3.9'
-  'basic-ftp': '^5.3.1'
+  'basic-ftp': '^6.2.1'
   'nanoid': '3.3.18'
   'postcss': '>=8.5.26'
   'vite': '^8.2.2'
@@ -63,7 +67,7 @@ overrides:
   'multer': '>=2.4.0'
   'ws': '>=8.21.0'
   'sharp': '>=0.35.0'
-  '@grpc/grpc-js': '>=1.14.4'
+  '@grpc/grpc-js': '>=1.14.5'
   '@opentelemetry/auto-instrumentations-node': '>=0.75.0'
   '@opentelemetry/exporter-prometheus': '>=0.217.0'
   '@opentelemetry/propagator-jaeger': '>=2.9.0'
@@ -71,3 +75,9 @@ overrides:
   'ajv': '^6.14.0'
   'browserslist': '>=4.28.7'
   '@humanfs/node': '>=0.16.8'
+  'jest': '^30.5.2'
+  '@jest/transform': '^30.5.2'
+  'expect': '^30.5.2'
+  'jest-message-util': '^30.5.1'
+  '@jest/types': '^30.5.1'
+  'jest-util': '^30.5.1'

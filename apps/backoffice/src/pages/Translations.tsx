@@ -346,7 +346,13 @@ const TranslationsPage: React.FC = () => {
 
   return (
     <div>
-      <h1 style={{ color: "var(--color-text-primary)", marginBottom: "2rem", fontSize: "2rem" }}>
+      <h1
+        style={{
+          color: "var(--color-text-primary)",
+          marginBottom: "2rem",
+          fontSize: "var(--type-page-title-size)",
+        }}
+      >
         Translations
       </h1>
 
@@ -362,7 +368,7 @@ const TranslationsPage: React.FC = () => {
         <div
           style={{
             color: "var(--color-text-primary)",
-            fontWeight: 600,
+            fontWeight: "var(--font-weight-semibold)",
             marginBottom: "0.5rem",
           }}
         >
@@ -377,7 +383,7 @@ const TranslationsPage: React.FC = () => {
           }}
         >
           {namespacesForUpdates.map((ns) => (
-            <span key={ns} style={{ fontSize: "0.9rem" }}>
+            <span key={ns} style={{ fontSize: "var(--type-body-size)" }}>
               {ns}:{" "}
               {latestUpdateByNamespace[ns]
                 ? new Date(latestUpdateByNamespace[ns]).toLocaleString("en-US", {
@@ -498,7 +504,7 @@ const TranslationsPage: React.FC = () => {
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   color: "var(--color-text-primary)",
                 }}
               >
@@ -522,7 +528,7 @@ const TranslationsPage: React.FC = () => {
                 style={{
                   display: "block",
                   marginBottom: "0.5rem",
-                  fontSize: "0.875rem",
+                  fontSize: "var(--type-supporting-size)",
                   color: "var(--color-text-primary)",
                 }}
               >
@@ -545,7 +551,7 @@ const TranslationsPage: React.FC = () => {
               style={{
                 display: "block",
                 marginBottom: "0.5rem",
-                fontSize: "0.875rem",
+                fontSize: "var(--type-supporting-size)",
                 color: "var(--color-text-primary)",
               }}
             >
@@ -563,7 +569,7 @@ const TranslationsPage: React.FC = () => {
               style={{
                 display: "block",
                 marginBottom: "0.5rem",
-                fontSize: "0.875rem",
+                fontSize: "var(--type-supporting-size)",
                 color: "var(--color-text-primary)",
               }}
             >
@@ -626,9 +632,9 @@ const TranslationsPage: React.FC = () => {
                   style={{
                     display: "block",
                     marginBottom: "0.5rem",
-                    fontSize: "0.875rem",
+                    fontSize: "var(--type-supporting-size)",
                     color: "var(--color-text-primary)",
-                    fontWeight: 500,
+                    fontWeight: "var(--font-weight-control-large)",
                   }}
                 >
                   {getLanguageLabel(lang)}
@@ -799,7 +805,7 @@ const TranslationsPage: React.FC = () => {
                             : isDeleted
                               ? "var(--color-danger-bg)"
                               : "var(--color-surface)",
-                          opacity: isDeleted ? 0.7 : 1,
+                          opacity: isDeleted ? "var(--opacity-subtle)" : "var(--opacity-full)",
                           cursor: "pointer",
                         }}
                       >
@@ -808,7 +814,7 @@ const TranslationsPage: React.FC = () => {
                             style={{
                               width: "10px",
                               height: "10px",
-                              borderRadius: "999px",
+                              borderRadius: "var(--radius-full)",
                               background: group.isIncomplete
                                 ? "var(--color-danger)"
                                 : "var(--color-success)",
@@ -822,8 +828,8 @@ const TranslationsPage: React.FC = () => {
                           style={{
                             padding: "0.75rem",
                             color: "var(--color-text-primary)",
-                            fontFamily: "monospace",
-                            fontSize: "0.875rem",
+                            fontFamily: "var(--font-family-body)",
+                            fontSize: "var(--type-supporting-size)",
                           }}
                         >
                           {group.key_path}
@@ -851,14 +857,14 @@ const TranslationsPage: React.FC = () => {
                                 overflow: "hidden",
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
-                                fontWeight: 500,
+                                fontWeight: "var(--font-weight-control-large)",
                               }}
                             >
                               {displayValue}
                             </div>
                             <div
                               style={{
-                                fontSize: "0.75rem",
+                                fontSize: "var(--type-supporting-size)",
                                 color: "var(--color-text-muted)",
                                 marginTop: "0.25rem",
                               }}
@@ -871,7 +877,7 @@ const TranslationsPage: React.FC = () => {
                           style={{
                             padding: "0.75rem",
                             color: "var(--color-text-primary)",
-                            fontSize: "0.8rem",
+                            fontSize: "var(--type-supporting-size)",
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -892,7 +898,7 @@ const TranslationsPage: React.FC = () => {
                           style={{
                             padding: "0.75rem",
                             color: "var(--color-text-primary)",
-                            fontSize: "0.8rem",
+                            fontSize: "var(--type-supporting-size)",
                             whiteSpace: "nowrap",
                           }}
                         >
@@ -926,7 +932,12 @@ const TranslationsPage: React.FC = () => {
                           }}
                         >
                           {isEditingThisKey ? (
-                            <div style={{ color: "var(--color-accent)", fontSize: "0.875rem" }}>
+                            <div
+                              style={{
+                                color: "var(--color-accent)",
+                                fontSize: "var(--type-supporting-size)",
+                              }}
+                            >
                               Editing...
                             </div>
                           ) : (
@@ -1026,7 +1037,7 @@ const TranslationsPage: React.FC = () => {
                                       <div
                                         style={{
                                           minWidth: "140px",
-                                          fontWeight: 600,
+                                          fontWeight: "var(--font-weight-semibold)",
                                           color: "var(--color-text-primary)",
                                         }}
                                       >
@@ -1045,7 +1056,7 @@ const TranslationsPage: React.FC = () => {
                                       {showDeleted && (
                                         <span
                                           style={{
-                                            fontSize: "0.75rem",
+                                            fontSize: "var(--type-supporting-size)",
                                             color: "var(--color-danger-text)",
                                             border: "1px solid var(--color-danger)",
                                             borderRadius: "var(--radius-2xs)",
