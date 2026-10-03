@@ -1016,5 +1016,74 @@
   },
   "actions": {
     "retry": "Erneut versuchen"
+  },
+  "librarySurface": {
+    "title": "Bibliothek",
+    "description": "Übungen entdecken, die eigene Bibliothek verwalten und Workouts erstellen.",
+    "sections": {
+      "search": "Suche und Filter",
+      "exercises": "Übungen"
+    },
+    "actions": {
+      "createExercise": "Neue Übung",
+      "createWorkout": "Workout erstellen",
+      "addToWorkout": "Zum Workout hinzufügen",
+      "details": "Details anzeigen",
+      "edit": "Bearbeiten",
+      "archive": "Archivieren",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "close": "Schließen",
+      "confirmArchive": "Übung archivieren"
+    },
+    "filters": {
+      "search": "Übungen suchen",
+      "type": "Typ",
+      "allTypes": "Alle Typen",
+      "muscleGroup": "Muskelgruppe",
+      "equipment": "Ausrüstung",
+      "tags": "Tags"
+    },
+    "states": {
+      "loading": "Übungen werden geladen…",
+      "error": "Übungen konnten nicht geladen werden.",
+      "noResults": "Keine Übungen entsprechen diesen Filtern."
+    },
+    "source": {
+      "global": "Global",
+      "mine": "Meine Übung",
+      "public": "Öffentlich"
+    },
+    "details": {
+      "noDescription": "Keine Beschreibung vorhanden."
+    },
+    "archive": {
+      "title": "Übung archivieren",
+      "description": "{{name}} archivieren? Die Übung verschwindet aus aktiven Selektoren, bleibt aber historisch erhalten."
+    },
+    "creator": {
+      "titleCreate": "Übung erstellen",
+      "titleEdit": "Übung bearbeiten",
+      "description": "Eine eigene Übung erstellen oder aktualisieren.",
+      "fields": {
+        "name": "Name",
+        "type": "Typ",
+        "selectType": "Typ auswählen",
+        "muscleGroup": "Primäre Muskelgruppe",
+        "equipment": "Ausrüstung",
+        "tags": "Tags",
+        "tagsPlaceholder": "kraft, langhantel, beine",
+        "description": "Beschreibung",
+        "public": "Diese Übung öffentlich machen"
+      },
+      "errors": {
+        "required": "Name und Typ sind erforderlich.",
+        "create": "Die Übung konnte nicht erstellt werden.",
+        "update": "Die Übung konnte nicht aktualisiert werden.",
+        "types": "Übungstypen konnten nicht geladen werden."
+      }
+    }
   }
 }

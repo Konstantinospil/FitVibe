@@ -14,6 +14,7 @@ import {
   createSession,
   listExercises,
   updateSession,
+  type Exercise,
   type SessionExerciseInput,
   type SessionWithExercises,
 } from "../../services/api";
@@ -50,6 +51,7 @@ export type WorkoutEditorProps = {
   session?: SessionWithExercises | null;
   plannedAt?: string;
   actions?: readonly WorkoutEditorAction[];
+  initialExercise?: Pick<Exercise, "id" | "name"> | null;
   onSaved?: (session: SessionWithExercises) => void;
 };
 
@@ -89,6 +91,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   session = null,
   plannedAt,
   actions = ["start", "plan"],
+  initialExercise = null,
   onSaved,
 }) => {
   const { t } = useTranslation();
@@ -127,7 +130,25 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     if (!session) {
       setName("");
       setNotes("");
-      setDrafts([]);
+      if (initialExercise) {
+        nextDraftId.current += 1;
+        setDrafts([
+          {
+            id: `${initialExercise.id}-initial-${nextDraftId.current}`,
+            exerciseId: initialExercise.id,
+            name: initialExercise.name,
+            sets: 1,
+            repetitions: "",
+            weight: "",
+            duration: "",
+            targetExertion: "",
+            restSet: "",
+            restExercise: "",
+          },
+        ]);
+      } else {
+        setDrafts([]);
+      }
       return;
     }
 
@@ -138,7 +159,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         .filter((exercise) => Boolean(exercise.exercise_id))
         .map((exercise) => toDraftExercise(exercise, exerciseFallbackName)),
     );
-  }, [exerciseFallbackName, open, session]);
+  }, [exerciseFallbackName, initialExercise, open, session]);
 
   useEffect(() => {
     if (!open || !session || exerciseNames.size === 0) {

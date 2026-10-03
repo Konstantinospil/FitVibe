@@ -14,6 +14,7 @@ const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
 const MainLayout = lazy(() => import("../layouts/MainLayout"));
 const Home = lazy(() => import("../pages/Home"));
 const Calendar = lazy(() => import("../pages/Calendar"));
+const Library = lazy(() => import("../pages/Library"));
 const AppSurfacePlaceholder = lazy(() => import("../pages/AppSurfacePlaceholder"));
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
@@ -67,7 +68,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
           <Route element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="calendar" element={<Calendar />} />
-            <Route path="library" element={<AppSurfacePlaceholder title="Library" />} />
+            <Route path="library" element={<Library />} />
             <Route path="dashboard" element={<AppSurfacePlaceholder title="Dashboard" />} />
             <Route path="settings" element={<AppSurfacePlaceholder title="Settings" />} />
             <Route path="terms" element={<Terms />} />

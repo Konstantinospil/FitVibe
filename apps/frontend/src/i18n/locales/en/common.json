@@ -1016,5 +1016,74 @@
   },
   "actions": {
     "retry": "Retry"
+  },
+  "librarySurface": {
+    "title": "Library",
+    "description": "Discover exercises, manage your own library, and build workouts.",
+    "sections": {
+      "search": "Search and filters",
+      "exercises": "Exercises"
+    },
+    "actions": {
+      "createExercise": "New exercise",
+      "createWorkout": "Create workout",
+      "addToWorkout": "Add to workout",
+      "details": "View details",
+      "edit": "Edit",
+      "archive": "Archive",
+      "previous": "Previous",
+      "next": "Next",
+      "cancel": "Cancel",
+      "save": "Save",
+      "close": "Close",
+      "confirmArchive": "Archive exercise"
+    },
+    "filters": {
+      "search": "Search exercises",
+      "type": "Type",
+      "allTypes": "All types",
+      "muscleGroup": "Muscle group",
+      "equipment": "Equipment",
+      "tags": "Tags"
+    },
+    "states": {
+      "loading": "Loading exercises…",
+      "error": "Exercises could not be loaded.",
+      "noResults": "No exercises match these filters."
+    },
+    "source": {
+      "global": "Global",
+      "mine": "My exercise",
+      "public": "Community public"
+    },
+    "details": {
+      "noDescription": "No description provided."
+    },
+    "archive": {
+      "title": "Archive exercise",
+      "description": "Archive {{name}}? It will disappear from active selectors but remain in history."
+    },
+    "creator": {
+      "titleCreate": "Create exercise",
+      "titleEdit": "Edit exercise",
+      "description": "Create or update an athlete-owned exercise.",
+      "fields": {
+        "name": "Name",
+        "type": "Type",
+        "selectType": "Select a type",
+        "muscleGroup": "Primary muscle group",
+        "equipment": "Equipment",
+        "tags": "Tags",
+        "tagsPlaceholder": "strength, barbell, legs",
+        "description": "Description",
+        "public": "Make this exercise public"
+      },
+      "errors": {
+        "required": "Name and type are required.",
+        "create": "The exercise could not be created.",
+        "update": "The exercise could not be updated.",
+        "types": "Exercise types could not be loaded."
+      }
+    }
   }
 }
