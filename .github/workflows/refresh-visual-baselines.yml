@@ -1,3 +1,4 @@
+# Manual refresh regenerates only changed Linux visual baselines after intentional UI changes.
 name: Refresh Visual Linux Baselines
 
 on:
