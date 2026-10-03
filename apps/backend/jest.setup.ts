@@ -63,12 +63,6 @@ afterAll(async () => {
   // Set timeout BEFORE async operations (Jest requires this)
   jest.setTimeout(60000);
 
-  // Switch to real timers to allow proper cleanup
-  try {
-    jest.useRealTimers();
-  } catch {
-    // Ignore if Jest environment is already torn down
-  }
 
   // CRITICAL: Stop Prometheus metrics collection FIRST and SYNCHRONOUSLY
   // These timers are the main culprit keeping the process alive
@@ -163,15 +157,6 @@ afterAll(async () => {
     setTimeout(resolve, 100);
   });
 
-  // Force clear any remaining timers as a last resort
-  // This helps catch any timers that weren't properly cleaned up
-  try {
-    if (typeof jest !== "undefined" && jest.clearAllTimers) {
-      jest.clearAllTimers();
-    }
-  } catch {
-    // Ignore if Jest environment is already torn down
-  }
 
   // Log what's keeping the process alive if available
   // This helps with debugging

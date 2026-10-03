@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from "@jest/globals";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals";
 
 jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   const db = Object.assign(jest.fn(), { raw: jest.fn() });
@@ -25,6 +25,9 @@ describe("measurements repository", () => {
   beforeEach(() => {
     mockDb.mockReset();
     mockDb.raw.mockReset();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("lists attributes with language joins and search", async () => {

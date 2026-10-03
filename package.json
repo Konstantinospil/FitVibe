@@ -31,6 +31,7 @@
     "i18n:check:db": "pnpm --filter @fitvibe/backend run db:check-i18n",
     "test:skips": "node tests/qa/assert-no-unexpected-skips.cjs",
     "test:no-silent-returns": "node tests/qa/assert-no-silent-test-returns.cjs",
+    "test:lifecycle": "node tests/qa/assert-test-lifecycle.cjs",
     "security:scan": "node tests/security/run-security-checks.mjs",
     "typecheck": "turbo run typecheck",
     "openapi:build": "pnpm --filter @fitvibe/backend run openapi:build",
