@@ -12,6 +12,8 @@ export interface Exercise {
   is_public: boolean;
   description_en: string | null;
   description_de: string | null;
+  met_value?: number | null;
+  seconds_per_rep?: number | null;
   created_at?: string;
   updated_at?: string;
   archived_at?: string | null;
@@ -26,6 +28,8 @@ export interface CreateExerciseRequest {
   is_public?: boolean;
   description_en?: string | null;
   description_de?: string | null;
+  met_value?: number | null;
+  seconds_per_rep?: number | null;
 }
 
 export interface UpdateExerciseRequest {
@@ -37,6 +41,8 @@ export interface UpdateExerciseRequest {
   is_public?: boolean;
   description_en?: string | null;
   description_de?: string | null;
+  met_value?: number | null;
+  seconds_per_rep?: number | null;
 }
 
 export interface ExerciseQuery {
