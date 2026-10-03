@@ -19,8 +19,6 @@ vi.mock("../../src/services/api", async () => {
     ...actual,
     getFeed: vi.fn(),
     listSessions: vi.fn(),
-    likeFeedItem: vi.fn(),
-    unlikeFeedItem: vi.fn(),
   };
 });
 
@@ -35,8 +33,6 @@ vi.mock("../../src/utils/logger", () => ({
 const mockedApi = {
   getFeed: vi.mocked(api.getFeed),
   listSessions: vi.mocked(api.listSessions),
-  likeFeedItem: vi.mocked(api.likeFeedItem),
-  unlikeFeedItem: vi.mocked(api.unlikeFeedItem),
 };
 
 const feedItem: api.FeedItem = {
@@ -102,8 +98,6 @@ describe("Home", () => {
       offset: 0,
     });
     mockedApi.listSessions.mockResolvedValue(sessions);
-    mockedApi.likeFeedItem.mockResolvedValue();
-    mockedApi.unlikeFeedItem.mockResolvedValue();
     apiErrorSpy.mockClear();
   });
 
@@ -139,32 +133,6 @@ describe("Home", () => {
     expect(mockedApi.listSessions).toHaveBeenCalledWith(
       expect.objectContaining({ status: "completed" }),
     );
-  });
-
-  it("recovers nod interaction from the feed behavior", async () => {
-    renderHome();
-
-    const nodButtons = await screen.findAllByRole("button", {
-      name: "homeSurface.news.addNod",
-    });
-    fireEvent.click(nodButtons[0]);
-
-    await waitFor(() => {
-      expect(mockedApi.likeFeedItem).toHaveBeenCalledWith("feed-1");
-    });
-  });
-
-  it("rolls back a failed nod and exposes the error", async () => {
-    mockedApi.likeFeedItem.mockRejectedValueOnce(new Error("network"));
-    renderHome();
-
-    const nodButtons = await screen.findAllByRole("button", {
-      name: "homeSurface.news.addNod",
-    });
-    fireEvent.click(nodButtons[0]);
-
-    expect(await screen.findByText("homeSurface.news.nodError")).toBeInTheDocument();
-    expect(apiErrorSpy).toHaveBeenCalled();
   });
 
   it("shows API error states and logs them", async () => {
