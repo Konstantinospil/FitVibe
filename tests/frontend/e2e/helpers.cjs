@@ -131,9 +131,15 @@ const confirmPasswordInput = (page) => page.locator("form input[name='confirmPas
 const displayNameInput = (page) => page.locator("form input[name='name']");
 
 async function acceptRegisterLegal(page) {
-  const checkboxes = page.locator("form input[type='checkbox']");
-  await checkboxes.nth(0).check();
-  await checkboxes.nth(1).check();
+  const controls = page.locator("form [data-component='checkbox']");
+  const checkboxes = page.getByRole("checkbox");
+
+  for (let index = 0; index < 2; index += 1) {
+    await controls.nth(index).locator("[data-slot='checkbox-box']").click();
+    if (!(await checkboxes.nth(index).isChecked())) {
+      throw new Error(`Registration legal checkbox ${index + 1} did not toggle through its visible control.`);
+    }
+  }
 }
 
 module.exports = {
