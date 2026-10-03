@@ -40,6 +40,8 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
   const [equipment, setEquipment] = useState("");
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
+  const [metValue, setMetValue] = useState("");
+  const [secondsPerRep, setSecondsPerRep] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -55,6 +57,8 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
     setEquipment(exercise?.equipment ?? "");
     setTags(exercise?.tags.join(", ") ?? "");
     setDescription(exercise?.description_en ?? "");
+    setMetValue(String(exercise?.met_value ?? ""));
+    setSecondsPerRep(String(exercise?.seconds_per_rep ?? ""));
     setIsPublic(exercise?.is_public ?? false);
   }, [exercise, open]);
 
@@ -90,6 +94,8 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
         ),
       ),
       description_en: description.trim() || null,
+      met_value: metValue.trim() ? Number(metValue) : null,
+      seconds_per_rep: secondsPerRep.trim() ? Number(secondsPerRep) : null,
       is_public: isPublic,
     };
 
@@ -220,6 +226,34 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
+            disabled={saving}
+          />
+        </label>
+
+        <label className="form-label">
+          <span className="form-label-text">{t("librarySurface.creator.fields.metValue")}</span>
+          <InputControl
+            type="number"
+            min="0.1"
+            max="30"
+            step="0.1"
+            value={metValue}
+            onChange={(event) => setMetValue(event.target.value)}
+            disabled={saving}
+          />
+        </label>
+
+        <label className="form-label">
+          <span className="form-label-text">
+            {t("librarySurface.creator.fields.secondsPerRep")}
+          </span>
+          <InputControl
+            type="number"
+            min="0.1"
+            max="120"
+            step="0.1"
+            value={secondsPerRep}
+            onChange={(event) => setSecondsPerRep(event.target.value)}
             disabled={saving}
           />
         </label>

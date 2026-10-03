@@ -9,6 +9,7 @@ import {
   reopenSessionHandler,
   cloneSessionHandler,
   applyRecurrenceHandler,
+  getSessionEstimateHandler,
 } from "./sessions.controller.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
@@ -39,6 +40,12 @@ sessionsRouter.patch(
   rateLimit("sessions_update"),
   requireAccessToken,
   asyncHandler(updateSessionHandler),
+);
+sessionsRouter.get(
+  "/:id/estimate",
+  rateLimit("sessions_estimate"),
+  requireAccessToken,
+  asyncHandler(getSessionEstimateHandler),
 );
 sessionsRouter.post(
   "/:id/reopen",

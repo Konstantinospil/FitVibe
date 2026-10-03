@@ -195,3 +195,19 @@ export async function createShareLink(
 export async function revokeShareLink(sessionId: string): Promise<void> {
   await apiClient.delete(`/api/v1/sessions/${sessionId}/share`);
 }
+
+export interface SessionEstimate {
+  activeDurationSec: number | null;
+  restDurationSec: number;
+  minimumTotalDurationSec: number | null;
+  normalizedMet: number | null;
+  estimatedKcalPerMin: number | null;
+  estimatedActiveKcal: number | null;
+  complete: boolean;
+  missingInputs: string[];
+}
+
+export async function getSessionEstimate(sessionId: string): Promise<SessionEstimate> {
+  const res = await apiClient.get<SessionEstimate>(`/api/v1/sessions/${sessionId}/estimate`);
+  return res.data;
+}

@@ -133,6 +133,8 @@ export async function createOne(
     is_public: dto.is_public ?? (resolvedOwnerId === null ? true : false),
     description_en: sanitizeNullable(dto.description_en),
     description_de: sanitizeNullable(dto.description_de),
+    met_value: dto.met_value ?? null,
+    seconds_per_rep: dto.seconds_per_rep ?? null,
     archived_at: null,
   };
 
@@ -203,6 +205,12 @@ export async function updateOne(
   }
   if (dto.description_de !== undefined) {
     updates.description_de = sanitizeNullable(dto.description_de);
+  }
+  if (dto.met_value !== undefined) {
+    updates.met_value = dto.met_value;
+  }
+  if (dto.seconds_per_rep !== undefined) {
+    updates.seconds_per_rep = dto.seconds_per_rep;
   }
 
   const affected = await updateExercise(id, updates);

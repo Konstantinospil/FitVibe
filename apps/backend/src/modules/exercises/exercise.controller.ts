@@ -17,6 +17,8 @@ const createSchema = z.object({
   is_public: z.boolean().optional(),
   description_en: z.string().trim().max(2000).optional(),
   description_de: z.string().trim().max(2000).optional(),
+  met_value: z.number().min(0.1).max(30).nullable().optional(),
+  seconds_per_rep: z.number().min(0.1).max(120).nullable().optional(),
   owner_id: z.string().uuid().nullable().optional(),
 });
 
@@ -30,6 +32,8 @@ const updateSchema = z
     is_public: z.boolean().optional(),
     description_en: z.string().trim().max(2000).optional(),
     description_de: z.string().trim().max(2000).optional(),
+    met_value: z.number().min(0.1).max(30).nullable().optional(),
+    seconds_per_rep: z.number().min(0.1).max(120).nullable().optional(),
   })
   .refine((payload) => Object.keys(payload).length > 0, {
     message: "At least one field must be provided",

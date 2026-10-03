@@ -238,6 +238,25 @@ const paths = {
       },
     },
   },
+  "/sessions/{id}/estimate": {
+    get: {
+      summary: "Estimate planned session duration and intensity",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonContent("#/components/schemas/SessionEstimate"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
   "/sessions/{id}/reopen": {
     post: {
       summary: "Reopen a completed session for correction",
@@ -578,6 +597,8 @@ const schemas = {
       status: { type: "string", enum: ["pending_verification", "active", "suspended", "banned", "pending_deletion", "deleted"] },
       createdAt: { type: "string", format: "date-time" },
       updatedAt: { type: "string", format: "date-time" },
+      met_value: { type: ["number", "null"], minimum: 0.1, maximum: 30 },
+      seconds_per_rep: { type: ["number", "null"], minimum: 0.1, maximum: 120 },
     },
     required: ["id", "email", "alias", "status", "createdAt"],
   },
@@ -661,6 +682,8 @@ const schemas = {
         type: "array",
         items: { type: "string" },
       },
+      met_value: { type: ["number", "null"], minimum: 0.1, maximum: 30 },
+      seconds_per_rep: { type: ["number", "null"], minimum: 0.1, maximum: 120 },
     },
     required: ["name", "visibility"],
   },
@@ -751,6 +774,30 @@ const schemas = {
       },
     },
     required: ["data", "meta"],
+  },
+  SessionEstimate: {
+    type: "object",
+    properties: {
+      activeDurationSec: { type: ["integer", "null"], minimum: 0 },
+      restDurationSec: { type: "integer", minimum: 0 },
+      minimumTotalDurationSec: { type: ["integer", "null"], minimum: 0 },
+      normalizedMet: { type: ["number", "null"], minimum: 0 },
+      estimatedKcalPerMin: { type: ["number", "null"], minimum: 0 },
+      estimatedActiveKcal: { type: ["number", "null"], minimum: 0 },
+      complete: { type: "boolean" },
+      missingInputs: { type: "array", items: { type: "string" } },
+    },
+    required: [
+      "activeDurationSec",
+      "restDurationSec",
+      "minimumTotalDurationSec",
+      "normalizedMet",
+      "estimatedKcalPerMin",
+      "estimatedActiveKcal",
+      "complete",
+      "missingInputs",
+    ],
+    additionalProperties: false,
   },
   SessionCompleteRequest: {
     type: "object",

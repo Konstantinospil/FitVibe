@@ -11,6 +11,7 @@ import {
   cloneOne,
   applyRecurrence,
 } from "./sessions.service.js";
+import { getSessionEstimate } from "./sessions.estimation.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
@@ -323,4 +324,15 @@ export async function reopenSessionHandler(req: Request, res: Response): Promise
 
   const reopened = await reopenOne(userId, id);
   res.json(reopened);
+}
+
+export async function getSessionEstimateHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+
+  const id = readRouteParam(req.params.id, "id");
+  const estimate = await getSessionEstimate(userId, id);
+  res.json(estimate);
 }

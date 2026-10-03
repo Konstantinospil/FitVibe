@@ -1076,7 +1076,9 @@
         "tags": "Etiquetas",
         "tagsPlaceholder": "fuerza, barra, piernas",
         "description": "Descripción",
-        "public": "Hacer público este ejercicio"
+        "public": "Hacer público este ejercicio",
+        "metValue": "Valor MET",
+        "secondsPerRep": "Segundos por repetición"
       },
       "errors": {
         "required": "El nombre y el tipo son obligatorios.",

@@ -318,6 +318,8 @@ describeWithTestDatabase("database migrations", () => {
       expect(columns.name).toBeDefined();
       expect(columns.owner_id).toBeDefined();
       expect(columns.type_code).toBeDefined();
+      expect(columns.met_value).toBeDefined();
+      expect(columns.seconds_per_rep).toBeDefined();
       expect(columns.created_at).toBeDefined();
       expect(columns.updated_at).toBeDefined();
     });

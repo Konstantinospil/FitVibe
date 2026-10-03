@@ -1076,7 +1076,9 @@
         "tags": "Tags",
         "tagsPlaceholder": "force, barre, jambes",
         "description": "Description",
-        "public": "Rendre cet exercice public"
+        "public": "Rendre cet exercice public",
+        "metValue": "Valeur MET",
+        "secondsPerRep": "Secondes par répétition"
       },
       "errors": {
         "required": "Le nom et le type sont obligatoires.",
