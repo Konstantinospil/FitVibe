@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button, Checkbox, InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
+import {
+  Button,
+  Checkbox,
+  InputControl,
+  SelectControl,
+  TextareaControl,
+} from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import {
   createExercise,
@@ -21,7 +27,12 @@ export interface ExerciseCreatorProps {
   onSaved?: (exercise: Exercise) => void;
 }
 
-const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null, onClose, onSaved }) => {
+const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
+  open,
+  exercise = null,
+  onClose,
+  onSaved,
+}) => {
   const { t } = useTranslation();
   const types = useQuery({
     queryKey: ["exercise-library", "types"],
@@ -40,7 +51,9 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setSaveError(null);
     setName(exercise?.name ?? "");
     setTypeCode(exercise?.type_code ?? "");
@@ -53,7 +66,12 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null
 
   useEffect(() => {
     if (types.error) {
-      logger.apiError("Failed to load exercise types", types.error, "/api/v1/exercise-types", "GET");
+      logger.apiError(
+        "Failed to load exercise types",
+        types.error,
+        "/api/v1/exercise-types",
+        "GET",
+      );
     }
   }, [types.error]);
 
@@ -69,7 +87,14 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null
       type_code: typeCode,
       muscle_group: muscleGroup.trim() || null,
       equipment: equipment.trim() || null,
-      tags: Array.from(new Set(tags.split(",").map((tag) => tag.trim().toLowerCase()).filter(Boolean))),
+      tags: Array.from(
+        new Set(
+          tags
+            .split(",")
+            .map((tag) => tag.trim().toLowerCase())
+            .filter(Boolean),
+        ),
+      ),
       description_en: description.trim() || null,
       is_public: isPublic,
     };
@@ -83,8 +108,17 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null
       onSaved?.(saved);
       onClose();
     } catch (error) {
-      logger.apiError("Failed to save exercise", error, exercise ? `/api/v1/exercises/${exercise.id}` : "/api/v1/exercises", exercise ? "PUT" : "POST");
-      setSaveError(exercise ? t("librarySurface.creator.errors.update") : t("librarySurface.creator.errors.create"));
+      logger.apiError(
+        "Failed to save exercise",
+        error,
+        exercise ? `/api/v1/exercises/${exercise.id}` : "/api/v1/exercises",
+        exercise ? "PUT" : "POST",
+      );
+      setSaveError(
+        exercise
+          ? t("librarySurface.creator.errors.update")
+          : t("librarySurface.creator.errors.create"),
+      );
     } finally {
       setSaving(false);
     }
@@ -95,18 +129,33 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null
       open={open}
       onClose={onClose}
       width="lg"
-      title={exercise ? t("librarySurface.creator.titleEdit") : t("librarySurface.creator.titleCreate")}
+      title={
+        exercise ? t("librarySurface.creator.titleEdit") : t("librarySurface.creator.titleCreate")
+      }
       description={t("librarySurface.creator.description")}
       closeLabel={t("librarySurface.actions.close")}
       footer={
         <>
-          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>{t("librarySurface.actions.cancel")}</Button>
-          <Button type="submit" form="exercise-creator-form" isLoading={saving}>{t("librarySurface.actions.save")}</Button>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+            {t("librarySurface.actions.cancel")}
+          </Button>
+          <Button type="submit" form="exercise-creator-form" isLoading={saving}>
+            {t("librarySurface.actions.save")}
+          </Button>
         </>
       }
     >
-      <form id="exercise-creator-form" onSubmit={(event) => void submit(event)} style={{ display: "grid", gap: "var(--space-md)" }}>
-        {saveError ? <div className="training-error" role="alert">{saveError}</div> : null}
+      <form
+        id="exercise-creator-form"
+        onSubmit={(event) => void submit(event)}
+        style={{ display: "grid", gap: "var(--space-md)" }}
+      >
+        {saveError ? (
+          <div className="training-error" role="alert">
+            {saveError}
+          </div>
+        ) : null}
+
         {types.isError ? (
           <RetryErrorPanel
             message={t("librarySurface.creator.errors.types")}
@@ -118,32 +167,79 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({ open, exercise = null
 
         <label className="form-label">
           <span className="form-label-text">{t("librarySurface.creator.fields.name")}</span>
-          <InputControl value={name} onChange={(e) => setName(e.target.value)} required disabled={saving} />
+          <InputControl
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            disabled={saving}
+          />
         </label>
+
         <label className="form-label">
           <span className="form-label-text">{t("librarySurface.creator.fields.type")}</span>
-          <SelectControl value={typeCode} onChange={(e) => setTypeCode(e.target.value)} required disabled={saving || types.isLoading}>
+          <SelectControl
+            value={typeCode}
+            onChange={(e) => setTypeCode(e.target.value)}
+            required
+            disabled={saving || types.isLoading}
+          >
             <option value="">{t("librarySurface.creator.fields.selectType")}</option>
-            {(types.data ?? []).map((type) => <option key={type.code} value={type.code}>{type.name}</option>)}
+            {(types.data ?? []).map((type) => (
+              <option key={type.code} value={type.code}>
+                {type.name}
+              </option>
+            ))}
           </SelectControl>
         </label>
+
         <label className="form-label">
-          <span className="form-label-text">{t("librarySurface.creator.fields.muscleGroup")}</span>
-          <InputControl value={muscleGroup} onChange={(e) => setMuscleGroup(e.target.value)} disabled={saving} />
+          <span className="form-label-text">
+            {t("librarySurface.creator.fields.muscleGroup")}
+          </span>
+          <InputControl
+            value={muscleGroup}
+            onChange={(e) => setMuscleGroup(e.target.value)}
+            disabled={saving}
+          />
         </label>
+
         <label className="form-label">
           <span className="form-label-text">{t("librarySurface.creator.fields.equipment")}</span>
-          <InputControl value={equipment} onChange={(e) => setEquipment(e.target.value)} disabled={saving} />
+          <InputControl
+            value={equipment}
+            onChange={(e) => setEquipment(e.target.value)}
+            disabled={saving}
+          />
         </label>
+
         <label className="form-label">
           <span className="form-label-text">{t("librarySurface.creator.fields.tags")}</span>
-          <InputControl value={tags} onChange={(e) => setTags(e.target.value)} placeholder={t("librarySurface.creator.fields.tagsPlaceholder")} disabled={saving} />
+          <InputControl
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder={t("librarySurface.creator.fields.tagsPlaceholder")}
+            disabled={saving}
+          />
         </label>
+
         <label className="form-label">
-          <span className="form-label-text">{t("librarySurface.creator.fields.description")}</span>
-          <TextareaControl value={description} onChange={(e) => setDescription(e.target.value)} rows={4} disabled={saving} />
+          <span className="form-label-text">
+            {t("librarySurface.creator.fields.description")}
+          </span>
+          <TextareaControl
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            disabled={saving}
+          />
         </label>
-        <Checkbox checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} label={t("librarySurface.creator.fields.public")} disabled={saving} />
+
+        <Checkbox
+          checked={isPublic}
+          onChange={(e) => setIsPublic(e.target.checked)}
+          label={t("librarySurface.creator.fields.public")}
+          disabled={saving}
+        />
       </form>
     </Modal>
   );
