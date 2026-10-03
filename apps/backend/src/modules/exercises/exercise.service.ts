@@ -94,8 +94,7 @@ export async function getAll(
 export async function getOne(id: string, userId: string, isAdmin = false): Promise<Exercise> {
   const exercise = isAdmin ? await getExerciseRaw(id) : await getExercise(id, userId);
   const canRead =
-    exercise &&
-    (exercise.owner_id === null || exercise.owner_id === userId || exercise.is_public);
+    exercise && (exercise.owner_id === null || exercise.owner_id === userId || exercise.is_public);
 
   if (!exercise || (!isAdmin && (!canRead || exercise.archived_at))) {
     throw new HttpError(404, ERROR_NOT_FOUND, "EXERCISE_NOT_FOUND");
