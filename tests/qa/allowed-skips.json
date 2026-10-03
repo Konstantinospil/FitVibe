@@ -1,5 +1,5 @@
 {
   "comment": "Full names or regex patterns of tests that may remain skipped in CI. Update this file in the same PR as any new skip.",
   "fullNames": [],
-  "namePatterns": ["^AdminStats \\(quarantined: no admin stats API\\)"]
+  "namePatterns": []
 }

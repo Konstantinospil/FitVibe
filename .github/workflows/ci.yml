@@ -134,6 +134,9 @@ jobs:
       - name: Ban silent test returns
         timeout-minutes: 2
         run: pnpm test:no-silent-returns
+      - name: Enforce test lifecycle ownership
+        timeout-minutes: 2
+        run: pnpm test:lifecycle
 
       - name: Type check
         timeout-minutes: 10
@@ -144,7 +147,7 @@ jobs:
         run: |
           echo "## Quality Gates Summary" >> "$GITHUB_STEP_SUMMARY"
           if [ "${{ job.status }}" = "success" ]; then
-            echo "- ✅ Quality job passed (manifest validation, dependency audit, lint, silent-return guard, typecheck)." >> "$GITHUB_STEP_SUMMARY"
+            echo "- ✅ Quality job passed (manifest validation, dependency audit, lint, silent-return guard, lifecycle guard, typecheck)." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "- ❌ Quality job failed. See the first failing step above; no individual check is reported as passed unless the job reached success." >> "$GITHUB_STEP_SUMMARY"
           fi
