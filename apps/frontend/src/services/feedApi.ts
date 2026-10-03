@@ -83,18 +83,18 @@ export async function getFeed(
         ? {
             id: item.session.id,
             title: item.session.title || undefined,
-            plannedAt: item.publishedAt || new Date().toISOString(),
+            plannedAt: item.publishedAt ?? item.session?.completedAt ?? "",
             completedAt: item.session.completedAt || undefined,
             exerciseCount: 0, // Not provided by backend, would need to fetch separately
             totalVolume: undefined,
           }
         : {
             id: "",
-            plannedAt: item.publishedAt || new Date().toISOString(),
+            plannedAt: item.publishedAt ?? item.session?.completedAt ?? "",
             exerciseCount: 0,
           },
       visibility: item.visibility,
-      createdAt: item.publishedAt || new Date().toISOString(),
+      createdAt: item.publishedAt ?? item.session?.completedAt ?? "",
       publishedAt: item.publishedAt,
       likesCount: item.stats.likes,
       commentsCount: item.stats.comments,
