@@ -142,9 +142,12 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          echo "## Quality Gates Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Lint: Passed" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Type Check: Passed" >> $GITHUB_STEP_SUMMARY
+          echo "## Quality Gates Summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "- ✅ Quality job passed (manifest validation, dependency audit, lint, silent-return guard, typecheck)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ❌ Quality job failed. See the first failing step above; no individual check is reported as passed unless the job reached success." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   deployment_contract:
     name: Deployment Contract
@@ -401,6 +404,58 @@ jobs:
             echo "- ✅ Frontend unit tests passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Frontend unit tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  backoffice_tests:
+    name: Backoffice E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs:
+      - quality
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --no-offline
+
+      - name: Install Playwright Chromium
+        timeout-minutes: 10
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run backoffice authorization smoke tests
+        timeout-minutes: 10
+        run: pnpm test:backoffice
+
+      - name: Upload backoffice Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: backoffice-playwright-${{ github.run_id }}
+          path: |
+            playwright-report/backoffice
+            test-results/backoffice
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Job summary
+        if: always()
+        run: |
+          echo "## Backoffice E2E Summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "- ✅ Backoffice privilege-wall smoke tests passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- ❌ Backoffice privilege-wall smoke tests failed." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   database_tests:
@@ -1300,14 +1355,44 @@ jobs:
           fi
 
   performance:
-    name: Performance Budgets
+    name: Performance Budgets (real backend)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     needs:
       - quality
+      - database_tests
       - lighthouse
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fitvibe_perf
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/fitvibe_perf
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: fitvibe_perf
+      NODE_ENV: development
+      PORT: "4000"
+      CSRF_ENABLED: "false"
+      METRICS_ENABLED: "true"
+      TRUST_PROXY: "true"
+      REDIS_ENABLED: "false"
+      CLAMAV_ENABLED: "false"
+      EMAIL_ENABLED: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -1320,17 +1405,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install native canvas prerequisites
+      - name: Install PostgreSQL client prerequisites
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            build-essential \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libjpeg-dev \
-            libgif-dev \
-            librsvg2-dev \
-            postgresql-client
+          sudo apt-get install -y postgresql-client
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
@@ -1338,44 +1416,64 @@ jobs:
       - name: Install k6
         uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1
 
-      - name: Build frontend
-        run: pnpm --filter @fitvibe/frontend run build
-
-      - name: Start mock services
-        timeout-minutes: 10
+      - name: Wait for PostgreSQL
+        timeout-minutes: 5
         run: |
-          node tests/perf/mock-server.mjs &
-          echo $! > mock-server.pid
-          for i in {1..20}; do
-            if curl -fsS http://127.0.0.1:4173/health >/dev/null; then
-              echo "Mock server started"
+          for i in {1..30}; do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres >/dev/null 2>&1; then
+              echo "PostgreSQL is ready"
               exit 0
             fi
-            sleep 3
+            sleep 2
           done
-          echo "Mock server did not start in time" >&2
+          echo "PostgreSQL did not become ready" >&2
           exit 1
 
-      - name: Run k6 smoke test
+      - name: Migrate and seed performance database
+        timeout-minutes: 10
+        run: |
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
+
+      - name: Build backend
+        run: pnpm --filter @fitvibe/backend run build
+
+      - name: Start real backend
+        timeout-minutes: 5
+        run: |
+          pnpm --filter @fitvibe/backend start > /tmp/fitvibe-perf-backend.log 2>&1 &
+          echo $! > /tmp/fitvibe-perf-backend.pid
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
+              curl -fsS http://127.0.0.1:4000/api/v1/system/read-only/status >/dev/null
+              curl -fsS http://127.0.0.1:4000/api/v1/exercise-types >/dev/null
+              curl -fsS http://127.0.0.1:4000/api/v1/translations/en >/dev/null
+              echo "Real FitVibe backend is ready for k6"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/fitvibe-perf-backend.log || true
+          echo "Backend did not become ready for performance testing" >&2
+          exit 1
+
+      - name: Run k6 real-stack smoke load
         timeout-minutes: 10
         env:
-          API_BASE_URL: http://127.0.0.1:4173/health
+          API_BASE_URL: http://127.0.0.1:4000
         run: k6 run --summary-export=tests/perf/k6-summary.json tests/perf/k6-smoke.js
 
       - name: Assert k6 performance budgets
-        timeout-minutes: 10
+        timeout-minutes: 5
         run: node tests/perf/assert-budgets.cjs tests/perf/k6-summary.json
 
-      - name: Stop mock server
+      - name: Stop backend
         if: always()
         timeout-minutes: 1
         run: |
-          pkill -f "mock-server.mjs" || true
-          if [ -f mock-server.pid ]; then
-            kill "$(cat mock-server.pid)" 2>/dev/null || true
-            rm -f mock-server.pid
+          if [ -f /tmp/fitvibe-perf-backend.pid ]; then
+            kill "$(cat /tmp/fitvibe-perf-backend.pid)" 2>/dev/null || true
           fi
-          sleep 1
 
       - name: Upload performance artifacts
         if: always()
@@ -1384,17 +1482,19 @@ jobs:
           name: perf-metrics-${{ github.run_id }}
           path: |
             tests/perf/k6-summary.json
+            /tmp/fitvibe-perf-backend.log
           retention-days: 30
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Job summary
         if: always()
         run: |
-          echo "## Performance Budgets Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "- ✅ k6 performance tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "## Performance Budgets Summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "- ✅ k6 exercised the built FitVibe backend with a migrated/seeded PostgreSQL database." >> "$GITHUB_STEP_SUMMARY"
+            echo "- CI smoke load is a regression gate, not a production-capacity certification." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- ❌ Performance tests failed" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ Real-stack performance smoke test failed." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   qa_summary:
@@ -1402,21 +1502,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs:
+      - architecture_hardcoding
       - quality
       - backend_tests
       - frontend_tests
+      - backoffice_tests
       - database_tests
       - coverage
       - integration
       - metrics_contract
       - accessibility
       - security
+      - codeql_compatibility
+      - zap_baseline
       - openapi_spec
       - lighthouse
       - i18n
       - performance
       - contract_tests
       - visual_regression
+      - e2e
       - deployment_contract
       - release_governance
     if: always()
@@ -1466,6 +1571,43 @@ jobs:
           path: tests/qa/summary
           retention-days: 90
           if-no-files-found: error
+
+      - name: Enforce required QA job results
+        if: always()
+        run: |
+          failed=0
+          while IFS='=' read -r job result; do
+            [ -z "$job" ] && continue
+            printf '%s: %s\n' "$job" "$result"
+            if [ "$result" != "success" ]; then
+              echo "::error::Required QA job $job concluded with $result"
+              failed=1
+            fi
+          done <<'EOF_RESULTS'
+          architecture_hardcoding=${{ needs.architecture_hardcoding.result }}
+          quality=${{ needs.quality.result }}
+          backend_tests=${{ needs.backend_tests.result }}
+          frontend_tests=${{ needs.frontend_tests.result }}
+          backoffice_tests=${{ needs.backoffice_tests.result }}
+          database_tests=${{ needs.database_tests.result }}
+          coverage=${{ needs.coverage.result }}
+          integration=${{ needs.integration.result }}
+          metrics_contract=${{ needs.metrics_contract.result }}
+          accessibility=${{ needs.accessibility.result }}
+          security=${{ needs.security.result }}
+          codeql_compatibility=${{ needs.codeql_compatibility.result }}
+          zap_baseline=${{ needs.zap_baseline.result }}
+          openapi_spec=${{ needs.openapi_spec.result }}
+          lighthouse=${{ needs.lighthouse.result }}
+          i18n=${{ needs.i18n.result }}
+          performance=${{ needs.performance.result }}
+          contract_tests=${{ needs.contract_tests.result }}
+          visual_regression=${{ needs.visual_regression.result }}
+          e2e=${{ needs.e2e.result }}
+          deployment_contract=${{ needs.deployment_contract.result }}
+          release_governance=${{ needs.release_governance.result }}
+          EOF_RESULTS
+          exit "$failed"
 
   accessibility:
     name: Accessibility (axe)
@@ -1650,64 +1792,6 @@ jobs:
             echo "- ⚠️ Visual differences detected - review screenshots" >> $GITHUB_STEP_SUMMARY
           fi
 
-  e2e_smoke:
-    name: E2E Playwright smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs:
-      - frontend_tests
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install native canvas prerequisites
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y \
-            build-essential \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libjpeg-dev \
-            libgif-dev \
-            librsvg2-dev \
-            postgresql-client
-
-      - name: Install project dependencies
-        run: pnpm install --frozen-lockfile --no-offline
-
-      - name: Install Playwright browsers
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps
-
-      - name: Build frontend
-        timeout-minutes: 10
-        run: pnpm --filter @fitvibe/frontend exec pnpm run build
-
-      - name: Run Playwright smoke tests
-        timeout-minutes: 10
-        run: pnpm exec playwright test tests/frontend/e2e/smoke.spec.cjs --config tests/frontend/e2e/playwright.config.cjs --reporter=line
-
-      - name: Upload Playwright smoke artifacts
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: playwright-smoke-${{ github.run_id }}
-          path: |
-            playwright-report
-            test-results
-          retention-days: 14
-          if-no-files-found: ignore
-
   e2e:
     name: E2E Playwright
     runs-on: ubuntu-latest
@@ -1751,9 +1835,17 @@ jobs:
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend exec pnpm run build
 
-      - name: Run Playwright e2e tests
-        timeout-minutes: 15
-        run: pnpm exec playwright test tests/frontend/e2e/smoke.spec.cjs tests/frontend/e2e/active-surfaces.spec.cjs --config tests/frontend/e2e/playwright.config.cjs --reporter=line
+      - name: Run authoritative Playwright e2e suite
+        timeout-minutes: 20
+        run: |
+          specs="$(find tests/frontend/e2e -maxdepth 1 -name '*.spec.cjs' ! -name 'accessibility.spec.cjs' -print | sort)"
+          if [ -z "$specs" ]; then
+            echo "::error::No E2E specs discovered"
+            exit 1
+          fi
+          echo "$specs"
+          # Accessibility has its own hard gate; every other E2E spec is discovered automatically.
+          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --reporter=line
 
       - name: Upload Playwright artifacts
         if: always()
@@ -1773,24 +1865,29 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     needs:
+      - architecture_hardcoding
       - quality
       - backend_tests
       - frontend_tests
+      - backoffice_tests
       - database_tests
       - coverage
       - integration
       - metrics_contract
       - accessibility
-      - qa_summary
-      - performance
       - security
+      - codeql_compatibility
+      - zap_baseline
       - openapi_spec
       - lighthouse
       - i18n
+      - performance
       - contract_tests
       - visual_regression
+      - e2e
       - deployment_contract
       - release_governance
+      - qa_summary
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -2182,7 +2279,7 @@ jobs:
         timeout-minutes: 5
         run: docker pull ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
 
-      - name: Verify backend image size
+      - name: Report backend image size
         timeout-minutes: 2
         run: |
           BACKEND_TAG="${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}"
@@ -2249,7 +2346,7 @@ jobs:
         timeout-minutes: 5
         run: docker pull ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
 
-      - name: Verify frontend image size
+      - name: Report frontend image size
         timeout-minutes: 2
         run: |
           FRONTEND_TAG="${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}"
@@ -2334,7 +2431,7 @@ jobs:
           if [ "${{ job.status }}" == "success" ]; then
             echo "- ✅ Backend container starts and health check passes" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ Frontend container starts and serves HTML" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ Image sizes verified" >> $GITHUB_STEP_SUMMARY
+            echo "- ℹ️ Image sizes reported for observability; no size budget is enforced in this job" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Build verification failed" >> $GITHUB_STEP_SUMMARY
             echo "- ⚠️ Containers may not be functioning correctly" >> $GITHUB_STEP_SUMMARY

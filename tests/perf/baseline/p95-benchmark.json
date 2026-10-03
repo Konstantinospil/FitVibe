@@ -1,6 +1,0 @@
-{
-  "http_req_duration": 200,
-  "http_req_duration_health": 150,
-  "http_req_duration_metrics": 150,
-  "http_req_duration_root": 180
-}

@@ -2,85 +2,95 @@
 
 **Date:** 2025-10-14  
 **Status:** Accepted  
-**Author:** Reviewer  
-**Cross-References:** PRD §7 Engineering Standards; PRD §5 NFRs (security/perf); TDD §9–§10 Build/Run/Deploy; QA §2–§14 CI gates (tests, perf, a11y, security)
+**Last reconciled with workflow:** 2026-10-03  
+**Cross-References:** PRD §7 Engineering Standards; PRD §5 NFRs; QA plan; ADR-028
 
 ---
 
 ## Context
 
-We require a deterministic, secure, and budget-enforcing delivery pipeline. The PRD, TDD, and QA plan define mandatory stages (lint, type-check, unit/integration/E2E tests), performance/a11y/security gates, and containerized releases. This ADR standardizes the CI/CD implementation on **GitHub Actions** with **GHCR** for images, **OIDC** for cloud access, and signed/supported artifacts (SBOM, SLSA provenance).
+FitVibe requires CI that is both reproducible and honest about what it proves. A green run must mean that the checks protecting a release actually passed; informational uploads or synthetic harnesses must not be described as production validation.
 
----
+The executable workflow in `.github/workflows/ci.yml` is the source of truth. This ADR records the intended contract and must be updated when that contract changes.
 
 ## Decision
 
-1. **Triggers & Branch Strategy**
-   - **All PRs**: run full CI (quality gates, tests, security, performance, accessibility).
-   - **Push to `main`, `dev`, `stage`**: run full CI + build images + publish tags (E2E and build jobs enabled).
-   - **Release tags (`vX.Y.Z`)**: publish immutable images, SBOM, and provenance; deploy to staging → manual approval → production.
-   - Protected branches with required checks; linear history via squash merges.
+### 1. Triggers and release path
 
-2. **Workflow Structure & Stages**
+- Pull requests run the full CI validation graph.
+- Pushes to `main` and `dev` run CI.
+- Container publication is performed only for a successful push to `main`.
+- CD is triggered from a successful `main` CI run and deploys the exact digest-pinned, signed images produced by that run.
+- The production deploy verifies cosign OIDC identity and refuses mutable image references.
 
-   The CI pipeline is structured as **multiple parallel and sequential jobs** for efficiency and clarity:
+### 2. Hard quality gates
 
-   **Primary Quality Gates** (run on all PRs and pushes, in parallel):
-   - **`quality`** job: lint (`pnpm lint:check`), typecheck (`pnpm typecheck`), unit tests (backend/frontend with coverage), coverage gate (`pnpm test:coverage:gate`), QA baseline validation, i18n check, feature flags check, build (`pnpm build`).
-   - **`database_tests`** job: migration tests and seed tests (separate from unit tests for isolation).
+The release graph requires all of the following before image publication:
 
-   **Secondary Jobs** (run after quality gates pass, mostly in parallel):
-   - **`openapi_spec`**: Generate and validate OpenAPI schema.
-   - **`integration`**: Integration tests with ephemeral Postgres/Redis via services; migrations/seeds per run.
-   - **`metrics_contract`**: Validate Prometheus metrics exposure.
-   - **`security`**: Dependency audit (`pnpm audit --prod --audit-level=high`), OSV scanner, Snyk scan, TruffleHog secret scanning, static secret scan, Trivy container scan.
-   - **`zap_baseline`**: OWASP ZAP baseline scan (if target URL configured).
-   - **`performance`**: k6 smoke test, performance budget assertion (API p95 < 300ms, LCP < 2.5s, no >10% regression), Lighthouse CI.
-   - **`accessibility`**: Axe accessibility suite for WCAG 2.2 AA compliance.
-   - **`qa_summary`**: Aggregate coverage and performance metrics, generate QA summary.
+- architecture/hardcoding policy checks;
+- manifest validation, dependency audit, lint and typecheck;
+- backend, frontend and backoffice tests;
+- database migration/seed tests;
+- enforced backend/frontend coverage;
+- integration and metrics-contract tests;
+- accessibility;
+- repository-native security aggregation;
+- CodeQL compatibility;
+- OWASP ZAP baseline;
+- OpenAPI and contract tests;
+- i18n;
+- Lighthouse;
+- real-stack k6 performance smoke;
+- visual regression;
+- authoritative Playwright E2E;
+- deployment-contract and release-governance checks;
+- QA summary enforcement.
 
-   **Conditional Jobs** (run only on push to `main`/`stage`):
-   - **`e2e`**: Playwright E2E tests against preview server; artifacts (screenshots, traces) uploaded.
-   - **`build`**: Build multi-arch Docker images (linux/amd64, linux/arm64), generate SBOMs (via Docker buildx), sign images with cosign (keyless OIDC), create GitHub release, upload container artifacts.
+`qa_summary` runs even when an upstream job fails so that diagnostics can still be produced, but its final enforcement step fails unless every required job concluded successfully.
 
-   > See `.github/workflows/ci.yml` for the complete job definitions and dependencies.
+### 3. E2E authority
 
-3. **Artifacts & Supply Chain Security**
-   - **SBOM** generated per image and attached to release.
-   - **Provenance** (SLSA generator for GitHub) publishes attestations.
-   - **Cosign** image signing (keyless via OIDC) and policy verification at deploy time.
+The E2E job automatically discovers every `*.spec.cjs` under `tests/frontend/e2e`, except `accessibility.spec.cjs`, which has its own hard gate. This prevents newly added E2E specs from silently existing outside CI.
 
-4. **Secrets & Cloud Access**
-   - Use **GitHub Environments** and **OIDC federation** for cloud credentials (no long-lived keys).
-   - Secrets are rotated and scoped per environment; runners have minimal permissions.
+E2E specifications must describe active production surfaces. Tests for intentionally retired routes are updated or archived rather than kept as misleading dormant coverage.
 
-5. **Caching & Speed**
-   - **pnpm** and **turbo** caches keyed by lockfile + task graph.
-   - **Docker layer cache** enabled with `--cache-from` for repeatable, fast builds.
-   - Matrix jobs for Node versions where helpful (LTS + current) on CI-only lanes.
+The backoffice has its own Playwright gate that verifies the privilege wall for unauthenticated, non-admin and admin sessions.
 
-6. **Testing Data & Ephemeral Infra**
-   - Compose services: Postgres, Redis, MinIO, Mailhog.
-   - DB migrations/seeds executed anew per job; tests clean up state.
-   - Artifacts (JUnit, coverage, Playwright traces, k6 results) uploaded for PR review.
+### 4. Performance evidence
 
-7. **Policy Gates & Budgets**
-   - **Fail build** when any gate is breached: lints/warnings, type errors, unit/integration/E2E failures, Lighthouse <90, ZAP High/Critical, perf budgets or **>10% regression**.
-   - Required checks configured in branch protection to enforce gates.
+Lighthouse runs against the built SSR frontend and currently enforces:
 
-8. **Releases & Rollbacks**
-   - Semantic versioning with conventional commits + changesets.
-   - **Blue/green or canary** supported via environment config; rollback = re-deploy previous tag.
-   - Release notes include OpenAPI artifact links and migration notes.
+- performance category >= 0.60;
+- accessibility, best-practices and SEO >= 0.90;
+- JavaScript <= 300 KiB;
+- LCP <= 2875 ms.
 
-9. **Observability & Notifications**
-   - Publish test & audit summaries to PR comments.
-   - On deployment, post release links, image digests, and SLO snapshot (latency, error rate).
-   - Alerts wired to on-call for failed post-deploy checks.
+The lower aggregate Lighthouse performance floor does not override the explicit LCP and bundle-size budgets.
 
-10. **Compliance & Retention**
-    - Retain logs and artifacts for ≥ 30 days (PR) and ≥ 180 days (release) as per policy.
-    - Access controls applied to environments; audit trail maintained for approvals.
+k6 no longer targets a mock server. CI migrates and seeds a real PostgreSQL database, builds and starts the FitVibe backend, and exercises real health, governance, exercise-type and translation routes. The CI profile is a repeatable regression smoke load, not a certification of production capacity or the historical 500 req/s design target.
+
+A relative p95 regression baseline may be added only after it has been calibrated from repeated real-stack runs. Until then, absolute endpoint budgets remain hard gates; a synthetic mock baseline must not be used.
+
+### 5. Coverage and external services
+
+The repository's own `test:coverage:gate` is the authoritative coverage gate. Codecov is a supplementary reporting service and `fail_ci_if_error: false` is intentional so a Codecov outage cannot override a passing repository-native coverage calculation.
+
+### 6. Supply-chain controls
+
+- GitHub Actions are pinned by commit SHA.
+- Multi-architecture images are built for amd64 and arm64.
+- Images are pushed by digest and assembled into manifests.
+- SBOM/provenance artifacts are produced by the release path.
+- Images are signed with keyless cosign/OIDC.
+- CD verifies signatures and exact digests before deployment.
+
+### 7. Caching and determinism
+
+CI currently disables turbo remote caching and installs from the frozen pnpm lockfile. Documentation must not claim active CI caching unless the workflow actually enables and validates it.
+
+### 8. Reporting
+
+Job summaries must reflect actual job outcomes. Informational checks, such as container image-size reporting, must be labelled informational unless an explicit threshold is enforced.
 
 ---
 
@@ -88,44 +98,23 @@ We require a deterministic, secure, and budget-enforcing delivery pipeline. The 
 
 **Positive**
 
-- Reproducible, secure pipeline with explicit quality budgets.
-- Faster feedback via caches and matrices; safer releases through canary + manual production gate.
-- Strong supply chain controls (SBOM, provenance, signing).
+- A successful release build now transitively and explicitly requires security, architecture, DAST and E2E checks.
+- Performance results measure FitVibe code and a real PostgreSQL data path instead of a toy server.
+- Dormant E2E files cannot create an illusion of coverage.
+- Backoffice privilege protection has executable CI coverage.
+- External reporting services remain useful without becoming accidental single points of failure.
 
-**Negative / Trade-offs**
+**Trade-offs**
 
-- Additional CI minutes for perf/a11y/security gates (intentional).
-- Slight configuration complexity for OIDC and attestations.
-
-**Operational**
-
-- Keep lockfiles and base images updated; rotate caches; review budgets quarterly.
-- First-party GitHub Actions JS runtimes must target Node 24 (`actions/checkout@v6`, `actions/setup-node@v6`, `actions/upload-artifact@v7` / `download-artifact@v8`, `pnpm/action-setup@v6`). The **application** runtime is Node 24 LTS (`NODE_VERSION: "24"`, ADR-028).
-- Record baselines for perf to keep regression signal healthy.
-
----
-
-## Alternatives Considered
-
-| Option                | Description                | Reason Rejected                                                  |
-| --------------------- | -------------------------- | ---------------------------------------------------------------- |
-| Third-party CI        | CircleCI/GitLab            | GitHub-native reduces friction and integrates with GHCR and GHAS |
-| Push-on-merge deploys | Auto prod on `main`        | Violates need for manual approval and staged verifications       |
-| No SBOM/provenance    | Skip supply chain metadata | Fails compliance and traceability goals in PRD/TDD               |
-
----
-
-## References
-
-- PRD: Engineering standards, performance/security budgets
-- TDD: Build/run/deploy conventions, container strategy
-- QA: CI gates, regression policy, a11y/security/perf tooling
+- Main/PR CI is slower because the release graph deliberately waits for more meaningful checks.
+- Real-stack performance measurements have more runner variance than a mock server; thresholds must therefore be calibrated conservatively and tightened from evidence.
 
 ---
 
 ## Status Log
 
-| Version | Date       | Change                                                                                 | Author               |
-| ------- | ---------- | -------------------------------------------------------------------------------------- | -------------------- |
-| v1.0    | 2025-10-14 | Initial ADR for CI/CD on GitHub Actions with GHCR, SBOM, provenance, and quality gates | Reviewer             |
-| v1.1    | 2026-09-03 | Record Node 24 action runtimes and application `NODE_VERSION` (ADR-028)                | FitVibe Architecture |
+| Version | Date       | Change |
+| ------- | ---------- | ------ |
+| v1.0 | 2025-10-14 | Initial CI/CD ADR |
+| v1.1 | 2026-09-03 | Record Node 24 action and application runtime |
+| v1.2 | 2026-10-03 | Reconcile ADR with live DAG; make architecture/E2E/ZAP/CodeQL/backoffice release gates; replace mock k6 with real backend/Postgres smoke; document actual Lighthouse and Codecov semantics |
