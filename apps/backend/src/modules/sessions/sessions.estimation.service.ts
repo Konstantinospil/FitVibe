@@ -71,7 +71,7 @@ export function estimateSessionComposition(
 
         if (explicitDuration !== null && explicitDuration > 0) {
           exerciseActiveSec += explicitDuration;
-        } else if (reps !== null && reps > 0 && input?.secondsPerRep != null) {
+        } else if (reps !== null && reps > 0 && input?.secondsPerRep !== null && input?.secondsPerRep !== undefined) {
           exerciseActiveSec += reps * input.secondsPerRep;
         } else {
           exerciseDurationComplete = false;
@@ -89,7 +89,7 @@ export function estimateSessionComposition(
 
       if (plannedDuration !== null && plannedDuration > 0) {
         exerciseActiveSec += plannedDuration;
-      } else if (plannedReps !== null && plannedReps > 0 && input?.secondsPerRep != null) {
+      } else if (plannedReps !== null && plannedReps > 0 && input?.secondsPerRep !== null && input?.secondsPerRep !== undefined) {
         exerciseActiveSec += plannedSets * plannedReps * input.secondsPerRep;
       } else if (plannedReps !== null && plannedReps > 0) {
         exerciseDurationComplete = false;
@@ -120,7 +120,7 @@ export function estimateSessionComposition(
 
     if (exerciseActiveSec > 0) {
       activeDurationSec += exerciseActiveSec;
-      if (input?.metValue == null) {
+      if (input?.metValue === null || input?.metValue === undefined) {
         intensityComplete = false;
         missing.add(`exercise:${exercise.exercise_id ?? exercise.id}:met_value`);
       } else {
@@ -182,14 +182,17 @@ async function getExerciseInputs(
       row.id,
       {
         id: row.id,
-        metValue: row.met_value == null ? null : Number(row.met_value),
-        secondsPerRep: row.seconds_per_rep == null ? null : Number(row.seconds_per_rep),
+        metValue: row.met_value === null ? null : Number(row.met_value),
+        secondsPerRep: row.seconds_per_rep === null ? null : Number(row.seconds_per_rep),
       },
     ]),
   );
 }
 
-export async function getSessionEstimate(userId: string, sessionId: string): Promise<SessionEstimate> {
+export async function getSessionEstimate(
+  userId: string,
+  sessionId: string,
+): Promise<SessionEstimate> {
   const session = await getOne(userId, sessionId);
   const exerciseIds = Array.from(
     new Set(
