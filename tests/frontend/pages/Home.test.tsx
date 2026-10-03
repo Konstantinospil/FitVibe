@@ -130,8 +130,15 @@ describe("Home", () => {
     expect(await screen.findAllByText("Tempo Strength")).not.toHaveLength(0);
     expect(await screen.findByText("Morning Strength")).toBeInTheDocument();
 
-    expect(mockedApi.getFeed).toHaveBeenCalledWith(expect.objectContaining({ sort: "date" }));
-    expect(mockedApi.getFeed).toHaveBeenCalledWith(expect.objectContaining({ sort: "popularity" }));
+    expect(mockedApi.getFeed).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: "public", sort: "date" }),
+    );
+    expect(mockedApi.getFeed).toHaveBeenCalledWith(
+      expect.objectContaining({ scope: "public", sort: "popularity" }),
+    );
+    expect(mockedApi.listSessions).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "completed" }),
+    );
   });
 
   it("recovers nod interaction from the feed behavior", async () => {
