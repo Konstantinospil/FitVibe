@@ -181,8 +181,12 @@ describeWithTestDatabase("database migrations", () => {
 
       const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "exercise_types");
       expect(columns.code).toBeDefined();
+      expect(columns.name).toBeDefined();
       expect(columns.description).toBeDefined();
+      expect(columns.is_active).toBeDefined();
+      expect(columns.is_active.defaultValue).toContain("true");
       expect(columns.created_at).toBeDefined();
+      expect(columns.updated_at).toBeDefined();
     });
 
     it("creates users table with correct schema", async () => {
