@@ -68,6 +68,6 @@ test.describe("Backoffice privilege wall", () => {
 
     await page.goto("/translations");
     await expect(page).toHaveURL(/\/translations$/);
-    await expect(page.getByText(/translations/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^translations$/i, level: 1 })).toBeVisible();
   });
 });
