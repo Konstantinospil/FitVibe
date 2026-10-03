@@ -3,19 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Eye, Pencil, Plus } from "lucide-react";
 import { Button, InputControl, SelectControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
-import {
-  deleteExercise,
-  listExercises,
-  listExerciseTypes,
-  type Exercise,
-} from "../services/api";
+import { deleteExercise, listExercises, listExerciseTypes, type Exercise } from "../services/api";
 import ExerciseCreator from "../components/composites/ExerciseCreator";
 import { Modal } from "../components/composites/Modal";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
-import {
-  TrainingPanel,
-  TrainingSummaryCard,
-} from "../components/composites/TrainingSurface";
+import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import WorkoutEditor from "../components/composites/WorkoutEditor";
 import { useAuthStore } from "../store/auth.store";
 import { logger } from "../utils/logger";
@@ -92,11 +84,7 @@ const Library: React.FC = () => {
   }, [search, typeCode, muscleGroup, equipment, tags]);
 
   const source = (exercise: Exercise) =>
-    exercise.owner_id === null
-      ? "global"
-      : exercise.owner_id === user?.id
-        ? "mine"
-        : "public";
+    exercise.owner_id === null ? "global" : exercise.owner_id === user?.id ? "mine" : "public";
 
   const refresh = () =>
     queryClient.invalidateQueries({
@@ -185,18 +173,12 @@ const Library: React.FC = () => {
 
           <label className="form-label">
             <span className="form-label-text">{t("librarySurface.filters.muscleGroup")}</span>
-            <InputControl
-              value={muscleGroup}
-              onChange={(e) => setMuscleGroup(e.target.value)}
-            />
+            <InputControl value={muscleGroup} onChange={(e) => setMuscleGroup(e.target.value)} />
           </label>
 
           <label className="form-label">
             <span className="form-label-text">{t("librarySurface.filters.equipment")}</span>
-            <InputControl
-              value={equipment}
-              onChange={(e) => setEquipment(e.target.value)}
-            />
+            <InputControl value={equipment} onChange={(e) => setEquipment(e.target.value)} />
           </label>
 
           <label className="form-label">

@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Button,
-  Checkbox,
-  InputControl,
-  SelectControl,
-  TextareaControl,
-} from "@fitvibe/ui";
+import { Button, Checkbox, InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import {
   createExercise,
@@ -193,9 +187,7 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
         </label>
 
         <label className="form-label">
-          <span className="form-label-text">
-            {t("librarySurface.creator.fields.muscleGroup")}
-          </span>
+          <span className="form-label-text">{t("librarySurface.creator.fields.muscleGroup")}</span>
           <InputControl
             value={muscleGroup}
             onChange={(e) => setMuscleGroup(e.target.value)}
@@ -223,9 +215,7 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
         </label>
 
         <label className="form-label">
-          <span className="form-label-text">
-            {t("librarySurface.creator.fields.description")}
-          </span>
+          <span className="form-label-text">{t("librarySurface.creator.fields.description")}</span>
           <TextareaControl
             value={description}
             onChange={(e) => setDescription(e.target.value)}
