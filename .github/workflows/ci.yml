@@ -208,7 +208,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: fitvibe_test
         ports:
           - 5432:5432
@@ -229,15 +229,14 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
       # Individual PG env vars for test files to detect database
       PGHOST: 127.0.0.1
       PGPORT: 5432
       PGUSER: postgres
-      PGPASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
       PGDATABASE: fitvibe_test
       # Highest priority - test files check this first
-      TEST_DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
       CLAMAV_ENABLED: "true"
       CLAMAV_HOST: "127.0.0.1"
       CLAMAV_PORT: "3310"
@@ -473,7 +472,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: fitvibe_test
         ports:
           - 5432:5432
@@ -483,15 +482,14 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     env:
-      DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
       # Individual PG env vars for test files to detect database
       PGHOST: 127.0.0.1
       PGPORT: 5432
       PGUSER: postgres
-      PGPASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
       PGDATABASE: fitvibe_test
       # Highest priority - test files check this first
-      TEST_DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
       CI: "true"
     steps:
       - name: Checkout
@@ -528,7 +526,7 @@ jobs:
             if pg_isready -h 127.0.0.1 -p 5432 -U postgres >/dev/null 2>&1; then
               echo "PostgreSQL is ready"
               echo "✓ Database is automatically provided by GitHub Actions service container"
-              echo "  Connection: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test"
+              echo "  Connection: postgresql://postgres@127.0.0.1:5432/fitvibe_test"
               break
             fi
             if [ $i -eq 30 ]; then
@@ -556,7 +554,7 @@ jobs:
         timeout-minutes: 2
         run: |
           echo "Closing all database connections..."
-          PGPASSWORD=postgres psql -h 127.0.0.1 -p 5432 -U postgres -d fitvibe_test -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'fitvibe_test' AND pid <> pg_backend_pid();" || true
+          psql -h 127.0.0.1 -p 5432 -U postgres -d fitvibe_test -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'fitvibe_test' AND pid <> pg_backend_pid();" || true
           echo "Database connections closed"
 
       - name: Job summary
@@ -851,7 +849,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: fitvibe_test
         ports:
           - 5432:5432
@@ -881,15 +879,14 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
       # Individual PG env vars for test files to detect database
       PGHOST: 127.0.0.1
       PGPORT: 5432
       PGUSER: postgres
-      PGPASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
       PGDATABASE: fitvibe_test
       # Highest priority - test files check this first
-      TEST_DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
       CLAMAV_ENABLED: "true"
       CLAMAV_HOST: "127.0.0.1"
       CLAMAV_PORT: "3310"
@@ -1372,7 +1369,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: fitvibe_perf
         ports:
           - 5432:5432
@@ -1382,11 +1379,10 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     env:
-      DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_perf
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_perf
       PGHOST: 127.0.0.1
       PGPORT: 5432
       PGUSER: postgres
-      PGPASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
       PGDATABASE: fitvibe_perf
       NODE_ENV: development
       PORT: "4000"
@@ -2209,7 +2205,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "ci-${{ github.run_id }}-${{ github.run_attempt }}"
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: fitvibe_test
         ports:
           - 5432:5432
@@ -2230,7 +2226,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@127.0.0.1:5432/fitvibe_test
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -2306,7 +2302,7 @@ jobs:
             -p 4100:4100 \
             -v "$RUNNER_TEMP/fitvibe-jwt/private.pem:/run/secrets/jwt-private.pem:ro" \
             -v "$RUNNER_TEMP/fitvibe-jwt/public.pem:/run/secrets/jwt-public.pem:ro" \
-            -e DATABASE_URL="postgresql://postgres:ci-${{ github.run_id }}-${{ github.run_attempt }}@host.docker.internal:5432/fitvibe_test" \
+            -e DATABASE_URL="postgresql://postgres@host.docker.internal:5432/fitvibe_test" \
             -e NODE_ENV=production \
             -e PORT=4100 \
             -e JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem \
