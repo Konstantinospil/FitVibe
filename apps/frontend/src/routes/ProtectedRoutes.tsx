@@ -17,7 +17,6 @@ const Calendar = lazy(() => import("../pages/Calendar"));
 const Library = lazy(() => import("../pages/Library"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Settings = lazy(() => import("../pages/Settings"));
-const AppSurfacePlaceholder = lazy(() => import("../pages/AppSurfacePlaceholder"));
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
