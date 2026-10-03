@@ -19,9 +19,14 @@ jest.mock("../../../../apps/backend/src/modules/common/audit-outbox.service.js",
   flushAuditOutbox: jest.fn().mockResolvedValue(0),
   persistAuditOutbox: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock("crypto", () => ({
-  randomUUID: jest.fn(() => "uuid-123"),
-}));
+jest.mock("crypto", () => {
+  const actualCrypto = jest.requireActual<typeof import("crypto")>("crypto");
+
+  return {
+    ...actualCrypto,
+    randomUUID: jest.fn(() => "uuid-123"),
+  };
+});
 
 const mockedDb = db as jest.MockedFunction<typeof db>;
 const mockedLogger = logger as jest.Mocked<typeof logger>;
