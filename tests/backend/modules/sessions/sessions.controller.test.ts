@@ -1,14 +1,17 @@
 import type { Request, Response } from "express";
 import * as sessionsController from "../../../../apps/backend/src/modules/sessions/sessions.controller.js";
 import * as sessionsService from "../../../../apps/backend/src/modules/sessions/sessions.service.js";
+import * as estimationService from "../../../../apps/backend/src/modules/sessions/sessions.estimation.service.js";
 import * as idempotencyService from "../../../../apps/backend/src/modules/common/idempotency.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/sessions/sessions.service.js");
+jest.mock("../../../../apps/backend/src/modules/sessions/sessions.estimation.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/idempotency.service.js");
 
 const mockSessionsService = jest.mocked(sessionsService);
+const mockEstimationService = jest.mocked(estimationService);
 const mockIdempotencyService = jest.mocked(idempotencyService);
 
 describe("Sessions Controller", () => {
@@ -78,6 +81,44 @@ describe("Sessions Controller", () => {
       await sessionsController.getSessionHandler(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.json).toHaveBeenCalledWith(mockSession);
+    });
+  });
+
+  describe("getSessionEstimateHandler", () => {
+    it("returns the current athlete-specific session estimate", async () => {
+      const estimate = {
+        activeDurationSec: 600,
+        restDurationSec: 120,
+        minimumTotalDurationSec: 720,
+        normalizedMet: 6.5,
+        estimatedKcalPerMin: 7.96,
+        estimatedActiveKcal: 79.6,
+        complete: true,
+        missingInputs: [],
+      };
+      mockRequest.params = { id: sessionId };
+      mockEstimationService.getSessionEstimate.mockResolvedValue(estimate);
+
+      await sessionsController.getSessionEstimateHandler(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockEstimationService.getSessionEstimate).toHaveBeenCalledWith(userId, sessionId);
+      expect(mockResponse.json).toHaveBeenCalledWith(estimate);
+    });
+
+    it("returns 401 when estimate is requested without authentication", async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { id: sessionId };
+
+      await sessionsController.getSessionEstimateHandler(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+      expect(mockEstimationService.getSessionEstimate).not.toHaveBeenCalled();
     });
   });
 
