@@ -1390,6 +1390,7 @@ jobs:
       CSRF_ENABLED: "false"
       METRICS_ENABLED: "true"
       TRUST_PROXY: "true"
+      TRUSTED_PROXY_IPS: "127.0.0.1,::1,::ffff:127.0.0.1"
       REDIS_ENABLED: "false"
       CLAMAV_ENABLED: "false"
       EMAIL_ENABLED: "false"
