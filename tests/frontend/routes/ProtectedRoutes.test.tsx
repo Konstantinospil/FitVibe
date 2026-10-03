@@ -34,6 +34,11 @@ vi.mock("../../../apps/frontend/src/pages/Calendar", () => ({
   default: () => <div>Calendar Page</div>,
 }));
 
+vi.mock("../../../apps/frontend/src/pages/Library", () => ({
+  default: () => <div>Library Page</div>,
+}));
+
+
 vi.mock("../../../apps/frontend/src/pages/AppSurfacePlaceholder", () => ({
   default: ({ title }: { title: string }) => <div>{title} Page</div>,
 }));

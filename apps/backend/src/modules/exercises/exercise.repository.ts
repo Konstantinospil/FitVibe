@@ -18,7 +18,7 @@ function applyOwnershipFilter(
   }
 
   query.where((builder) => {
-    builder.whereNull("owner_id").orWhere("owner_id", userId);
+    builder.whereNull("owner_id").orWhere("owner_id", userId).orWhere("is_public", true);
   });
 }
 
@@ -99,7 +99,7 @@ export async function getExercise(id: string, scopeUserId: string) {
     .where({ id })
     .whereNull("archived_at")
     .andWhere((builder) => {
-      builder.whereNull("owner_id").orWhere("owner_id", scopeUserId);
+      builder.whereNull("owner_id").orWhere("owner_id", scopeUserId).orWhere("is_public", true);
     })
     .first();
 }

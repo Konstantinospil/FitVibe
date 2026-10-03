@@ -1016,5 +1016,74 @@
   },
   "actions": {
     "retry": "Réessayer"
+  },
+  "librarySurface": {
+    "title": "Bibliothèque",
+    "description": "Découvrez des exercices, gérez votre bibliothèque et créez des entraînements.",
+    "sections": {
+      "search": "Recherche et filtres",
+      "exercises": "Exercices"
+    },
+    "actions": {
+      "createExercise": "Nouvel exercice",
+      "createWorkout": "Créer un entraînement",
+      "addToWorkout": "Ajouter à l’entraînement",
+      "details": "Voir les détails",
+      "edit": "Modifier",
+      "archive": "Archiver",
+      "previous": "Précédent",
+      "next": "Suivant",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "close": "Fermer",
+      "confirmArchive": "Archiver l’exercice"
+    },
+    "filters": {
+      "search": "Rechercher des exercices",
+      "type": "Type",
+      "allTypes": "Tous les types",
+      "muscleGroup": "Groupe musculaire",
+      "equipment": "Équipement",
+      "tags": "Tags"
+    },
+    "states": {
+      "loading": "Chargement des exercices…",
+      "error": "Les exercices n’ont pas pu être chargés.",
+      "noResults": "Aucun exercice ne correspond à ces filtres."
+    },
+    "source": {
+      "global": "Global",
+      "mine": "Mon exercice",
+      "public": "Public de la communauté"
+    },
+    "details": {
+      "noDescription": "Aucune description fournie."
+    },
+    "archive": {
+      "title": "Archiver l’exercice",
+      "description": "Archiver {{name}} ? Il disparaîtra des sélecteurs actifs mais restera dans l’historique."
+    },
+    "creator": {
+      "titleCreate": "Créer un exercice",
+      "titleEdit": "Modifier l’exercice",
+      "description": "Créer ou mettre à jour un exercice appartenant à l’athlète.",
+      "fields": {
+        "name": "Nom",
+        "type": "Type",
+        "selectType": "Sélectionner un type",
+        "muscleGroup": "Groupe musculaire principal",
+        "equipment": "Équipement",
+        "tags": "Tags",
+        "tagsPlaceholder": "force, barre, jambes",
+        "description": "Description",
+        "public": "Rendre cet exercice public"
+      },
+      "errors": {
+        "required": "Le nom et le type sont obligatoires.",
+        "create": "L’exercice n’a pas pu être créé.",
+        "update": "L’exercice n’a pas pu être mis à jour.",
+        "types": "Les types d’exercice n’ont pas pu être chargés."
+      }
+    }
   }
 }
