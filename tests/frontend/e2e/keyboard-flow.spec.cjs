@@ -8,7 +8,6 @@ const {
   passwordInput,
   confirmPasswordInput,
   displayNameInput,
-  acceptRegisterLegal,
 } = require("./helpers.cjs");
 
 const loginPayload = {
@@ -71,7 +70,12 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     await page.keyboard.type(loginPayload.password);
     await focusByTab(page, confirmPasswordInput(page));
     await page.keyboard.type(loginPayload.password);
-    await acceptRegisterLegal(page);
+    const legalCheckboxes = page.getByRole("checkbox");
+    for (let index = 0; index < 2; index += 1) {
+      await focusByTab(page, legalCheckboxes.nth(index));
+      await page.keyboard.press("Space");
+      await expect(legalCheckboxes.nth(index)).toBeChecked();
+    }
     await focusByTab(page, page.getByRole("button", { name: /create account/i }));
     await page.keyboard.press("Enter");
 
