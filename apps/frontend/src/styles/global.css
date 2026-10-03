@@ -1446,8 +1446,8 @@ small {
 .home-surface__grid {
   grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 2fr);
   grid-template-areas:
-    "metric feed trending"
-    "activities feed trending";
+    "metric trending feed"
+    "activities trending feed";
 }
 
 .home-surface__metric {
