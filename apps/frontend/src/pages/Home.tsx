@@ -21,6 +21,7 @@ const Home: React.FC = () => {
     queryKey: ["home", "feed", "date"],
     queryFn: () =>
       getFeed({
+        scope: "public",
         limit: TRAINING_DATA_CONFIG.homeRecentFeedLimit,
         sort: "date",
       }),
@@ -31,6 +32,7 @@ const Home: React.FC = () => {
     queryKey: ["home", "feed", "popularity"],
     queryFn: () =>
       getFeed({
+        scope: "public",
         limit: TRAINING_DATA_CONFIG.homeTrendingFeedLimit,
         sort: "popularity",
       }),
@@ -41,6 +43,7 @@ const Home: React.FC = () => {
     queryKey: ["home", "recent-sessions"],
     queryFn: () =>
       listSessions({
+        status: "completed",
         limit: TRAINING_DATA_CONFIG.homeRecentFeedLimit,
       }),
     staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
