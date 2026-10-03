@@ -71,7 +71,12 @@ export function estimateSessionComposition(
 
         if (explicitDuration !== null && explicitDuration > 0) {
           exerciseActiveSec += explicitDuration;
-        } else if (reps !== null && reps > 0 && input?.secondsPerRep !== null && input?.secondsPerRep !== undefined) {
+        } else if (
+          reps !== null &&
+          reps > 0 &&
+          input?.secondsPerRep !== null &&
+          input?.secondsPerRep !== undefined
+        ) {
           exerciseActiveSec += reps * input.secondsPerRep;
         } else {
           exerciseDurationComplete = false;
@@ -89,7 +94,12 @@ export function estimateSessionComposition(
 
       if (plannedDuration !== null && plannedDuration > 0) {
         exerciseActiveSec += plannedDuration;
-      } else if (plannedReps !== null && plannedReps > 0 && input?.secondsPerRep !== null && input?.secondsPerRep !== undefined) {
+      } else if (
+        plannedReps !== null &&
+        plannedReps > 0 &&
+        input?.secondsPerRep !== null &&
+        input?.secondsPerRep !== undefined
+      ) {
         exerciseActiveSec += plannedSets * plannedReps * input.secondsPerRep;
       } else if (plannedReps !== null && plannedReps > 0) {
         exerciseDurationComplete = false;
