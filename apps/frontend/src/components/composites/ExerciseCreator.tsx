@@ -57,10 +57,8 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
     setEquipment(exercise?.equipment ?? "");
     setTags(exercise?.tags.join(", ") ?? "");
     setDescription(exercise?.description_en ?? "");
-    setMetValue(exercise?.met_value == null ? "" : String(exercise.met_value));
-    setSecondsPerRep(
-      exercise?.seconds_per_rep == null ? "" : String(exercise.seconds_per_rep),
-    );
+    setMetValue(String(exercise?.met_value ?? ""));
+    setSecondsPerRep(String(exercise?.seconds_per_rep ?? ""));
     setIsPublic(exercise?.is_public ?? false);
   }, [exercise, open]);
 
