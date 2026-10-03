@@ -9,6 +9,8 @@ export interface Exercise {
   is_public: boolean;
   description_en: string | null;
   description_de: string | null;
+  met_value?: number | null;
+  seconds_per_rep?: number | null;
   created_at?: string;
   updated_at?: string;
   archived_at?: string | null;
@@ -23,6 +25,8 @@ export interface CreateExerciseDTO {
   is_public?: boolean;
   description_en?: string | null;
   description_de?: string | null;
+  met_value?: number | null;
+  seconds_per_rep?: number | null;
   owner_id?: string | null; // admin may set to specific user or null for global
 }
 
@@ -35,6 +39,8 @@ export interface UpdateExerciseDTO {
   is_public?: boolean;
   description_en?: string | null;
   description_de?: string | null;
+  met_value?: number | null;
+  seconds_per_rep?: number | null;
 }
 
 export interface ExerciseQuery {
