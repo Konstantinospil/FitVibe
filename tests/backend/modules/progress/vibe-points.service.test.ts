@@ -1,13 +1,13 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from "@jest/globals";
 
-import { getVibePoints } from "../progress.service.js";
-import { fetchVibePointsTrends } from "../progress.repository.js";
+import { getVibePoints } from "../../../../apps/backend/src/modules/progress/progress.service.js";
+import { fetchVibePointsTrends } from "../../../../apps/backend/src/modules/progress/progress.repository.js";
 
-jest.mock("../progress.repository.js", () => ({
+jest.mock("../../../../apps/backend/src/modules/progress/progress.repository.js", () => ({
   fetchVibePointsTrends: jest.fn(),
 }));
 
-jest.mock("../../common/audit.util.js", () => ({
+jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
   insertAudit: jest.fn(),
 }));
 
