@@ -100,26 +100,8 @@ function loadAuthoringDocument(
   const { directory } = getLegalLanguageDefinition(language);
   const candidates = [
     path.resolve(process.cwd(), "legal-authoring-locales", directory, filename),
-    path.resolve(
-      process.cwd(),
-      "apps",
-      "frontend",
-      "src",
-      "i18n",
-      "locales",
-      directory,
-      filename,
-    ),
-    path.resolve(
-      process.cwd(),
-      "..",
-      "frontend",
-      "src",
-      "i18n",
-      "locales",
-      directory,
-      filename,
-    ),
+    path.resolve(process.cwd(), "apps", "frontend", "src", "i18n", "locales", directory, filename),
+    path.resolve(process.cwd(), "..", "frontend", "src", "i18n", "locales", directory, filename),
   ];
 
   for (const candidate of candidates) {
