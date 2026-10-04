@@ -1,9 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useThemeStore } from "../store/theme.store";
 
 type BrandLogoSize = "sm" | "lg";
 
-const BRAND_MARK_SRC = "/fitvibe-mark.svg";
+const BRAND_MARK_DARK_SRC = "/fitvibe-mark-dark.svg";
+const BRAND_MARK_LIGHT_SRC = "/fitvibe-mark-light.svg";
 
 const SIZE_STYLES: Record<BrandLogoSize, React.CSSProperties> = {
   sm: {
@@ -30,18 +32,20 @@ type BrandLogoProps = {
 
 const BrandLogo: React.FC<BrandLogoProps> = ({ size = "lg", priority = false }) => {
   const { t } = useTranslation();
+  const theme = useThemeStore((state) => state.theme);
+  const src = theme === "dark" ? BRAND_MARK_DARK_SRC : BRAND_MARK_LIGHT_SRC;
   const dims = SIZE_DIMS[size];
 
   return (
     <img
-      src={BRAND_MARK_SRC}
+      src={src}
       alt={t("brand.logoAlt")}
       width={dims.width}
       height={dims.height}
       decoding={priority ? "sync" : "async"}
       loading={priority ? "eager" : "lazy"}
       style={SIZE_STYLES[size]}
-      {...(priority ? { fetchpriority: "high" } : {})}
+      {...(priority ? { fetchPriority: "high" } : {})}
     />
   );
 };
