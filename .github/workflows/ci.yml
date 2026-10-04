@@ -2376,16 +2376,22 @@ jobs:
             "${frontend_tags[@]}" \
             ${frontend_refs}
 
+          docker buildx imagetools create \
+            "${backoffice_tags[@]}" \
+            ${backoffice_refs}
+
           backend_digest=$(docker buildx imagetools inspect "${BACKEND_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
           frontend_digest=$(docker buildx imagetools inspect "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
+          backoffice_digest=$(docker buildx imagetools inspect "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
 
-          if [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ]; then
+          if [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ] || [ -z "${backoffice_digest}" ]; then
             echo "Failed to resolve merged image digests" >&2
             exit 1
           fi
 
           echo "backend_digest=${backend_digest}" >> "$GITHUB_OUTPUT"
           echo "frontend_digest=${frontend_digest}" >> "$GITHUB_OUTPUT"
+          echo "backoffice_digest=${backoffice_digest}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
