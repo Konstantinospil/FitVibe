@@ -4,40 +4,30 @@
 
 **AC ID**: US-6.1-AC01  
 **Story ID**: [US-6.1](../d.User_stories/US-6.1-data-export.md)  
-**Status**: Proposed  
+**Status**: Approved  
 **Priority**: High  
 **Test Method**: E2E DSR  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Criterion
 
-Users can request data export via GET /api/v1/users/me/export; export generates JSON bundle with user, profile, sessions, exercises, points, badges within ≤24h.
-
-**SMART Criteria Checklist**:
-
-- **Specific**: Clear API endpoint and data scope
-- **Measurable**: Export generated, all data included, within ≤24h
-- **Achievable**: Standard export job pattern
-- **Relevant**: GDPR data portability requirement
-- **Time-bound**: ≤24h generation time
+An authenticated user can request their portable data via `GET /api/v1/users/me/export` and receive a machine-readable export containing the applicable user, profile, session/training, exercise, points/badges and related portable records.
 
 ## Test Method
 
-E2E tests for complete export workflow including job creation and download.
+Integration + E2E DSR
 
 ## Evidence Required
 
-- Export job logs
-- JSON bundle samples
+- Authenticated response, export fixture, completeness assertions
 
 ## Verification
 
-- [ ] Criterion is specific and measurable
-- [ ] Test method is appropriate
-- [ ] Evidence requirements are clear
+- [ ] Criterion satisfied
+- [ ] Evidence linked
 
 ## Related Artifacts
 

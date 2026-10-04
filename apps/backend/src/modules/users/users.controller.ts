@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import {
   getMe,
@@ -17,6 +18,8 @@ import {
   createUser,
   getPrivacySettings,
   updatePrivacySettings,
+  getUserPreferences,
+  updateUserPreferences,
 } from "./users.service.js";
 import { getContactById, getUserMetrics } from "./users.repository.js";
 import { passwordPolicy } from "../auth/auth.schemas.js";
@@ -36,8 +39,6 @@ const updateProfileSchema = z.object({
   username: usernameSchema.optional(),
   displayName: z.string().min(1).max(120).optional(),
   bio: z.string().max(500).optional(),
-  locale: z.string().max(10).optional(),
-  preferredLang: z.string().max(5).optional(),
   alias: z
     .string()
     .min(3)
@@ -69,6 +70,17 @@ const updateProfileSchema = z.object({
 });
 
 export const UpdateProfileSchema = updateProfileSchema;
+
+const updatePreferencesSchema = z
+  .object({
+    language: z.enum(["en", "de", "fr", "es", "el"]).optional(),
+    measurementSystem: z.enum(["metric", "imperial"]).optional(),
+  })
+  .refine((value) => Object.values(value).some((field) => field !== undefined), {
+    message: "At least one preference field is required",
+  });
+
+export const UpdatePreferencesSchema = updatePreferencesSchema;
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(12).max(128),
@@ -111,7 +123,7 @@ const createUserSchema = z.object({
   password: passwordPolicy,
   role: z.string().min(1).max(50),
   locale: z.string().max(10).optional(),
-  preferredLang: z.string().max(5).optional(),
+  preferredLang: z.enum(["en", "de", "fr", "es", "el"]).optional(),
   status: z.enum(["pending_verification", "active", "suspended"]).optional(),
 });
 
@@ -261,6 +273,34 @@ export async function exportData(req: Request, res: Response): Promise<void> {
   await writeUserDataArchive(res, data);
 }
 
+export async function getPreferences(req: Request, res: Response): Promise<void> {
+  const userId = req.user?.sub;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const preferences = await getUserPreferences(userId);
+  res.json(preferences);
+}
+
+export async function updatePreferences(req: Request, res: Response): Promise<void> {
+  const userId = req.user?.sub;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const parsed = updatePreferencesSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const preferences = await updateUserPreferences(userId, parsed.data);
+  res.json(preferences);
+}
+
 export async function getPrivacy(req: Request, res: Response): Promise<void> {
   const userId = req.user?.sub;
   if (!userId) {
@@ -290,7 +330,7 @@ export async function updatePrivacy(req: Request, res: Response): Promise<void> 
 }
 
 export async function getById(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const user = await getMe(id);
   if (!user) {
     res.status(404).json({ error: "User not found" });
@@ -478,7 +518,7 @@ export async function removeContactHandler(req: Request, res: Response): Promise
 
 export async function adminChangeStatus(req: Request, res: Response): Promise<void> {
   const actorId = req.user?.sub ?? null;
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const parsed = statusSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -504,7 +544,13 @@ export async function adminChangeStatus(req: Request, res: Response): Promise<vo
 }
 
 export async function getMetrics(req: Request, res: Response): Promise<void> {
-  const targetUserId = req.params.userId || req.user?.sub;
+  const requestedUserId = req.params.userId;
+  if (Array.isArray(requestedUserId)) {
+    res.status(400).json({ error: "User ID must be a single value" });
+    return;
+  }
+
+  const targetUserId = requestedUserId || req.user?.sub;
   const requestingUserId = req.user?.sub;
   const requestingUserRole = req.user?.role;
 

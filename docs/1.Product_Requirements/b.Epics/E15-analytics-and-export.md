@@ -10,7 +10,7 @@
 **Gate**: GOLD  
 **Estimated Total Effort**: 12-18 story points  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -24,11 +24,11 @@ Empowers users with insights into their training progress, helping them make inf
 
 ## Related Activities
 
-{Note: Activities will be created and linked here as they are defined}
+This is legacy-completed scope that predates the current activity-level traceability discipline. No retrospective activities will be fabricated solely to populate historical documentation. Future extensions must be represented as new canonical scope.
 
 ## Related User Stories
 
-{Note: User stories will be created and linked here as they are defined}
+This is a **legacy-completed epic** that predates the current story-level traceability discipline. The completed scope remains historical product documentation. Do not create retrospective backlog stories solely to populate this section; future extensions require new canonical scope and are evaluated independently.
 
 ## Dependencies
 
@@ -54,5 +54,5 @@ Empowers users with insights into their training progress, helping them make inf
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: N/A (legacy-completed epic)

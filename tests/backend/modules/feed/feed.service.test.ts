@@ -1,12 +1,14 @@
 import * as feedService from "../../../../apps/backend/src/modules/feed/feed.service.js";
 import * as feedRepository from "../../../../apps/backend/src/modules/feed/feed.repository.js";
-import * as sessionsService from "../../../../apps/backend/src/modules/sessions/sessions.service.js";
+import * as sessionsCloneService from "../../../../apps/backend/src/modules/sessions/sessions.clone.service.js";
 import * as usersRepository from "../../../../apps/backend/src/modules/users/users.repository.js";
+import * as badgesService from "../../../../apps/backend/src/modules/points/badges.service.js";
+import * as projectionService from "../../../../apps/backend/src/modules/points/gamification-projection.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/feed/feed.repository.js");
-jest.mock("../../../../apps/backend/src/modules/sessions/sessions.service.js");
+jest.mock("../../../../apps/backend/src/modules/sessions/sessions.clone.service.js");
 jest.mock("../../../../apps/backend/src/modules/users/users.repository.js");
 jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
   insertAudit: jest.fn().mockResolvedValue(undefined),
@@ -14,10 +16,16 @@ jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
 jest.mock("../../../../apps/backend/src/modules/points/badges.service.js", () => ({
   evaluateBadgesForFollow: jest.fn().mockResolvedValue([]),
 }));
+jest.mock("../../../../apps/backend/src/modules/points/gamification-projection.service.js", () => ({
+  markGamificationStale: jest.fn().mockResolvedValue(undefined),
+  scheduleGamificationReconciliation: jest.fn(),
+}));
 
 const mockFeedRepo = jest.mocked(feedRepository);
-const mockSessionsService = jest.mocked(sessionsService);
+const mockSessionsCloneService = jest.mocked(sessionsCloneService);
 const mockUsersRepo = jest.mocked(usersRepository);
+const mockBadgesService = jest.mocked(badgesService);
+const mockProjectionService = jest.mocked(projectionService);
 
 describe("Feed Service", () => {
   const userId = "user-123";
@@ -98,16 +106,16 @@ describe("Feed Service", () => {
         exercises: [],
       };
 
-      mockSessionsService.cloneOne.mockResolvedValue(mockSession as never);
+      mockSessionsCloneService.cloneOne.mockResolvedValue(mockSession as never);
 
       const result = await feedService.cloneSessionFromFeed(userId, sessionId);
 
       expect(result).toEqual(mockSession);
-      expect(mockSessionsService.cloneOne).toHaveBeenCalled();
+      expect(mockSessionsCloneService.cloneOne).toHaveBeenCalled();
     });
 
     it("should throw 404 when session not found", async () => {
-      mockSessionsService.cloneOne.mockRejectedValue(
+      mockSessionsCloneService.cloneOne.mockRejectedValue(
         new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND"),
       );
 
@@ -128,6 +136,24 @@ describe("Feed Service", () => {
       await feedService.followUserByAlias(userId, "targetuser");
 
       expect(mockFeedRepo.upsertFollower).toHaveBeenCalledWith(userId, targetUser.id);
+    });
+
+    it("should keep the follow and schedule existing reconciliation when badge evaluation fails", async () => {
+      const targetUser = { id: "target-user", username: "targetuser" };
+      mockUsersRepo.findUserByUsername.mockResolvedValue(targetUser);
+      mockFeedRepo.upsertFollower.mockResolvedValue(undefined);
+      mockBadgesService.evaluateBadgesForFollow.mockRejectedValueOnce(new Error("badge failure"));
+
+      await expect(feedService.followUserByAlias(userId, "targetuser")).resolves.toEqual({
+        followingId: targetUser.id,
+      });
+
+      expect(mockProjectionService.markGamificationStale).toHaveBeenCalledWith(userId, true);
+      expect(mockProjectionService.scheduleGamificationReconciliation).toHaveBeenCalledWith(
+        userId,
+        undefined,
+        true,
+      );
     });
 
     it("should throw 404 when user not found", async () => {
@@ -160,6 +186,14 @@ describe("Feed Service", () => {
         session_id: sessionId,
         owner_id: userId,
       });
+      mockFeedRepo.findSessionById.mockResolvedValue({
+        id: sessionId,
+        owner_id: userId,
+        title: "Test Session",
+        planned_at: new Date().toISOString(),
+        status: "completed",
+        visibility: "public",
+      });
       mockFeedRepo.upsertFeedLike.mockResolvedValue(undefined);
       const statsMap = new Map();
       statsMap.set(feedItemId, { likes: 1, comments: 0 });
@@ -183,6 +217,14 @@ describe("Feed Service", () => {
         feed_item_id: feedItemId,
         session_id: sessionId,
         owner_id: userId,
+      });
+      mockFeedRepo.findSessionById.mockResolvedValue({
+        id: sessionId,
+        owner_id: userId,
+        title: "Test Session",
+        planned_at: new Date().toISOString(),
+        status: "completed",
+        visibility: "public",
       });
       mockFeedRepo.deleteFeedLike.mockResolvedValue(1);
       const statsMap = new Map();

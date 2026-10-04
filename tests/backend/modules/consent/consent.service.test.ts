@@ -2,23 +2,31 @@ import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 import * as consentService from "../../../../apps/backend/src/modules/consent/consent.service.js";
 import * as consentRepository from "../../../../apps/backend/src/modules/consent/consent.repository.js";
 import { insertAudit } from "../../../../apps/backend/src/modules/common/audit.util.js";
-import { getCurrentCookiePolicyVersion } from "../../../../apps/backend/src/config/legal-version.js";
+import {
+  getCurrentLegalPublication,
+  legalVersionSatisfiesCurrentRequirement,
+} from "../../../../apps/backend/src/modules/legal/legal.service.js";
 
 jest.mock("../../../../apps/backend/src/modules/consent/consent.repository.js");
 jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
   insertAudit: jest.fn(),
 }));
-jest.mock("../../../../apps/backend/src/config/legal-version.js", () => ({
-  getCurrentCookiePolicyVersion: jest.fn(),
+jest.mock("../../../../apps/backend/src/modules/legal/legal.service.js", () => ({
+  getCurrentLegalPublication: jest.fn(),
+  legalVersionSatisfiesCurrentRequirement: jest.fn(),
 }));
 
 const mockRepository = jest.mocked(consentRepository);
 const mockInsertAudit = jest.mocked(insertAudit);
-const mockGetCurrentCookiePolicyVersion = jest.mocked(getCurrentCookiePolicyVersion);
+const mockGetCurrentLegalPublication = jest.mocked(getCurrentLegalPublication);
+const mockLegalVersionSatisfiesCurrentRequirement = jest.mocked(
+  legalVersionSatisfiesCurrentRequirement,
+);
 
 describe("Consent Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLegalVersionSatisfiesCurrentRequirement.mockResolvedValue(true);
   });
 
   describe("getConsentStatus", () => {
@@ -35,6 +43,7 @@ describe("Consent Service", () => {
         id: "consent-1",
         ipAddress: "203.0.113.2",
         consentVersion: "2024-06-01",
+        legalVersionId: "legal-cookie-1",
         essentialCookies: true,
         preferencesCookies: false,
         analyticsCookies: true,
@@ -47,6 +56,11 @@ describe("Consent Service", () => {
       });
 
       const result = await consentService.getConsentStatus("203.0.113.2");
+
+      expect(mockLegalVersionSatisfiesCurrentRequirement).toHaveBeenCalledWith(
+        "cookie",
+        "legal-cookie-1",
+      );
 
       expect(result).toEqual({
         hasConsent: true,
@@ -77,11 +91,23 @@ describe("Consent Service", () => {
     });
 
     it("persists consent and writes audit log", async () => {
-      mockGetCurrentCookiePolicyVersion.mockResolvedValue("2024-06-01");
+      mockGetCurrentLegalPublication.mockResolvedValue({
+        id: "legal-cookie-1",
+        document_type: "cookie",
+        version: "2024-06-01",
+        change_class: "legacy",
+        user_action: "renew_consent",
+        effective_at: "2024-06-01T00:00:00.000Z",
+        published_at: "2024-06-01T00:00:00.000Z",
+        published_by: null,
+        source: "legacy_migration",
+        created_at: "2024-06-01T00:00:00.000Z",
+      });
       mockRepository.upsertConsent.mockResolvedValue({
         id: "consent-2",
         ipAddress: "203.0.113.11",
         consentVersion: "2024-06-01",
+        legalVersionId: "legal-cookie-1",
         essentialCookies: true,
         preferencesCookies: true,
         analyticsCookies: false,
@@ -109,12 +135,15 @@ describe("Consent Service", () => {
         "203.0.113.11",
         expect.objectContaining({
           consentVersion: "2024-06-01",
+          legalVersionId: "legal-cookie-1",
           essentialCookies: true,
           preferencesCookies: true,
           analyticsCookies: false,
           marketingCookies: true,
           userAgent: "UA",
         }),
+        null,
+        "legal-cookie-1",
       );
       expect(mockInsertAudit).toHaveBeenCalledWith(
         expect.objectContaining({

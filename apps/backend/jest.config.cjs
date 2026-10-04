@@ -49,13 +49,7 @@ module.exports = {
   testPathIgnorePatterns: [
     "/node_modules/",
     "\\.integration\\.test\\.ts$",
-    "verification-resend-limit\\.test\\.ts$",
-    "login-enumeration\\.test\\.ts$",
     "test-manager-spec",
   ],
   clearMocks: true,
-  // Enable forceExit in CI to prevent timeout issues
-  // In local development, we keep it disabled to detect open handles
-  // Use --detectOpenHandles locally to identify what's keeping the process alive
-  forceExit: process.env.CI === "true",
 };

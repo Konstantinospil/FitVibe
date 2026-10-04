@@ -17,7 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@fitvibe/contracts": ["../../packages/types/src/contracts.d.ts"]
     }
   },
   "include": ["src", "src/vite-env.d.ts"],

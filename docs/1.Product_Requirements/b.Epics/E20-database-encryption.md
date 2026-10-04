@@ -10,7 +10,7 @@
 **Gate**: GOLD  
 **Estimated Total Effort**: 8-12 story points  
 **Created**: 2025-12-21  
-**Updated**: 2025-12-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -72,12 +72,14 @@ Implement comprehensive database encryption to protect data both in transit (TLS
 
 ## Implementation Documents
 
-- [Implementation Plans](../../6.Implementation/README.md)
-- [Verification Report](../../6.Implementation/README.md)
+- [Implementation Plans](./E20-IMPLEMENTATION-PLANS.md)
+- [Historical Verification Report](./E20-VERIFICATION-REPORT.md)
+
+The verification report is historical evidence, not current implementation truth. E20 remains **Progressing** until its acceptance criteria are revalidated against the live `dev` implementation.
 
 ---
 
-**Last Updated**: 2025-12-21  
-**Next Review**: 2026-01-21
+**Last Updated**: 2026-09-25  
+**Next Review**: after live implementation revalidation
 
 **Implementation Status**: Database encryption in transit (SSL/TLS) configured with certificate verification support. Encryption at rest (filesystem-level) implementation in progress.

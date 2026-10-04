@@ -67,6 +67,30 @@ async function installCommonMocks(page) {
   await page.route("**/api/v1/auth/2fa/status", async (route) => {
     await route.fulfill(jsonResponse({ enabled: false }));
   });
+  await page.route("**/api/v1/auth/legal-documents/status", async (route) => {
+    await route.fulfill(
+      jsonResponse({
+        terms: {
+          accepted: true,
+          acceptedAt: "2026-09-25T00:00:00.000Z",
+          acceptedVersion: "2026-09-25.1",
+          currentVersion: "2026-09-25.1",
+          requiredVersion: "2026-09-25.1",
+          requiredAction: "accept",
+          needsAcceptance: false,
+        },
+        privacy: {
+          accepted: true,
+          acceptedAt: "2026-09-25T00:00:00.000Z",
+          acceptedVersion: "2026-09-25.1",
+          currentVersion: "2026-09-25.1",
+          requiredVersion: null,
+          requiredAction: "none",
+          needsAcceptance: false,
+        },
+      }),
+    );
+  });
   await page.route("**/api/v1/users/me", async (route) => {
     if (route.request().method() !== "GET") {
       await route.fallback();
@@ -98,21 +122,24 @@ async function preparePage(page, { authenticated = false } = {}) {
 }
 
 async function waitForApp(page) {
-  await page
-    .locator("#login-shell")
-    .waitFor({ state: "detached", timeout: 15_000 })
-    .catch(() => undefined);
+  await page.locator("#login-shell").waitFor({ state: "detached", timeout: 15_000 });
 }
 
-const emailInput = (page) => page.locator("form.form input[name='email']");
-const passwordInput = (page) => page.locator("form.form input[name='password']");
-const confirmPasswordInput = (page) => page.locator("form.form input[name='confirmPassword']");
-const displayNameInput = (page) => page.locator("form.form input[name='name']");
+const emailInput = (page) => page.locator("form input[name='email']");
+const passwordInput = (page) => page.locator("form input[name='password']");
+const confirmPasswordInput = (page) => page.locator("form input[name='confirmPassword']");
+const displayNameInput = (page) => page.locator("form input[name='name']");
 
 async function acceptRegisterLegal(page) {
-  const checkboxes = page.locator("form.form input[type='checkbox']");
-  await checkboxes.nth(0).check();
-  await checkboxes.nth(1).check();
+  const controls = page.locator("form [data-component='checkbox']");
+  const checkboxes = page.getByRole("checkbox");
+
+  for (let index = 0; index < 2; index += 1) {
+    await controls.nth(index).locator("[data-slot='checkbox-box']").click();
+    if (!(await checkboxes.nth(index).isChecked())) {
+      throw new Error(`Registration legal checkbox ${index + 1} did not toggle through its visible control.`);
+    }
+  }
 }
 
 module.exports = {

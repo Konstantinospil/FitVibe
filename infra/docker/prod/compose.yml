@@ -1,0 +1,91 @@
+name: fitvibe
+
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE digest reference is required}
+    env_file:
+      - ${FITVIBE_ENV_FILE:-.env}
+    environment:
+      CLAMAV_ENABLED: "true"
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "127.0.0.1:4000:4000"
+
+  frontend:
+    image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE digest reference is required}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+
+  db:
+    image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE digest reference is required}
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fitvibe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-fitvibe}
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fitvibe} -d ${POSTGRES_DB:-fitvibe}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  redis:
+    image: ${REDIS_IMAGE:?REDIS_IMAGE digest reference is required}
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+  clamav:
+    image: ${CLAMAV_IMAGE:?CLAMAV_IMAGE digest reference is required}
+    restart: unless-stopped
+    environment:
+      FRESHCLAM_CHECKS: ${FRESHCLAM_CHECKS:-12}
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - clamav_signatures:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --version >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+volumes:
+  db_data:
+  redis_data:
+  clamav_signatures:

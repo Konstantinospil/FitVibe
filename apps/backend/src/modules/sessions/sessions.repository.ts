@@ -4,7 +4,6 @@ import type {
   PaginatedResult,
   Session,
   SessionExercise,
-  SessionExerciseActualAttributes,
   SessionExerciseAttributes,
   SessionExerciseSet,
   SessionQuery,
@@ -23,6 +22,9 @@ export interface SessionExerciseSetUpsert {
   distance_m?: number | null;
   duration_sec?: number | null;
   rpe?: number | null;
+  rest_sec?: number | null;
+  extras?: Record<string, unknown>;
+  recorded_at?: string | null;
   notes?: string | null;
 }
 
@@ -32,7 +34,6 @@ export interface SessionExerciseUpsertInput {
   order_index: number;
   notes: string | null;
   planned?: SessionExerciseAttributes | null;
-  actual?: SessionExerciseActualAttributes | null;
   sets: SessionExerciseSetUpsert[];
 }
 
@@ -117,22 +118,6 @@ function buildAttributes(
   return isAttributesEmpty(candidate) ? null : candidate;
 }
 
-function buildActualAttributes(
-  attributes: SessionExerciseActualAttributes | null | undefined,
-): SessionExerciseActualAttributes | null {
-  if (!attributes) {
-    return null;
-  }
-  const base = buildAttributes(attributes);
-  if (!base) {
-    return null;
-  }
-  return {
-    ...base,
-    recorded_at: attributes.recorded_at ?? null,
-  };
-}
-
 export async function listSessions(
   userId: string,
   q: SessionQuery,
@@ -194,15 +179,6 @@ type SessionExerciseRow = {
   planned_rpe: number | null;
   planned_rest: string | null;
   planned_extras: unknown;
-  actual_sets: number | null;
-  actual_reps: number | null;
-  actual_load: number | string | null;
-  actual_distance: number | string | null;
-  actual_duration: string | null;
-  actual_rpe: number | null;
-  actual_rest: string | null;
-  actual_extras: unknown;
-  actual_recorded_at: Date | string | null;
 };
 
 type SessionExerciseSetRow = {
@@ -214,6 +190,9 @@ type SessionExerciseSetRow = {
   distance_m: number | null;
   duration_sec: number | null;
   rpe: number | null;
+  rest_sec: number | null;
+  extras: unknown;
+  recorded_at: Date | string | null;
   notes: string | null;
   created_at?: Date | string | null;
 };
@@ -271,6 +250,9 @@ export async function getSessionWithDetails(
           "distance_m",
           "duration_sec",
           "rpe",
+          "rest_sec",
+          "extras",
+          "recorded_at",
           "notes",
           "created_at",
         ])
@@ -287,6 +269,9 @@ export async function getSessionWithDetails(
       distance_m: row.distance_m ?? null,
       duration_sec: row.duration_sec ?? null,
       rpe: row.rpe ?? null,
+      rest_sec: row.rest_sec ?? null,
+      extras: normalizeExtras(row.extras),
+      recorded_at: toDateString(row.recorded_at) ?? null,
       notes: row.notes ?? null,
       created_at: toDateString(row.created_at),
     });
@@ -305,18 +290,6 @@ export async function getSessionWithDetails(
       extras: normalizeExtras(row.planned_extras),
     });
 
-    const actual: SessionExerciseActualAttributes | null = buildActualAttributes({
-      sets: null,
-      reps: null,
-      load: null,
-      distance: null,
-      duration: null,
-      rpe: null,
-      rest: null,
-      extras: {},
-      recorded_at: null,
-    });
-
     return {
       id: row.id,
       session_id: row.session_id,
@@ -327,7 +300,7 @@ export async function getSessionWithDetails(
       created_at: toDateString(row.created_at),
       updated_at: toDateString(row.updated_at),
       planned,
-      actual,
+      actual: null,
       sets: setsByExercise.get(row.id) ?? [],
     };
   });
@@ -474,6 +447,9 @@ export async function replaceSessionExercises(
       distance_m: set.distance_m ?? null,
       duration_sec: set.duration_sec ?? null,
       rpe: set.rpe ?? null,
+      rest_sec: set.rest_sec ?? null,
+      extras: set.extras ?? {},
+      recorded_at: set.recorded_at ?? null,
       notes: set.notes ?? null,
       created_at: timestamp,
     })),
@@ -499,6 +475,9 @@ export async function listSessionSets(sessionId: string, trx?: Knex.Transaction)
       "s.distance_m",
       "s.duration_sec",
       "s.rpe",
+      "s.rest_sec",
+      "s.extras",
+      "s.recorded_at",
       "s.notes",
     )
     .where("se.session_id", sessionId)
@@ -564,4 +543,31 @@ export async function listRegionalStrengthStimuli(
     setCount: Number(row.set_count),
     averageRpe: row.average_rpe === null ? null : Number(row.average_rpe),
   }));
+}
+
+export async function listCompletedSessionIdsForGamification(
+  userId: string,
+  trx?: Knex.Transaction,
+): Promise<string[]> {
+  const rows = await executor(trx)("sessions")
+    .where({ owner_id: userId, status: "completed" })
+    .whereNull("deleted_at")
+    .whereNotNull("completed_at")
+    .orderBy("completed_at", "asc")
+    .orderBy("id", "asc")
+    .select<Array<{ id: string }>>("id");
+  return rows.map((row) => row.id);
+}
+
+export async function clearCompletedSessionGamificationRebuildFlags(
+  userId: string,
+  trx?: Knex.Transaction,
+): Promise<void> {
+  await executor(trx)("sessions")
+    .where({ owner_id: userId, status: "completed" })
+    .whereNull("deleted_at")
+    .update({
+      gamification_rebuild_required: false,
+      updated_at: new Date().toISOString(),
+    });
 }

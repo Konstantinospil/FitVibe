@@ -5,12 +5,12 @@
 **Epic ID**: E19  
 **Requirement ID**: [REQ-2025-01-20-001](../a.Requirements/REQ-2025-01-20-001-terms-and-conditions.md)  
 **Title**: Terms and Conditions  
-**Status**: Open  
+**Status**: Done  
 **Priority**: High  
 **Gate**: GOLD  
 **Estimated Total Effort**: 3-5 story points  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -28,7 +28,9 @@ Ensures legal compliance and protects the platform by requiring explicit user co
 
 ## Related User Stories
 
-{Note: User stories will be created and linked here as they are defined}
+- [US-19.1: Publish Legal Document Snapshots](../d.User_stories/US-19.1-legal-publication.md)
+- [US-19.2: Terms Acceptance at Registration](../d.User_stories/US-19.2-registration-terms-acceptance.md)
+- [US-19.3: Terms Re-Acceptance](../d.User_stories/US-19.3-terms-reacceptance.md)
 
 ## Dependencies
 
@@ -42,7 +44,9 @@ Ensures legal compliance and protects the platform by requiring explicit user co
 - 100% of new registrations include terms acceptance
 - Terms acceptance is recorded and auditable
 - Registration cannot be completed without terms acceptance
-- Terms versioning is tracked
+- Terms versioning is tracked through immutable publication snapshots
+- Minor vs authoritative publications have explicit semantics
+- Historical accepted content remains reproducible
 
 ## Risks & Mitigation
 
@@ -53,5 +57,5 @@ Ensures legal compliance and protects the platform by requiring explicit user co
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: after implementation comparison

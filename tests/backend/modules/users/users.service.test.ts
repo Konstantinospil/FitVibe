@@ -20,6 +20,9 @@ import type {
 import type { DeleteSchedule } from "../../../../apps/backend/src/modules/users/dsr.service.js";
 
 // Mock dependencies
+jest.mock("../../../../apps/backend/src/modules/common/email-blacklist.repository.js", () => ({
+  isEmailBlacklisted: jest.fn().mockResolvedValue(false),
+}));
 jest.mock("../../../../apps/backend/src/modules/users/users.repository.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
 jest.mock("../../../../apps/backend/src/modules/users/dsr.service.js");
@@ -413,39 +416,6 @@ describe("Users Service", () => {
       const result = await usersService.updateProfile(userId, dto);
 
       expect(result.displayName).toBe("New Display Name");
-    });
-
-    it("should update locale and preferred language", async () => {
-      const dto: UpdateProfileDTO = {
-        locale: "de",
-        preferredLang: "de",
-      };
-
-      mockUsersRepo.findUserById.mockResolvedValue({
-        id: userId,
-        username: "testuser",
-        display_name: "Test User",
-        locale: "en",
-        preferred_lang: "en",
-      } as UserRow);
-
-      mockUsersRepo.updateUserProfile.mockResolvedValue(1);
-      mockUsersRepo.fetchUserWithContacts.mockResolvedValue({
-        user: {
-          id: userId,
-          username: "testuser",
-          display_name: "Test User",
-          locale: "de",
-          preferred_lang: "de",
-        } as UserRow,
-        contacts: [],
-        avatar: null,
-      });
-
-      const result = await usersService.updateProfile(userId, dto);
-
-      expect(result.locale).toBe("de");
-      expect(result.preferredLang).toBe("de");
     });
 
     it("should update alias with valid format", async () => {
@@ -932,13 +902,13 @@ describe("Users Service", () => {
 
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockBcrypt.hash.mockResolvedValue("new_hash" as never);
-      mockUsersRepo.changePassword.mockResolvedValue(1);
+      mockAuthRepo.changePasswordAndRevokeAuthAtomic.mockResolvedValue(undefined);
 
       await usersService.updatePassword(userId, dto);
 
       expect(mockBcrypt.compare).toHaveBeenCalledWith("OldP@ssw0rd123", "old_hash");
       expect(mockBcrypt.hash).toHaveBeenCalledWith("NewP@ssw0rd456", 12);
-      expect(mockUsersRepo.changePassword).toHaveBeenCalled();
+      expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalled();
       expect(mockAuditUtil.insertAudit).toHaveBeenCalled();
     });
 
@@ -996,11 +966,11 @@ describe("Users Service", () => {
 
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockBcrypt.hash.mockResolvedValue("new_hash" as never);
-      mockUsersRepo.changePassword.mockResolvedValue(1);
+      mockAuthRepo.changePasswordAndRevokeAuthAtomic.mockResolvedValue(undefined);
 
       await usersService.updatePassword(userId, dto);
 
-      expect(mockAuthRepo.revokeRefreshByUserId).toHaveBeenCalledWith(userId);
+      expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalledWith(userId, expect.any(String));
     });
   });
 
@@ -1591,6 +1561,38 @@ describe("Users Service", () => {
       mockQueryBuilder.first.mockResolvedValue(null);
 
       await expect(usersService.collectUserData(userId)).rejects.toThrow("USER_NOT_FOUND");
+    });
+  });
+
+  describe("user preferences", () => {
+    const userId = "user-123";
+    const preferences = {
+      language: "de" as const,
+      measurementSystem: "metric" as const,
+    };
+
+    it("should return user preferences", async () => {
+      mockUsersRepo.getUserPreferences.mockResolvedValue(preferences);
+
+      await expect(usersService.getUserPreferences(userId)).resolves.toEqual(preferences);
+    });
+
+    it("should throw when user preferences are missing", async () => {
+      mockUsersRepo.getUserPreferences.mockResolvedValue(undefined);
+
+      await expect(usersService.getUserPreferences(userId)).rejects.toThrow("USER_NOT_FOUND");
+    });
+
+    it("should persist user preferences", async () => {
+      const updated = { ...preferences, measurementSystem: "imperial" as const };
+      mockUsersRepo.updateUserPreferences.mockResolvedValue(updated);
+
+      await expect(
+        usersService.updateUserPreferences(userId, { measurementSystem: "imperial" }),
+      ).resolves.toEqual(updated);
+      expect(mockUsersRepo.updateUserPreferences).toHaveBeenCalledWith(userId, {
+        measurementSystem: "imperial",
+      });
     });
   });
 

@@ -26,9 +26,23 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   };
 });
 
+jest.mock("../../../../apps/backend/src/modules/points/gamification-policy.repository.js", () => ({
+  getGamificationPolicy: jest.fn().mockResolvedValue({
+    versionCode: "v1",
+    streakLookbackDays: 90,
+    streakTiers: [
+      { minDays: 3, bonusPoints: 5 },
+      { minDays: 7, bonusPoints: 10 },
+      { minDays: 14, bonusPoints: 20 },
+      { minDays: 30, bonusPoints: 50 },
+    ],
+  }),
+}));
+
 // Mock the points repository
 jest.mock("../../../../apps/backend/src/modules/points/points.repository.js", () => ({
   getCompletedSessionDatesInRange: jest.fn(),
+  findPointsEventBySource: jest.fn(),
   insertPointsEvent: jest.fn(),
 }));
 
@@ -45,6 +59,7 @@ jest.mock("../../../../apps/backend/src/config/logger.js", () => ({
 describe("Streaks Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(pointsRepository.findPointsEventBySource).mockResolvedValue(undefined);
   });
 
   describe("calculateCurrentStreak", () => {
@@ -141,6 +156,37 @@ describe("Streaks Service", () => {
       const result = await awardStreakBonus("user-123", "session-1", 2, new Date());
 
       expect(result).toBe(0);
+      expect(pointsRepository.insertPointsEvent).not.toHaveBeenCalled();
+    });
+
+    it("returns the existing streak award instead of inserting a duplicate", async () => {
+      jest.mocked(pointsRepository.findPointsEventBySource).mockResolvedValue({
+        id: "existing-event",
+        user_id: "user-123",
+        source_type: "streak_bonus",
+        source_id: "session-1",
+        algorithm_version: "v1",
+        points: 5,
+        calories: null,
+        metadata: { streak_days: 3, bonus_tier: 5 },
+        awarded_at: "2025-01-15T00:00:00.000Z",
+        created_at: "2025-01-15T00:00:00.000Z",
+      });
+
+      const result = await awardStreakBonus(
+        "user-123",
+        "session-1",
+        3,
+        new Date("2025-01-15"),
+      );
+
+      expect(result).toBe(5);
+      expect(pointsRepository.findPointsEventBySource).toHaveBeenCalledWith(
+        "user-123",
+        "streak_bonus",
+        "session-1",
+        undefined,
+      );
       expect(pointsRepository.insertPointsEvent).not.toHaveBeenCalled();
     });
 

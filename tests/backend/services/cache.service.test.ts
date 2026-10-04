@@ -1,5 +1,6 @@
 import { CacheService } from "../../../apps/backend/src/services/cache.service.js";
 import type Redis from "ioredis";
+import { env } from "../../../apps/backend/src/config/env.js";
 
 // Mock Redis
 const mockRedisInstance = {
@@ -33,11 +34,18 @@ const mockLogger = jest.mocked(logger);
 
 describe("Cache Service", () => {
   let cacheService: CacheService;
-  const originalEnv = process.env;
+  const redisConfig = env.redis as {
+    enabled: boolean;
+    host: string;
+    port: number;
+    password?: string;
+    db: number;
+  };
+  const originalRedisConfig = { ...redisConfig };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env = { ...originalEnv };
+    Object.assign(redisConfig, originalRedisConfig);
     // Reset Redis mock
     mockRedisInstance.get.mockResolvedValue(null);
     mockRedisInstance.set.mockResolvedValue("OK");
@@ -56,7 +64,7 @@ describe("Cache Service", () => {
   });
 
   afterEach(() => {
-    process.env = originalEnv;
+    Object.assign(redisConfig, originalRedisConfig);
     if (cacheService) {
       cacheService.close().catch(() => {
         // Ignore errors during cleanup
@@ -66,7 +74,7 @@ describe("Cache Service", () => {
 
   describe("In-Memory Cache (Redis disabled)", () => {
     beforeEach(() => {
-      process.env.REDIS_ENABLED = "false";
+      redisConfig.enabled = false;
       cacheService = new CacheService();
     });
 
@@ -171,9 +179,9 @@ describe("Cache Service", () => {
 
   describe("Redis Cache (Redis enabled)", () => {
     beforeEach(() => {
-      process.env.REDIS_ENABLED = "true";
-      process.env.REDIS_HOST = "localhost";
-      process.env.REDIS_PORT = "6379";
+      redisConfig.enabled = true;
+      redisConfig.host = "localhost";
+      redisConfig.port = 6379;
       cacheService = new CacheService();
     });
 
@@ -320,7 +328,7 @@ describe("Cache Service", () => {
 
   describe("Redis connection events", () => {
     it("should handle Redis error event and fallback to in-memory", () => {
-      process.env.REDIS_ENABLED = "true";
+      redisConfig.enabled = true;
       const errorHandler = jest.fn();
       mockRedisInstance.on.mockImplementation((event: string, handler: () => void) => {
         if (event === "error") {
@@ -342,7 +350,7 @@ describe("Cache Service", () => {
     });
 
     it("should handle Redis connect event", () => {
-      process.env.REDIS_ENABLED = "true";
+      redisConfig.enabled = true;
       const connectHandler = jest.fn();
       mockRedisInstance.on.mockImplementation((event: string, handler: () => void) => {
         if (event === "connect") {
@@ -366,7 +374,7 @@ describe("Cache Service", () => {
 
   describe("Redis initialization errors", () => {
     it("should fallback to in-memory when Redis constructor throws", () => {
-      process.env.REDIS_ENABLED = "true";
+      redisConfig.enabled = true;
       const RedisMock = jest.requireMock("ioredis");
       RedisMock.mockImplementationOnce(() => {
         throw new Error("Redis init error");
@@ -378,7 +386,7 @@ describe("Cache Service", () => {
     });
 
     it("should fallback to in-memory when Redis connect fails", async () => {
-      process.env.REDIS_ENABLED = "true";
+      redisConfig.enabled = true;
       mockRedisInstance.connect.mockRejectedValue(new Error("Connection failed"));
 
       cacheService = new CacheService();

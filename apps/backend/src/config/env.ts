@@ -30,14 +30,9 @@ const EnvSchema = z.object({
   ALLOWED_ORIGINS: z.string().optional(),
   CSRF_ALLOWED_ORIGINS: z.string().optional(),
   CSRF_ENABLED: z.string().optional(),
-  GLOBAL_RATE_LIMIT_POINTS: z.coerce.number().default(120),
-  GLOBAL_RATE_LIMIT_DURATION: z.coerce.number().default(60),
   METRICS_ENABLED: z.string().optional(),
-  TYPES_CACHE_TTL_SEC: z.coerce.number().default(60),
   ACCESS_COOKIE_NAME: z.string().default("fitvibe_access"),
   REFRESH_COOKIE_NAME: z.string().default("fitvibe_refresh"),
-  EMAIL_VERIFICATION_TTL_MIN: z.coerce.number().default(15),
-  PASSWORD_RESET_TTL_MIN: z.coerce.number().default(15),
   APP_BASE_URL: z.string().default("http://localhost:4000"),
   FRONTEND_URL: z.string().default("http://localhost:5173"),
   JWT_PRIVATE_KEY: z.string().optional(),
@@ -45,12 +40,7 @@ const EnvSchema = z.object({
   JWT_PRIVATE_KEY_PATH: z.string().default("./keys/jwt_rs256.key"),
   JWT_PUBLIC_KEY_PATH: z.string().default("./keys/jwt_rs256.pub"),
   MEDIA_STORAGE_ROOT: z.string().default("./storage"),
-  DSR_PURGE_DELAY_MIN: z.coerce.number().default(15),
-  DSR_BACKUP_PURGE_DAYS: z.coerce.number().default(14),
   READ_ONLY_MODE: z.string().optional(),
-  MAINTENANCE_MESSAGE: z
-    .string()
-    .default("System is temporarily in read-only mode for maintenance"),
   CLAMAV_ENABLED: z.string().optional(),
   CLAMAV_HOST: z.string().default("localhost"),
   CLAMAV_PORT: z.coerce.number().default(3310),
@@ -78,6 +68,8 @@ const EnvSchema = z.object({
   BULLMQ_RATE_LIMIT_MAX: z.coerce.number().default(100),
   BULLMQ_RATE_LIMIT_DURATION: z.coerce.number().default(60000),
   TRUST_PROXY: z.string().optional(),
+  TRUSTED_PROXY_IPS: z.string().optional(),
+  TOTP_ENCRYPTION_KEY: z.string().optional(),
 });
 
 const raw = EnvSchema.parse(process.env);
@@ -215,8 +207,6 @@ export const env = {
   },
   ACCESS_TOKEN_TTL: raw.ACCESS_TOKEN_TTL_SEC,
   REFRESH_TOKEN_TTL: raw.REFRESH_TOKEN_TTL_SEC,
-  EMAIL_VERIFICATION_TTL_SEC: raw.EMAIL_VERIFICATION_TTL_MIN * 60,
-  PASSWORD_RESET_TTL_SEC: raw.PASSWORD_RESET_TTL_MIN * 60,
   COOKIE_DOMAIN: raw.COOKIE_DOMAIN,
   COOKIE_SECURE: parseBoolean(raw.COOKIE_SECURE, raw.NODE_ENV === "production"),
   ACCESS_COOKIE_NAME: raw.ACCESS_COOKIE_NAME,
@@ -227,21 +217,11 @@ export const env = {
     allowedOrigins: csrfAllowedOrigins,
   },
   metricsEnabled: parseBoolean(raw.METRICS_ENABLED, true),
-  globalRateLimit: {
-    points: raw.GLOBAL_RATE_LIMIT_POINTS,
-    duration: raw.GLOBAL_RATE_LIMIT_DURATION,
-  },
-  typesCacheTtl: raw.TYPES_CACHE_TTL_SEC,
   appBaseUrl: raw.APP_BASE_URL,
   frontendUrl: raw.FRONTEND_URL,
   appName: raw.APP_NAME,
   mediaStorageRoot: raw.MEDIA_STORAGE_ROOT,
-  dsr: {
-    purgeDelayMinutes: raw.DSR_PURGE_DELAY_MIN,
-    backupPurgeDays: raw.DSR_BACKUP_PURGE_DAYS,
-  },
   readOnlyMode: parseBoolean(raw.READ_ONLY_MODE, false),
-  maintenanceMessage: raw.MAINTENANCE_MESSAGE,
   clamav: {
     enabled: parseBoolean(raw.CLAMAV_ENABLED, false),
     host: raw.CLAMAV_HOST,
@@ -281,9 +261,11 @@ export const env = {
       email: raw.SMTP_FROM_EMAIL || raw.SMTP_USER,
     },
   },
-  // Trust X-Forwarded-For header when behind a reverse proxy (default: true in production)
-  // Set to false if not behind a proxy to prevent IP spoofing attacks
-  trustProxy: parseBoolean(raw.TRUST_PROXY, raw.NODE_ENV === "production"),
+  // Forwarded client IPs are trusted only when proxy mode is explicitly enabled
+  // and the immediate TCP peer is explicitly allowlisted.
+  trustProxy: parseBoolean(raw.TRUST_PROXY, false),
+  trustedProxyIps: parseList(raw.TRUSTED_PROXY_IPS),
+  totpEncryptionKey: raw.TOTP_ENCRYPTION_KEY,
 } as const;
 
 export const RSA_KEYS = {

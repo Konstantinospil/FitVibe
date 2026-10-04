@@ -1,59 +1,69 @@
 import { logger } from "../../config/logger.js";
+import { env } from "../../config/env.js";
 import { queueService as inMemoryQueue } from "./queue.service.js";
 import { getBullMQService, shutdownBullMQ } from "./bullmq.queue.service.js";
 import type { QueueJob } from "./queue.service.js";
 
-/**
- * Abstract queue interface that both implementations must satisfy
- */
 export interface IQueueService {
   enqueue(job: QueueJob): void | Promise<void>;
   getQueueLength?(): number | Promise<number>;
   isProcessing?(): boolean;
 }
 
-/**
- * Queue factory that returns the appropriate queue service
- * based on environment configuration
- */
-export function getQueueService(): IQueueService {
-  const redisEnabled = process.env.REDIS_ENABLED === "true";
+export type QueueAdapter = "bullmq" | "memory";
 
-  if (redisEnabled) {
+export function getQueueService(): IQueueService {
+  if (env.redis.enabled) {
     logger.info("[queue] Using BullMQ (Redis-backed) queue service");
     const bullMQ = getBullMQService();
-
     if (!bullMQ) {
-      logger.warn(
-        "[queue] REDIS_ENABLED=true but BullMQ service not available, falling back to in-memory",
-      );
-      return inMemoryQueue;
+      throw new Error("[queue] Redis is enabled but BullMQ could not be initialized");
     }
-
     return bullMQ;
   }
 
-  logger.info("[queue] Using in-memory queue service");
+  if (env.isProduction) {
+    throw new Error(
+      "[queue] Production requires the durable Redis/BullMQ queue; REDIS_ENABLED must be true",
+    );
+  }
+
+  logger.info("[queue] Using in-memory queue service for non-production runtime");
   return inMemoryQueue;
 }
 
-/**
- * Shutdown the active queue service
- */
-export async function shutdownQueue(): Promise<void> {
-  const redisEnabled = process.env.REDIS_ENABLED === "true";
+export function getQueueAdapter(): QueueAdapter {
+  return env.redis?.enabled === true ? "bullmq" : "memory";
+}
 
-  if (redisEnabled) {
+export async function checkQueueHealth(): Promise<boolean> {
+  if (env.redis?.enabled !== true) {
+    return !env.isProduction;
+  }
+  const bullMQ = getBullMQService();
+  return bullMQ ? bullMQ.checkHealth() : false;
+}
+
+export async function shutdownQueue(): Promise<void> {
+  if (env.redis?.enabled === true) {
     await shutdownBullMQ();
   } else {
-    // Shutdown in-memory queue service to clear timers
     inMemoryQueue.shutdown();
   }
 
   logger.info("[queue] Queue service shutdown complete");
 }
 
-/**
- * Default export - use the factory to get the configured queue service
- */
-export const queueService = getQueueService();
+export const queueService: IQueueService = {
+  enqueue(job: QueueJob): void | Promise<void> {
+    return getQueueService().enqueue(job);
+  },
+  getQueueLength(): number | Promise<number> {
+    const service = getQueueService();
+    return service.getQueueLength ? service.getQueueLength() : 0;
+  },
+  isProcessing(): boolean {
+    const service = getQueueService();
+    return service.isProcessing ? service.isProcessing() : false;
+  },
+};

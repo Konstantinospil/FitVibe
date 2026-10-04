@@ -4,40 +4,30 @@
 
 **AC ID**: US-6.1-AC02  
 **Story ID**: [US-6.1](../d.User_stories/US-6.1-data-export.md)  
-**Status**: Proposed  
+**Status**: Approved  
 **Priority**: High  
 **Test Method**: E2E DSR  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Criterion
 
-Export link valid for 24h; download available via secure link; export includes all user data per GDPR requirements.
-
-**SMART Criteria Checklist**:
-
-- **Specific**: Clear link validity and data completeness requirements
-- **Measurable**: Link expires after 24h, all data included
-- **Achievable**: Standard secure link pattern
-- **Relevant**: GDPR compliance and security
-- **Time-bound**: 24h link validity
+The export is delivered only to the authenticated account and contains the complete portable dataset defined by the export service. A separate 24-hour stored download link is not required unless direct generation later becomes operationally unsuitable.
 
 ## Test Method
 
-E2E tests for link expiration and data completeness verification.
+Security + E2E DSR
 
 ## Evidence Required
 
-- Export link tests
-- Data completeness verification
+- Authorization tests, completeness verification, confirmation that no unnecessary persistent export artifact is created
 
 ## Verification
 
-- [ ] Criterion is specific and measurable
-- [ ] Test method is appropriate
-- [ ] Evidence requirements are clear
+- [ ] Criterion satisfied
+- [ ] Evidence linked
 
 ## Related Artifacts
 

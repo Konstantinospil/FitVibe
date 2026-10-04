@@ -1,53 +1,118 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
-import { renderSettings, setupSettingsTests } from "./Settings.test.helpers";
+import React from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import Settings from "../../src/pages/Settings";
+import * as api from "../../src/services/api";
+import { cleanupQueryClient, createTestQueryClient } from "../helpers/testQueryClient";
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
+vi.mock("../../src/services/api", async () => {
+  const actual = await vi.importActual("../../src/services/api");
+  return {
+    ...actual,
+    getCurrentUser: vi.fn(),
+    updateProfile: vi.fn(),
+    getUserPreferences: vi.fn(),
+    updateUserPreferences: vi.fn(),
+    getPrivacySettings: vi.fn(),
+    updatePrivacySettings: vi.fn(),
+    get2FAStatus: vi.fn(),
+  };
+});
 
 describe("Settings", () => {
+  let queryClient: QueryClient;
+
   beforeEach(() => {
-    setupSettingsTests();
-  });
-
-  it("renders the modular settings navigation and profile", async () => {
-    const { mockGetCurrentUser } = setupSettingsTests();
-    renderSettings();
-
-    expect(screen.getByRole("tab", { name: /Profile/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Progress/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Security/i })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Privacy/i })).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(mockGetCurrentUser).toHaveBeenCalled();
-      expect(screen.getByDisplayValue("Test User")).toBeInTheDocument();
-      expect(screen.getByDisplayValue("testalias")).toBeInTheDocument();
+    queryClient = createTestQueryClient();
+    vi.mocked(api.getCurrentUser).mockResolvedValue({
+      id: "u1",
+      username: "athlete",
+      displayName: "Athlete",
+      alias: "athlete",
+      bio: "Training",
+    });
+    vi.mocked(api.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "metric",
+    });
+    vi.mocked(api.getPrivacySettings).mockResolvedValue({
+      defaultVisibility: "private",
+      allowFollowers: true,
+      showEmail: false,
+      showWeight: false,
+      showFitnessLevel: false,
+    });
+    vi.mocked(api.get2FAStatus).mockResolvedValue({ enabled: true });
+    vi.mocked(api.updateProfile).mockResolvedValue({
+      id: "u1",
+      username: "athlete",
+      displayName: "Updated",
+    });
+    vi.mocked(api.updateUserPreferences).mockResolvedValue({
+      language: "de",
+      measurementSystem: "metric",
+    });
+    vi.mocked(api.updatePrivacySettings).mockResolvedValue({
+      defaultVisibility: "private",
+      allowFollowers: false,
+      showEmail: false,
+      showWeight: false,
+      showFitnessLevel: false,
     });
   });
 
-  it("switches to the Progress tab", () => {
-    renderSettings();
-    fireEvent.click(screen.getByRole("tab", { name: /Progress/i }));
+  afterEach(async () => {
+    await cleanupQueryClient(queryClient);
+    vi.clearAllMocks();
+  });
 
-    const panel = screen.getByRole("tabpanel");
-    expect(panel).toHaveAttribute("id", "tabpanel-progress");
-    expect(screen.getByRole("tab", { name: /Progress/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
+  const renderSettings = () =>
+    render(
+      <QueryClientProvider client={queryClient}>
+        <Settings />
+      </QueryClientProvider>,
     );
+
+  it("loads only supported canonical Settings sections", async () => {
+    renderSettings();
+    expect(await screen.findByDisplayValue("Athlete")).toBeInTheDocument();
+    expect(screen.getByText("settings.preferences.title")).toBeInTheDocument();
+    expect(screen.getByText("settings.privacy.title")).toBeInTheDocument();
+    expect(screen.getByText("settings.security.enabled")).toBeInTheDocument();
   });
 
-  it("switches to the Security tab", () => {
+  it("persists profile changes through the canonical account API", async () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("tab", { name: /Security/i }));
+    const displayName = await screen.findByLabelText("settings.profile.displayName");
+    fireEvent.change(displayName, { target: { value: "Updated" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[0]);
 
-    const panel = screen.getByRole("tabpanel");
-    expect(panel).toHaveAttribute("id", "tabpanel-security");
+    await waitFor(() => {
+      expect(api.updateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({ displayName: "Updated" }),
+      );
+    });
   });
 
-  it("switches to the Privacy tab", () => {
+  it("persists privacy toggles through the canonical privacy API", async () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("tab", { name: /Privacy/i }));
+    const followers = await screen.findByRole("switch", {
+      name: "settings.privacy.allowFollowers",
+    });
+    fireEvent.click(followers);
+    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[1]);
 
-    const panel = screen.getByRole("tabpanel");
-    expect(panel).toHaveAttribute("id", "tabpanel-privacy");
+    await waitFor(() => {
+      expect(api.updatePrivacySettings).toHaveBeenCalledWith(
+        expect.objectContaining({ allowFollowers: false }),
+      );
+    });
   });
 });
+
+export {};

@@ -30,6 +30,9 @@ type InsertChain = {
   onConflict: jest.Mock;
   ignore: jest.Mock;
   merge: jest.Mock;
+  where: jest.Mock;
+  orderBy: jest.Mock;
+  first: jest.Mock;
 };
 
 const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
@@ -40,9 +43,15 @@ function createInsertChain(): InsertChain {
     onConflict: jest.fn(),
     ignore: jest.fn(),
     merge: jest.fn(),
+    where: jest.fn(),
+    orderBy: jest.fn(),
+    first: jest.fn(),
   };
   chain.insert.mockReturnValue(chain);
   chain.onConflict.mockReturnValue(chain);
+  chain.where.mockReturnValue(chain);
+  chain.orderBy.mockReturnValue(chain);
+  chain.first.mockResolvedValue({ version: "2024-06-01" });
   chain.ignore.mockResolvedValue(undefined);
   chain.merge.mockResolvedValue(undefined);
   return chain;

@@ -5,11 +5,11 @@
 **Story ID**: US-9.1  
 **Epic ID**: [E9](../b.Epics/E9-observability.md)  
 **Title**: Structured Logging  
-**Status**: Proposed  
+**Status**: Progressing  
 **Story Points**: 3  
 **Priority**: Medium  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## Description
 
-All logs are structured JSON with required fields: ts, level, request_id, user_id (if authenticated), route, status, lat_ms. No PII in logs. Correlation IDs (request_id) are propagated across services; request tracing is possible via correlation ID search.
+All logs are structured JSON with required operational fields such as timestamp, level, request/correlation ID, route, status, and latency. Raw user identifiers and other PII must not be logged. Where actor-level correlation is operationally necessary, only a one-way hashed actor identifier may be emitted. Correlation IDs are propagated across services and remain the primary key for request tracing.
 
 ## Related Acceptance Criteria
 

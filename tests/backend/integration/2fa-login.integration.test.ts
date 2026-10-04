@@ -47,10 +47,19 @@ jest.mock("../../../apps/backend/src/db/index.js", () => {
 });
 jest.mock("bcryptjs");
 jest.mock("jsonwebtoken");
-jest.mock("crypto");
+jest.mock("crypto", () => {
+  const actualCrypto = jest.requireActual<typeof import("crypto")>("crypto");
+
+  return {
+    ...actualCrypto,
+    createHash: jest.fn(actualCrypto.createHash),
+  };
+});
 jest.mock("uuid", () => ({
   v4: jest.fn(() => "00000000-0000-0000-0000-000000000123"),
 }));
+
+const USER_ID = "11111111-1111-4111-8111-111111111111";
 
 const mockAuthRepo = jest.mocked(authRepo);
 const mockTwofaService = jest.mocked(twofaService);
@@ -62,7 +71,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
 
   beforeEach(async () => {
     mockUser = {
-      id: "user-123",
+      id: USER_ID,
       username: "testuser",
       display_name: "Test User",
       locale: "en-US",
@@ -136,6 +145,20 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       updated_at: new Date().toISOString(),
     });
     mockBruteforceRepo.resetFailedAttemptsByIP.mockResolvedValue(undefined);
+    mockPending2faRepo.hasRecentSecondFactorThrottle.mockResolvedValue(false);
+    mockPending2faRepo.claimPending2FASessionVerified.mockResolvedValue(true);
+    mockPending2faRepo.incrementPending2FAFailures.mockResolvedValue({
+      id: "pending-session-123",
+      user_id: USER_ID,
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      ip: "127.0.0.1",
+      user_agent: "Mozilla/5.0",
+      verified: false,
+      failed_attempts: 1,
+      identifier: "test@example.com",
+      last_failed_at: new Date().toISOString(),
+    });
     // Mock IP-based synchronous functions
     (mockBruteforceRepo.isIPLocked as jest.Mock).mockImplementation((attempt) => {
       if (!attempt || !attempt.locked_until) {
@@ -161,7 +184,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       mockTwofaService.is2FAEnabled.mockResolvedValue(true);
       mockPending2faRepo.createPending2FASession.mockResolvedValue({
         id: "pending-session-123",
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "127.0.0.1",
@@ -177,9 +200,16 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       if (result.requires2FA) {
         expect(result.pendingSessionId).toBe("00000000-0000-0000-0000-000000000123");
       }
-      expect(mockTwofaService.is2FAEnabled).toHaveBeenCalledWith("user-123");
+      expect(mockTwofaService.is2FAEnabled).toHaveBeenCalledWith(USER_ID);
       expect(mockPending2faRepo.createPending2FASession).toHaveBeenCalled();
-      expect(mockAuthRepo.createAuthSession).not.toHaveBeenCalled(); // No session created yet
+      const pendingSession = mockPending2faRepo.createPending2FASession.mock.calls[0]?.[0];
+      expect(new Date(pendingSession.expires_at).getTime() - Date.now()).toBeGreaterThanOrEqual(
+        29 * 60 * 1000,
+      );
+      expect(new Date(pendingSession.expires_at).getTime() - Date.now()).toBeLessThanOrEqual(
+        30 * 60 * 1000,
+      );
+      expect(mockAuthRepo.createSessionWithRefresh).not.toHaveBeenCalled(); // No session created yet
     });
 
     it("should return requires2FA=false and tokens when user has 2FA disabled", async () => {
@@ -188,8 +218,8 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       const bcrypt = jest.mocked(await import("bcryptjs"));
       jest.mocked(bcrypt.compare).mockResolvedValue(true as never);
       mockTwofaService.is2FAEnabled.mockResolvedValue(false);
-      mockAuthRepo.createAuthSession.mockResolvedValue([]);
-      mockAuthRepo.insertRefreshToken.mockResolvedValue([]);
+      mockAuthRepo.createSessionWithRefresh.mockResolvedValue(undefined);
+      
 
       const jwt = jest.mocked(await import("jsonwebtoken"));
       jest.mocked(jwt.sign).mockReturnValue("mock-jwt-token" as never);
@@ -211,14 +241,14 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Verify
       expect(result.requires2FA).toBe(false);
       if (!result.requires2FA) {
-        expect(result.user.id).toBe("user-123");
+        expect(result.user.id).toBe(USER_ID);
         expect(result.tokens.accessToken).toBeDefined();
         expect(result.tokens.refreshToken).toBeDefined();
         expect(result.session.id).toBeDefined();
       }
-      expect(mockTwofaService.is2FAEnabled).toHaveBeenCalledWith("user-123");
+      expect(mockTwofaService.is2FAEnabled).toHaveBeenCalledWith(USER_ID);
       expect(mockPending2faRepo.createPending2FASession).not.toHaveBeenCalled();
-      expect(mockAuthRepo.createAuthSession).toHaveBeenCalled(); // Session created
+      expect(mockAuthRepo.createSessionWithRefresh).toHaveBeenCalled(); // Session created
     });
   });
 
@@ -230,7 +260,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Setup: Valid pending session, valid code
       mockPending2faRepo.getPending2FASession.mockResolvedValue({
         id: pendingSessionId,
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "127.0.0.1",
@@ -240,8 +270,8 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       mockTwofaService.verify2FACode.mockResolvedValue(true);
       mockPending2faRepo.markPending2FASessionVerified.mockResolvedValue(undefined);
       mockAuthRepo.findUserById.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthSession.mockResolvedValue([]);
-      mockAuthRepo.insertRefreshToken.mockResolvedValue([]);
+      mockAuthRepo.createSessionWithRefresh.mockResolvedValue(undefined);
+      
       mockPending2faRepo.deletePending2FASession.mockResolvedValue(undefined);
 
       const jwt = jest.mocked(await import("jsonwebtoken"));
@@ -262,12 +292,12 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       const result = await authService.verify2FALogin(pendingSessionId, validCode, loginContext);
 
       // Verify
-      expect(result.user.id).toBe("user-123");
+      expect(result.user.id).toBe(USER_ID);
       expect(result.tokens.accessToken).toBeDefined();
       expect(result.tokens.refreshToken).toBeDefined();
       expect(result.session.id).toBeDefined();
-      expect(mockTwofaService.verify2FACode).toHaveBeenCalledWith("user-123", validCode);
-      expect(mockPending2faRepo.markPending2FASessionVerified).toHaveBeenCalledWith(
+      expect(mockTwofaService.verify2FACode).toHaveBeenCalledWith(USER_ID, validCode);
+      expect(mockPending2faRepo.claimPending2FASessionVerified).toHaveBeenCalledWith(
         pendingSessionId,
       );
       expect(mockPending2faRepo.deletePending2FASession).toHaveBeenCalledWith(pendingSessionId);
@@ -277,7 +307,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Setup: Valid pending session, invalid code
       mockPending2faRepo.getPending2FASession.mockResolvedValue({
         id: pendingSessionId,
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "127.0.0.1",
@@ -289,11 +319,61 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Execute & Verify
       await expect(
         authService.verify2FALogin(pendingSessionId, "wrong-code", loginContext),
-      ).rejects.toThrow("Invalid 2FA code");
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
 
-      expect(mockTwofaService.verify2FACode).toHaveBeenCalledWith("user-123", "wrong-code");
-      expect(mockPending2faRepo.markPending2FASessionVerified).not.toHaveBeenCalled();
-      expect(mockAuthRepo.createAuthSession).not.toHaveBeenCalled();
+      expect(mockTwofaService.verify2FACode).toHaveBeenCalledWith(USER_ID, "wrong-code");
+      expect(mockPending2faRepo.claimPending2FASessionVerified).not.toHaveBeenCalled();
+      expect(mockPending2faRepo.incrementPending2FAFailures).toHaveBeenCalledWith(pendingSessionId);
+      expect(mockAuthRepo.createSessionWithRefresh).not.toHaveBeenCalled();
+    });
+
+    it("should exhaust the challenge after the third failed 2FA attempt", async () => {
+      mockPending2faRepo.getPending2FASession
+        .mockResolvedValueOnce({
+          id: pendingSessionId,
+          user_id: USER_ID,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          ip: "127.0.0.1",
+          user_agent: "Mozilla/5.0",
+          verified: false,
+          failed_attempts: 2,
+        })
+        .mockResolvedValueOnce({
+          id: pendingSessionId,
+          user_id: USER_ID,
+          created_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+          ip: "127.0.0.1",
+          user_agent: "Mozilla/5.0",
+          verified: false,
+          failed_attempts: 3,
+        });
+      mockPending2faRepo.incrementPending2FAFailures.mockResolvedValueOnce({
+        id: pendingSessionId,
+        user_id: USER_ID,
+        created_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        ip: "127.0.0.1",
+        user_agent: "Mozilla/5.0",
+        verified: false,
+        failed_attempts: 3,
+        last_failed_at: new Date().toISOString(),
+      });
+      mockTwofaService.verify2FACode.mockResolvedValueOnce(false);
+
+      await expect(
+        authService.verify2FALogin(pendingSessionId, "123456", loginContext),
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
+
+      jest.clearAllMocks();
+
+      await expect(
+        authService.verify2FALogin(pendingSessionId, "123456", loginContext),
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
+
+      expect(mockTwofaService.verify2FACode).not.toHaveBeenCalled();
+      expect(mockAuthRepo.createSessionWithRefresh).not.toHaveBeenCalled();
     });
 
     it("should throw error when pending session does not exist", async () => {
@@ -303,7 +383,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Execute & Verify
       await expect(
         authService.verify2FALogin("non-existent-session", validCode, loginContext),
-      ).rejects.toThrow("Invalid or expired 2FA session");
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
 
       expect(mockTwofaService.verify2FACode).not.toHaveBeenCalled();
     });
@@ -312,7 +392,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Setup: Expired pending session
       mockPending2faRepo.getPending2FASession.mockResolvedValue({
         id: pendingSessionId,
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
         expires_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // Expired 5 mins ago
         ip: "127.0.0.1",
@@ -324,9 +404,9 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Execute & Verify
       await expect(
         authService.verify2FALogin(pendingSessionId, validCode, loginContext),
-      ).rejects.toThrow("2FA session expired");
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
 
-      expect(mockPending2faRepo.deletePending2FASession).toHaveBeenCalledWith(pendingSessionId);
+      expect(mockPending2faRepo.deletePending2FASession).not.toHaveBeenCalled();
       expect(mockTwofaService.verify2FACode).not.toHaveBeenCalled();
     });
 
@@ -334,7 +414,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Setup: Already verified session
       mockPending2faRepo.getPending2FASession.mockResolvedValue({
         id: pendingSessionId,
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "127.0.0.1",
@@ -346,9 +426,9 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Execute & Verify
       await expect(
         authService.verify2FALogin(pendingSessionId, validCode, loginContext),
-      ).rejects.toThrow("2FA session already used");
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
 
-      expect(mockPending2faRepo.deletePending2FASession).toHaveBeenCalledWith(pendingSessionId);
+      expect(mockPending2faRepo.deletePending2FASession).not.toHaveBeenCalled();
       expect(mockTwofaService.verify2FACode).not.toHaveBeenCalled();
     });
 
@@ -356,7 +436,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Setup: Valid pending session but different IP
       mockPending2faRepo.getPending2FASession.mockResolvedValue({
         id: pendingSessionId,
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "192.168.1.1", // Different IP
@@ -368,9 +448,9 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // Execute & Verify
       await expect(
         authService.verify2FALogin(pendingSessionId, validCode, loginContext),
-      ).rejects.toThrow("Session security validation failed");
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
 
-      expect(mockPending2faRepo.deletePending2FASession).toHaveBeenCalledWith(pendingSessionId);
+      expect(mockPending2faRepo.deletePending2FASession).not.toHaveBeenCalled();
       expect(mockTwofaService.verify2FACode).not.toHaveBeenCalled();
     });
   });
@@ -383,7 +463,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       // First verification - success
       mockPending2faRepo.getPending2FASession.mockResolvedValueOnce({
         id: pendingSessionId,
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "127.0.0.1",
@@ -393,8 +473,8 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       mockTwofaService.verify2FACode.mockResolvedValue(true);
       mockPending2faRepo.markPending2FASessionVerified.mockResolvedValue(undefined);
       mockAuthRepo.findUserById.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthSession.mockResolvedValue([]);
-      mockAuthRepo.insertRefreshToken.mockResolvedValue([]);
+      mockAuthRepo.createSessionWithRefresh.mockResolvedValue(undefined);
+      
       mockPending2faRepo.deletePending2FASession.mockResolvedValue(undefined);
 
       const jwt = jest.mocked(await import("jsonwebtoken"));
@@ -418,7 +498,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
 
       await expect(
         authService.verify2FALogin(pendingSessionId, validCode, loginContext),
-      ).rejects.toThrow("Invalid or expired 2FA session");
+      ).rejects.toThrow("AUTH_VERIFICATION_FAILED");
     });
 
     it("should create audit log entries for 2FA events", async () => {
@@ -429,7 +509,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       mockTwofaService.is2FAEnabled.mockResolvedValue(true);
       mockPending2faRepo.createPending2FASession.mockResolvedValue({
         id: "pending-session-123",
-        user_id: "user-123",
+        user_id: USER_ID,
         created_at: new Date().toISOString(),
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         ip: "127.0.0.1",
@@ -443,7 +523,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       expect(mockPending2faRepo.createPending2FASession).toHaveBeenCalledWith(
         expect.objectContaining({
           id: "00000000-0000-0000-0000-000000000123",
-          user_id: "user-123",
+          user_id: USER_ID,
           ip: "127.0.0.1",
           user_agent: "Mozilla/5.0",
         }),

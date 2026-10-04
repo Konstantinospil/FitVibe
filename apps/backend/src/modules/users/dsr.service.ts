@@ -4,7 +4,7 @@ import { HttpError } from "../../utils/http.js";
 import { deleteStorageObject } from "../../services/mediaStorage.service.js";
 import { toError } from "../../utils/error.utils.js";
 import { logger } from "../../config/logger.js";
-import { env } from "../../config/env.js";
+import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 import crypto from "node:crypto";
 import type { UserStatus } from "./users.types.js";
 
@@ -19,7 +19,8 @@ type UserRow = {
 type MediaRow = { id: string; storage_key: string; owner_id: string };
 type ContactRow = { value: string };
 
-const { purgeDelayMinutes, backupPurgeDays } = env.dsr;
+const MILLISECONDS_PER_MINUTE = 60 * 1000;
+const MILLISECONDS_PER_DAY = 24 * 60 * MILLISECONDS_PER_MINUTE;
 
 export interface DeleteSchedule {
   scheduledAt: string;
@@ -28,13 +29,15 @@ export interface DeleteSchedule {
 }
 
 function computeSchedule(now: Date, user: UserRow): DeleteSchedule {
+  const purgeDelayMinutes = getRuntimeAppSetting<number>("privacy.dsr_purge_delay_minutes");
+  const backupPurgeDays = getRuntimeAppSetting<number>("privacy.dsr_backup_purge_days");
   const scheduledAt = user.deleted_at ?? now.toISOString();
   const purgeDueAt =
     user.purge_scheduled_at ??
-    new Date(now.getTime() + purgeDelayMinutes * 60 * 1000).toISOString();
+    new Date(now.getTime() + purgeDelayMinutes * MILLISECONDS_PER_MINUTE).toISOString();
   const backupPurgeDueAt =
     user.backup_purge_due_at ??
-    new Date(now.getTime() + backupPurgeDays * 24 * 60 * 60 * 1000).toISOString();
+    new Date(now.getTime() + backupPurgeDays * MILLISECONDS_PER_DAY).toISOString();
 
   return { scheduledAt, purgeDueAt, backupPurgeDueAt };
 }

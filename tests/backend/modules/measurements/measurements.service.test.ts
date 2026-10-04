@@ -15,8 +15,10 @@ import {
   listLatestAttributeValues,
   listSelections,
   upsertSelection,
+  withMeasurementTransaction,
 } from "../../../../apps/backend/src/modules/measurements/measurements.repository.js";
 import { upsertTranslation } from "../../../../apps/backend/src/modules/translations/translations.repository.js";
+import { insertAudit } from "../../../../apps/backend/src/modules/common/audit.util.js";
 
 jest.mock("../../../../apps/backend/src/modules/measurements/measurements.repository.js", () => ({
   getAttributeById: jest.fn(),
@@ -27,15 +29,23 @@ jest.mock("../../../../apps/backend/src/modules/measurements/measurements.reposi
   listLatestAttributeValues: jest.fn(),
   listSelections: jest.fn(),
   upsertSelection: jest.fn(),
+  withMeasurementTransaction: jest.fn(async (work: (trx: unknown) => Promise<unknown>) =>
+    work({}),
+  ),
 }));
 
 jest.mock("../../../../apps/backend/src/modules/translations/translations.repository.js", () => ({
   upsertTranslation: jest.fn(),
 }));
 
+jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
+  insertAudit: jest.fn(),
+}));
+
 describe("measurements service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(withMeasurementTransaction).mockImplementation(async (work) => work({} as never));
   });
 
   afterEach(() => {
@@ -196,11 +206,43 @@ describe("measurements service", () => {
     });
 
     expect(created.id).toBe("attr-1");
-    expect(upsertTranslation).toHaveBeenCalledWith({
-      namespace: "user_attributes",
-      key_path: "user_attributes.height",
-      language: "en",
-      value: "Height",
+    expect(insertAttribute).toHaveBeenCalledWith(
+      "bio",
+      expect.objectContaining({
+        key: "height",
+        normalized_key: "height",
+        unit_type: "length",
+        granularity: "cm",
+        measurement_system: "metric",
+        min_value_metric: 100,
+        max_value_metric: 200,
+        min_value_imperial: expect.closeTo(39.3701, 3),
+        max_value_imperial: expect.closeTo(78.7402, 3),
+      }),
+      expect.anything(),
+    );
+    expect(upsertTranslation).toHaveBeenCalledWith(
+      {
+        namespace: "user_attributes",
+        key_path: "user_attributes.height",
+        language: "en",
+        value: "Height",
+      },
+      expect.anything(),
+    );
+    expect(insertAudit).toHaveBeenCalledWith({
+      actorUserId: "user-1",
+      entityType: "measurement_attribute",
+      action: "create",
+      entityId: "attr-1",
+      metadata: {
+        category: "bio",
+        key: "height",
+        normalizedKey: "height",
+        unitType: "length",
+        granularity: "cm",
+        measurementSystem: "metric",
+      },
     });
   });
 
@@ -288,8 +330,38 @@ describe("measurements service", () => {
       updated_at: "2025-01-01",
     });
 
+    jest.mocked(listSelections).mockResolvedValue([
+      { user_id: "user-1", attribute_id: "range", is_visible: true, created_at: "2025-01-01" },
+    ]);
+
     await expect(addMeasurementValue("bio", "user-1", "range", 1)).rejects.toMatchObject({
       code: "MEASUREMENT_OUT_OF_RANGE",
+    });
+
+    jest.mocked(getAttributeById).mockResolvedValueOnce({
+      id: "disabled",
+      key: "disabled",
+      normalized_key: "disabled",
+      label: "Disabled",
+      description: null,
+      unit_type: "count",
+      granularity: "count",
+      measurement_system: "metric",
+      min_value_metric: null,
+      max_value_metric: null,
+      min_value_imperial: null,
+      max_value_imperial: null,
+      is_default: false,
+      derived_from_a_id: null,
+      derived_from_b_id: null,
+      derived_operator: null,
+      created_at: "2025-01-01",
+      updated_at: "2025-01-01",
+    });
+    jest.mocked(listSelections).mockResolvedValue([]);
+
+    await expect(addMeasurementValue("bio", "user-1", "disabled", 10)).rejects.toMatchObject({
+      code: "MEASUREMENT_NOT_ENABLED",
     });
 
     jest.useFakeTimers().setSystemTime(new Date("2025-03-01T10:00:00Z"));
@@ -313,6 +385,10 @@ describe("measurements service", () => {
       created_at: "2025-01-01",
       updated_at: "2025-01-01",
     });
+
+    jest.mocked(listSelections).mockResolvedValue([
+      { user_id: "user-1", attribute_id: "ok", is_visible: true, created_at: "2025-01-01" },
+    ]);
 
     const result = await addMeasurementValue("bio", "user-1", "ok", 10);
 

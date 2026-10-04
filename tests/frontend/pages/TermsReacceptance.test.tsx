@@ -107,10 +107,9 @@ describe("TermsReacceptance page", () => {
 
     await waitFor(
       () => {
-        const errorElement = screen.queryByText("You must accept the terms");
-        const alert = screen.queryByRole("alert");
-        // Either the error text or an alert should be present
-        expect(errorElement || alert).toBeTruthy();
+        const errorElements = screen.queryAllByText("You must accept the terms");
+        const alerts = screen.queryAllByRole("alert");
+        expect(errorElements.length + alerts.length).toBeGreaterThan(0);
       },
       { timeout: 3000 },
     );
@@ -231,9 +230,13 @@ describe("TermsReacceptance page", () => {
     );
   });
 
-  it("should disable form while submitting", async () => {
+  it("should disable form while submitting and settle the request before teardown", async () => {
+    let resolveRequest!: (value: { message: string }) => void;
     vi.mocked(api.acceptTerms).mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100)),
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
     );
 
     render(
@@ -245,19 +248,24 @@ describe("TermsReacceptance page", () => {
     const checkbox = screen.getByRole("checkbox");
     const submitButton = screen.getByRole("button", { name: "Accept" });
 
-    act(() => {
-      fireEvent.click(checkbox);
-      fireEvent.click(submitButton);
+    fireEvent.click(checkbox);
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(submitButton).toBeDisabled();
+      expect(checkbox).toBeDisabled();
+      expect(api.acceptTerms).toHaveBeenCalled();
     });
 
-    await waitFor(
-      () => {
-        expect(submitButton).toBeDisabled();
-        expect(checkbox).toBeDisabled();
-        expect(api.acceptTerms).toHaveBeenCalled();
-      },
-      { timeout: 1000 },
-    );
+    await act(async () => {
+      resolveRequest({ message: "Terms accepted" });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(submitButton).not.toBeDisabled();
+      expect(checkbox).not.toBeDisabled();
+    });
   });
 
   it("should allow signing out", async () => {
@@ -290,10 +298,14 @@ describe("TermsReacceptance page", () => {
 
     await waitFor(
       () => {
-        const termsLink = screen.getByText("Terms");
-        const privacyLink = screen.getByText("Privacy Policy");
-        expect(termsLink.closest("a")).toHaveAttribute("href", "/terms");
-        expect(privacyLink.closest("a")).toHaveAttribute("href", "/privacy");
+        const termsLinks = screen.getAllByRole("link").filter(
+          (link) => link.getAttribute("href") === "/terms",
+        );
+        const privacyLinks = screen.getAllByRole("link").filter(
+          (link) => link.getAttribute("href") === "/privacy",
+        );
+        expect(termsLinks.length).toBeGreaterThan(0);
+        expect(privacyLinks.length).toBeGreaterThan(0);
       },
       { timeout: 5000 },
     );

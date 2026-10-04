@@ -26,7 +26,7 @@ describe("progress service", () => {
     jest.mocked(fetchVibePointsTrends).mockResolvedValue({
       vibeRows: [
         { type_code: "strength", month_key: "2025-02", points: 10 },
-        { type_code: "balance", month_key: "2025-03", points: 20 },
+        { type_code: "regeneration", month_key: "2025-03", points: 20 },
       ],
       overallRows: [
         { month_key: "2025-02", points: 5 },
@@ -54,7 +54,7 @@ describe("progress service", () => {
         ],
       },
       {
-        type_code: "balance",
+        type_code: "regeneration",
         points: 20,
         trend: [
           { month: "2025-01", points: 0 },

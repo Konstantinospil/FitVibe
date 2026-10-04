@@ -5,11 +5,11 @@
 **Story ID**: US-6.1  
 **Epic ID**: [E6](../b.Epics/E6-privacy-and-gdpr.md)  
 **Title**: Data Export  
-**Status**: Proposed  
+**Status**: Open  
 **Story Points**: 5  
 **Priority**: High  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## Description
 
-Users can request a data export that generates a JSON bundle containing all user data (user, profile, sessions, exercises, points, badges) within ≤24h. The export link is valid for 24h and includes all user data per GDPR requirements.
+Users can request an authenticated export of their portable FitVibe data and receive it directly as a machine-readable download. The export must include the applicable user/profile/training/gamification data without persisting an additional downloadable copy merely to satisfy the export flow.
 
 ## Related Acceptance Criteria
 
@@ -37,15 +37,15 @@ Users can request a data export that generates a JSON bundle containing all user
 
 ## Technical Notes
 
-- Export job runs asynchronously
-- JSON bundle includes all user-related data
-- Export link expires after 24h
+- Export may be generated synchronously while the data volume remains appropriate for an authenticated request.
+- Use asynchronous generation only if measured data volume makes direct generation unreliable.
+- Do not persist a temporary export artifact unless that becomes operationally necessary.
 
 ## Test Strategy
 
-- E2E tests for complete export workflow
+- E2E tests for authenticated export workflow
 - Data completeness verification
-- Link expiration tests
+- Authorization and response-content tests
 
 ## Definition of Done
 
@@ -57,5 +57,5 @@ Users can request a data export that generates a JSON bundle containing all user
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: after implementation comparison

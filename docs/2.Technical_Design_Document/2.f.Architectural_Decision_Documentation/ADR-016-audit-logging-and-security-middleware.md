@@ -60,24 +60,32 @@ This ADR defines the standard middleware stack, audit event model, storage/reten
    - **Never store secrets or raw PII** (e.g., email, address); use stable IDs or hashed tokens for lookup when necessary.
    - **Sampling:** Info-level request logs sampled; **security/audit events are not sampled**.
 
-5. **Storage, Retention, and Integrity**
+5. **Durable audit delivery**
+
+   - A failed primary `audit_log` insert is persisted to the database-backed `audit_outbox` for later replay rather than being treated as successful delivery.
+   - Replay is **at-least-once attempted and idempotent at the audit-event ID**: insertion into `audit_log` uses the original event ID and duplicate IDs are ignored before the outbox row is removed.
+   - Short actor-FK visibility races may be retried synchronously with a bounded delay before falling back to the outbox.
+   - Replay may be opportunistic; a full transactional outbox coupling business state and audit state is **not** implied by this mechanism. If both the primary audit insert and outbox persistence fail, the application logs that audit durability has failed; this ADR does not claim atomic business-operation/audit-event commit.
+   - This mechanism is the recovery path required by the audit durability policy, not an independent source of business truth.
+
+6. **Storage, Retention, and Integrity**
    - **Structured JSON logs** shipped to a centralized store (e.g., OpenSearch/Cloud Logging).
    - **Retention:** 180 days default; **access-controlled** indices; DSR deletions **do not** remove audit entries but they contain no PII.
    - **Tamper-evidence:** Append-only sink with periodic **hash chaining** or provider-native immutability (WORM) for audit-critical streams.
 
-6. **Observability & Alerts**
+7. **Observability & Alerts**
    - **Metrics:** Prometheus counters/histograms for `http_requests`, `auth_failures_total`, `rate_limit_hits_total`, `audit_events_total`, and latency per route.
    - **Alerts:** Notify on spikes of 401/403/429, admin route access, and audit writer failures. SLO: API p95 < **300 ms**; logging overhead < **5%** CPU budget.
 
-7. **Idempotency & Replays (tie-in)**
+8. **Idempotency & Replays (tie-in)**
    - Audit entries reference idempotency keys on unsafe writes; replays are marked `result: "replay"` to distinguish from duplicates.
 
-8. **Privacy & Compliance**
+9. **Privacy & Compliance**
    - **Redaction hooks** scrub known fields before logging.
    - **Data residency** follows deployment region; logs tagged with region.
    - **Access controls**: least-privileged roles for log readers; auditable access to the log platform.
 
-9. **Testing & CI Integration**
+10. **Testing & CI Integration**
    - **Automated checks** ensure security headers, CORS policy, and CSRF tokens on protected routes (ZAP baseline in CI).
    - Unit/integration tests assert: no PII in logs, correlation propagation, and audit events for critical actions.
    - **Performance gate:** k6 smoke must pass with budgets; log sampling configurable for test envs.
@@ -127,3 +135,4 @@ This ADR defines the standard middleware stack, audit event model, storage/reten
 | Version | Date       | Change                                                | Author   |
 | ------- | ---------- | ----------------------------------------------------- | -------- |
 | v1.0    | 2025-10-14 | Initial ADR for security middleware and audit logging | Reviewer |
+| v1.1    | 2026-09-24 | Document bounded audit-write retry and durable idempotent database outbox replay semantics introduced during backend debt reduction | FitVibe Engineering / Product Owner |

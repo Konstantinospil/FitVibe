@@ -3,7 +3,8 @@ import { z } from "zod";
 
 import { getPointsHistory, getPointsSummary } from "./points.service.js";
 import type { PointsHistoryQuery } from "./points.types.js";
-import { getBadgeCatalog } from "./points.repository.js";
+import { getBadgeCatalog, getUserBadges } from "./points.repository.js";
+import { ensureGamificationProjectionFresh } from "./gamification-projection.service.js";
 
 const historyQuerySchema = z.object({
   cursor: z.string().optional(),
@@ -32,6 +33,7 @@ export async function getPointsSummaryHandler(req: Request, res: Response): Prom
   if (!userId) {
     return;
   }
+  await ensureGamificationProjectionFresh(userId);
   const summary = await getPointsSummary(userId);
   res.json(summary);
 }
@@ -48,6 +50,7 @@ export async function getPointsHistoryHandler(req: Request, res: Response): Prom
     return;
   }
 
+  await ensureGamificationProjectionFresh(userId);
   const history = await getPointsHistory(userId, parsed.data as PointsHistoryQuery);
   res.json(history);
 }
@@ -56,4 +59,15 @@ export async function getBadgeCatalogHandler(_req: Request, res: Response): Prom
   const catalog = await getBadgeCatalog();
   const badges = Array.from(catalog.values());
   res.json({ badges });
+}
+
+export async function getUserBadgesHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+
+  await ensureGamificationProjectionFresh(userId);
+  const badges = await getUserBadges(userId);
+  res.json({ badges, total: badges.length });
 }

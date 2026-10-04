@@ -4,6 +4,7 @@ import {
   disable,
   enable,
   regenerateBackups,
+  restartSetup,
   setup,
   status,
   verify,
@@ -14,6 +15,7 @@ jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js", () 
   enableTwoFactor: jest.fn(),
   disableTwoFactor: jest.fn(),
   regenerateTwoFactorBackupCodes: jest.fn(),
+  restartTwoFactorSetup: jest.fn(),
   getTwoFactorStatus: jest.fn(),
 }));
 
@@ -81,6 +83,28 @@ describe("two-factor controller", () => {
     });
   });
 
+  describe("restart setup", () => {
+    it("requires step-up credentials and delegates replacement to the service", async () => {
+      serviceMocks.restartTwoFactorSetup.mockResolvedValue({
+        secret: "secret-2",
+        qrCode: "qr-2",
+        backupCodes: ["backup-1"],
+      });
+      const req = createRequest({ body: { password: "StrongPassword123!", code: "123456" } });
+      const res = createResponse();
+      const next = jest.fn();
+
+      await restartSetup(req, res, next);
+
+      expect(serviceMocks.restartTwoFactorSetup).toHaveBeenCalledWith(
+        "user-123",
+        "StrongPassword123!",
+        "123456",
+      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ secret: "secret-2" }));
+    });
+  });
+
   describe("verify", () => {
     it("validates the six-digit setup code", async () => {
       const req = createRequest({ body: { code: "123" } });
@@ -129,7 +153,7 @@ describe("two-factor controller", () => {
   describe("disable", () => {
     it("requires the current password and delegates verification to the service", async () => {
       serviceMocks.disableTwoFactor.mockResolvedValue();
-      const req = createRequest({ body: { password: "StrongPassword123!" } });
+      const req = createRequest({ body: { password: "StrongPassword123!", code: "123456" } });
       const res = createResponse();
       const next = jest.fn();
 
@@ -138,6 +162,7 @@ describe("two-factor controller", () => {
       expect(serviceMocks.disableTwoFactor).toHaveBeenCalledWith(
         "user-123",
         "StrongPassword123!",
+        "123456",
       );
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -163,13 +188,17 @@ describe("two-factor controller", () => {
   describe("backup codes", () => {
     it("regenerates backup codes through the canonical service", async () => {
       serviceMocks.regenerateTwoFactorBackupCodes.mockResolvedValue(["code-1", "code-2"]);
-      const req = createRequest();
+      const req = createRequest({ body: { password: "StrongPassword123!", code: "123456" } });
       const res = createResponse();
       const next = jest.fn();
 
       await regenerateBackups(req, res, next);
 
-      expect(serviceMocks.regenerateTwoFactorBackupCodes).toHaveBeenCalledWith("user-123");
+      expect(serviceMocks.regenerateTwoFactorBackupCodes).toHaveBeenCalledWith(
+        "user-123",
+        "StrongPassword123!",
+        "123456",
+      );
       expect(res.json).toHaveBeenCalledWith({
         message: "Backup codes regenerated successfully",
         backupCodes: ["code-1", "code-2"],

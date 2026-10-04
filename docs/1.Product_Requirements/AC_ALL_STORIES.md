@@ -1,5 +1,8 @@
 # Acceptance Criteria for All User Stories
 
+> **Authority:** Historical aggregate only. This file contains legacy/generated acceptance-criterion text and identifier collisions from earlier product-model versions. It must not be used as product SSOT or as a backlog source. Canonical acceptance criteria live as individual files under `e.Acceptance_Criteria/`; where they disagree, the individual canonical file wins.
+
+
 **Generated**: 2025-01-21
 
 ---

@@ -1,4 +1,3 @@
-import type { Knex } from "knex";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../../db/connection.js";
 import {
@@ -10,28 +9,30 @@ import {
   cancelSession,
   replaceSessionExercises,
   refreshSessionSummary,
-  sessionsExistAtDates,
-  type SessionExerciseUpsertInput,
 } from "./sessions.repository.js";
 import type {
   CreateSessionDTO,
   UpdateSessionDTO,
-  CloneSessionDTO,
-  SessionRecurrenceDTO,
   Session,
   SessionQuery,
   PaginatedResult,
-  SessionExerciseInput,
-  SessionExerciseAttributesInput,
-  SessionExerciseActualInput,
   SessionWithExercises,
-  SessionExercise,
 } from "./sessions.types";
 import { recomputeProgress } from "../plans/plans.service.js";
-import { awardPointsForSession } from "../points/points.service.js";
 import { insertAudit } from "../common/audit.util.js";
 import { HttpError } from "../../utils/http.js";
-import { findFeedItemBySessionId, insertFeedItem } from "../feed/feed.repository.js";
+import { reconcileSessionPublication } from "../feed/feed.publication.service.js";
+import {
+  markGamificationStale,
+  scheduleGamificationReconciliation,
+} from "../points/gamification-projection.service.js";
+import { ensureSessionInteractionAllowed, loadSessionOrThrow } from "../feed/feed.access.js";
+import {
+  ensureNonNegativeInteger,
+  ensurePlanExists,
+  normalizeSessionExercises,
+  trimToNull,
+} from "./sessions.normalization.js";
 
 const allowedTransitions: Record<string, string[]> = {
   planned: ["in_progress", "completed", "canceled"],
@@ -39,268 +40,6 @@ const allowedTransitions: Record<string, string[]> = {
   completed: [],
   canceled: [],
 };
-
-const intervalPattern =
-  /^(?:P(?!$)(?:\d+Y)?(?:\d+M)?(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+S)?)?|(?:\d{2}):(?:\d{2})(?::(?:\d{2}))?)$/;
-
-function trimToNull(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-}
-
-function ensureNonNegativeNumber(
-  name: string,
-  value: number | null | undefined,
-  context: string,
-): number | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (Number.isNaN(value) || value < 0) {
-    throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: ${name} cannot be negative`);
-  }
-  return value;
-}
-
-function ensureNonNegativeInteger(
-  name: string,
-  value: number | null | undefined,
-  context: string,
-): number | null {
-  const normalized = ensureNonNegativeNumber(name, value, context);
-  if (normalized === null) {
-    return null;
-  }
-  if (!Number.isInteger(normalized)) {
-    throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: ${name} must be an integer`);
-  }
-  return normalized;
-}
-
-function ensureRpeRange(
-  name: string,
-  value: number | null | undefined,
-  context: string,
-): number | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (!Number.isInteger(value) || value < 1 || value > 10) {
-    throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: ${name} must be 1-10`);
-  }
-  return value;
-}
-
-function validateInterval(
-  name: string,
-  value: string | null | undefined,
-  context: string,
-): string | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (!intervalPattern.test(value)) {
-    throw new HttpError(
-      422,
-      "E.SESSION.INVALID_SET",
-      `${context}: ${name} must be ISO 8601 duration or HH:MM[:SS]`,
-    );
-  }
-  return value;
-}
-
-function normalizeExtras(extras: unknown): Record<string, unknown> {
-  if (!extras || typeof extras !== "object" || Array.isArray(extras)) {
-    return {};
-  }
-  return extras as Record<string, unknown>;
-}
-
-type PlanRow = { id: string; user_id: string };
-
-async function ensurePlanExists(
-  trx: Knex.Transaction,
-  planId: string,
-  ownerId: string,
-): Promise<void> {
-  const plan = await trx<PlanRow>("plans")
-    .select("id")
-    .where({ id: planId, user_id: ownerId })
-    .first();
-  if (!plan) {
-    throw new HttpError(400, "E.SESSION.INVALID_PLAN", "SESSION_INVALID_PLAN");
-  }
-}
-
-function normalizeAttributesInput(
-  input: SessionExerciseAttributesInput | null | undefined,
-  context: string,
-) {
-  if (!input) {
-    return null;
-  }
-
-  const normalized = {
-    sets: ensureNonNegativeInteger("sets", input.sets, context),
-    reps: ensureNonNegativeInteger("reps", input.reps, context),
-    load: ensureNonNegativeNumber("load", input.load, context),
-    distance: ensureNonNegativeNumber("distance", input.distance, context),
-    duration: validateInterval("duration", input.duration ?? null, context),
-    rpe: ensureRpeRange("rpe", input.rpe, context),
-    rest: validateInterval("rest", input.rest ?? null, context),
-    extras: normalizeExtras(input.extras),
-  };
-
-  const hasValue =
-    normalized.sets !== null ||
-    normalized.reps !== null ||
-    normalized.load !== null ||
-    normalized.distance !== null ||
-    (normalized.duration && normalized.duration.length > 0) ||
-    normalized.rpe !== null ||
-    (normalized.rest && normalized.rest.length > 0) ||
-    Object.keys(normalized.extras).length > 0;
-
-  return hasValue ? normalized : null;
-}
-
-function normalizeActualAttributesInput(
-  input: SessionExerciseActualInput | null | undefined,
-  context: string,
-) {
-  const base = normalizeAttributesInput(input, context);
-  if (!base) {
-    return null;
-  }
-  const recordedAt =
-    input?.recorded_at && input.recorded_at.length
-      ? new Date(input.recorded_at).toISOString()
-      : null;
-  return {
-    ...base,
-    recorded_at: recordedAt,
-  };
-}
-
-function normalizeSets(
-  sets: SessionExerciseInput["sets"],
-  context: string,
-): SessionExerciseUpsertInput["sets"] {
-  if (!sets || sets.length === 0) {
-    return [];
-  }
-  const seenOrders = new Set<number>();
-
-  const normalized = sets.map((set, index) => {
-    const setContext = `${context} set #${index + 1}`;
-    const order = ensureNonNegativeInteger("order", set.order, setContext);
-    if (order === null || order < 1) {
-      throw new HttpError(422, "E.SESSION.INVALID_SET", `${setContext}: order must be >= 1`);
-    }
-    if (seenOrders.has(order)) {
-      throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: duplicate set order ${order}`);
-    }
-    seenOrders.add(order);
-
-    return {
-      id: set.id ?? uuidv4(),
-      order_index: order,
-      reps: ensureNonNegativeInteger("reps", set.reps ?? null, setContext),
-      weight_kg: ensureNonNegativeNumber("weight_kg", set.weight_kg ?? null, setContext),
-      distance_m: ensureNonNegativeInteger("distance_m", set.distance_m ?? null, setContext),
-      duration_sec: ensureNonNegativeInteger("duration_sec", set.duration_sec ?? null, setContext),
-      rpe: ensureRpeRange("rpe", set.rpe ?? null, setContext),
-      notes: trimToNull(set.notes),
-    };
-  });
-
-  normalized.sort((a, b) => a.order_index - b.order_index);
-  return normalized;
-}
-
-function normalizeSessionExercises(
-  exercises?: SessionExerciseInput[],
-): SessionExerciseUpsertInput[] {
-  if (!exercises || exercises.length === 0) {
-    return [];
-  }
-
-  const seenOrders = new Set<number>();
-
-  const normalized = exercises.map((exercise, index) => {
-    const context = `exercise #${index + 1}`;
-    const order = ensureNonNegativeInteger("order", exercise.order, context);
-    if (order === null || order < 1) {
-      throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: order must be >= 1`);
-    }
-    if (seenOrders.has(order)) {
-      throw new HttpError(422, "E.SESSION.INVALID_SET", `Duplicate exercise order ${order}`);
-    }
-    seenOrders.add(order);
-
-    return {
-      id: exercise.id ?? uuidv4(),
-      exercise_id: exercise.exercise_id ?? null,
-      order_index: order,
-      notes: trimToNull(exercise.notes),
-      planned: normalizeAttributesInput(exercise.planned ?? null, `${context} planned`),
-      actual: normalizeActualAttributesInput(exercise.actual ?? null, `${context} actual`),
-      sets: normalizeSets(exercise.sets, context),
-    };
-  });
-
-  normalized.sort((a, b) => a.order_index - b.order_index);
-  return normalized;
-}
-
-function convertExistingExerciseToInput(
-  exercise: SessionExercise,
-  includeActual: boolean,
-): SessionExerciseInput {
-  return {
-    order: exercise.order_index,
-    exercise_id: exercise.exercise_id ?? undefined,
-    notes: exercise.notes ?? undefined,
-    planned: exercise.planned ?? undefined,
-    actual: includeActual ? (exercise.actual ?? undefined) : null,
-    sets:
-      exercise.sets?.map((set) => ({
-        order: set.order_index,
-        reps: set.reps ?? undefined,
-        weight_kg: set.weight_kg ?? undefined,
-        distance_m: set.distance_m ?? undefined,
-        duration_sec: set.duration_sec ?? undefined,
-        rpe: set.rpe ?? undefined,
-        notes: set.notes ?? undefined,
-      })) ?? [],
-  };
-}
-
-function cloneExerciseInputsForReuse(inputs: SessionExerciseInput[]): SessionExerciseInput[] {
-  return inputs.map((exercise) => ({
-    ...exercise,
-    sets: exercise.sets
-      ? exercise.sets.map((set) => ({
-          ...set,
-        }))
-      : undefined,
-    planned: exercise.planned
-      ? {
-          ...exercise.planned,
-          extras: exercise.planned.extras ? { ...exercise.planned.extras } : undefined,
-        }
-      : undefined,
-    actual: exercise.actual
-      ? {
-          ...exercise.actual,
-          extras: exercise.actual.extras ? { ...exercise.actual.extras } : undefined,
-        }
-      : exercise.actual,
-  }));
-}
 
 export async function getAll(
   userId: string,
@@ -310,7 +49,10 @@ export async function getAll(
 }
 
 export async function getOne(userId: string, id: string): Promise<SessionWithExercises> {
-  const session = await getSessionWithDetails(id, userId);
+  const accessSession = await loadSessionOrThrow(id);
+  await ensureSessionInteractionAllowed(userId, accessSession);
+
+  const session = await getSessionWithDetails(id, accessSession.owner_id);
   if (!session) {
     throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
   }
@@ -370,30 +112,12 @@ export async function createOne(
     await recomputeProgress(userId, row.plan_id);
   }
 
-  // Retry logic for transaction visibility (especially in test environments)
-  let created: SessionWithExercises | undefined;
-  let retries = 0;
-  const maxRetries = 5;
-  while (!created && retries < maxRetries) {
-    if (retries > 0) {
-      // Small delay to allow transaction to be fully committed and visible
-      await new Promise((resolve) => setTimeout(resolve, 50 * retries));
-    }
-    created = await getSessionWithDetails(sessionId, userId);
-    retries++;
-  }
-
+  const created = await getSessionWithDetails(sessionId, userId);
   if (!created) {
-    // Log additional context for debugging
-    const sessionExists = (await db("sessions").where({ id: sessionId }).first()) as
-      { owner_id: string } | undefined;
-    const errorDetails: Record<string, unknown> = {
+    throw new HttpError(500, "E.SESSION.CREATE_FAILED", "SESSION_CREATE_FAILED", {
       sessionId,
       userId,
-      sessionExists: !!sessionExists,
-      ownerMatches: sessionExists?.owner_id === userId,
-    };
-    throw new HttpError(500, "E.SESSION.CREATE_FAILED", "SESSION_CREATE_FAILED", errorDetails);
+    });
   }
 
   if (normalizedExercises.length > 0 || created.status === "completed") {
@@ -411,6 +135,22 @@ export async function updateOne(
   const current = await getSessionById(id, userId);
   if (!current) {
     throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
+  }
+
+  const correctionFieldsTouched =
+    dto.plan_id !== undefined ||
+    dto.planned_at !== undefined ||
+    dto.started_at !== undefined ||
+    dto.completed_at !== undefined ||
+    dto.calories !== undefined ||
+    dto.exercises !== undefined;
+
+  if (current.status === "completed" && correctionFieldsTouched) {
+    throw new HttpError(
+      409,
+      "E.SESSION.REOPEN_REQUIRED",
+      "Completed workout records must be reopened before correction.",
+    );
   }
 
   const normalizedExercises = dto.exercises ? normalizeSessionExercises(dto.exercises) : null;
@@ -480,6 +220,9 @@ export async function updateOne(
     updates.deleted_at = targetDeletedAt;
   }
 
+  const completing = targetStatus === "completed" && current.status !== "completed";
+  const fullGamificationRebuild = completing && current.gamification_rebuild_required === true;
+
   await db.transaction(async (trx) => {
     if (dto.plan_id) {
       await ensurePlanExists(trx, dto.plan_id, userId);
@@ -492,6 +235,10 @@ export async function updateOne(
 
     if (normalizedExercises !== null) {
       await replaceSessionExercises(trx, id, normalizedExercises);
+    }
+
+    if (completing) {
+      await markGamificationStale(userId, fullGamificationRebuild, trx);
     }
   });
 
@@ -506,34 +253,12 @@ export async function updateOne(
   const visibilityChanged =
     dto.visibility !== undefined && current.visibility !== updated.visibility;
 
-  const shouldAwardPoints =
-    updated.status === "completed" &&
-    (statusChanged || current.points === null || current.points === undefined);
-
-  if (shouldAwardPoints) {
-    const awardResult = await awardPointsForSession(updated);
-    if (awardResult.pointsAwarded !== null) {
-      updated.points = awardResult.pointsAwarded;
-    }
+  if (statusChanged || visibilityChanged) {
+    await reconcileSessionPublication(userId, id, updated.status, updated.visibility);
   }
 
-  // Automatically create feed item when a completed session is public
-  // This handles both cases:
-  // 1. Session completed and visibility is already public
-  // 2. Session visibility changed to public and it's already completed
-  if (updated.status === "completed" && updated.visibility === "public") {
-    // Only create if something relevant changed (status or visibility)
-    // to avoid unnecessary checks on every update
-    if (statusChanged || visibilityChanged) {
-      const existingFeedItem = await findFeedItemBySessionId(id);
-      if (!existingFeedItem) {
-        await insertFeedItem({
-          ownerId: userId,
-          sessionId: id,
-          visibility: "public",
-        });
-      }
-    }
+  if (completing) {
+    scheduleGamificationReconciliation(userId, id, fullGamificationRebuild);
   }
 
   if (statusChanged || exercisesTouched) {
@@ -565,261 +290,7 @@ export async function updateOne(
   return updated;
 }
 
-export async function cloneOne(
-  userId: string,
-  sourceId: string,
-  dto: CloneSessionDTO,
-): Promise<SessionWithExercises> {
-  const source = await getSessionWithDetails(sourceId, userId);
-  if (!source) {
-    throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
-  }
-
-  const includeActual = dto.include_actual ?? false;
-
-  const targetPlanId = dto.plan_id !== undefined ? (dto.plan_id ?? null) : (source.plan_id ?? null);
-  const planChanged = targetPlanId !== (source.plan_id ?? null);
-
-  const normalizedExercises = normalizeSessionExercises(
-    source.exercises.map((exercise) => convertExistingExerciseToInput(exercise, includeActual)),
-  );
-
-  let plannedAt: string;
-  if (dto.planned_at) {
-    plannedAt = new Date(dto.planned_at).toISOString();
-  } else if (dto.date_offset_days !== undefined) {
-    const base = new Date(source.planned_at);
-    base.setUTCDate(base.getUTCDate() + dto.date_offset_days);
-    plannedAt = base.toISOString();
-  } else {
-    plannedAt = new Date(source.planned_at).toISOString();
-  }
-
-  const sessionId = uuidv4();
-  const timestamp = new Date().toISOString();
-  const row: Session = {
-    id: sessionId,
-    owner_id: userId,
-    plan_id: targetPlanId ?? null,
-    title: dto.title !== undefined ? trimToNull(dto.title) : trimToNull(source.title ?? null),
-    planned_at: plannedAt,
-    status: "planned",
-    visibility: dto.visibility ?? source.visibility ?? "private",
-    notes: dto.notes !== undefined ? trimToNull(dto.notes) : trimToNull(source.notes ?? null),
-    recurrence_rule:
-      dto.recurrence_rule !== undefined
-        ? trimToNull(dto.recurrence_rule)
-        : trimToNull(source.recurrence_rule ?? null),
-    created_at: timestamp,
-    updated_at: timestamp,
-  };
-
-  await db.transaction(async (trx) => {
-    if (planChanged && targetPlanId) {
-      await ensurePlanExists(trx, targetPlanId, userId);
-    }
-
-    await createSession(row, trx);
-    if (normalizedExercises.length > 0) {
-      await replaceSessionExercises(trx, sessionId, normalizedExercises);
-    }
-  });
-
-  const cloned = await getSessionWithDetails(sessionId, userId);
-  if (!cloned) {
-    throw new HttpError(500, "E.SESSION.CLONE_FAILED", "SESSION_CLONE_FAILED");
-  }
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "sessions",
-    action: "clone",
-    entityId: sessionId,
-    metadata: {
-      source_id: sourceId,
-      plan_id: cloned.plan_id,
-      include_actual: includeActual,
-    },
-  });
-
-  if (cloned.plan_id) {
-    await recomputeProgress(userId, cloned.plan_id);
-  }
-
-  if (normalizedExercises.length > 0) {
-    await refreshSessionSummary();
-  }
-
-  return cloned;
-}
-
-function addDays(base: Date, days: number): Date {
-  const clone = new Date(base.getTime());
-  clone.setUTCDate(clone.getUTCDate() + days);
-  return clone;
-}
-
-export async function applyRecurrence(
-  userId: string,
-  sourceId: string,
-  dto: SessionRecurrenceDTO,
-): Promise<SessionWithExercises[]> {
-  if (!Number.isInteger(dto.occurrences) || dto.occurrences < 1 || dto.occurrences > 52) {
-    throw new HttpError(
-      400,
-      "E.SESSION.RECURRENCE_INVALID",
-      "occurrences must be between 1 and 52",
-    );
-  }
-
-  if (!Number.isInteger(dto.offset_days) || dto.offset_days < 1 || dto.offset_days > 180) {
-    throw new HttpError(
-      400,
-      "E.SESSION.RECURRENCE_INVALID",
-      "offset_days must be between 1 and 180",
-    );
-  }
-
-  if (dto.offset_days * dto.occurrences > 365) {
-    throw new HttpError(400, "E.SESSION.RECURRENCE_INVALID", "SESSION_RECURRENCE_INVALID");
-  }
-
-  const source = await getSessionWithDetails(sourceId, userId);
-  if (!source) {
-    throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
-  }
-  if (source.status === "canceled") {
-    throw new HttpError(400, "E.SESSION.RECURRENCE_SOURCE_INVALID", "SESSION_INVALID_SOURCE");
-  }
-
-  const includeActual = dto.include_actual ?? false;
-  const targetPlanId = dto.plan_id !== undefined ? (dto.plan_id ?? null) : (source.plan_id ?? null);
-
-  const baseExercisesInput = source.exercises
-    ? source.exercises.map((exercise) => convertExistingExerciseToInput(exercise, includeActual))
-    : [];
-
-  const baseDate = new Date(source.planned_at);
-  if (Number.isNaN(baseDate.getTime())) {
-    throw new HttpError(500, "E.SESSION.INVALID_SOURCE", "SESSION_INVALID_SOURCE");
-  }
-
-  let startDate: Date | null = null;
-  if (dto.start_from) {
-    startDate = new Date(dto.start_from);
-    if (Number.isNaN(startDate.getTime())) {
-      throw new HttpError(
-        400,
-        "E.SESSION.RECURRENCE_INVALID_START",
-        "start_from must be a valid date",
-      );
-    }
-  }
-
-  const plannedDates: string[] = [];
-  for (let index = 0; index < dto.occurrences; index += 1) {
-    const reference = startDate ? startDate : baseDate;
-    const increment = startDate ? dto.offset_days * index : dto.offset_days * (index + 1);
-    const target = addDays(reference, increment);
-    plannedDates.push(target.toISOString());
-  }
-
-  const baseIso = baseDate.toISOString();
-  if (plannedDates.includes(baseIso)) {
-    throw new HttpError(
-      400,
-      "E.SESSION.RECURRENCE_INVALID_START",
-      "Recurrence would duplicate the source session date",
-    );
-  }
-
-  const conflicts = await sessionsExistAtDates(userId, plannedDates);
-  if (conflicts.length > 0) {
-    throw new HttpError(
-      409,
-      "E.SESSION.RECURRENCE_CONFLICT",
-      "A session already exists for one or more target dates",
-      { conflicts },
-    );
-  }
-
-  const createdSessionIds: string[] = [];
-  const timestamp = new Date().toISOString();
-
-  await db.transaction(async (trx) => {
-    if (targetPlanId) {
-      await ensurePlanExists(trx, targetPlanId, userId);
-    }
-
-    for (const plannedAt of plannedDates) {
-      const sessionId = uuidv4();
-      const row: Session = {
-        id: sessionId,
-        owner_id: userId,
-        plan_id: targetPlanId ?? null,
-        title: dto.title !== undefined ? trimToNull(dto.title) : trimToNull(source.title ?? null),
-        planned_at: plannedAt,
-        status: "planned",
-        visibility: dto.visibility ?? source.visibility ?? "private",
-        notes: dto.notes !== undefined ? trimToNull(dto.notes) : trimToNull(source.notes ?? null),
-        recurrence_rule:
-          dto.recurrence_rule !== undefined
-            ? trimToNull(dto.recurrence_rule)
-            : trimToNull(source.recurrence_rule ?? null),
-        created_at: timestamp,
-        updated_at: timestamp,
-      };
-
-      await createSession(row, trx);
-
-      if (baseExercisesInput.length > 0) {
-        const normalized = normalizeSessionExercises(
-          cloneExerciseInputsForReuse(baseExercisesInput),
-        );
-        if (normalized.length > 0) {
-          await replaceSessionExercises(trx, sessionId, normalized);
-        }
-      }
-
-      createdSessionIds.push(sessionId);
-    }
-  });
-
-  const clones: SessionWithExercises[] = [];
-  for (const id of createdSessionIds) {
-    const clone = await getSessionWithDetails(id, userId);
-    if (!clone) {
-      throw new HttpError(
-        500,
-        "E.SESSION.RECURRENCE_LOAD_FAILED",
-        "Unable to load created recurrence session",
-      );
-    }
-    clones.push(clone);
-  }
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "sessions",
-    action: "recurrence_create",
-    entityId: sourceId,
-    metadata: {
-      occurrences: dto.occurrences,
-      offset_days: dto.offset_days,
-      planned_dates: plannedDates,
-      include_actual: includeActual,
-      plan_id: targetPlanId,
-    },
-  });
-
-  if (targetPlanId) {
-    await recomputeProgress(userId, targetPlanId);
-  }
-
-  await refreshSessionSummary();
-
-  return clones;
-}
+export { cloneOne, applyRecurrence } from "./sessions.clone.service.js";
 
 export async function cancelOne(userId: string, id: string): Promise<void> {
   const current = await getSessionById(id, userId);
@@ -846,9 +317,69 @@ export async function cancelOne(userId: string, id: string): Promise<void> {
     entityId: id,
   });
 
+  await reconcileSessionPublication(userId, id, "canceled", current.visibility);
   await refreshSessionSummary();
 
   if (current.plan_id) {
     await recomputeProgress(userId, current.plan_id);
   }
+}
+
+export async function reopenOne(userId: string, id: string): Promise<SessionWithExercises> {
+  const current = await getSessionById(id, userId);
+  if (!current) {
+    throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
+  }
+  if (current.status !== "completed") {
+    throw new HttpError(
+      409,
+      "E.SESSION.REOPEN_NOT_COMPLETED",
+      "Only completed sessions can be reopened.",
+    );
+  }
+
+  await db.transaction(async (trx) => {
+    const affected = await updateSession(
+      id,
+      userId,
+      {
+        status: "in_progress",
+        completed_at: null,
+        points: null,
+        gamification_rebuild_required: true,
+      },
+      trx,
+    );
+    if (affected === 0) {
+      throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
+    }
+    await markGamificationStale(userId, true, trx);
+  });
+
+  const reopened = await getSessionWithDetails(id, userId);
+  if (!reopened) {
+    throw new HttpError(500, "E.SESSION.UPDATE_FAILED", "SESSION_UPDATE_FAILED");
+  }
+
+  await reconcileSessionPublication(userId, id, reopened.status, reopened.visibility);
+  await refreshSessionSummary();
+  scheduleGamificationReconciliation(userId, undefined, true);
+
+  await insertAudit({
+    actorUserId: userId,
+    entityType: "sessions",
+    action: "reopen",
+    entityId: id,
+    metadata: {
+      previous_status: current.status,
+      previous_completed_at: current.completed_at ?? null,
+      reason: "workout_record_correction",
+    },
+  });
+
+  if (current.plan_id) {
+    await recomputeProgress(userId, current.plan_id);
+  }
+
+  return reopened;
 }

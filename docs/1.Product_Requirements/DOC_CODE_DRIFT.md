@@ -2,7 +2,9 @@
 
 **Created**: 2026-09-01  
 **Scope**: Product requirements, technical design, design system, policies. Excludes testing plans and security/review folders.  
-**Status**: Decisions filled 2026-09-01 from the qualitative analysis (running app is SSOT for shipped behavior; GOLD/legal leftover UI still `change-code`). **Decision** is the recommended direction, not yet applied to product docs or code except the cheap wiring slice called out in that analysis.
+**Status**: Historical snapshot under revalidation. The register was created before Backend Technical-Debt Reduction Pass 2 Phases 11–15 and must not be treated as a current implementation backlog without checking the live `dev` state. **Decision** records the 2026-09-01 recommendation, not an instruction to change current code.
+
+> **Debt-confrontation rule (2026-09-24):** documentation is reconciled before implementation debt is selected. Rows that describe intentionally open product scope are backlog, not technical debt. Rows already repaired by later phases must be marked superseded rather than reimplemented.
 
 This file is a decision log. Each row is a mismatch between documentation and the current codebase. **Suggested** is the original one-liner; **Decision** is the recommended correction: `update-doc` | `change-code` | `keep-both` | `wont-fix`.
 
@@ -22,6 +24,29 @@ Matching ACs are omitted. Only failing ACs, status/wording mismatches, missing a
 1. Read **Doc** (the claim) and **Code** (what exists).
 2. **Decision** is filled with the recommended source of truth. Override a cell if you disagree.
 3. Values: `update-doc` (docs catch up to code or shrink over-spec), `change-code` (implement or wire what docs/unused UI already require), `keep-both` (two valid surfaces; document both), `wont-fix` (real backlog or out of scope for this pass; do not pretend it shipped).
+
+---
+
+## 2026-09-25 Documentation Reconciliation Baseline
+
+The following documentation decisions have now been made and incorporated into canonical artifacts. They are no longer open documentation-design questions:
+
+- delivery lifecycle uses Open / Progressing / Done / Superseded; ACs keep Proposed / Approved / Verified / Rejected;
+- individual canonical artifacts outrank indexes/catalogues; `docs/6.Implementation/` and GitHub issues are not product SSOT;
+- FR-013 lockout feedback is Superseded by Phase-14 opaque authentication controls and no longer owns `US-13.*`;
+- E13 owns `US-13.*` and has eight canonical product stories; E13-A11/A12 remain verification activities;
+- Profile Measurements no longer reopens E1/FR-009; it is FR-014 / E21, while US-1.4 is Superseded;
+- E14–E18 are legacy-completed scope; missing retrospective stories are not future backlog;
+- FR-008/E16 explicitly recognize product administration plus the dedicated Backoffice surface and canonical roles `athlete`, `coach`, `support`, `admin`;
+- NFR-001 removes CAPTCHA/puzzle authentication from target scope and follows ADR-030;
+- NFR-004 uses WCAG 2.2 AA as normative scope; Lighthouse is a regression indicator rather than proof of conformance;
+- NFR-005 standardizes quarterly full restore drills with automated backup/integrity evidence between drills;
+- NFR-006/E18 define the canonical five-locale set: EN/DE/EL/ES/FR with English fallback;
+- legal publication authority is an immutable Backoffice publication snapshot under ADR-032; mutable translation/Markdown sources cannot redefine a published version;
+- E19 now has canonical publication, registration-acceptance, and re-acceptance stories;
+- E20 verification reports are historical evidence and must be revalidated against live `dev` before backlog derivation.
+
+**Next step:** compare this contradiction-reduced target documentation against live implementation. Rows in this historical register must be reclassified from live evidence before any GitHub Project/backlog is created.
 
 ---
 
@@ -268,6 +293,17 @@ Design-system tokens in `3.b` match `global.css` `--vibe-*`. No row.
 User-flow doc `3.c` (points on complete, progress export) matches code. No row.
 
 ---
+
+## 2026-09-24 revalidation notes
+
+The following snapshot findings are already superseded by later implementation and must not drive duplicate repair work:
+
+- **DRIFT-082** (production PostgreSQL certificate verification): current code owns SSL construction in `apps/backend/src/db/ssl-config.ts`; production enables certificate verification, while relaxed verification is limited to development or explicit configuration. The old row describes the pre-repair `db.config.ts` implementation.
+- **DRIFT-063** (two 2FA services): the current split has distinct responsibilities: login-stage verification and 2FA lifecycle/administration. Do not merge them solely because the historical AC dump called the split debt; only a demonstrated duplicated invariant or dependency problem justifies consolidation.
+- Phase 14 deliberately removed public lockout counters/reasons from the authentication surface to prevent credential/enrollment disclosure. Historical lockout-UI rows and ACs must therefore be reconciled to the opaque-challenge contract rather than used to restore those disclosures.
+- Phase 15 made the email blacklist authoritative/fail-closed, encrypted persisted TOTP secrets, and added step-up authentication to sensitive 2FA administration. Any earlier row or policy statement claiming those controls are absent requires revalidation against PR #240.
+
+Open feature scope such as planner activation/DnD, GPX/FIT import, offline sync, coach units, comprehensive observability channels, or automated backup scheduling remains product backlog unless a completed phase or accepted requirement explicitly claims it is shipped. The debt-confrontation pass will not implement such scope merely to make this historical register reach zero rows.
 
 ## Suggested review order
 

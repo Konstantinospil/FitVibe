@@ -8,7 +8,11 @@
     "you": "Du",
     "activeSession": "Aktive Einheit",
     "skipToContent": "Zum Hauptinhalt springen",
-    "back": "Zurück"
+    "back": "Zurück",
+    "calendar": "Kalender",
+    "library": "Bibliothek",
+    "dashboard": "Dashboard",
+    "settings": "Einstellungen"
   },
   "language": {
     "label": "Sprache",
@@ -73,6 +77,12 @@
         "title": "Highlights",
         "description": "180 kg Kniebeuge - 115 kg Bankdrücken - 210 kg Kreuzheben - Boston-Marathon-Qualifikation."
       }
+    },
+    "measurements": {
+      "title": "Messwerte",
+      "empty": "In Ihrem Profil werden noch keine Messwerte angezeigt.",
+      "noValue": "Noch kein Wert erfasst",
+      "loadError": "Profil-Messwerte konnten nicht geladen werden."
     }
   },
   "feed": {
@@ -272,7 +282,24 @@
     "period": "Zeitraum",
     "volume": "Volumen",
     "sessions": "Einheiten",
-    "helperText": "Zeige bis zu 5 Zeiträume, um die Payload auf geteilten Dashboards gering zu halten."
+    "helperText": "Zeige bis zu 5 Zeiträume, um die Payload auf geteilten Dashboards gering zu halten.",
+    "vibeformTitle": "Vibeform",
+    "vibeformDescription": "Deine gespeicherte Vibeform und dein aktuell berechneter Trainingszustand.",
+    "vibeformAccessibleLabel": "Deine aktuelle Vibeform",
+    "loadingVibeform": "Vibeform wird geladen…",
+    "vibeformError": "Deine Vibeform konnte nicht geladen werden.",
+    "vibesTitle": "Vibes",
+    "currentVibe": "Aktueller Wert",
+    "valueUnavailable": "Wert nicht verfügbar",
+    "vibeValue": "{{value}} %",
+    "badgesTitle": "Verdiente Badges",
+    "loadingBadges": "Badges werden geladen…",
+    "badgesError": "Badges konnten nicht geladen werden.",
+    "noBadges": "Noch keine Badges verdient.",
+    "fitnessTestTitle": "Fitnesstest",
+    "fitnessTestDescription": "Die Auswertung des Fitnesstests ist noch nicht definiert. Die Forschung bleibt vom Dashboard getrennt.",
+    "fitnessTestAction": "Informationen zum Fitnesstest",
+    "fitnessTestPending": "Die Benchmark-Definition ist im separaten Forschungsthema ausstehend."
   },
   "progress": {
     "eyebrow": "Trends & Insights",
@@ -488,20 +515,16 @@
     },
     "preferences": {
       "title": "Präferenzen",
-      "description": "Setze deine Standard-Session-Sichtbarkeit, Einheiten und Sprache",
-      "defaultVisibility": "Standard-Session-Sichtbarkeit",
+      "description": "Wähle deine bevorzugte Sprache und dein Einheitensystem",
       "units": "Einheiten",
       "language": "Sprache",
       "saveSuccess": "Präferenzen erfolgreich gespeichert!",
       "saveError": "Fehler beim Speichern der Präferenzen. Bitte versuche es erneut.",
       "saveButton": "Präferenzen speichern",
       "saving": "Wird gespeichert...",
-      "visibilityPrivate": "Privat (nur du)",
-      "visibilityFollowers": "Follower",
-      "visibilityLink": "Nur Link",
-      "visibilityPublic": "Öffentlich",
       "unitsMetric": "Metrisch (kg, km)",
-      "unitsImperial": "Imperial (lb, mi)"
+      "unitsImperial": "Imperial (lb, mi)",
+      "loadError": "Präferenzen konnten nicht geladen werden. Bitte versuche es erneut."
     },
     "privacy": {
       "title": "Datenschutzeinstellungen",
@@ -587,6 +610,33 @@
       "confirmDelete": "Löschen bestätigen",
       "deleteSuccess": "Dein Konto wurde zur Löschung vorgemerkt. Du wirst jetzt abgemeldet.",
       "deleteError": "Konto konnte nicht gelöscht werden. Bitte versuche es erneut."
+    },
+    "measurements": {
+      "title": "Messwerte",
+      "description": "Erfassen Sie Werte für Messgrößen, die bereits in Ihrem Profil aktiviert sind.",
+      "category": "Messwertkategorie",
+      "biometric": "Biometrisch",
+      "performance": "Leistung",
+      "latest": "Zuletzt",
+      "value": "Wert",
+      "measuredAt": "gemessen am",
+      "save": "Speichern",
+      "noneEnabled": "In dieser Kategorie sind keine Messgrößen aktiviert.",
+      "loadError": "Messgrößen konnten nicht geladen werden.",
+      "saveError": "Messwert konnte nicht gespeichert werden.",
+      "invalidValue": "Geben Sie einen Wert innerhalb des zulässigen Bereichs ein."
+    },
+    "measurementDiscovery": {
+      "title": "Messgrößen auswählen",
+      "description": "Durchsuchen Sie den zentralen Messkatalog und wählen Sie aus, was in Ihrem Profil angezeigt wird.",
+      "category": "Messwertkategorie",
+      "search": "Messgrößen suchen",
+      "searchPlaceholder": "Nach Name suchen",
+      "empty": "Keine Messgrößen gefunden.",
+      "add": "Hinzufügen",
+      "remove": "Entfernen",
+      "loadError": "Messkatalog konnte nicht geladen werden.",
+      "saveError": "Profil-Messgrößen konnten nicht aktualisiert werden."
     }
   },
   "common": {
@@ -851,6 +901,207 @@
         "month": "Monat",
         "year": "Jahr",
         "all": "Gesamt"
+      }
+    }
+  },
+  "homeSurface": {
+    "title": "Startseite",
+    "sections": {
+      "recentActivity": "Letzte Aktivität",
+      "trending": "Trend-Workouts",
+      "newsFeed": "Newsfeed",
+      "previousActivities": "Frühere Aktivitäten"
+    },
+    "activity": {
+      "timeSinceLast": "Zeit seit der letzten Aktivität",
+      "noActivity": "Noch keine Aktivität erfasst",
+      "lastActivity": "Letzte Aktivität: {{name}}",
+      "startHint": "Erfasse ein Workout, um deine Aktivitätshistorie zu starten."
+    },
+    "session": {
+      "workout": "Workout",
+      "workoutSummary": "Workout-Zusammenfassung",
+      "exercises": "{{count}} Übung",
+      "exercises_other": "{{count}} Übungen",
+      "points": "{{count}} Punkte"
+    },
+    "news": {
+      "unpublished": "Nicht veröffentlicht",
+      "sharedBy": "Geteilt von {{name}}",
+      "addNod": "Nod geben",
+      "removeNod": "Nod zurücknehmen",
+      "comments": "{{count}} Kommentare",
+      "nodError": "Der Nod konnte nicht aktualisiert werden."
+    },
+    "loading": {
+      "trending": "Trend-Workouts werden geladen…",
+      "news": "Newsfeed wird geladen…",
+      "activities": "Frühere Aktivitäten werden geladen…"
+    },
+    "empty": {
+      "trending": "Noch keine Trend-Workouts.",
+      "news": "Noch keine geteilten Workouts.",
+      "activities": "Noch keine früheren Aktivitäten."
+    },
+    "errors": {
+      "trending": "Trend-Workouts konnten nicht geladen werden.",
+      "news": "Der Newsfeed konnte nicht geladen werden.",
+      "activities": "Frühere Aktivitäten konnten nicht geladen werden."
+    }
+  },
+  "calendarSurface": {
+    "title": "Kalender",
+    "sections": {
+      "calendar": "Kalender",
+      "history": "Historie",
+      "weekPlan": "Wöchentlicher Trainingsplan"
+    },
+    "actions": {
+      "plan": "Workout planen",
+      "start": "Workout starten",
+      "log": "Workout erfassen",
+      "options": "Workout-Optionen"
+    },
+    "navigation": {
+      "previousMonth": "Vorheriger Monat",
+      "nextMonth": "Nächster Monat",
+      "previousYear": "Vorheriges Jahr",
+      "nextYear": "Nächstes Jahr"
+    },
+    "gridLabel": "Monatlicher Workout-Kalender",
+    "dayLabel": "{{date}}, {{count}} Workouts",
+    "empty": {
+      "selectedDay": "Keine Workouts an diesem Tag.",
+      "history": "Noch keine Workout-Historie.",
+      "week": "Für den Rest dieser Woche sind keine Workouts geplant."
+    },
+    "errors": {
+      "load": "Kalenderdaten konnten nicht geladen werden."
+    }
+  },
+  "workoutEditor": {
+    "title": "Workout-Editor",
+    "close": "Workout-Editor schließen",
+    "exerciseFallback": "Übung",
+    "sections": {
+      "general": "Allgemeine Informationen",
+      "activity": "Aktivität",
+      "overview": "Übersicht"
+    },
+    "actions": {
+      "start": "Starten",
+      "plan": "Planen",
+      "addExercise": "Übung hinzufügen",
+      "removeLast": "Letzte Übung entfernen"
+    },
+    "fields": {
+      "name": "Workout-Name",
+      "notes": "Notizen",
+      "exercise": "Übung",
+      "sets": "Sätze",
+      "repetitions": "Wiederholungen",
+      "weight": "Widerstand / Gewicht",
+      "duration": "Dauer (Sekunden)",
+      "exertion": "Zielanstrengung",
+      "restSet": "Pause nach jedem Satz (Sekunden)",
+      "restExercise": "Pause nach der Übung (Sekunden)"
+    },
+    "placeholders": {
+      "name": "Name für das Workout",
+      "notes": "Workout beschreiben",
+      "exercise": "Übung auswählen"
+    },
+    "metrics": {
+      "caloriesPerMinute": "Kalorien / Minute",
+      "duration": "Dauer",
+      "calories": "Kalorien",
+      "unavailable": "Nicht verfügbar"
+    },
+    "empty": {
+      "activity": "Wähle eine Übung aus, um das Workout aufzubauen.",
+      "overview": "Keine Übungen hinzugefügt."
+    },
+    "summary": {
+      "sets": "{{count}} Satz",
+      "sets_other": "{{count}} Sätze",
+      "repetitions": "{{value}} Wiederholungen"
+    },
+    "errors": {
+      "save": "Das Workout konnte nicht gespeichert werden.",
+      "exercises": "Übungen konnten nicht geladen werden."
+    }
+  },
+  "actions": {
+    "retry": "Erneut versuchen"
+  },
+  "librarySurface": {
+    "title": "Bibliothek",
+    "description": "Übungen entdecken, die eigene Bibliothek verwalten und Workouts erstellen.",
+    "sections": {
+      "search": "Suche und Filter",
+      "exercises": "Übungen"
+    },
+    "actions": {
+      "createExercise": "Neue Übung",
+      "createWorkout": "Workout erstellen",
+      "addToWorkout": "Zum Workout hinzufügen",
+      "details": "Details anzeigen",
+      "edit": "Bearbeiten",
+      "archive": "Archivieren",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "close": "Schließen",
+      "confirmArchive": "Übung archivieren"
+    },
+    "filters": {
+      "search": "Übungen suchen",
+      "type": "Typ",
+      "allTypes": "Alle Typen",
+      "muscleGroup": "Muskelgruppe",
+      "equipment": "Ausrüstung",
+      "tags": "Tags"
+    },
+    "states": {
+      "loading": "Übungen werden geladen…",
+      "error": "Übungen konnten nicht geladen werden.",
+      "noResults": "Keine Übungen entsprechen diesen Filtern."
+    },
+    "source": {
+      "global": "Global",
+      "mine": "Meine Übung",
+      "public": "Öffentlich"
+    },
+    "details": {
+      "noDescription": "Keine Beschreibung vorhanden."
+    },
+    "archive": {
+      "title": "Übung archivieren",
+      "description": "{{name}} archivieren? Die Übung verschwindet aus aktiven Selektoren, bleibt aber historisch erhalten."
+    },
+    "creator": {
+      "titleCreate": "Übung erstellen",
+      "titleEdit": "Übung bearbeiten",
+      "description": "Eine eigene Übung erstellen oder aktualisieren.",
+      "fields": {
+        "name": "Name",
+        "type": "Typ",
+        "selectType": "Typ auswählen",
+        "muscleGroup": "Primäre Muskelgruppe",
+        "equipment": "Ausrüstung",
+        "tags": "Tags",
+        "tagsPlaceholder": "kraft, langhantel, beine",
+        "description": "Beschreibung",
+        "public": "Diese Übung öffentlich machen",
+        "metValue": "MET-Wert",
+        "secondsPerRep": "Sekunden pro Wiederholung"
+      },
+      "errors": {
+        "required": "Name und Typ sind erforderlich.",
+        "create": "Die Übung konnte nicht erstellt werden.",
+        "update": "Die Übung konnte nicht aktualisiert werden.",
+        "types": "Übungstypen konnten nicht geladen werden."
       }
     }
   }

@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 
 import { getAllTypes, getOneType, addType, editType, removeType } from "./exerciseTypes.service.js";
@@ -23,7 +24,7 @@ export async function listTypes(req: Request, res: Response): Promise<void> {
 }
 
 export async function getType(req: Request, res: Response): Promise<void> {
-  const { code } = req.params;
+  const code = readRouteParam(req.params.code, "code");
   const type = await getOneType(code);
   if (!type) {
     res.status(404).json({ error: "Not found" });
@@ -45,7 +46,7 @@ export async function createType(req: Request, res: Response): Promise<void> {
 }
 
 export async function updateType(req: Request, res: Response): Promise<void> {
-  const { code } = req.params;
+  const code = readRouteParam(req.params.code, "code");
   const parsed = updateTypeSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.flatten() });
@@ -58,7 +59,7 @@ export async function updateType(req: Request, res: Response): Promise<void> {
 }
 
 export async function deleteType(req: Request, res: Response): Promise<void> {
-  const { code } = req.params;
+  const code = readRouteParam(req.params.code, "code");
   const adminId = req.user?.sub;
   await removeType(code, adminId);
   res.status(204).send();

@@ -123,11 +123,16 @@ describe("Register", () => {
     expect(passwordInput).toHaveAttribute("type", "password");
     expect(confirmPasswordInput).toHaveAttribute("type", "password");
 
-    fireEvent.click(passwordToggles[0]);
+    fireEvent.mouseDown(passwordToggles[0]);
     expect(passwordInput).toHaveAttribute("type", "text");
+    fireEvent.mouseUp(screen.getAllByLabelText(/hide password/i)[0]);
+    expect(passwordInput).toHaveAttribute("type", "password");
 
-    fireEvent.click(passwordToggles[1]);
+    const refreshedToggles = screen.getAllByLabelText(/show password/i);
+    fireEvent.mouseDown(refreshedToggles[1]);
     expect(confirmPasswordInput).toHaveAttribute("type", "text");
+    fireEvent.mouseUp(screen.getAllByLabelText(/hide password/i)[0]);
+    expect(confirmPasswordInput).toHaveAttribute("type", "password");
   });
 
   it("validates password match", async () => {
@@ -559,8 +564,8 @@ describe("Register", () => {
     });
 
     // Wait for error message about terms
-    const errorMessage = await screen.findByText(/accept.*terms/i, {}, { timeout: 2000 });
-    expect(errorMessage).toBeInTheDocument();
+    const errorMessages = await screen.findAllByText(/accept.*terms/i, {}, { timeout: 2000 });
+    expect(errorMessages.length).toBeGreaterThan(0);
 
     expect(api.register).not.toHaveBeenCalled();
   });
@@ -743,11 +748,15 @@ describe("Register", () => {
     expect(passwordToggle).toBeInTheDocument();
     expect(confirmPasswordToggle).toBeInTheDocument();
 
-    // Test that clicking toggles work (CSS hover states are tested via E2E)
-    fireEvent.click(passwordToggle);
-    fireEvent.click(confirmPasswordToggle);
-    expect(passwordToggle).toBeInTheDocument();
-    expect(confirmPasswordToggle).toBeInTheDocument();
+    fireEvent.mouseDown(passwordToggle);
+    expect(screen.getByPlaceholderText(/create a strong password/i)).toHaveAttribute("type", "text");
+    fireEvent.mouseLeave(passwordToggle);
+    expect(screen.getByPlaceholderText(/create a strong password/i)).toHaveAttribute("type", "password");
+
+    fireEvent.touchStart(confirmPasswordToggle);
+    expect(screen.getByPlaceholderText(/confirm your password/i)).toHaveAttribute("type", "text");
+    fireEvent.touchEnd(confirmPasswordToggle);
+    expect(screen.getByPlaceholderText(/confirm your password/i)).toHaveAttribute("type", "password");
   });
 
   it("shows error styling on terms checkbox when error exists", async () => {
@@ -774,17 +783,15 @@ describe("Register", () => {
       }
     });
 
-    // Wait for error message first
-    await screen.findByText(/accept.*terms/i, {}, { timeout: 2000 });
-    
+    await screen.findAllByText(/accept.*terms/i, {}, { timeout: 2000 });
+
     const checkboxes = screen.getAllByRole("checkbox", { name: /accept the/i });
-    const termsCheckbox = checkboxes[0]; // Terms checkbox
-    const termsLabel = termsCheckbox.closest("label");
-    // Verify error styling is applied (check for border style presence rather than exact value)
-    expect(termsLabel).toBeInTheDocument();
-    const borderStyle = window.getComputedStyle(termsLabel!).border;
-    // Just verify that a border exists (error styling), exact color value checking is brittle
-    expect(borderStyle).toBeTruthy();
+    const termsCheckbox = checkboxes[0];
+    expect(termsCheckbox).toHaveAttribute("aria-invalid", "true");
+    expect(termsCheckbox.closest("[data-component='checkbox']")).toHaveAttribute(
+      "data-state",
+      "error",
+    );
   });
 
   it("trims whitespace from name and email inputs", async () => {
@@ -1014,9 +1021,11 @@ describe("Register", () => {
     // Then check for the email message (might be split across elements)
     expect(screen.getByText(/verification email sent to/i)).toBeInTheDocument();
 
-    // Check for resend link
-    expect(screen.getByText("Didn't receive the email?")).toBeInTheDocument();
-    expect(screen.getByText("Resend verification email")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /resend verification email/i,
+      }),
+    ).toBeInTheDocument();
   });
 
   it("should call resendVerificationEmail when resend link is clicked", async () => {

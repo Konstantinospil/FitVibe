@@ -1,6 +1,5 @@
 import type { Knex } from "knex";
 import bcrypt from "bcryptjs";
-import { getCurrentTermsVersion } from "../../config/terms.js";
 
 const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
 const ADMIN_CONTACT_ID = "33333333-3333-3333-3333-333333333333";
@@ -29,7 +28,16 @@ const INITIAL_VOLATILITY = 0.06;
 export async function seed(knex: Knex): Promise<void> {
   const adminPassword = await bcrypt.hash("admin", 12);
   const now = new Date();
-  const termsVersion = getCurrentTermsVersion();
+  const currentTerms = await knex("legal_document_versions")
+    .where({ document_type: "terms" })
+    .where("effective_at", "<=", now)
+    .orderBy("effective_at", "desc")
+    .orderBy("published_at", "desc")
+    .first<{ id: string; version: string }>("id", "version");
+  if (!currentTerms) {
+    throw new Error("Cannot seed administrator without a published Terms version");
+  }
+  const termsVersion = currentTerms.version;
 
   await knex("users")
     .insert([
@@ -49,6 +57,19 @@ export async function seed(knex: Knex): Promise<void> {
       },
     ])
     .onConflict("id")
+    .ignore();
+
+  await knex("legal_document_acceptances")
+    .insert({
+      user_id: ADMIN_ID,
+      version_id: currentTerms.id,
+      action: "accept",
+      source: "bootstrap_seed",
+      accepted_at: now,
+      revoked_at: null,
+      created_at: now,
+    })
+    .onConflict(["user_id", "version_id"])
     .ignore();
 
   await knex("user_contacts")

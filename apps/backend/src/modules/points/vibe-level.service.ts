@@ -1,4 +1,6 @@
 import type { Knex } from "knex";
+
+import { db } from "../../db/connection.js";
 import type { SessionWithExercises } from "../sessions/sessions.types.js";
 import type {
   DomainCode,
@@ -10,17 +12,16 @@ import type {
 import {
   getAllDomainVibeLevels,
   getDomainVibeLevel,
-  updateDomainVibeLevel,
   insertVibeLevelChange,
-} from "./points.repository.js";
+  lockVibeLevelsForUser,
+  updateDomainVibeLevel,
+} from "./vibe-level.repository.js";
 
 // Constants
 const INITIAL_VIBE_LEVEL = 1000.0;
 const INITIAL_RD = 350.0;
 const INITIAL_VOLATILITY = 0.06;
-const TAU = 0.0833; // Volatility constraint (τ)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _C = Math.sqrt((350 ** 2 - 50 ** 2) / Math.log(2)); // ≈ 83.33 (for future use)
+const VOLATILITY_ADAPTATION = 0.0833;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -373,7 +374,8 @@ export function calculatePerformanceScore(
 }
 
 /**
- * Update volatility using simplified Glicko-2 algorithm
+ * Update the endogenous FitVibe uncertainty/volatility term.
+ * This is a product-specific progression model, not a Glicko-2 implementation.
  */
 function updateVolatility(
   currentVolatility: number,
@@ -382,7 +384,7 @@ function updateVolatility(
   v: number,
   tau: number,
 ): number {
-  // Simplified volatility update (full algorithm in Glicko-2 paper)
+  // Bounded Newton-style adaptation used by the FitVibe progression model.
   const a = Math.log(currentVolatility ** 2);
   const f = (x: number): number => {
     const ex = Math.exp(x);
@@ -407,16 +409,17 @@ function updateVolatility(
 }
 
 /**
- * Update Glicko-2 rating based on performance outcome
+ * Update the endogenous FitVibe domain progression state from workout performance.
+ * The inputs are workout-derived rather than opponent/match results; do not label this Glicko-2.
  */
-export function updateGlicko2Rating(
+export function updateVibeProgression(
   currentRating: number,
   currentRd: number,
   currentVolatility: number,
   outcome: number, // 0-1 (performance score / 100)
   domainImpact: number, // 0-1
 ): { newRating: number; newRd: number; newVolatility: number } {
-  // Step 1: Convert rating and RD to Glicko-2 scale
+  // Normalize the progression level and uncertainty to the model scale.
   const mu = (currentRating - 1500) / 173.7178;
   const phi = currentRd / 173.7178;
 
@@ -431,7 +434,7 @@ export function updateGlicko2Rating(
   const delta = v * g * (outcome - E);
 
   // Step 5: Compute new volatility
-  const newVolatility = updateVolatility(currentVolatility, delta, phi, v, TAU);
+  const newVolatility = updateVolatility(currentVolatility, delta, phi, v, VOLATILITY_ADAPTATION);
 
   // Step 6: Update φ' (new RD)
   const phiStar = Math.sqrt(phi ** 2 + newVolatility ** 2);
@@ -520,14 +523,16 @@ export async function calculatePointsFromVibeLevel(
 /**
  * Update domain vibe level for a session
  */
-export async function updateDomainVibeLevelForSession(
+async function updateDomainVibeLevelForSessionInTransaction(
   userId: string,
   domain: DomainCode,
   session: SessionWithExercises,
   domainImpact: DomainImpact,
   exerciseMetadata: Map<string, ExerciseMetadata>,
-  trx?: Knex.Transaction,
+  trx: Knex.Transaction,
 ): Promise<VibeLevelUpdateResult> {
+  await lockVibeLevelsForUser(userId, trx);
+
   // Get current vibe level
   const current = await getDomainVibeLevel(userId, domain, trx);
   const currentRating = current?.vibe_level ?? INITIAL_VIBE_LEVEL;
@@ -542,11 +547,11 @@ export async function updateDomainVibeLevelForSession(
     exerciseMetadata,
   );
 
-  // Convert to Glicko-2 outcome (0-1)
+  // Normalize workout performance to the endogenous progression outcome (0-1).
   const outcome = performanceScore / 100;
 
-  // Update Glicko-2 rating
-  const { newRating, newRd, newVolatility } = updateGlicko2Rating(
+  // Update FitVibe progression state.
+  const { newRating, newRd, newVolatility } = updateVibeProgression(
     currentRating,
     currentRd,
     currentVolatility,
@@ -567,7 +572,15 @@ export async function updateDomainVibeLevelForSession(
   );
 
   // Update database
-  await updateDomainVibeLevel(userId, domain, newRating, newRd, newVolatility, trx);
+  await updateDomainVibeLevel(
+    userId,
+    domain,
+    newRating,
+    newRd,
+    newVolatility,
+    trx,
+    session.completed_at ?? undefined,
+  );
 
   // Log change
   await insertVibeLevelChange(
@@ -603,6 +616,37 @@ export async function updateDomainVibeLevelForSession(
     domainImpact: domainImpact.impact,
     pointsAwarded,
   };
+}
+
+export async function updateDomainVibeLevelForSession(
+  userId: string,
+  domain: DomainCode,
+  session: SessionWithExercises,
+  domainImpact: DomainImpact,
+  exerciseMetadata: Map<string, ExerciseMetadata>,
+  trx?: Knex.Transaction,
+): Promise<VibeLevelUpdateResult> {
+  if (trx) {
+    return updateDomainVibeLevelForSessionInTransaction(
+      userId,
+      domain,
+      session,
+      domainImpact,
+      exerciseMetadata,
+      trx,
+    );
+  }
+
+  return db.transaction((transaction: Knex.Transaction) =>
+    updateDomainVibeLevelForSessionInTransaction(
+      userId,
+      domain,
+      session,
+      domainImpact,
+      exerciseMetadata,
+      transaction,
+    ),
+  );
 }
 
 /**

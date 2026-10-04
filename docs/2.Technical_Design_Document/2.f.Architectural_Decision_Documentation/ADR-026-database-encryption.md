@@ -38,6 +38,19 @@ We will implement comprehensive database encryption using a two-pronged approach
 3. **Key Management**: Encryption keys managed according to KEY_MANAGEMENT_POLICY.md (rotation every 6 months)
 4. **Performance Target**: Encryption overhead must not exceed 5% (measured via benchmarks)
 
+### Application-level protection for recoverable authentication secrets
+
+Phase 15 adds a narrower application-level control for TOTP seeds. This does **not** replace filesystem/database-volume encryption; it is defense in depth for a secret that must remain recoverable by the application.
+
+- Persisted TOTP seeds are stored as versioned AES-256-GCM authenticated-encryption envelopes.
+- Encryption key material is supplied through application secret/configuration mechanisms and is never stored alongside the ciphertext.
+- Runtime authentication refuses plaintext TOTP seeds.
+- Existing plaintext seeds are migrated forward to encrypted envelopes; rollback must not recreate plaintext.
+- Envelope versioning permits an explicit future key/format migration rather than silently changing ciphertext semantics.
+- The encryption key is operationally required anywhere TOTP is used or the plaintext-to-encrypted migration has work to perform.
+
+This is intentionally field-level encryption for a recoverable credential secret. Other database fields remain governed by the filesystem/volume and backup encryption decision below unless a separate threat model justifies field-level encryption.
+
 ### Rationale
 
 - **Security Compliance**: Meets GDPR, SOC 2, and ISO 27001 requirements for data protection
@@ -95,3 +108,4 @@ We will implement comprehensive database encryption using a two-pronged approach
 | Version | Date       | Change        | Author                   |
 | ------- | ---------- | ------------- | ------------------------ |
 | v1.0    | 2025-12-21 | Initial draft | FitVibe Development Team |
+| v1.1    | 2026-09-24 | Record Phase 15 field-level AES-256-GCM protection and forward-only migration policy for recoverable TOTP seeds | FitVibe Engineering / Product Owner |

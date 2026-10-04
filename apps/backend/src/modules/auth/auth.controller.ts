@@ -13,7 +13,10 @@ import {
   revokeSessions as doRevokeSessions,
   acceptTerms as doAcceptTerms,
   revokeTerms as doRevokeTerms,
+  acceptPrivacyPolicy as doAcceptPrivacyPolicy,
+  revokePrivacyPolicy as doRevokePrivacyPolicy,
   getLegalDocumentsStatus as doGetLegalDocumentsStatus,
+  getLegalDocumentVersions as doGetLegalDocumentVersions,
 } from "./auth.service.js";
 import { env, JWKS } from "../../config/env.js";
 import {
@@ -24,12 +27,13 @@ import {
   ResetPasswordSchema,
   RevokeSessionsSchema,
   AcceptTermsSchema,
+  AcceptPrivacyPolicySchema,
   ResendVerificationSchema,
 } from "./auth.schemas.js";
 import type { z } from "zod";
 import type { LoginContext } from "./auth.types.js";
 import { HttpError } from "../../utils/http.js";
-import { verifyAccess } from "../../services/tokens.js";
+import { verifyAccess } from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 
@@ -480,6 +484,45 @@ export async function revokeTerms(req: Request, res: Response, next: NextFunctio
   }
 }
 
+export async function acceptPrivacyPolicy(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const authUser = getAuthenticatedUser(req);
+    const userId = authUser?.sub;
+    if (!userId) {
+      throw new HttpError(401, "UNAUTHENTICATED", "UNAUTHENTICATED");
+    }
+    AcceptPrivacyPolicySchema.parse(req.body);
+    await doAcceptPrivacyPolicy(userId);
+    res.status(200).json({ message: "Privacy policy acknowledged successfully" });
+    return;
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function revokePrivacyPolicy(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const authUser = getAuthenticatedUser(req);
+    const userId = authUser?.sub;
+    if (!userId) {
+      throw new HttpError(401, "UNAUTHENTICATED", "UNAUTHENTICATED");
+    }
+    await doRevokePrivacyPolicy(userId);
+    res.status(200).json({ message: "Privacy policy acknowledgement revoked" });
+    return;
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getLegalDocumentsStatus(
   req: Request,
   res: Response,
@@ -493,6 +536,19 @@ export async function getLegalDocumentsStatus(
     }
     const status = await doGetLegalDocumentsStatus(userId);
     res.status(200).json(status);
+    return;
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getLegalDocumentVersions(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    res.status(200).json(await doGetLegalDocumentVersions());
     return;
   } catch (error) {
     next(error);

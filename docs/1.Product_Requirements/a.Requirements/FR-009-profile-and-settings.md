@@ -10,7 +10,7 @@
 **Gate**: SILVER  
 **Owner**: ENG/QA  
 **Created**: 2025-01-20  
-**Updated**: 2025-01-21  
+**Updated**: 2026-09-25  
 **Completed**: 2025-01-21
 
 ---
@@ -123,6 +123,10 @@ The following fields shall be immutable after initial registration:
 - Should there be avatar moderation/review?
 - Should training frequency be auto-calculated from logged sessions?
 
+## Scope Boundary
+
+FR-009 covers ordinary profile and preference management completed under E1. The later Profile Measurements subsystem (global measurement definitions, measurement values, unit metadata/conversion, discovery, and derived measurements) is intentionally separated into [FR-014](./FR-014-profile-measurements.md) rather than reopening completed FR-009.
+
 ## Related Requirements
 
 - [FR-001: User Registration](./FR-001-user-registration.md) - Profile creation
@@ -191,5 +195,5 @@ The following fields shall be immutable after initial registration:
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: N/A (completed scope)

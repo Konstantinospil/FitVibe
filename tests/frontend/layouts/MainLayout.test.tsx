@@ -1,6 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import MainLayout from "../../src/layouts/MainLayout";
 import { useAuth } from "../../src/contexts/AuthContext";
@@ -25,20 +25,30 @@ vi.mock("react-i18next", () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
         "navigation.home": "Home",
-        "navigation.profile": "Profile",
+        "navigation.calendar": "Calendar",
+        "navigation.library": "Library",
+        "navigation.dashboard": "Dashboard",
+        "navigation.settings": "Settings",
         "navigation.skipToContent": "Skip to content",
-        "navigation.you": "You",
-        "navigation.activeSession": "Active session",
         "navigation.signOut": "Sign out",
+        "brand.logoAlt": "FitVibe",
+        "brand.slogan": "Balance is not a state",
         "footer.note": "FitVibe",
         "footer.terms": "Terms",
         "footer.privacy": "Privacy",
-        "brand.logoAlt": "FitVibe",
+        "language.label": "Language",
+        "language.select": "Select language",
+        "language.english": "English",
+        "language.german": "German",
+        "language.french": "French",
+        "language.spanish": "Spanish",
+        "language.greek": "Greek",
       };
       return translations[key] || key;
     },
     i18n: {
       language: "en",
+      changeLanguage: vi.fn().mockResolvedValue(undefined),
     },
   }),
 }));
@@ -55,33 +65,31 @@ describe("MainLayout", () => {
     });
   });
 
-  it("should render main layout with navigation", () => {
+  it("renders the canonical application navigation contract", () => {
     render(
       <MemoryRouter>
         <MainLayout />
       </MemoryRouter>,
     );
 
-    // Navigation items use icons with aria-labels - use getAllByLabelText and check first
-    const homeLinks = screen.getAllByLabelText("Home");
-    const profileLinks = screen.getAllByLabelText("Profile");
-    expect(homeLinks.length).toBeGreaterThan(0);
-    expect(profileLinks.length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Calendar" })).toHaveAttribute("href", "/calendar");
+    expect(screen.getByRole("link", { name: "Library" })).toHaveAttribute("href", "/library");
+    expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("href", "/dashboard");
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
   });
 
-  it("should render skip to content link", () => {
+  it("renders the skip-to-content link", () => {
     render(
       <MemoryRouter>
         <MainLayout />
       </MemoryRouter>,
     );
 
-    const skipLink = screen.getByText("Skip to content");
-    expect(skipLink).toBeInTheDocument();
-    expect(skipLink).toHaveAttribute("href", "#main-content");
+    expect(screen.getByText("Skip to content")).toHaveAttribute("href", "#main-content");
   });
 
-  it("should handle sign out", async () => {
+  it("handles sign out and returns to login", async () => {
     mockSignOut.mockResolvedValue(undefined);
 
     render(
@@ -90,16 +98,13 @@ describe("MainLayout", () => {
       </MemoryRouter>,
     );
 
-    const signOutButton = screen.getByLabelText("Sign out");
-    fireEvent.click(signOutButton);
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
-    await waitFor(() => {
-      expect(mockSignOut).toHaveBeenCalled();
-    });
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
     expect(mockNavigate).toHaveBeenCalledWith("/login", { replace: true });
   });
 
-  it("should render footer links", () => {
+  it("renders footer links and the child outlet target", () => {
     render(
       <MemoryRouter>
         <MainLayout />
@@ -108,95 +113,29 @@ describe("MainLayout", () => {
 
     expect(screen.getByText("Terms")).toBeInTheDocument();
     expect(screen.getByText("Privacy")).toBeInTheDocument();
+    expect(document.querySelector("#main-content")).toBeInTheDocument();
   });
 
-  it("should render outlet for child routes", () => {
+  it("renders the branded header utilities", () => {
     render(
       <MemoryRouter>
         <MainLayout />
       </MemoryRouter>,
     );
 
-    const main = document.querySelector("#main-content");
-    expect(main).toBeInTheDocument();
+    expect(screen.getAllByAltText("FitVibe").length).toBeGreaterThan(0);
+    expect(screen.getByText("Balance is not a state")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /switch to/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Language" })).toBeInTheDocument();
   });
 
-  it("should render logo", () => {
+  it("marks Home as the current page", () => {
     render(
       <MemoryRouter>
         <MainLayout />
       </MemoryRouter>,
     );
 
-    const logo = screen.getByAltText("FitVibe Logo");
-    expect(logo).toBeInTheDocument();
-  });
-
-  it("should render theme toggle", () => {
-    render(
-      <MemoryRouter>
-        <MainLayout />
-      </MemoryRouter>,
-    );
-
-    // ThemeToggle should be present (it's rendered in the layout)
-    // Check for navigation elements - there may be multiple (header and footer)
-    const navElements = screen.getAllByRole("navigation");
-    expect(navElements.length).toBeGreaterThan(0);
-    // ThemeToggle renders a button, so we can check for it
-    const themeButtons = screen.getAllByRole("button");
-    expect(themeButtons.length).toBeGreaterThan(0);
-  });
-
-  it("should render language switcher", () => {
-    render(
-      <MemoryRouter>
-        <MainLayout />
-      </MemoryRouter>,
-    );
-
-    // LanguageSwitcher should be present (it's rendered in the layout)
-    // Check for navigation elements - there may be multiple (header and footer)
-    const navElements = screen.getAllByRole("navigation");
-    expect(navElements.length).toBeGreaterThan(0);
-    // LanguageSwitcher renders a button, so we can check for it
-    const buttons = screen.getAllByRole("button");
-    expect(buttons.length).toBeGreaterThan(0);
-  });
-
-  it("should render user avatar when authenticated", () => {
-    (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
-      signIn: vi.fn(),
-      signOut: mockSignOut,
-      user: { id: "user-1", username: "test", email: "test@example.com" },
-      isAuthenticated: true,
-      updateUser: vi.fn(),
-    });
-
-    render(
-      <MemoryRouter>
-        <MainLayout />
-      </MemoryRouter>,
-    );
-
-    // Avatar should be present when user is authenticated
-    // Check for navigation elements - there may be multiple (header and footer)
-    const navElements = screen.getAllByRole("navigation");
-    expect(navElements.length).toBeGreaterThan(0);
-    // Check for the "You" text which is rendered with the avatar
-    expect(screen.getByText("You")).toBeInTheDocument();
-  });
-
-  it("should navigate when nav link is clicked", () => {
-    render(
-      <MemoryRouter>
-        <MainLayout />
-      </MemoryRouter>,
-    );
-
-    const homeLink = screen.getByRole("link", { name: "Home" });
-    expect(homeLink).toHaveAttribute("href", "/");
-    fireEvent.click(homeLink);
-    expect(homeLink).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
   });
 });

@@ -1,11 +1,17 @@
-# ADR-024: Legal Document Version Calculation from Multi-Language Translations
+# ADR-024: Legal Document Version Calculation
+
+> **Superseded by ADR-035 (2026-09-26).** Translation/database timestamps are no longer a runtime legal authority. Persisted legal publications and acceptances are authoritative.
 
 **Date:** 2025-12-22  
-**Status:** Accepted  
+**Status:** Superseded  
 **Author:** FitVibe Engineering Team  
 **Cross-References:** REQ-2025-01-20-001 (Terms and Conditions), E19 (Terms and Conditions Epic)
 
 ---
+
+## Current Authority
+
+For published legal documents, [ADR-032](./ADR-032-legal-document-publication-snapshots.md) is authoritative: immutable publication snapshots determine the published version and acceptance contract. The calculation described in this ADR remains relevant for editable/bootstrap translation state and migration compatibility, but must not override an existing publication snapshot.
 
 ## Context
 
@@ -35,12 +41,12 @@ The system must work with both sources and prioritize database values when avail
 
 ## Decision
 
-Implement a **unified version calculation system** that:
+For **mutable/bootstrap content where no publication snapshot governs the document**, implement a unified version calculation system that:
 
 1. **Calculates version from the latest `effectiveDateValue` across ALL languages** for each document namespace (terms, privacy, cookie)
 2. **Checks both translation sources** (JSON files and database table) with database taking precedence
 3. **Uses a single version string** (YYYY-MM-DD format) for all languages of a document
-4. **Requires re-acceptance when ANY language is updated**, regardless of the user's original acceptance language
+4. **Produces the candidate cross-language version for mutable/bootstrap content**. Once content is published through ADR-032, re-acceptance is determined by authoritative snapshot publication rather than inferred from a translation-row edit.
 
 ### Implementation Details
 
@@ -67,8 +73,8 @@ Implement a **unified version calculation system** that:
 If Spanish terms are updated in December 2025 but German terms haven't changed since 2024:
 
 - **Version for ALL languages**: `2025-12-01` (the latest date)
-- **All users** must re-accept, regardless of which language they originally accepted
-- **Single version field** in user record: `terms_version = "2025-12-01"`
+- Before snapshot publication, the candidate cross-language version is `2025-12-01`.
+- After ADR-032 publication, users re-accept only when a new **authoritative** snapshot advances the acceptance contract; a minor snapshot does not do so by itself.
 
 ---
 

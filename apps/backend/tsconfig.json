@@ -5,7 +5,8 @@
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
-      "@fitvibe/types": ["../../packages/types/src/vibeform.d.ts"]
+      "@fitvibe/types": ["../../packages/types/src/vibeform.d.ts"],
+      "@fitvibe/contracts": ["../../packages/types/src/contracts.d.ts"]
     },
     "rootDir": "src",
     "outDir": "dist",

@@ -2,9 +2,9 @@ import React, { useState, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
-import { Button } from "../components/ui";
+import { Button, PasswordField, TextLink } from "@fitvibe/ui";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
-import { Eye, EyeOff } from "lucide-react";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 
 const ResetPassword: React.FC = () => {
@@ -17,8 +17,6 @@ const ResetPassword: React.FC = () => {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -64,19 +62,18 @@ const ResetPassword: React.FC = () => {
         title={t("resetPassword.titleSuccess")}
         description={t("resetPassword.descSuccess")}
       >
-        <div className="form-success">{t("resetPassword.successText")}</div>
+        <FormFeedback tone="success">{t("resetPassword.successText")}</FormFeedback>
       </AuthPageLayout>
     );
   }
 
   return (
     <AuthPageLayout title={t("resetPassword.title")} description={t("resetPassword.description")}>
-      <form
+      <FormStack
         ref={formRef}
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="form"
       >
         <div
           className="rounded-md p-md text-sm text-secondary"
@@ -96,76 +93,40 @@ const ResetPassword: React.FC = () => {
             <li className="list-item">{t("resetPassword.passwordRequirements.special")}</li>
           </ul>
         </div>
-        <label className="form-label">
-          <span className="form-label-text">{t("resetPassword.newPasswordLabel")}</span>
-          <div className="form-input-wrapper">
-            <input
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder={t("resetPassword.newPasswordPlaceholder")}
-              className="form-input form-input--password"
-              required
-              minLength={12}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isSubmitting}
-            />
-            <button
-              type="button"
-              onMouseDown={() => setShowPassword(true)}
-              onMouseUp={() => setShowPassword(false)}
-              onMouseLeave={() => setShowPassword(false)}
-              onTouchStart={() => setShowPassword(true)}
-              onTouchEnd={() => setShowPassword(false)}
-              className="form-password-toggle"
-              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-        </label>
-        <label className="form-label">
-          <span className="form-label-text">{t("resetPassword.confirmPasswordLabel")}</span>
-          <div className="form-input-wrapper">
-            <input
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder={t("resetPassword.confirmPasswordPlaceholder")}
-              className="form-input form-input--password"
-              required
-              minLength={12}
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isSubmitting}
-            />
-            <button
-              type="button"
-              onMouseDown={() => setShowConfirmPassword(true)}
-              onMouseUp={() => setShowConfirmPassword(false)}
-              onMouseLeave={() => setShowConfirmPassword(false)}
-              onTouchStart={() => setShowConfirmPassword(true)}
-              onTouchEnd={() => setShowConfirmPassword(false)}
-              className="form-password-toggle"
-              aria-label={showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-            >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-        </label>
-        {error ? (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        ) : null}
+        <PasswordField
+          label={t("resetPassword.newPasswordLabel")}
+          name="password"
+          placeholder={t("resetPassword.newPasswordPlaceholder")}
+          required
+          minLength={12}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          showPasswordLabel={t("auth.showPassword")}
+          hidePasswordLabel={t("auth.hidePassword")}
+        />
+        <PasswordField
+          label={t("resetPassword.confirmPasswordLabel")}
+          name="confirmPassword"
+          placeholder={t("resetPassword.confirmPasswordPlaceholder")}
+          required
+          minLength={12}
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          showPasswordLabel={t("auth.showPassword")}
+          hidePasswordLabel={t("auth.hidePassword")}
+        />
+        {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
           {isSubmitting ? t("resetPassword.resetting") : t("resetPassword.resetButton")}
         </Button>
-        <NavLink to="/login" className="form-link form-link--block">
+        <TextLink as={NavLink} to="/login">
           {t("resetPassword.backToLogin")}
-        </NavLink>
-      </form>
+        </TextLink>
+      </FormStack>
     </AuthPageLayout>
   );
 };

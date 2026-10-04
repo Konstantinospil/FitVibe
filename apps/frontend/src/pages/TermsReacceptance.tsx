@@ -2,7 +2,8 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
-import { Button } from "../components/ui";
+import { Button, Checkbox, TextLink } from "@fitvibe/ui";
+import { FormActions, FormFeedback, FormStack } from "../components/composites/FormStack";
 import { acceptTerms } from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { NavLink } from "react-router-dom";
@@ -58,81 +59,50 @@ const TermsReacceptance: React.FC = () => {
       title={t("auth.termsReacceptance.title")}
       description={t("auth.termsReacceptance.description")}
     >
-      <form
+      <FormStack
         ref={formRef}
         onSubmit={(e) => {
           void handleSubmit(e);
         }}
-        className="form"
       >
-        <div
-          className="p-md rounded-md mb-1"
-          style={{
-            background: "rgba(251, 191, 36, 0.1)",
-            border: "1px solid rgba(251, 191, 36, 0.3)",
-          }}
-        >
-          <p className="m-0 text-secondary text-095">{t("auth.termsReacceptance.notice")}</p>
-        </div>
+        <FormFeedback tone="warning">{t("auth.termsReacceptance.notice")}</FormFeedback>
 
-        <label
-          className="checkbox-wrapper"
-          style={{
-            padding: "0.75rem",
-            borderRadius: "8px",
-            background: "var(--color-surface-glass)",
-            border:
-              error && !acceptedTerms
-                ? "1px solid rgba(248, 113, 113, 0.5)"
-                : "1px solid var(--color-border)",
-            transition: "border-color 150ms ease",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            required
-            disabled={isSubmitting}
-            style={{
-              marginTop: "0.2rem",
-              cursor: "pointer",
-              width: "18px",
-              height: "18px",
-              accentColor: "var(--color-accent)",
-            }}
-            aria-required="true"
-            aria-invalid={error && !acceptedTerms ? "true" : "false"}
-          />
-          <span className="checkbox-label">
-            {t("auth.termsReacceptance.acceptTerms")}{" "}
-            <NavLink
-              to="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {t("auth.termsReacceptance.termsLink")}
-            </NavLink>{" "}
-            {t("auth.termsReacceptance.and")}{" "}
-            <NavLink
-              to="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {t("auth.termsReacceptance.privacyLink")}
-            </NavLink>
-          </span>
-        </label>
+        <Checkbox
+          checked={acceptedTerms}
+          onChange={(event) => setAcceptedTerms(event.target.checked)}
+          required
+          disabled={isSubmitting}
+          error={error && !acceptedTerms ? t("auth.termsReacceptance.termsRequired") : undefined}
+          aria-required="true"
+          label={
+            <span>
+              {t("auth.termsReacceptance.acceptTerms")}{" "}
+              <TextLink
+                as={NavLink}
+                to="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {t("auth.termsReacceptance.termsLink")}
+              </TextLink>{" "}
+              {t("auth.termsReacceptance.and")}{" "}
+              <TextLink
+                as={NavLink}
+                to="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(event) => event.stopPropagation()}
+              >
+                {t("auth.termsReacceptance.privacyLink")}
+              </TextLink>
+            </span>
+          }
+        />
 
-        {error ? (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        ) : null}
+        {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
 
-        <div className="flex flex--gap-md flex--wrap">
+        <FormActions>
           <Button
             type="submit"
             fullWidth
@@ -154,8 +124,8 @@ const TermsReacceptance: React.FC = () => {
           >
             {t("auth.termsReacceptance.signOut")}
           </Button>
-        </div>
-      </form>
+        </FormActions>
+      </FormStack>
     </AuthPageLayout>
   );
 };

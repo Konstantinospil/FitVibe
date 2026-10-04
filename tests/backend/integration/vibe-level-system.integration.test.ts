@@ -4,7 +4,7 @@
  * Tests the cross-module flow:
  * 1. User completes a session
  * 2. Domains are detected from session metrics
- * 3. Vibe levels are updated using Glicko-2
+ * 3. Vibe levels are updated using the endogenous FitVibe progression model
  * 4. Points are calculated and awarded
  * 5. Rating decay is applied for inactive domains
  *
@@ -15,7 +15,8 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll } from "@jest/gl
 import bcrypt from "bcryptjs";
 import db from "../../../apps/backend/src/db/index.js";
 import { createUser } from "../../../apps/backend/src/modules/auth/auth.repository.js";
-import { awardPointsForSession } from "../../../apps/backend/src/modules/points/points.service.js";
+import { awardPointsForSession, getPointsHistory } from "../../../apps/backend/src/modules/points/points.service.js";
+import { reconcileGamificationProjection } from "../../../apps/backend/src/modules/points/gamification-projection.service.js";
 import { applyVibeLevelDecay } from "../../../apps/backend/src/jobs/services/vibe-level-decay.service.js";
 import {
   getDomainVibeLevel,
@@ -31,6 +32,7 @@ import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import type { SessionWithExercises } from "../../../apps/backend/src/modules/sessions/sessions.types.js";
+import { listCompletedSessionIdsForGamification } from "../../../apps/backend/src/modules/sessions/sessions.repository.js";
 
 async function persistSession(session: SessionWithExercises): Promise<void> {
   await db("sessions").insert({
@@ -138,6 +140,188 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
       expect(level.vibe_level).toBe(1000.0);
       expect(level.rating_deviation).toBe(350.0);
     }
+  });
+
+  it("converges concurrent scoring attempts to one current points event", async () => {
+    const session: SessionWithExercises = {
+      id: uuidv4(),
+      owner_id: testUser.id,
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      started_at: new Date(Date.now() - 30 * 60000).toISOString(),
+      visibility: "private",
+      planned_at: new Date().toISOString(),
+      exercises: [],
+    };
+
+    await persistSession(session);
+
+    const results = await Promise.all([
+      awardPointsForSession(session, { scheduleSecondary: false }),
+      awardPointsForSession(session, { scheduleSecondary: false }),
+    ]);
+
+    expect(results.filter((result) => result.awarded)).toHaveLength(1);
+    expect(new Set(results.map((result) => result.eventId)).size).toBe(1);
+
+    const events = await db("user_points").where({
+      user_id: testUser.id,
+      source_type: "session_completed",
+      source_id: session.id,
+    });
+    expect(events).toHaveLength(1);
+  });
+
+  it("archives replaced scoring and leaves one current event after a full projection rebuild", async () => {
+    const session: SessionWithExercises = {
+      id: uuidv4(),
+      owner_id: testUser.id,
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      started_at: new Date(Date.now() - 30 * 60000).toISOString(),
+      visibility: "private",
+      planned_at: new Date().toISOString(),
+      exercises: [],
+    };
+
+    await persistSession(session);
+    await awardPointsForSession(session, { scheduleSecondary: false });
+
+    const before = await db("user_points").where({
+      user_id: testUser.id,
+      source_type: "session_completed",
+      source_id: session.id,
+    });
+    expect(before).toHaveLength(1);
+
+    const manualEventId = uuidv4();
+    await db("user_points").insert({
+      id: manualEventId,
+      user_id: testUser.id,
+      source_type: "manual_adjustment",
+      source_id: uuidv4(),
+      algorithm_version: "manual",
+      points: 17,
+      calories: null,
+      metadata: { reason: "integration-preserve-manual" },
+      awarded_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    });
+
+    const rebuilt = await reconcileGamificationProjection(testUser.id, {
+      forceFullRebuild: true,
+      reason: "integration_test_rebuild",
+    });
+    expect(rebuilt.rebuilt).toBe(true);
+
+    const after = await db("user_points").where({
+      user_id: testUser.id,
+      source_type: "session_completed",
+      source_id: session.id,
+    });
+    expect(after).toHaveLength(1);
+
+    const revisions = await db("points_event_revisions").where({
+      user_id: testUser.id,
+      points_event_id: before[0].id,
+      revision_reason: "integration_test_rebuild",
+    });
+    expect(revisions).toHaveLength(1);
+
+    const preservedManual = await db("user_points").where({ id: manualEventId }).first();
+    expect(preservedManual).toBeDefined();
+    expect(Number(preservedManual.points)).toBe(17);
+
+    const projection = await db("user_gamification_projection_state")
+      .where({ user_id: testUser.id })
+      .first();
+    expect(projection.is_stale).toBe(false);
+    expect(projection.rebuild_required).toBe(false);
+  });
+
+  it("replays completed sessions in deterministic chronological order", async () => {
+    const sameCompletedAt = "2026-09-23T11:00:00.000Z";
+    const earlier: SessionWithExercises = {
+      id: "00000000-0000-4000-8000-000000000010",
+      owner_id: testUser.id,
+      status: "completed",
+      completed_at: "2026-09-23T10:00:00.000Z",
+      visibility: "private",
+      planned_at: "2026-09-23T09:00:00.000Z",
+      exercises: [],
+    };
+    const sameTimeLowerId: SessionWithExercises = {
+      ...earlier,
+      id: "00000000-0000-4000-8000-000000000011",
+      completed_at: sameCompletedAt,
+    };
+    const sameTimeHigherId: SessionWithExercises = {
+      ...earlier,
+      id: "00000000-0000-4000-8000-000000000012",
+      completed_at: sameCompletedAt,
+    };
+
+    await persistSession(sameTimeHigherId);
+    await persistSession(earlier);
+    await persistSession(sameTimeLowerId);
+
+    const ordered = await listCompletedSessionIdsForGamification(testUser.id);
+
+    expect(ordered).toEqual([
+      earlier.id,
+      sameTimeLowerId.id,
+      sameTimeHigherId.id,
+    ]);
+  });
+
+  it("paginates equal-timestamp point events without gaps or duplicates", async () => {
+    const awardedAt = "2026-09-23T10:00:00.000Z";
+    const rows = [
+      {
+        id: "00000000-0000-4000-8000-000000000003",
+        sourceId: "10000000-0000-4000-8000-000000000003",
+        points: 30,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000002",
+        sourceId: "10000000-0000-4000-8000-000000000002",
+        points: 20,
+      },
+      {
+        id: "00000000-0000-4000-8000-000000000001",
+        sourceId: "10000000-0000-4000-8000-000000000001",
+        points: 10,
+      },
+    ];
+
+    await db("user_points").insert(
+      rows.map((row) => ({
+        id: row.id,
+        user_id: testUser.id,
+        source_type: "manual_adjustment",
+        source_id: row.sourceId,
+        algorithm_version: "manual",
+        points: row.points,
+        calories: null,
+        metadata: {},
+        awarded_at: awardedAt,
+        created_at: awardedAt,
+      })),
+    );
+
+    const first = await getPointsHistory(testUser.id, { limit: 2 });
+    expect(first.items.map((item) => item.id)).toEqual([rows[0].id, rows[1].id]);
+    expect(first.nextCursor).toBe(awardedAt + "|" + rows[1].id);
+
+    const second = await getPointsHistory(testUser.id, {
+      limit: 2,
+      cursor: first.nextCursor ?? undefined,
+    });
+
+    const allIds = [...first.items, ...second.items].map((item) => item.id);
+    expect(allIds).toEqual(rows.map((row) => row.id));
+    expect(new Set(allIds).size).toBe(rows.length);
+    expect(second.nextCursor).toBeNull();
   });
 
   it("should detect strength domain and update vibe level", async () => {

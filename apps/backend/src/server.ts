@@ -55,16 +55,25 @@ async function bootstrapRuntimeSecrets(): Promise<void> {
 export async function startServer(): Promise<void> {
   await bootstrapRuntimeSecrets();
 
-  const [{ default: app }, { env }, { logger }] = await Promise.all([
-    import("./app.js"),
-    import("./config/env.js"),
-    import("./config/logger.js"),
-  ]);
+  const [{ default: app }, { env }, { logger }, { initializeApplicationSettingsRuntime }] =
+    await Promise.all([
+      import("./app.js"),
+      import("./config/env.js"),
+      import("./config/logger.js"),
+      import("./modules/system/app-settings.runtime.js"),
+    ]);
+
+  await initializeApplicationSettingsRuntime();
 
   if (env.isProduction) {
     const { checkHealth } = await import("./services/antivirus.service.js");
     if (!(await checkHealth())) {
       throw new Error("ClamAV health check failed during production startup");
+    }
+
+    const { checkQueueHealth } = await import("./jobs/services/queue.factory.js");
+    if (!(await checkQueueHealth())) {
+      throw new Error("Redis/BullMQ health check failed during production startup");
     }
   }
 

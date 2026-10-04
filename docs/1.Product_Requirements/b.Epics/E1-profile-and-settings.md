@@ -10,7 +10,7 @@
 **Gate**: SILVER  
 **Estimated Total Effort**: 8-12 story points  
 **Created**: 2025-01-20  
-**Updated**: 2025-12-14  
+**Updated**: 2026-09-25  
 **Completed**: 2025-12-14
 
 ---
@@ -34,6 +34,8 @@ Allows users to personalize their FitVibe experience by managing their profile i
 - [US-1.1: Profile Editing](../d.User_stories/US-1.1-profile-editing.md)
 - [US-1.2: Avatar Upload](../d.User_stories/US-1.2-avatar-upload.md)
 - [US-1.3: Profile Testing](../d.User_stories/US-1.3-profile-testing.md)
+
+Profile Measurements were proposed after E1 had been completed and are intentionally not used to reopen this epic. That independently meaningful subsystem is tracked under [FR-014](../a.Requirements/FR-014-profile-measurements.md) / [E21](./E21-profile-measurements.md).
 
 ## Dependencies
 
@@ -66,5 +68,5 @@ Allows users to personalize their FitVibe experience by managing their profile i
 
 ---
 
-**Last Updated**: 2025-12-14  
+**Last Updated**: 2026-09-25  
 **Next Review**: N/A (Epic completed)

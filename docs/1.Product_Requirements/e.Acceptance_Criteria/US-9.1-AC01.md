@@ -8,13 +8,13 @@
 **Priority**: Medium
 **Test Method**: Integration
 **Created**: 2025-01-21
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Criterion
 
-All logs are structured JSON with required fields: ts, level, request_id, user_id (if authenticated), route, status, lat_ms; no PII in logs.
+All application logs are structured JSON and include the operational fields required for diagnosis, including timestamp, level, request/correlation ID, route, status, and latency where applicable. Raw user IDs and other PII are excluded. If actor-level correlation is required, only a one-way hashed actor identifier may be logged.
 
 **SMART Criteria Checklist**:
 

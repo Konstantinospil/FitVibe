@@ -1,8 +1,8 @@
 # Acceptance Criteria Index
 
-**Last Updated**: 2026-08-30
+**Last Updated**: 2026-09-25
 
-Only files that exist on disk are listed.
+Only files that exist on disk are listed. Individual AC files are canonical; this index is a navigation summary. AC lifecycle is Proposed / Approved / Verified / Rejected.
 
 ### Epic 1: Profile & Settings
 
@@ -38,10 +38,10 @@ Only files that exist on disk are listed.
 
 | AC ID       | Story                                                      | Status   | Test Method                | File                               |
 | ----------- | ---------------------------------------------------------- | -------- | -------------------------- | ---------------------------------- |
-| US-1.4-AC01 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Proposed | Integration + API negative | [US-1.4-AC01.md](./US-1.4-AC01.md) |
-| US-1.4-AC02 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Proposed | Integration                | [US-1.4-AC02.md](./US-1.4-AC02.md) |
-| US-1.4-AC03 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Proposed | E2E                        | [US-1.4-AC03.md](./US-1.4-AC03.md) |
-| US-1.4-AC04 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Proposed | Integration + E2E          | [US-1.4-AC04.md](./US-1.4-AC04.md) |
+| US-1.4-AC01 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Rejected | Integration + API negative | [US-1.4-AC01.md](./US-1.4-AC01.md) |
+| US-1.4-AC02 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Rejected | Integration                | [US-1.4-AC02.md](./US-1.4-AC02.md) |
+| US-1.4-AC03 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Rejected | E2E                        | [US-1.4-AC03.md](./US-1.4-AC03.md) |
+| US-1.4-AC04 | [US-1.4](../d.User_stories/US-1.4-profile-measurements.md) | Rejected | Integration + E2E          | [US-1.4-AC04.md](./US-1.4-AC04.md) |
 
 ### Epic 2: Exercise Library
 
@@ -507,3 +507,53 @@ Only files that exist on disk are listed.
 ---
 
 **Total ACs**: 163
+
+### Epic 13: WCAG 2.2 Compliance Update
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-13.1-AC01 | [US-13.1](../d.User_stories/US-13.1-wcag-documentation-alignment.md) | Approved | Accessibility audit + automated/E2E | [US-13.1-AC01.md](./US-13.1-AC01.md) |
+| US-13.2-AC01 | [US-13.2](../d.User_stories/US-13.2-focus-not-obscured.md) | Approved | Accessibility audit + automated/E2E | [US-13.2-AC01.md](./US-13.2-AC01.md) |
+| US-13.3-AC01 | [US-13.3](../d.User_stories/US-13.3-dragging-alternatives.md) | Approved | Accessibility audit + automated/E2E | [US-13.3-AC01.md](./US-13.3-AC01.md) |
+| US-13.4-AC01 | [US-13.4](../d.User_stories/US-13.4-target-size.md) | Approved | Accessibility audit + automated/E2E | [US-13.4-AC01.md](./US-13.4-AC01.md) |
+| US-13.5-AC01 | [US-13.5](../d.User_stories/US-13.5-consistent-help.md) | Approved | Accessibility audit + automated/E2E | [US-13.5-AC01.md](./US-13.5-AC01.md) |
+| US-13.6-AC01 | [US-13.6](../d.User_stories/US-13.6-redundant-entry-and-form-persistence.md) | Approved | Accessibility audit + automated/E2E | [US-13.6-AC01.md](./US-13.6-AC01.md) |
+| US-13.7-AC01 | [US-13.7](../d.User_stories/US-13.7-accessible-authentication.md) | Approved | Accessibility audit + automated/E2E | [US-13.7-AC01.md](./US-13.7-AC01.md) |
+| US-13.8-AC01 | [US-13.8](../d.User_stories/US-13.8-status-messages.md) | Approved | Accessibility audit + automated/E2E | [US-13.8-AC01.md](./US-13.8-AC01.md) |
+
+### Epic 19: Terms and Conditions
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-19.1-AC01 | [US-19.1](../d.User_stories/US-19.1-legal-publication.md) | Verified | Integration + E2E + audit | [US-19.1-AC01.md](./US-19.1-AC01.md) |
+| US-19.2-AC01 | [US-19.2](../d.User_stories/US-19.2-registration-terms-acceptance.md) | Verified | Integration + E2E + audit | [US-19.2-AC01.md](./US-19.2-AC01.md) |
+| US-19.3-AC01 | [US-19.3](../d.User_stories/US-19.3-terms-reacceptance.md) | Verified | Integration + E2E + audit | [US-19.3-AC01.md](./US-19.3-AC01.md) |
+
+### Epic 21: Profile Measurements
+
+#### US-21.1: Measurement Definition Catalogue
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-21.1-AC01 | [US-21.1](../d.User_stories/US-21.1-measurement-definition-catalogue.md) | Approved | Integration + DB constraint review | [US-21.1-AC01.md](./US-21.1-AC01.md) |
+| US-21.1-AC02 | [US-21.1](../d.User_stories/US-21.1-measurement-definition-catalogue.md) | Approved | Unit + integration | [US-21.1-AC02.md](./US-21.1-AC02.md) |
+| US-21.1-AC03 | [US-21.1](../d.User_stories/US-21.1-measurement-definition-catalogue.md) | Approved | Database + service review | [US-21.1-AC03.md](./US-21.1-AC03.md) |
+
+#### US-21.2: User Measurement Values
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-21.2-AC01 | [US-21.2](../d.User_stories/US-21.2-user-measurement-values.md) | Approved | Unit + API integration + frontend | [US-21.2-AC01.md](./US-21.2-AC01.md) |
+| US-21.2-AC02 | [US-21.2](../d.User_stories/US-21.2-user-measurement-values.md) | Approved | Database + service review | [US-21.2-AC02.md](./US-21.2-AC02.md) |
+| US-21.2-AC03 | [US-21.2](../d.User_stories/US-21.2-user-measurement-values.md) | Approved | Unit + frontend contract review | [US-21.2-AC03.md](./US-21.2-AC03.md) |
+
+#### US-21.3: Measurement Discovery & Profile Presentation
+
+| AC ID | Story | Status | Test Method | File |
+| --- | --- | --- | --- | --- |
+| US-21.3-AC01 | [US-21.3](../d.User_stories/US-21.3-measurement-discovery-profile-presentation.md) | Approved | API + frontend | [US-21.3-AC01.md](./US-21.3-AC01.md) |
+| US-21.3-AC02 | [US-21.3](../d.User_stories/US-21.3-measurement-discovery-profile-presentation.md) | Approved | API + frontend | [US-21.3-AC02.md](./US-21.3-AC02.md) |
+| US-21.3-AC03 | [US-21.3](../d.User_stories/US-21.3-measurement-discovery-profile-presentation.md) | Approved | Frontend + accessibility | [US-21.3-AC03.md](./US-21.3-AC03.md) |
+
+The remaining E21 story ACs stay deferred until their implementation comparisons are performed.
+

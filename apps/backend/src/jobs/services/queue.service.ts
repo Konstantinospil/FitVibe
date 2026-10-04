@@ -1,5 +1,4 @@
 import { logger } from "../../config/logger.js";
-import { applyVibeLevelDecay } from "./vibe-level-decay.service.js";
 import { executeSharedJob, SHARED_JOB_TYPES } from "./job.handlers.js";
 
 export interface QueueJob {
@@ -47,13 +46,6 @@ export class QueueService {
         await executeSharedJob(jobName, job.payload);
       });
     }
-
-    // Deliberately remains local-only until the decay implementation is made concurrency-safe.
-    this.registerHandler("vibe-level.decay", async (job) => {
-      logger.info({ job }, "[queue] Processing vibe level decay");
-      await applyVibeLevelDecay();
-      logger.info("[queue] Vibe level decay completed successfully");
-    });
   }
 
   /**

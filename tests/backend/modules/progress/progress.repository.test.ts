@@ -118,4 +118,33 @@ describe("Progress Repository", () => {
       expect(Array.isArray(result)).toBe(true);
     });
   });
+  describe("fetchVibePointsTrends", () => {
+    it("reads canonical v2 domain points instead of splitting session points by exercise", async () => {
+      const vibeRows = [
+        { type_code: "strength", month_key: "2026-09", points: "35" },
+        { type_code: "regeneration", month_key: "2026-09", points: "20" },
+      ];
+      const overallRows = [{ month_key: "2026-09", points: "55" }];
+
+      const dbModule = await import("../../../../apps/backend/src/db/connection.js");
+      const dbFn = dbModule.db as jest.Mock;
+      dbFn("vibe_level_changes as vlc");
+      const builder = queryBuilders["vibe_level_changes as vlc"];
+      builder.orderBy = jest
+        .fn()
+        .mockResolvedValueOnce(vibeRows)
+        .mockResolvedValueOnce(overallRows);
+
+      const result = await progressRepository.fetchVibePointsTrends(userId, 3);
+
+      expect(dbFn).toHaveBeenCalledWith("vibe_level_changes as vlc");
+      expect(builder.where).toHaveBeenCalledWith({
+        "vlc.user_id": userId,
+        "vlc.change_reason": "session_completed",
+      });
+      expect(builder.whereNotNull).toHaveBeenCalledWith("vlc.points_awarded");
+      expect(result).toEqual({ vibeRows, overallRows });
+    });
+  });
+
 });

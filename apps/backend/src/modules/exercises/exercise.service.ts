@@ -93,10 +93,10 @@ export async function getAll(
 
 export async function getOne(id: string, userId: string, isAdmin = false): Promise<Exercise> {
   const exercise = isAdmin ? await getExerciseRaw(id) : await getExercise(id, userId);
-  if (!exercise || (!isAdmin && exercise.owner_id && exercise.owner_id !== userId)) {
-    throw new HttpError(404, ERROR_NOT_FOUND, "EXERCISE_NOT_FOUND");
-  }
-  if (!isAdmin && exercise.archived_at) {
+  const canRead =
+    exercise && (exercise.owner_id === null || exercise.owner_id === userId || exercise.is_public);
+
+  if (!exercise || (!isAdmin && (!canRead || exercise.archived_at))) {
     throw new HttpError(404, ERROR_NOT_FOUND, "EXERCISE_NOT_FOUND");
   }
   return exercise;
@@ -133,6 +133,8 @@ export async function createOne(
     is_public: dto.is_public ?? (resolvedOwnerId === null ? true : false),
     description_en: sanitizeNullable(dto.description_en),
     description_de: sanitizeNullable(dto.description_de),
+    met_value: dto.met_value ?? null,
+    seconds_per_rep: dto.seconds_per_rep ?? null,
     archived_at: null,
   };
 
@@ -203,6 +205,12 @@ export async function updateOne(
   }
   if (dto.description_de !== undefined) {
     updates.description_de = sanitizeNullable(dto.description_de);
+  }
+  if (dto.met_value !== undefined) {
+    updates.met_value = dto.met_value;
+  }
+  if (dto.seconds_per_rep !== undefined) {
+    updates.seconds_per_rep = dto.seconds_per_rep;
   }
 
   const affected = await updateExercise(id, updates);

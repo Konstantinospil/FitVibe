@@ -1,3 +1,5 @@
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
+import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 import { HttpError } from "../../utils/http.js";
 
 export interface PasswordContext {
@@ -6,10 +8,15 @@ export interface PasswordContext {
   alias?: string;
 }
 
-const COMPLEXITY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{12,}$/;
+const COMPLEXITY_REGEX = new RegExp(
+  "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{" +
+    AUTH_SECURITY_POLICY.password.minLengthFloor +
+    ",}$",
+);
 
 export function assertPasswordPolicy(password: string, context?: PasswordContext) {
-  if (!COMPLEXITY_REGEX.test(password)) {
+  const configuredMinLength = getRuntimeAppSetting<number>("auth.password_min_length");
+  if (!COMPLEXITY_REGEX.test(password) || password.length < configuredMinLength) {
     throw new HttpError(400, "WEAK_PASSWORD", "WEAK_PASSWORD");
   }
 

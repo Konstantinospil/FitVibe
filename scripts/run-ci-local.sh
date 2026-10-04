@@ -191,10 +191,10 @@ run_database_tests() {
     log "=== Database Tests ==="
     
     run_job "Migration Tests" \
-        "pnpm --filter @fitvibe/backend exec jest migrations/migrations.test.ts --maxWorkers=1 --forceExit" || return 1
+        "pnpm --filter @fitvibe/backend exec jest migrations/migrations.test.ts --maxWorkers=1" || return 1
     
     run_job "Seed Tests" \
-        "pnpm --filter @fitvibe/backend exec jest seeds/seeds.test.ts --maxWorkers=1 --forceExit" || return 1
+        "pnpm --filter @fitvibe/backend exec jest seeds/seeds.test.ts --maxWorkers=1" || return 1
     
     log "✅ Database tests passed"
 }
@@ -279,10 +279,10 @@ run_excluded_tests() {
         "pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts" || return 1
     
     run_job "Scripts Test" \
-        "pnpm --filter @fitvibe/backend exec jest tests/backend/db/utils/scripts.test.ts --maxWorkers=1 --forceExit" || return 1
+        "pnpm --filter @fitvibe/backend exec jest tests/backend/db/utils/scripts.test.ts --maxWorkers=1" || return 1
     
     run_job "Integration Tests" \
-        "pnpm --filter @fitvibe/backend exec jest --maxWorkers=2 --testMatch='**/integration/**/*.integration.test.ts' --testPathIgnorePatterns='/node_modules/|verification-resend-limit\\.test\\.ts$|login-enumeration\\.test\\.ts$' --forceExit" || return 1
+        "pnpm --filter @fitvibe/backend exec jest --maxWorkers=2 --testMatch='**/integration/**/*.integration.test.ts' --testPathIgnorePatterns='/node_modules/'" || return 1
     
     log "✅ Excluded tests passed"
 }
@@ -321,7 +321,7 @@ run_integration_tests() {
         "pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts" || return 1
     
     run_job "Integration Tests" \
-        "pnpm --filter @fitvibe/backend exec jest --maxWorkers=2 --testMatch='**/integration/**/*.integration.test.ts' --testPathIgnorePatterns='/node_modules/|verification-resend-limit\\.test\\.ts$|login-enumeration\\.test\\.ts$'" || return 1
+        "pnpm --filter @fitvibe/backend exec jest --maxWorkers=2 --testMatch='**/integration/**/*.integration.test.ts' --testPathIgnorePatterns='/node_modules/'" || return 1
     
     # Reset to test database
     setup_env

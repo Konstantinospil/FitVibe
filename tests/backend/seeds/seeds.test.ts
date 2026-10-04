@@ -266,7 +266,9 @@ describeWithTestDatabase("database seeds", () => {
         const strength = await client("exercise_types").where({ code: "strength" }).first();
         expect(strength).toBeDefined();
         expect(strength.code).toBe("strength");
+        expect(strength.name).toBe("Strength");
         expect(strength.description).toBe("Strength & resistance training");
+        expect(strength.is_active).toBe(true);
       });
 
       it("inserts cardio type", async () => {
@@ -329,7 +331,9 @@ describeWithTestDatabase("database seeds", () => {
       it("has timestamps on exercise type records", async () => {
         const type = await client("exercise_types").where({ code: "strength" }).first();
         expect(type?.created_at).toBeDefined();
+        expect(type?.updated_at).toBeDefined();
         expect(new Date(type?.created_at as string | number | Date)).toBeInstanceOf(Date);
+        expect(new Date(type?.updated_at as string | number | Date)).toBeInstanceOf(Date);
       });
     });
 

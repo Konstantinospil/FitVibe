@@ -13,7 +13,10 @@ import {
   revokeSessions,
   acceptTerms,
   revokeTerms,
+  acceptPrivacyPolicy,
+  revokePrivacyPolicy,
   getLegalDocumentsStatus,
+  getLegalDocumentVersions,
   jwksHandler,
 } from "./auth.controller.js";
 // Removed twofa.controller imports - using two-factor.controller via two-factor.routes.ts instead
@@ -27,6 +30,7 @@ import {
   ResetPasswordSchema,
   RevokeSessionsSchema,
   AcceptTermsSchema,
+  AcceptPrivacyPolicySchema,
   ResendVerificationSchema,
 } from "./auth.schemas.js";
 import { requireAccessToken } from "./auth.middleware.js";
@@ -37,73 +41,86 @@ export const authRouter = Router();
 
 authRouter.post(
   "/register",
-  rateLimit("auth_register", 10, 60),
+  rateLimit("auth_register"),
   validate(RegisterSchema),
   asyncHandler(register),
 );
-authRouter.get("/verify", rateLimit("auth_verify", 60, 60), asyncHandler(verifyEmail));
+authRouter.get("/verify", rateLimit("auth_verify"), asyncHandler(verifyEmail));
 authRouter.post(
   "/verify/resend",
-  rateLimit("auth_verify_resend", 3, 3600), // 3 requests per hour
+  rateLimit("auth_verify_resend"), // 3 requests per hour
   validate(ResendVerificationSchema),
   asyncHandler(resendVerificationEmail),
 );
-authRouter.post(
-  "/login",
-  rateLimit("auth_login", 10, 60),
-  validate(LoginSchema),
-  asyncHandler(login),
-);
+authRouter.post("/login", rateLimit("auth_login"), validate(LoginSchema), asyncHandler(login));
 authRouter.post(
   "/login/verify-2fa",
-  rateLimit("auth_2fa_login", 10, 60),
+  rateLimit("auth_2fa_login"),
   validate(Verify2FALoginSchema),
   asyncHandler(verify2FALogin),
 );
-authRouter.post("/refresh", rateLimit("auth_refresh", 60, 60), asyncHandler(refresh));
-authRouter.post("/logout", rateLimit("auth_logout", 60, 60), asyncHandler(logout));
+authRouter.post("/refresh", rateLimit("auth_refresh"), asyncHandler(refresh));
+authRouter.post("/logout", rateLimit("auth_logout"), asyncHandler(logout));
 authRouter.post(
   "/password/forgot",
-  rateLimit("auth_pw_forgot", 5, 60),
+  rateLimit("auth_pw_forgot"),
   validate(ForgotPasswordSchema),
   asyncHandler(forgotPassword),
 );
 authRouter.post(
   "/password/reset",
-  rateLimit("auth_pw_reset", 5, 60),
+  rateLimit("auth_pw_reset"),
   validate(ResetPasswordSchema),
   asyncHandler(resetPassword),
 );
 
 authRouter.get(
   "/sessions",
-  rateLimit("auth_sessions", 60, 60),
+  rateLimit("auth_sessions"),
   requireAccessToken,
   asyncHandler(listSessions),
 );
 authRouter.post(
   "/sessions/revoke",
-  rateLimit("auth_sessions_revoke", 10, 60),
+  rateLimit("auth_sessions_revoke"),
   requireAccessToken,
   validate(RevokeSessionsSchema),
   asyncHandler(revokeSessions),
 );
 authRouter.post(
   "/terms/accept",
-  rateLimit("auth_terms_accept", 5, 60),
+  rateLimit("auth_terms_accept"),
   requireAccessToken,
   validate(AcceptTermsSchema),
   asyncHandler(acceptTerms),
 );
 authRouter.post(
   "/terms/revoke",
-  rateLimit("auth_terms_revoke", 5, 60),
+  rateLimit("auth_terms_revoke"),
   requireAccessToken,
   asyncHandler(revokeTerms),
 );
+authRouter.post(
+  "/privacy/accept",
+  rateLimit("auth_privacy_accept"),
+  requireAccessToken,
+  validate(AcceptPrivacyPolicySchema),
+  asyncHandler(acceptPrivacyPolicy),
+);
+authRouter.post(
+  "/privacy/revoke",
+  rateLimit("auth_privacy_revoke"),
+  requireAccessToken,
+  asyncHandler(revokePrivacyPolicy),
+);
+authRouter.get(
+  "/legal-documents/versions",
+  rateLimit("auth_legal_versions"),
+  asyncHandler(getLegalDocumentVersions),
+);
 authRouter.get(
   "/legal-documents/status",
-  rateLimit("auth_legal_status", 60, 60),
+  rateLimit("auth_legal_status"),
   requireAccessToken,
   asyncHandler(getLegalDocumentsStatus),
 );

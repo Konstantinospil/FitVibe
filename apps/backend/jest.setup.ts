@@ -10,6 +10,8 @@ process.env.CSRF_ALLOWED_ORIGINS = process.env.CSRF_ALLOWED_ORIGINS ?? "http://l
 process.env.EMAIL_ENABLED = process.env.EMAIL_ENABLED ?? "false";
 process.env.CLAMAV_ENABLED = process.env.CLAMAV_ENABLED ?? "false";
 process.env.VAULT_ENABLED = process.env.VAULT_ENABLED ?? "false";
+process.env.TOTP_ENCRYPTION_KEY =
+  process.env.TOTP_ENCRYPTION_KEY ?? "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
 const testJwtKeys = generateKeyPairSync("rsa", {
   modulusLength: 2048,
@@ -61,12 +63,6 @@ afterAll(async () => {
   // Set timeout BEFORE async operations (Jest requires this)
   jest.setTimeout(60000);
 
-  // Switch to real timers to allow proper cleanup
-  try {
-    jest.useRealTimers();
-  } catch {
-    // Ignore if Jest environment is already torn down
-  }
 
   // CRITICAL: Stop Prometheus metrics collection FIRST and SYNCHRONOUSLY
   // These timers are the main culprit keeping the process alive
@@ -161,15 +157,6 @@ afterAll(async () => {
     setTimeout(resolve, 100);
   });
 
-  // Force clear any remaining timers as a last resort
-  // This helps catch any timers that weren't properly cleaned up
-  try {
-    if (typeof jest !== "undefined" && jest.clearAllTimers) {
-      jest.clearAllTimers();
-    }
-  } catch {
-    // Ignore if Jest environment is already torn down
-  }
 
   // Log what's keeping the process alive if available
   // This helps with debugging

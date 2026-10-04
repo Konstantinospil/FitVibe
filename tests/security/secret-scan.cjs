@@ -12,6 +12,8 @@ const TEXT_EXTENSIONS = new Set([
   ".cjs",
   ".mjs",
   ".json",
+  ".html",
+  ".css",
   ".yml",
   ".yaml",
   ".md",
@@ -55,6 +57,8 @@ const SECRET_PATTERNS = [
 
 const findings = [];
 const repoRoot = process.cwd();
+const explicitScanRoot = process.argv[2] ? path.resolve(repoRoot, process.argv[2]) : null;
+const scanRoot = explicitScanRoot ?? repoRoot;
 
 function shouldSkip(entryPath, stats) {
   if (stats.isDirectory()) {
@@ -159,7 +163,12 @@ function walk(dirPath) {
   }
 }
 
-walk(process.cwd());
+if (!fs.existsSync(scanRoot)) {
+  console.error(`Secret scan root does not exist: ${path.relative(repoRoot, scanRoot)}`);
+  process.exit(1);
+}
+
+walk(scanRoot);
 
 if (findings.length > 0) {
   console.error("Potential secrets detected:");
@@ -172,4 +181,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log("Secret scan completed — no patterns detected.");
+console.log(`Secret scan completed for ${path.relative(repoRoot, scanRoot) || "."} — no patterns detected.`);

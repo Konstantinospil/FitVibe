@@ -4,7 +4,7 @@
  * Tests the complete login flow with IP-based protection:
  * 1. IP lockout when too many attempts from same IP
  * 2. IP lockout when too many distinct emails attempted
- * 3. IP attempts reset on successful login
+ * 3. IP spray evidence survives successful login
  * 4. Integration with account-level protection
  */
 
@@ -129,7 +129,7 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
 
       const firstNine = await failLoginsWithoutAccountLock(ipAddress, 9);
       for (const response of firstNine) {
-        expect([401, 429]).toContain(response.status);
+        expect(response.status).toBe(200);
         if (response.status === 429) {
           expect(response.body.error.code).not.toBe("AUTH_ACCOUNT_LOCKED");
         }
@@ -144,21 +144,14 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
         expect(attempt9).toBeNull();
       }
 
-      // 10th attempt should trigger IP lockout
+      // 10th attempt triggers internal IP throttling but keeps the public
+      // response indistinguishable from earlier credential attempts.
       const response10 = await postLogin(ipAddress, ACCOUNT_SAFE_EMAILS[1]);
 
-      expect(response10.status).toBe(429);
-      expect(response10.body.error.code).toBe("AUTH_IP_LOCKED");
-      expect(response10.body.error.message).toContain("IP address temporarily locked");
-
-      // Verify structured error details are included
-      expect(response10.body.error.details).toBeDefined();
-      expect(response10.body.error.details.remainingSeconds).toBeGreaterThan(0);
-      expect(response10.body.error.details.lockoutType).toBe("ip");
-      expect(response10.body.error.details.totalAttemptCount).toBeGreaterThanOrEqual(10);
-      expect(response10.body.error.details.distinctEmailCount).toBeGreaterThanOrEqual(1);
-      expect(response10.body.error.details.maxAttempts).toBe(10);
-      expect(response10.body.error.details.maxDistinctEmails).toBe(5);
+      expect(response10.status).toBe(200);
+      expect(response10.body.requires2FA).toBe(true);
+      expect(response10.body.pendingSessionId).toEqual(expect.any(String));
+      expect(response10.body.error).toBeUndefined();
 
       // Verify IP is locked
       const attempt10 = await getFailedAttemptByIP(ipAddress);
@@ -179,7 +172,7 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
             password: "WrongPassword123!",
           });
 
-        expect([401, 429]).toContain(response.status);
+        expect(response.status).toBe(200);
       }
 
       // Check IP is not locked yet
@@ -197,8 +190,9 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
           password: "WrongPassword123!",
         });
 
-      expect(response5.status).toBe(429);
-      expect(response5.body.error.code).toBe("AUTH_IP_LOCKED");
+      expect(response5.status).toBe(200);
+      expect(response5.body.requires2FA).toBe(true);
+      expect(response5.body.error).toBeUndefined();
 
       // Verify IP is locked
       const attempt5 = await getFailedAttemptByIP(ipAddress);
@@ -245,13 +239,14 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
           password,
         });
 
-      expect(response.status).toBe(429);
-      expect(response.body.error.code).toBe("AUTH_IP_LOCKED");
+      expect(response.status).toBe(200);
+      expect(response.body.requires2FA).toBe(true);
+      expect(response.body.user).toBeUndefined();
     });
   });
 
-  describe("IP Attempt Reset on Successful Login", () => {
-    it("should reset IP attempts on successful login", async () => {
+  describe("IP Spray Evidence on Successful Login", () => {
+    it("should preserve IP spray attempts on successful login", async () => {
       const ipAddress = createTestIp();
       const email = "success@example.com";
       const password = "ValidPassword123!";
@@ -288,7 +283,7 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
       expect(beforeLogin).not.toBeNull();
       expect(beforeLogin?.total_attempt_count).toBeGreaterThan(0);
 
-      // Successful login should reset IP attempts
+      // Successful login must not erase aggregate IP spray evidence
       const loginResponse = await request(app)
         .post("/api/v1/auth/login")
         .set("X-Forwarded-For", ipAddress)
@@ -299,12 +294,13 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
 
       expect(loginResponse.status).toBe(200);
 
-      // Verify IP attempts are reset
+      // Aggregate IP evidence remains after a valid account authenticates.
       const afterLogin = await getFailedAttemptByIP(ipAddress);
-      expect(afterLogin).toBeNull();
+      expect(afterLogin).not.toBeNull();
+      expect(afterLogin?.total_attempt_count).toBe(beforeLogin?.total_attempt_count);
     });
 
-    it("should reset IP attempts even if account-level attempts exist", async () => {
+    it("should preserve IP spray evidence while clearing the successful account pair", async () => {
       const ipAddress = createTestIp();
       const email = "mixed@example.com";
       const password = "ValidPassword123!";
@@ -348,7 +344,7 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
       const ipAttempts = await getFailedAttemptByIP(ipAddress);
       expect(ipAttempts).not.toBeNull();
 
-      // Successful login should reset IP attempts
+      // Successful login clears only the identifier+IP pair, not aggregate IP evidence
       const loginResponse = await request(app)
         .post("/api/v1/auth/login")
         .set("X-Forwarded-For", ipAddress)
@@ -359,9 +355,9 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
 
       expect(loginResponse.status).toBe(200);
 
-      // Verify IP attempts are reset
       const afterLogin = await getFailedAttemptByIP(ipAddress);
-      expect(afterLogin).toBeNull();
+      expect(afterLogin).not.toBeNull();
+      expect(afterLogin?.total_attempt_count).toBe(ipAttempts?.total_attempt_count);
     });
   });
 
@@ -388,9 +384,10 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
           password: "WrongPassword123!",
         });
 
-      // Should get IP lockout, not account lockout
-      expect(response.status).toBe(429);
-      expect(response.body.error.code).toBe("AUTH_IP_LOCKED");
+      // The IP throttle wins internally, but its reason is not exposed.
+      expect(response.status).toBe(200);
+      expect(response.body.requires2FA).toBe(true);
+      expect(response.body.error).toBeUndefined();
     });
 
     it("should allow account-level lockout when IP is not locked", async () => {
@@ -412,7 +409,8 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
       expect(ipAttempt?.distinct_email_count).toBe(1);
       expect(isIPLocked(ipAttempt)).toBe(false);
 
-      // Next attempt should trigger account-level lockout
+      // The account-level throttle is internal; the public response remains
+      // the same opaque challenge and discloses no lockout reason.
       const response = await request(app)
         .post("/api/v1/auth/login")
         .set("X-Forwarded-For", ipAddress)
@@ -421,15 +419,9 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
           password: "WrongPassword123!",
         });
 
-      expect(response.status).toBe(429);
-      expect(response.body.error.code).toBe("AUTH_ACCOUNT_LOCKED");
-
-      // Verify structured error details are included
-      expect(response.body.error.details).toBeDefined();
-      expect(response.body.error.details.remainingSeconds).toBeGreaterThan(0);
-      expect(response.body.error.details.lockoutType).toBe("account");
-      expect(response.body.error.details.attemptCount).toBeGreaterThanOrEqual(5);
-      expect(response.body.error.details.maxAttempts).toBe(5);
+      expect(response.status).toBe(200);
+      expect(response.body.requires2FA).toBe(true);
+      expect(response.body.error).toBeUndefined();
     });
   });
 
@@ -508,7 +500,7 @@ describeWithTestDatabase("Integration: IP-Based Brute Force Protection", () => {
           password: "WrongPassword123!",
         });
 
-      expect([401, 429]).toContain(response.status); // Should not be IP-locked
+      expect(response.status).toBe(200); // Should not be IP-locked
     });
   });
 });

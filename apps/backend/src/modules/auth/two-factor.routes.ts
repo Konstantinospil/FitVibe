@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../users/users.middleware.js";
+import { requireAccessToken } from "../auth/auth.middleware.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import * as twoFactorController from "./two-factor.controller.js";
 
@@ -11,25 +11,28 @@ const router = Router();
  */
 
 // Initialize 2FA setup (get secret, QR code, backup codes)
-router.get("/setup", requireAuth, asyncHandler(twoFactorController.setup));
+router.get("/setup", requireAccessToken, asyncHandler(twoFactorController.setup));
+
+// Restart or replace an existing setup after step-up authentication
+router.post("/setup", requireAccessToken, asyncHandler(twoFactorController.restartSetup));
 
 // Enable 2FA after verifying TOTP token
-router.post("/enable", requireAuth, asyncHandler(twoFactorController.enable));
+router.post("/enable", requireAccessToken, asyncHandler(twoFactorController.enable));
 
 // Disable 2FA (requires password + 2FA token)
-router.post("/disable", requireAuth, asyncHandler(twoFactorController.disable));
+router.post("/disable", requireAccessToken, asyncHandler(twoFactorController.disable));
 
 // Verify 2FA token (used during login flow)
-router.post("/verify", requireAuth, asyncHandler(twoFactorController.verify));
+router.post("/verify", requireAccessToken, asyncHandler(twoFactorController.verify));
 
 // Regenerate backup codes
 router.post(
   "/backup-codes/regenerate",
-  requireAuth,
+  requireAccessToken,
   asyncHandler(twoFactorController.regenerateBackups),
 );
 
 // Get 2FA status and statistics
-router.get("/status", requireAuth, asyncHandler(twoFactorController.status));
+router.get("/status", requireAccessToken, asyncHandler(twoFactorController.status));
 
 export default router;

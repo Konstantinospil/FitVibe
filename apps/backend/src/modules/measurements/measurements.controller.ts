@@ -95,7 +95,7 @@ async function addValue(category: "bio" | "perf", req: Request, res: Response) {
     return;
   }
   const attributeId = req.params.attributeId;
-  if (!attributeId) {
+  if (typeof attributeId !== "string" || attributeId.length === 0) {
     res.status(400).json({ error: "Attribute ID is required" });
     return;
   }
@@ -122,7 +122,7 @@ async function updateVisibility(category: "bio" | "perf", req: Request, res: Res
     return;
   }
   const attributeId = req.params.attributeId;
-  if (!attributeId) {
+  if (typeof attributeId !== "string" || attributeId.length === 0) {
     res.status(400).json({ error: "Attribute ID is required" });
     return;
   }

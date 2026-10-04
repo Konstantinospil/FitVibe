@@ -5,10 +5,15 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import ProtectedRoute from "../../src/components/ProtectedRoute";
 import * as AuthContext from "../../src/contexts/AuthContext";
 import type { User } from "../../src/store/auth.store";
+import { getLegalDocumentsStatus } from "../../src/services/api";
 
 vi.mock("../../src/contexts/AuthContext");
+vi.mock("../../src/services/api", () => ({
+  getLegalDocumentsStatus: vi.fn(),
+}));
 
 const mockUseAuth = vi.mocked(AuthContext.useAuth);
+const mockGetLegalDocumentsStatus = vi.mocked(getLegalDocumentsStatus);
 
 const mockUser: User = {
   id: "user-123",
@@ -20,13 +25,33 @@ const mockUser: User = {
 describe("ProtectedRoute", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetLegalDocumentsStatus.mockResolvedValue({
+      terms: {
+        accepted: true,
+        acceptedAt: "2026-09-25T10:00:00.000Z",
+        acceptedVersion: "2026-09-25.1",
+        currentVersion: "2026-09-25.1",
+        requiredVersion: "2026-09-25.1",
+        requiredAction: "accept",
+        needsAcceptance: false,
+      },
+      privacy: {
+        accepted: true,
+        acceptedAt: null,
+        acceptedVersion: null,
+        currentVersion: "2024-06-01",
+        requiredVersion: "2024-06-01",
+        requiredAction: "acknowledge",
+        needsAcceptance: false,
+      },
+    });
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it("should render children when user is authenticated", () => {
+  it("should render children when user is authenticated", async () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
       user: mockUser,
@@ -45,7 +70,7 @@ describe("ProtectedRoute", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Protected Content")).toBeInTheDocument();
+    expect(await screen.findByText("Protected Content")).toBeInTheDocument();
   });
 
   it("should redirect to login when user is not authenticated", async () => {
@@ -117,7 +142,7 @@ describe("ProtectedRoute", () => {
     );
   });
 
-  it("should allow access to nested routes when authenticated", () => {
+  it("should allow access to nested routes when authenticated", async () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
       user: mockUser,
@@ -136,7 +161,206 @@ describe("ProtectedRoute", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Nested Protected Content")).toBeInTheDocument();
+    expect(await screen.findByText("Nested Protected Content")).toBeInTheDocument();
+  });
+
+  it("redirects ordinary authenticated routes when current Terms require acceptance", async () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: mockUser,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      updateUser: vi.fn(),
+    });
+    mockGetLegalDocumentsStatus.mockResolvedValue({
+      terms: {
+        accepted: false,
+        acceptedAt: null,
+        acceptedVersion: "2024-06-01",
+        currentVersion: "2026-09-25.1",
+        requiredVersion: "2026-09-25.1",
+        requiredAction: "accept",
+        needsAcceptance: true,
+      },
+      privacy: {
+        accepted: true,
+        acceptedAt: null,
+        acceptedVersion: null,
+        currentVersion: "2024-06-01",
+        requiredVersion: "2024-06-01",
+        requiredAction: "acknowledge",
+        needsAcceptance: false,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<div>Dashboard</div>} />
+            <Route path="/terms-reacceptance" element={<div>Terms Reacceptance</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Terms Reacceptance")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+  });
+
+  it("keeps acknowledgement-only Privacy changes non-blocking", async () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: mockUser,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      updateUser: vi.fn(),
+    });
+    mockGetLegalDocumentsStatus.mockResolvedValue({
+      terms: {
+        accepted: true,
+        acceptedAt: "2026-09-25T10:00:00.000Z",
+        acceptedVersion: "2026-09-25.1",
+        currentVersion: "2026-09-25.1",
+        requiredVersion: "2026-09-25.1",
+        requiredAction: "accept",
+        needsAcceptance: false,
+      },
+      privacy: {
+        accepted: false,
+        acceptedAt: null,
+        acceptedVersion: "2024-06-01",
+        currentVersion: "2026-09-25.1",
+        requiredVersion: "2026-09-25.1",
+        requiredAction: "acknowledge",
+        needsAcceptance: true,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<div>Dashboard</div>} />
+            <Route path="/privacy" element={<div>Privacy</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Dashboard")).toBeInTheDocument();
+  });
+
+  it("blocks ordinary routes when Privacy explicitly requires acceptance", async () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: mockUser,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      updateUser: vi.fn(),
+    });
+    mockGetLegalDocumentsStatus.mockResolvedValue({
+      terms: {
+        accepted: true,
+        acceptedAt: "2026-09-25T10:00:00.000Z",
+        acceptedVersion: "2026-09-25.1",
+        currentVersion: "2026-09-25.1",
+        requiredVersion: "2026-09-25.1",
+        requiredAction: "accept",
+        needsAcceptance: false,
+      },
+      privacy: {
+        accepted: false,
+        acceptedAt: null,
+        acceptedVersion: "2024-06-01",
+        currentVersion: "2026-09-25.2",
+        requiredVersion: "2026-09-25.2",
+        requiredAction: "accept",
+        needsAcceptance: true,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<div>Dashboard</div>} />
+            <Route path="/privacy" element={<div>Privacy Gate</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Privacy Gate")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+  });
+
+  it("fails closed on legal-status lookup failure for ordinary routes", async () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: mockUser,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      updateUser: vi.fn(),
+    });
+    mockGetLegalDocumentsStatus.mockRejectedValue(new Error("legal status unavailable"));
+
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<div>Dashboard</div>} />
+            <Route path="/terms-reacceptance" element={<div>Terms Reacceptance</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Terms Reacceptance")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
+  });
+
+  it("keeps legal and account settings routes available during Terms reacceptance", async () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: mockUser,
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      updateUser: vi.fn(),
+    });
+    mockGetLegalDocumentsStatus.mockResolvedValue({
+      terms: {
+        accepted: false,
+        acceptedAt: null,
+        acceptedVersion: "2024-06-01",
+        currentVersion: "2026-09-25.1",
+        requiredVersion: "2026-09-25.1",
+        requiredAction: "accept",
+        needsAcceptance: true,
+      },
+      privacy: {
+        accepted: true,
+        acceptedAt: null,
+        acceptedVersion: null,
+        currentVersion: "2024-06-01",
+        requiredVersion: "2024-06-01",
+        requiredAction: "acknowledge",
+        needsAcceptance: false,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/settings"]}>
+        <Routes>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/settings" element={<div>Account Settings</div>} />
+            <Route path="/terms-reacceptance" element={<div>Terms Reacceptance</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Account Settings")).toBeInTheDocument();
   });
 
   it("should prevent access to nested routes when not authenticated", async () => {

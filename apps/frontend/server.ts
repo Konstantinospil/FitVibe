@@ -13,6 +13,7 @@ import express, {
 import compression from "compression";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { createHash } from "node:crypto";
 import { isCacheableRoute, getCachedHtml, setCachedHtml } from "./src/ssr/cache.js";
 import { loadProductionRenderPage } from "./src/ssr/loadRenderPage.js";
 import { recordSSRMetric } from "./src/ssr/metrics.js";
@@ -22,8 +23,61 @@ const __dirname = dirname(__filename);
 const root = resolve(__dirname, ".");
 
 const app = express();
+app.disable("x-powered-by");
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4173;
 const isProduction = process.env.NODE_ENV === "production";
+
+const nonHtmlContentSecurityPolicy = [
+  "default-src 'none'",
+  "base-uri 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+].join("; ");
+
+const sha256Source = (value: string) =>
+  `'sha256-${createHash("sha256").update(value, "utf8").digest("base64")}'`;
+
+const contentSecurityPolicyForHtml = (html: string) => {
+  const styleHashes = [
+    ...new Set(
+      Array.from(html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi), (match) =>
+        sha256Source(match[1] ?? ""),
+      ),
+    ),
+  ];
+
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "img-src 'self' data:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "script-src 'self'",
+    "script-src-attr 'none'",
+    `style-src 'self'${styleHashes.length ? ` ${styleHashes.join(" ")}` : ""}`,
+    "style-src-attr 'unsafe-inline'",
+  ].join("; ");
+};
+
+const setHtmlContentSecurityPolicy = (res: Response, html: string) => {
+  res.setHeader("Content-Security-Policy", contentSecurityPolicyForHtml(html));
+};
+
+app.use((_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("Content-Security-Policy", nonHtmlContentSecurityPolicy);
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  next();
+});
 
 // Enable compression for all responses (gzip/brotli)
 // This improves Lighthouse "uses-text-compression" score
@@ -123,6 +177,18 @@ if (isProduction) {
   app.use("/favicon.ico", express.static(resolve(root, "public/favicon.ico")));
 }
 
+const notFound = (_req: Request, res: Response) => {
+  res.status(404).json({ error: "Not Found" });
+};
+
+app.all("/api", notFound);
+app.all("/api/{*splat}", notFound);
+app.all("/admin", notFound);
+app.all("/admin/{*splat}", notFound);
+app.get("/sitemap.xml", (_req: Request, res: Response) => {
+  res.status(404).type("text/plain").send("Not Found");
+});
+
 // Serve robots.txt with proper headers
 app.get("/robots.txt", (_req: Request, res: Response) => {
   const robotsPath = isProduction
@@ -161,6 +227,7 @@ const ssrHandler: RequestHandler = async (req: Request, res: Response, next: Nex
         res.setHeader("X-Cache", "HIT");
         res.setHeader("X-SSR-Time", `${renderTime}ms`);
         res.setHeader("Cache-Control", "public, max-age=300, s-maxage=600"); // 5 min browser, 10 min CDN
+        setHtmlContentSecurityPolicy(res, cachedHtml);
         return res.send(cachedHtml);
       }
     }
@@ -192,11 +259,7 @@ const ssrHandler: RequestHandler = async (req: Request, res: Response, next: Nex
     } else {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
     }
-    // Security headers
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "DENY");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    setHtmlContentSecurityPolicy(res, html);
     res.send(html);
   } catch (err) {
     const renderTime = Date.now() - startTime;

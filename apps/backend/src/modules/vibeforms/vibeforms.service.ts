@@ -1,6 +1,7 @@
 import { UpdateVibeformPreferencesSchema } from "./vibeforms.schemas.js";
 import { getLatestBioValuesByKeys } from "../measurements/measurements.repository.js";
-import { getAllDomainVibeLevels } from "../points/points.repository.js";
+import { getAllDomainVibeLevels } from "../points/vibe-level.repository.js";
+import { ensureGamificationProjectionFresh } from "../points/gamification-projection.service.js";
 import type { DomainCode } from "../points/points.types.js";
 import {
   listRegionalStrengthStimuli,
@@ -126,6 +127,7 @@ export async function getVibeformProfile(
   userId: string,
   now: Date = new Date(),
 ): Promise<VibeformProfile> {
+  await ensureGamificationProjectionFresh(userId);
   const to = new Date(now);
   const from = new Date(to.getTime() - VIBEFORM_TRAINING_WINDOW_WEEKS * MILLISECONDS_PER_WEEK);
 

@@ -135,6 +135,14 @@ export async function handleIdempotentRequest<T>(
     return true;
   }
 
+  if (resolution.type === "pending") {
+    throw new HttpError(
+      409,
+      "E.IDEMPOTENCY.IN_PROGRESS",
+      "A request with this idempotency key is already in progress",
+    );
+  }
+
   recordId = resolution.recordId;
 
   // Execute the handler

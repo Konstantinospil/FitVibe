@@ -10,7 +10,7 @@
 **Gate**: GOLD  
 **Owner**: ENG/QA  
 **Created**: 2025-11-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -24,7 +24,7 @@ Enable administrative control and role-based access control for platform managem
 
 - **Business Objective**: Enable administrative control and role-based access control for platform management.
 - **Success Criteria**: Admins can manage users and content with proper authorization and audit logging.
-- **Target Users**: Administrators and coaches
+- **Target Users**: Administrators, support users, and coaches where explicitly authorized
 
 ## Traceability
 
@@ -37,18 +37,25 @@ Enable administrative control and role-based access control for platform managem
 
 The system shall provide RBAC with the following capabilities:
 
-- **Roles**: Support `user`, `coach`, and `admin` roles
+- **Roles**: Canonical role codes are `athlete`, `coach`, `support`, and `admin`; unauthenticated access is not a role
 - **Route Guards**: Route guards deny access appropriately with 403 Forbidden
-- **JWT Claims**: RBAC claims come from JWT `roles[]` array
+- **JWT Claims**: Authorization uses the canonical scalar `role` claim and server-side authorization checks
 - **Middleware Enforcement**: Middleware rejects tokens missing required role
 - **No Information Leakage**: Error messages do not leak role information
 
+### Administrative Surfaces
+
+Administrative functionality may be exposed through both the authenticated product administration routes and the dedicated Backoffice application. They are two presentation surfaces over the same authorization, audit, and domain rules; neither surface may invent a separate permission model.
+
+The Backoffice is the preferred surface for operational administration such as user management, translations/legal-content administration, system settings, messages, and operational controls. Product-facing administration may remain where it belongs naturally in the user application.
+
 ### Admin Actions
 
-- **2-Step Confirmation**: Admin actions (adjust points, edit user, delete session) require 2-step confirmation
-- **Audit Logging**: All admin actions are fully audit-logged
-- **User Management**: Admins can view and edit user profiles
-- **Content Moderation**: Admins can moderate and delete inappropriate content
+- **Confirmation**: Destructive/high-impact admin actions require explicit confirmation appropriate to their risk.
+- **Audit Logging**: All state-changing administrative actions are audit-logged.
+- **User Management**: Authorized administrators/support users can manage user state within their role permissions.
+- **Content Moderation**: Authorized administrators can moderate content where the corresponding product capability exists.
+- **Authoritative Publication**: Where versioned legal or other authoritative content is published, Backoffice workflows must preserve draft/snapshot/publication history rather than mutating the meaning of previously published versions.
 
 ### Security
 
@@ -113,5 +120,5 @@ The system shall provide RBAC with the following capabilities:
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: 2026-10-25

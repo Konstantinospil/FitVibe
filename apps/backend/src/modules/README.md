@@ -53,13 +53,13 @@ The `common/` module provides shared functionality used across all modules:
 ```typescript
 // modules/example/example.routes.ts
 import { Router } from "express";
-import { requireAuth } from "../users/users.middleware.js";
+import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import { exampleController } from "./example.controller.js";
 
 export const exampleRouter = Router();
 
-exampleRouter.use(requireAuth); // Apply to all routes
+exampleRouter.use(requireAccessToken); // Apply to all routes
 exampleRouter.get("/", exampleController.list);
 exampleRouter.post("/", requireRole("admin"), exampleController.create);
 ```
@@ -96,7 +96,7 @@ export async function createExample(input: CreateExampleInput): Promise<ExampleR
 
 ### Authentication
 
-Most modules require authentication via `requireAuth` middleware from `users/users.middleware.ts`.
+Most modules require authentication via the canonical `requireAccessToken` middleware from `auth/auth.middleware.ts`. Browser requests use the HttpOnly access-token cookie; deliberate API clients may use a Bearer token.
 
 ### Authorization
 
@@ -188,7 +188,7 @@ export const exampleController = {
 
 // 5. Routes (example.routes.ts)
 export const exampleRouter = Router();
-exampleRouter.post("/", requireAuth, exampleController.create);
+exampleRouter.post("/", requireAccessToken, exampleController.create);
 
 // 6. Re-export from src/api/examples.routes.ts
 export { exampleRouter } from "../modules/example/example.routes.js";

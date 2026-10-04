@@ -11,6 +11,44 @@ jest.mock("uuid", () => ({
   v4: jest.fn(() => "00000000-0000-0000-0000-000000000001"),
 }));
 
+jest.mock("../../../../apps/backend/src/modules/points/gamification-policy.repository.js", () => ({
+  getSeasonalEventPolicies: jest.fn(async (at: Date) => {
+    const events = [
+      {
+        policyVersion: "v1",
+        code: "new_year_2025",
+        name: "New Year Kickstart 2025",
+        startDate: new Date("2025-01-01T00:00:00Z"),
+        endDate: new Date("2025-01-31T23:59:59Z"),
+        multiplier: 1.5,
+        minSessionsForBonus: 12,
+        bonusPoints: 100,
+      },
+      {
+        policyVersion: "v1",
+        code: "summer_shred_2025",
+        name: "Summer Shred 2025",
+        startDate: new Date("2025-06-01T00:00:00Z"),
+        endDate: new Date("2025-08-31T23:59:59Z"),
+        multiplier: 1.25,
+        minSessionsForBonus: 36,
+        bonusPoints: 250,
+      },
+      {
+        policyVersion: "v1",
+        code: "holiday_hustle_2025",
+        name: "Holiday Hustle 2025",
+        startDate: new Date("2025-11-15T00:00:00Z"),
+        endDate: new Date("2025-12-31T23:59:59Z"),
+        multiplier: 2,
+        minSessionsForBonus: 20,
+        bonusPoints: 200,
+      },
+    ];
+    return events.filter((event) => at >= event.startDate && at <= event.endDate);
+  }),
+}));
+
 jest.mock("../../../../apps/backend/src/modules/points/points.repository.js", () => ({
   insertPointsEvent: jest.fn(),
 }));
@@ -88,67 +126,67 @@ describe("seasonal-events.service", () => {
   });
 
   describe("getActiveEvents", () => {
-    it("should return empty array when no events are active", () => {
+    it("should return empty array when no events are active", async () => {
       // Set time to before first event
       jest.setSystemTime(new Date("2024-12-31T23:59:59Z"));
 
-      const result = getActiveEvents();
+      const result = await getActiveEvents();
 
       expect(result).toEqual([]);
     });
 
-    it("should return active events for current date", () => {
+    it("should return active events for current date", async () => {
       // Set time to during New Year event
       jest.setSystemTime(new Date("2025-01-15T12:00:00Z"));
 
-      const result = getActiveEvents();
+      const result = await getActiveEvents();
 
       expect(result).toHaveLength(1);
       expect(result[0]?.code).toBe("new_year_2025");
       expect(result[0]?.name).toBe("New Year Kickstart 2025");
     });
 
-    it("should return event on start date", () => {
+    it("should return event on start date", async () => {
       jest.setSystemTime(new Date("2025-01-01T00:00:00Z"));
 
-      const result = getActiveEvents();
+      const result = await getActiveEvents();
 
       expect(result).toHaveLength(1);
       expect(result[0]?.code).toBe("new_year_2025");
     });
 
-    it("should return event on end date", () => {
+    it("should return event on end date", async () => {
       jest.setSystemTime(new Date("2025-01-31T23:59:59Z"));
 
-      const result = getActiveEvents();
+      const result = await getActiveEvents();
 
       expect(result).toHaveLength(1);
       expect(result[0]?.code).toBe("new_year_2025");
     });
 
-    it("should not return event after end date", () => {
+    it("should not return event after end date", async () => {
       jest.setSystemTime(new Date("2025-02-01T00:00:00Z"));
 
-      const result = getActiveEvents();
+      const result = await getActiveEvents();
 
       expect(result).toEqual([]);
     });
 
-    it("should accept custom date parameter", () => {
+    it("should accept custom date parameter", async () => {
       const customDate = new Date("2025-06-15T12:00:00Z");
 
-      const result = getActiveEvents(customDate);
+      const result = await getActiveEvents(customDate);
 
       expect(result).toHaveLength(1);
       expect(result[0]?.code).toBe("summer_shred_2025");
     });
 
-    it("should return multiple events if they overlap", () => {
+    it("should return multiple events if they overlap", async () => {
       // This test would require overlapping events in the data
       // Currently no overlapping events, but test structure is ready
       jest.setSystemTime(new Date("2025-01-15T12:00:00Z"));
 
-      const result = getActiveEvents();
+      const result = await getActiveEvents();
 
       expect(result.length).toBeGreaterThanOrEqual(0);
     });

@@ -10,7 +10,7 @@
 **Gate**: SILVER  
 **Owner**: OPS/ENG  
 **Created**: 2025-11-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -51,9 +51,10 @@ The system shall maintain high availability:
 
 ### Disaster Recovery
 
-- **Restore Drills**: Monthly restore drills validate RTO≤4h/RPO≤24h
+- **Restore Drills**: Quarterly full restore drills validate RTO≤4h/RPO≤24h
 - **DR Procedures**: Disaster recovery procedures documented and tested
 - **Data Integrity**: Restored data matches source; integrity verified
+- **Between-Drill Verification**: Nightly backup jobs verify creation/encryption/checksums; automated integrity checks provide evidence between quarterly full restores
 
 ## Related Epics
 
@@ -116,5 +117,5 @@ The system shall maintain high availability:
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: 2026-10-25

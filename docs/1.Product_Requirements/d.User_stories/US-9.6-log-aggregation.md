@@ -5,11 +5,11 @@
 **Story ID**: US-9.6  
 **Epic ID**: [E9](../b.Epics/E9-observability.md)  
 **Title**: Log Aggregation  
-**Status**: Proposed  
+**Status**: Progressing  
 **Story Points**: 3  
 **Priority**: Medium  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## Description
 
-Log aggregation pipeline is configured (Loki or compatible). Logs are ingested from all services; logs are searchable by correlation ID, user ID, timestamp. Log retention policy is configured (default 30 days, configurable); log storage is optimized; log queries are performant (<2s for typical searches).
+Log aggregation pipeline is configured (Loki or compatible). Logs are ingested from all services and searchable by correlation ID, timestamp, service/route, and—where explicitly needed—a one-way hashed actor identifier. Raw user IDs are not an allowed search field. Log retention is configurable with a 30-day default target; log storage and normal operational queries must remain performant.
 
 ## Related Acceptance Criteria
 

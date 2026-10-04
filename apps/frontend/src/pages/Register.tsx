@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
-import AuthPageLayout from "../components/AuthPageLayout";
+import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { register as registerAccount, resendVerificationEmail } from "../services/api";
-import { Button } from "../components/ui";
 import { useTranslation } from "react-i18next";
-import { Eye, EyeOff } from "lucide-react";
+import { Button, Checkbox, InputField, PasswordField, TextLink } from "@fitvibe/ui";
+import AuthPageLayout from "../components/AuthPageLayout";
+import { FormFeedback, FormStack } from "../components/composites/FormStack";
+import { StatusPanel } from "../components/composites/StatusPanel";
+import { register as registerAccount, resendVerificationEmail } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 import { useCountdown } from "../hooks/useCountdown";
 
@@ -13,30 +14,12 @@ const Register: React.FC = () => {
   const location = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
   useRequiredFieldValidation(formRef, t);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
-
-  // Pre-fill email from location state (e.g., from expired verification token)
-  useEffect(() => {
-    const state = location.state as { email?: string; resendVerification?: boolean } | null;
-    if (state?.email) {
-      setEmail(state.email);
-    }
-  }, [location.state]);
-
-  // Auto-generate username from email when email changes
-  useEffect(() => {
-    if (email && !username) {
-      const generated = email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_");
-      setUsername(generated);
-    }
-  }, [email, username]);
-
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -48,29 +31,38 @@ const Register: React.FC = () => {
   const [retryAfter, setRetryAfter] = useState<number | null>(null);
   const [countdown, , resetCountdown] = useCountdown(0);
 
+  useEffect(() => {
+    const state = location.state as { email?: string; resendVerification?: boolean } | null;
+    if (state?.email) {
+      setEmail(state.email);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (email && !username) {
+      setUsername(email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_"));
+    }
+  }, [email, username]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
-    // Validate required fields
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
       setError(t("auth.register.fillAllFields"));
       return;
     }
 
-    // Check if terms and privacy are accepted
     if (!termsAccepted || !privacyAccepted) {
       setError(t("auth.register.termsRequired"));
       return;
     }
 
-    // Check if passwords match
     if (password !== confirmPassword) {
       setError(t("auth.register.passwordMismatch"));
       return;
     }
 
-    // Validate password strength
     const passwordErrors: string[] = [];
     if (password.length < 12) {
       passwordErrors.push(t("validation.passwordMinLength"));
@@ -93,13 +85,8 @@ const Register: React.FC = () => {
       return;
     }
 
-    // Validate username if provided
     if (username) {
-      if (username.length < 3 || username.length > 50) {
-        setError(t("errors.USER_USERNAME_INVALID"));
-        return;
-      }
-      if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+      if (username.length < 3 || username.length > 50 || !/^[a-zA-Z0-9_.-]+$/.test(username)) {
         setError(t("errors.USER_USERNAME_INVALID"));
         return;
       }
@@ -108,30 +95,24 @@ const Register: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Use provided username or generate from email
       const finalUsername = username.trim() || email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_");
 
       await registerAccount({
         email: email.trim(),
         password,
         username: finalUsername,
-        terms_accepted: true, // Both termsAccepted and privacyAccepted are already validated above
-        profile: {
-          display_name: name.trim(),
-        },
+        terms_accepted: true,
+        profile: { display_name: name.trim() },
       });
 
-      // Registration successful - show success message
       setSuccess(true);
     } catch (err: unknown) {
-      // Show more specific error if available
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
           response?: { data?: { error?: { code?: string; message?: string } } };
         };
         const errorCode = axiosError.response?.data?.error?.code;
         const errorMessage = axiosError.response?.data?.error?.message;
-        // Use error code translation if available, otherwise use error message, otherwise fallback
         setError(errorCode ? t(`errors.${errorCode}`) : errorMessage || t("auth.register.error"));
       } else {
         setError(t("auth.register.error"));
@@ -141,333 +122,234 @@ const Register: React.FC = () => {
     }
   };
 
+  const handleResend = async () => {
+    setIsResending(true);
+    setResendError(null);
+    setResendSuccess(false);
+
+    try {
+      await resendVerificationEmail({ email });
+      setResendSuccess(true);
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as {
+          response?: {
+            data?: { error?: { code?: string; message?: string; retryAfter?: number } };
+            headers?: { "retry-after"?: string };
+          };
+        };
+        const errorCode = axiosError.response?.data?.error?.code;
+        const retryAfterValue =
+          axiosError.response?.data?.error?.retryAfter ||
+          (axiosError.response?.headers?.["retry-after"]
+            ? parseInt(axiosError.response.headers["retry-after"], 10)
+            : null);
+
+        if (errorCode === "RATE_LIMITED" && retryAfterValue) {
+          setRetryAfter(retryAfterValue);
+          resetCountdown(retryAfterValue);
+        }
+
+        const errorMessage =
+          (errorCode
+            ? t(`errors.${errorCode}`) ||
+              axiosError.response?.data?.error?.message ||
+              t("verifyEmail.resendError")
+            : t("verifyEmail.resendError")) ?? "";
+        setResendError(errorMessage || null);
+      } else {
+        setResendError(t("verifyEmail.resendError"));
+      }
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   if (success) {
     return (
       <AuthPageLayout
         title={t("auth.register.successTitle")}
         description={t("auth.register.successDescription")}
       >
-        <div className="text-center p-2rem">
-          <div
-            className="flex flex--center mb-1"
-            style={{
-              width: "64px",
-              height: "64px",
-              margin: "0 auto 1rem",
-              borderRadius: "50%",
-              backgroundColor: "rgba(34, 197, 94, 0.1)",
-            }}
-          >
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#22c55e"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <p className="mb-1 text-secondary">{t("auth.register.checkEmail", { email })}</p>
+        <StatusPanel
+          kind="success"
+          actions={
+            <TextLink as={NavLink} to="/login">
+              {t("auth.register.goToLogin")}
+            </TextLink>
+          }
+        >
+          {t("auth.register.checkEmail", { email })}
+        </StatusPanel>
+
+        <FormStack as="div">
           {resendSuccess ? (
-            <div className="mb-1">
-              <p style={{ color: "#22c55e", marginBottom: "1rem", fontSize: "0.875rem" }}>
-                {t("verifyEmail.resendSuccess")}
-              </p>
-            </div>
+            <FormFeedback tone="success">{t("verifyEmail.resendSuccess")}</FormFeedback>
           ) : (
-            <p className="mb-1 text-secondary" style={{ fontSize: "0.875rem" }}>
-              {t("auth.register.didntReceiveEmail")}{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  void (async () => {
-                    setIsResending(true);
-                    setResendError(null);
-                    setResendSuccess(false);
-                    try {
-                      await resendVerificationEmail({ email });
-                      setResendSuccess(true);
-                    } catch (err: unknown) {
-                      setResendSuccess(false);
-                      if (err && typeof err === "object" && "response" in err) {
-                        const axiosError = err as {
-                          response?: {
-                            data?: {
-                              error?: { code?: string; message?: string; retryAfter?: number };
-                            };
-                            headers?: { "retry-after"?: string };
-                          };
-                        };
-                        const errorCode = axiosError.response?.data?.error?.code;
-                        const retryAfterValue =
-                          axiosError.response?.data?.error?.retryAfter ||
-                          (axiosError.response?.headers?.["retry-after"]
-                            ? parseInt(axiosError.response.headers["retry-after"], 10)
-                            : null);
-
-                        if (errorCode === "RATE_LIMITED" && retryAfterValue) {
-                          setRetryAfter(retryAfterValue);
-                          resetCountdown(retryAfterValue);
-                        }
-
-                        const errorMsg =
-                          (errorCode
-                            ? t(`errors.${errorCode}`) ||
-                              axiosError.response?.data?.error?.message ||
-                              t("verifyEmail.resendError")
-                            : t("verifyEmail.resendError")) ?? "";
-                        setResendError(errorMsg || null);
-                      } else {
-                        setResendError(t("verifyEmail.resendError"));
-                      }
-                    } finally {
-                      setIsResending(false);
-                    }
-                  })();
-                }}
-                disabled={isResending}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--color-accent)",
-                  textDecoration: "underline",
-                  cursor: isResending ? "not-allowed" : "pointer",
-                  padding: 0,
-                  fontSize: "inherit",
-                }}
-              >
-                {isResending ? t("verifyEmail.resending") : t("auth.register.resendEmail")}
-              </button>
-            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => void handleResend()}
+              disabled={isResending}
+              isLoading={isResending}
+            >
+              {t("auth.register.didntReceiveEmail")} {t("auth.register.resendEmail")}
+            </Button>
           )}
-          {resendError && (
-            <div role="alert" style={{ marginBottom: "1rem" }}>
-              <p style={{ color: "#ef4444", fontSize: "0.875rem", marginBottom: "0.25rem" }}>
-                {resendError}
-              </p>
-              {retryAfter !== null && countdown > 0 && (
-                <p style={{ color: "#666", fontSize: "0.75rem" }}>
-                  {t("verifyEmail.retryAfter", { seconds: countdown })}
-                </p>
-              )}
-            </div>
-          )}
-          <NavLink
-            to="/login"
-            className="rounded-xl"
-            style={{
-              padding: "0.9rem 1.4rem",
-              background: "var(--color-accent)",
-              color: "#0f172a",
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-              display: "inline-block",
-            }}
-          >
-            {t("auth.register.goToLogin")}
-          </NavLink>
-        </div>
+
+          {resendError ? (
+            <FormFeedback tone="danger">
+              {resendError}
+              {retryAfter !== null && countdown > 0
+                ? ` ${t("verifyEmail.retryAfter", { seconds: countdown })}`
+                : ""}
+            </FormFeedback>
+          ) : null}
+        </FormStack>
       </AuthPageLayout>
     );
   }
 
   return (
     <AuthPageLayout title={t("auth.register.title")} description={t("auth.register.description")}>
-      <form
+      <FormStack
         ref={formRef}
-        onSubmit={(e) => {
-          void handleSubmit(e);
+        onSubmit={(event) => {
+          void handleSubmit(event);
         }}
-        className="form"
       >
-        <label className="form-label">
-          <span className="form-label-text">{t("auth.register.nameLabel")}</span>
-          <input
-            name="name"
-            type="text"
-            placeholder={t("auth.placeholders.name")}
-            className="form-input"
-            required
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            autoComplete="name"
-            disabled={isSubmitting}
-          />
-        </label>
-        <label className="form-label">
-          <span className="form-label-text">{t("auth.register.emailLabel")}</span>
-          <input
-            name="email"
-            type="email"
-            placeholder={t("auth.placeholders.email")}
-            className="form-input"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            disabled={isSubmitting}
-          />
-        </label>
-        <div className="form-label">
-          <label htmlFor="register-username" className="form-label-text">
-            {t("auth.register.usernameLabel")}
-          </label>
-          <input
-            id="register-username"
-            name="username"
-            type="text"
-            placeholder={t("auth.placeholders.username")}
-            className="form-input"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            autoComplete="username"
-            disabled={isSubmitting}
-            minLength={3}
-            maxLength={50}
-            pattern="[a-zA-Z0-9_.-]+"
-          />
-          <small
-            className="text-secondary"
-            style={{ fontSize: "0.75rem", marginTop: "0.25rem", display: "block" }}
-          >
-            {t("auth.register.usernameHelp")}
-          </small>
-        </div>
-        <div className="form-label">
-          <label htmlFor="register-password" className="form-label-text">
-            {t("auth.register.passwordLabel")}
-          </label>
-          <div className="form-input-wrapper">
-            <input
-              id="register-password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder={t("auth.placeholders.password")}
-              className="form-input form-input--password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isSubmitting}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="form-password-toggle"
-              aria-label={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-              disabled={isSubmitting}
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-        </div>
-        <div className="form-label">
-          <label htmlFor="register-confirm-password" className="form-label-text">
-            {t("auth.register.confirmPasswordLabel")}
-          </label>
-          <div className="form-input-wrapper">
-            <input
-              id="register-confirm-password"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder={t("auth.placeholders.confirmPassword")}
-              className="form-input form-input--password"
-              required
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              autoComplete="new-password"
-              disabled={isSubmitting}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="form-password-toggle"
-              aria-label={showConfirmPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-              disabled={isSubmitting}
-            >
-              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
-        </div>
-        <div className="password-requirements">
-          <label
-            className="checkbox-wrapper"
-            style={{
-              border:
-                error && !termsAccepted
-                  ? "1px solid rgba(248, 113, 113, 0.5)"
-                  : "1px solid var(--color-border)",
-              borderRadius: "8px",
-              padding: "0.75rem",
-              transition: "border-color 150ms ease",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              disabled={isSubmitting}
-              style={{
-                marginTop: "0.2rem",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-              aria-invalid={error && !termsAccepted ? "true" : "false"}
-            />
-            <span className="checkbox-label">
+        <InputField
+          label={t("auth.register.nameLabel")}
+          name="name"
+          type="text"
+          placeholder={t("auth.placeholders.name")}
+          required
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          autoComplete="name"
+          disabled={isSubmitting}
+        />
+
+        <InputField
+          label={t("auth.register.emailLabel")}
+          name="email"
+          type="email"
+          placeholder={t("auth.placeholders.email")}
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          autoComplete="email"
+          disabled={isSubmitting}
+        />
+
+        <InputField
+          id="register-username"
+          label={t("auth.register.usernameLabel")}
+          helperText={t("auth.register.usernameHelp")}
+          name="username"
+          type="text"
+          placeholder={t("auth.placeholders.username")}
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          autoComplete="username"
+          disabled={isSubmitting}
+          minLength={3}
+          maxLength={50}
+          pattern="[a-zA-Z0-9_.-]+"
+        />
+
+        <PasswordField
+          id="register-password"
+          label={t("auth.register.passwordLabel")}
+          name="password"
+          placeholder={t("auth.placeholders.password")}
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          showPasswordLabel={t("auth.showPassword")}
+          hidePasswordLabel={t("auth.hidePassword")}
+        />
+
+        <PasswordField
+          id="register-confirm-password"
+          label={t("auth.register.confirmPasswordLabel")}
+          name="confirmPassword"
+          placeholder={t("auth.placeholders.confirmPassword")}
+          required
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          showPasswordLabel={t("auth.showPassword")}
+          hidePasswordLabel={t("auth.hidePassword")}
+        />
+
+        <Checkbox
+          checked={termsAccepted}
+          onChange={(event) => setTermsAccepted(event.target.checked)}
+          disabled={isSubmitting}
+          error={error && !termsAccepted ? t("auth.register.termsRequired") : undefined}
+          label={
+            <span>
               {t("auth.register.acceptTerms")}{" "}
-              <NavLink
+              <TextLink
+                as={NavLink}
                 to="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
               >
                 {t("auth.register.termsLink")}
-              </NavLink>
+              </TextLink>
             </span>
-          </label>
-          <label className="checkbox-wrapper">
-            <input
-              type="checkbox"
-              checked={privacyAccepted}
-              onChange={(e) => setPrivacyAccepted(e.target.checked)}
-              disabled={isSubmitting}
-              style={{
-                marginTop: "0.2rem",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-            />
-            <span className="checkbox-label">
+          }
+        />
+
+        <Checkbox
+          checked={privacyAccepted}
+          onChange={(event) => setPrivacyAccepted(event.target.checked)}
+          disabled={isSubmitting}
+          label={
+            <span>
               {t("auth.register.acceptTerms")}{" "}
-              <NavLink
+              <TextLink
+                as={NavLink}
                 to="/privacy"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
               >
                 {t("auth.register.privacyLink")}
-              </NavLink>
+              </TextLink>
             </span>
-          </label>
-        </div>
-        {error ? (
-          <div role="alert" className="form-error">
-            {error}
-          </div>
-        ) : null}
+          }
+        />
+
+        {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
+
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
           {isSubmitting ? t("auth.register.submitting") : t("auth.register.submit")}
         </Button>
-        <p className="m-0 text-09 text-secondary text-center">
+
+        <p
+          style={{
+            margin: 0,
+            textAlign: "center",
+            color: "var(--color-text-secondary)",
+            fontFamily: "var(--font-family-body)",
+            fontSize: "var(--type-supporting-size)",
+            lineHeight: "var(--type-supporting-line-height)",
+          }}
+        >
           {t("auth.register.loginPrompt")}{" "}
-          <NavLink to="/login" className="text-secondary">
+          <TextLink as={NavLink} to="/login">
             {t("auth.register.loginLink")}
-          </NavLink>
+          </TextLink>
         </p>
-      </form>
+      </FormStack>
     </AuthPageLayout>
   );
 };

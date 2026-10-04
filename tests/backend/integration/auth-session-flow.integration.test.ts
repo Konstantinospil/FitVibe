@@ -26,6 +26,7 @@ import {
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
+import { seed as seedLegalPublications } from "../../../apps/backend/src/db/seeds/005_legal_publications.js";
 
 describeWithTestDatabase("Integration: Auth → Session Flow", () => {
   beforeAll(async () => {
@@ -41,6 +42,10 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
 
       // Clean up any existing test data
       await truncateAll();
+      // Registration requires an explicit authoritative Terms publication.
+      // Keep the integration fixture aligned with a fresh deployed database:
+      // schema migration first, then deterministic catalog/legal seeds.
+      await seedLegalPublications(db);
       // Ensure roles are seeded before creating users
       await ensureRolesSeeded();
     }, "beforeEach");
@@ -202,12 +207,17 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
       password: "WrongPassword123!",
     });
 
-    // Rate limiting (429) is also acceptable as it indicates the request was processed
-    // and the invalid credentials were detected before rate limiting
-    expect([401, 429]).toContain(loginResponse.status);
-    if (loginResponse.status === 401) {
-      expect(loginResponse.body.error).toBeDefined();
-    }
+    // Phase 14: invalid credentials continue into an opaque pre-authentication
+    // challenge so the response does not disclose whether the password was correct
+    // or whether the account uses 2FA. No authenticated state is issued.
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body).toMatchObject({
+      requires2FA: true,
+      pendingSessionId: expect.any(String),
+    });
+    expect(loginResponse.body.user).toBeUndefined();
+    expect(loginResponse.body.session).toBeUndefined();
+    expect(loginResponse.body.tokens).toBeUndefined();
   });
 
   it("should prevent creating session without authentication", async () => {

@@ -10,6 +10,7 @@ import {
   getTranslationMetadata,
   getNamespacesForLanguage,
   updateMeasurementAttributeLabel,
+  withTranslationTransaction,
 } from "./translations.repository.js";
 import type {
   SupportedLanguage,
@@ -77,31 +78,40 @@ export async function createTranslationService(
   dto: CreateTranslationDTO,
   userId?: string,
 ): Promise<TranslationRecord> {
-  const record = await createTranslation({
-    ...dto,
-    created_by: userId ?? null,
-    updated_by: userId ?? null,
-  });
-  if (dto.namespace === ATTRIBUTE_NAMESPACE && dto.language === DEFAULT_ATTRIBUTE_LANGUAGE) {
-    const key = attributeKeyFromPath(dto.key_path);
+  const key =
+    dto.namespace === ATTRIBUTE_NAMESPACE && dto.language === DEFAULT_ATTRIBUTE_LANGUAGE
+      ? attributeKeyFromPath(dto.key_path)
+      : null;
+
+  const record = await withTranslationTransaction(async (trx) => {
+    const created = await createTranslation(
+      {
+        ...dto,
+        created_by: userId ?? null,
+        updated_by: userId ?? null,
+      },
+      trx,
+    );
+
     if (key) {
-      await updateMeasurementAttributeLabel(key, dto.value);
-      await insertAudit({
-        actorUserId: userId ?? null,
-        entityType: "measurement_attributes",
-        action: "rename",
-        entityId: key,
-        metadata: { namespace: dto.namespace, key_path: dto.key_path, label: dto.value },
-      });
+      await updateMeasurementAttributeLabel(key, dto.value, trx);
     }
+    return created;
+  });
+
+  if (key) {
+    await insertAudit({
+      actorUserId: userId ?? null,
+      entityType: "measurement_attributes",
+      action: "rename",
+      entityId: key,
+      metadata: { namespace: dto.namespace, key_path: dto.key_path, label: dto.value },
+    });
   }
+
   return record;
 }
 
-/**
- * Update an existing translation
- * Creates a new version: marks old record as deleted and creates a new one
- */
 export async function updateTranslationService(
   language: SupportedLanguage,
   namespace: TranslationNamespace,
@@ -109,69 +119,83 @@ export async function updateTranslationService(
   dto: UpdateTranslationDTO,
   userId?: string,
 ): Promise<TranslationRecord> {
-  const existing = await getTranslation(language, namespace, keyPath, false);
-  if (!existing) {
-    throw new HttpError(404, "TRANSLATION_NOT_FOUND", "Translation not found");
-  }
+  const key =
+    namespace === ATTRIBUTE_NAMESPACE && language === DEFAULT_ATTRIBUTE_LANGUAGE
+      ? attributeKeyFromPath(keyPath)
+      : null;
 
-  const updated = await updateTranslation(
-    language,
-    namespace,
-    keyPath,
-    {
-      value: dto.value,
-    },
-    userId,
-  );
-
-  if (!updated) {
-    throw new HttpError(500, "TRANSLATION_UPDATE_FAILED", "Failed to update translation");
-  }
-
-  if (namespace === ATTRIBUTE_NAMESPACE && language === DEFAULT_ATTRIBUTE_LANGUAGE) {
-    const key = attributeKeyFromPath(keyPath);
-    if (key) {
-      await updateMeasurementAttributeLabel(key, dto.value);
-      await insertAudit({
-        actorUserId: userId ?? null,
-        entityType: "measurement_attributes",
-        action: "rename",
-        entityId: key,
-        metadata: { namespace, key_path: keyPath, label: dto.value },
-      });
+  const updated = await withTranslationTransaction(async (trx) => {
+    const existing = await getTranslation(language, namespace, keyPath, false, trx);
+    if (!existing) {
+      throw new HttpError(404, "TRANSLATION_NOT_FOUND", "Translation not found");
     }
+
+    const next = await updateTranslation(
+      language,
+      namespace,
+      keyPath,
+      { value: dto.value },
+      userId,
+      trx,
+    );
+
+    if (!next) {
+      throw new HttpError(500, "TRANSLATION_UPDATE_FAILED", "Failed to update translation");
+    }
+
+    if (key) {
+      await updateMeasurementAttributeLabel(key, dto.value, trx);
+    }
+    return next;
+  });
+
+  if (key) {
+    await insertAudit({
+      actorUserId: userId ?? null,
+      entityType: "measurement_attributes",
+      action: "rename",
+      entityId: key,
+      metadata: { namespace, key_path: keyPath, label: dto.value },
+    });
   }
 
   return updated;
 }
 
-/**
- * Bulk update translations for a key across multiple languages
- */
 export async function bulkUpdateTranslationService(
   dto: BulkUpdateTranslationDTO,
   userId?: string,
 ): Promise<TranslationRecord[]> {
-  const results: TranslationRecord[] = [];
   const key = attributeKeyFromPath(dto.key_path);
   const enValue = dto.translations[DEFAULT_ATTRIBUTE_LANGUAGE];
 
-  for (const [language, value] of Object.entries(dto.translations)) {
-    if (value === undefined) {
-      continue;
+  const results = await withTranslationTransaction(async (trx) => {
+    const records: TranslationRecord[] = [];
+    for (const [language, value] of Object.entries(dto.translations)) {
+      if (value === undefined) {
+        continue;
+      }
+      const result = await upsertTranslation(
+        {
+          namespace: dto.namespace,
+          key_path: dto.key_path,
+          language,
+          value,
+          updated_by: userId ?? null,
+        },
+        trx,
+      );
+      records.push(result);
     }
-    const result = await upsertTranslation({
-      namespace: dto.namespace,
-      key_path: dto.key_path,
-      language: language,
-      value,
-      updated_by: userId ?? null,
-    });
-    results.push(result);
-  }
+
+    if (dto.namespace === ATTRIBUTE_NAMESPACE && key && typeof enValue === "string") {
+      await updateMeasurementAttributeLabel(key, enValue, trx);
+    }
+
+    return records;
+  });
 
   if (dto.namespace === ATTRIBUTE_NAMESPACE && key && typeof enValue === "string") {
-    await updateMeasurementAttributeLabel(key, enValue);
     await insertAudit({
       actorUserId: userId ?? null,
       entityType: "measurement_attributes",
@@ -184,9 +208,6 @@ export async function bulkUpdateTranslationService(
   return results;
 }
 
-/**
- * Delete a translation
- */
 export async function deleteTranslationService(
   language: SupportedLanguage,
   namespace: TranslationNamespace,

@@ -103,6 +103,15 @@ const paths = {
     },
   },
   "/users/me/preferences": {
+    get: {
+      summary: "Get user preferences",
+      tags: ["Users"],
+      security: [bearerAuth],
+      responses: {
+        200: jsonContent("#/components/schemas/UserPreferences"),
+        401: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
     patch: {
       summary: "Update user preferences",
       tags: ["Users"],
@@ -226,6 +235,45 @@ const paths = {
       responses: {
         201: jsonContent("#/components/schemas/Session"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/estimate": {
+    get: {
+      summary: "Estimate planned session duration and intensity",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonContent("#/components/schemas/SessionEstimate"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/reopen": {
+    post: {
+      summary: "Reopen a completed session for correction",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonContent("#/components/schemas/Session"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+        409: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
   },
@@ -519,7 +567,7 @@ const schemas = {
       password: { type: "string", minLength: 12, maxLength: 128 },
       role: { type: "string", minLength: 1, maxLength: 50 },
       locale: { type: "string", maxLength: 10 },
-      preferredLang: { type: "string", maxLength: 5 },
+      preferredLang: { type: "string", enum: ["en", "de", "fr", "es", "el"] },
       status: { type: "string", enum: ["pending_verification", "active", "suspended"] },
     },
     required: ["username", "displayName", "email", "password", "role"],
@@ -549,7 +597,8 @@ const schemas = {
       status: { type: "string", enum: ["pending_verification", "active", "suspended", "banned", "pending_deletion", "deleted"] },
       createdAt: { type: "string", format: "date-time" },
       updatedAt: { type: "string", format: "date-time" },
-      preferences: { $ref: "#/components/schemas/UserPreferences" },
+      met_value: { type: ["number", "null"], minimum: 0.1, maximum: 30 },
+      seconds_per_rep: { type: ["number", "null"], minimum: 0.1, maximum: 120 },
     },
     required: ["id", "email", "alias", "status", "createdAt"],
   },
@@ -572,11 +621,11 @@ const schemas = {
   UserPreferences: {
     type: "object",
     properties: {
-      measurementSystem: { type: "string", enum: ["metric", "imperial", "mixed"] },
-      locale: { type: "string" },
-      timeZone: { type: "string" },
-      visibility: { type: "string", enum: ["private", "followers", "public"] },
+      language: { type: "string", enum: ["en", "de", "fr", "es", "el"] },
+      measurementSystem: { type: "string", enum: ["metric", "imperial"] },
     },
+    required: ["language", "measurementSystem"],
+    additionalProperties: false,
   },
   UpdateProfileRequest: {
     type: "object",
@@ -584,8 +633,6 @@ const schemas = {
       username: { type: "string", minLength: 3, maxLength: 50 },
       displayName: { type: "string", minLength: 1, maxLength: 120 },
       bio: { type: "string", maxLength: 500 },
-      locale: { type: "string", maxLength: 10 },
-      preferredLang: { type: "string", maxLength: 5 },
       alias: { type: "string", minLength: 3, maxLength: 50 },
       weight: { type: "number", minimum: 20, maximum: 500 },
       weightUnit: { type: "string", enum: ["kg", "lb"] },
@@ -599,11 +646,10 @@ const schemas = {
   UpdatePreferencesRequest: {
     type: "object",
     properties: {
-      measurementSystem: { type: "string", enum: ["metric", "imperial", "mixed"] },
-      locale: { type: "string" },
-      timeZone: { type: "string" },
-      visibility: { type: "string", enum: ["private", "followers", "public"] },
+      language: { type: "string", enum: ["en", "de", "fr", "es", "el"] },
+      measurementSystem: { type: "string", enum: ["metric", "imperial"] },
     },
+    additionalProperties: false,
   },
   Exercise: {
     type: "object",
@@ -636,6 +682,8 @@ const schemas = {
         type: "array",
         items: { type: "string" },
       },
+      met_value: { type: ["number", "null"], minimum: 0.1, maximum: 30 },
+      seconds_per_rep: { type: ["number", "null"], minimum: 0.1, maximum: 120 },
     },
     required: ["name", "visibility"],
   },
@@ -680,7 +728,7 @@ const schemas = {
       plan_id: { type: "string", format: "uuid", nullable: true },
       title: { type: "string", minLength: 2, maxLength: 100, nullable: true },
       planned_at: { type: "string", format: "date-time" },
-      visibility: { type: "string", enum: ["private", "public", "link"] },
+      visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
       notes: { type: "string", maxLength: 1000, nullable: true },
       recurrence_rule: { type: "string", maxLength: 255, nullable: true },
       exercises: {
@@ -726,6 +774,30 @@ const schemas = {
       },
     },
     required: ["data", "meta"],
+  },
+  SessionEstimate: {
+    type: "object",
+    properties: {
+      activeDurationSec: { type: ["integer", "null"], minimum: 0 },
+      restDurationSec: { type: "integer", minimum: 0 },
+      minimumTotalDurationSec: { type: ["integer", "null"], minimum: 0 },
+      normalizedMet: { type: ["number", "null"], minimum: 0 },
+      estimatedKcalPerMin: { type: ["number", "null"], minimum: 0 },
+      estimatedActiveKcal: { type: ["number", "null"], minimum: 0 },
+      complete: { type: "boolean" },
+      missingInputs: { type: "array", items: { type: "string" } },
+    },
+    required: [
+      "activeDurationSec",
+      "restDurationSec",
+      "minimumTotalDurationSec",
+      "normalizedMet",
+      "estimatedKcalPerMin",
+      "estimatedActiveKcal",
+      "complete",
+      "missingInputs",
+    ],
+    additionalProperties: false,
   },
   SessionCompleteRequest: {
     type: "object",

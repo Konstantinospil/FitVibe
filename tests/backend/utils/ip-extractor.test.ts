@@ -9,6 +9,9 @@ import { env } from "../../../apps/backend/src/config/env.js";
 jest.mock("../../../apps/backend/src/config/env.js", () => ({
   env: {
     trustProxy: false,
+    trustedProxyIps: ["192.168.1.1", "10.0.0.1"],
+    NODE_ENV: "production",
+    isProduction: true,
   },
 }));
 
@@ -100,6 +103,15 @@ describe("ip-extractor", () => {
     describe("when behind trusted proxy", () => {
       beforeEach(() => {
         jest.mocked(env).trustProxy = true;
+      });
+
+      it("should ignore forwarded headers from an untrusted proxy peer", () => {
+        mockRequest.socket = { remoteAddress: "192.168.1.200" };
+        mockRequest.headers = { "x-forwarded-for": "1.2.3.4" };
+
+        const ip = extractClientIp(mockRequest as Request);
+
+        expect(ip).toBe("192.168.1.200");
       });
 
       it("should use leftmost IP from X-Forwarded-For header", () => {

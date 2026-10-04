@@ -1,78 +1,54 @@
 /**
- * Secure IP address extraction utility
- * Prevents X-Forwarded-For header spoofing (OWASP A07:2021)
+ * Secure client-IP extraction for authentication and rate limiting.
  *
- * Security considerations:
- * - X-Forwarded-For can be spoofed by clients
- * - Only trust X-Forwarded-For when behind a trusted proxy
- * - Use the leftmost IP (actual client) from the chain
- * - Always validate IP format
+ * X-Forwarded-For is accepted in the test environment or when proxy mode is
+ * explicitly enabled and the immediate TCP peer is allowlisted. Direct
+ * clients cannot opt themselves into proxy semantics by sending the header.
  */
 
 import { isIP } from "node:net";
 import type { Request } from "express";
 import { env } from "../config/env.js";
 
-/**
- * Validates if a string is a valid IP address (IPv4 or IPv6).
- * Node's parser supports compressed IPv6 and IPv4-mapped IPv6 addresses,
- * which are common for requests coming through Docker networking.
- */
 function isValidIP(ip: string): boolean {
   return isIP(ip) !== 0;
 }
 
-/**
- * Extracts the client IP address from a request, with protection against header spoofing.
- *
- * When behind a proxy (trust proxy enabled):
- * - Uses the leftmost IP from X-Forwarded-For (actual client IP)
- * - Validates IP format before using it
- * - Falls back to socket.remoteAddress if header is invalid
- *
- * When not behind a proxy:
- * - Always uses socket.remoteAddress
- * - Ignores X-Forwarded-For to prevent spoofing
- *
- * @param req - Express request object
- * @returns Client IP address or "unknown" if cannot be determined
- */
-export function extractClientIp(req: Request): string {
-  // In test environment, always check X-Forwarded-For first to allow test IP injection
-  // SECURITY: Only allow test mode behavior when actually in test environment
-  // In production, only trust X-Forwarded-For when behind a trusted proxy
-  // Note: NODE_ENV is set at process startup and cannot be manipulated by HTTP requests
-  const isTestEnv = env.NODE_ENV === "test" && !env.isProduction;
-  const shouldCheckForwardedFor = isTestEnv || env.trustProxy;
+function socketAddress(req: Request): string | null {
+  const candidate = req.socket?.remoteAddress || req.ip;
+  return candidate && isValidIP(candidate) ? candidate : null;
+}
 
-  if (shouldCheckForwardedFor) {
+function canTrustForwardedFor(req: Request): boolean {
+  const isTestEnv = env.NODE_ENV === "test" && !env.isProduction;
+  if (isTestEnv) {
+    return true;
+  }
+
+  const peer = socketAddress(req);
+  const trustedProxyIps = env.trustedProxyIps ?? [];
+  return Boolean(env.trustProxy && peer && trustedProxyIps.includes(peer));
+}
+
+export function extractClientIp(req: Request): string {
+  if (canTrustForwardedFor(req)) {
     const forwardedFor = req.headers["x-forwarded-for"];
 
     if (forwardedFor && typeof forwardedFor === "string") {
-      // X-Forwarded-For format: "client, proxy1, proxy2"
-      // We want the leftmost IP (the actual client)
-      const ips = forwardedFor.split(",").map((ip) => ip.trim());
-      const clientIp = ips[0];
+      const clientIp = forwardedFor
+        .split(",")
+        .map((ip) => ip.trim())
+        .find((ip) => ip.length > 0);
 
-      // Validate the IP format before using it
       if (clientIp && isValidIP(clientIp)) {
         return clientIp;
       }
     }
   }
 
-  // Fallback to socket address
-  const socketIp = req.socket?.remoteAddress || req.ip;
-  return socketIp && isValidIP(socketIp) ? socketIp : "unknown";
+  return socketAddress(req) ?? "unknown";
 }
 
-/**
- * Extracts the client IP for rate limiting purposes.
- * Returns a consistent identifier that can be used for rate limit keys.
- *
- * @param req - Express request object
- * @returns IP address or identifier string
- */
 export function extractClientIpForRateLimit(req: Request): string {
   return extractClientIp(req);
 }

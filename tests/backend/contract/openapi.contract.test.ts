@@ -11,6 +11,7 @@ import { CreateSessionSchema } from "../../../apps/backend/src/modules/sessions/
 import { ReportFeedItemSchema } from "../../../apps/backend/src/modules/feed/feed.schemas.js";
 import {
   UpdateProfileSchema,
+  UpdatePreferencesSchema,
   CreateUserSchema,
 } from "../../../apps/backend/src/modules/users/users.controller.js";
 import { CreateExerciseTypeSchema } from "../../../apps/backend/src/modules/exercise-types/exerciseTypes.controller.js";
@@ -32,6 +33,7 @@ const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
   { name: "SessionCreateRequest", schema: CreateSessionSchema },
   { name: "ReportFeedItemRequest", schema: ReportFeedItemSchema },
   { name: "UpdateProfileRequest", schema: UpdateProfileSchema },
+  { name: "UpdatePreferencesRequest", schema: UpdatePreferencesSchema },
   { name: "CreateUserRequest", schema: CreateUserSchema },
   { name: "CreateExerciseTypeRequest", schema: CreateExerciseTypeSchema },
   { name: "UpdateVibeformPreferencesRequest", schema: UpdateVibeformPreferencesSchema },

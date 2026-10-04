@@ -8,9 +8,9 @@ import {
   listTranslations,
   updateTranslation,
 } from "../../src/services/translations.api";
-import { apiClient } from "../../src/services/api";
+import { apiClient } from "../../src/services/httpApi";
 
-vi.mock("../../src/services/api", () => ({
+vi.mock("../../src/services/httpApi", () => ({
   apiClient: {
     get: vi.fn(),
     post: vi.fn(),

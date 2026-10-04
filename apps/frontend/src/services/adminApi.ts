@@ -3,7 +3,8 @@
  * Contains API calls for admin-only operations
  */
 
-import { apiClient } from "./api";
+import { apiClient } from "./httpApi";
+import type { UserStatus } from "@fitvibe/contracts";
 
 // Types
 export interface FeedReport {
@@ -24,8 +25,7 @@ export interface UserRecord {
   username: string;
   email: string;
   roleCode: string;
-  status:
-    "pending_verification" | "active" | "suspended" | "banned" | "pending_deletion" | "deleted";
+  status: UserStatus;
   createdAt: string;
   lastLoginAt: string | null;
   sessionCount: number;

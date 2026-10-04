@@ -2,6 +2,10 @@ import * as auditUtil from "../../../../apps/backend/src/modules/common/audit.ut
 import { db } from "../../../../apps/backend/src/db/connection.js";
 import { logger } from "../../../../apps/backend/src/config/logger.js";
 import crypto from "crypto";
+import {
+  flushAuditOutbox,
+  persistAuditOutbox,
+} from "../../../../apps/backend/src/modules/common/audit-outbox.service.js";
 
 jest.mock("../../../../apps/backend/src/db/connection.js");
 jest.mock("../../../../apps/backend/src/config/logger.js", () => ({
@@ -11,12 +15,23 @@ jest.mock("../../../../apps/backend/src/config/logger.js", () => ({
     info: jest.fn(),
   },
 }));
-jest.mock("crypto", () => ({
-  randomUUID: jest.fn(() => "uuid-123"),
+jest.mock("../../../../apps/backend/src/modules/common/audit-outbox.service.js", () => ({
+  flushAuditOutbox: jest.fn().mockResolvedValue(0),
+  persistAuditOutbox: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock("crypto", () => {
+  const actualCrypto = jest.requireActual<typeof import("crypto")>("crypto");
+
+  return {
+    ...actualCrypto,
+    randomUUID: jest.fn(() => "uuid-123"),
+  };
+});
 
 const mockedDb = db as jest.MockedFunction<typeof db>;
 const mockedLogger = logger as jest.Mocked<typeof logger>;
+const mockedFlushAuditOutbox = jest.mocked(flushAuditOutbox);
+const mockedPersistAuditOutbox = jest.mocked(persistAuditOutbox);
 
 describe("audit.util", () => {
   let mockQueryBuilder: {
@@ -60,6 +75,7 @@ describe("audit.util", () => {
           created_at: expect.any(String),
         }),
       );
+      expect(mockedFlushAuditOutbox).toHaveBeenCalledWith(25);
     });
 
     it("should normalize invalid actor IDs to null", async () => {
@@ -109,7 +125,14 @@ describe("audit.util", () => {
 
       expect(mockedLogger.error).toHaveBeenCalledWith(
         { err: error, action: "create" },
-        "[AUDIT] insert failed",
+        "[AUDIT] insert failed; persisting to outbox",
+      );
+      expect(mockedPersistAuditOutbox).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entity_type: "session",
+          action: "create",
+        }),
+        error,
       );
     });
   });

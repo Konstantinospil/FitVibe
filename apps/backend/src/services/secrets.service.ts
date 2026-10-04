@@ -44,6 +44,39 @@ let vaultClient: VaultClient | null = null;
 let awsClient: SecretsManagerClient | null = null;
 let config: SecretConfig | null = null;
 
+const ENV_SECRET_ALIASES: Record<string, string> = {
+  "secret/jwt:private": "JWT_PRIVATE_KEY",
+  "secret/jwt:public": "JWT_PUBLIC_KEY",
+  "secret/database:url": "DATABASE_URL",
+};
+
+function getEnvironmentSecret(key: string, field?: string): string | null {
+  const alias = ENV_SECRET_ALIASES[`${key}:${field ?? ""}`];
+  const genericName = ["FITVIBE_SECRET", key, field]
+    .filter((part): part is string => {
+      return Boolean(part);
+    })
+    .join("_")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
+  const value = process.env[alias ?? genericName];
+  return value === undefined ? null : value;
+}
+
+function readStructuredField(serialized: string, field: string): string | null {
+  try {
+    const parsed = JSON.parse(serialized) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+    const value = (parsed as Record<string, unknown>)[field];
+    return typeof value === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Initialize secrets manager with configuration
  */
@@ -108,61 +141,59 @@ export async function getSecret(key: string, field?: string): Promise<string | n
     return null;
   }
 
-  // Try Vault first
-  if (config.vault?.enabled && vaultClient) {
+  if (config.provider === "vault" && config.vault?.enabled && vaultClient) {
     try {
       const result = await vaultClient.read<{
         data?: { data?: Record<string, unknown> } & Record<string, unknown>;
       }>(key);
-
       if (result?.data) {
-        // Handle both KV v1 and v2
         const secretData = result.data.data || result.data;
-
         if (field) {
           const value = secretData[field];
-          return typeof value === "string" ? value : null;
-        }
-
-        // If no field specified and data is a string, return it
-        if (typeof secretData === "string") {
+          if (typeof value === "string") {
+            return value;
+          }
+        } else if (typeof secretData === "string") {
           return secretData;
+        } else if (Object.keys(secretData).length === 1 && typeof secretData.value === "string") {
+          return secretData.value;
+        } else {
+          return JSON.stringify(secretData);
         }
-
-        // If data is an object, return JSON string
-        return JSON.stringify(secretData);
       }
-
-      logger.warn({ key, field }, "[secrets] Secret not found in Vault");
+      logger.warn(
+        { key, field },
+        "[secrets] Secret not found in Vault; trying environment fallback",
+      );
     } catch (error) {
-      logger.error({ err: error, key, field }, "[secrets] Vault read failed");
+      logger.error(
+        { err: error, key, field },
+        "[secrets] Vault read failed; trying environment fallback",
+      );
     }
-  }
-
-  // Try AWS Secrets Manager
-  if (config.aws?.enabled && awsClient) {
+  } else if (config.provider === "aws" && config.aws?.enabled && awsClient) {
     try {
       const command = new GetSecretValueCommand({ SecretId: key });
       const result = await awsClient.send(command);
-
-      if (result.SecretString) {
-        const secretData = JSON.parse(result.SecretString) as Record<string, unknown>;
-
-        if (field) {
-          const value = secretData[field];
-          return typeof value === "string" ? value : null;
+      if (result.SecretString !== undefined) {
+        if (!field) {
+          return result.SecretString;
         }
-
-        return result.SecretString;
+        const value = readStructuredField(result.SecretString, field);
+        if (value !== null) {
+          return value;
+        }
       }
-
-      logger.warn({ key, field }, "[secrets] Secret not found in AWS");
+      logger.warn({ key, field }, "[secrets] Secret not found in AWS; trying environment fallback");
     } catch (error) {
-      logger.error({ err: error, key, field }, "[secrets] AWS Secrets Manager read failed");
+      logger.error(
+        { err: error, key, field },
+        "[secrets] AWS Secrets Manager read failed; trying environment fallback",
+      );
     }
   }
 
-  return null;
+  return getEnvironmentSecret(key, field);
 }
 
 /**
@@ -188,8 +219,8 @@ export async function writeSecret(
     return false;
   }
 
-  // Write to Vault
-  if (config.vault?.enabled && vaultClient) {
+  // Write only to the configured authoritative provider.
+  if (config.provider === "vault" && config.vault?.enabled && vaultClient) {
     try {
       const data = typeof value === "string" ? { value } : value;
       await vaultClient.write(key, data);
@@ -203,7 +234,7 @@ export async function writeSecret(
   }
 
   // Write to AWS Secrets Manager
-  if (config.aws?.enabled && awsClient) {
+  if (config.provider === "aws" && config.aws?.enabled && awsClient) {
     try {
       const secretString = typeof value === "string" ? value : JSON.stringify(value);
 

@@ -1,0 +1,176 @@
+# Manual refresh regenerates only changed Linux visual baselines after intentional UI changes.
+name: Refresh Visual Linux Baselines
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["feature"]
+    paths:
+      - ".github/workflows/refresh-visual-baselines.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    name: Refresh Visual Linux Baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-jammy
+      options: --ipc=host
+
+    steps:
+      - name: Checkout feature
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: feature
+          fetch-depth: 0
+
+      - name: Trust workspace
+        shell: bash
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --no-offline
+
+      - name: Build visual frontend
+        run: pnpm --filter @fitvibe/frontend run build:visual
+
+      - name: Start preview server
+        shell: bash
+        run: |
+          cd apps/frontend
+          pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client >/tmp/fitvibe-preview.log 2>&1 &
+          echo $! >/tmp/fitvibe-preview.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/fitvibe-preview.log
+          exit 1
+
+      - name: Refresh changed Linux baselines
+        env:
+          APP_URL: http://127.0.0.1:4173
+          DISABLE_WEBSERVER: "true"
+          CI: "true"
+        run: |
+          pnpm exec playwright test \
+            --config tests/frontend/visual/config/playwright.config.ts \
+            --update-snapshots=changed
+
+      - name: Commit refreshed Linux baselines via GitHub API
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from "node:child_process";
+          import { readFile } from "node:fs/promises";
+
+          const repo = process.env.GITHUB_REPOSITORY;
+          const token = process.env.GH_TOKEN;
+          const branch = "feature";
+          const api = "https://api.github.com";
+          const headers = {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${token}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json",
+          };
+
+          const status = execFileSync(
+            "git",
+            ["status", "--porcelain", "--untracked-files=all", "--", "tests/frontend/visual"],
+            { encoding: "utf8" },
+          );
+
+          const files = [...new Set(
+            status
+              .split("\n")
+              .filter(Boolean)
+              .map((line) => line.slice(3).trim())
+              .filter((path) => path.includes("-snapshots/") && path.endsWith("-linux.png")),
+          )];
+
+          if (files.length === 0) {
+            console.log("No Linux visual baseline changes produced.");
+            process.exit(0);
+          }
+
+          console.log("Baseline files to commit:");
+          for (const file of files) console.log(`- ${file}`);
+
+          const request = async (path, options = {}) => {
+            const response = await fetch(`${api}/repos/${repo}${path}`, {
+              ...options,
+              headers: { ...headers, ...(options.headers || {}) },
+            });
+            if (!response.ok) {
+              throw new Error(`${options.method || "GET"} ${path}: ${response.status} ${await response.text()}`);
+            }
+            return response.json();
+          };
+
+          const ref = await request(`/git/ref/heads/${branch}`);
+          const headSha = ref.object.sha;
+          if (headSha !== process.env.GITHUB_SHA) {
+            throw new Error(
+              `Feature moved from tested commit ${process.env.GITHUB_SHA} to ${headSha}; refusing to commit stale visual baselines.`,
+            );
+          }
+          const headCommit = await request(`/git/commits/${headSha}`);
+          const treeEntries = [];
+
+          for (const path of files) {
+            const content = (await readFile(path)).toString("base64");
+            const blob = await request("/git/blobs", {
+              method: "POST",
+              body: JSON.stringify({ content, encoding: "base64" }),
+            });
+            treeEntries.push({ path, mode: "100644", type: "blob", sha: blob.sha });
+          }
+
+          const tree = await request("/git/trees", {
+            method: "POST",
+            body: JSON.stringify({ base_tree: headCommit.tree.sha, tree: treeEntries }),
+          });
+
+          const commit = await request("/git/commits", {
+            method: "POST",
+            body: JSON.stringify({
+              message: "test(visual): refresh Linux baselines for current feature UI",
+              tree: tree.sha,
+              parents: [headSha],
+            }),
+          });
+
+          await request(`/git/refs/heads/${branch}`, {
+            method: "PATCH",
+            body: JSON.stringify({ sha: commit.sha, force: false }),
+          });
+
+          console.log(`Committed ${files.length} refreshed Linux baseline(s) in ${commit.sha}`);
+          NODE
+
+      - name: Upload refreshed visual artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: refreshed-visual-baselines-${{ github.run_id }}
+          if-no-files-found: ignore
+          path: |
+            tests/frontend/visual/__screenshots__
+            playwright-report/visual
+            test-results/visual-junit.xml

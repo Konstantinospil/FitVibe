@@ -5,12 +5,12 @@
 **Requirement ID**: REQ-2025-01-20-001  
 **Type**: Functional Requirement  
 **Title**: Terms and Conditions Acceptance  
-**Status**: Open  
+**Status**: Done  
 **Priority**: High  
 **Gate**: GOLD  
 **Owner**: Legal/ENG  
 **Created**: 2025-01-20  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -40,10 +40,10 @@ Add a Terms and Conditions acceptance requirement to the user registration flow.
 
 The system shall provide access to Terms and Conditions:
 
-- **Document Storage**: Terms and Conditions document stored and accessible
+- **Document Storage**: Mutable authoring content is separated from immutable published legal-document snapshots per ADR-032
 - **Public Access**: Terms document accessible via public route (e.g., `/terms` or `/terms-and-conditions`)
 - **Document Content**: Terms document includes standard sections: user obligations, service description, liability limitations, dispute resolution
-- **Versioning**: Terms document is versioned with effective date
+- **Versioning**: Published Terms are immutable snapshots with explicit publication classification (`minor` or `authoritative`) and effective/version metadata
 - **Viewing Options**: Terms document can be viewed in modal or new page from registration form
 
 ### Terms Acceptance in Registration
@@ -57,7 +57,7 @@ The system shall provide access to Terms and Conditions:
 
 - **Database Storage**: Terms acceptance is recorded in database with timestamp and version
 - **Audit Trail**: Terms acceptance is audit-logged for compliance
-- **Version Tracking**: System tracks which version of Terms user accepted
+- **Version Tracking**: System tracks the authoritative publication snapshot/version accepted by the user
 
 ## Related Epics
 
@@ -102,10 +102,13 @@ The system shall provide access to Terms and Conditions:
 - **Risk**: Terms updates may require re-acceptance
 - **Risk**: Legal requirements may change
 
-## Open Questions
+## Decisions
 
-- Should users be required to re-accept Terms when updated?
-- How should Terms updates be communicated to existing users?
+- A new **authoritative** publication advances the acceptance contract and may require re-acceptance.
+- A **minor** publication remains versioned/auditable but does not independently invalidate prior acceptance.
+- The exact published content accepted by a user must be reproducible from the immutable publication snapshot.
+- Backoffice is the governed publication surface; see ADR-032.
+- Communication of a required re-acceptance is a product-delivery concern under E19 and must not be inferred merely from mutable translation edits.
 
 ## Related Requirements
 
@@ -113,5 +116,5 @@ The system shall provide access to Terms and Conditions:
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: after implementation comparison

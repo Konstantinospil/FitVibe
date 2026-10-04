@@ -3,7 +3,10 @@
  */
 
 import { HttpError } from "../../utils/http.js";
-import { getCurrentCookiePolicyVersion } from "../../config/legal-version.js";
+import {
+  getCurrentLegalPublication,
+  legalVersionSatisfiesCurrentRequirement,
+} from "../legal/legal.service.js";
 import type {
   CookieConsent,
   CookieConsentResponse,
@@ -22,6 +25,10 @@ export async function getConsentStatus(ipAddress: string): Promise<CookieConsent
     return {
       hasConsent: false,
     };
+  }
+
+  if (!(await legalVersionSatisfiesCurrentRequirement("cookie", consent.legalVersionId))) {
+    return { hasConsent: false };
   }
 
   return {
@@ -56,9 +63,11 @@ export async function saveCookiePreferences(
     throw new HttpError(400, "CONSENT_ESSENTIAL_REQUIRED", "Essential cookies must be enabled");
   }
 
+  const currentCookiePolicy = await getCurrentLegalPublication("cookie");
   const input: CreateCookieConsentInput = {
     ipAddress,
-    consentVersion: await getCurrentCookiePolicyVersion(),
+    consentVersion: currentCookiePolicy.version,
+    legalVersionId: currentCookiePolicy.id,
     essentialCookies: preferences.essential,
     preferencesCookies: preferences.preferences,
     analyticsCookies: preferences.analytics,
@@ -66,7 +75,7 @@ export async function saveCookiePreferences(
     userAgent: userAgent ?? null,
   };
 
-  const consent = await upsertConsent(ipAddress, input);
+  const consent = await upsertConsent(ipAddress, input, null, currentCookiePolicy.id);
 
   // Audit log consent change
   await insertAudit({

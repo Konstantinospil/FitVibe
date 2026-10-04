@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { asyncHandler } from "../../utils/async-handler.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit, rateLimitByIPAndEmail } from "../common/rateLimiter.js";
@@ -18,8 +17,8 @@ export const contactRouter = Router();
 // Rate limit: 5 messages per hour per IP and per email address
 contactRouter.post(
   "/",
-  rateLimitByIPAndEmail("contact_submit", 5, 3600), // 5 requests per hour per IP and per email
-  asyncHandler(submitContactHandler),
+  rateLimitByIPAndEmail("contact_submit"), // 5 requests per hour per IP and per email
+  submitContactHandler,
 );
 
 // Admin endpoints - require authentication and admin role
@@ -27,38 +26,38 @@ contactRouter.get(
   "/messages",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_list", 60, 60),
-  asyncHandler(listContactMessagesHandler),
+  rateLimit("contact_list"),
+  listContactMessagesHandler,
 );
 
 contactRouter.get(
   "/messages/:id",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_get", 60, 60),
-  asyncHandler(getContactMessageHandler),
+  rateLimit("contact_get"),
+  getContactMessageHandler,
 );
 
 contactRouter.post(
   "/messages/:id/read",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_mark_read", 60, 60),
-  asyncHandler(markMessageAsReadHandler),
+  rateLimit("contact_mark_read"),
+  markMessageAsReadHandler,
 );
 
 contactRouter.post(
   "/messages/:id/responded",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_mark_responded", 60, 60),
-  asyncHandler(markMessageAsRespondedHandler),
+  rateLimit("contact_mark_responded"),
+  markMessageAsRespondedHandler,
 );
 
 contactRouter.post(
   "/messages/:id/response",
   requireAccessToken,
   requireRole("admin"),
-  rateLimit("contact_save_response", 60, 60),
-  asyncHandler(saveMessageResponseHandler),
+  rateLimit("contact_save_response"),
+  saveMessageResponseHandler,
 );

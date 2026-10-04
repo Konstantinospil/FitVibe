@@ -1,22 +1,29 @@
 # @fitvibe/types
 
-Central repository of TypeScript types that are shared between the backend, frontend, and tooling. Keeping these definitions in one place prevents drift between client and server contracts.
+Shared TypeScript contracts used by FitVibe applications and tooling.
+
+The package currently exposes:
+
+- API contract unions from `src/contracts.d.ts` such as `UserStatus`, `SessionStatus`, and `SessionVisibility`.
+- Vibeform types from `src/vibeform.d.ts`.
+
+Application code may also resolve the API unions through the `@fitvibe/contracts` path alias. Do not add parallel app-local copies of these shared unions.
 
 ## Build
 
 ```bash
-pnpm --filter @fitvibe/types build    # emits ESM/CJS typings into dist/
+pnpm --filter @fitvibe/types build
 ```
 
 ## Usage
 
 ```ts
-import type { SessionSummary, UserProfile } from "@fitvibe/types";
+import type { SessionVisibility, UserStatus } from "@fitvibe/types";
 ```
 
-### Adding a Type
+### Adding or changing a shared contract
 
-1. Create or update files in `src/`.
-2. Export the new types from `src/index.ts`.
-3. Re-run `pnpm build` for this package.
-4. Bump dependants if the change is breaking.
+1. Update the appropriate definition under `src/`.
+2. Export it from `src/index.ts` when it belongs to the package surface.
+3. Update consumers rather than introducing duplicate local unions.
+4. Run the package and application type checks.

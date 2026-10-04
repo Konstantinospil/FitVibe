@@ -10,7 +10,7 @@ title: "Authentication & Session Strategy — JWT (RS256) with Refresh Token Rot
 status: "Accepted"
 date: "2025-10-13"
 owners: ["Dr. Konstantinos Pilpilidis"]
-version: "1.0"
+version: "1.3"
 supersedes: []
 links:
 
@@ -50,7 +50,7 @@ Adopt **JWT access tokens (RS256)** with **rotating refresh tokens** and **slidi
 - **Browser**:
   - `AT` in **HttpOnly, Secure, SameSite=Lax** cookie `at`, path `/`, domain app scope.
   - `RT` in **HttpOnly, Secure, SameSite=Strict** cookie `rt`, path `/auth/refresh`.
-  - CSRF protection via **double-submit token** (header `X-CSRF-Token` matching a non-HttpOnly cookie) for **state-changing** requests.
+  - CSRF protection for browser mutations uses an **HttpOnly CSRF secret cookie** plus a derived token obtained from `/api/v1/csrf-token` and returned in the `X-CSRF-Token` header. The global CSRF middleware also validates browser origin/referrer.
 - **Mobile/API clients**: Bearer `Authorization` header for `AT`; `RT` exchanged via refresh endpoint using client-auth or signed body.
 
 ### Rotation & Reuse Detection
@@ -75,6 +75,15 @@ Adopt **JWT access tokens (RS256)** with **rotating refresh tokens** and **slidi
 
 ### Security Controls
 
+- **Authoritative email deny-list:** an active blacklist entry prevents registration and any flow that can establish or restore account access. The blacklist repository is authoritative and fails closed: storage/schema/read errors are security failures, not equivalent to “not blacklisted”.
+- **Sensitive 2FA administration requires step-up:** disabling 2FA and regenerating recovery codes require the current password plus a current second factor. Replacing/restarting an existing 2FA enrollment requires the same proof; first-time enrollment does not require a factor that does not yet exist. Read-only 2FA status does not require step-up.
+
+- **Pre-authentication state machine:** password verification is not authentication success. For 2FA-protected accounts, tokens are issued only after the second factor succeeds.
+- **Enumeration resistance:** unknown identifiers and wrong passwords perform comparable work and return the same opaque pre-authentication response shape as a real 2FA-required password success. Password and second-factor verification are timing-normalized.
+- **Second-factor retry boundary:** a pending 2FA challenge is exhausted after three failed verification attempts. Recent exhausted challenges temporarily suppress issuance of a fresh real challenge.
+- **Brute-force separation:** identifier+IP password failures and aggregate IP spray evidence are separate. Full authentication clears only identifier+IP state; aggregate spray evidence survives success and decays on its own observation window.
+- **Temporary throttling:** password-failure history decays after inactivity; no permanent account lock is introduced. An active password/IP throttle suppresses real credential verification but still returns the opaque pre-authentication response, avoiding a throttle-based password oracle.
+- **Proxy trust:** forwarding headers are honored only when proxy mode is explicitly enabled and the immediate TCP peer is allowlisted.
 - **Rate limiting** on `/auth/*` and login by IP + account.
 - **Device/session management UI**: List & revoke sessions per device.
 - **Anomaly detection**: Alert on RT reuse, impossible travel, excessive refreshes.
@@ -115,7 +124,7 @@ Adopt **JWT access tokens (RS256)** with **rotating refresh tokens** and **slidi
 - **Endpoints**: `/auth/login`, `/auth/refresh`, `/auth/logout`, `/auth/sessions`, `/auth/revoke/:sid`.
 - **Cookies**: `at` (Lax), `rt` (Strict), `csrf` (non-HttpOnly).
 - **Headers**: `Authorization: Bearer <AT>`, `X-CSRF-Token` for mutations.
-- **Middleware**: JWT verify with `kid` → fetch public key; scope/role guards; CSRF for state-changing methods.
+- **Middleware**: `requireAccessToken` is the single protected-route authentication middleware. Browser requests authenticate with the HttpOnly access-token cookie; deliberate non-browser/API clients may use `Authorization: Bearer <AT>`. Scope/role guards run after this middleware. Global CSRF protection applies to browser state-changing methods before API routing.
 - **Observability**: Emit audit logs for login, refresh, logout, revoke, RT reuse; metrics: `auth_login_success_total`, `auth_rt_reuse_total`, `auth_refresh_latency_ms` (p95).
 
 ## QA & Acceptance
@@ -132,3 +141,6 @@ If critical issues arise (e.g., widespread RT reuse false-positives), **fallback
 ## Change Log
 
 - **1.0 (2025-10-13):** Initial acceptance.
+- **1.1 (2026-09-23):** Phase 14 authentication state-machine hardening: opaque pre-auth challenges, three-attempt second-factor exhaustion, separated password/spray reset semantics, failure-history decay, race serialization, timing normalization across both authentication stages, and explicit proxy-peer trust.
+- **1.2 (2026-09-24):** Phase 15 security-control closure: authoritative fail-closed email blacklist and password + current-factor step-up for sensitive 2FA administration.
+- **1.3 (2026-09-26):** Phase 21 DD-01 closure: one protected-route middleware contract; HttpOnly access cookie is canonical for browsers, Bearer remains deliberate for non-browser/API clients, and CSRF documentation is aligned with the implemented HttpOnly-secret/derived-token design.

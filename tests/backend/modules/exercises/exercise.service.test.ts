@@ -149,6 +149,20 @@ describe("Exercise Service", () => {
       await expect(exerciseService.getOne(exerciseId, userId)).rejects.toThrow(HttpError);
     });
 
+    it("should return a public exercise owned by a different user", async () => {
+      const publicExercise: Exercise = {
+        ...mockExercise,
+        owner_id: "other-user",
+        is_public: true,
+      };
+
+      mockExerciseRepo.getExercise.mockResolvedValue(publicExercise);
+
+      const result = await exerciseService.getOne(exerciseId, userId);
+
+      expect(result).toEqual(publicExercise);
+    });
+
     it("should throw 404 when exercise is archived", async () => {
       const archivedExercise: Exercise = {
         ...mockExercise,

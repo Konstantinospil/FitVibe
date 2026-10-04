@@ -4,13 +4,17 @@
 
 **AC ID**: US-1.4-AC04  
 **Story ID**: [US-1.4](../d.User_stories/US-1.4-profile-measurements.md)  
-**Status**: Proposed  
+**Status**: Rejected  
 **Priority**: High  
 **Test Method**: Integration + E2E  
 **Created**: 2026-01-04  
-**Updated**: 2026-01-04
+**Updated**: 2026-09-25
 
 ---
+
+## Supersession
+
+Rejected as an active acceptance criterion because parent story US-1.4 is superseded. The underlying intent is restructured under FR-014/E21 and will receive canonical E21 acceptance criteria after documentation-to-implementation comparison.
 
 ## Criterion
 
@@ -50,6 +54,6 @@ Integration tests validate derived measure definitions and E2E tests validate UI
 
 ---
 
-**Last Updated**: 2026-01-04  
+**Last Updated**: 2026-09-25  
 **Verified By**: {Name/Team}  
 **Verified Date**: {YYYY-MM-DD}

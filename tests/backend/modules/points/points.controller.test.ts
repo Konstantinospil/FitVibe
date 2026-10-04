@@ -2,13 +2,16 @@ import type { Request, Response } from "express";
 import * as pointsController from "../../../../apps/backend/src/modules/points/points.controller.js";
 import * as pointsService from "../../../../apps/backend/src/modules/points/points.service.js";
 import * as pointsRepository from "../../../../apps/backend/src/modules/points/points.repository.js";
+import * as gamificationProjection from "../../../../apps/backend/src/modules/points/gamification-projection.service.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/points/points.service.js");
 jest.mock("../../../../apps/backend/src/modules/points/points.repository.js");
+jest.mock("../../../../apps/backend/src/modules/points/gamification-projection.service.js");
 
 const mockPointsService = jest.mocked(pointsService);
 const mockPointsRepository = jest.mocked(pointsRepository);
+const mockGamificationProjection = jest.mocked(gamificationProjection);
 
 describe("Points Controller", () => {
   let mockRequest: Partial<Request>;
@@ -17,6 +20,7 @@ describe("Points Controller", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGamificationProjection.ensureGamificationProjectionFresh.mockResolvedValue(undefined);
 
     mockRequest = {
       user: { sub: userId, role: "athlete" },
@@ -48,6 +52,10 @@ describe("Points Controller", () => {
         mockResponse as Response,
       );
 
+      expect(mockGamificationProjection.ensureGamificationProjectionFresh).toHaveBeenCalledWith(
+        userId,
+      );
+      expect(mockPointsService.getPointsSummary).toHaveBeenCalledWith(userId);
       expect(mockResponse.json).toHaveBeenCalledWith(mockSummary);
     });
 
@@ -77,6 +85,10 @@ describe("Points Controller", () => {
         mockResponse as Response,
       );
 
+      expect(mockGamificationProjection.ensureGamificationProjectionFresh).toHaveBeenCalledWith(
+        userId,
+      );
+      expect(mockPointsService.getPointsHistory).toHaveBeenCalledWith(userId, {});
       expect(mockResponse.json).toHaveBeenCalledWith(mockHistory);
     });
   });

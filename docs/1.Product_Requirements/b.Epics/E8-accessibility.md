@@ -10,7 +10,7 @@
 **Gate**: GOLD
 **Estimated Total Effort**: 12-18 story points
 **Created**: 2025-01-20
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -55,9 +55,9 @@ Legal compliance requirement and ethical imperative. Accessible design benefits 
 
 ## Success Criteria
 
-- WCAG 2.2 AA compliance verified by automated tests
+- WCAG 2.2 AA conformance verified criterion-by-criterion with automated and manual evidence as appropriate
 - 0 critical or serious violations in axe-core reports
-- Lighthouse accessibility score = 100
+- Lighthouse accessibility score ≥90 on tracked pages as a regression indicator; it is not proof of WCAG conformance
 - All features navigable using only keyboard
 - Screen reader support verified (NVDA, JAWS, VoiceOver)
 - Color contrast meets requirements (≥4.5:1 for text)
@@ -73,5 +73,5 @@ Legal compliance requirement and ethical imperative. Accessible design benefits 
 
 ---
 
-**Last Updated**: 2025-01-21
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25
+**Next Review**: after implementation comparison

@@ -70,6 +70,8 @@ import {
   changePassword,
   getPrivacySettings,
   updatePrivacySettings,
+  getUserPreferences,
+  updateUserPreferences,
   deleteAccount,
   exportUserData,
   getFeedItemComments,
@@ -718,7 +720,7 @@ describe("API Service Functions", () => {
       const mockResponse = { success: true, message: "2FA disabled" };
       apiMock.onPost("/api/v1/auth/2fa/disable").reply(200, mockResponse);
 
-      const result = await disable2FA("password123");
+      const result = await disable2FA({ password: "password123", code: "123456" });
 
       expect(result).toEqual(mockResponse);
     });
@@ -1017,6 +1019,18 @@ describe("API Service Functions", () => {
       });
     });
 
+    it("gets and updates user preferences", async () => {
+      const preferences = { language: "de" as const, measurementSystem: "metric" as const };
+      apiMock.onGet("/api/v1/users/me/preferences").replyOnce(200, preferences);
+      await expect(getUserPreferences()).resolves.toEqual(preferences);
+
+      const updated = { language: "de" as const, measurementSystem: "imperial" as const };
+      apiMock.onPatch("/api/v1/users/me/preferences").replyOnce(200, updated);
+      await expect(updateUserPreferences({ measurementSystem: "imperial" })).resolves.toEqual(
+        updated,
+      );
+    });
+
     it("covers contact, terms, privacy, and legal document calls", async () => {
       rawMock.onPost("/api/v1/contact").reply(200, {
         success: true,
@@ -1127,9 +1141,9 @@ describe("API Service Functions", () => {
       await expect(getPointsHistory({ limit: 10 })).resolves.toMatchObject({ entries: [] });
       await expect(getPointsHistory()).resolves.toMatchObject({ entries: [] });
 
-      apiMock.onGet("/api/v1/badges").reply(200, { badges: [], total: 0 });
+      apiMock.onGet("/api/v1/points/badges/earned").reply(200, { badges: [], total: 0 });
       await expect(getUserBadges()).resolves.toEqual({ badges: [], total: 0 });
-      apiMock.onGet("/api/v1/badges/catalog").reply(200, { badges: [], total: 0 });
+      apiMock.onGet("/api/v1/points/badges").reply(200, { badges: [], total: 0 });
       await expect(getBadgeCatalog()).resolves.toEqual({ badges: [], total: 0 });
       apiMock.onGet("/api/v1/leaderboards").reply(200, { entries: [], total: 0 });
       await expect(getLeaderboard({ type: "global", period: "week" })).resolves.toMatchObject({

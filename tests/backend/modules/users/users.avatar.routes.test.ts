@@ -5,11 +5,11 @@
 import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 import type { Request, Response, NextFunction } from "express";
 import { usersAvatarRouter } from "../../../../apps/backend/src/modules/users/users.avatar.routes.js";
-import { requireAuth } from "../../../../apps/backend/src/modules/users/users.middleware.js";
+import { requireAccessToken } from "../../../../apps/backend/src/modules/auth/auth.middleware.js";
 
 // Mock dependencies
-jest.mock("../../../../apps/backend/src/modules/users/users.middleware.js", () => ({
-  requireAuth: jest.fn((req: Request, res: Response, next: NextFunction) => next()),
+jest.mock("../../../../apps/backend/src/modules/auth/auth.middleware.js", () => ({
+  requireAccessToken: jest.fn((req: Request, res: Response, next: NextFunction) => next()),
 }));
 
 jest.mock("../../../../apps/backend/src/modules/common/rateLimiter.js", () => ({
@@ -72,11 +72,11 @@ describe("Users Avatar Routes", () => {
     expect(deleteRoute).toBeDefined();
   });
 
-  it("should apply requireAuth middleware to POST /avatar", () => {
-    expect(requireAuth).toBeDefined();
+  it("should apply requireAccessToken middleware to POST /avatar", () => {
+    expect(requireAccessToken).toBeDefined();
   });
 
-  it("should apply requireAuth middleware to DELETE /avatar", () => {
-    expect(requireAuth).toBeDefined();
+  it("should apply requireAccessToken middleware to DELETE /avatar", () => {
+    expect(requireAccessToken).toBeDefined();
   });
 });

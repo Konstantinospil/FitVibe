@@ -19,6 +19,7 @@ function createMockQueryBuilder(defaultValue: unknown = null) {
     insert: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue([]),
     update: jest.fn().mockResolvedValue(1),
+    del: jest.fn().mockResolvedValue(1),
     onConflict: jest.fn().mockReturnThis(),
     merge: jest.fn().mockReturnThis(),
     ignore: jest.fn().mockReturnThis(),
@@ -506,7 +507,7 @@ describe("Points Repository", () => {
       expect(result.size).toBe(2);
       expect(result.has("first_session")).toBe(true);
       expect(result.has("streak_7")).toBe(true);
-      expect(newBuilder.where).toHaveBeenCalledWith({ user_id: userId });
+      expect(newBuilder.where).toHaveBeenCalledWith({ user_id: userId, is_active: true });
     });
 
     it("should return empty set when no badges", async () => {
@@ -579,6 +580,35 @@ describe("Points Repository", () => {
       await pointsRepository.insertBadgeAward(award, mockTrx);
 
       expect(newBuilder.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe("supersedeSessionDerivedGamification", () => {
+    it("uses jsonb_exists for session-derived badge supersession", async () => {
+      const builders: Record<string, ReturnType<typeof createMockQueryBuilder>> = {
+        vibe_level_changes: createMockQueryBuilder(),
+        user_domain_vibe_levels: createMockQueryBuilder(),
+        badges: createMockQueryBuilder(),
+        sessions: createMockQueryBuilder(),
+      };
+      const mockTrx = ((table: string) => builders[table]) as any;
+
+      await pointsRepository.supersedeSessionDerivedGamification(userId, mockTrx);
+
+      expect(builders.badges.where).toHaveBeenCalledWith({
+        user_id: userId,
+        is_active: true,
+      });
+      expect(builders.badges.whereRaw).toHaveBeenCalledWith(
+        "jsonb_exists(metadata, ?)",
+        ["session_id"],
+      );
+      expect(builders.badges.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          is_active: false,
+          superseded_at: expect.any(String),
+        }),
+      );
     });
   });
 
@@ -689,4 +719,18 @@ describe("Points Repository", () => {
       );
     });
   });
+  describe("lockVibeLevelsForUser", () => {
+    it("uses a transaction-scoped advisory lock keyed by user", async () => {
+      const trx = {
+        raw: jest.fn().mockResolvedValue({ rows: [] }),
+      };
+
+      await pointsRepository.lockVibeLevelsForUser(userId, trx as any);
+
+      expect(trx.raw).toHaveBeenCalledWith("SELECT pg_advisory_xact_lock(hashtext(?))", [
+        `fitvibe:vibe-level:${userId}`,
+      ]);
+    });
+  });
+
 });

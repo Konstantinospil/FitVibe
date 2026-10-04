@@ -5,6 +5,7 @@ const path = require("node:path");
 const { createCoverageMap } = require("istanbul-lib-coverage");
 
 const MIN_THRESHOLD = Number(process.env.COVERAGE_MIN ?? 80);
+const FRONTEND_MIN_THRESHOLD = Number(process.env.FRONTEND_COVERAGE_MIN ?? 84);
 const METRICS = ["lines", "statements", "branches", "functions"];
 const WORKSPACE_DIRS = ["apps", "packages"];
 // Only check workspaces that actually run tests with coverage
@@ -66,6 +67,11 @@ function collectCoverageDirs(rootDir) {
   }
 
   return dirs;
+}
+
+function thresholdForWorkspace(workspace) {
+  const name = workspace.split(path.sep).pop();
+  return name === "frontend" ? FRONTEND_MIN_THRESHOLD : MIN_THRESHOLD;
 }
 
 function readCoverageSummary(coverageDir) {
@@ -151,10 +157,11 @@ if (workspaceMetrics.length > 0) {
   console.log(`\nWorkspace-specific coverage:`);
   for (const { workspace, metrics: wsMetrics } of workspaceMetrics) {
     console.log(`  ${workspace}:`);
+    const threshold = thresholdForWorkspace(workspace);
     for (const metric of METRICS) {
       const pct = wsMetrics[metric];
-      const status = pct >= MIN_THRESHOLD ? "✅" : "❌";
-      console.log(`    ${status} ${metric}: ${pct.toFixed(2)}%`);
+      const status = pct >= threshold ? "✅" : "❌";
+      console.log(`    ${status} ${metric}: ${pct.toFixed(2)}% (target ${threshold}%)`);
     }
   }
 }
@@ -220,8 +227,9 @@ const validWorkspaces = ONLY_CHECK_VALID
   : workspaceMetrics;
 
 // Check if any valid workspace is below threshold
-const workspaceFailures = validWorkspaces.filter(({ metrics: wsMetrics }) => {
-  return METRICS.some((metric) => wsMetrics[metric] < MIN_THRESHOLD);
+const workspaceFailures = validWorkspaces.filter(({ workspace, metrics: wsMetrics }) => {
+  const threshold = thresholdForWorkspace(workspace);
+  return METRICS.some((metric) => wsMetrics[metric] < threshold);
 });
 
 if (validWorkspaces.length === 0) {
@@ -247,13 +255,14 @@ if (excludedWorkspaces.length > 0 && ONLY_CHECK_VALID) {
 // For now, we only fail on workspace-specific failures, not aggregated
 // (aggregated can fail due to one workspace dragging down the average)
 if (workspaceFailures.length > 0) {
-  console.error(`\n❌ Some workspaces below ${MIN_THRESHOLD}% threshold:`);
+  console.error("\n❌ Some workspaces below their coverage threshold:");
   for (const { workspace, metrics: wsMetrics } of workspaceFailures) {
+    const threshold = thresholdForWorkspace(workspace);
     console.error(`  ${workspace}:`);
     for (const metric of METRICS) {
       const pct = wsMetrics[metric];
-      if (pct < MIN_THRESHOLD) {
-        console.error(`    - ${metric}: ${pct.toFixed(2)}% (need ${MIN_THRESHOLD}%)`);
+      if (pct < threshold) {
+        console.error(`    - ${metric}: ${pct.toFixed(2)}% (need ${threshold}%)`);
       }
     }
   }

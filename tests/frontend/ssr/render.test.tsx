@@ -9,6 +9,10 @@ import type * as NodeFs from "node:fs";
 import { renderPage } from "../../src/ssr/render.js";
 
 // Mock dependencies
+const { prefetchQuery } = vi.hoisted(() => ({
+  prefetchQuery: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("react-dom/server", () => ({
   renderToString: vi.fn(() => "<div>Rendered App</div>"),
 }));
@@ -32,7 +36,7 @@ vi.mock("../../src/contexts/ToastContext.js", () => ({
 
 vi.mock("../../src/lib/queryClient.js", () => ({
   createQueryClient: vi.fn(() => ({
-    prefetchQuery: vi.fn(),
+    prefetchQuery,
   })),
 }));
 
@@ -94,7 +98,8 @@ describe("SSR render", () => {
     const html = await renderPage("/");
 
     expect(html).toContain("Rendered App");
-    expect(html).toContain("__REACT_QUERY_STATE__");
+    expect(html).toContain('id="fitvibe-react-query-state"');
+    expect(html).not.toContain("window.__REACT_QUERY_STATE__");
   });
 
   it("should render page for sessions route", async () => {
@@ -250,4 +255,47 @@ describe("SSR render", () => {
     expect(html).toContain("Rendered App");
     mockI18n.language = "en";
   });
+
+  it("schedules insight queries for insight and progress routes", async () => {
+    await renderPage("/insights");
+    await renderPage("/progress?period=30");
+
+    const queryKeys = prefetchQuery.mock.calls.map(([options]) => options.queryKey);
+    expect(queryKeys).toEqual(
+      expect.arrayContaining([
+        ["progress-trends", { period: 30, group_by: "week" }, "week"],
+        ["exercise-breakdown", { period: 30 }],
+      ]),
+    );
+    expect(prefetchQuery).toHaveBeenCalledTimes(4);
+  });
+
+  it("schedules public feed prefetch only for the feed route", async () => {
+    prefetchQuery.mockClear();
+
+    await renderPage("/feed");
+    await renderPage("/profile");
+
+    expect(prefetchQuery).toHaveBeenCalledTimes(1);
+    expect(prefetchQuery.mock.calls[0]?.[0]?.queryKey).toEqual([
+      "feed",
+      { scope: "public", limit: 20, offset: 0 },
+    ]);
+  });
+
+  it("replaces nested fallback root content without leaving nested shell markup behind", async () => {
+    const fs = await import("node:fs");
+    vi.mocked(fs.existsSync).mockReset();
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    vi.mocked(fs.readFileSync).mockReset();
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      '<html><head></head><body><div id="root"><div><div>Old shell</div></div></div></body></html>',
+    );
+
+    const html = await renderPage("/login");
+
+    expect(html).toContain('<div id="root"><div>Rendered App</div></div>');
+    expect(html).not.toContain("Old shell");
+  });
+
 });

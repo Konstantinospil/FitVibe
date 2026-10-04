@@ -63,9 +63,10 @@ describe("SSR render", () => {
     expect(html).toContain('<div id="root">');
   });
 
-  it("should inject dehydrated state script", async () => {
+  it("should inject dehydrated state as inert markup", async () => {
     const html = await renderPage("/login");
-    expect(html).toContain("window.__REACT_QUERY_STATE__");
+    expect(html).toContain('id="fitvibe-react-query-state"');
+    expect(html).not.toContain("window.__REACT_QUERY_STATE__");
   });
 
   it("should inject hydration script", async () => {

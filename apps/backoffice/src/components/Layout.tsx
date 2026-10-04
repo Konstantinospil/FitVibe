@@ -74,7 +74,13 @@ const Layout: React.FC = () => {
             background: colors.surface,
           }}
         >
-          <div style={{ color: colors.textSecondary, marginBottom: "1rem", fontSize: "0.875rem" }}>
+          <div
+            style={{
+              color: colors.textSecondary,
+              marginBottom: "1rem",
+              fontSize: "var(--type-supporting-size)",
+            }}
+          >
             Logged in as: {user?.displayName || user?.username}
           </div>
           <div style={{ marginBottom: "1rem" }}>
@@ -88,7 +94,7 @@ const Layout: React.FC = () => {
               background: "transparent",
               color: colors.text,
               border: `1px solid ${colors.border}`,
-              borderRadius: "4px",
+              borderRadius: "var(--radius-sm)",
               cursor: "pointer",
             }}
           >

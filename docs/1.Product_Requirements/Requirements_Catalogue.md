@@ -1,145 +1,71 @@
 # FitVibe Requirements Catalogue
 
-**Version**: 2.0  
-**Last Updated**: 2025-12-04  
+**Version**: 3.0  
+**Last Updated**: 2026-09-25  
 **Status**: Active
 
 ---
 
 ## Purpose
 
-This catalogue provides a comprehensive index of all functional and non-functional requirements for the FitVibe platform. Each requirement is linked to its detailed specification document and traced to the Product Requirements Document (PRD) and Technical Design Document (TDD).
+This catalogue is a synchronized navigation summary of the canonical requirement files in `a.Requirements/`. It is **not** an independent source of requirement status or scope. If this catalogue disagrees with an individual requirement file, the individual canonical file wins and the catalogue must be corrected.
 
----
+The lifecycle for delivery artifacts is `Open → Progressing → Done`, with `Superseded` retained for historical traceability.
 
-## Requirements Organization
+## Functional Requirements
 
-Requirements are organized by:
+| ID | Title | Status | Priority | Gate | Canonical file |
+| --- | --- | --- | --- | --- | --- |
+| FR-001 | User Registration | Done | High | GOLD | [FR-001-user-registration.md](a.Requirements/FR-001-user-registration.md) |
+| FR-002 | Login & Session | Done | High | GOLD | [FR-002-login-and-session.md](a.Requirements/FR-002-login-and-session.md) |
+| FR-003 | Auth-Wall | Done | High | GOLD | [FR-003-authwall.md](a.Requirements/FR-003-authwall.md) |
+| FR-004 | Planner | Progressing | Medium | SILVER | [FR-004-planner.md](a.Requirements/FR-004-planner.md) |
+| FR-005 | Logging & Import | Progressing | Medium | SILVER | [FR-005-logging-and-import.md](a.Requirements/FR-005-logging-and-import.md) |
+| FR-006 | Gamification | Done | Medium | SILVER | [FR-006-gamification.md](a.Requirements/FR-006-gamification.md) |
+| FR-007 | Analytics & Export | Done | High | GOLD | [FR-007-analytics-and-export.md](a.Requirements/FR-007-analytics-and-export.md) |
+| FR-008 | Admin & RBAC | Done | High | GOLD | [FR-008-admin-and-rbac.md](a.Requirements/FR-008-admin-and-rbac.md) |
+| FR-009 | Profile & Settings | Done | Medium | SILVER | [FR-009-profile-and-settings.md](a.Requirements/FR-009-profile-and-settings.md) |
+| FR-010 | Exercise Library | Done | Medium | SILVER | [FR-010-exercise-library.md](a.Requirements/FR-010-exercise-library.md) |
+| FR-011 | Sharing & Community | Done | Medium | SILVER | [FR-011-sharing-and-community.md](a.Requirements/FR-011-sharing-and-community.md) |
+| FR-012 | Coach Training Unit Assignment | Open | High | SILVER | [FR-012-coach-training-unit-assignment.md](a.Requirements/FR-012-coach-training-unit-assignment.md) |
+| FR-013 | Lockout UI Feedback & Countdown Timer | Superseded | Medium | SILVER | [FR-013-lockout-ui-feedback.md](a.Requirements/FR-013-lockout-ui-feedback.md) |
+| FR-014 | Profile Measurements | Progressing | High | SILVER | [FR-014-profile-measurements.md](a.Requirements/FR-014-profile-measurements.md) |
 
-- **Type**: Functional (FR) or Non-Functional (NFR)
-- **Status**: Done, Progressing, or Open
-- **Priority**: High, Medium, or Low
-- **Quality Gate**: GOLD (must-have) or SILVER (should-have)
+## Non-Functional Requirements
 
----
+| ID | Title | Status | Priority | Gate | Canonical file |
+| --- | --- | --- | --- | --- | --- |
+| NFR-001 | Security | Done | High | GOLD | [NFR-001-security.md](a.Requirements/NFR-001-security.md) |
+| NFR-002 | Privacy | Progressing | High | GOLD | [NFR-002-privacy.md](a.Requirements/NFR-002-privacy.md) |
+| NFR-003 | Performance | Progressing | High | GOLD | [NFR-003-performance.md](a.Requirements/NFR-003-performance.md) |
+| NFR-004 | Accessibility | Progressing | High | GOLD | [NFR-004-a11y.md](a.Requirements/NFR-004-a11y.md) |
+| NFR-005 | Availability & Backups | Progressing | High | SILVER | [NFR-005-ops.md](a.Requirements/NFR-005-ops.md) |
+| NFR-006 | Internationalization | Done | Medium | SILVER | [NFR-006-i18n.md](a.Requirements/NFR-006-i18n.md) |
+| NFR-007 | Observability | Progressing | Medium | SILVER | [NFR-007-observability.md](a.Requirements/NFR-007-observability.md) |
+| NFR-008 | Database Encryption | Progressing | High | GOLD | [NFR-008-database-encryption.md](a.Requirements/NFR-008-database-encryption.md) |
 
-## Functional Requirements (FR)
+## Other Requirements
 
-### Authentication & User Management
+| ID | Title | Status | Priority | Gate | Canonical file |
+| --- | --- | --- | --- | --- | --- |
+| REQ-2025-01-20-001  | Terms and Conditions Acceptance | Done | High | GOLD | [REQ-2025-01-20-001-terms-and-conditions.md](a.Requirements/REQ-2025-01-20-001-terms-and-conditions.md) |
 
-| ID     | Title              | Status | Priority | Gate   | Document                                                                        | PRD Reference |
-| ------ | ------------------ | ------ | -------- | ------ | ------------------------------------------------------------------------------- | ------------- |
-| FR-001 | User Registration  | Done   | High     | GOLD   | [FR-001-user-registration.md](a.Requirements/FR-001-user-registration.md)       | PRD §4.1      |
-| FR-002 | Login & Session    | Done   | High     | GOLD   | [FR-002-login-and-session.md](a.Requirements/FR-002-login-and-session.md)       | PRD §4.1      |
-| FR-003 | Auth-Wall          | Done   | High     | GOLD   | [FR-003-authwall.md](a.Requirements/FR-003-authwall.md)                         | PRD §4.1      |
-| FR-009 | Profile & Settings | Done   | Medium   | SILVER | [FR-009-profile-and-settings.md](a.Requirements/FR-009-profile-and-settings.md) | PRD §4.2      |
+## Status Summary
 
-### Content Management
-
-| ID     | Title            | Status      | Priority | Gate   | Document                                                                    | PRD Reference |
-| ------ | ---------------- | ----------- | -------- | ------ | --------------------------------------------------------------------------- | ------------- |
-| FR-010 | Exercise Library | Open        | Medium   | SILVER | [FR-010-exercise-library.md](a.Requirements/FR-010-exercise-library.md)     | PRD §4.3      |
-| FR-004 | Planner          | Progressing | Medium   | SILVER | [FR-004-planner.md](a.Requirements/FR-004-planner.md)                       | PRD §4.4      |
-| FR-005 | Logging & Import | Progressing | Medium   | SILVER | [FR-005-logging-and-import.md](a.Requirements/FR-005-logging-and-import.md) | PRD §4.4      |
-
-### Analytics & Social
-
-| ID     | Title               | Status | Priority | Gate   | Document                                                                          | PRD Reference |
-| ------ | ------------------- | ------ | -------- | ------ | --------------------------------------------------------------------------------- | ------------- |
-| FR-006 | Gamification        | Done   | Medium   | SILVER | [FR-006-gamification.md](a.Requirements/FR-006-gamification.md)                   | PRD §4.6      |
-| FR-007 | Analytics & Export  | Done   | High     | GOLD   | [FR-007-analytics-and-export.md](a.Requirements/FR-007-analytics-and-export.md)   | PRD §4.5      |
-| FR-011 | Sharing & Community | Open   | Medium   | SILVER | [FR-011-sharing-and-community.md](a.Requirements/FR-011-sharing-and-community.md) | PRD §4.7      |
-
-### Administration
-
-| ID     | Title        | Status | Priority | Gate | Document                                                            | PRD Reference |
-| ------ | ------------ | ------ | -------- | ---- | ------------------------------------------------------------------- | ------------- |
-| FR-008 | Admin & RBAC | Done   | High     | GOLD | [FR-008-admin-and-rbac.md](a.Requirements/FR-008-admin-and-rbac.md) | PRD §4.8      |
-
----
-
-## Non-Functional Requirements (NFR)
-
-### Security & Privacy
-
-| ID      | Title          | Status      | Priority | Gate | Document                                                  | PRD Reference |
-| ------- | -------------- | ----------- | -------- | ---- | --------------------------------------------------------- | ------------- |
-| NFR-001 | Security       | Done        | High     | GOLD | [NFR-001-security.md](a.Requirements/NFR-001-security.md) | PRD §5.1      |
-| NFR-002 | Privacy & GDPR | Progressing | High     | GOLD | [NFR-002-privacy.md](a.Requirements/NFR-002-privacy.md)   | PRD §5.2      |
-
-### Performance & Quality
-
-| ID      | Title                       | Status      | Priority | Gate | Document                                                        | PRD Reference |
-| ------- | --------------------------- | ----------- | -------- | ---- | --------------------------------------------------------------- | ------------- |
-| NFR-003 | Performance                 | Progressing | High     | GOLD | [NFR-003-performance.md](a.Requirements/NFR-003-performance.md) | PRD §5.3      |
-| NFR-004 | Accessibility (WCAG 2.2 AA) | Progressing | High     | GOLD | [NFR-004-a11y.md](a.Requirements/NFR-004-a11y.md)               | PRD §5.5      |
-
-### Operations & Infrastructure
-
-| ID      | Title                       | Status      | Priority | Gate   | Document                                          | PRD Reference  |
-| ------- | --------------------------- | ----------- | -------- | ------ | ------------------------------------------------- | -------------- |
-| NFR-005 | Availability & Backups      | Progressing | High     | SILVER | [NFR-005-ops.md](a.Requirements/NFR-005-ops.md)   | PRD §5.4, §5.7 |
-| NFR-006 | Internationalization (i18n) | Done        | Medium   | SILVER | [NFR-006-i18n.md](a.Requirements/NFR-006-i18n.md) | PRD §4.8       |
-
-### Observability
-
-| ID      | Title         | Status | Priority | Gate   | Document                                                            | PRD Reference |
-| ------- | ------------- | ------ | -------- | ------ | ------------------------------------------------------------------- | ------------- |
-| NFR-007 | Observability | Open   | Medium   | SILVER | [NFR-007-observability.md](a.Requirements/NFR-007-observability.md) | PRD §5.6      |
-
----
-
-## Requirements Summary
-
-### By Status
-
-- **Done**: 9 requirements (FR-001, FR-002, FR-003, FR-006, FR-007, FR-008, FR-009, NFR-001, NFR-006)
-- **Progressing**: 6 requirements (FR-004, FR-005, NFR-002, NFR-003, NFR-004, NFR-005)
-- **Open**: 4 requirements (FR-010, FR-011, NFR-007, REQ-2025-01-20-001)
-
-### By Priority
-
-- **High**: 10 requirements
-- **Medium**: 9 requirements
-
-### By Quality Gate
-
-- **GOLD** (Must-have): 9 requirements
-- **SILVER** (Should-have): 10 requirements
-
----
-
-## Traceability
-
-All requirements are traced to:
-
-- **PRD**: Product Requirements Document sections
-- **TDD**: Technical Design Document sections
-- **AC_Master**: Acceptance Criteria master list
-- **RTM**: Requirements Traceability Matrix (CSV)
-
----
-
-## Related Documents
-
-- [Product Requirements Document](../1.Product_Requirements_Document.md)
-- [Acceptance Criteria Master List](../AC_Master.md)
-- [Requirements Traceability Matrix](../rtm_comprehensive.csv)
-- [Technical Design Document](../../2.Technical_Design_Document/)
-
----
+- **Done**: 12
+- **Progressing**: 9
+- **Open**: 1
+- **Superseded**: 1
+- **Total**: 23
 
 ## Maintenance
 
-This catalogue is maintained by the requirements engineering team. When requirements are added, modified, or completed:
-
-1. Update this catalogue
-2. Update the individual requirement document
-3. Update AC_Master.md with acceptance criteria
-4. Update rtm_comprehensive.csv for traceability
-5. Update PRD/TDD references if needed
+1. Change requirement scope/status in the canonical individual requirement file.
+2. Synchronize `a.Requirements/INDEX.md`.
+3. Synchronize this catalogue and downstream traceability summaries.
+4. Do not use GitHub issues or `docs/6.Implementation/` working notes to override canonical product documentation.
 
 ---
 
-**Last Reviewed**: 2025-01-20  
-**Next Review**: 2025-02-20
+**Last Reviewed**: 2026-09-25  
+**Next Review**: after implementation comparison

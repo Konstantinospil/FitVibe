@@ -5,13 +5,24 @@
 **Story ID**: US-1.4  
 **Epic ID**: [E1](../b.Epics/E1-profile-and-settings.md)  
 **Title**: Profile Measurements  
-**Status**: Proposed  
+**Status**: Superseded  
 **Story Points**: 8  
 **Priority**: High  
 **Created**: 2026-01-04  
-**Updated**: 2026-01-04
+**Updated**: 2026-09-25
 
 ---
+
+## Supersession
+
+This story was created after E1/FR-009 had already been completed. It is retained for traceability but is not active scope. Its product intent has been restructured under [FR-014](../a.Requirements/FR-014-profile-measurements.md) / [E21](../b.Epics/E21-profile-measurements.md):
+
+- [US-21.1: Measurement Definition Catalogue](./US-21.1-measurement-definition-catalogue.md)
+- [US-21.2: User Measurement Values](./US-21.2-user-measurement-values.md)
+- [US-21.3: Measurement Discovery & Profile Presentation](./US-21.3-measurement-discovery-profile-presentation.md)
+- [US-21.4: Derived Measurements](./US-21.4-derived-measurements.md)
+
+The original text below remains historical context only.
 
 ## User Story
 
@@ -54,7 +65,7 @@ Users can add attributes via a search bar that queries existing attributes as th
 
 ## Definition of Done
 
-- [ ] All acceptance criteria met
+- [x] Story superseded by FR-014/E21; original acceptance criteria are not active backlog
 - [ ] Code implemented and reviewed
 - [ ] Tests written and passing (≥80% coverage)
 - [ ] Documentation updated
@@ -62,5 +73,5 @@ Users can add attributes via a search bar that queries existing attributes as th
 
 ---
 
-**Last Updated**: 2026-01-04  
+**Last Updated**: 2026-09-25  
 **Next Review**: 2026-02-04

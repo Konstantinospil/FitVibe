@@ -100,15 +100,23 @@ export async function listAttributes(
   return rows;
 }
 
-export async function getAttributeById(category: "bio" | "perf", attributeId: string) {
+export async function getAttributeById(
+  category: "bio" | "perf",
+  attributeId: string,
+  trx?: Knex.Transaction,
+) {
   const table = attributesTable(category);
-  const row = await db<MeasurementAttributeRow>(table).where({ id: attributeId }).first();
+  const row = await (trx ?? db)<MeasurementAttributeRow>(table).where({ id: attributeId }).first();
   return row ?? null;
 }
 
-export async function getAttributeByNormalizedKey(category: "bio" | "perf", normalizedKey: string) {
+export async function getAttributeByNormalizedKey(
+  category: "bio" | "perf",
+  normalizedKey: string,
+  trx?: Knex.Transaction,
+) {
   const table = attributesTable(category);
-  const row = await db<MeasurementAttributeRow>(table)
+  const row = await (trx ?? db)<MeasurementAttributeRow>(table)
     .where({ normalized_key: normalizedKey })
     .first();
   return row ?? null;
@@ -117,10 +125,11 @@ export async function getAttributeByNormalizedKey(category: "bio" | "perf", norm
 export async function insertAttribute(
   category: "bio" | "perf",
   row: Omit<MeasurementAttributeRow, "id" | "created_at" | "updated_at">,
+  trx?: Knex.Transaction,
 ) {
   const table = attributesTable(category);
   const now = new Date().toISOString();
-  const [record] = (await db(table)
+  const [record] = (await (trx ?? db)(table)
     .insert({
       ...row,
       created_at: now,
@@ -128,6 +137,12 @@ export async function insertAttribute(
     })
     .returning("id")) as Array<{ id: string }>;
   return record.id;
+}
+
+export async function withMeasurementTransaction<T>(
+  work: (trx: Knex.Transaction) => Promise<T>,
+): Promise<T> {
+  return db.transaction(work);
 }
 
 export async function listLatestAttributeValues(category: "bio" | "perf", userId: string) {

@@ -8,13 +8,13 @@
 **Priority**: Medium
 **Test Method**: Ops review
 **Created**: 2025-01-21
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Criterion
 
-Log aggregation pipeline configured (Loki or compatible); logs ingested from all services; logs searchable by correlation ID, user ID, timestamp.
+Log aggregation pipeline is configured (Loki or compatible); logs are ingested from all services and searchable by correlation ID, timestamp, service/route, and, where operationally necessary, a one-way hashed actor identifier. Raw user IDs are not indexed as a log search field.
 
 **SMART Criteria Checklist**:
 

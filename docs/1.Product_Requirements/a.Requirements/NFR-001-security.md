@@ -10,7 +10,7 @@
 **Gate**: GOLD  
 **Owner**: SEC/ENG  
 **Created**: 2025-11-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
@@ -45,9 +45,10 @@ The system shall implement comprehensive security headers:
 
 ### Rate Limiting
 
-- **Auth Endpoints**: Rate limit `/auth/*` endpoints ≥10 req/min/IP
-- **429 Response**: Return 429 with Retry-After header when limit exceeded
-- **CAPTCHA**: CAPTCHA challenge after sustained abuse (>50 req/10min/IP) via feature flag
+- **Auth Endpoints**: Apply temporary throttling and abuse controls to authentication endpoints without exposing password/account validity.
+- **Opaque Pre-Authentication Responses**: Pre-authentication failures must not expose account/IP lockout type, remaining-attempt counters, or countdown metadata where this would create an oracle.
+- **No Cognitive Challenges**: CAPTCHA/puzzle-style cognitive authentication challenges are not part of the target design. Abuse resistance is provided through throttling, rate limiting, opaque responses, second-factor controls, and recovery workflows.
+- **Sensitive 2FA Administration**: Follow [ADR-030](../../2.Technical_Design_Document/2.f.Architectural_Decision_Documentation/ADR-030-account-security-controls.md): password confirmation plus a current second factor is required to disable/replace active 2FA or regenerate backup codes.
 
 ### Token Security
 
@@ -91,7 +92,7 @@ The system shall implement comprehensive security headers:
 ### Business Constraints
 
 - Security must not degrade user experience
-- CAPTCHA must be optional (feature flag)
+- Authentication must remain accessible without CAPTCHA or puzzle-style cognitive tests.
 
 ## Assumptions
 
@@ -103,12 +104,12 @@ The system shall implement comprehensive security headers:
 
 - **Risk**: Security headers may break some functionality
 - **Risk**: Rate limiting may prevent legitimate access
-- **Risk**: CAPTCHA may frustrate users
+- **Risk**: Abuse controls may block legitimate users if thresholds are poorly calibrated
 
 ## Open Questions
 
 - Should there be different rate limits for different user types?
-- Should CAPTCHA be mandatory or optional?
+- How should abuse thresholds be calibrated without creating an account-enumeration oracle?
 
 ## Related Requirements
 
@@ -118,5 +119,5 @@ The system shall implement comprehensive security headers:
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: 2026-10-25

@@ -51,8 +51,12 @@ Goals:
    - Read paths can consult a cache layer (in-memory/Redis) abstracted via `cache.get/set/invalidate`. Services define cache keys and invalidation when writes occur.
    - CI budgets: API **p95 < 300 ms** overall; endpoint groups: auth ≤200 ms, CRUD ≤300 ms, feed ≤400 ms, analytics ≤600 ms.
 
-8. **Validation & Localization**
+8. **Validation, localization, and user preferences**
    - All inputs validated at the router using shared schemas; server errors localized via token catalogs (for user-facing messages), while logs remain English.
+   - Profile identity/content and user preferences are separate domain contracts even when their persistence currently shares the `users` table.
+   - `preferred_lang` is the authoritative persisted **user language preference**; `units` is the authoritative persisted **measurement-system preference**. They are exposed and mutated through the preferences service/API, not the profile-update contract.
+   - `locale` is a distinct account/localization attribute and must not be silently treated as, synchronized with, or overwritten by the language preference. A future product decision may define explicit synchronization, but it must be deliberate rather than inferred from similarly named fields.
+   - Sharing a database row does not make profile and preferences one service boundary; repository/service ownership follows the domain contract.
 
 9. **Asynchrony & Events**
    - Services can emit domain events to an internal queue for side effects (notifications, analytics materialization). Event handling is idempotent and retried with backoff.
@@ -146,3 +150,4 @@ apps/backend/src/
 | Version | Date       | Change                                                           | Author   |
 | ------- | ---------- | ---------------------------------------------------------------- | -------- |
 | v1.0    | 2025-10-14 | Initial ADR: modular monolith with Router → Service → Repository | Reviewer |
+| v1.1    | 2026-09-24 | Record Phase 9 profile/preferences ownership boundary and explicit distinction between persisted language preference and locale | FitVibe Engineering / Product Owner |

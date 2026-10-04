@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth } from "../users/users.middleware.js";
+import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import {
   exercisesHandler,
@@ -16,37 +16,37 @@ export const progressRouter = Router();
 
 progressRouter.get(
   "/summary",
-  rateLimit("progress_summary", 60, 60),
-  requireAuth,
+  rateLimit("progress_summary"),
+  requireAccessToken,
   asyncHandler(summaryHandler),
 );
 progressRouter.get(
   "/trends",
-  rateLimit("progress_trends", 60, 60),
-  requireAuth,
+  rateLimit("progress_trends"),
+  requireAccessToken,
   asyncHandler(trendsHandler),
 );
 progressRouter.get(
   "/exercises",
-  rateLimit("progress_exercises", 60, 60),
-  requireAuth,
+  rateLimit("progress_exercises"),
+  requireAccessToken,
   asyncHandler(exercisesHandler),
 );
 progressRouter.get(
   "/plans",
-  rateLimit("progress_plans", 60, 60),
-  requireAuth,
+  rateLimit("progress_plans"),
+  requireAccessToken,
   asyncHandler(plansHandler),
 );
 progressRouter.get(
   "/vibes",
-  rateLimit("progress_vibes", 60, 60),
-  requireAuth,
+  rateLimit("progress_vibes"),
+  requireAccessToken,
   asyncHandler(vibePointsHandler),
 );
 progressRouter.get(
   "/export",
-  rateLimit("progress_export", 15, 60),
-  requireAuth,
+  rateLimit("progress_export"),
+  requireAccessToken,
   asyncHandler(exportHandler),
 );

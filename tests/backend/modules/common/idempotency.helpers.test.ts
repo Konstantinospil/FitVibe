@@ -277,6 +277,33 @@ describe("idempotency.helpers", () => {
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
 
+    it("should reject a concurrent request while the original is pending", async () => {
+      (mockRequest.get as jest.Mock).mockReturnValue("idempotency-key-pending");
+      mockIdempotencyService.resolveIdempotency.mockResolvedValue({
+        type: "pending",
+        recordId: "record-pending",
+      });
+
+      const handler = jest.fn().mockResolvedValue({ status: 201, body: { id: "duplicate" } });
+
+      await expect(
+        idempotencyHelpers.handleIdempotentRequest(
+          mockRequest as Request,
+          mockResponse as Response,
+          userId,
+          { title: "Test" },
+          handler,
+        ),
+      ).rejects.toMatchObject({
+        status: 409,
+        code: "E.IDEMPOTENCY.IN_PROGRESS",
+      });
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(mockIdempotencyService.persistIdempotencyResult).not.toHaveBeenCalled();
+      expect(mockResponse.status).not.toHaveBeenCalled();
+    });
+
     it("should replay idempotent request", async () => {
       (mockRequest.get as jest.Mock).mockReturnValue("idempotency-key-123");
       mockRequest.baseUrl = "/api/v1";

@@ -210,47 +210,32 @@ export async function fetchVibePointsTrends(
 ): Promise<{ vibeRows: VibePointsRow[]; overallRows: OverallPointsRow[] }> {
   const cutoff = cutoffMonthISO(months);
 
-  const sessionExercisePoints = db("sessions as sess")
-    .join("session_exercises as se", "se.session_id", "sess.id")
-    .join("exercises as e", "e.id", "se.exercise_id")
-    .join(
-      db("session_exercises as se_count")
-        .select("se_count.session_id")
-        .count("* as exercise_count")
-        .groupBy("se_count.session_id")
-        .as("sec"),
-      "sec.session_id",
-      "sess.id",
-    )
-    .where({ "sess.owner_id": userId, "sess.status": "completed" })
-    .whereNotNull("sess.completed_at")
-    .andWhere("sess.completed_at", ">=", cutoff)
-    .whereNotNull("e.type_code")
+  const vibeRows = (await db("vibe_level_changes as vlc")
+    .where({
+      "vlc.user_id": userId,
+      "vlc.change_reason": "session_completed",
+    })
+    .whereNotNull("vlc.points_awarded")
+    .andWhere("vlc.created_at", ">=", cutoff)
+    .groupBy("vlc.domain_code", db.raw("to_char(date_trunc('month', vlc.created_at), 'YYYY-MM')"))
     .select(
-      "e.type_code",
-      db.raw("to_char(date_trunc('month', sess.completed_at), 'YYYY-MM') as month_key"),
-      db.raw("COALESCE(sess.points, 0) as session_points"),
-      "sec.exercise_count",
-    )
-    .as("sep");
-
-  const vibeRows = (await db(sessionExercisePoints)
-    .groupBy("type_code", "month_key")
-    .select(
-      "type_code",
-      "month_key",
-      db.raw("SUM(session_points / NULLIF(exercise_count, 0)) as points"),
+      "vlc.domain_code as type_code",
+      db.raw("to_char(date_trunc('month', vlc.created_at), 'YYYY-MM') as month_key"),
+      db.raw("SUM(COALESCE(vlc.points_awarded, 0)) as points"),
     )
     .orderBy("month_key", "asc")) as VibePointsRow[];
 
-  const overallRows = (await db("sessions as sess")
-    .where({ "sess.owner_id": userId, "sess.status": "completed" })
-    .whereNotNull("sess.completed_at")
-    .andWhere("sess.completed_at", ">=", cutoff)
-    .groupByRaw("to_char(date_trunc('month', sess.completed_at), 'YYYY-MM')")
+  const overallRows = (await db("vibe_level_changes as vlc")
+    .where({
+      "vlc.user_id": userId,
+      "vlc.change_reason": "session_completed",
+    })
+    .whereNotNull("vlc.points_awarded")
+    .andWhere("vlc.created_at", ">=", cutoff)
+    .groupBy(db.raw("to_char(date_trunc('month', vlc.created_at), 'YYYY-MM')"))
     .select(
-      db.raw("to_char(date_trunc('month', sess.completed_at), 'YYYY-MM') as month_key"),
-      db.raw("SUM(COALESCE(sess.points, 0)) as points"),
+      db.raw("to_char(date_trunc('month', vlc.created_at), 'YYYY-MM') as month_key"),
+      db.raw("SUM(COALESCE(vlc.points_awarded, 0)) as points"),
     )
     .orderBy("month_key", "asc")) as OverallPointsRow[];
 

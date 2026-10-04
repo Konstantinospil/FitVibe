@@ -1,4 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
+import type { UserStatus } from "@fitvibe/contracts";
 
 const API_URL =
   import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "" : "http://localhost:4000");
@@ -163,6 +164,26 @@ export interface TranslationMetadataResponse {
   };
 }
 
+export type LegalDocumentType = "terms" | "privacy" | "cookie";
+export type LegalChangeClass = "legacy" | "editorial" | "material";
+export type LegalUserAction = "none" | "acknowledge" | "accept" | "renew_consent";
+
+export interface LegalPublication {
+  id: string;
+  documentType: LegalDocumentType;
+  version: string;
+  changeClass: LegalChangeClass;
+  userAction: LegalUserAction;
+  effectiveAt: string;
+  publishedAt: string;
+  publishedBy: string | null;
+  languages: string[];
+}
+
+export interface LegalPublicationListResponse {
+  data: LegalPublication[];
+}
+
 // Contact message types
 export interface ContactMessage {
   id: string;
@@ -248,8 +269,7 @@ export interface UserRecord {
   displayName?: string | null;
   email: string;
   roleCode: string;
-  status:
-    "pending_verification" | "active" | "suspended" | "banned" | "pending_deletion" | "deleted";
+  status: UserStatus;
   createdAt: string;
   deactivatedAt: string | null;
   lastLoginAt: string | null;
@@ -394,6 +414,32 @@ export const translationsApi = {
   metadata: async () => {
     const response = await apiClient.get<TranslationMetadataResponse>(
       "/api/v1/translations/metadata",
+    );
+    return response.data;
+  },
+};
+
+export const legalPublicationsApi = {
+  list: async (documentType?: LegalDocumentType) => {
+    const response = await apiClient.get<LegalPublicationListResponse>(
+      "/api/v1/legal/publications",
+      {
+        params: documentType ? { documentType } : undefined,
+      },
+    );
+    return response.data;
+  },
+  publish: async (
+    documentType: LegalDocumentType,
+    data: {
+      changeClass: Exclude<LegalChangeClass, "legacy">;
+      userAction: LegalUserAction;
+      effectiveAt?: string;
+    },
+  ) => {
+    const response = await apiClient.post<LegalPublication>(
+      `/api/v1/legal/publications/${documentType}`,
+      data,
     );
     return response.data;
   },
@@ -634,6 +680,42 @@ export const auditLogsApi = {
       resolved,
     });
     return response.data.updated;
+  },
+};
+
+export interface PrivilegedAdmin {
+  id: string;
+  username: string | null;
+  email: string | null;
+  role: "admin" | "superadmin";
+  status: string;
+  totpVerified: boolean;
+}
+
+export const superadminApi = {
+  listAdmins: async () => {
+    const response = await apiClient.get<{ users: PrivilegedAdmin[] }>(
+      "/api/v1/admin/superadmin/privileges/admins",
+    );
+    return response.data.users;
+  },
+  sudo: async (password: string) => {
+    const response = await apiClient.post<{ expiresAt: string }>("/api/v1/admin/superadmin/sudo", {
+      password,
+    });
+    return response.data;
+  },
+  changeRole: async (
+    userId: string,
+    role: "admin" | "superadmin",
+    reason: string,
+    totpCode: string,
+  ) => {
+    await apiClient.post("/api/v1/admin/superadmin/privileges/admins/" + userId + "/role", {
+      role,
+      reason,
+      totpCode,
+    });
   },
 };
 

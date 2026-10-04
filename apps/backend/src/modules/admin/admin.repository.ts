@@ -4,6 +4,7 @@
 
 import { db } from "../../db/index.js";
 import type { UserStatus } from "../users/users.types.js";
+export { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import type {
   FeedReport,
   UserSearchResult,
@@ -293,30 +294,6 @@ export async function getUserForAdmin(userId: string): Promise<UserSearchResult 
     .first()) as UserSearchResult | undefined;
 
   return row ?? null;
-}
-
-/**
- * Check if an email is currently blacklisted
- * Returns false if the blacklist table is missing or schema is incompatible (e.g. migrations not run).
- */
-export async function isEmailBlacklisted(email: string): Promise<boolean> {
-  const normalizedEmail = email.toLowerCase();
-  const now = new Date();
-
-  try {
-    const row = await db<{ id: string }>("blacklist")
-      .where("email", normalizedEmail)
-      .where(function () {
-        this.whereNull("active_to").orWhere("active_to", ">", now);
-      })
-      .where("active_from", "<=", now)
-      .first();
-
-    return !!row;
-  } catch {
-    // Table or column missing (e.g. migration not applied) – treat as not blacklisted
-    return false;
-  }
 }
 
 /**

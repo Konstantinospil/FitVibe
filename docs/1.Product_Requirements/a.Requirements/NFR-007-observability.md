@@ -5,12 +5,12 @@
 **Requirement ID**: NFR-007  
 **Type**: Non-Functional Requirement  
 **Title**: Observability  
-**Status**: Open  
+**Status**: Progressing  
 **Priority**: Medium  
 **Gate**: SILVER  
 **Owner**: ENG/OPS  
 **Created**: 2025-01-20  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 

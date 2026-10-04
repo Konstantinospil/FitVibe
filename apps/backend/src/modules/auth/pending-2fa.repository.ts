@@ -4,38 +4,44 @@ import type { Knex } from "knex";
 export interface Pending2FASession {
   id: string;
   user_id: string;
+  identifier?: string | null;
   created_at: string;
   expires_at: string;
   ip: string | null;
   user_agent: string | null;
   verified: boolean;
+  failed_attempts?: number;
+  last_failed_at?: string | null;
 }
 
 interface CreatePending2FASessionInput {
   id: string;
   user_id: string;
+  identifier?: string;
   expires_at: string;
   ip: string | null;
   user_agent: string | null;
 }
 
-/**
- * Create a pending 2FA session for stage 1 of 2-stage login
- */
 export async function createPending2FASession(
   input: CreatePending2FASessionInput,
   trx?: Knex.Transaction,
 ): Promise<Pending2FASession> {
   const conn = trx ?? db;
+  const row: Record<string, unknown> = {
+    id: input.id,
+    user_id: input.user_id,
+    expires_at: input.expires_at,
+    ip: input.ip,
+    user_agent: input.user_agent,
+    verified: false,
+  };
+  if (input.identifier !== undefined) {
+    row.identifier = input.identifier;
+  }
+
   const [session] = await conn<Pending2FASession>("pending_2fa_sessions")
-    .insert({
-      id: input.id,
-      user_id: input.user_id,
-      expires_at: input.expires_at,
-      ip: input.ip,
-      user_agent: input.user_agent,
-      verified: false,
-    })
+    .insert(row)
     .returning("*");
   if (!session) {
     throw new Error("Failed to create pending 2FA session");
@@ -43,9 +49,6 @@ export async function createPending2FASession(
   return session;
 }
 
-/**
- * Get a pending 2FA session by ID
- */
 export async function getPending2FASession(
   sessionId: string,
   trx?: Knex.Transaction,
@@ -57,35 +60,63 @@ export async function getPending2FASession(
   return session ?? null;
 }
 
-/**
- * Mark a pending 2FA session as verified (prevents reuse)
- */
+export async function incrementPending2FAFailures(
+  sessionId: string,
+  trx?: Knex.Transaction,
+): Promise<Pending2FASession | null> {
+  const conn = trx ?? db;
+  const now = new Date().toISOString();
+  const [session] = await conn<Pending2FASession>("pending_2fa_sessions")
+    .where({ id: sessionId, verified: false })
+    .where("failed_attempts", "<", 3)
+    .increment("failed_attempts", 1)
+    .update({ last_failed_at: now })
+    .returning("*");
+  return session ?? null;
+}
+
+export async function claimPending2FASessionVerified(
+  sessionId: string,
+  trx?: Knex.Transaction,
+): Promise<boolean> {
+  const rows = await (trx ?? db)("pending_2fa_sessions")
+    .where({ id: sessionId, verified: false })
+    .where("failed_attempts", "<", 3)
+    .update({ verified: true })
+    .returning("id");
+  return rows.length === 1;
+}
+
+export async function hasRecentSecondFactorThrottle(
+  userId: string,
+  ip: string | null,
+  since: string,
+  trx?: Knex.Transaction,
+): Promise<boolean> {
+  const row = await (trx ?? db)<Pending2FASession>("pending_2fa_sessions")
+    .where({ user_id: userId, ip, verified: false })
+    .where("failed_attempts", ">=", 3)
+    .where("last_failed_at", ">=", since)
+    .first("id");
+  return Boolean(row);
+}
+
 export async function markPending2FASessionVerified(
   sessionId: string,
   trx?: Knex.Transaction,
 ): Promise<void> {
-  const conn = trx ?? db;
-  await conn("pending_2fa_sessions").where({ id: sessionId }).update({ verified: true });
+  await (trx ?? db)("pending_2fa_sessions").where({ id: sessionId }).update({ verified: true });
 }
 
-/**
- * Delete expired pending 2FA sessions (called by retention job)
- */
 export async function deletePending2FASession(
   sessionId: string,
   trx?: Knex.Transaction,
 ): Promise<void> {
-  const conn = trx ?? db;
-  await conn("pending_2fa_sessions").where({ id: sessionId }).del();
+  await (trx ?? db)("pending_2fa_sessions").where({ id: sessionId }).del();
 }
 
-/**
- * Clean up expired pending 2FA sessions (for retention job)
- */
 export async function deleteExpiredPending2FASessions(trx?: Knex.Transaction): Promise<number> {
-  const conn = trx ?? db;
-  const deleted = await conn("pending_2fa_sessions")
+  return (trx ?? db)("pending_2fa_sessions")
     .where("expires_at", "<", new Date().toISOString())
     .del();
-  return deleted;
 }

@@ -1,8 +1,34 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import Privacy from "../../src/pages/Privacy";
+import { ToastProvider } from "../../src/contexts/ToastContext";
+
+const {
+  authState,
+  acceptPrivacyPolicy,
+  revokePrivacyPolicy,
+  getLegalDocumentsStatus,
+  getPublishedLegalDocument,
+} = vi.hoisted(() => ({
+  authState: { isAuthenticated: false },
+  acceptPrivacyPolicy: vi.fn(),
+  revokePrivacyPolicy: vi.fn(),
+  getLegalDocumentsStatus: vi.fn(),
+  getPublishedLegalDocument: vi.fn(),
+}));
+
+vi.mock("../../src/store/auth.store", () => ({
+  useAuthStore: vi.fn((selector: (state: typeof authState) => unknown) => selector(authState)),
+}));
+
+vi.mock("../../src/services/api", () => ({
+  acceptPrivacyPolicy,
+  revokePrivacyPolicy,
+  getLegalDocumentsStatus,
+  getPublishedLegalDocument,
+}));
 
 vi.mock("../../src/i18n/config", () => ({
   ensureLegalTranslationsLoaded: vi.fn().mockResolvedValue(undefined),
@@ -10,134 +36,130 @@ vi.mock("../../src/i18n/config", () => ({
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    i18n: { language: "en" },
-    t: (key: string, options?: { returnObjects?: boolean }) => {
-      // Handle array/object translations when returnObjects is true
-      if (options?.returnObjects) {
-        const arrayKeys = [
-          "privacy.section1.items",
-          "privacy.section4.items",
-          "privacy.section5.items",
-          "privacy.section7.items",
-          "privacy.section9.items",
-          "privacy.section11.items",
-          "privacy.section13.items",
-          "privacy.section15.items",
-        ];
-        const objectKeys = [
-          "privacy.section6.items",
-          "privacy.section8.items",
-          "privacy.section10.items",
-          "privacy.section12.items",
-        ];
-
-        if (arrayKeys.includes(key)) {
-          return ["Item 1", "Item 2", "Item 3"];
-        }
-        if (objectKeys.includes(key)) {
-          return [
-            { title: "Title 1", content: "Content 1" },
-            { title: "Title 2", content: "Content 2" },
-          ];
-        }
-      }
-
-      const translations: Record<string, string> = {
+    i18n: {
+      language: "en",
+      getResourceBundle: vi.fn(() => ({})),
+    },
+    t: (key: string, options?: { defaultValue?: string }) => {
+      const values: Record<string, string> = {
         "navigation.back": "Back",
-        "privacy.eyebrow": "Privacy",
         "privacy.title": "Privacy Policy",
         "privacy.description": "How we handle your data",
-        "privacy.effectiveDate": "Effective Date",
-        "privacy.effectiveDateValue": "26 October 2025",
-        "privacy.intro1": "Introduction text 1",
-        "privacy.intro2": "Introduction text 2",
-        "privacy.section1.title": "1. Scope",
-        "privacy.section1.subtitle": "Section 1 subtitle",
-        "privacy.section2.title": "2. Who we are and how to contact us",
-        "privacy.section2.controller": "Controller:",
-        "privacy.section2.controllerValue": "Controller value",
-        "privacy.section2.privacyInquiries": "Privacy Inquiries:",
-        "privacy.section2.privacyInquiriesValue": "privacy@example.com",
-        "privacy.section2.dpo": "Data Protection Officer:",
-        "privacy.section2.dpoValue": "dpo@example.com",
-        "privacy.section2.euRepresentative": "EU Representative:",
-        "privacy.section2.euRepresentativeValue": "eu@example.com",
-        "privacy.section2.contactNote": "Contact note",
-        "privacy.section3.title": "3. Information we collect",
-        "privacy.section3.subtitle": "Section 3 subtitle",
-        "privacy.section3.table.headers.category": "Category",
-        "privacy.section3.table.headers.examples": "Examples",
-        "privacy.section3.table.headers.source": "Source",
-        "privacy.section3.table.rows.accountData.category": "Account data",
-        "privacy.section3.table.rows.accountData.examples": "Account examples",
-        "privacy.section3.table.rows.accountData.source": "Account source",
-        "privacy.section3.specialCategoriesNote": "Special categories note",
-        "privacy.section16.email": "Email:",
-        "privacy.section16.emailValue": "kpilpilidis@gmail.com",
+        "privacy.consent.acknowledge": "Acknowledge",
+        "privacy.consent.revoke": "Revoke acknowledgement",
       };
-      return translations[key] || key;
+      return values[key] ?? options?.defaultValue ?? key;
     },
   }),
 }));
 
-describe("Privacy page", () => {
-  it("should render privacy policy content", () => {
-    render(
+const snapshot = {
+  documentType: "privacy",
+  version: "2026-09-25.1",
+  changeClass: "material",
+  userAction: "acknowledge",
+  effectiveAt: "2026-09-25T10:00:00.000Z",
+  publishedAt: "2026-09-25T09:00:00.000Z",
+  language: "en",
+  legacyWithoutSnapshot: false,
+  content: {
+    intro: "Published privacy introduction",
+    section1: { title: "1. Scope", content: "Scope text" },
+    section2: { title: "2. Who we are and how to contact us", email: "privacy@example.com" },
+    section3: {
+      title: "3. Information we collect",
+      table: {
+        headers: { category: "Category", examples: "Examples", source: "Source" },
+        rows: {
+          account: {
+            category: "Account data",
+            examples: "Email",
+            source: "Provided by user",
+          },
+        },
+      },
+    },
+  },
+};
+
+const renderPrivacy = () =>
+  render(
+    <ToastProvider>
       <MemoryRouter>
         <Privacy />
-      </MemoryRouter>,
-    );
+      </MemoryRouter>
+    </ToastProvider>,
+  );
+
+describe("Privacy page", () => {
+  beforeEach(() => {
+    authState.isAuthenticated = false;
+    acceptPrivacyPolicy.mockReset().mockResolvedValue({ message: "ok" });
+    revokePrivacyPolicy.mockReset().mockResolvedValue({ message: "ok" });
+    getLegalDocumentsStatus.mockReset();
+    getPublishedLegalDocument.mockReset().mockResolvedValue(snapshot);
+  });
+
+  it("renders the authoritative published Privacy snapshot", async () => {
+    renderPrivacy();
 
     expect(screen.getByText("Privacy Policy")).toBeInTheDocument();
-    expect(screen.getByText("How we handle your data")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
-  });
-
-  it("should display effective date", () => {
-    render(
-      <MemoryRouter>
-        <Privacy />
-      </MemoryRouter>,
-    );
-
-    const effectiveDateElements = screen.getAllByText(/Effective Date/i);
-    expect(effectiveDateElements.length).toBeGreaterThan(0);
-    expect(screen.getByText(/26 October 2025/i)).toBeInTheDocument();
-  });
-
-  it("should render privacy policy sections", () => {
-    render(
-      <MemoryRouter>
-        <Privacy />
-      </MemoryRouter>,
-    );
-
+    expect(await screen.findByText("Published privacy introduction")).toBeInTheDocument();
     expect(screen.getByText("1. Scope")).toBeInTheDocument();
-    expect(screen.getByText("2. Who we are and how to contact us")).toBeInTheDocument();
-    expect(screen.getByText("3. Information we collect")).toBeInTheDocument();
-  });
-
-  it("should render data collection table", () => {
-    render(
-      <MemoryRouter>
-        <Privacy />
-      </MemoryRouter>,
-    );
-
     expect(screen.getByText("Category")).toBeInTheDocument();
-    expect(screen.getByText("Examples")).toBeInTheDocument();
-    expect(screen.getByText("Source")).toBeInTheDocument();
     expect(screen.getByText("Account data")).toBeInTheDocument();
+    expect(screen.getByText("privacy@example.com")).toBeInTheDocument();
   });
 
-  it("should render contact information", () => {
-    render(
-      <MemoryRouter>
-        <Privacy />
-      </MemoryRouter>,
-    );
+  it("records a required privacy acknowledgement", async () => {
+    authState.isAuthenticated = true;
+    getLegalDocumentsStatus
+      .mockResolvedValueOnce({
+        terms: {
+          accepted: true,
+          acceptedAt: null,
+          acceptedVersion: "2024-06-01",
+          currentVersion: "2024-06-01",
+          requiredVersion: "2024-06-01",
+          requiredAction: "accept",
+          needsAcceptance: false,
+        },
+        privacy: {
+          accepted: false,
+          acceptedAt: null,
+          acceptedVersion: null,
+          currentVersion: "2026-09-25.1",
+          requiredVersion: "2026-09-25.1",
+          requiredAction: "acknowledge",
+          needsAcceptance: true,
+        },
+      })
+      .mockResolvedValueOnce({
+        terms: {
+          accepted: true,
+          acceptedAt: null,
+          acceptedVersion: "2024-06-01",
+          currentVersion: "2024-06-01",
+          requiredVersion: "2024-06-01",
+          requiredAction: "accept",
+          needsAcceptance: false,
+        },
+        privacy: {
+          accepted: true,
+          acceptedAt: "2026-09-25T11:00:00.000Z",
+          acceptedVersion: "2026-09-25.1",
+          currentVersion: "2026-09-25.1",
+          requiredVersion: "2026-09-25.1",
+          requiredAction: "acknowledge",
+          needsAcceptance: false,
+        },
+      });
 
-    const emailElements = screen.getAllByText(/kpilpilidis@gmail.com/i);
-    expect(emailElements.length).toBeGreaterThan(0);
+    renderPrivacy();
+    fireEvent.click(await screen.findByRole("button", { name: "Acknowledge" }));
+
+    await waitFor(() => {
+      expect(acceptPrivacyPolicy).toHaveBeenCalledWith({ privacy_policy_accepted: true });
+    });
   });
 });

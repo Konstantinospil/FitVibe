@@ -28,15 +28,18 @@ function createMockQueryBuilder(
   return builder;
 }
 
-let mockDb: (jest.Mock & { fn: { now: jest.Mock }; transaction: jest.Mock }) | undefined;
+let mockDb:
+  | (jest.Mock & { fn: { now: jest.Mock }; transaction: jest.Mock; raw: jest.Mock })
+  | undefined;
 
 jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   const db = jest.fn((table: string) => {
     const builder = builderQueue.shift() ?? createMockQueryBuilder();
     return builder;
-  }) as jest.Mock & { fn: { now: jest.Mock }; transaction: jest.Mock };
+  }) as jest.Mock & { fn: { now: jest.Mock }; transaction: jest.Mock; raw: jest.Mock };
 
   db.fn = { now: jest.fn(() => "now") };
+  db.raw = jest.fn().mockResolvedValue(undefined);
   db.transaction = jest.fn(async (callback: (trx: typeof db) => Promise<unknown>) => {
     return callback(db);
   });
@@ -120,7 +123,7 @@ describe("Translations Repository", () => {
 
     const activeCheck = createMockQueryBuilder([], activeRecord);
     const existingCheck = createMockQueryBuilder([], activeRecord);
-    const updateBuilder = createMockQueryBuilder();
+    const updateBuilder = createMockQueryBuilder(1);
     const insertBuilder = createMockQueryBuilder([], null, [newRecord]);
 
     builderQueue.push(activeCheck, existingCheck, updateBuilder, insertBuilder);
@@ -216,11 +219,10 @@ describe("Translations Repository", () => {
       value: "Hello updated",
     };
 
-    const deletedCheck = createMockQueryBuilder([], null);
     const activeCheck = createMockQueryBuilder([], activeRecord);
     const updateBuilder = createMockQueryBuilder([], null, [updatedRecord]);
 
-    builderQueue.push(deletedCheck, activeCheck, updateBuilder);
+    builderQueue.push(activeCheck, updateBuilder);
 
     const result = await translationsRepository.upsertTranslation({
       namespace: "common",
@@ -231,11 +233,14 @@ describe("Translations Repository", () => {
       created_by: "admin-1",
     });
 
+    expect(updateBuilder.where).toHaveBeenCalledWith({
+      id: "t-3",
+      deleted_at: null,
+    });
     expect(updateBuilder.update).toHaveBeenCalledWith(
       expect.objectContaining({
         value: "Hello updated",
         updated_by: "admin-1",
-        deleted_at: null,
       }),
     );
     expect(result).toEqual(updatedRecord);
@@ -283,10 +288,11 @@ describe("Translations Repository", () => {
     };
 
     const existingBuilder = createMockQueryBuilder([], existing);
-    const updateBuilder = createMockQueryBuilder();
+    const updateBuilder = createMockQueryBuilder(1);
     const insertBuilder = createMockQueryBuilder([], null, [newRecord]);
     const trxQueue: MockBuilder[] = [existingBuilder, updateBuilder, insertBuilder];
-    const trx = jest.fn(() => trxQueue.shift());
+    const trx = jest.fn(() => trxQueue.shift()) as jest.Mock & { raw: jest.Mock };
+    trx.raw = jest.fn().mockResolvedValue(undefined);
 
     const result = await translationsRepository.updateTranslation(
       "en",

@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { asyncHandler } from "../../utils/async-handler.js";
-import { requireAuth } from "../users/users.middleware.js";
+import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit, rateLimitByUser } from "../common/rateLimiter.js";
 import {
   blockUserHandler,
@@ -31,168 +31,168 @@ export const feedRouter = Router();
 // All feed endpoints require authentication per FR-003 (privacy-by-default)
 feedRouter.get(
   "/",
-  requireAuth,
-  rateLimitByUser("feed_user", 120, 60),
-  rateLimit("feed_public", 120, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_user"),
+  rateLimit("feed_public"),
   asyncHandler(getFeedHandler),
 );
 
 feedRouter.get(
   "/leaderboard",
-  requireAuth,
-  rateLimitByUser("feed_leaderboard_user", 60, 60),
-  rateLimit("feed_leaderboard", 60, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_leaderboard_user"),
+  rateLimit("feed_leaderboard"),
   asyncHandler(getLeaderboardHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/clone",
-  requireAuth,
-  rateLimitByUser("feed_clone_user", 20, 60),
-  rateLimit("feed_clone", 20, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_clone_user"),
+  rateLimit("feed_clone"),
   asyncHandler(cloneSessionFromFeedHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/publish",
-  requireAuth,
-  rateLimitByUser("feed_publish_user", 20, 60),
-  rateLimit("feed_publish", 20, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_publish_user"),
+  rateLimit("feed_publish"),
   asyncHandler(publishSessionHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/link",
-  requireAuth,
-  rateLimitByUser("feed_link_user", 20, 60),
-  rateLimit("feed_link", 20, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_link_user"),
+  rateLimit("feed_link"),
   asyncHandler(publishSessionHandler),
 );
 
 feedRouter.post(
   "/session/:sessionId/bookmark",
-  requireAuth,
-  rateLimitByUser("feed_bookmark_user", 100, 300),
-  rateLimit("feed_bookmark", 100, 300),
+  requireAccessToken,
+  rateLimitByUser("feed_bookmark_user"),
+  rateLimit("feed_bookmark"),
   asyncHandler(bookmarkSessionHandler),
 );
 
 feedRouter.delete(
   "/session/:sessionId/bookmark",
-  requireAuth,
-  rateLimitByUser("feed_bookmark_user", 100, 300),
-  rateLimit("feed_bookmark", 100, 300),
+  requireAccessToken,
+  rateLimitByUser("feed_bookmark_user"),
+  rateLimit("feed_bookmark"),
   asyncHandler(removeBookmarkHandler),
 );
 
 feedRouter.get(
   "/bookmarks",
-  requireAuth,
-  rateLimitByUser("feed_bookmark_list_user", 60, 60),
-  rateLimit("feed_bookmark_list", 60, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_bookmark_list_user"),
+  rateLimit("feed_bookmark_list"),
   asyncHandler(listBookmarksHandler),
 );
 
 feedRouter.post(
   "/item/:feedItemId/like",
-  requireAuth,
-  rateLimitByUser("feed_like_user", 100, 300),
-  rateLimit("feed_like", 100, 300),
+  requireAccessToken,
+  rateLimitByUser("feed_like_user"),
+  rateLimit("feed_like"),
   asyncHandler(likeFeedItemHandler),
 );
 
 feedRouter.delete(
   "/item/:feedItemId/like",
-  requireAuth,
-  rateLimitByUser("feed_like_user", 100, 300),
-  rateLimit("feed_like", 100, 300),
+  requireAccessToken,
+  rateLimitByUser("feed_like_user"),
+  rateLimit("feed_like"),
   asyncHandler(unlikeFeedItemHandler),
 );
 
 feedRouter.get(
   "/item/:feedItemId/comments",
-  requireAuth,
-  rateLimitByUser("feed_comments_list_user", 120, 60),
-  rateLimit("feed_comments_list", 120, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_comments_list_user"),
+  rateLimit("feed_comments_list"),
   asyncHandler(listCommentsHandler),
 );
 
 feedRouter.post(
   "/item/:feedItemId/comments",
-  requireAuth,
-  rateLimitByUser("feed_comments_create_user", 20, 3600),
-  rateLimit("feed_comments_create", 20, 3600),
+  requireAccessToken,
+  rateLimitByUser("feed_comments_create_user"),
+  rateLimit("feed_comments_create"),
   asyncHandler(createCommentHandler),
 );
 
 feedRouter.delete(
   "/comments/:commentId",
-  requireAuth,
-  rateLimitByUser("feed_comments_delete_user", 60, 3600),
-  rateLimit("feed_comments_delete", 60, 3600),
+  requireAccessToken,
+  rateLimitByUser("feed_comments_delete_user"),
+  rateLimit("feed_comments_delete"),
   asyncHandler(deleteCommentHandler),
 );
 
 feedRouter.post(
   "/item/:feedItemId/report",
-  requireAuth,
-  rateLimitByUser("feed_report_item_user", 20, 3600),
-  rateLimit("feed_report_item", 20, 3600),
+  requireAccessToken,
+  rateLimitByUser("feed_report_item_user"),
+  rateLimit("feed_report_item"),
   asyncHandler(reportFeedItemHandler),
 );
 
 feedRouter.post(
   "/comments/:commentId/report",
-  requireAuth,
-  rateLimitByUser("feed_report_comment_user", 20, 3600),
-  rateLimit("feed_report_comment", 20, 3600),
+  requireAccessToken,
+  rateLimitByUser("feed_report_comment_user"),
+  rateLimit("feed_report_comment"),
   asyncHandler(reportCommentHandler),
 );
 
 feedRouter.post(
   "/users/:alias/block",
-  requireAuth,
-  rateLimitByUser("feed_block_user", 50, 86400),
-  rateLimit("feed_block_user", 50, 86400),
+  requireAccessToken,
+  rateLimitByUser("feed_block_user"),
+  rateLimit("feed_block_user"),
   asyncHandler(blockUserHandler),
 );
 
 feedRouter.delete(
   "/users/:alias/block",
-  requireAuth,
-  rateLimitByUser("feed_block_user", 50, 86400),
-  rateLimit("feed_block_user", 50, 86400),
+  requireAccessToken,
+  rateLimitByUser("feed_block_user"),
+  rateLimit("feed_block_user"),
   asyncHandler(unblockUserHandler),
 );
 
 feedRouter.post(
   "/users/:alias/follow",
-  requireAuth,
-  rateLimitByUser("feed_follow_user", 50, 86400),
-  rateLimit("feed_follow_user", 50, 86400),
+  requireAccessToken,
+  rateLimitByUser("feed_follow_user"),
+  rateLimit("feed_follow_user"),
   asyncHandler(followUserHandler),
 );
 
 feedRouter.delete(
   "/users/:alias/follow",
-  requireAuth,
-  rateLimitByUser("feed_follow_user", 50, 86400),
-  rateLimit("feed_follow_user", 50, 86400),
+  requireAccessToken,
+  rateLimitByUser("feed_follow_user"),
+  rateLimit("feed_follow_user"),
   asyncHandler(unfollowUserHandler),
 );
 
 feedRouter.get(
   "/users/:alias/followers",
-  requireAuth,
-  rateLimitByUser("feed_followers_list_user", 120, 60),
-  rateLimit("feed_followers_list", 120, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_followers_list_user"),
+  rateLimit("feed_followers_list"),
   asyncHandler(listFollowersHandler),
 );
 
 feedRouter.get(
   "/users/:alias/following",
-  requireAuth,
-  rateLimitByUser("feed_following_list_user", 120, 60),
-  rateLimit("feed_following_list", 120, 60),
+  requireAccessToken,
+  rateLimitByUser("feed_following_list_user"),
+  rateLimit("feed_following_list"),
   asyncHandler(listFollowingHandler),
 );

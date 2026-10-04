@@ -9,6 +9,12 @@ jest.mock("bcryptjs");
 jest.mock("@otplib/preset-default");
 jest.mock("qrcode");
 jest.mock("../../../../apps/backend/src/db/connection.js");
+jest.mock("../../../../apps/backend/src/modules/auth/totp-secret.crypto.js", () => ({
+  encryptTotpSecret: jest.fn((secret: string) => `enc:${secret}`),
+  decryptTotpSecret: jest.fn((stored: string) =>
+    stored.startsWith("enc:") ? stored.slice(4) : stored,
+  ),
+}));
 
 const mockBcrypt = jest.mocked(bcrypt);
 const mockAuthenticator = jest.mocked(authenticator);
@@ -82,6 +88,7 @@ describe("Two-Factor Lifecycle Service", () => {
     });
 
     it("fails setup when the primary email is missing", async () => {
+      queryBuilders["user_2fa_settings"] = createMockQueryBuilder(null);
       queryBuilders["user_contacts"] = createMockQueryBuilder(null);
 
       await expect(twoFactorService.beginTwoFactorSetup(userId)).rejects.toMatchObject({
@@ -93,7 +100,7 @@ describe("Two-Factor Lifecycle Service", () => {
     it("fails disable when the user no longer exists", async () => {
       queryBuilders["users"] = createMockQueryBuilder(null);
 
-      await expect(twoFactorService.disableTwoFactor(userId, password)).rejects.toMatchObject({
+      await expect(twoFactorService.disableTwoFactor(userId, password, "123456")).rejects.toMatchObject({
         code: "E.USER.NOT_FOUND",
         status: 404,
       });
@@ -164,7 +171,7 @@ describe("Two-Factor Lifecycle Service", () => {
         (queryBuilders["user_2fa_settings"] as { update: jest.Mock }).update,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          totp_secret: secret,
+          totp_secret: `enc:${secret}`,
           is_enabled: false,
           is_verified: false,
         }),
@@ -483,76 +490,85 @@ describe("Two-Factor Lifecycle Service", () => {
     });
   });
 
-  describe("disable2FA", () => {
-    it("should disable 2FA successfully", async () => {
-      const settings = {
-        id: "settings-id",
-        user_id: userId,
-        totp_secret: "secret",
-        is_enabled: true,
-        is_verified: true,
-        recovery_email: null,
-        recovery_phone: null,
-        enabled_at: new Date().toISOString(),
-        last_used_at: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+  describe("sensitive 2FA administration", () => {
+    const enabledSettings = {
+      id: "settings-id",
+      user_id: userId,
+      totp_secret: "enc:secret",
+      is_enabled: true,
+      is_verified: true,
+      recovery_email: null,
+      recovery_phone: null,
+      enabled_at: new Date().toISOString(),
+      last_used_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
 
-      mockBcrypt.compare.mockResolvedValue(true as never);
-
-      queryBuilders["user_2fa_settings"] = createMockQueryBuilder(settings);
-      (queryBuilders["user_2fa_settings"] as { first: jest.Mock }).first.mockResolvedValue(
-        settings,
-      );
-      (queryBuilders["user_2fa_settings"] as { update: jest.Mock }).update.mockResolvedValue(1);
-
+    it("requires password and current factor before disabling 2FA", async () => {
+      queryBuilders["users"] = createMockQueryBuilder({ password_hash: passwordHash });
+      queryBuilders["user_2fa_settings"] = createMockQueryBuilder(enabledSettings);
       queryBuilders["backup_codes"] = createMockQueryBuilder();
-      (queryBuilders["backup_codes"] as { del: jest.Mock }).del.mockResolvedValue(1);
-
       queryBuilders["audit_log"] = createMockQueryBuilder();
-      (queryBuilders["audit_log"] as { insert: jest.Mock }).insert.mockResolvedValue([1]);
+      mockBcrypt.compare.mockResolvedValue(true as never);
+      mockAuthenticator.verify.mockReturnValue(true);
 
-      const result = await twoFactorService.disable2FA(userId, password, passwordHash);
+      await expect(
+        twoFactorService.disableTwoFactor(userId, password, "123456"),
+      ).resolves.toBeUndefined();
 
-      expect(result).toBe(true);
       expect(mockBcrypt.compare).toHaveBeenCalledWith(password, passwordHash);
+      expect(mockAuthenticator.verify).toHaveBeenCalledWith({
+        token: "123456",
+        secret: "secret",
+      });
       expect(
         (queryBuilders["user_2fa_settings"] as { update: jest.Mock }).update,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
-          totp_secret: "",
           is_enabled: false,
           is_verified: false,
-          enabled_at: null,
-          last_used_at: null,
         }),
       );
+      expect(
+        (queryBuilders["user_2fa_settings"] as { update: jest.Mock }).update,
+      ).not.toHaveBeenCalledWith(expect.objectContaining({ totp_secret: "" }));
     });
 
-    it("should throw error when password is invalid", async () => {
+    it("rejects a wrong password before the second factor is evaluated", async () => {
+      queryBuilders["users"] = createMockQueryBuilder({ password_hash: passwordHash });
       mockBcrypt.compare.mockResolvedValue(false as never);
 
-      await expect(twoFactorService.disable2FA(userId, "wrong_password", passwordHash)).rejects.toThrow(
-        HttpError,
-      );
-      const error = await twoFactorService
-        .disable2FA(userId, "wrong_password", passwordHash)
-        .catch((e) => e);
-      expect((error as HttpError).code).toBe("INVALID_PASSWORD");
+      await expect(
+        twoFactorService.disableTwoFactor(userId, "wrong_password", "123456"),
+      ).rejects.toMatchObject({
+        code: "STEP_UP_FAILED",
+        status: 401,
+      });
+      expect(mockAuthenticator.verify).not.toHaveBeenCalled();
     });
 
-    it("should throw error when 2FA is not enabled", async () => {
+    it("rejects an invalid current factor after password verification", async () => {
+      queryBuilders["users"] = createMockQueryBuilder({ password_hash: passwordHash });
+      queryBuilders["user_2fa_settings"] = createMockQueryBuilder(enabledSettings);
       mockBcrypt.compare.mockResolvedValue(true as never);
+      mockAuthenticator.verify.mockReturnValue(false);
 
+      await expect(
+        twoFactorService.disableTwoFactor(userId, password, "000000"),
+      ).rejects.toMatchObject({
+        code: "STEP_UP_FAILED",
+        status: 401,
+      });
+    });
+
+    it("low-level disable still rejects when 2FA is not enabled", async () => {
       queryBuilders["user_2fa_settings"] = createMockQueryBuilder(null);
-      (queryBuilders["user_2fa_settings"] as { first: jest.Mock }).first.mockResolvedValue(null);
 
-      await expect(twoFactorService.disable2FA(userId, password, passwordHash)).rejects.toThrow(
-        HttpError,
-      );
-      const error = await twoFactorService.disable2FA(userId, password, passwordHash).catch((e) => e);
-      expect((error as HttpError).code).toBe("2FA_NOT_ENABLED");
+      await expect(twoFactorService.disable2FA(userId)).rejects.toMatchObject({
+        code: "2FA_NOT_ENABLED",
+        status: 404,
+      });
     });
   });
 

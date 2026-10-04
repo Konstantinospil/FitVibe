@@ -8,25 +8,25 @@
 **Priority**: High
 **Test Method**: Lighthouse CI
 **Created**: 2025-01-21
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Criterion
 
-Lighthouse accessibility score = 100; all accessibility audits pass; score maintained across releases.
+Lighthouse accessibility score is ≥90 on the tracked pages defined by the QA plan. The score is treated as a regression indicator and does not by itself establish WCAG 2.2 AA conformance.
 
 **SMART Criteria Checklist**:
 
-- **Specific**: Clear score target and audit requirements
-- **Measurable**: Score = 100, all audits pass, maintained across releases
+- **Specific**: Clear Lighthouse regression threshold and scope
+- **Measurable**: Score ≥90 on tracked pages and maintained across governed CI runs
 - **Achievable**: Standard Lighthouse testing approach
-- **Relevant**: WCAG compliance verification
+- **Relevant**: Continuous accessibility regression detection; criterion-level WCAG verification remains separate
 - **Time-bound**: Per release
 
 ## Test Method
 
-Lighthouse CI runs verify accessibility score.
+Lighthouse CI verifies the configured ≥90 accessibility threshold on tracked pages.
 
 ## Evidence Required
 
@@ -58,6 +58,6 @@ Lighthouse CI runs verify accessibility score.
 
 ---
 
-**Last Updated**: 2025-01-21
+**Last Updated**: 2026-09-25
 **Verified By**: {Name/Team}
 **Verified Date**: {YYYY-MM-DD}

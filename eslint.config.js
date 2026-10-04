@@ -26,6 +26,7 @@ export default tseslint.config(
       "**/*.js",
       "**/*.cjs",
       "**/*.mjs",
+      "apps/frontend/archive/**",
       "tests/**/*.cjs", // E2E test configs
       "tests/setup/test-helpers.ts", // Test helper file not in tsconfig
       "tests/setup/jest.setup.ts", // Test setup file not in tsconfig

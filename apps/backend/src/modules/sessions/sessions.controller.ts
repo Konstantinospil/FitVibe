@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
 import {
   getAll,
@@ -6,13 +7,15 @@ import {
   createOne,
   updateOne,
   cancelOne,
+  reopenOne,
   cloneOne,
   applyRecurrence,
 } from "./sessions.service.js";
+import { getSessionEstimate } from "./sessions.estimation.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
-const visibilityEnum = z.enum(["private", "public", "link"]);
+const visibilityEnum = z.enum(["private", "followers", "public", "link"]);
 
 const titleSchema = z
   .string()
@@ -57,6 +60,9 @@ const sessionSetSchema = z
     distance_m: z.number().min(0).nullable().optional(),
     duration_sec: z.number().int().min(0).nullable().optional(),
     rpe: z.number().int().min(1).max(10).nullable().optional(),
+    rest_sec: z.number().int().min(0).nullable().optional(),
+    extras: extrasSchema,
+    recorded_at: z.string().datetime().nullable().optional(),
     notes: z.string().max(500).nullable().optional(),
   })
   .strict();
@@ -174,7 +180,7 @@ export async function getSessionHandler(req: Request, res: Response): Promise<vo
     return;
   }
 
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   const result = await getOne(userId, id);
   res.json(result);
 }
@@ -215,8 +221,8 @@ export async function updateSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const { id } = req.params;
-  if (!id) {
+  const id = req.params.id;
+  if (typeof id !== "string" || id.length === 0) {
     res.status(400).json({ error: "Session ID is required" });
     return;
   }
@@ -242,15 +248,15 @@ export async function cloneSessionHandler(req: Request, res: Response): Promise<
     req,
     res,
     userId,
-    { source_id: req.params.id, ...parsed.data },
+    { source_id: readRouteParam(req.params.id, "id"), ...parsed.data },
     async () => {
-      const body = await cloneOne(userId, req.params.id, parsed.data);
+      const body = await cloneOne(userId, readRouteParam(req.params.id, "id"), parsed.data);
       return { status: 201, body };
     },
   );
 
   if (!handled) {
-    const body = await cloneOne(userId, req.params.id, parsed.data);
+    const body = await cloneOne(userId, readRouteParam(req.params.id, "id"), parsed.data);
     res.status(201).json(body);
   }
 }
@@ -272,15 +278,23 @@ export async function applyRecurrenceHandler(req: Request, res: Response): Promi
     req,
     res,
     userId,
-    { source_id: req.params.id, ...parsed.data },
+    { source_id: readRouteParam(req.params.id, "id"), ...parsed.data },
     async () => {
-      const sessions = await applyRecurrence(userId, req.params.id, parsed.data);
+      const sessions = await applyRecurrence(
+        userId,
+        readRouteParam(req.params.id, "id"),
+        parsed.data,
+      );
       return { status: 201, body: { sessions } };
     },
   );
 
   if (!handled) {
-    const sessions = await applyRecurrence(userId, req.params.id, parsed.data);
+    const sessions = await applyRecurrence(
+      userId,
+      readRouteParam(req.params.id, "id"),
+      parsed.data,
+    );
     res.status(201).json({ sessions });
   }
 }
@@ -291,7 +305,34 @@ export async function deleteSessionHandler(req: Request, res: Response): Promise
     return;
   }
 
-  const { id } = req.params;
+  const id = readRouteParam(req.params.id, "id");
   await cancelOne(userId, id);
   res.status(204).send();
+}
+
+export async function reopenSessionHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+
+  const id = req.params.id;
+  if (typeof id !== "string" || id.length === 0) {
+    res.status(400).json({ error: "Session ID is required" });
+    return;
+  }
+
+  const reopened = await reopenOne(userId, id);
+  res.json(reopened);
+}
+
+export async function getSessionEstimateHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+
+  const id = readRouteParam(req.params.id, "id");
+  const estimate = await getSessionEstimate(userId, id);
+  res.json(estimate);
 }

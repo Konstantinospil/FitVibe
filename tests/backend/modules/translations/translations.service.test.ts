@@ -14,6 +14,7 @@ import {
   updateTranslation,
   upsertTranslation,
   updateMeasurementAttributeLabel,
+  withTranslationTransaction,
 } from "../../../../apps/backend/src/modules/translations/translations.repository.js";
 import { insertAudit } from "../../../../apps/backend/src/modules/common/audit.util.js";
 
@@ -25,6 +26,9 @@ jest.mock("../../../../apps/backend/src/modules/translations/translations.reposi
   updateTranslation: jest.fn(),
   upsertTranslation: jest.fn(),
   updateMeasurementAttributeLabel: jest.fn(),
+  withTranslationTransaction: jest.fn(async (work: (trx: unknown) => Promise<unknown>) =>
+    work({}),
+  ),
 }));
 
 jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
@@ -34,6 +38,7 @@ jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
 describe("translations service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(withTranslationTransaction).mockImplementation(async (work) => work({} as never));
   });
 
   it("merges namespaces into a single language payload", async () => {
@@ -80,15 +85,18 @@ describe("translations service", () => {
     });
 
     expect(record).toEqual({ id: "translation-1" });
-    expect(createTranslation).toHaveBeenCalledWith({
-      namespace: "user_attributes",
-      key_path: "user_attributes.height",
-      language: "en",
-      value: "Height",
-      created_by: null,
-      updated_by: null,
-    });
-    expect(updateMeasurementAttributeLabel).toHaveBeenCalledWith("height", "Height");
+    expect(createTranslation).toHaveBeenCalledWith(
+      {
+        namespace: "user_attributes",
+        key_path: "user_attributes.height",
+        language: "en",
+        value: "Height",
+        created_by: null,
+        updated_by: null,
+      },
+      expect.anything(),
+    );
+    expect(updateMeasurementAttributeLabel).toHaveBeenCalledWith("height", "Height", expect.anything());
     expect(insertAudit).toHaveBeenCalledWith({
       actorUserId: null,
       entityType: "measurement_attributes",
@@ -133,7 +141,7 @@ describe("translations service", () => {
       value: "Height Updated",
     });
 
-    expect(updateMeasurementAttributeLabel).toHaveBeenCalledWith("height", "Height Updated");
+    expect(updateMeasurementAttributeLabel).toHaveBeenCalledWith("height", "Height Updated", expect.anything());
     expect(insertAudit).toHaveBeenCalledWith({
       actorUserId: null,
       entityType: "measurement_attributes",
@@ -162,7 +170,7 @@ describe("translations service", () => {
 
     expect(result).toHaveLength(2);
     expect(upsertTranslation).toHaveBeenCalledTimes(2);
-    expect(updateMeasurementAttributeLabel).toHaveBeenCalledWith("weight", "Weight");
+    expect(updateMeasurementAttributeLabel).toHaveBeenCalledWith("weight", "Weight", expect.anything());
     expect(insertAudit).toHaveBeenCalledWith({
       actorUserId: null,
       entityType: "measurement_attributes",

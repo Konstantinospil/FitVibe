@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, beforeEach } from "vitest";
 // Import CSS at module level - Vitest processes CSS imports safely
 import "../../src/styles/global.css";
-import { CardTitle } from "../../src/components/ui";
+import { CardTitle } from "../../../packages/ui/src";
 
 describe("Design tokens", () => {
   beforeEach(() => {

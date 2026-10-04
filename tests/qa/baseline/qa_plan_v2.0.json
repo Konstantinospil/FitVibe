@@ -82,7 +82,7 @@
     {
       "id": "accessibility",
       "objective": "Accessibility",
-      "target": "WCAG 2.1 AA; axe/Lighthouse score ≥90 (Auth, Planner, Logger, Dashboard)",
+      "target": "WCAG 2.2 AA; axe/Lighthouse score ≥90 (Auth, Planner, Logger, Dashboard)",
       "gate": "axe-core + Lighthouse CI reports",
       "status": "not_measured",
       "linkedTasks": ["Q-5", "Q-18"],

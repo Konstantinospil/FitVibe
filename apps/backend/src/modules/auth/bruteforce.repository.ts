@@ -4,6 +4,8 @@ import { db } from "../../db/index.js";
 
 const TABLE = "failed_login_attempts";
 const IP_TABLE = "failed_login_attempts_by_ip";
+const ACCOUNT_ATTEMPT_WINDOW_MS = 30 * 60 * 1000;
+const IP_ATTEMPT_WINDOW_MS = 30 * 60 * 1000;
 
 export interface FailedLoginAttempt {
   id: string;
@@ -119,33 +121,30 @@ export async function recordFailedAttempt(
   const normalizedIdentifier = identifier.toLowerCase().trim();
   const now = new Date().toISOString();
 
-  // Check if record exists
+  // Check if record exists. Old failure history decays so an account does not
+  // remain permanently one attempt away from a long throttle.
   const existing = await getFailedAttempt(normalizedIdentifier, ipAddress, trx);
 
   if (existing) {
-    // Calculate lockout duration based on attempt count
-    const newAttemptCount = existing.attempt_count + 1;
+    const lastAttemptAt = new Date(existing.last_attempt_at).getTime();
+    const windowExpired = Date.now() - lastAttemptAt >= ACCOUNT_ATTEMPT_WINDOW_MS;
+    const newAttemptCount = windowExpired ? 1 : existing.attempt_count + 1;
     const lockedUntil = calculateLockoutDuration(newAttemptCount);
 
     // Update existing record
-    await exec(TABLE).where({ id: existing.id }).update({
-      attempt_count: newAttemptCount,
-      locked_until: lockedUntil,
-      last_attempt_at: now,
-      updated_at: now,
-    });
-
-    // Fetch the updated record to ensure we return the correct values
-    const updated = await getFailedAttempt(normalizedIdentifier, ipAddress, trx);
-    if (!updated) {
-      // Fallback to constructing the return value if fetch fails
-      return {
-        ...existing,
+    await exec(TABLE)
+      .where({ id: existing.id })
+      .update({
         attempt_count: newAttemptCount,
         locked_until: lockedUntil,
+        first_attempt_at: windowExpired ? now : existing.first_attempt_at,
         last_attempt_at: now,
         updated_at: now,
-      };
+      });
+
+    const updated = await getFailedAttempt(normalizedIdentifier, ipAddress, trx);
+    if (!updated) {
+      throw new Error("Failed login attempt disappeared immediately after update");
     }
     return updated;
   }
@@ -333,10 +332,34 @@ export async function recordFailedAttemptByIP(
 ): Promise<FailedLoginAttemptByIP> {
   const exec = withDb(trx);
   const normalizedIdentifier = identifier.toLowerCase().trim();
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+  const windowStart = new Date(nowDate.getTime() - IP_ATTEMPT_WINDOW_MS).toISOString();
 
-  // Check if record exists
-  const existing = await getFailedAttemptByIP(ipAddress, trx);
+  const existingRow = await exec<FailedLoginByIPRow>(IP_TABLE)
+    .where({ ip_address: ipAddress })
+    .first();
+  let existing = existingRow ? toIPRecord(existingRow) : null;
+
+  if (existing && new Date(existing.last_attempt_at) < new Date(windowStart)) {
+    await exec(IP_TABLE).where({ id: existing.id }).update({
+      distinct_email_count: 0,
+      total_attempt_count: 0,
+      locked_until: null,
+      first_attempt_at: now,
+      last_attempt_at: now,
+      updated_at: now,
+    });
+    existing = {
+      ...existing,
+      distinct_email_count: 0,
+      total_attempt_count: 0,
+      locked_until: null,
+      first_attempt_at: now,
+      last_attempt_at: now,
+      updated_at: now,
+    };
+  }
 
   if (existing) {
     // Count distinct identifiers for this IP in the failed_login_attempts table
@@ -345,6 +368,7 @@ export async function recordFailedAttemptByIP(
     // we count from the database to get the accurate current count
     const distinctCountResult = await exec(TABLE)
       .where({ ip_address: ipAddress })
+      .where("last_attempt_at", ">=", windowStart)
       .countDistinct("identifier as count")
       .first<{ count: string | number }>();
 
@@ -388,19 +412,9 @@ export async function recordFailedAttemptByIP(
       updated_at: now,
     });
 
-    // Fetch the updated record to ensure we return correct values
-    // This matches the pattern used in recordFailedAttempt
     const updated = await getFailedAttemptByIP(ipAddress, trx);
     if (!updated) {
-      // Fallback to constructing the return value if fetch fails
-      return {
-        ...existing,
-        distinct_email_count: newDistinctEmailCount,
-        total_attempt_count: newTotalAttemptCount,
-        locked_until: finalLockedUntil,
-        last_attempt_at: now,
-        updated_at: now,
-      };
+      throw new Error("IP login-attempt aggregate disappeared immediately after update");
     }
     return updated;
   }
@@ -591,4 +605,12 @@ export async function cleanupOldIPAttempts(trx?: Knex.Transaction): Promise<numb
   const deleted = await exec(IP_TABLE).where("last_attempt_at", "<", cutoff.toISOString()).del();
 
   return deleted;
+}
+
+/**
+ * Serialize failed-password updates per source IP inside the caller transaction.
+ * This prevents lost increments and inconsistent distinct-identifier counts.
+ */
+export async function lockLoginAttemptIp(ipAddress: string, trx: Knex.Transaction): Promise<void> {
+  await trx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [`fitvibe-auth:${ipAddress}`]);
 }

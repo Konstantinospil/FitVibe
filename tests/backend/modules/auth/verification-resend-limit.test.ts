@@ -16,7 +16,7 @@ import type { AuthUserRecord } from "../../../../apps/backend/src/modules/auth/a
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository");
 jest.mock("bcryptjs");
 jest.mock("../../../../apps/backend/src/services/mailer.service.js");
-jest.mock("../../../../apps/backend/src/modules/admin/admin.repository.js", () => ({
+jest.mock("../../../../apps/backend/src/modules/common/email-blacklist.repository.js", () => ({
   isEmailBlacklisted: jest.fn().mockResolvedValue(false),
 }));
 jest.mock("../../../../apps/backend/src/modules/users/dsr.service.js", () => ({

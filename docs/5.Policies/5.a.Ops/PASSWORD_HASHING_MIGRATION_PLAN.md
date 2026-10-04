@@ -1,6 +1,6 @@
 # Password Hashing Migration Plan: bcrypt → Argon2id
 
-**Status**: 📋 **PLANNED**  
+**Status**: **Approved target; implementation pending verification**  
 **Priority**: Medium  
 **Estimated Effort**: 2-3 weeks  
 **Risk Level**: Medium (requires careful migration strategy)
@@ -229,4 +229,4 @@ If issues arise:
 
 **Last Updated**: 2025-12-18  
 **Owner**: Security Team  
-**Status**: 📋 Planned - Awaiting approval
+**Status**: Approved target - implementation state to be verified against live `dev`

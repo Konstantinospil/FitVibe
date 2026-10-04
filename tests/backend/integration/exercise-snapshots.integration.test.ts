@@ -88,6 +88,7 @@ describeWithTestDatabase("Integration: Exercise Snapshots", () => {
       // Ensure exercise_types exist
       await db("exercise_types").insert({
         code: "strength",
+        name: "Strength",
         description: "Strength training",
         created_at: new Date().toISOString(),
       });

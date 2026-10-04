@@ -6,15 +6,16 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "../../db/connection.js";
 import type { Knex } from "knex";
 import { HttpError } from "../../utils/http.js";
+import { decryptTotpSecret, encryptTotpSecret } from "./totp-secret.crypto.js";
+import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 
-const APP_NAME = "FitVibe";
-const BACKUP_CODE_COUNT = 10;
-const BACKUP_CODE_LENGTH = 8;
+const TOTP_CODE_PATTERN = new RegExp(`^\\d{${AUTH_SECURITY_POLICY.totp.digits}}$`);
 
 // Configure TOTP settings
 authenticator.options = {
-  window: 1, // Allow 1 step before/after for clock drift
-  step: 30, // 30 second time step
+  window: AUTH_SECURITY_POLICY.totp.windowSteps,
+  step: AUTH_SECURITY_POLICY.totp.stepSeconds,
 };
 
 interface User2FASettings {
@@ -46,6 +47,17 @@ export async function beginTwoFactorSetup(userId: string): Promise<{
   qrCode: string;
   backupCodes: string[];
 }> {
+  const existing = await db<User2FASettings>("user_2fa_settings")
+    .where({ user_id: userId })
+    .first();
+  if (existing) {
+    throw new HttpError(
+      409,
+      "2FA_SETUP_RESTART_REQUIRES_STEP_UP",
+      "Step-up authentication required",
+    );
+  }
+
   const email = await db("user_contacts")
     .where({ user_id: userId, type: "email", is_primary: true })
     .first<{ value: string }>("value");
@@ -57,28 +69,67 @@ export async function beginTwoFactorSetup(userId: string): Promise<{
   return db.transaction((trx) => setupTwoFactor(userId, email.value, trx));
 }
 
+export async function restartTwoFactorSetup(
+  userId: string,
+  password: string,
+  code?: string,
+): Promise<{ secret: string; qrCode: string; backupCodes: string[] }> {
+  const email = await db("user_contacts")
+    .where({ user_id: userId, type: "email", is_primary: true })
+    .first<{ value: string }>("value");
+  if (!email?.value) {
+    throw new HttpError(404, "E.USER.EMAIL_NOT_FOUND", "Primary email not found");
+  }
+
+  return db.transaction(async (trx) => {
+    const settings = await trx<User2FASettings>("user_2fa_settings")
+      .where({ user_id: userId })
+      .first();
+    await assertStepUp(
+      userId,
+      password,
+      code,
+      Boolean(settings?.is_enabled && settings?.is_verified),
+      trx,
+    );
+    return setupTwoFactor(userId, email.value, trx, true);
+  });
+}
+
 export async function enableTwoFactor(userId: string, code: string): Promise<void> {
   await db.transaction(async (trx) => {
     await verifyAndEnable2FA(userId, code, trx);
   });
 }
 
-export async function disableTwoFactor(userId: string, password: string): Promise<void> {
-  const user = await db("users")
-    .where({ id: userId })
-    .first<{ password_hash: string }>("password_hash");
-
-  if (!user) {
-    throw new HttpError(404, "E.USER.NOT_FOUND", "User not found");
-  }
-
+export async function disableTwoFactor(
+  userId: string,
+  password: string,
+  code: string,
+): Promise<void> {
   await db.transaction(async (trx) => {
-    await disable2FA(userId, password, user.password_hash, trx);
+    const user = await trx("users").where({ id: userId }).first<{ role_code: string }>("role_code");
+    if (user?.role_code === "superadmin") {
+      throw new HttpError(
+        409,
+        "SUPERADMIN_2FA_REQUIRED",
+        "Demote the superadmin account before disabling two-factor authentication",
+      );
+    }
+    await assertStepUp(userId, password, code, true, trx);
+    await disable2FA(userId, trx);
   });
 }
 
-export async function regenerateTwoFactorBackupCodes(userId: string): Promise<string[]> {
-  return db.transaction((trx) => regenerateBackupCodes(userId, trx));
+export async function regenerateTwoFactorBackupCodes(
+  userId: string,
+  password: string,
+  code: string,
+): Promise<string[]> {
+  return db.transaction(async (trx) => {
+    await assertStepUp(userId, password, code, true, trx);
+    return regenerateBackupCodes(userId, trx);
+  });
 }
 
 /**
@@ -89,6 +140,7 @@ export async function setupTwoFactor(
   userId: string,
   userEmail: string,
   trx?: Knex.Transaction,
+  allowReplace = false,
 ): Promise<{
   secret: string;
   qrCode: string;
@@ -101,7 +153,7 @@ export async function setupTwoFactor(
     .where({ user_id: userId })
     .first();
 
-  if (existing && existing.is_enabled) {
+  if (existing && existing.is_enabled && !allowReplace) {
     throw new HttpError(400, "2FA_ALREADY_ENABLED", "Two-factor authentication is already enabled");
   }
 
@@ -109,7 +161,7 @@ export async function setupTwoFactor(
   const secret = authenticator.generateSecret();
 
   // Generate QR code
-  const otpauthUrl = authenticator.keyuri(userEmail, APP_NAME, secret);
+  const otpauthUrl = authenticator.keyuri(userEmail, env.appName, secret);
 
   const qrCode: string = await QRCode.toDataURL(otpauthUrl);
 
@@ -120,18 +172,20 @@ export async function setupTwoFactor(
 
   if (existing) {
     // Update existing record
-    await exec("user_2fa_settings").where({ id: existing.id }).update({
-      totp_secret: secret,
-      is_enabled: false,
-      is_verified: false,
-      updated_at: now,
-    });
+    await exec("user_2fa_settings")
+      .where({ id: existing.id })
+      .update({
+        totp_secret: encryptTotpSecret(secret),
+        is_enabled: false,
+        is_verified: false,
+        updated_at: now,
+      });
   } else {
     // Create new record
     await exec("user_2fa_settings").insert({
       id: uuidv4(),
       user_id: userId,
-      totp_secret: secret,
+      totp_secret: encryptTotpSecret(secret),
       is_enabled: false,
       is_verified: false,
       recovery_email: null,
@@ -175,7 +229,7 @@ export async function verifyAndEnable2FA(
   // Verify the TOTP code
   const isValid: boolean = authenticator.verify({
     token: code,
-    secret: settings.totp_secret,
+    secret: decryptTotpSecret(settings.totp_secret),
   });
 
   if (!isValid) {
@@ -205,6 +259,30 @@ export async function verifyAndEnable2FA(
   return true;
 }
 
+export async function verifyTotpOnly(
+  userId: string,
+  code: string,
+  trx?: Knex.Transaction,
+): Promise<boolean> {
+  if (!TOTP_CODE_PATTERN.test(code)) {
+    return false;
+  }
+
+  const exec = trx ?? db;
+  const settings = await exec<User2FASettings>("user_2fa_settings")
+    .where({ user_id: userId, is_enabled: true, is_verified: true })
+    .first();
+
+  if (!settings) {
+    return false;
+  }
+
+  return authenticator.verify({
+    token: code,
+    secret: decryptTotpSecret(settings.totp_secret),
+  });
+}
+
 /**
  * Verify a TOTP code during login
  */
@@ -226,7 +304,7 @@ export async function verify2FACode(
   // Try TOTP code first
   const isValidTOTP = authenticator.verify({
     token: code,
-    secret: settings.totp_secret,
+    secret: decryptTotpSecret(settings.totp_secret),
   });
 
   if (isValidTOTP) {
@@ -235,6 +313,12 @@ export async function verify2FACode(
       last_used_at: new Date().toISOString(),
     });
     return true;
+  }
+
+  // A numeric TOTP cannot match the human-readable backup-code format.
+  // Avoid unnecessary bcrypt scans and keep invalid-TOTP timing predictable.
+  if (TOTP_CODE_PATTERN.test(code)) {
+    return false;
   }
 
   // Try backup codes
@@ -247,22 +331,10 @@ export async function verify2FACode(
 }
 
 /**
- * Disable 2FA for a user (requires password confirmation)
+ * Disable 2FA after step-up has already succeeded.
  */
-export async function disable2FA(
-  userId: string,
-  password: string,
-  userPasswordHash: string,
-  trx?: Knex.Transaction,
-): Promise<boolean> {
-  // Verify password
-  const passwordValid = await bcrypt.compare(password, userPasswordHash);
-  if (!passwordValid) {
-    throw new HttpError(401, "INVALID_PASSWORD", "Invalid password");
-  }
-
+export async function disable2FA(userId: string, trx?: Knex.Transaction): Promise<boolean> {
   const exec = trx ?? db;
-
   const settings = await exec<User2FASettings>("user_2fa_settings")
     .where({ user_id: userId })
     .first();
@@ -271,10 +343,11 @@ export async function disable2FA(
     throw new HttpError(404, "2FA_NOT_ENABLED", "Two-factor authentication is not enabled");
   }
 
-  // Disable 2FA
   const now = new Date().toISOString();
   await exec("user_2fa_settings").where({ id: settings.id }).update({
-    totp_secret: "",
+    // Keep the encrypted secret at rest while disabling. An empty string would
+    // bypass the encryption-at-rest invariant and is unnecessary because the
+    // enabled/verified flags make the secret unusable.
     is_enabled: false,
     is_verified: false,
     enabled_at: null,
@@ -282,10 +355,8 @@ export async function disable2FA(
     updated_at: now,
   });
 
-  // Invalidate all backup codes
   await exec("backup_codes").where({ user_id: userId }).del();
 
-  // Audit log
   await exec("audit_log").insert({
     id: uuidv4(),
     actor_user_id: userId,
@@ -296,6 +367,32 @@ export async function disable2FA(
   });
 
   return true;
+}
+
+async function assertStepUp(
+  userId: string,
+  password: string,
+  code: string | undefined,
+  requireSecondFactor: boolean,
+  trx: Knex.Transaction,
+): Promise<void> {
+  const user = await trx("users")
+    .where({ id: userId })
+    .first<{ password_hash: string }>("password_hash");
+  if (!user) {
+    throw new HttpError(404, "E.USER.NOT_FOUND", "User not found");
+  }
+
+  const passwordValid = await bcrypt.compare(password, user.password_hash);
+  if (!passwordValid) {
+    throw new HttpError(401, "STEP_UP_FAILED", "Step-up authentication failed");
+  }
+
+  if (requireSecondFactor) {
+    if (!code || !(await verify2FACode(userId, code, trx))) {
+      throw new HttpError(401, "STEP_UP_FAILED", "Step-up authentication failed");
+    }
+  }
 }
 
 /**
@@ -327,9 +424,9 @@ export async function generateBackupCodes(
   await exec("backup_codes").where({ user_id: userId, generation_batch: batch }).del();
 
   // Generate new codes
-  for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
+  for (let i = 0; i < AUTH_SECURITY_POLICY.backupCodes.count; i++) {
     const code = generateBackupCode();
-    const codeHash = await bcrypt.hash(code, 10);
+    const codeHash = await bcrypt.hash(code, AUTH_SECURITY_POLICY.backupCodes.hashCost);
 
     await exec("backup_codes").insert({
       id: uuidv4(),
@@ -350,7 +447,7 @@ export async function generateBackupCodes(
     actor_user_id: userId,
     action: "2fa_backup_codes_generated",
     entity_type: "auth",
-    metadata: { batch, count: BACKUP_CODE_COUNT },
+    metadata: { batch, count: AUTH_SECURITY_POLICY.backupCodes.count },
     created_at: now,
   });
 
@@ -464,15 +561,15 @@ export async function regenerateBackupCodes(
  * Format: XXXX-XXXX (8 alphanumeric characters with dash)
  */
 function generateBackupCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude ambiguous characters
+  const chars = AUTH_SECURITY_POLICY.backupCodes.alphabet;
   let code = "";
 
-  for (let i = 0; i < BACKUP_CODE_LENGTH; i++) {
+  for (let i = 0; i < AUTH_SECURITY_POLICY.backupCodes.length; i++) {
     const randomIndex = crypto.randomInt(0, chars.length);
     code += chars[randomIndex];
 
     // Add dash in the middle
-    if (i === BACKUP_CODE_LENGTH / 2 - 1) {
+    if (i === AUTH_SECURITY_POLICY.backupCodes.length / 2 - 1) {
       code += "-";
     }
   }

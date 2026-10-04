@@ -10,8 +10,6 @@ const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("../pages/ResetPassword"));
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
-const Cookie = lazy(() => import("../pages/Cookie"));
-const Impressum = lazy(() => import("../pages/Impressum"));
 const Contact = lazy(() => import("../pages/Contact"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
 
@@ -48,22 +46,6 @@ const PublicRoutes: React.FC = () => (
         element={
           <PublicPageLayout>
             <Privacy />
-          </PublicPageLayout>
-        }
-      />
-      <Route
-        path="/cookie"
-        element={
-          <PublicPageLayout>
-            <Cookie />
-          </PublicPageLayout>
-        }
-      />
-      <Route
-        path="/impressum"
-        element={
-          <PublicPageLayout>
-            <Impressum />
           </PublicPageLayout>
         }
       />

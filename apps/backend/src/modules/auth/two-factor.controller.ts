@@ -7,6 +7,7 @@ import {
   enableTwoFactor,
   getTwoFactorStatus,
   regenerateTwoFactorBackupCodes,
+  restartTwoFactorSetup,
 } from "./two-factor.service.js";
 
 const VerificationSchema = z
@@ -24,8 +25,14 @@ const VerificationSchema = z
     message: "Verification code is required",
   });
 
-const DisableTwoFactorSchema = z.object({
+const StepUpSchema = z.object({
   password: z.string().min(1),
+  code: z.string().min(1),
+});
+
+const RestartSetupSchema = z.object({
+  password: z.string().min(1),
+  code: z.string().min(1).optional(),
 });
 
 function requireUserId(req: Request): string {
@@ -74,6 +81,25 @@ export async function setup(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
+export async function restartSetup(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = requireUserId(req);
+    const parsed = RestartSetupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new HttpError(400, "E.VALIDATION.FAILED", "Invalid input", parsed.error.flatten());
+    }
+    const result = await restartTwoFactorSetup(userId, parsed.data.password, parsed.data.code);
+    res.json({
+      secret: result.secret,
+      qrCode: result.qrCode,
+      backupCodes: result.backupCodes,
+      message: "Two-factor setup restarted after step-up authentication",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function enable(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     await enableFromRequest(req, res);
@@ -93,12 +119,12 @@ export async function verify(req: Request, res: Response, next: NextFunction): P
 export async function disable(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = requireUserId(req);
-    const parsed = DisableTwoFactorSchema.safeParse(req.body);
+    const parsed = StepUpSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new HttpError(400, "E.VALIDATION.FAILED", "Invalid input", parsed.error.flatten());
     }
 
-    await disableTwoFactor(userId, parsed.data.password);
+    await disableTwoFactor(userId, parsed.data.password, parsed.data.code);
 
     res.json({
       success: true,
@@ -116,7 +142,15 @@ export async function regenerateBackups(
 ): Promise<void> {
   try {
     const userId = requireUserId(req);
-    const backupCodes = await regenerateTwoFactorBackupCodes(userId);
+    const parsed = StepUpSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new HttpError(400, "E.VALIDATION.FAILED", "Invalid input", parsed.error.flatten());
+    }
+    const backupCodes = await regenerateTwoFactorBackupCodes(
+      userId,
+      parsed.data.password,
+      parsed.data.code,
+    );
 
     res.json({
       message: "Backup codes regenerated successfully",

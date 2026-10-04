@@ -5,22 +5,25 @@ import {
   updateVibeformPreferences,
 } from "../../../../apps/backend/src/modules/vibeforms/vibeforms.service.js";
 import * as measurementsRepository from "../../../../apps/backend/src/modules/measurements/measurements.repository.js";
-import * as pointsRepository from "../../../../apps/backend/src/modules/points/points.repository.js";
+import * as vibeLevelRepository from "../../../../apps/backend/src/modules/points/vibe-level.repository.js";
 import * as sessionsRepository from "../../../../apps/backend/src/modules/sessions/sessions.repository.js";
 import * as repository from "../../../../apps/backend/src/modules/vibeforms/vibeforms.repository.js";
+import * as gamificationProjection from "../../../../apps/backend/src/modules/points/gamification-projection.service.js";
 
 jest.mock("../../../../apps/backend/src/db/connection.js", () => ({
   db: jest.fn(),
 }));
 jest.mock("../../../../apps/backend/src/modules/vibeforms/vibeforms.repository.js");
 jest.mock("../../../../apps/backend/src/modules/measurements/measurements.repository.js");
-jest.mock("../../../../apps/backend/src/modules/points/points.repository.js");
+jest.mock("../../../../apps/backend/src/modules/points/vibe-level.repository.js");
 jest.mock("../../../../apps/backend/src/modules/sessions/sessions.repository.js");
+jest.mock("../../../../apps/backend/src/modules/points/gamification-projection.service.js");
 
 const mockedRepository = jest.mocked(repository);
 const mockedMeasurementsRepository = jest.mocked(measurementsRepository);
-const mockedPointsRepository = jest.mocked(pointsRepository);
+const mockedVibeLevelRepository = jest.mocked(vibeLevelRepository);
 const mockedSessionsRepository = jest.mocked(sessionsRepository);
+const mockedGamificationProjection = jest.mocked(gamificationProjection);
 const userId = "c4f6d130-9696-4cb3-8d3e-f8f619ab804d";
 
 describe("Vibeform preference service", () => {
@@ -83,6 +86,7 @@ describe("Vibeform preference service", () => {
 describe("Vibeform profile service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockedGamificationProjection.ensureGamificationProjectionFresh.mockResolvedValue(undefined);
     mockedRepository.findVibeformPreferences.mockResolvedValue(null);
   });
 
@@ -91,7 +95,7 @@ describe("Vibeform profile service", () => {
       weight_kg: { key: "weight_kg", valueNumber: 81, measuredAt: "2026-09-18T00:00:00Z" },
       height_cm: { key: "height_cm", valueNumber: 180, measuredAt: "2026-09-01T00:00:00Z" },
     });
-    mockedPointsRepository.getAllDomainVibeLevels.mockResolvedValue(
+    mockedVibeLevelRepository.getAllDomainVibeLevels.mockResolvedValue(
       new Map([
         ["intelligence", { vibe_level: 100 }],
         ["regeneration", { vibe_level: 680 }],
@@ -143,7 +147,7 @@ describe("Vibeform profile service", () => {
 
   it("uses initial Vibe levels and nullable body metrics when source rows are absent", async () => {
     mockedMeasurementsRepository.getLatestBioValuesByKeys.mockResolvedValue({});
-    mockedPointsRepository.getAllDomainVibeLevels.mockResolvedValue(new Map());
+    mockedVibeLevelRepository.getAllDomainVibeLevels.mockResolvedValue(new Map());
     mockedSessionsRepository.listRegionalStrengthStimuli.mockResolvedValue([]);
 
     const profile = await getVibeformProfile(userId, new Date("2026-09-19T00:00:00.000Z"));
@@ -188,7 +192,7 @@ describe("Vibeform profile service", () => {
     ],
   ] as const)("allocates %s without leaking load between regions", async (_name, stimuli, upper, lower) => {
     mockedMeasurementsRepository.getLatestBioValuesByKeys.mockResolvedValue({});
-    mockedPointsRepository.getAllDomainVibeLevels.mockResolvedValue(new Map());
+    mockedVibeLevelRepository.getAllDomainVibeLevels.mockResolvedValue(new Map());
     mockedSessionsRepository.listRegionalStrengthStimuli.mockResolvedValue([...stimuli]);
 
     const result = await getVibeformProfile(userId, new Date("2026-09-19T00:00:00.000Z"));
@@ -202,7 +206,7 @@ describe("Vibeform profile service", () => {
       weight_kg: { key: "weight_kg", valueNumber: 0, measuredAt: "2026-09-19T00:00:00Z" },
       height_cm: { key: "height_cm", valueNumber: -10, measuredAt: "2026-09-19T00:00:00Z" },
     });
-    mockedPointsRepository.getAllDomainVibeLevels.mockResolvedValue(new Map());
+    mockedVibeLevelRepository.getAllDomainVibeLevels.mockResolvedValue(new Map());
     mockedSessionsRepository.listRegionalStrengthStimuli.mockResolvedValue([]);
 
     const result = await getVibeformProfile(userId, new Date("2026-09-19T00:00:00.000Z"));

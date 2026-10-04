@@ -424,6 +424,59 @@ describe("Users Controller", () => {
     });
   });
 
+  describe("user preferences", () => {
+    const preferences = {
+      language: "de" as const,
+      measurementSystem: "metric" as const,
+    };
+
+    it("should get user preferences", async () => {
+      mockUsersService.getUserPreferences.mockResolvedValue(preferences);
+
+      await usersController.getPreferences(mockRequest as Request, mockResponse as Response);
+
+      expect(mockUsersService.getUserPreferences).toHaveBeenCalledWith(userId);
+      expect(mockResponse.json).toHaveBeenCalledWith(preferences);
+    });
+
+    it("should update valid user preferences", async () => {
+      mockRequest.body = { language: "de", measurementSystem: "imperial" };
+      mockUsersService.updateUserPreferences.mockResolvedValue({
+        language: "de",
+        measurementSystem: "imperial",
+      });
+
+      await usersController.updatePreferences(mockRequest as Request, mockResponse as Response);
+
+      expect(mockUsersService.updateUserPreferences).toHaveBeenCalledWith(userId, {
+        language: "de",
+        measurementSystem: "imperial",
+      });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        language: "de",
+        measurementSystem: "imperial",
+      });
+    });
+
+    it("should reject empty preference updates", async () => {
+      mockRequest.body = {};
+
+      await usersController.updatePreferences(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockUsersService.updateUserPreferences).not.toHaveBeenCalled();
+    });
+
+    it("should reject unsupported preference values", async () => {
+      mockRequest.body = { language: "xx", measurementSystem: "mixed" };
+
+      await usersController.updatePreferences(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockUsersService.updateUserPreferences).not.toHaveBeenCalled();
+    });
+  });
+
   describe("getPrivacy", () => {
     const privacySettings = {
       defaultVisibility: "private" as const,

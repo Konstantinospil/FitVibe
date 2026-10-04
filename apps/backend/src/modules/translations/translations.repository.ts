@@ -14,6 +14,22 @@ function withDb(trx?: Knex.Transaction) {
   return trx ?? db;
 }
 
+export async function withTranslationTransaction<T>(
+  work: (trx: Knex.Transaction) => Promise<T>,
+): Promise<T> {
+  return db.transaction(work);
+}
+
+async function lockTranslationKey(
+  trx: Knex.Transaction,
+  language: SupportedLanguage,
+  namespace: TranslationNamespace,
+  keyPath: string,
+): Promise<void> {
+  const lockKey = `${namespace}:${language}:${keyPath}`;
+  await trx.raw("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", [lockKey]);
+}
+
 /**
  * Get all translations for a language and optional namespace
  * Returns a flat object with dot-notation keys
@@ -80,8 +96,9 @@ export async function getTranslation(
   namespace: TranslationNamespace,
   keyPath: string,
   includeDeleted = false,
+  trx?: Knex.Transaction,
 ): Promise<TranslationRecord | undefined> {
-  let query = db(TRANSLATIONS_TABLE).where({
+  let query = withDb(trx)(TRANSLATIONS_TABLE).where({
     language,
     namespace,
     key_path: keyPath,
@@ -103,87 +120,73 @@ export async function createTranslation(
   data: TranslationInsert,
   trx?: Knex.Transaction,
 ): Promise<TranslationRecord> {
-  const dbInstance = withDb(trx);
+  const work = async (transaction: Knex.Transaction): Promise<TranslationRecord> => {
+    await lockTranslationKey(transaction, data.language, data.namespace, data.key_path);
 
-  // Check if there's an active translation - if so, update it (creates new version)
-  const active = await dbInstance(TRANSLATIONS_TABLE)
-    .where({
-      language: data.language,
-      namespace: data.namespace,
-      key_path: data.key_path,
-    })
-    .whereNull("deleted_at")
-    .first<TranslationRecord>();
-
-  if (active) {
-    // If an active translation exists, update it (which creates a new version)
-    // This makes the API more user-friendly for bulk operations like "Save all languages"
-    const updated = await updateTranslation(
-      data.language,
-      data.namespace,
-      data.key_path,
-      { value: data.value },
-      data.updated_by ?? null,
-      trx,
-    );
-    // updateTranslation should always return a record since we verified active exists
-    if (!updated) {
-      throw new Error(
-        `Failed to update active translation for ${data.namespace}.${data.key_path} (${data.language})`,
-      );
-    }
-    return updated;
-  }
-
-  // Check if there's a deleted translation - if so, restore it
-  const deleted = await dbInstance(TRANSLATIONS_TABLE)
-    .where({
-      language: data.language,
-      namespace: data.namespace,
-      key_path: data.key_path,
-    })
-    .whereNotNull("deleted_at")
-    .orderBy("deleted_at", "desc") // Get the most recently deleted one
-    .first<TranslationRecord>();
-
-  if (deleted) {
-    // Restore the deleted translation by making it active again
-    const [record] = (await dbInstance(TRANSLATIONS_TABLE)
+    const active = await transaction(TRANSLATIONS_TABLE)
       .where({
         language: data.language,
         namespace: data.namespace,
         key_path: data.key_path,
-        id: deleted.id, // Update the specific deleted record
       })
-      .update({
-        value: data.value,
-        deleted_at: null, // Restore by making it active
-        updated_at: db.fn.now(),
-        updated_by: data.updated_by ?? null,
-        // Keep original created_at and created_by for audit trail
-      })
-      .returning("*")) as [TranslationRecord];
+      .whereNull("deleted_at")
+      .first<TranslationRecord>();
 
-    if (!record) {
-      throw new Error(
-        `Failed to restore deleted translation for ${data.namespace}.${data.key_path} (${data.language})`,
+    if (active) {
+      const updated = await updateTranslation(
+        data.language,
+        data.namespace,
+        data.key_path,
+        { value: data.value },
+        data.updated_by ?? null,
+        transaction,
       );
+      if (!updated) {
+        throw new Error(
+          `Failed to update active translation for ${data.namespace}.${data.key_path} (${data.language})`,
+        );
+      }
+      return updated;
     }
 
-    return record;
-  }
+    const deleted = await transaction(TRANSLATIONS_TABLE)
+      .where({
+        language: data.language,
+        namespace: data.namespace,
+        key_path: data.key_path,
+      })
+      .whereNotNull("deleted_at")
+      .orderBy("deleted_at", "desc")
+      .first<TranslationRecord>();
 
-  // No existing translation (active or deleted) - create new one
-  const [record] = (await dbInstance(TRANSLATIONS_TABLE).insert(data).returning("*")) as [
-    TranslationRecord,
-  ];
-  return record;
+    if (deleted) {
+      const [record] = (await transaction(TRANSLATIONS_TABLE)
+        .where({ id: deleted.id })
+        .update({
+          value: data.value,
+          deleted_at: null,
+          updated_at: db.fn.now(),
+          updated_by: data.updated_by ?? null,
+        })
+        .returning("*")) as [TranslationRecord];
+
+      if (!record) {
+        throw new Error(
+          `Failed to restore deleted translation for ${data.namespace}.${data.key_path} (${data.language})`,
+        );
+      }
+      return record;
+    }
+
+    const [record] = (await transaction(TRANSLATIONS_TABLE).insert(data).returning("*")) as [
+      TranslationRecord,
+    ];
+    return record;
+  };
+
+  return trx ? work(trx) : db.transaction(work);
 }
 
-/**
- * Update an existing translation
- * Creates a new version: marks old record as deleted and creates a new one
- */
 export async function updateTranslation(
   language: SupportedLanguage,
   namespace: TranslationNamespace,
@@ -192,46 +195,39 @@ export async function updateTranslation(
   userId?: string | null,
   trx?: Knex.Transaction,
 ): Promise<TranslationRecord | undefined> {
-  const dbInstance = withDb(trx);
+  const work = async (transaction: Knex.Transaction): Promise<TranslationRecord | undefined> => {
+    await lockTranslationKey(transaction, language, namespace, keyPath);
 
-  // Get the current active translation
-  const existing = await dbInstance(TRANSLATIONS_TABLE)
-    .where({
-      language,
-      namespace,
-      key_path: keyPath,
-    })
-    .whereNull("deleted_at")
-    .first<TranslationRecord>();
+    const existing = await transaction(TRANSLATIONS_TABLE)
+      .where({ language, namespace, key_path: keyPath })
+      .whereNull("deleted_at")
+      .first<TranslationRecord>();
 
-  if (!existing) {
-    return undefined;
-  }
+    if (!existing) {
+      return undefined;
+    }
 
-  // Use transaction if provided, otherwise start a new one
-  const executeUpdate = async (transaction: Knex.Transaction) => {
-    const now = new Date();
-    const deletedAt = now;
-    const createdAt = now; // Use same timestamp as deletion for clear audit trail
-
-    // Mark old record as deleted
-    await transaction(TRANSLATIONS_TABLE)
-      .where({ id: existing.id })
+    const now = new Date().toISOString();
+    const retired = await transaction(TRANSLATIONS_TABLE)
+      .where({ id: existing.id, deleted_at: null })
       .update({
-        deleted_at: deletedAt.toISOString(),
-        updated_at: deletedAt.toISOString(),
+        deleted_at: now,
+        updated_at: now,
         updated_by: userId ?? null,
       });
 
-    // Create new record with updated value
+    if (retired !== 1) {
+      throw new Error(`Translation changed concurrently for ${namespace}.${keyPath} (${language})`);
+    }
+
     const [newRecord] = (await transaction(TRANSLATIONS_TABLE)
       .insert({
         namespace: existing.namespace,
         key_path: existing.key_path,
         language: existing.language,
         value: updates.value ?? existing.value,
-        created_at: createdAt.toISOString(),
-        updated_at: createdAt.toISOString(),
+        created_at: now,
+        updated_at: now,
         created_by: userId ?? existing.created_by,
         updated_by: userId ?? null,
       })
@@ -240,107 +236,81 @@ export async function updateTranslation(
     return newRecord;
   };
 
-  if (trx) {
-    // Use existing transaction
-    return await executeUpdate(trx);
-  } else {
-    // Start new transaction
-    return await db.transaction(async (transaction) => {
-      return await executeUpdate(transaction);
-    });
-  }
+  return trx ? work(trx) : db.transaction(work);
 }
 
-/**
- * Upsert a translation (insert or update)
- * If a deleted translation exists, restores it by setting deleted_at to null
- */
 export async function upsertTranslation(
   data: TranslationInsert,
   trx?: Knex.Transaction,
 ): Promise<TranslationRecord> {
-  const dbInstance = withDb(trx);
+  const work = async (transaction: Knex.Transaction): Promise<TranslationRecord> => {
+    await lockTranslationKey(transaction, data.language, data.namespace, data.key_path);
 
-  // Check if there's a deleted translation that should be restored
-  const deleted = await dbInstance(TRANSLATIONS_TABLE)
-    .where({
-      language: data.language,
-      namespace: data.namespace,
-      key_path: data.key_path,
-    })
-    .whereNotNull("deleted_at")
-    .orderBy("deleted_at", "desc") // Get the most recently deleted one
-    .first<TranslationRecord>();
-
-  if (deleted) {
-    // Restore the deleted translation by making it active again
-    const [record] = (await dbInstance(TRANSLATIONS_TABLE)
+    const active = await transaction(TRANSLATIONS_TABLE)
       .where({
         language: data.language,
         namespace: data.namespace,
         key_path: data.key_path,
-        id: deleted.id, // Update the specific deleted record
       })
-      .update({
-        value: data.value,
-        deleted_at: null, // Restore by making it active
-        updated_at: db.fn.now(),
-        updated_by: data.updated_by ?? null,
-        // Keep original created_at and created_by for audit trail
-      })
-      .returning("*")) as [TranslationRecord];
+      .whereNull("deleted_at")
+      .first<TranslationRecord>();
 
-    if (!record) {
-      throw new Error(
-        `Failed to restore deleted translation for ${data.namespace}.${data.key_path} (${data.language})`,
-      );
+    if (active) {
+      const [record] = (await transaction(TRANSLATIONS_TABLE)
+        .where({ id: active.id, deleted_at: null })
+        .update({
+          value: data.value,
+          updated_at: db.fn.now(),
+          updated_by: data.updated_by ?? null,
+        })
+        .returning("*")) as [TranslationRecord];
+
+      if (!record) {
+        throw new Error(
+          `Failed to update active translation for ${data.namespace}.${data.key_path} (${data.language})`,
+        );
+      }
+      return record;
     }
 
-    return record;
-  }
-
-  // Check if there's an active translation - if so, update it
-  const active = await dbInstance(TRANSLATIONS_TABLE)
-    .where({
-      language: data.language,
-      namespace: data.namespace,
-      key_path: data.key_path,
-    })
-    .whereNull("deleted_at")
-    .first<TranslationRecord>();
-
-  if (active) {
-    // Update the existing active translation
-    const [record] = (await dbInstance(TRANSLATIONS_TABLE)
-      .where({ id: active.id })
-      .update({
-        value: data.value,
-        updated_at: db.fn.now(),
-        updated_by: data.updated_by ?? null,
-        deleted_at: null, // Ensure deleted_at is null
+    const deleted = await transaction(TRANSLATIONS_TABLE)
+      .where({
+        language: data.language,
+        namespace: data.namespace,
+        key_path: data.key_path,
       })
-      .returning("*")) as [TranslationRecord];
+      .whereNotNull("deleted_at")
+      .orderBy("deleted_at", "desc")
+      .first<TranslationRecord>();
 
-    if (!record) {
-      throw new Error(
-        `Failed to update active translation for ${data.namespace}.${data.key_path} (${data.language})`,
-      );
+    if (deleted) {
+      const [record] = (await transaction(TRANSLATIONS_TABLE)
+        .where({ id: deleted.id })
+        .update({
+          value: data.value,
+          deleted_at: null,
+          updated_at: db.fn.now(),
+          updated_by: data.updated_by ?? null,
+        })
+        .returning("*")) as [TranslationRecord];
+
+      if (!record) {
+        throw new Error(
+          `Failed to restore deleted translation for ${data.namespace}.${data.key_path} (${data.language})`,
+        );
+      }
+      return record;
     }
 
+    const [record] = (await transaction(TRANSLATIONS_TABLE).insert(data).returning("*")) as [
+      TranslationRecord,
+    ];
     return record;
-  }
+  };
 
-  // No active or deleted record exists - create new one
-  const [record] = (await dbInstance(TRANSLATIONS_TABLE).insert(data).returning("*")) as [
-    TranslationRecord,
-  ];
-
-  return record;
+  return trx ? work(trx) : db.transaction(work);
 }
 
-/**
- * Soft delete a translation
- */
 export async function deleteTranslation(
   language: SupportedLanguage,
   namespace: TranslationNamespace,

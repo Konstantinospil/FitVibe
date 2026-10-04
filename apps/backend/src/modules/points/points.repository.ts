@@ -108,8 +108,11 @@ interface BadgeCatalogRow {
 }
 
 interface BadgeRow {
+  id: string;
   user_id: string;
   badge_type: string;
+  is_active: boolean;
+  awarded_at: Date | string | number | null;
 }
 
 interface CompletedSessionRow {
@@ -338,9 +341,29 @@ export async function getUserBadgeCodes(
 ): Promise<Set<string>> {
   const exec = executor(trx);
   const rows = await exec<BadgeRow>("badges")
-    .where({ user_id: userId })
+    .where({ user_id: userId, is_active: true })
     .select<BadgeRow[]>(["badge_type"]);
   return new Set(rows.map((row) => row.badge_type));
+}
+
+export async function getUserBadges(
+  userId: string,
+  trx?: Knex.Transaction,
+): Promise<Array<BadgeCatalogEntry & { id: string; earnedAt: string }>> {
+  const exec = executor(trx);
+  const rows = await exec<BadgeRow>("badges")
+    .where({ user_id: userId, is_active: true })
+    .select<BadgeRow[]>(["id", "badge_type", "awarded_at"])
+    .orderBy("awarded_at", "desc");
+  const catalog = await getBadgeCatalog(trx);
+
+  return rows.flatMap((row) => {
+    const definition = catalog.get(row.badge_type);
+    if (!definition) {
+      return [];
+    }
+    return [{ ...definition, id: row.id, earnedAt: toIsoString(row.awarded_at) }];
+  });
 }
 
 export async function insertBadgeAward(
@@ -486,178 +509,187 @@ export async function countFollowsByUser(userId: string, trx?: Knex.Transaction)
   return typeof value === "string" ? Number(value) : Number(value ?? 0);
 }
 
-// Vibe Level Repository Functions
+export {
+  getAllDomainVibeLevels,
+  getDomainVibeLevel,
+  getStaleDomainVibeLevels,
+  insertVibeLevelChange,
+  lockVibeLevelsForUser,
+  updateDomainVibeLevel,
+} from "./vibe-level.repository.js";
 
-import type {
-  DomainCode,
-  DomainVibeLevel,
-  InsertVibeLevelChange,
-  VibeLevelChangeRecord,
-} from "./points.types.js";
-
-interface DomainVibeLevelRow {
-  user_id: string;
-  domain_code: string;
-  vibe_level: string | number;
-  rating_deviation: string | number;
-  volatility: string | number;
-  last_updated_at: Date | string | number | null;
-  created_at: Date | string | number | null;
-  updated_at: Date | string | number | null;
+export interface GamificationProjectionState {
+  userId: string;
+  isStale: boolean;
+  rebuildRequired: boolean;
+  algorithmVersion: string | null;
+  staleSince: string | null;
+  lastRebuiltAt: string | null;
 }
 
-interface VibeLevelChangeRow {
-  id: string;
-  user_id: string;
-  domain_code: string;
-  session_id: string | null;
-  old_vibe_level: string | number;
-  new_vibe_level: string | number;
-  old_rd: string | number;
-  new_rd: string | number;
-  change_amount: string | number;
-  performance_score: string | number | null;
-  domain_impact: string | number | null;
-  points_awarded: string | number | null;
-  change_reason: string;
-  metadata: unknown;
-  created_at: Date | string | number | null;
-}
-
-function toDomainVibeLevel(row: DomainVibeLevelRow): DomainVibeLevel {
-  return {
-    user_id: row.user_id,
-    domain_code: row.domain_code as DomainCode,
-    vibe_level: Number(row.vibe_level),
-    rating_deviation: Number(row.rating_deviation),
-    volatility: Number(row.volatility),
-    last_updated_at: toIsoString(row.last_updated_at),
-    created_at: toIsoString(row.created_at),
-    updated_at: toIsoString(row.updated_at),
-  };
-}
-
-function toVibeLevelChangeRecord(row: VibeLevelChangeRow): VibeLevelChangeRecord {
-  return {
-    id: row.id,
-    user_id: row.user_id,
-    domain_code: row.domain_code as DomainCode,
-    session_id: row.session_id ?? null,
-    old_vibe_level: Number(row.old_vibe_level),
-    new_vibe_level: Number(row.new_vibe_level),
-    old_rd: Number(row.old_rd),
-    new_rd: Number(row.new_rd),
-    change_amount: Number(row.change_amount),
-    performance_score:
-      row.performance_score === null || row.performance_score === undefined
-        ? null
-        : Number(row.performance_score),
-    domain_impact:
-      row.domain_impact === null || row.domain_impact === undefined
-        ? null
-        : Number(row.domain_impact),
-    points_awarded:
-      row.points_awarded === null || row.points_awarded === undefined
-        ? null
-        : Number(row.points_awarded),
-    change_reason: row.change_reason as "session_completed" | "decay" | "manual_adjustment",
-    metadata: toRecord(row.metadata),
-    created_at: toIsoString(row.created_at),
-  };
-}
-
-export async function getDomainVibeLevel(
+export async function lockPointsSource(
   userId: string,
-  domainCode: DomainCode,
-  trx?: Knex.Transaction,
-): Promise<DomainVibeLevel | undefined> {
-  const exec = executor(trx);
-  const row = await exec<DomainVibeLevelRow>("user_domain_vibe_levels")
-    .where({ user_id: userId, domain_code: domainCode })
-    .first();
-
-  return row ? toDomainVibeLevel(row) : undefined;
+  sourceId: string,
+  trx: Knex.Transaction,
+): Promise<void> {
+  await trx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
+    `fitvibe:points-source:${userId}:${sourceId}`,
+  ]);
 }
 
-export async function getAllDomainVibeLevels(
+export async function lockGamificationProjectionForUser(
+  userId: string,
+  trx: Knex.Transaction,
+): Promise<void> {
+  await trx.raw("SELECT pg_advisory_xact_lock(hashtext(?))", [
+    `fitvibe:gamification-projection:${userId}`,
+  ]);
+}
+
+export async function getGamificationProjectionState(
   userId: string,
   trx?: Knex.Transaction,
-): Promise<Map<DomainCode, DomainVibeLevel>> {
+): Promise<GamificationProjectionState | null> {
   const exec = executor(trx);
-  const rows = await exec<DomainVibeLevelRow>("user_domain_vibe_levels")
-    .where({ user_id: userId })
-    .select<DomainVibeLevelRow[]>([
-      "user_id",
-      "domain_code",
-      "vibe_level",
-      "rating_deviation",
-      "volatility",
-      "last_updated_at",
-      "created_at",
-      "updated_at",
-    ]);
-
-  const map = new Map<DomainCode, DomainVibeLevel>();
-  for (const row of rows) {
-    map.set(row.domain_code as DomainCode, toDomainVibeLevel(row));
+  const row = await exec("user_gamification_projection_state").where({ user_id: userId }).first<{
+    user_id: string;
+    is_stale: boolean;
+    rebuild_required: boolean;
+    algorithm_version: string | null;
+    stale_since: Date | string | null;
+    last_rebuilt_at: Date | string | null;
+  }>();
+  if (!row) {
+    return null;
   }
-  return map;
+  return {
+    userId: row.user_id,
+    isStale: Boolean(row.is_stale),
+    rebuildRequired: Boolean(row.rebuild_required),
+    algorithmVersion: row.algorithm_version ?? null,
+    staleSince: row.stale_since ? toIsoString(row.stale_since) : null,
+    lastRebuiltAt: row.last_rebuilt_at ? toIsoString(row.last_rebuilt_at) : null,
+  };
 }
 
-export async function updateDomainVibeLevel(
+export async function markGamificationProjectionStale(
   userId: string,
-  domainCode: DomainCode,
-  vibeLevel: number,
-  ratingDeviation: number,
-  volatility: number,
+  rebuildRequired: boolean,
   trx?: Knex.Transaction,
 ): Promise<void> {
   const exec = executor(trx);
   const now = new Date().toISOString();
-
-  await exec("user_domain_vibe_levels")
+  await exec("user_gamification_projection_state")
     .insert({
       user_id: userId,
-      domain_code: domainCode,
-      vibe_level: vibeLevel,
-      rating_deviation: ratingDeviation,
-      volatility: volatility,
-      last_updated_at: now,
-      created_at: now,
+      is_stale: true,
+      rebuild_required: rebuildRequired,
+      stale_since: now,
       updated_at: now,
     })
-    .onConflict(["user_id", "domain_code"])
+    .onConflict("user_id")
     .merge({
-      vibe_level: vibeLevel,
-      rating_deviation: ratingDeviation,
-      volatility: volatility,
-      last_updated_at: now,
+      is_stale: true,
+      rebuild_required: exec.raw(
+        "user_gamification_projection_state.rebuild_required OR EXCLUDED.rebuild_required",
+      ),
+      stale_since: exec.raw(
+        "COALESCE(user_gamification_projection_state.stale_since, EXCLUDED.stale_since)",
+      ),
       updated_at: now,
     });
 }
 
-export async function insertVibeLevelChange(
-  change: InsertVibeLevelChange,
+export async function markGamificationProjectionFresh(
+  userId: string,
+  algorithmVersion: string,
   trx?: Knex.Transaction,
-): Promise<VibeLevelChangeRecord> {
+): Promise<void> {
   const exec = executor(trx);
-  const [row] = await exec<VibeLevelChangeRow>("vibe_level_changes")
+  const now = new Date().toISOString();
+  await exec("user_gamification_projection_state")
     .insert({
-      user_id: change.user_id,
-      domain_code: change.domain_code,
-      session_id: change.session_id ?? null,
-      old_vibe_level: change.old_vibe_level,
-      new_vibe_level: change.new_vibe_level,
-      old_rd: change.old_rd,
-      new_rd: change.new_rd,
-      change_amount: change.change_amount,
-      performance_score: change.performance_score ?? null,
-      domain_impact: change.domain_impact ?? null,
-      points_awarded: change.points_awarded ?? null,
-      change_reason: change.change_reason,
-      metadata: change.metadata,
+      user_id: userId,
+      is_stale: false,
+      rebuild_required: false,
+      algorithm_version: algorithmVersion,
+      stale_since: null,
+      last_rebuilt_at: now,
+      updated_at: now,
     })
-    .returning<VibeLevelChangeRow[]>(["*"]);
+    .onConflict("user_id")
+    .merge({
+      is_stale: false,
+      rebuild_required: false,
+      algorithm_version: algorithmVersion,
+      stale_since: null,
+      last_rebuilt_at: now,
+      updated_at: now,
+    });
+}
 
-  return toVibeLevelChangeRecord(row);
+export async function archiveAndDeleteDerivedPoints(
+  userId: string,
+  revisionReason: string,
+  trx: Knex.Transaction,
+): Promise<void> {
+  const sourceTypes = ["session_completed", "streak_bonus", "seasonal_event"];
+  await trx.raw(
+    `
+      INSERT INTO points_event_revisions (
+        points_event_id,
+        user_id,
+        source_type,
+        source_id,
+        algorithm_version,
+        points,
+        calories,
+        metadata,
+        awarded_at,
+        revision_reason,
+        revised_at
+      )
+      SELECT
+        id,
+        user_id,
+        source_type,
+        source_id,
+        algorithm_version,
+        points,
+        calories,
+        metadata,
+        awarded_at,
+        ?,
+        now()
+      FROM user_points
+      WHERE user_id = ?
+        AND source_type = ANY(?::text[])
+    `,
+    [revisionReason, userId, sourceTypes],
+  );
+  await trx(TABLE).where({ user_id: userId }).whereIn("source_type", sourceTypes).del();
+}
+
+export async function supersedeSessionDerivedGamification(
+  userId: string,
+  trx: Knex.Transaction,
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  await trx("vibe_level_changes")
+    .where({ user_id: userId, is_active: true })
+    .whereIn("change_reason", ["session_completed", "decay"])
+    .update({ is_active: false, superseded_at: now });
+
+  await trx("user_domain_vibe_levels").where({ user_id: userId }).del();
+
+  await trx("badges")
+    .where({ user_id: userId, is_active: true })
+    .whereRaw("jsonb_exists(metadata, ?)", ["session_id"])
+    .update({ is_active: false, superseded_at: now });
+
+  await trx("sessions")
+    .where({ owner_id: userId, status: "completed" })
+    .whereNull("deleted_at")
+    .update({ points: null, updated_at: now });
 }

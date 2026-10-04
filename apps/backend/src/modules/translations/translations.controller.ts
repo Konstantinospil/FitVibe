@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { readRouteParam } from "../../utils/http.js";
 import {
   getLanguageTranslations,
   getAllTranslationsForLanguage,
@@ -92,9 +93,9 @@ export async function createTranslation(req: Request, res: Response): Promise<vo
  */
 export async function updateTranslation(req: Request, res: Response): Promise<void> {
   const params = TranslationParamsSchema.parse({
-    language: req.params.language,
-    namespace: req.params.namespace,
-    keyPath: decodeURIComponent(req.params.keyPath || "").replace(/%2E/g, "."), // Decode dots in URL
+    language: readRouteParam(req.params.language, "language"),
+    namespace: readRouteParam(req.params.namespace, "namespace"),
+    keyPath: decodeURIComponent(readRouteParam(req.params.keyPath, "keyPath")).replace(/%2E/g, "."), // Decode dots in URL
   });
 
   const dto = UpdateTranslationSchema.parse(req.body);
@@ -130,9 +131,9 @@ export async function bulkUpdateTranslation(req: Request, res: Response): Promis
  */
 export async function deleteTranslation(req: Request, res: Response): Promise<void> {
   const params = TranslationParamsSchema.parse({
-    language: req.params.language,
-    namespace: req.params.namespace,
-    keyPath: decodeURIComponent(req.params.keyPath || "").replace(/%2E/g, "."), // Decode dots in URL
+    language: readRouteParam(req.params.language, "language"),
+    namespace: readRouteParam(req.params.namespace, "namespace"),
+    keyPath: decodeURIComponent(readRouteParam(req.params.keyPath, "keyPath")).replace(/%2E/g, "."), // Decode dots in URL
   });
 
   await deleteTranslationService(params.language, params.namespace, params.keyPath);

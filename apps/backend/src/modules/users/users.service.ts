@@ -1,58 +1,35 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { db } from "../../db/connection.js";
-import type { ContactRow, UserRow, AvatarRow } from "./users.repository.js";
 import {
   findUserById,
   listUsers as listUserRows,
-  changePassword,
-  updateUserProfile,
   createUserRecord,
   setUserStatus,
   fetchUserWithContacts,
   insertStateHistory,
   getUserContacts,
   upsertContact,
-  markContactVerified,
-  deleteContact,
-  getContactById,
-  getProfileByUserId,
-  checkAliasAvailable,
   updateProfileAlias,
-  updateProfileBio,
-  canChangeAlias,
-  insertUserMetric,
-  getLatestUserMetrics,
-  getPrivacySettings as getPrivacySettingsRow,
-  updatePrivacySettings as persistPrivacySettings,
-  type ProfileRow,
 } from "./users.repository.js";
 import type {
-  UpdateProfileDTO,
   ChangePasswordDTO,
   CreateUserDTO,
   UserSafe,
   UserDetail,
   UserStatus,
-  UserContact,
-  UserAvatar,
-  UserDataExportBundle,
-  PrivacySettings,
-  UpdatePrivacyDTO,
 } from "./users.types.js";
 import {
-  revokeRefreshByUserId,
-  createAuthToken,
-  findAuthToken,
-  consumeAuthToken,
-  markAuthTokensConsumed,
-  countAuthTokensSince,
-  purgeAuthTokensOlderThan,
+  changePasswordAndRevokeAuthAtomic,
+  revokeUserAuthStateAtomic,
 } from "../auth/auth.repository.js";
 import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
-import { env } from "../../config/env.js";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
+import { primaryEmail, toUserDetail, toUserSafe } from "./users.mapping.js";
+import { ensureUsernameAvailable, ensureUsernameFormat } from "./users.username.js";
+import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import {
   scheduleAccountDeletion,
   executeAccountDeletion,
@@ -60,7 +37,6 @@ import {
   type DeleteSchedule,
 } from "./dsr.service.js";
 
-const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,50}$/;
 const STATUS_TRANSITIONS: Record<UserStatus, UserStatus[]> = {
   pending_verification: ["active", "suspended", "banned", "pending_deletion"],
   active: ["suspended", "banned", "pending_deletion"],
@@ -70,134 +46,8 @@ const STATUS_TRANSITIONS: Record<UserStatus, UserStatus[]> = {
   deleted: [],
 };
 const INITIAL_ALLOWED_STATUSES: UserStatus[] = ["pending_verification", "active", "suspended"];
-const CONTACT_VERIFICATION_TOKEN_PREFIX = "contact_verify";
-const CONTACT_VERIFICATION_TTL_SEC = env.EMAIL_VERIFICATION_TTL_SEC;
-const CONTACT_VERIFICATION_RESEND_LIMIT = 3;
-const CONTACT_VERIFICATION_RESEND_WINDOW_MS = 60 * 60 * 1000;
-const CONTACT_VERIFICATION_RETENTION_DAYS = 7;
-
-// ProfileRow and UserMetricRow are imported from repository
-
-type SessionRow = { id: string; owner_id: string };
-type SessionExerciseRow = { id: string; session_id: string };
-type GenericRow = Record<string, unknown>;
-type UserPointRow = { id: string; user_id: string; points: number | string; awarded_at?: string };
-type BadgeRow = { id: string; user_id: string; badge_type: string; awarded_at: string };
-type MediaRow = {
-  id: string;
-  owner_id: string;
-  target_type: string;
-  target_id: string;
-  storage_key: string;
-  file_url: string;
-  mime_type: string | null;
-  media_type: string | null;
-  bytes: number | null;
-  created_at: string;
-};
-type UserStateHistoryRow = {
-  id: string;
-  user_id: string;
-  field: string;
-  old_value: unknown;
-  new_value: unknown;
-  changed_at: string;
-};
-
-function cloneExportRows<T extends object>(rows: T[]): T[] {
-  return rows.map((row) => ({ ...row }));
-}
-
-function toContact(row: ContactRow): UserContact {
-  return {
-    id: row.id,
-    type: row.type,
-    value: row.value,
-    isPrimary: row.is_primary,
-    isRecovery: row.is_recovery,
-    isVerified: row.is_verified,
-    verifiedAt: row.verified_at,
-    createdAt: row.created_at,
-  };
-}
 
 export { executeAccountDeletion, processDueAccountDeletions };
-
-function primaryEmail(contacts: ContactRow[]): string | null {
-  return contacts.find((contact) => contact.type === "email" && contact.is_primary)?.value ?? null;
-}
-
-function primaryPhone(contacts: ContactRow[]): string | null {
-  return contacts.find((contact) => contact.type === "phone")?.value ?? null;
-}
-
-async function toUserDetail(
-  user: UserRow,
-  contacts: ContactRow[],
-  avatar?: AvatarRow | null,
-): Promise<UserDetail> {
-  // Fetch profile and latest metrics
-  const profile = await getProfileByUserId(user.id);
-  const latestMetrics = await getLatestUserMetrics(user.id);
-
-  return {
-    id: user.id,
-    username: user.username,
-    displayName: user.display_name,
-    locale: user.locale,
-    preferredLang: user.preferred_lang,
-    defaultVisibility: (user as { default_visibility?: string }).default_visibility ?? "private",
-    units: (user as { units?: string }).units ?? "metric",
-    role: user.role_code,
-    status: user.status as UserStatus,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at,
-    primaryEmail: primaryEmail(contacts),
-    phoneNumber: primaryPhone(contacts),
-    avatar: toUserAvatar(avatar),
-    contacts: contacts.map(toContact),
-    profile: {
-      alias: profile?.alias ?? null,
-      bio: profile?.bio ?? null,
-      weight: latestMetrics?.weight ?? null,
-      weightUnit: latestMetrics?.unit ?? null,
-      fitnessLevel: latestMetrics?.fitness_level_code ?? null,
-      trainingFrequency: latestMetrics?.training_frequency ?? null,
-    },
-  };
-}
-
-function toUserSafe(row: UserRow): UserSafe {
-  return {
-    id: row.id,
-    username: row.username,
-    displayName: row.display_name,
-    locale: row.locale,
-    preferredLang: row.preferred_lang,
-    defaultVisibility: (row as { default_visibility?: string }).default_visibility ?? "private",
-    units: (row as { units?: string }).units ?? "metric",
-    role: row.role_code,
-    status: row.status as UserStatus,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    primaryEmail: row.primary_email ?? null,
-    phoneNumber: null,
-    avatar: toUserAvatarFromList(row),
-  };
-}
-
-async function ensureUsernameAvailable(userId: string, username: string) {
-  const available = await checkAliasAvailable(username, userId);
-  if (!available) {
-    throw new HttpError(409, "USER_USERNAME_TAKEN", "USER_USERNAME_TAKEN");
-  }
-}
-
-function ensureUsernameFormat(username: string) {
-  if (!USERNAME_REGEX.test(username)) {
-    throw new HttpError(422, "USER_USERNAME_INVALID", "USER_USERNAME_INVALID");
-  }
-}
 
 function assertStatusTransition(current: string, next: UserStatus) {
   const allowed = STATUS_TRANSITIONS[current as UserStatus] ?? [];
@@ -218,47 +68,6 @@ function isUniqueViolation(error: unknown): boolean {
   return typeof maybeCode === "string" && maybeCode === "23505";
 }
 
-function toUserAvatar(row: AvatarRow | null | undefined): UserAvatar | null {
-  if (!row) {
-    return null;
-  }
-  return {
-    url: row.file_url,
-    mimeType: row.mime_type ?? null,
-    bytes: row.bytes ?? null,
-    updatedAt: row.created_at ?? null,
-  };
-}
-
-function toUserAvatarFromList(row: {
-  avatar_url?: string | null;
-  avatar_mime_type?: string | null;
-  avatar_bytes?: number | string | null;
-  avatar_updated_at?: string | null;
-}): UserAvatar | null {
-  if (!row?.avatar_url) {
-    return null;
-  }
-  const bytes =
-    row.avatar_bytes === undefined || row.avatar_bytes === null ? null : Number(row.avatar_bytes);
-  return {
-    url: row.avatar_url,
-    mimeType: row.avatar_mime_type ?? null,
-    bytes,
-    updatedAt: row.avatar_updated_at ?? null,
-  };
-}
-
-function contactTokenType(contactId: string): string {
-  return `${CONTACT_VERIFICATION_TOKEN_PREFIX}:${contactId}`;
-}
-
-function generateContactToken() {
-  const raw = crypto.randomBytes(32).toString("base64url");
-  const hash = crypto.createHash("sha256").update(raw).digest("hex");
-  return { raw, hash };
-}
-
 export async function createUser(
   actorUserId: string | null,
   dto: CreateUserDTO,
@@ -277,6 +86,9 @@ export async function createUser(
   if (!email) {
     throw new HttpError(422, "USER_EMAIL_INVALID", "USER_EMAIL_INVALID");
   }
+  if (await isEmailBlacklisted(email)) {
+    throw new HttpError(403, "USER_EMAIL_BLOCKED", "USER_EMAIL_BLOCKED");
+  }
   if (!roleCode) {
     throw new HttpError(422, "USER_ROLE_INVALID", "USER_ROLE_INVALID");
   }
@@ -286,9 +98,9 @@ export async function createUser(
 
   await ensureUsernameAvailable(userId, username);
   assertPasswordPolicy(dto.password, { email, username });
-  const passwordHash = await bcrypt.hash(dto.password, 12);
+  const passwordHash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
   const locale = dto.locale?.trim() || undefined;
-  const preferredLang = dto.preferredLang?.trim() || undefined;
+  const preferredLang = dto.preferredLang;
 
   try {
     await db.transaction(async (trx) => {
@@ -360,215 +172,7 @@ export async function listAll(limit = 50, offset = 0): Promise<UserSafe[]> {
   return rows.map(toUserSafe);
 }
 
-export async function updateProfile(userId: string, dto: UpdateProfileDTO): Promise<UserDetail> {
-  const user = await findUserById(userId);
-  if (!user) {
-    throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
-  }
-
-  const patch: UpdateProfileDTO = {};
-  const changes: Record<string, { old: unknown; next: unknown }> = {};
-
-  if (dto.username) {
-    const normalized = dto.username.trim();
-    ensureUsernameFormat(normalized);
-    if (normalized.toLowerCase() !== (user.username ?? "").toLowerCase()) {
-      await ensureUsernameAvailable(userId, normalized);
-      patch.alias = normalized;
-      changes.alias = { old: user.username, next: normalized };
-    }
-  }
-
-  if (dto.displayName && dto.displayName !== user.display_name) {
-    patch.displayName = dto.displayName;
-    changes.display_name = { old: user.display_name, next: dto.displayName };
-  }
-
-  if (dto.locale && dto.locale !== user.locale) {
-    patch.locale = dto.locale;
-    changes.locale = { old: user.locale, next: dto.locale };
-  }
-
-  if (dto.preferredLang && dto.preferredLang !== user.preferred_lang) {
-    patch.preferredLang = dto.preferredLang;
-    changes.preferred_lang = {
-      old: user.preferred_lang,
-      next: dto.preferredLang,
-    };
-  }
-
-  if (dto.bio !== undefined) {
-    const profile = await getProfileByUserId(userId);
-    const currentBio = profile?.bio ?? null;
-    if (dto.bio !== currentBio) {
-      patch.bio = dto.bio;
-      changes.bio = { old: currentBio, next: dto.bio };
-    }
-  }
-
-  const userWithPrefs = user as { default_visibility?: string; units?: string };
-  if (dto.defaultVisibility && dto.defaultVisibility !== userWithPrefs.default_visibility) {
-    patch.defaultVisibility = dto.defaultVisibility;
-    changes.default_visibility = {
-      old: userWithPrefs.default_visibility,
-      next: dto.defaultVisibility,
-    };
-  }
-
-  if (dto.units && dto.units !== userWithPrefs.units) {
-    patch.units = dto.units;
-    changes.units = {
-      old: userWithPrefs.units,
-      next: dto.units,
-    };
-  }
-
-  if (dto.bio !== undefined) {
-    const profile = await getProfileByUserId(userId);
-    const currentBio = profile?.bio ?? null;
-    if (dto.bio !== currentBio) {
-      patch.bio = dto.bio;
-      changes.bio = { old: currentBio, next: dto.bio };
-    }
-  }
-
-  // Handle alias update
-  if (dto.alias !== undefined) {
-    const normalizedAlias = dto.alias.trim();
-    const profile = await getProfileByUserId(userId);
-    const currentAlias = profile?.alias ?? null;
-
-    if (normalizedAlias !== currentAlias) {
-      // Check alias change rate limiting (max 1 per 30 days)
-      const aliasChangeCheck = await canChangeAlias(userId);
-      if (!aliasChangeCheck.allowed) {
-        const daysRemaining = aliasChangeCheck.daysRemaining ?? 30;
-        throw new HttpError(
-          429,
-          "E.ALIAS_CHANGE_RATE_LIMITED",
-          `Alias can only be changed once per 30 days. Please try again in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}.`,
-        );
-      }
-
-      // Check alias availability (case-insensitive)
-      const isAvailable = await checkAliasAvailable(normalizedAlias, userId);
-      if (!isAvailable) {
-        // Genericize error message to prevent enumeration attacks
-        // Add random delay (100-500ms) to prevent timing attacks
-        const delay = Math.floor(Math.random() * 400) + 100;
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        throw new HttpError(
-          409,
-          "E.PROFILE_UPDATE_FAILED",
-          "Profile update failed. Please try again.",
-        );
-      }
-      changes.alias = { old: currentAlias, next: normalizedAlias };
-    }
-  }
-
-  // Handle weight, fitness level, and training frequency updates
-  const metricUpdates: {
-    weight?: number;
-    unit?: string;
-    fitness_level_code?: string;
-    training_frequency?: string;
-  } = {};
-
-  if (dto.weight !== undefined || dto.weightUnit !== undefined) {
-    let weightInKg = dto.weight;
-    if (dto.weight !== undefined && dto.weightUnit === "lb") {
-      // Convert lb to kg
-      weightInKg = dto.weight * 0.453592;
-    }
-
-    // Validate and round weight precision (max 2 decimal places)
-    if (weightInKg !== undefined) {
-      // Round to 2 decimal places
-      weightInKg = Math.round(weightInKg * 100) / 100;
-
-      // Validate precision (should not have more than 2 decimal places)
-      if (weightInKg.toString().split(".")[1]?.length > 2) {
-        throw new HttpError(400, "E.VALIDATION_ERROR", "Weight must have at most 2 decimal places");
-      }
-    }
-
-    const latestMetrics = await getLatestUserMetrics(userId);
-    const currentWeight = latestMetrics?.weight ?? null;
-    if (weightInKg !== undefined && weightInKg !== currentWeight) {
-      metricUpdates.weight = weightInKg;
-      // If weight was converted from lb to kg, store unit as kg
-      metricUpdates.unit = dto.weightUnit === "lb" ? "kg" : (dto.weightUnit ?? "kg");
-      changes.weight = { old: currentWeight, next: weightInKg };
-    }
-  }
-
-  if (dto.fitnessLevel !== undefined) {
-    const latestMetrics = await getLatestUserMetrics(userId);
-    const currentFitnessLevel = latestMetrics?.fitness_level_code ?? null;
-    if (dto.fitnessLevel !== currentFitnessLevel) {
-      metricUpdates.fitness_level_code = dto.fitnessLevel;
-      changes.fitness_level = { old: currentFitnessLevel, next: dto.fitnessLevel };
-    }
-  }
-
-  if (dto.trainingFrequency !== undefined) {
-    const latestMetrics = await getLatestUserMetrics(userId);
-    const currentTrainingFrequency = latestMetrics?.training_frequency ?? null;
-    if (dto.trainingFrequency !== currentTrainingFrequency) {
-      metricUpdates.training_frequency = dto.trainingFrequency;
-      changes.training_frequency = { old: currentTrainingFrequency, next: dto.trainingFrequency };
-    }
-  }
-
-  await db.transaction(async (trx) => {
-    // Update user profile fields
-    if (Object.keys(patch).length > 0) {
-      await updateUserProfile(userId, patch, trx);
-    }
-
-    if (patch.bio !== undefined) {
-      await updateProfileBio(userId, patch.bio, trx);
-    }
-
-    // Update alias in profiles table
-    const nextAlias = dto.alias ?? patch.alias;
-    if (nextAlias !== undefined) {
-      const normalizedAlias = nextAlias.trim();
-      const profile = await getProfileByUserId(userId, trx);
-      const currentAlias = profile?.alias ?? null;
-      if (normalizedAlias !== currentAlias) {
-        await updateProfileAlias(userId, normalizedAlias, trx);
-      }
-    }
-
-    // Insert new user metric record if any metric fields are being updated
-    if (Object.keys(metricUpdates).length > 0) {
-      await insertUserMetric(userId, metricUpdates, trx);
-    }
-
-    // Record state history for all changes
-    for (const [field, diff] of Object.entries(changes)) {
-      await insertStateHistory(userId, field, diff.old, diff.next, trx, userId, null);
-    }
-  });
-
-  if (Object.keys(changes).length > 0) {
-    await insertAudit({
-      actorUserId: userId,
-      entityType: "users",
-      action: "profile_update",
-      entityId: userId,
-      metadata: { changes },
-    });
-  }
-
-  const updated = await fetchUserWithContacts(userId);
-  if (!updated) {
-    throw new HttpError(500, "USER_REFRESH_FAILED", "USER_REFRESH_FAILED");
-  }
-  return await toUserDetail(updated.user, updated.contacts, updated.avatar);
-}
+export { updateProfile } from "./users.profile.service.js";
 
 export async function updatePassword(userId: string, dto: ChangePasswordDTO): Promise<void> {
   const user = await findUserById(userId);
@@ -585,15 +189,14 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
   const email = primaryEmail(contacts) ?? undefined;
 
   assertPasswordPolicy(dto.newPassword, { email, username: user.username });
-  const newHash = await bcrypt.hash(dto.newPassword, 12);
-  await changePassword(userId, newHash);
-  await revokeRefreshByUserId(userId);
+  const newHash = await bcrypt.hash(dto.newPassword, AUTH_SECURITY_POLICY.password.hashCost);
+  await changePasswordAndRevokeAuthAtomic(userId, newHash);
   await insertAudit({
     actorUserId: userId,
     entityType: "users",
     action: "password_change",
     entityId: userId,
-    metadata: { rotatedSessions: true },
+    metadata: { rotatedSessions: true, accessInvalidated: true },
   });
 }
 
@@ -618,6 +221,9 @@ export async function changeStatus(
   await db.transaction(async (trx) => {
     await setUserStatus(userId, nextStatus, trx);
     await insertStateHistory(userId, "status", user.status, nextStatus, trx);
+    if (nextStatus !== "active") {
+      await revokeUserAuthStateAtomic(userId, trx);
+    }
   });
 
   await insertAudit({
@@ -625,12 +231,12 @@ export async function changeStatus(
     entityType: "users",
     action: "status_change",
     entityId: userId,
-    metadata: { from: user.status, to: nextStatus },
+    metadata: {
+      from: user.status,
+      to: nextStatus,
+      accessInvalidated: nextStatus !== "active",
+    },
   });
-
-  if (nextStatus !== "active") {
-    await revokeRefreshByUserId(userId);
-  }
 
   const refreshed = await fetchUserWithContacts(userId);
   if (!refreshed) {
@@ -656,7 +262,6 @@ export async function requestAccountDeletion(
 
   if (user.status !== "pending_deletion") {
     await changeStatus(userId, userId, "pending_deletion");
-    await revokeRefreshByUserId(userId);
     await insertAudit({
       actorUserId: userId,
       entityType: "users",
@@ -670,444 +275,14 @@ export async function requestAccountDeletion(
   return schedule;
 }
 
-export async function listContacts(userId: string): Promise<UserContact[]> {
-  const contacts = await getUserContacts(userId);
-  return contacts.map(toContact);
-}
-
-export async function requestContactVerification(
-  userId: string,
-  contactId: string,
-): Promise<{ token: string; expiresAt: string }> {
-  const contact = await getContactById(contactId);
-  if (!contact || contact.user_id !== userId) {
-    throw new HttpError(404, "USER_CONTACT_NOT_FOUND", "USER_CONTACT_NOT_FOUND");
-  }
-  if (contact.is_verified) {
-    throw new HttpError(409, "USER_CONTACT_ALREADY_VERIFIED", "USER_CONTACT_ALREADY_VERIFIED");
-  }
-
-  const now = Date.now();
-  const tokenType = contactTokenType(contactId);
-  const windowStart = new Date(now - CONTACT_VERIFICATION_RESEND_WINDOW_MS);
-  const recentAttempts = await countAuthTokensSince(userId, tokenType, windowStart);
-  if (recentAttempts >= CONTACT_VERIFICATION_RESEND_LIMIT) {
-    throw new HttpError(
-      429,
-      "USER_CONTACT_VERIFY_LIMIT",
-      "Verification request limit reached. Try again later.",
-    );
-  }
-
-  const retentionCutoff = new Date(now - CONTACT_VERIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-  await purgeAuthTokensOlderThan(tokenType, retentionCutoff);
-  await markAuthTokensConsumed(userId, tokenType);
-
-  const { raw, hash } = generateContactToken();
-  const createdAt = new Date(now).toISOString();
-  const expiresAt = new Date(now + CONTACT_VERIFICATION_TTL_SEC * 1000).toISOString();
-
-  await createAuthToken({
-    id: crypto.randomUUID(),
-    user_id: userId,
-    token_type: tokenType,
-    token_hash: hash,
-    created_at: createdAt,
-    expires_at: expiresAt,
-  });
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "user_contacts",
-    action: "verification_token_requested",
-    entityId: contactId,
-    metadata: { type: contact.type },
-  });
-
-  return { token: raw, expiresAt };
-}
-
-export async function updatePrimaryEmail(userId: string, email: string): Promise<UserDetail> {
-  const trimmed = email.trim().toLowerCase();
-  if (!trimmed) {
-    throw new HttpError(422, "USER_EMAIL_INVALID", "USER_EMAIL_INVALID");
-  }
-
-  try {
-    await upsertContact(userId, {
-      type: "email",
-      value: trimmed,
-      isPrimary: true,
-      isRecovery: true,
-    });
-  } catch (error) {
-    if (isUniqueViolation(error)) {
-      throw new HttpError(409, "USER_EMAIL_TAKEN", "USER_EMAIL_TAKEN");
-    }
-    throw error;
-  }
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "user_contacts",
-    action: "email_upsert",
-    entityId: userId,
-    metadata: { email: trimmed },
-  });
-
-  const refreshed = await fetchUserWithContacts(userId);
-  if (!refreshed) {
-    throw new HttpError(500, "USER_REFRESH_FAILED", "USER_REFRESH_FAILED");
-  }
-  return toUserDetail(refreshed.user, refreshed.contacts, refreshed.avatar);
-}
-
-export async function updatePhoneNumber(
-  userId: string,
-  phone: string,
-  isRecovery = true,
-): Promise<UserDetail> {
-  const trimmed = phone.trim();
-  if (!trimmed) {
-    throw new HttpError(422, "USER_PHONE_INVALID", "USER_PHONE_INVALID");
-  }
-
-  try {
-    await upsertContact(userId, {
-      type: "phone",
-      value: trimmed,
-      isPrimary: false,
-      isRecovery,
-    });
-  } catch (error) {
-    if (isUniqueViolation(error)) {
-      throw new HttpError(409, "USER_PHONE_TAKEN", "USER_PHONE_TAKEN");
-    }
-    throw error;
-  }
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "user_contacts",
-    action: "phone_upsert",
-    entityId: userId,
-    metadata: { phone: trimmed, isRecovery },
-  });
-
-  const refreshed = await fetchUserWithContacts(userId);
-  if (!refreshed) {
-    throw new HttpError(500, "USER_REFRESH_FAILED", "USER_REFRESH_FAILED");
-  }
-  return toUserDetail(refreshed.user, refreshed.contacts, refreshed.avatar);
-}
-
-export async function verifyContact(
-  userId: string,
-  contactId: string,
-  token: string,
-): Promise<UserContact> {
-  const contact = await getContactById(contactId);
-  if (!contact || contact.user_id !== userId) {
-    throw new HttpError(404, "USER_CONTACT_NOT_FOUND", "USER_CONTACT_NOT_FOUND");
-  }
-
-  if (contact.is_verified) {
-    return toContact(contact);
-  }
-
-  const trimmedToken = token?.trim();
-  if (!trimmedToken) {
-    throw new HttpError(400, "USER_CONTACT_TOKEN_REQUIRED", "USER_CONTACT_TOKEN_REQUIRED");
-  }
-
-  const tokenType = contactTokenType(contactId);
-  const tokenHash = crypto.createHash("sha256").update(trimmedToken).digest("hex");
-  const record = await findAuthToken(tokenType, tokenHash);
-  if (!record || record.user_id !== userId) {
-    throw new HttpError(400, "USER_CONTACT_TOKEN_INVALID", "USER_CONTACT_TOKEN_INVALID");
-  }
-
-  if (new Date(record.expires_at).getTime() <= Date.now()) {
-    await consumeAuthToken(record.id);
-    throw new HttpError(400, "USER_CONTACT_TOKEN_EXPIRED", "USER_CONTACT_TOKEN_EXPIRED");
-  }
-
-  await markContactVerified(contactId);
-  await consumeAuthToken(record.id);
-  await markAuthTokensConsumed(userId, tokenType);
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "user_contacts",
-    action: "contact_verify",
-    entityId: contactId,
-    metadata: { type: contact.type },
-  });
-
-  const refreshed = await getContactById(contactId);
-  if (!refreshed) {
-    throw new HttpError(500, "USER_CONTACT_REFRESH_FAILED", "USER_CONTACT_REFRESH_FAILED");
-  }
-  return toContact(refreshed);
-}
-
-export async function removeContact(userId: string, contactId: string): Promise<void> {
-  const contact = await getContactById(contactId);
-  if (!contact || contact.user_id !== userId) {
-    throw new HttpError(404, "USER_CONTACT_NOT_FOUND", "USER_CONTACT_NOT_FOUND");
-  }
-  if (contact.type === "email" && contact.is_primary) {
-    throw new HttpError(400, "USER_CONTACT_REMOVE_PRIMARY", "USER_CONTACT_REMOVE_PRIMARY");
-  }
-  await deleteContact(userId, contactId);
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "user_contacts",
-    action: "contact_remove",
-    entityId: contactId,
-    metadata: { type: contact.type },
-  });
-}
-
-export async function collectUserData(userId: string): Promise<UserDataExportBundle> {
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "users",
-    action: "data_export_requested",
-    entityId: userId,
-  });
-
-  const user = await db<UserRow>("users")
-    .leftJoin("profiles", "profiles.user_id", "users.id")
-    .select<UserRow[]>("users.*", db.raw("profiles.alias as username"))
-    .where("users.id", userId)
-    .first<UserRow>();
-  if (!user) {
-    throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
-  }
-
-  const contacts = (await db("user_contacts").where({
-    user_id: userId,
-  })) as unknown as ContactRow[];
-  const profileRow = await db<ProfileRow>("profiles")
-    .where({ user_id: userId })
-    .first<ProfileRow>();
-  const profile = profileRow
-    ? {
-        user_id: profileRow.user_id,
-        alias: profileRow.alias,
-        bio: profileRow.bio,
-        avatar_asset_id: profileRow.avatar_asset_id,
-        date_of_birth: profileRow.date_of_birth,
-        gender_code: profileRow.gender_code,
-        visibility: profileRow.visibility,
-        fitness_level_code: profileRow.fitness_level_code,
-        training_frequency: profileRow.training_frequency,
-        created_at: profileRow.created_at,
-        updated_at: profileRow.updated_at,
-      }
-    : null;
-
-  const [
-    bioValues,
-    perfValues,
-    consents,
-    sessions,
-    plans,
-    exercises,
-    pointsHistory,
-    badges,
-    followers,
-    following,
-    blocks,
-    personalRecords,
-    vibeLevels,
-    vibeChanges,
-    feedItems,
-    feedLikes,
-    feedComments,
-    bookmarks,
-    reports,
-    twoFactorSettings,
-  ] = await Promise.all([
-    db<GenericRow>("bio_attribute_values").where({ user_id: userId }).orderBy("measured_at", "asc"),
-    db<GenericRow>("perf_attribute_values")
-      .where({ user_id: userId })
-      .orderBy("measured_at", "asc"),
-    db<GenericRow>("cookie_consents").where({ user_id: userId }).orderBy("consent_given_at", "asc"),
-    db<SessionRow>("sessions").where({ owner_id: userId }),
-    db<GenericRow>("plans").where({ user_id: userId }),
-    db<GenericRow>("exercises").where({ owner_id: userId }),
-    db<UserPointRow>("user_points").where({ user_id: userId }).orderBy("awarded_at", "asc"),
-    db<BadgeRow>("badges").where({ user_id: userId }).orderBy("awarded_at", "asc"),
-    db<GenericRow>("followers").where({ following_id: userId }).orderBy("created_at", "asc"),
-    db<GenericRow>("followers").where({ follower_id: userId }).orderBy("created_at", "asc"),
-    db<GenericRow>("user_blocks")
-      .where({ blocker_id: userId })
-      .orWhere({ blocked_id: userId })
-      .orderBy("created_at", "asc"),
-    db<GenericRow>("personal_records").where({ user_id: userId }).orderBy("achieved_at", "asc"),
-    db<GenericRow>("user_domain_vibe_levels").where({ user_id: userId }),
-    db<GenericRow>("vibe_level_changes").where({ user_id: userId }).orderBy("created_at", "asc"),
-    db<GenericRow>("feed_items").where({ owner_id: userId }).orderBy("created_at", "asc"),
-    db<GenericRow>("feed_likes").where({ user_id: userId }),
-    db<GenericRow>("feed_comments").where({ user_id: userId }),
-    db<GenericRow>("session_bookmarks").where({ user_id: userId }),
-    db<GenericRow>("feed_reports").where({ reporter_id: userId }),
-    db<{ is_enabled: boolean; is_verified: boolean }>("user_2fa_settings")
-      .where("user_id", userId)
-      .select("is_enabled", "is_verified")
-      .first(),
-  ]);
-  const metrics = {
-    bio: bioValues as unknown as GenericRow[],
-    perf: perfValues as unknown as GenericRow[],
-    consents: consents as unknown as GenericRow[],
-  };
-
-  const sessionIds = sessions.map((session) => session.id);
-  const totalPoints = pointsHistory.reduce((sum, record) => sum + Number(record.points ?? 0), 0);
-
-  const [sessionExercises, exerciseSets] = await Promise.all([
-    sessionIds.length
-      ? db<SessionExerciseRow>("session_exercises").whereIn("session_id", sessionIds)
-      : Promise.resolve([]),
-    sessionIds.length
-      ? db<GenericRow>("exercise_sets")
-          .join("session_exercises", "session_exercises.id", "exercise_sets.session_exercise_id")
-          .whereIn("session_exercises.session_id", sessionIds)
-          .select("exercise_sets.*")
-      : Promise.resolve([]),
-  ]);
-
-  const mediaRows = await db<MediaRow>("media")
-    .where({ owner_id: userId })
-    .orderBy("created_at", "asc");
-  const media = mediaRows.map((row) => ({
-    id: row.id,
-    targetType: row.target_type,
-    targetId: row.target_id,
-    storageKey: row.storage_key,
-    fileUrl: row.file_url,
-    mimeType: row.mime_type,
-    mediaType: row.media_type,
-    bytes: row.bytes ?? null,
-    createdAt: row.created_at,
-  }));
-
-  const stateHistory = await db<UserStateHistoryRow>("user_state_history")
-    .where({ user_id: userId })
-    .orderBy("changed_at", "asc");
-
-  const userRecord: Record<string, unknown> = { ...user };
-  delete userRecord.password_hash;
-  if (!("primary_email" in userRecord)) {
-    const primaryContact = contacts.find(
-      (contact) => contact.type === "email" && contact.is_primary,
-    );
-    if (primaryContact) {
-      userRecord.primary_email = primaryContact.value;
-    }
-  }
-
-  const recordCounts: Record<string, number> = {
-    contacts: contacts.length,
-    sessions: sessions.length,
-    sessionExercises: sessionExercises.length,
-    sessionSets: exerciseSets.length,
-    plans: plans.length,
-    personalExercises: exercises.length,
-    personalRecords: personalRecords.length,
-    metrics: metrics.bio.length + metrics.perf.length + metrics.consents.length,
-    pointsHistory: pointsHistory.length,
-    badges: badges.length,
-    vibeLevels: vibeLevels.length,
-    vibeChanges: vibeChanges.length,
-    feedItems: feedItems.length,
-    media: media.length,
-    followers: followers.length,
-    following: following.length,
-    blocks: blocks.length,
-    stateHistory: stateHistory.length,
-  };
-
-  await insertAudit({
-    actorUserId: userId,
-    entityType: "users",
-    action: "data_export_completed",
-    entityId: userId,
-    metadata: { recordCounts },
-  });
-
-  return {
-    meta: {
-      schemaVersion: "2.0.0",
-      exportedAt: new Date().toISOString(),
-      recordCounts,
-    },
-    user: { ...userRecord },
-    profile,
-    contacts: cloneExportRows(contacts),
-    metrics: {
-      bio: cloneExportRows(metrics.bio),
-      perf: cloneExportRows(metrics.perf),
-      consents: cloneExportRows(metrics.consents),
-    },
-    social: {
-      followers,
-      following,
-      blocks,
-    },
-    exercises: {
-      personal: exercises,
-      plans,
-      personalRecords,
-    },
-    sessions: {
-      items: sessions,
-      exercises: sessionExercises,
-      sets: exerciseSets,
-    },
-    points: {
-      total: totalPoints,
-      history: pointsHistory,
-    },
-    badges,
-    vibe: {
-      levels: vibeLevels,
-      changes: vibeChanges,
-    },
-    feed: {
-      items: feedItems,
-      likes: feedLikes,
-      comments: feedComments,
-      bookmarks,
-      reports,
-    },
-    twoFactor: {
-      isEnabled: Boolean(twoFactorSettings?.is_enabled),
-      isVerified: Boolean(twoFactorSettings?.is_verified),
-    },
-    media,
-    stateHistory,
-  };
-}
-
-export async function getPrivacySettings(userId: string): Promise<PrivacySettings> {
-  const settings = await getPrivacySettingsRow(userId);
-  if (!settings) {
-    throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
-  }
-  return settings;
-}
-
-export async function updatePrivacySettings(
-  userId: string,
-  updates: UpdatePrivacyDTO,
-): Promise<PrivacySettings> {
-  const settings = await persistPrivacySettings(userId, updates);
-  if (!settings) {
-    throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
-  }
-  return settings;
-}
+export {
+  listContacts,
+  requestContactVerification,
+  updatePrimaryEmail,
+  updatePhoneNumber,
+  verifyContact,
+  removeContact,
+} from "./users.contacts.service.js";
+export { collectUserData } from "./users.export.service.js";
+export { getPrivacySettings, updatePrivacySettings } from "./users.privacy.service.js";
+export { getUserPreferences, updateUserPreferences } from "./users.preferences.service.js";

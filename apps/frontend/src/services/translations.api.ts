@@ -1,4 +1,4 @@
-import { apiClient } from "./api.js";
+import { apiClient } from "./httpApi.js";
 
 export type SupportedLanguage = string;
 export type TranslationNamespace = string;

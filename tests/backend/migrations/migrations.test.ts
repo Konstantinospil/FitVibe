@@ -27,30 +27,101 @@ function findProjectRoot(): string {
   return path.resolve(__dirname, "../../..");
 }
 
+const FINAL_SCHEMA = "tmp_migration_schema_test";
+const ROLLBACK_SCHEMA = "tmp_migration_rollback_test";
+const MIGRATIONS_DIRECTORY = path.resolve(findProjectRoot(), "apps/backend/src/db/migrations");
+
+function createMigrationClient(schemaName: string): knex.Knex {
+  return knex({
+    client: "pg",
+    connection: DATABASE_URL,
+    // Keep public available only for extension-provided types/functions. Migration
+    // bookkeeping is explicitly pinned to schemaName below.
+    searchPath: [schemaName, "public"],
+    migrations: {
+      loadExtensions: [".ts"],
+      directory: MIGRATIONS_DIRECTORY,
+      schemaName,
+    },
+  });
+}
+
+async function resetSchema(admin: knex.Knex, schemaName: string): Promise<void> {
+  if (!/^[a-z0-9_]+$/.test(schemaName)) {
+    throw new Error(`Unsafe test schema name: ${schemaName}`);
+  }
+  await admin.raw(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
+  await admin.raw(`CREATE SCHEMA "${schemaName}";`);
+}
+
+async function schemaHasTable(
+  client: knex.Knex,
+  schemaName: string,
+  tableName: string,
+): Promise<boolean> {
+  const row = await client("information_schema.tables")
+    .select("table_name")
+    .where({ table_schema: schemaName, table_name: tableName })
+    .first();
+  return Boolean(row);
+}
+
+async function schemaColumnInfo(
+  client: knex.Knex,
+  schemaName: string,
+  tableName: string,
+): Promise<Record<string, { defaultValue: string | null }>> {
+  const rows = (await client("information_schema.columns")
+    .select("column_name", "column_default")
+    .where({ table_schema: schemaName, table_name: tableName })) as Array<{
+    column_name: string;
+    column_default: string | null;
+  }>;
+
+  return Object.fromEntries(
+    rows.map((row) => [row.column_name, { defaultValue: row.column_default }]),
+  );
+}
+
 describeWithTestDatabase("database migrations", () => {
   let client: knex.Knex;
+  let rollbackCycleCompleted = false;
 
   beforeAll(async () => {
     const admin = knex({
       client: "pg",
       connection: DATABASE_URL,
     });
+    let rollbackClient: knex.Knex | undefined;
 
-    await admin.raw("DROP SCHEMA IF EXISTS tmp_migration_test CASCADE;");
-    await admin.raw("CREATE SCHEMA tmp_migration_test;");
-    await ensureDatabaseExtensions(admin);
-    await admin.destroy();
+    try {
+      await ensureDatabaseExtensions(admin);
 
-    client = knex({
-      client: "pg",
-      connection: DATABASE_URL,
-      searchPath: ["tmp_migration_test", "public"],
-      migrations: {
-        loadExtensions: [".ts"],
-        directory: path.resolve(findProjectRoot(), "apps/backend/src/db/migrations"),
-      },
-    });
-  });
+      // Exercise rollback in a disposable schema. Some historical down migrations
+      // remove database-wide extensions, so finish this cycle before constructing
+      // the authoritative final-schema fixture.
+      await resetSchema(admin, ROLLBACK_SCHEMA);
+      rollbackClient = createMigrationClient(ROLLBACK_SCHEMA);
+      await rollbackClient.migrate.latest();
+      await rollbackClient.migrate.rollback(undefined, true);
+      rollbackCycleCompleted = true;
+      await rollbackClient.destroy();
+      rollbackClient = undefined;
+      await admin.raw(`DROP SCHEMA IF EXISTS "${ROLLBACK_SCHEMA}" CASCADE;`);
+
+      // Rollback may have removed extensions globally. Restore them, then migrate
+      // exactly once into a fresh schema used only for final-state assertions.
+      await ensureDatabaseExtensions(admin);
+      await resetSchema(admin, FINAL_SCHEMA);
+      client = createMigrationClient(FINAL_SCHEMA);
+      await client.migrate.latest();
+    } finally {
+      if (rollbackClient) {
+        await rollbackClient.destroy();
+      }
+      await admin.destroy();
+    }
+  }, 120000);
 
   afterAll(async () => {
     if (client) {
@@ -60,65 +131,69 @@ describeWithTestDatabase("database migrations", () => {
       client: "pg",
       connection: DATABASE_URL,
     });
-    await admin.raw("DROP SCHEMA IF EXISTS tmp_migration_test CASCADE;");
-    await admin.destroy();
+    try {
+      await admin.raw(`DROP SCHEMA IF EXISTS "${FINAL_SCHEMA}" CASCADE;`);
+      await admin.raw(`DROP SCHEMA IF EXISTS "${ROLLBACK_SCHEMA}" CASCADE;`);
+    } finally {
+      await admin.destroy();
+    }
   });
 
-  it("applies latest migrations and rolls back cleanly", async () => {
-    await expect(client.migrate.latest()).resolves.toBeDefined();
-    await expect(client.migrate.rollback(undefined, true)).resolves.toBeDefined();
-  }, 120000); // 2 minute timeout for full migration cycle (up + rollback)
+  it("applies latest migrations and rolls back cleanly in an isolated schema", () => {
+    expect(rollbackCycleCompleted).toBe(true);
+  });
 
-  describe("table schemas after migration", () => {
-    beforeAll(async () => {
-      await client.migrate.latest();
-    });
+  describe("table schemas after a single fresh migration", () => {
 
     it("creates roles table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("roles");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "roles");
       expect(hasTable).toBe(true);
 
-      const columns = await client("roles").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "roles");
       expect(columns.code).toBeDefined();
       expect(columns.description).toBeDefined();
       expect(columns.created_at).toBeDefined();
     });
 
     it("creates genders table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("genders");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "genders");
       expect(hasTable).toBe(true);
 
-      const columns = await client("genders").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "genders");
       expect(columns.code).toBeDefined();
       expect(columns.description).toBeDefined();
       expect(columns.created_at).toBeDefined();
     });
 
     it("creates fitness_levels table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("fitness_levels");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "fitness_levels");
       expect(hasTable).toBe(true);
 
-      const columns = await client("fitness_levels").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "fitness_levels");
       expect(columns.code).toBeDefined();
       expect(columns.description).toBeDefined();
       expect(columns.created_at).toBeDefined();
     });
 
     it("creates exercise_types table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("exercise_types");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "exercise_types");
       expect(hasTable).toBe(true);
 
-      const columns = await client("exercise_types").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "exercise_types");
       expect(columns.code).toBeDefined();
+      expect(columns.name).toBeDefined();
       expect(columns.description).toBeDefined();
+      expect(columns.is_active).toBeDefined();
+      expect(columns.is_active.defaultValue).toContain("true");
       expect(columns.created_at).toBeDefined();
+      expect(columns.updated_at).toBeDefined();
     });
 
     it("creates users table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("users");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "users");
       expect(hasTable).toBe(true);
 
-      const columns = await client("users").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "users");
       expect(columns.id).toBeDefined();
       expect(columns.username).toBeUndefined();
       expect(columns.display_name).toBeDefined();
@@ -129,10 +204,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates profiles table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("profiles");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "profiles");
       expect(hasTable).toBe(true);
 
-      const columns = await client("profiles").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "profiles");
       expect(columns.user_id).toBeDefined();
       expect(columns.date_of_birth).toBeDefined();
       expect(columns.gender_code).toBeDefined();
@@ -145,10 +220,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates user_vibeform_preferences with only durable user choices", async () => {
-      const hasTable = await client.schema.hasTable("user_vibeform_preferences");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "user_vibeform_preferences");
       expect(hasTable).toBe(true);
 
-      const columns = await client("user_vibeform_preferences").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "user_vibeform_preferences");
       expect(Object.keys(columns).sort()).toEqual(
         [
           "body_profile",
@@ -176,7 +251,7 @@ describeWithTestDatabase("database migrations", () => {
         LEFT JOIN information_schema.constraint_column_usage AS ccu
           ON ccu.constraint_name = tc.constraint_name
           AND ccu.table_schema = tc.table_schema
-        WHERE tc.table_schema = 'tmp_migration_test'
+        WHERE tc.table_schema = '${FINAL_SCHEMA}'
           AND tc.table_name = 'user_vibeform_preferences'
       `);
 
@@ -196,7 +271,7 @@ describeWithTestDatabase("database migrations", () => {
       const foreignKey = await client.raw(`
         SELECT rc.delete_rule
         FROM information_schema.referential_constraints rc
-        WHERE rc.constraint_schema = 'tmp_migration_test'
+        WHERE rc.constraint_schema = '${FINAL_SCHEMA}'
           AND rc.constraint_name = 'user_vibeform_preferences_user_id_foreign'
       `);
       expect(foreignKey.rows).toEqual(
@@ -208,7 +283,7 @@ describeWithTestDatabase("database migrations", () => {
         FROM pg_constraint c
         JOIN pg_class t ON t.oid = c.conrelid
         JOIN pg_namespace n ON n.oid = t.relnamespace
-        WHERE n.nspname = 'tmp_migration_test'
+        WHERE n.nspname = '${FINAL_SCHEMA}'
           AND t.relname = 'user_vibeform_preferences'
           AND c.contype = 'c'
       `);
@@ -219,10 +294,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates sessions table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("sessions");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "sessions");
       expect(hasTable).toBe(true);
 
-      const columns = await client("sessions").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "sessions");
       expect(columns.id).toBeDefined();
       expect(columns.owner_id).toBeDefined();
       expect(columns.plan_id).toBeDefined();
@@ -235,23 +310,25 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates exercises table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("exercises");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "exercises");
       expect(hasTable).toBe(true);
 
-      const columns = await client("exercises").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "exercises");
       expect(columns.id).toBeDefined();
       expect(columns.name).toBeDefined();
       expect(columns.owner_id).toBeDefined();
       expect(columns.type_code).toBeDefined();
+      expect(columns.met_value).toBeDefined();
+      expect(columns.seconds_per_rep).toBeDefined();
       expect(columns.created_at).toBeDefined();
       expect(columns.updated_at).toBeDefined();
     });
 
     it("creates session_exercises table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("session_exercises");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "session_exercises");
       expect(hasTable).toBe(true);
 
-      const columns = await client("session_exercises").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "session_exercises");
       expect(columns.id).toBeDefined();
       expect(columns.session_id).toBeDefined();
       expect(columns.exercise_id).toBeDefined();
@@ -261,10 +338,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates exercise_sets table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("exercise_sets");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "exercise_sets");
       expect(hasTable).toBe(true);
 
-      const columns = await client("exercise_sets").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "exercise_sets");
       expect(columns.id).toBeDefined();
       expect(columns.session_exercise_id).toBeDefined();
       expect(columns.order_index).toBeDefined();
@@ -275,10 +352,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates personal_records table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("personal_records");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "personal_records");
       expect(hasTable).toBe(true);
 
-      const columns = await client("personal_records").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "personal_records");
       expect(columns.id).toBeDefined();
       expect(columns.user_id).toBeDefined();
       expect(columns.exercise_id).toBeDefined();
@@ -290,10 +367,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates feed_items table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("feed_items");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "feed_items");
       expect(hasTable).toBe(true);
 
-      const columns = await client("feed_items").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "feed_items");
       expect(columns.id).toBeDefined();
       expect(columns.owner_id).toBeDefined();
       expect(columns.session_id).toBeDefined();
@@ -303,10 +380,10 @@ describeWithTestDatabase("database migrations", () => {
     });
 
     it("creates user_points table with correct schema", async () => {
-      const hasTable = await client.schema.hasTable("user_points");
+      const hasTable = await schemaHasTable(client, FINAL_SCHEMA, "user_points");
       expect(hasTable).toBe(true);
 
-      const columns = await client("user_points").columnInfo();
+      const columns = await schemaColumnInfo(client, FINAL_SCHEMA, "user_points");
       expect(columns.id).toBeDefined();
       expect(columns.user_id).toBeDefined();
       expect(columns.points).toBeDefined();
@@ -330,7 +407,7 @@ describeWithTestDatabase("database migrations", () => {
           ON ccu.constraint_name = tc.constraint_name
           AND ccu.table_schema = tc.table_schema
         WHERE tc.constraint_type = 'FOREIGN KEY'
-          AND tc.table_schema = 'tmp_migration_test'
+          AND tc.table_schema = '${FINAL_SCHEMA}'
           AND tc.table_name = 'profiles'
       `);
 
@@ -341,19 +418,36 @@ describeWithTestDatabase("database migrations", () => {
       const indexes = await client.raw(`
         SELECT tablename, indexname
         FROM pg_indexes
-        WHERE schemaname = 'tmp_migration_test'
+        WHERE schemaname = '${FINAL_SCHEMA}'
           AND tablename IN ('users', 'sessions', 'exercises')
       `);
 
       expect(indexes.rows.length).toBeGreaterThan(0);
     });
 
+    it("enforces current Phase 15 authentication schema invariants", async () => {
+      const twoFactorColumns = await schemaColumnInfo(client, FINAL_SCHEMA, "user_2fa_settings");
+      expect(twoFactorColumns.totp_secret).toBeDefined();
+      expect(twoFactorColumns.is_enabled).toBeDefined();
+      expect(twoFactorColumns.is_verified).toBeDefined();
+
+      const blacklistColumns = await schemaColumnInfo(client, FINAL_SCHEMA, "blacklist");
+      expect(blacklistColumns.email).toBeDefined();
+      expect(blacklistColumns.active_from).toBeDefined();
+      expect(blacklistColumns.active_to).toBeDefined();
+
+      const challengeColumns = await schemaColumnInfo(client, FINAL_SCHEMA, "pending_2fa_sessions");
+      expect(challengeColumns.failed_attempts).toBeDefined();
+      expect(challengeColumns.last_failed_at).toBeDefined();
+      expect(challengeColumns.expires_at).toBeDefined();
+    });
+
     it("does not recreate dropped tables or users.username", async () => {
-      expect(await client.schema.hasColumn("users", "username")).toBe(false);
-      expect(await client.schema.hasTable("user_metrics")).toBe(false);
-      expect(await client.schema.hasTable("share_links")).toBe(false);
-      expect(await client.schema.hasTable("translation_cache")).toBe(false);
-      expect(await client.schema.hasTable("actual_exercise_attributes")).toBe(false);
+      expect((await schemaColumnInfo(client, FINAL_SCHEMA, "users")).username).toBeUndefined();
+      expect(await schemaHasTable(client, FINAL_SCHEMA, "user_metrics")).toBe(false);
+      expect(await schemaHasTable(client, FINAL_SCHEMA, "share_links")).toBe(false);
+      expect(await schemaHasTable(client, FINAL_SCHEMA, "translation_cache")).toBe(false);
+      expect(await schemaHasTable(client, FINAL_SCHEMA, "actual_exercise_attributes")).toBe(false);
     });
   });
 });

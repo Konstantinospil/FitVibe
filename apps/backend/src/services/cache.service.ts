@@ -1,5 +1,6 @@
 import Redis from "ioredis";
 import { logger } from "../config/logger.js";
+import { env } from "../config/env.js";
 
 /**
  * Cache service with Redis support and in-memory fallback
@@ -12,14 +13,14 @@ export class CacheService {
   private useRedis: boolean;
 
   constructor() {
-    this.useRedis = process.env.REDIS_ENABLED === "true";
+    this.useRedis = env.redis.enabled;
     if (this.useRedis) {
       try {
         this.redis = new Redis({
-          host: process.env.REDIS_HOST ?? "localhost",
-          port: parseInt(process.env.REDIS_PORT ?? "6379", 10),
-          password: process.env.REDIS_PASSWORD,
-          db: parseInt(process.env.REDIS_DB ?? "0", 10),
+          host: env.redis.host,
+          port: env.redis.port,
+          password: env.redis.password,
+          db: env.redis.db,
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000);
             return delay;

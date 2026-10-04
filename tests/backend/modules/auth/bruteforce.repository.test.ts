@@ -105,6 +105,22 @@ describeWithTestDatabase("Brute Force Protection Repository", () => {
       expect(attempt3.attempt_count).toBe(3);
     });
 
+    it("should decay stale account failure history", async () => {
+      await recordFailedAttempt(identifier, ipAddress, userAgent);
+      await recordFailedAttempt(identifier, ipAddress, userAgent);
+
+      await db("failed_login_attempts")
+        .where({ identifier, ip_address: ipAddress })
+        .update({
+          last_attempt_at: new Date(Date.now() - 31 * 60 * 1000).toISOString(),
+        });
+
+      const attempt = await recordFailedAttempt(identifier, ipAddress, userAgent);
+
+      expect(attempt.attempt_count).toBe(1);
+      expect(attempt.locked_until).toBeNull();
+    });
+
     it("should apply progressive lockout after 5 attempts", async () => {
       // Record 4 attempts (no lockout)
       for (let i = 0; i < 4; i++) {

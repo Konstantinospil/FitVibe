@@ -18,8 +18,10 @@ import {
   getMetrics,
   getPrivacy,
   updatePrivacy,
+  getPreferences,
+  updatePreferences,
 } from "./users.controller.js";
-import { requireAuth } from "./users.middleware.js";
+import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import { usersAvatarRouter } from "./users.avatar.routes.js";
@@ -37,127 +39,139 @@ export const usersRouter = Router();
 usersRouter.use(usersAvatarRouter);
 usersRouter.use(usersBodyProgressRouter);
 
-usersRouter.get("/me", rateLimit("user_me", 60, 60), requireAuth, asyncHandler(me));
-usersRouter.patch("/me", rateLimit("user_update", 20, 60), requireAuth, asyncHandler(updateMe));
+usersRouter.get("/me", rateLimit("user_me"), requireAccessToken, asyncHandler(me));
+usersRouter.patch("/me", rateLimit("user_update"), requireAccessToken, asyncHandler(updateMe));
 usersRouter.post(
   "/change-password",
-  rateLimit("user_pw", 10, 60),
-  requireAuth,
+  rateLimit("user_pw"),
+  requireAccessToken,
   asyncHandler(changePassword),
 );
 usersRouter.delete(
   "/me",
-  rateLimit("user_delete", 10, 60),
-  requireAuth,
+  rateLimit("user_delete"),
+  requireAccessToken,
   asyncHandler(deleteAccount),
 );
 usersRouter.get(
   "/me/contacts",
-  rateLimit("user_contacts_get", 20, 60),
-  requireAuth,
+  rateLimit("user_contacts_get"),
+  requireAccessToken,
   asyncHandler(listUserContacts),
 );
 usersRouter.put(
   "/me/contacts/email",
-  rateLimit("user_contacts_email", 10, 300),
-  requireAuth,
+  rateLimit("user_contacts_email"),
+  requireAccessToken,
   asyncHandler(updateEmail),
 );
 usersRouter.put(
   "/me/contacts/phone",
-  rateLimit("user_contacts_phone", 10, 300),
-  requireAuth,
+  rateLimit("user_contacts_phone"),
+  requireAccessToken,
   asyncHandler(updatePhone),
 );
 usersRouter.post(
   "/me/contacts/:contactId/request-verification",
-  rateLimit("user_contacts_verify_request", 5, 300),
-  requireAuth,
+  rateLimit("user_contacts_verify_request"),
+  requireAccessToken,
   asyncHandler(requestContactVerificationHandler),
 );
 usersRouter.post(
   "/me/contacts/:contactId/verify",
-  rateLimit("user_contacts_verify", 10, 300),
-  requireAuth,
+  rateLimit("user_contacts_verify"),
+  requireAccessToken,
   asyncHandler(verifyContactHandler),
 );
 usersRouter.delete(
   "/me/contacts/:contactId",
-  rateLimit("user_contacts_delete", 10, 300),
-  requireAuth,
+  rateLimit("user_contacts_delete"),
+  requireAccessToken,
   asyncHandler(removeContactHandler),
 );
 usersRouter.post(
   "/",
-  rateLimit("user_create", 5, 60),
-  requireAuth,
+  rateLimit("user_create"),
+  requireAccessToken,
   requireRole("admin"),
   asyncHandler(adminCreateUser),
 );
 usersRouter.get(
   "/",
-  rateLimit("user_list", 10, 60),
-  requireAuth,
+  rateLimit("user_list"),
+  requireAccessToken,
   requireRole("admin"),
   asyncHandler(list),
 );
 usersRouter.get(
   "/me/export",
-  requireAuth,
-  rateLimit("user_export", 2, 3600),
+  requireAccessToken,
+  rateLimit("user_export"),
   asyncHandler(exportData),
 );
 usersRouter.get(
+  "/me/preferences",
+  rateLimit("user_preferences_get"),
+  requireAccessToken,
+  asyncHandler(getPreferences),
+);
+usersRouter.patch(
+  "/me/preferences",
+  rateLimit("user_preferences_update"),
+  requireAccessToken,
+  asyncHandler(updatePreferences),
+);
+usersRouter.get(
   "/me/privacy",
-  rateLimit("user_privacy_get", 60, 60),
-  requireAuth,
+  rateLimit("user_privacy_get"),
+  requireAccessToken,
   asyncHandler(getPrivacy),
 );
 usersRouter.patch(
   "/me/privacy",
-  rateLimit("user_privacy_update", 20, 60),
-  requireAuth,
+  rateLimit("user_privacy_update"),
+  requireAccessToken,
   asyncHandler(updatePrivacy),
 );
 usersRouter.patch(
   "/:id/status",
-  rateLimit("user_status", 10, 60),
-  requireAuth,
+  rateLimit("user_status"),
+  requireAccessToken,
   requireRole("admin"),
   asyncHandler(adminChangeStatus),
 );
 usersRouter.post(
   "/:alias/follow",
-  rateLimit("user_follow", 50, 86400),
-  requireAuth,
+  rateLimit("user_follow"),
+  requireAccessToken,
   asyncHandler(followUserHandler),
 );
 usersRouter.delete(
   "/:alias/follow",
-  rateLimit("user_unfollow", 50, 86400),
-  requireAuth,
+  rateLimit("user_unfollow"),
+  requireAccessToken,
   asyncHandler(unfollowUserHandler),
 );
 usersRouter.get(
   "/:alias/followers",
-  rateLimit("user_followers", 120, 60),
+  rateLimit("user_followers"),
   asyncHandler(listFollowersHandler),
 );
 usersRouter.get(
   "/:alias/following",
-  rateLimit("user_following", 120, 60),
+  rateLimit("user_following"),
   asyncHandler(listFollowingHandler),
 );
 usersRouter.get(
   "/me/metrics",
-  rateLimit("user_metrics", 60, 60),
-  requireAuth,
+  rateLimit("user_metrics"),
+  requireAccessToken,
   asyncHandler(getMetrics),
 );
 usersRouter.get(
   "/:userId/metrics",
-  rateLimit("user_metrics_by_id", 60, 60),
-  requireAuth,
+  rateLimit("user_metrics_by_id"),
+  requireAccessToken,
   asyncHandler(getMetrics),
 );
-usersRouter.get("/:id", requireAuth, requireRole("admin"), asyncHandler(getById));
+usersRouter.get("/:id", requireAccessToken, requireRole("admin"), asyncHandler(getById));

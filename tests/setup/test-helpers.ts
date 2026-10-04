@@ -222,6 +222,40 @@ export async function isDatabaseAvailable(): Promise<boolean> {
   }
 }
 
+
+/**
+ * Ensure integration tests have one effective persisted Terms publication.
+ * This models the Phase 17 runtime authority without falling back to users.terms_version.
+ */
+export async function ensureLegalPublicationsSeeded(): Promise<void> {
+  const db = await getDb();
+  try {
+    const existing = await db("legal_document_versions")
+      .where({ document_type: "terms" })
+      .where("effective_at", "<=", new Date().toISOString())
+      .first("id");
+    if (existing) {
+      return;
+    }
+    await db("legal_document_versions").insert({
+      document_type: "terms",
+      version: "test-baseline.1",
+      change_class: "legacy",
+      user_action: "none",
+      effective_at: new Date(Date.now() - 60_000).toISOString(),
+      published_at: new Date(Date.now() - 60_000).toISOString(),
+      published_by: null,
+      source: "test_fixture",
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("does not exist") || errorMessage.includes("relation")) {
+      return;
+    }
+    throw error;
+  }
+}
+
 /**
  * Handle lives on profiles.alias; users.username was removed.
  * Kept so existing test hooks do not need a mass rename.
@@ -240,6 +274,7 @@ export async function ensureUsernameColumnExists(): Promise<void> {
 export async function truncateAll(): Promise<void> {
   const db = await getDb();
   const tables = [
+    "audit_outbox",
     "idempotency_keys",
     "audit_log",
     "cookie_consents",
@@ -313,4 +348,5 @@ export async function truncateAll(): Promise<void> {
   await ensureRolesSeeded();
   await ensureFitnessLevelsSeeded();
   await ensureWeightAttributeSeeded();
+  await ensureLegalPublicationsSeeded();
 }

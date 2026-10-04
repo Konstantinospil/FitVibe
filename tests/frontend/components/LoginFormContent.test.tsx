@@ -245,10 +245,14 @@ describe("LoginFormContent", () => {
 
     expect(passwordInput.type).toBe("password");
 
-    fireEvent.click(toggleButton);
+    fireEvent.mouseDown(toggleButton);
 
     expect(passwordInput.type).toBe("text");
-    expect(screen.getByLabelText("Hide password")).toBeInTheDocument();
+    const hideButton = screen.getByLabelText("Hide password");
+    expect(hideButton).toBeInTheDocument();
+
+    fireEvent.mouseUp(hideButton);
+    expect(passwordInput.type).toBe("password");
   });
 
   it("should render register and forgot password links", () => {
@@ -565,14 +569,14 @@ describe("LoginFormContent", () => {
     );
   });
 
-  describe("lockout error handling", () => {
-    it("should handle AUTH_ACCOUNT_LOCKED error with remainingSeconds", async () => {
+  describe("legacy authentication failure concealment", () => {
+    it("should not render legacy lockout details", async () => {
       vi.mocked(api.login).mockRejectedValue({
         response: {
           data: {
             error: {
               code: "AUTH_ACCOUNT_LOCKED",
-              message: "Account locked",
+              message: "Account temporarily locked",
               details: {
                 remainingSeconds: 300,
                 lockoutType: "account",
@@ -588,118 +592,31 @@ describe("LoginFormContent", () => {
         </MemoryRouter>,
       );
 
-      const emailInput = screen.getByLabelText("Email");
-      const passwordInput = screen.getByLabelText("Password");
-      const submitButton = screen.getByRole("button", { name: "Sign In" });
-
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "password123" } });
-      fireEvent.click(submitButton);
-
-      await waitFor(
-        () => {
-          expect(screen.getByText("Account locked")).toBeInTheDocument();
-          expect(screen.getByRole("status")).toBeInTheDocument();
-          expect(screen.getByRole("button", { name: "Sign In" })).toBeDisabled();
-        },
-        { timeout: 5000 },
-      );
-    });
-
-    it("should handle AUTH_IP_LOCKED error with remainingSeconds", async () => {
-      vi.mocked(api.login).mockRejectedValue({
-        response: {
-          data: {
-            error: {
-              code: "AUTH_IP_LOCKED",
-              message: "IP address locked",
-              details: {
-                remainingSeconds: 600,
-                lockoutType: "ip",
-              },
-            },
-          },
-        },
+      fireEvent.change(screen.getByLabelText("Email"), {
+        target: { value: "test@example.com" },
       });
-
-      render(
-        <MemoryRouter>
-          <LoginFormContent />
-        </MemoryRouter>,
-      );
-
-      const emailInput = screen.getByLabelText("Email");
-      const passwordInput = screen.getByLabelText("Password");
-      const submitButton = screen.getByRole("button", { name: "Sign In" });
-
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "password123" } });
-      fireEvent.click(submitButton);
-
-      await waitFor(
-        () => {
-          expect(screen.getByText("IP address locked")).toBeInTheDocument();
-          expect(screen.getByRole("status")).toBeInTheDocument();
-        },
-        { timeout: 5000 },
-      );
-    });
-
-    it("should handle lockout error without errorMessage (uses default)", async () => {
-      vi.mocked(api.login).mockRejectedValue({
-        response: {
-          data: {
-            error: {
-              code: "AUTH_ACCOUNT_LOCKED",
-              details: {
-                remainingSeconds: 300,
-                lockoutType: "account",
-              },
-            },
-          },
-        },
+      fireEvent.change(screen.getByLabelText("Password"), {
+        target: { value: "password123" },
       });
-
-      render(
-        <MemoryRouter>
-          <LoginFormContent />
-        </MemoryRouter>,
-      );
-
-      const emailInput = screen.getByLabelText("Email");
-      const passwordInput = screen.getByLabelText("Password");
-      const submitButton = screen.getByRole("button", { name: "Sign In" });
-
-      fireEvent.change(emailInput, { target: { value: "test@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "password123" } });
-      fireEvent.click(submitButton);
+      fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
 
       await waitFor(
         () => {
-          // Should show lockout message or default
-          const alert = screen.getByRole("alert");
-          expect(alert).toBeInTheDocument();
+          expect(screen.getByRole("alert")).toBeInTheDocument();
+          expect(screen.queryByText("Account temporarily locked")).not.toBeInTheDocument();
+          expect(screen.queryByRole("status")).not.toBeInTheDocument();
         },
         { timeout: 5000 },
       );
     });
 
-    it("should show remaining-attempt warning when credentials are invalid", async () => {
+    it("should not render legacy invalid-credential details", async () => {
       vi.mocked(api.login).mockRejectedValue({
         response: {
           data: {
             error: {
               code: "AUTH_INVALID_CREDENTIALS",
-              message: "Invalid credentials",
-              details: {
-                warning: true,
-                remainingAccountAttempts: 2,
-                remainingIPAttempts: 4,
-                remainingIPDistinctEmails: 3,
-                accountAttemptCount: 3,
-                ipTotalAttemptCount: 5,
-                ipDistinctEmailCount: 2,
-              },
+              message: "Invalid email or password",
             },
           },
         },
@@ -711,14 +628,18 @@ describe("LoginFormContent", () => {
         </MemoryRouter>,
       );
 
-      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "test@example.com" } });
-      fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong" } });
+      fireEvent.change(screen.getByLabelText("Email"), {
+        target: { value: "test@example.com" },
+      });
+      fireEvent.change(screen.getByLabelText("Password"), {
+        target: { value: "wrong" },
+      });
       fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
 
       await waitFor(
         () => {
-          const alerts = screen.getAllByRole("alert");
-          expect(alerts.length).toBeGreaterThanOrEqual(2);
+          expect(screen.getByRole("alert")).toBeInTheDocument();
+          expect(screen.queryByText("Invalid email or password")).not.toBeInTheDocument();
         },
         { timeout: 5000 },
       );

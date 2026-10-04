@@ -13,6 +13,7 @@ const initializeSecretsManagerMock = jest.fn();
 const getJWTKeysMock = jest.fn();
 const getDatabaseURLMock = jest.fn();
 const antivirusHealthMock = jest.fn();
+const initializeApplicationSettingsRuntimeMock = jest.fn();
 
 const envMock: EnvMockShape = {
   PORT: 5050,
@@ -42,6 +43,10 @@ jest.mock("../../apps/backend/src/services/antivirus.service.js", () => ({
   checkHealth: antivirusHealthMock,
 }));
 
+jest.mock("../../apps/backend/src/modules/system/app-settings.runtime.js", () => ({
+  initializeApplicationSettingsRuntime: initializeApplicationSettingsRuntimeMock,
+}));
+
 describe("server bootstrap", () => {
   const originalEnv = { ...process.env };
 
@@ -56,6 +61,7 @@ describe("server bootstrap", () => {
     getJWTKeysMock.mockResolvedValue(null);
     getDatabaseURLMock.mockResolvedValue(null);
     antivirusHealthMock.mockResolvedValue(true);
+    initializeApplicationSettingsRuntimeMock.mockResolvedValue(undefined);
   });
 
   afterAll(() => {
@@ -69,6 +75,7 @@ describe("server bootstrap", () => {
     await startServer();
 
     expect(initializeSecretsManagerMock).not.toHaveBeenCalled();
+    expect(initializeApplicationSettingsRuntimeMock).toHaveBeenCalledTimes(1);
     expect(listenMock).toHaveBeenCalledWith(5050, expect.any(Function));
     expect(loggerMock.info).toHaveBeenCalledWith(
       "[server] Secrets manager disabled - using environment/files",

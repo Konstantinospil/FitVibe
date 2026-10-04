@@ -43,6 +43,63 @@ describe("PointsJobsService", () => {
     });
   });
 
+  describe("schedule failure isolation", () => {
+    it("swallows synchronous enqueue failures and logs them", () => {
+      jest.mocked(mockQueueService.enqueue).mockImplementationOnce(() => {
+        throw new Error("queue unavailable");
+      });
+
+      expect(() =>
+        service.schedule({
+          name: "points.projection.reconcile",
+          payload: { userId: "user-123" },
+        }),
+      ).not.toThrow();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: "queue unavailable",
+        }),
+        "[jobs] Failed to enqueue points job",
+      );
+    });
+
+    it("handles asynchronous enqueue rejection without exposing it to the caller", async () => {
+      jest
+        .mocked(mockQueueService.enqueue)
+        .mockRejectedValueOnce(new Error("redis unavailable"));
+
+      expect(() =>
+        service.schedule({
+          name: "points.projection.reconcile",
+          payload: { userId: "user-123" },
+        }),
+      ).not.toThrow();
+
+      await Promise.resolve();
+
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: "redis unavailable",
+        }),
+        "[jobs] Failed to enqueue points job",
+      );
+    });
+
+    it("schedules projection reconciliation with explicit rebuild intent", () => {
+      service.scheduleProjectionReconciliation("user-123", "session-456", true);
+
+      expect(mockQueueService.enqueue).toHaveBeenCalledWith({
+        name: "points.projection.reconcile",
+        payload: {
+          userId: "user-123",
+          sessionId: "session-456",
+          forceFullRebuild: true,
+        },
+      });
+    });
+  });
+
   describe("scheduleStreakEvaluation", () => {
     it("should schedule streak evaluation job", () => {
       const userId = "user-123";

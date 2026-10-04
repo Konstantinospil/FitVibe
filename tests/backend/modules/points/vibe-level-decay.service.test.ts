@@ -1,265 +1,203 @@
 import * as decayService from "../../../../apps/backend/src/jobs/services/vibe-level-decay.service.js";
-import * as pointsRepository from "../../../../apps/backend/src/modules/points/points.repository.js";
+import * as vibeLevelRepository from "../../../../apps/backend/src/modules/points/vibe-level.repository.js";
+import type { DomainVibeLevel } from "../../../../apps/backend/src/modules/points/points.types.js";
 
-// Mock dependencies
-jest.mock("../../../../apps/backend/src/modules/points/points.repository.js");
+jest.mock("../../../../apps/backend/src/modules/points/vibe-level.repository.js");
 
-// Mock db with proper query builder chaining
-let mockSelectResult: unknown[] = [];
+type MockTransaction = jest.Mock & {
+  raw: jest.Mock;
+  transaction: jest.Mock;
+};
+
+function createMockTransaction(): MockTransaction {
+  const trx = jest.fn() as MockTransaction;
+  trx.raw = jest.fn().mockResolvedValue({ rows: [{ acquired: true }] });
+  trx.transaction = jest.fn((callback) => Promise.resolve(callback(trx)));
+  return trx;
+}
 
 jest.mock("../../../../apps/backend/src/db/connection.js", () => {
-  const createMockQueryBuilder = () => {
-    return {
-      where: jest.fn().mockReturnThis(),
-      select: jest.fn().mockImplementation(() => {
-        // Access the outer scope's mockSelectResult
-        return Promise.resolve(mockSelectResult);
-      }),
-    };
+  const mockDb = {
+    transaction: jest.fn((callback) => Promise.resolve(callback(createMockTransaction()))),
   };
 
-  const mockDb = jest.fn(() => createMockQueryBuilder()) as jest.Mock & {
-    transaction: jest.Mock;
-  };
-
-  mockDb.transaction = jest.fn((cb) => {
-    const trx = createMockQueryBuilder();
-    return Promise.resolve(cb(trx));
-  });
-
-  return {
-    db: mockDb,
-  };
+  return { db: mockDb };
 });
 
-const mockPointsRepo = jest.mocked(pointsRepository);
+const mockVibeLevelRepo = jest.mocked(vibeLevelRepository);
 
-// Import the mocked db
 import { db } from "../../../../apps/backend/src/db/connection.js";
-const mockDb = db as jest.Mock & { transaction: jest.Mock };
+const mockDb = db as unknown as { transaction: jest.Mock };
+
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function createRating(overrides: Partial<DomainVibeLevel> = {}): DomainVibeLevel {
+  const timestamp = daysAgo(2);
+  return {
+    user_id: "user-1",
+    domain_code: "strength",
+    vibe_level: 1500,
+    rating_deviation: 50,
+    volatility: 0.06,
+    last_updated_at: timestamp,
+    created_at: timestamp,
+    updated_at: timestamp,
+    ...overrides,
+  };
+}
 
 describe("Vibe Level Decay Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSelectResult = [];
+    mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([]);
+    mockVibeLevelRepo.lockVibeLevelsForUser.mockResolvedValue(undefined);
+    mockVibeLevelRepo.getDomainVibeLevel.mockResolvedValue(undefined);
+    mockVibeLevelRepo.updateDomainVibeLevel.mockResolvedValue(undefined);
   });
 
   describe("applyVibeLevelDecay", () => {
-    it("should apply decay to stale ratings", async () => {
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 2); // 2 days ago
+    it("applies decay from the rating re-read under the user lock", async () => {
+      const rating = createRating();
+      mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([rating]);
+      mockVibeLevelRepo.getDomainVibeLevel.mockResolvedValue(rating);
 
-      mockSelectResult = [
-        {
-          user_id: "user-1",
-          domain_code: "strength",
-          vibe_level: 1500,
-          rating_deviation: 50,
-          volatility: 0.06,
-          last_updated_at: oneDayAgo.toISOString(),
-        },
-      ];
+      const result = await decayService.applyVibeLevelDecay();
 
-      mockPointsRepo.updateDomainVibeLevel.mockResolvedValue();
-      mockPointsRepo.insertVibeLevelChange.mockResolvedValue({
-        id: "change-1",
-        user_id: "user-1",
-        domain_code: "strength",
-        session_id: null,
-        old_vibe_level: 1500,
-        new_vibe_level: 1498, // 2 days * 1 point/day = 2 point loss
-        old_rd: 50,
-        new_rd: 54, // 2 days * 2 points/day = 4 point increase
-        change_amount: -2,
-        performance_score: null,
-        domain_impact: null,
-        points_awarded: null,
-        change_reason: "decay",
-        metadata: {},
-        created_at: new Date().toISOString(),
-      });
-
-      await decayService.applyVibeLevelDecay();
-
-      expect(mockDb).toHaveBeenCalledWith("user_domain_vibe_levels");
-      expect(mockPointsRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
+      expect(result).toEqual({ skipped: false, decayed: 1 });
+      expect(mockVibeLevelRepo.lockVibeLevelsForUser).toHaveBeenCalledWith(
         "user-1",
-        "strength",
-        1498, // 1500 - 2
-        54, // 50 + 4
-        expect.any(Number), // volatility
-        expect.any(Object), // transaction
+        expect.anything(),
       );
-      expect(mockPointsRepo.insertVibeLevelChange).toHaveBeenCalled();
-    });
-
-    it("should not decay ratings updated within last day", async () => {
-      const recentDate = new Date();
-      recentDate.setHours(recentDate.getHours() - 12); // 12 hours ago
-
-      mockSelectResult = [
-        {
-          user_id: "user-1",
-          domain_code: "strength",
-          vibe_level: 1500,
-          rating_deviation: 50,
-          volatility: 0.06,
-          last_updated_at: recentDate.toISOString(),
-        },
-      ];
-
-      await decayService.applyVibeLevelDecay();
-
-      expect(mockPointsRepo.updateDomainVibeLevel).not.toHaveBeenCalled();
-    });
-
-    it("should cap decay at maximum values", async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      mockSelectResult = [
-        {
-          user_id: "user-1",
-          domain_code: "strength",
-          vibe_level: 1500,
-          rating_deviation: 50,
-          volatility: 0.06,
-          last_updated_at: thirtyDaysAgo.toISOString(),
-        },
-      ];
-
-      mockPointsRepo.updateDomainVibeLevel.mockResolvedValue();
-      mockPointsRepo.insertVibeLevelChange.mockResolvedValue({
-        id: "change-1",
-        user_id: "user-1",
-        domain_code: "strength",
-        session_id: null,
-        old_vibe_level: 1500,
-        new_vibe_level: 1450, // Max 50 point loss
-        old_rd: 50,
-        new_rd: 100, // Max 50 point increase (50 + 50 = 100)
-        change_amount: -50,
-        performance_score: null,
-        domain_impact: null,
-        points_awarded: null,
-        change_reason: "decay",
-        metadata: {},
-        created_at: new Date().toISOString(),
-      });
-
-      await decayService.applyVibeLevelDecay();
-
-      expect(mockPointsRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
         "user-1",
         "strength",
-        1470, // 1500 - 30 (30 days * 1 point/day, capped at 50 but 30 < 50)
-        100, // 50 + 50 (30 days * 2 points/day = 60, but capped at 50, so 50 + 50 = 100)
+        1498,
+        54,
         expect.any(Number),
-        expect.any(Object),
+        expect.anything(),
+      );
+      expect(mockVibeLevelRepo.insertVibeLevelChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          old_vibe_level: 1500,
+          new_vibe_level: 1498,
+          change_amount: -2,
+          change_reason: "decay",
+        }),
+        expect.anything(),
       );
     });
 
-    it("should not decay below minimum vibe level", async () => {
-      const tenDaysAgo = new Date();
-      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-
-      mockSelectResult = [
-        {
-          user_id: "user-1",
-          domain_code: "strength",
-          vibe_level: 105, // Low vibe level
-          rating_deviation: 50,
-          volatility: 0.06,
-          last_updated_at: tenDaysAgo.toISOString(),
-        },
-      ];
-
-      mockPointsRepo.updateDomainVibeLevel.mockResolvedValue();
-      mockPointsRepo.insertVibeLevelChange.mockResolvedValue({
-        id: "change-1",
-        user_id: "user-1",
-        domain_code: "strength",
-        session_id: null,
-        old_vibe_level: 105,
-        new_vibe_level: 100, // Clamped to minimum
-        old_rd: 50,
-        new_rd: 70, // 50 + (10 * 2) = 70
-        change_amount: -5,
-        performance_score: null,
-        domain_impact: null,
-        points_awarded: null,
-        change_reason: "decay",
-        metadata: {},
-        created_at: new Date().toISOString(),
+    it("skips a candidate that became fresh before the user lock was acquired", async () => {
+      const staleCandidate = createRating({ last_updated_at: daysAgo(2) });
+      const freshCurrent = createRating({
+        vibe_level: 1510,
+        last_updated_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
       });
+      mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([staleCandidate]);
+      mockVibeLevelRepo.getDomainVibeLevel.mockResolvedValue(freshCurrent);
+
+      const result = await decayService.applyVibeLevelDecay();
+
+      expect(result).toEqual({ skipped: false, decayed: 0 });
+      expect(mockVibeLevelRepo.lockVibeLevelsForUser).toHaveBeenCalled();
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).not.toHaveBeenCalled();
+      expect(mockVibeLevelRepo.insertVibeLevelChange).not.toHaveBeenCalled();
+    });
+
+    it("recomputes decay from the locked current value instead of the stale scan snapshot", async () => {
+      const timestamp = daysAgo(2);
+      const staleCandidate = createRating({ vibe_level: 1500, last_updated_at: timestamp });
+      const lockedCurrent = createRating({ vibe_level: 1600, last_updated_at: timestamp });
+      mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([staleCandidate]);
+      mockVibeLevelRepo.getDomainVibeLevel.mockResolvedValue(lockedCurrent);
 
       await decayService.applyVibeLevelDecay();
 
-      expect(mockPointsRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
         "user-1",
         "strength",
-        100, // Clamped to minimum
+        1598,
+        54,
         expect.any(Number),
-        expect.any(Number),
-        expect.any(Object),
+        expect.anything(),
       );
     });
 
-    it("should handle multiple stale ratings", async () => {
-      const twoDaysAgo = new Date();
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-
-      mockSelectResult = [
-        {
-          user_id: "user-1",
-          domain_code: "strength",
-          vibe_level: 1500,
-          rating_deviation: 50,
-          volatility: 0.06,
-          last_updated_at: twoDaysAgo.toISOString(),
-        },
-        {
-          user_id: "user-1",
-          domain_code: "endurance",
-          vibe_level: 1200,
-          rating_deviation: 100,
-          volatility: 0.06,
-          last_updated_at: twoDaysAgo.toISOString(),
-        },
-        {
-          user_id: "user-2",
-          domain_code: "strength",
-          vibe_level: 2000,
-          rating_deviation: 30,
-          volatility: 0.06,
-          last_updated_at: twoDaysAgo.toISOString(),
-        },
-      ];
-
-      mockPointsRepo.updateDomainVibeLevel.mockResolvedValue();
-      mockPointsRepo.insertVibeLevelChange.mockResolvedValue({
-        id: "change-1",
-        user_id: "user-1",
-        domain_code: "strength",
-        session_id: null,
-        old_vibe_level: 1500,
-        new_vibe_level: 1498,
-        old_rd: 50,
-        new_rd: 54,
-        change_amount: -2,
-        performance_score: null,
-        domain_impact: null,
-        points_awarded: null,
-        change_reason: "decay",
-        metadata: {},
-        created_at: new Date().toISOString(),
+    it("skips when another decay run holds the global advisory lock", async () => {
+      mockDb.transaction.mockImplementationOnce((callback) => {
+        const trx = createMockTransaction();
+        trx.raw.mockResolvedValueOnce({ rows: [{ acquired: false }] });
+        return Promise.resolve(callback(trx));
       });
+
+      const result = await decayService.applyVibeLevelDecay();
+
+      expect(result).toEqual({ skipped: true, decayed: 0 });
+      expect(mockVibeLevelRepo.getStaleDomainVibeLevels).not.toHaveBeenCalled();
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).not.toHaveBeenCalled();
+    });
+
+    it("caps long inactivity decay and rating-deviation growth", async () => {
+      const rating = createRating({ last_updated_at: daysAgo(60) });
+      mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([rating]);
+      mockVibeLevelRepo.getDomainVibeLevel.mockResolvedValue(rating);
 
       await decayService.applyVibeLevelDecay();
 
-      // Should process all stale ratings
-      expect(mockPointsRepo.updateDomainVibeLevel).toHaveBeenCalledTimes(3);
-      expect(mockPointsRepo.insertVibeLevelChange).toHaveBeenCalledTimes(3);
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
+        "user-1",
+        "strength",
+        1450,
+        100,
+        expect.any(Number),
+        expect.anything(),
+      );
+    });
+
+    it("does not decay below the minimum vibe level", async () => {
+      const rating = createRating({
+        vibe_level: 105,
+        last_updated_at: daysAgo(10),
+      });
+      mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([rating]);
+      mockVibeLevelRepo.getDomainVibeLevel.mockResolvedValue(rating);
+
+      await decayService.applyVibeLevelDecay();
+
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).toHaveBeenCalledWith(
+        "user-1",
+        "strength",
+        100,
+        expect.any(Number),
+        expect.any(Number),
+        expect.anything(),
+      );
+    });
+
+    it("continues processing other ratings when one decay fails", async () => {
+      const first = createRating({
+        user_id: "user-1",
+        domain_code: "strength",
+      });
+      const second = createRating({
+        user_id: "user-2",
+        domain_code: "endurance",
+      });
+      mockVibeLevelRepo.getStaleDomainVibeLevels.mockResolvedValue([first, second]);
+      mockVibeLevelRepo.getDomainVibeLevel
+        .mockResolvedValueOnce(first)
+        .mockResolvedValueOnce(second);
+      mockVibeLevelRepo.updateDomainVibeLevel
+        .mockRejectedValueOnce(new Error("write failed"))
+        .mockResolvedValueOnce(undefined);
+
+      const result = await decayService.applyVibeLevelDecay();
+
+      expect(result).toEqual({ skipped: false, decayed: 1 });
+      expect(mockVibeLevelRepo.updateDomainVibeLevel).toHaveBeenCalledTimes(2);
+      expect(mockVibeLevelRepo.insertVibeLevelChange).toHaveBeenCalledTimes(1);
     });
   });
 });

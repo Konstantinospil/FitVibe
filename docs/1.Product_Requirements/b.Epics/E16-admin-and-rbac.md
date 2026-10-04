@@ -10,13 +10,13 @@
 **Gate**: GOLD  
 **Estimated Total Effort**: 15-20 story points  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Description
 
-Enable administrative control and role-based access control for platform management. Provide administrators and coaches with appropriate tools and permissions to manage users and content.
+Enable administrative control and role-based access control for platform management. Administration is delivered through both product-integrated administration and a dedicated Backoffice surface, sharing the same authorization, audit, and domain rules.
 
 ## Business Value
 
@@ -24,11 +24,11 @@ Enables platform administration and supports coach functionality. Ensures proper
 
 ## Related Activities
 
-{Note: Activities will be created and linked here as they are defined}
+This is legacy-completed scope that predates the current activity-level traceability discipline. No retrospective activities will be fabricated solely to populate historical documentation. Future extensions must be represented as new canonical scope.
 
 ## Related User Stories
 
-{Note: User stories will be created and linked here as they are defined}
+This is a **legacy-completed epic**. It predates the current story-level traceability discipline and is retained as completed historical scope. Do not fabricate retrospective backlog stories solely to populate this section. New administrative capabilities that are not part of the completed E16 scope require a new story/epic or an explicit extension of a still-open requirement.
 
 ## Dependencies
 
@@ -41,8 +41,9 @@ Enables platform administration and supports coach functionality. Ensures proper
 ## Success Criteria
 
 - Role-based access control functions correctly
-- Administrators can manage users and content
-- All administrative actions are audit-logged
+- Authorized administrators/support users can manage supported operational state through product administration and/or Backoffice
+- Both administration surfaces share authorization and audit semantics
+- All state-changing administrative actions are audit-logged
 - Proper authorization is enforced
 
 ## Risks & Mitigation
@@ -54,5 +55,5 @@ Enables platform administration and supports coach functionality. Ensures proper
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: N/A (legacy-completed epic)

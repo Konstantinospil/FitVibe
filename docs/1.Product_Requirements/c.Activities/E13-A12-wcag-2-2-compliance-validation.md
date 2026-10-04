@@ -29,9 +29,9 @@ Perform final validation of WCAG 2.2 AA compliance across the entire application
 
 ## Acceptance Criteria
 
-- 100% WCAG 2.2 AA compliance verified by automated tests
+- WCAG 2.2 AA conformance verified criterion-by-criterion for applicable A/AA success criteria using automated and manual evidence as appropriate
 - 0 critical or serious violations in axe-core reports
-- Lighthouse accessibility score remains ≥ 90
+- Lighthouse accessibility score remains ≥ 90 on tracked pages as a regression indicator, not as proof of conformance
 - All documentation updated and accurate
 - Manual testing confirms all new criteria met
 - Compliance report generated

@@ -10,13 +10,13 @@
 **Gate**: GOLD  
 **Estimated Total Effort**: 6-10 story points  
 **Created**: 2025-01-20  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## Description
 
-Update FitVibe's accessibility compliance from WCAG 2.1 AA to WCAG 2.2 AA by implementing the 9 new success criteria introduced in WCAG 2.2 (released October 2023). This epic enhances the existing accessibility work in Epic 8 with the latest standards.
+Update FitVibe's accessibility target from WCAG 2.1 AA to WCAG 2.2 AA. WCAG 2.2 introduced nine new success criteria in total; this epic requires the new A/AA criteria relevant to WCAG 2.2 AA conformance and may track AAA criteria separately as non-blocking guidance. It also aligns related accessibility documentation and verification with the current standard.
 
 ## Business Value
 
@@ -39,7 +39,16 @@ Ensures FitVibe remains compliant with the latest accessibility standards, impro
 
 ## Related User Stories
 
-{Note: User stories will be created and linked here as they are defined}
+- [US-13.1: WCAG 2.2 Documentation Alignment](../d.User_stories/US-13.1-wcag-documentation-alignment.md)
+- [US-13.2: Focus Not Obscured](../d.User_stories/US-13.2-focus-not-obscured.md)
+- [US-13.3: Keyboard Alternatives for Dragging](../d.User_stories/US-13.3-dragging-alternatives.md)
+- [US-13.4: Pointer Target Size](../d.User_stories/US-13.4-target-size.md)
+- [US-13.5: Consistent Help](../d.User_stories/US-13.5-consistent-help.md)
+- [US-13.6: Redundant Entry & Form Persistence](../d.User_stories/US-13.6-redundant-entry-and-form-persistence.md)
+- [US-13.7: Accessible Authentication](../d.User_stories/US-13.7-accessible-authentication.md)
+- [US-13.8: Programmatic Status Messages](../d.User_stories/US-13.8-status-messages.md)
+
+E13-A11 (test updates) and E13-A12 (compliance validation) are verification activities, not additional product stories.
 
 ## Dependencies
 
@@ -50,17 +59,17 @@ Ensures FitVibe remains compliant with the latest accessibility standards, impro
 
 ### Blocking Dependencies
 
-- [E8-A5: Focus Management](../c.Activities/E8-A5-focus-management.md): Required for E13-A4
-- [E8-A2: Keyboard Navigation](../c.Activities/E8-A2-keyboard-navigation.md): Required for E13-A5
-- [E8-A3: Color Contrast](../c.Activities/E8-A3-color-contrast.md): Required for E13-A6
-- [E8-A6: Accessibility Testing](../c.Activities/E8-A6-accessibility-testing.md): Required for E13-A11
+- [E8-A5: Focus Management](../c.Activities/E8-A5-focus-management-system.md): Required for E13-A4
+- [E8-A2: Keyboard Navigation](../c.Activities/E8-A2-keyboard-navigation-implementation.md): Required for E13-A5
+- [E8-A3: Color Contrast](../c.Activities/E8-A3-color-contrast-compliance.md): Required for E13-A6
+- [E8-A6: Accessibility Testing](../c.Activities/E8-A6-accessibility-testing-automation.md): Required for E13-A11
 - [E4-A4: Drag-and-Drop Implementation](../c.Activities/E4-A4-drag-and-drop-implementation.md): Required for E13-A5
 
 ## Success Criteria
 
-- 100% WCAG 2.2 AA compliance verified by automated tests
-- 0 critical or serious violations in axe-core reports
-- Lighthouse accessibility score remains ≥ 90
+- WCAG 2.2 AA conformance is verified criterion-by-criterion for all applicable A/AA success criteria using automated and manual evidence as appropriate
+- 0 critical or serious violations in axe-core reports for covered flows/components
+- Lighthouse accessibility score remains ≥ 90 as a regression indicator; Lighthouse does not by itself prove WCAG conformance
 - All documentation updated and accurate
 - Manual testing confirms all new criteria met
 
@@ -75,5 +84,5 @@ Ensures FitVibe remains compliant with the latest accessibility standards, impro
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: after implementation comparison

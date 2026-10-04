@@ -2,7 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 import { logger } from "../../config/logger.js";
-import { getCompletedSessionDatesInRange, insertPointsEvent } from "./points.repository.js";
+import {
+  findPointsEventBySource,
+  getCompletedSessionDatesInRange,
+  insertPointsEvent,
+} from "./points.repository.js";
+import { getGamificationPolicy } from "./gamification-policy.repository.js";
 
 /**
  * Calculate the current workout streak for a user
@@ -18,9 +23,9 @@ export async function calculateCurrentStreak(
   completedAt: Date,
   trx?: Knex.Transaction,
 ): Promise<number> {
-  // Get all completed session dates in the past 90 days (maximum reasonable streak)
+  const policy = await getGamificationPolicy(completedAt, trx);
   const lookbackStart = new Date(completedAt);
-  lookbackStart.setDate(lookbackStart.getDate() - 90);
+  lookbackStart.setUTCDate(lookbackStart.getUTCDate() - policy.streakLookbackDays);
 
   const completedDates = await getCompletedSessionDatesInRange(
     userId,
@@ -48,8 +53,7 @@ export async function calculateCurrentStreak(
       break;
     }
 
-    // Safety check: don't go back more than 90 days
-    if (streakLength >= 90) {
+    if (streakLength >= policy.streakLookbackDays) {
       break;
     }
   }
@@ -78,22 +82,20 @@ export async function awardStreakBonus(
   completedAt: Date,
   trx?: Knex.Transaction,
 ): Promise<number> {
-  let bonusPoints = 0;
-
-  // Determine bonus points based on streak length
-  if (streakLength >= 30) {
-    bonusPoints = 50;
-  } else if (streakLength >= 14) {
-    bonusPoints = 20;
-  } else if (streakLength >= 7) {
-    bonusPoints = 10;
-  } else if (streakLength >= 3) {
-    bonusPoints = 5;
-  }
+  const policy = await getGamificationPolicy(completedAt, trx);
+  const applicableTier = [...policy.streakTiers]
+    .sort((a, b) => b.minDays - a.minDays)
+    .find((tier) => streakLength >= tier.minDays);
+  const bonusPoints = applicableTier?.bonusPoints ?? 0;
 
   // No bonus for streaks less than 3 days
   if (bonusPoints === 0) {
     return 0;
+  }
+
+  const existing = await findPointsEventBySource(userId, "streak_bonus", sessionId, trx);
+  if (existing) {
+    return existing.points;
   }
 
   // Record the streak bonus points
@@ -106,7 +108,7 @@ export async function awardStreakBonus(
       source_id: sessionId,
       points: bonusPoints,
       calories: null,
-      algorithm_version: "v1",
+      algorithm_version: policy.versionCode,
       metadata: {
         streak_days: streakLength,
         bonus_tier: bonusPoints,
@@ -137,18 +139,27 @@ export async function evaluateStreakBonus(
   userId: string,
   sessionId: string,
   completedAt: string | Date,
+  trx?: Knex.Transaction,
 ): Promise<{ streakLength: number; bonusPoints: number }> {
   const completedDate = typeof completedAt === "string" ? new Date(completedAt) : completedAt;
 
-  return db.transaction(async (trx) => {
+  const run = async (activeTrx: Knex.Transaction) => {
     // Calculate current streak
-    const streakLength = await calculateCurrentStreak(userId, completedDate, trx);
+    const streakLength = await calculateCurrentStreak(userId, completedDate, activeTrx);
 
     logger.debug({ userId, sessionId, streakLength }, "[streaks] Calculated current streak length");
 
     // Award bonus points if applicable
-    const bonusPoints = await awardStreakBonus(userId, sessionId, streakLength, completedDate, trx);
+    const bonusPoints = await awardStreakBonus(
+      userId,
+      sessionId,
+      streakLength,
+      completedDate,
+      activeTrx,
+    );
 
     return { streakLength, bonusPoints };
-  });
+  };
+
+  return trx ? run(trx) : db.transaction(run);
 }

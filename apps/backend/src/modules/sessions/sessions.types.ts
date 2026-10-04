@@ -1,5 +1,10 @@
-export type SessionStatus = "planned" | "in_progress" | "completed" | "canceled";
-export type SessionVisibility = "private" | "public" | "link";
+import type {
+  SessionStatus as SharedSessionStatus,
+  SessionVisibility as SharedSessionVisibility,
+} from "@fitvibe/contracts";
+
+export type SessionStatus = SharedSessionStatus;
+export type SessionVisibility = SharedSessionVisibility;
 
 export interface Session {
   id: string;
@@ -15,6 +20,7 @@ export interface Session {
   completed_at?: string | null;
   calories?: number | null;
   points?: number | null;
+  gamification_rebuild_required?: boolean;
   deleted_at?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -43,6 +49,9 @@ export interface SessionSetInput {
   distance_m?: number | null;
   duration_sec?: number | null;
   rpe?: number | null;
+  rest_sec?: number | null;
+  extras?: Record<string, unknown>;
+  recorded_at?: string | null;
   notes?: string | null;
 }
 
@@ -143,6 +152,9 @@ export interface SessionExerciseSet {
   distance_m?: number | null;
   duration_sec?: number | null;
   rpe?: number | null;
+  rest_sec?: number | null;
+  extras?: Record<string, unknown>;
+  recorded_at?: string | null;
   notes?: string | null;
   created_at?: string;
 }

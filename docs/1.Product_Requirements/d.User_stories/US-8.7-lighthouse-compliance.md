@@ -5,23 +5,23 @@
 **Story ID**: US-8.7  
 **Epic ID**: [E8](../b.Epics/E8-accessibility.md)  
 **Title**: Lighthouse Compliance  
-**Status**: Proposed  
+**Status**: Open  
 **Story Points**: 2  
 **Priority**: High  
 **Created**: 2025-01-21  
-**Updated**: 2025-01-21
+**Updated**: 2026-09-25
 
 ---
 
 ## User Story
 
 **As a** developer  
-**I want** Lighthouse accessibility score to be 100  
-**So that** I can ensure WCAG compliance
+**I want** Lighthouse accessibility checks to provide a stable regression signal  
+**So that** accessibility regressions are detected continuously without treating an automated score as proof of WCAG conformance
 
 ## Description
 
-Lighthouse accessibility score = 100; all accessibility audits pass; score maintained across releases. Lighthouse CI runs per PR; accessibility score regression blocks merge; budget enforced.
+Lighthouse accessibility score target is ≥90 on tracked pages, consistent with NFR-004 and the QA plan. Lighthouse is a regression indicator only; WCAG 2.2 AA conformance is established criterion-by-criterion with automated and manual evidence as appropriate. Lighthouse CI runs on the governed CI path and regressions below the configured threshold block completion.
 
 ## Related Acceptance Criteria
 
@@ -56,5 +56,5 @@ Lighthouse accessibility score = 100; all accessibility audits pass; score maint
 
 ---
 
-**Last Updated**: 2025-01-21  
-**Next Review**: 2025-02-21
+**Last Updated**: 2026-09-25  
+**Next Review**: after implementation comparison
