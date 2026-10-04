@@ -21,10 +21,17 @@ const getSystemTheme = (): Theme => {
   }
 };
 
-// Apply theme to document
-const applyTheme = (theme: Theme) => {
+const getThemeMarkSrc = (theme: Theme): string =>
+  theme === "light" ? "/fitvibe-mark-light.svg" : "/fitvibe-mark-dark.svg";
+
+// Apply theme to document and theme-dependent brand assets
+export const applyTheme = (theme: Theme) => {
   if (typeof document !== "undefined") {
     document.documentElement.setAttribute("data-theme", theme);
+    const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (favicon) {
+      favicon.href = getThemeMarkSrc(theme);
+    }
   }
 };
 
