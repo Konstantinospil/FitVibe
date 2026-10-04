@@ -2439,8 +2439,32 @@ jobs:
           resolve_digest() {
             image="$1"
             digest="$(docker buildx imagetools inspect "$image" | awk '/^Digest:/ {print $2; exit}')"
-            if ! printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}
+            if ! printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+              echo "Failed to resolve immutable digest for $image: $digest" >&2
+              exit 1
+            fi
+            printf '%s\n' "$digest"
+          }
 
+          postgres_digest="$(resolve_digest postgres:16)"
+          clamav_digest="$(resolve_digest clamav/clamav:latest)"
+          redis_digest="$(resolve_digest redis:7-alpine)"
+
+          echo "postgres_image=postgres@${postgres_digest}" >> "$GITHUB_OUTPUT"
+          echo "clamav_image=clamav/clamav@${clamav_digest}" >> "$GITHUB_OUTPUT"
+          echo "redis_image=redis@${redis_digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Record image digests
+        timeout-minutes: 2
+        run: |
+          printf "backend=%s@%s\nfrontend=%s@%s\nbackoffice=%s@%s\npostgres=%s\nclamav=%s\nredis=%s\nstack_version=v%s\n" \
+            "${{ env.BACKEND_IMAGE }}" "${{ steps.manifests.outputs.backend_digest }}" \
+            "${{ env.FRONTEND_IMAGE }}" "${{ steps.manifests.outputs.frontend_digest }}" \
+            "${{ env.BACKOFFICE_IMAGE }}" "${{ steps.manifests.outputs.backoffice_digest }}" \
+            "${{ steps.infra_images.outputs.postgres_image }}" \
+            "${{ steps.infra_images.outputs.clamav_image }}" \
+            "${{ steps.infra_images.outputs.redis_image }}" \
+            "${{ steps.versions.outputs.backend }}" > image-digests.txt
       - name: Download OpenAPI artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
