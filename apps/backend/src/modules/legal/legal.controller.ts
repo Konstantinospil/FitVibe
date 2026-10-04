@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { HttpError, readRouteParam } from "../../utils/http.js";
+import { isLegalDocumentType } from "./legal.registry.js";
 import {
   getCurrentLegalDocument,
   getCurrentLegalVersions,
@@ -8,13 +9,11 @@ import {
 } from "./legal.service.js";
 import type { LegalDocumentType, PublishLegalDocumentInput } from "./legal.types.js";
 
-const DOCUMENT_TYPES = new Set<LegalDocumentType>(["terms", "privacy", "cookie"]);
-
 function parseDocumentType(value: string): LegalDocumentType {
-  if (!DOCUMENT_TYPES.has(value as LegalDocumentType)) {
+  if (!isLegalDocumentType(value)) {
     throw new HttpError(400, "LEGAL_DOCUMENT_TYPE_INVALID", "Invalid legal document type");
   }
-  return value as LegalDocumentType;
+  return value;
 }
 
 export async function getLegalVersionsHandler(_req: Request, res: Response): Promise<void> {

@@ -9,7 +9,7 @@ WORKDIR /app
 # relative file:/link: dependencies. Keep this override scoped to the
 # image build; the repository-wide packageManager pin remains unchanged.
 ENV HUSKY=0 \
-    COREPACK_ENABLE_PROJECT_SPEC=0
+    pnpm_config_pm_on_fail=ignore
 
 # pnpm fetch is lockfile-driven. Avoid wildcard COPY destinations for
 # workspace manifests because Docker treats the destination wildcard
