@@ -7,11 +7,12 @@ WORKDIR /app
 
 ENV HUSKY=0
 
+# pnpm fetch is lockfile-driven. Avoid wildcard COPY destinations for
+# workspace manifests because Docker treats the destination wildcard
+# literally and would create /app/packages/* as a workspace directory.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc .pnpmfile.cjs ./
-COPY apps/backend/package.json apps/backend/
-COPY packages/*/package.json packages/*/
 
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+RUN corepack enable && corepack prepare pnpm@12.5.1 --activate
 RUN pnpm fetch --prod=false
 
 COPY . .

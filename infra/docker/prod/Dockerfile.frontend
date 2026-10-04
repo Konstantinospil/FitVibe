@@ -8,17 +8,16 @@ WORKDIR /app
 
 ENV HUSKY=0
 
-# 1) Copy workspace manifests needed for dependency resolution.
-#    .pnpmfile.cjs is required: pnpm-lock.yaml stores pnpmfileChecksum.
+# 1) Copy only the lockfile/config inputs needed by pnpm fetch.
+#    Avoid wildcard COPY destinations for workspace manifests because
+#    Docker treats the destination wildcard literally as /app/packages/*.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc .pnpmfile.cjs ./
-COPY apps/frontend/package.json apps/frontend/
-COPY packages/*/package.json packages/*/
 
-# 2) Enable pnpm via corepack and pre-fetch deps for better caching
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+# 2) Use the repository-declared pnpm version and pre-fetch dependencies.
+RUN corepack enable && corepack prepare pnpm@12.5.1 --activate
 RUN pnpm fetch --prod=false
 
-# 3) Copy the remaining project sources
+# 3) Copy the complete workspace after the dependency cache is populated.
 COPY . .
 
 # 4) Link node_modules (dev deps included for build tooling)
