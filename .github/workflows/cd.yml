@@ -192,6 +192,29 @@ jobs:
           --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
           ${{ steps.deployment.outputs.frontend_image }}
 
+      - name: Resolve infrastructure image digests
+        id: infra_images
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolve_digest() {
+            image="$1"
+            digest="$(docker buildx imagetools inspect "$image" | awk '/^Digest:/ {print $2; exit}')"
+            if ! printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+              echo "Failed to resolve immutable digest for $image: $digest" >&2
+              exit 1
+            fi
+            printf '%s\n' "$digest"
+          }
+
+          postgres_digest="$(resolve_digest postgres:16)"
+          clamav_digest="$(resolve_digest clamav/clamav:latest)"
+          redis_digest="$(resolve_digest redis:7-alpine)"
+
+          echo "postgres_image=postgres@${postgres_digest}" >> "$GITHUB_OUTPUT"
+          echo "clamav_image=clamav/clamav@${clamav_digest}" >> "$GITHUB_OUTPUT"
+          echo "redis_image=redis@${redis_digest}" >> "$GITHUB_OUTPUT"
       - name: Connect runner to Tailscale
         uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
         with:
@@ -206,12 +229,15 @@ jobs:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: BACKEND_IMAGE,FRONTEND_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
+          envs: BACKEND_IMAGE,FRONTEND_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
           script: |
             set -eu
 
             : "${BACKEND_IMAGE:?BACKEND_IMAGE is required}"
             : "${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}"
+            : "${POSTGRES_IMAGE:?POSTGRES_IMAGE is required}"
+            : "${CLAMAV_IMAGE:?CLAMAV_IMAGE is required}"
+            : "${REDIS_IMAGE:?REDIS_IMAGE is required}"
             : "${STACK_VERSION:?STACK_VERSION is required}"
             : "${DEPLOY_SHA:?DEPLOY_SHA is required}"
             : "${PROD_SOURCE_DIR:?PROD_SOURCE_DIR is required}"
@@ -250,7 +276,7 @@ jobs:
             install -m 0644 "${canonical_compose}" "${PROD_STACK_DIR}/compose.yml"
 
             cd "${PROD_STACK_DIR}"
-            export BACKEND_IMAGE FRONTEND_IMAGE STACK_VERSION
+            export BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
 
             compose() {
               docker compose --env-file .env -f compose.yml "$@"
@@ -306,6 +332,9 @@ jobs:
         env:
           BACKEND_IMAGE: ${{ steps.deployment.outputs.backend_image }}
           FRONTEND_IMAGE: ${{ steps.deployment.outputs.frontend_image }}
+          POSTGRES_IMAGE: ${{ steps.infra_images.outputs.postgres_image }}
+          CLAMAV_IMAGE: ${{ steps.infra_images.outputs.clamav_image }}
+          REDIS_IMAGE: ${{ steps.infra_images.outputs.redis_image }}
           STACK_VERSION: ${{ steps.deployment.outputs.stack_version }}
           DEPLOY_SHA: ${{ steps.deployment.outputs.deploy_sha }}
           PROD_SOURCE_DIR: ${{ env.PROD_SOURCE_DIR }}
