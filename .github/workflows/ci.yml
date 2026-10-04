@@ -2287,7 +2287,7 @@ jobs:
           PGPORT: 5432
           PGDATABASE: fitvibe_test
           PGUSER: postgres
-        run: pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
+        run: pnpm --filter @fitvibe/backend run db:migrate
 
       - name: Login to GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
