@@ -2142,6 +2142,7 @@ jobs:
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
           echo "PLATFORM_PAIR=${platform_pair}" >> "$GITHUB_ENV"
 
       - name: Setup Docker Buildx
@@ -2264,14 +2265,16 @@ jobs:
         id: versions
         timeout-minutes: 2
         run: |
-          if [ ! -f apps/backend/package.json ] || [ ! -f apps/frontend/package.json ]; then
+          if [ ! -f apps/backend/package.json ] || [ ! -f apps/frontend/package.json ] || [ ! -f apps/backoffice/package.json ]; then
             echo "Error: package.json files not found" >&2
             exit 1
           fi
           backend=$(node -p "require('./apps/backend/package.json').version")
           frontend=$(node -p "require('./apps/frontend/package.json').version")
+          backoffice=$(node -p "require('./apps/backoffice/package.json').version")
           echo "backend=${backend}" >> "$GITHUB_OUTPUT"
           echo "frontend=${frontend}" >> "$GITHUB_OUTPUT"
+          echo "backoffice=${backoffice}" >> "$GITHUB_OUTPUT"
 
       - name: Determine release eligibility
         id: release_guard
@@ -2308,6 +2311,13 @@ jobs:
           pattern: frontend-digests-*
           merge-multiple: true
 
+      - name: Download backoffice digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: ${{ runner.temp }}/backoffice-digests
+          pattern: backoffice-digests-*
+          merge-multiple: true
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
@@ -2326,9 +2336,10 @@ jobs:
 
           backend_count=$(find "${RUNNER_TEMP}/backend-digests" -type f | wc -l)
           frontend_count=$(find "${RUNNER_TEMP}/frontend-digests" -type f | wc -l)
-          if [ "${backend_count}" -lt 2 ] || [ "${frontend_count}" -lt 2 ]; then
+          backoffice_count=$(find "${RUNNER_TEMP}/backoffice-digests" -type f | wc -l)
+          if [ "${backend_count}" -lt 2 ] || [ "${frontend_count}" -lt 2 ] || [ "${backoffice_count}" -lt 2 ]; then
             echo "Expected 2 platform digests per image (amd64 + arm64)." >&2
-            echo "backend=${backend_count} frontend=${frontend_count}" >&2
+            echo "backend=${backend_count} frontend=${frontend_count} backoffice=${backoffice_count}" >&2
             exit 1
           fi
 
@@ -2342,12 +2353,19 @@ jobs:
             frontend_refs="${frontend_refs} ${FRONTEND_IMAGE}@sha256:$(basename "${digest_file}")"
           done
 
+          backoffice_refs=""
+          for digest_file in "${RUNNER_TEMP}/backoffice-digests"/*; do
+            backoffice_refs="${backoffice_refs} ${BACKOFFICE_IMAGE}@sha256:$(basename "${digest_file}")"
+          done
+
           backend_tags=(-t "${BACKEND_IMAGE}:sha-${GITHUB_SHA}")
           frontend_tags=(-t "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}")
+          backoffice_tags=(-t "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}")
 
           if [ "${{ steps.release_guard.outputs.should_release }}" = "true" ]; then
             backend_tags+=(-t "${BACKEND_IMAGE}:v${{ steps.versions.outputs.backend }}")
             frontend_tags+=(-t "${FRONTEND_IMAGE}:v${{ steps.versions.outputs.frontend }}")
+            backoffice_tags+=(-t "${BACKOFFICE_IMAGE}:v${{ steps.versions.outputs.backoffice }}")
           fi
 
           docker buildx imagetools create \
@@ -2380,6 +2398,10 @@ jobs:
         timeout-minutes: 5
         run: cosign sign --yes ${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}
 
+      - name: Sign backoffice image
+        timeout-minutes: 5
+        run: cosign sign --yes ${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}
+
       - name: Generate backend SBOM
         timeout-minutes: 5
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
@@ -2393,6 +2415,13 @@ jobs:
         with:
           image: ${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}
           output-file: sbom-frontend.spdx.json
+
+      - name: Generate backoffice SBOM
+        timeout-minutes: 5
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}
+          output-file: sbom-backoffice.spdx.json
 
       - name: Record image digests
         timeout-minutes: 2
@@ -2415,6 +2444,7 @@ jobs:
           path: |
             sbom-backend.spdx.json
             sbom-frontend.spdx.json
+            sbom-backoffice.spdx.json
             image-digests.txt
             artifacts/openapi/openapi.json
           retention-days: 90
@@ -2432,9 +2462,10 @@ jobs:
           body: |
             - Backend image: ${{ env.BACKEND_IMAGE }}:v${{ steps.versions.outputs.backend }}
             - Frontend image: ${{ env.FRONTEND_IMAGE }}:v${{ steps.versions.outputs.frontend }}
+            - Backoffice image: ${{ env.BACKOFFICE_IMAGE }}:v${{ steps.versions.outputs.backoffice }}
           draft: false
           prerelease: false
-          artifacts: "sbom-backend.spdx.json,sbom-frontend.spdx.json,image-digests.txt,artifacts/openapi/openapi.json"
+          artifacts: "sbom-backend.spdx.json,sbom-frontend.spdx.json,sbom-backoffice.spdx.json,image-digests.txt,artifacts/openapi/openapi.json"
           artifactErrorsFailBuild: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -2444,6 +2475,7 @@ jobs:
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Backend image: \`${{ env.BACKEND_IMAGE }}@${{ steps.manifests.outputs.backend_digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Frontend image: \`${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backoffice image: \`${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Images signed with cosign" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ SBOMs generated" >> $GITHUB_STEP_SUMMARY
 
