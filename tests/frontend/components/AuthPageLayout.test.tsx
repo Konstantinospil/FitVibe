@@ -96,7 +96,7 @@ describe("AuthPageLayout", () => {
     expect(privacy).toBeInTheDocument();
   });
 
-  it("should render header utilities after idle task", () => {
+  it("should render the semantic public header and utilities after the idle task", () => {
     render(
       <MemoryRouter>
         <AuthPageLayout title="Test Title" description="Test Description">
@@ -105,9 +105,8 @@ describe("AuthPageLayout", () => {
       </MemoryRouter>,
     );
 
-    // ThemeToggle and LanguageSwitcher should be rendered after idle task
-    // Since we mock scheduleIdleTask to call immediately, they should be present
-    const headerUtilities = document.querySelector('[style*="top"]');
-    expect(headerUtilities).toBeInTheDocument();
+    const header = screen.getByRole("banner");
+    expect(header).toHaveAttribute("data-component", "public-header");
+    expect(header.querySelector(".public-header__utilities")).toBeInTheDocument();
   });
 });
