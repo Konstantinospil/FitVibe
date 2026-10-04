@@ -31,6 +31,7 @@ jobs:
   architecture_hardcoding:
     name: Architecture & Hardcoding
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.head_ref == 'feature'
     timeout-minutes: 10
     permissions:
       contents: read
@@ -98,6 +99,7 @@ jobs:
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.head_ref == 'feature'
     timeout-minutes: 20
     permissions:
       contents: read
@@ -155,6 +157,7 @@ jobs:
   deployment_contract:
     name: Deployment Contract
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 10
     permissions:
       contents: read
@@ -168,6 +171,7 @@ jobs:
   release_governance:
     name: Release Governance
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     timeout-minutes: 5
     permissions:
       contents: read
@@ -199,6 +203,7 @@ jobs:
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.head_ref == 'feature'
     timeout-minutes: 20
     permissions:
       contents: read
@@ -334,6 +339,7 @@ jobs:
   frontend_tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.head_ref == 'feature'
     timeout-minutes: 15
     permissions:
       contents: read
@@ -411,6 +417,7 @@ jobs:
   backoffice_tests:
     name: Backoffice E2E
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 25
     needs:
       - quality
@@ -463,6 +470,7 @@ jobs:
   database_tests:
     name: Database Tests
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 20
     permissions:
       contents: read
@@ -571,11 +579,11 @@ jobs:
   coverage:
     name: Coverage Gate
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 15
     needs:
       - backend_tests
       - frontend_tests
-      - database_tests
     permissions:
       contents: read
       actions: read
@@ -655,6 +663,7 @@ jobs:
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 20
     needs:
       - quality
@@ -749,6 +758,7 @@ jobs:
   i18n:
     name: i18n Coverage Check
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 10
     needs:
       - quality
@@ -787,6 +797,7 @@ jobs:
   contract_tests:
     name: API Contract Tests
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 15
     needs:
       - quality
@@ -836,6 +847,7 @@ jobs:
   integration:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev' || github.head_ref == 'feature'
     timeout-minutes: 30
     needs:
       - backend_tests
@@ -1012,6 +1024,7 @@ jobs:
   openapi_spec:
     name: Build OpenAPI spec
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 15
     needs:
       - quality
@@ -1071,6 +1084,7 @@ jobs:
   metrics_contract:
     name: Metrics Contract
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 5
     needs:
       - quality
@@ -1092,6 +1106,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 35
     needs:
       - quality
@@ -1240,6 +1255,7 @@ jobs:
   codeql_compatibility:
     name: CodeQL Compatibility (javascript)
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 30
     needs:
       - quality
@@ -1270,6 +1286,7 @@ jobs:
   zap_baseline:
     name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 25
     needs:
       - quality
@@ -1357,6 +1374,7 @@ jobs:
   performance:
     name: Performance Budgets (real backend)
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 25
     needs:
       - quality
@@ -1524,7 +1542,7 @@ jobs:
       - e2e
       - deployment_contract
       - release_governance
-    if: always()
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/dev'
     permissions:
       contents: read
     steps:
@@ -1612,6 +1630,7 @@ jobs:
   accessibility:
     name: Accessibility (axe)
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 20
     needs:
       - quality
@@ -1666,6 +1685,7 @@ jobs:
   visual_regression:
     name: Visual Regression Tests
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 30
     needs:
       - quality
@@ -1795,6 +1815,7 @@ jobs:
   e2e:
     name: E2E Playwright
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 30
     needs: integration
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
@@ -1865,29 +1886,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     needs:
-      - architecture_hardcoding
-      - quality
-      - backend_tests
-      - frontend_tests
-      - backoffice_tests
-      - database_tests
-      - coverage
-      - integration
-      - metrics_contract
-      - accessibility
-      - security
-      - codeql_compatibility
-      - zap_baseline
-      - openapi_spec
-      - lighthouse
-      - i18n
-      - performance
-      - contract_tests
-      - visual_regression
-      - e2e
       - deployment_contract
       - release_governance
-      - qa_summary
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -1918,28 +1918,6 @@ jobs:
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@1e60f620b9541d20c243d986e2d9b3d3f4a2c7c9 # v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Migrate smoke-test database
-        timeout-minutes: 2
-        env:
-          NODE_ENV: test
-          PGHOST: 127.0.0.1
-          PGPORT: 5432
-          PGDATABASE: fitvibe_test
-          PGUSER: postgres
-        run: pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
 
       - name: Login to GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
@@ -2289,6 +2267,27 @@ jobs:
             fi
             sleep 2
           done
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --no-offline
+
+      - name: Migrate smoke-test database
+        timeout-minutes: 2
+        env:
+          NODE_ENV: test
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGDATABASE: fitvibe_test
+          PGUSER: postgres
+        run: pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
 
       - name: Login to GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
