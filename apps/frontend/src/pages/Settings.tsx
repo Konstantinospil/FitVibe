@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Button,
-  InputControl,
-  SelectControl,
-  Switch,
-  TextareaControl,
-} from "@fitvibe/ui";
+import { Button, InputControl, SelectControl, Switch, TextareaControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import {
   get2FAStatus,
@@ -140,7 +134,10 @@ const Settings: React.FC = () => {
   };
 
   const primaryError =
-    profileQuery.isError || preferencesQuery.isError || privacyQuery.isError || twoFactorQuery.isError;
+    profileQuery.isError ||
+    preferencesQuery.isError ||
+    privacyQuery.isError ||
+    twoFactorQuery.isError;
 
   if (primaryError) {
     return (
