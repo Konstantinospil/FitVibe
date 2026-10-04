@@ -100,12 +100,12 @@ export const APP_SETTINGS_REGISTRY = {
 
 export type AppSettingKey = keyof typeof APP_SETTINGS_REGISTRY;
 
-export function validateAppSetting(key: string, value: unknown): unknown {
-  const definition = APP_SETTINGS_REGISTRY[key as AppSettingKey];
-  if (!definition) {
-    throw new Error(`Unknown governed application setting: ${key}`);
-  }
-  return definition.schema.parse(value);
+export function isAppSettingKey(key: string): key is AppSettingKey {
+  return Object.hasOwn(APP_SETTINGS_REGISTRY, key);
+}
+
+export function validateAppSetting(key: AppSettingKey, value: unknown): unknown {
+  return APP_SETTINGS_REGISTRY[key].schema.parse(value);
 }
 
 export function getDefaultSettings(): Record<string, unknown> {
