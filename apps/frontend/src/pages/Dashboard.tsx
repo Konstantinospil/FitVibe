@@ -6,10 +6,7 @@ import { getUserBadges } from "../services/api";
 import { getMyVibeformProfile } from "../lib/vibeform/api";
 import { VibeformRenderer } from "../lib/vibeform/components/VibeformRenderer";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
-import {
-  TrainingPanel,
-  TrainingSummaryCard,
-} from "../components/composites/TrainingSurface";
+import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 
 const VIBES = [
   "strength",
