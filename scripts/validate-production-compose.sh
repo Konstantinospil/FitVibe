@@ -64,6 +64,15 @@ for dependency in ("db", "clamav", "redis"):
     if dependency not in backend_depends:
         raise SystemExit(f"backend must depend on {dependency}")
 
+frontend_ports = services["frontend"].get("ports") or []
+if not any(
+    isinstance(port, dict)
+    and int(port.get("target", 0)) == 4173
+    and str(port.get("published", "")) == "80"
+    for port in frontend_ports
+):
+    raise SystemExit("frontend must publish host port 80 to SSR container port 4173")
+
 clamav_volumes = services["clamav"].get("volumes") or []
 if not any(
     (v.get("source") if isinstance(v, dict) else str(v).split(":", 1)[0]) == "clamav_signatures"
