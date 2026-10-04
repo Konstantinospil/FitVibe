@@ -2142,7 +2142,6 @@ jobs:
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
-          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
           echo "PLATFORM_PAIR=${platform_pair}" >> "$GITHUB_ENV"
 
       - name: Setup Docker Buildx
@@ -2260,6 +2259,7 @@ jobs:
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
 
       - name: Determine package versions
         id: versions
@@ -2426,9 +2426,10 @@ jobs:
       - name: Record image digests
         timeout-minutes: 2
         run: |
-          printf "backend=%s@%s\nfrontend=%s@%s\nstack_version=v%s\n" \
+          printf "backend=%s@%s\nfrontend=%s@%s\nbackoffice=%s@%s\nstack_version=v%s\n" \
             "${{ env.BACKEND_IMAGE }}" "${{ steps.manifests.outputs.backend_digest }}" \
             "${{ env.FRONTEND_IMAGE }}" "${{ steps.manifests.outputs.frontend_digest }}" \
+            "${{ env.BACKOFFICE_IMAGE }}" "${{ steps.manifests.outputs.backoffice_digest }}" \
             "${{ steps.versions.outputs.backend }}" > image-digests.txt
 
       - name: Download OpenAPI artifact
