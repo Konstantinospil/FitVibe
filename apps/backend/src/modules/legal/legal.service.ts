@@ -7,7 +7,6 @@ import { insertAudit } from "../common/audit.util.js";
 import {
   getLegalDocumentDefinition,
   getLegalLanguageDefinition,
-  LEGAL_DOCUMENT_REGISTRY,
   LEGAL_DOCUMENT_TYPES,
   SUPPORTED_LEGAL_LANGUAGES,
   toSupportedLegalLanguage,
