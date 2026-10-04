@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSwitcher from "./LanguageSwitcher";
+import BrandLogo from "./BrandLogo";
 import { scheduleIdleTask } from "../utils/idleScheduler";
 
 const headerSkeletonStyle: React.CSSProperties = {
@@ -38,20 +39,14 @@ const HeaderUtilities: React.FC = () => {
 };
 
 const HeaderUtilitiesBar: React.FC = () => (
-  <div
-    style={{
-      position: "absolute",
-      top: "clamp(1rem, 3vw, 1.5rem)",
-      right: "clamp(0.75rem, 3vw, 1.5rem)",
-      display: "flex",
-      alignItems: "center",
-      gap: "0.6rem",
-      zIndex: 10,
-      maxWidth: "calc(100% - clamp(1rem, 4vw, 1.5rem) * 2)",
-    }}
-  >
-    <HeaderUtilities />
-  </div>
+  <header className="public-header" data-component="public-header">
+    <div className="public-header__inner">
+      <BrandLogo size="sm" priority />
+      <div className="public-header__utilities">
+        <HeaderUtilities />
+      </div>
+    </div>
+  </header>
 );
 
 export default HeaderUtilitiesBar;

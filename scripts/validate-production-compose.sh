@@ -27,6 +27,7 @@ fi
 dummy_digest="$(printf 'a%.0s' {1..64})"
 export BACKEND_IMAGE="ghcr.io/example/fitvibe-backend@sha256:${dummy_digest}"
 export FRONTEND_IMAGE="ghcr.io/example/fitvibe-frontend@sha256:${dummy_digest}"
+export BACKOFFICE_IMAGE="ghcr.io/example/fitvibe-backoffice@sha256:${dummy_digest}"
 export POSTGRES_IMAGE="postgres@sha256:${dummy_digest}"
 export CLAMAV_IMAGE="clamav/clamav@sha256:${dummy_digest}"
 export REDIS_IMAGE="redis@sha256:${dummy_digest}"
@@ -49,7 +50,7 @@ python3 - "${resolved_config}" <<'PY'
 import json, sys
 data = json.loads(sys.argv[1])
 services = data.get("services", {})
-required = {"backend", "frontend", "db", "clamav", "redis"}
+required = {"backend", "frontend", "backoffice", "db", "clamav", "redis"}
 missing = sorted(required - set(services))
 if missing:
     raise SystemExit(f"Missing production services: {', '.join(missing)}")
@@ -72,6 +73,19 @@ if not any(
     for port in frontend_ports
 ):
     raise SystemExit("frontend must publish host port 80 to SSR container port 4173")
+
+backoffice_ports = services["backoffice"].get("ports") or []
+if not any(
+    isinstance(port, dict)
+    and int(port.get("target", 0)) == 8080
+    and str(port.get("published", "")) == "8081"
+    for port in backoffice_ports
+):
+    raise SystemExit("backoffice must publish host port 8081 to container port 8080")
+
+backoffice_depends = services["backoffice"].get("depends_on") or {}
+if "backend" not in backoffice_depends:
+    raise SystemExit("backoffice must depend on backend")
 
 clamav_volumes = services["clamav"].get("volumes") or []
 if not any(

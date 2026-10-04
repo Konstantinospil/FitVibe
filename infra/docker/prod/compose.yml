@@ -36,6 +36,17 @@ services:
     ports:
       - "80:4173"
 
+  backoffice:
+    image: ${BACKOFFICE_IMAGE:?BACKOFFICE_IMAGE digest reference is required}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8081:8080"
+
   db:
     image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE digest reference is required}
     restart: unless-stopped

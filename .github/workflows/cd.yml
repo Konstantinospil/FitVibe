@@ -146,6 +146,10 @@ jobs:
 
           backend="$(sed -n 's/^backend=//p' "${digest_file}" | head -n 1)"
           frontend="$(sed -n 's/^frontend=//p' "${digest_file}" | head -n 1)"
+          backoffice="$(sed -n 's/^backoffice=//p' "${digest_file}" | head -n 1)"
+          postgres="$(sed -n 's/^postgres=//p' "${digest_file}" | head -n 1)"
+          clamav="$(sed -n 's/^clamav=//p' "${digest_file}" | head -n 1)"
+          redis="$(sed -n 's/^redis=//p' "${digest_file}" | head -n 1)"
           stack_version="$(sed -n 's/^stack_version=//p' "${digest_file}" | head -n 1)"
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
 
@@ -165,6 +169,29 @@ jobs:
               ;;
           esac
 
+          case "${backoffice}" in
+            "${REGISTRY}/${owner}/fitvibe-backoffice@sha256:"*) ;;
+            *)
+              echo "Unexpected backoffice image reference: ${backoffice}" >&2
+              exit 1
+              ;;
+          esac
+
+          if [[ ! "${postgres}" =~ ^postgres@sha256:[0-9a-f]{64}$ ]]; then
+            echo "Unexpected PostgreSQL image reference: ${postgres}" >&2
+            exit 1
+          fi
+
+          if [[ ! "${clamav}" =~ ^clamav/clamav@sha256:[0-9a-f]{64}$ ]]; then
+            echo "Unexpected ClamAV image reference: ${clamav}" >&2
+            exit 1
+          fi
+
+          if [[ ! "${redis}" =~ ^redis@sha256:[0-9a-f]{64}$ ]]; then
+            echo "Unexpected Redis image reference: ${redis}" >&2
+            exit 1
+          fi
+
           if [[ ! "${stack_version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
             echo "Unexpected stack version: ${stack_version}" >&2
             exit 1
@@ -172,6 +199,10 @@ jobs:
 
           echo "backend_image=${backend}" >> "${GITHUB_OUTPUT}"
           echo "frontend_image=${frontend}" >> "${GITHUB_OUTPUT}"
+          echo "backoffice_image=${backoffice}" >> "${GITHUB_OUTPUT}"
+          echo "postgres_image=${postgres}" >> "${GITHUB_OUTPUT}"
+          echo "clamav_image=${clamav}" >> "${GITHUB_OUTPUT}"
+          echo "redis_image=${redis}" >> "${GITHUB_OUTPUT}"
           echo "stack_version=${stack_version}" >> "${GITHUB_OUTPUT}"
           echo "deploy_sha=${{ needs.resolve_ci.outputs.head_sha }}" >> "${GITHUB_OUTPUT}"
 
@@ -192,29 +223,13 @@ jobs:
           --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
           ${{ steps.deployment.outputs.frontend_image }}
 
-      - name: Resolve infrastructure image digests
-        id: infra_images
-        shell: bash
-        run: |
-          set -euo pipefail
+      - name: Verify backoffice signature
+        run: >
+          cosign verify
+          --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@refs/heads/main"
+          --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+          ${{ steps.deployment.outputs.backoffice_image }}
 
-          resolve_digest() {
-            image="$1"
-            digest="$(docker buildx imagetools inspect "$image" | awk '/^Digest:/ {print $2; exit}')"
-            if ! printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
-              echo "Failed to resolve immutable digest for $image: $digest" >&2
-              exit 1
-            fi
-            printf '%s\n' "$digest"
-          }
-
-          postgres_digest="$(resolve_digest postgres:16)"
-          clamav_digest="$(resolve_digest clamav/clamav:latest)"
-          redis_digest="$(resolve_digest redis:7-alpine)"
-
-          echo "postgres_image=postgres@${postgres_digest}" >> "$GITHUB_OUTPUT"
-          echo "clamav_image=clamav/clamav@${clamav_digest}" >> "$GITHUB_OUTPUT"
-          echo "redis_image=redis@${redis_digest}" >> "$GITHUB_OUTPUT"
       - name: Connect runner to Tailscale
         uses: tailscale/github-action@780049a30b6ff5c378a9e7b389d15ece7a204888 # v4.1.3
         with:
@@ -229,12 +244,13 @@ jobs:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: BACKEND_IMAGE,FRONTEND_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
+          envs: BACKEND_IMAGE,FRONTEND_IMAGE,BACKOFFICE_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
           script: |
             set -eu
 
             : "${BACKEND_IMAGE:?BACKEND_IMAGE is required}"
             : "${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}"
+            : "${BACKOFFICE_IMAGE:?BACKOFFICE_IMAGE is required}"
             : "${POSTGRES_IMAGE:?POSTGRES_IMAGE is required}"
             : "${CLAMAV_IMAGE:?CLAMAV_IMAGE is required}"
             : "${REDIS_IMAGE:?REDIS_IMAGE is required}"
@@ -276,7 +292,7 @@ jobs:
             install -m 0644 "${canonical_compose}" "${PROD_STACK_DIR}/compose.yml"
 
             cd "${PROD_STACK_DIR}"
-            export BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
+            export BACKEND_IMAGE FRONTEND_IMAGE BACKOFFICE_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
 
             compose() {
               docker compose --env-file .env -f compose.yml "$@"
@@ -306,6 +322,12 @@ jobs:
               exit 1
             fi
 
+            if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKOFFICE_IMAGE}" >/dev/null; then
+              echo "compose.yml does not resolve backoffice to ${BACKOFFICE_IMAGE}." >&2
+              echo "The production stack must consume the BACKOFFICE_IMAGE variable from CD." >&2
+              exit 1
+            fi
+
             compose pull
             compose up -d --remove-orphans
 
@@ -328,13 +350,16 @@ jobs:
 
             curl -fsS http://127.0.0.1:4000/metrics >/dev/null
             curl -fsS http://127.0.0.1/ >/dev/null
+            curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null
+            curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
             compose ps
         env:
           BACKEND_IMAGE: ${{ steps.deployment.outputs.backend_image }}
           FRONTEND_IMAGE: ${{ steps.deployment.outputs.frontend_image }}
-          POSTGRES_IMAGE: ${{ steps.infra_images.outputs.postgres_image }}
-          CLAMAV_IMAGE: ${{ steps.infra_images.outputs.clamav_image }}
-          REDIS_IMAGE: ${{ steps.infra_images.outputs.redis_image }}
+          BACKOFFICE_IMAGE: ${{ steps.deployment.outputs.backoffice_image }}
+          POSTGRES_IMAGE: ${{ steps.deployment.outputs.postgres_image }}
+          CLAMAV_IMAGE: ${{ steps.deployment.outputs.clamav_image }}
+          REDIS_IMAGE: ${{ steps.deployment.outputs.redis_image }}
           STACK_VERSION: ${{ steps.deployment.outputs.stack_version }}
           DEPLOY_SHA: ${{ steps.deployment.outputs.deploy_sha }}
           PROD_SOURCE_DIR: ${{ env.PROD_SOURCE_DIR }}

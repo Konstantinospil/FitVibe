@@ -13,12 +13,9 @@ The production host therefore must not maintain an independent Compose definitio
 `/srv/stacks/fitvibe/.env` supplies host-specific configuration and secrets. At minimum it must define:
 
 - `POSTGRES_PASSWORD`
-- `POSTGRES_IMAGE` as a full `@sha256:<64-hex>` digest reference
-- `CLAMAV_IMAGE` as a full `@sha256:<64-hex>` digest reference
-- `REDIS_IMAGE` as a full `@sha256:<64-hex>` digest reference
 - application variables required by `.env`/the backend runtime
 
-`BACKEND_IMAGE` and `FRONTEND_IMAGE` are injected by CD from the signed CI image-digest artifact and are not stored as mutable tags.
+`BACKEND_IMAGE`, `FRONTEND_IMAGE`, `BACKOFFICE_IMAGE`, `POSTGRES_IMAGE`, `CLAMAV_IMAGE`, and `REDIS_IMAGE` are injected by CD from the successful main CI image-digest artifact. The production host does not maintain these image references in `.env`.
 
 All production images must resolve to immutable SHA-256 digest references. CD rejects mutable tags.
 
