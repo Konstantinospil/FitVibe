@@ -37,9 +37,7 @@ export const LEGAL_LANGUAGE_REGISTRY = {
 
 export type SupportedLegalLanguage = keyof typeof LEGAL_LANGUAGE_REGISTRY;
 
-export const LEGAL_DOCUMENT_TYPES = Object.keys(
-  LEGAL_DOCUMENT_REGISTRY,
-) as LegalDocumentType[];
+export const LEGAL_DOCUMENT_TYPES = Object.keys(LEGAL_DOCUMENT_REGISTRY) as LegalDocumentType[];
 
 export const SUPPORTED_LEGAL_LANGUAGES = Object.keys(
   LEGAL_LANGUAGE_REGISTRY,
@@ -50,9 +48,7 @@ export function isLegalDocumentType(value: string): value is LegalDocumentType {
 }
 
 export function toSupportedLegalLanguage(value: string): SupportedLegalLanguage | null {
-  return Object.hasOwn(LEGAL_LANGUAGE_REGISTRY, value)
-    ? (value as SupportedLegalLanguage)
-    : null;
+  return Object.hasOwn(LEGAL_LANGUAGE_REGISTRY, value) ? (value as SupportedLegalLanguage) : null;
 }
 
 export function getLegalDocumentDefinition(
