@@ -15,11 +15,21 @@ export async function migrateAll(): Promise<void> {
     // Verify database connection with timeout
     const connectionTimeout = 5000; // 5 seconds
     const connectionPromise = db.raw("SELECT 1");
+    let timeoutHandle: NodeJS.Timeout | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("Database connection timeout")), connectionTimeout);
+      timeoutHandle = setTimeout(
+        () => reject(new Error("Database connection timeout")),
+        connectionTimeout,
+      );
     });
 
-    await Promise.race([connectionPromise, timeoutPromise]);
+    try {
+      await Promise.race([connectionPromise, timeoutPromise]);
+    } finally {
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    }
     logger.info("[db] Database connection verified");
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

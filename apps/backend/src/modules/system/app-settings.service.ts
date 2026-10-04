@@ -5,6 +5,7 @@ import { assertActiveSudo, assertFreshPrivilegedTotp } from "../admin/superadmin
 import {
   APP_SETTINGS_REGISTRY,
   getDefaultSettings,
+  isAppSettingKey,
   validateAppSetting,
 } from "./app-settings.registry.js";
 import {
@@ -42,6 +43,13 @@ async function getCommittedValues(): Promise<Record<string, unknown>> {
     .select<{ setting_key: string; new_value: unknown }[]>(["setting_key", "new_value"]);
 
   for (const row of rows) {
+    if (!isAppSettingKey(row.setting_key)) {
+      throw new HttpError(
+        500,
+        "APP_SETTINGS_STATE_INVALID",
+        `Unknown governed setting in committed revision: ${row.setting_key}`,
+      );
+    }
     values[row.setting_key] = row.new_value;
   }
 
@@ -166,15 +174,18 @@ export async function stageSettingsRevision(input: {
   }
 
   const current = await getCommittedValues();
-  const normalized: Record<string, unknown> = {};
+  const normalized = new Map<string, unknown>();
   for (const [key, value] of Object.entries(input.changes)) {
+    if (!isAppSettingKey(key)) {
+      throw new HttpError(400, "INVALID_APP_SETTING", `Unknown governed setting ${key}`);
+    }
     try {
-      normalized[key] = validateAppSetting(key, value);
+      normalized.set(key, validateAppSetting(key, value));
     } catch {
       throw new HttpError(400, "INVALID_APP_SETTING", `Invalid value for governed setting ${key}`);
     }
   }
-  if (Object.keys(normalized).length === 0) {
+  if (normalized.size === 0) {
     throw new HttpError(
       400,
       "SETTINGS_CHANGES_REQUIRED",
@@ -200,7 +211,7 @@ export async function stageSettingsRevision(input: {
       created_at: trx.fn.now(),
     });
 
-    for (const [key, newValue] of Object.entries(normalized)) {
+    for (const [key, newValue] of normalized) {
       await trx("app_setting_revision_items").insert({
         revision_id: id,
         setting_key: key,
@@ -213,7 +224,7 @@ export async function stageSettingsRevision(input: {
       id,
       revision,
       reason,
-      changes: Object.entries(normalized).map(([key, newValue]) => ({
+      changes: Array.from(normalized, ([key, newValue]) => ({
         key,
         oldValue: current[key] ?? null,
         newValue,
