@@ -2,7 +2,7 @@ import axios, { type InternalAxiosRequestConfig } from "axios";
 import type { UserStatus } from "@fitvibe/contracts";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "" : "http://localhost:4000");
+  import.meta.env.VITE_API_URL || "";
 
 export const apiClient = axios.create({
   baseURL: API_URL,
