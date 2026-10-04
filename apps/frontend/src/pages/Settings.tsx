@@ -12,6 +12,7 @@ import {
   updateUserPreferences,
 } from "../services/api";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
+import { getMyVibeformProfile, updateMyVibeformPreferences } from "../lib/vibeform/api";
 import { TrainingPanel } from "../components/composites/TrainingSurface";
 
 const Settings: React.FC = () => {
@@ -34,6 +35,10 @@ const Settings: React.FC = () => {
     queryKey: ["settings", "2fa-status"],
     queryFn: get2FAStatus,
   });
+  const vibeformQuery = useQuery({
+    queryKey: ["vibeform", "me"],
+    queryFn: getMyVibeformProfile,
+  });
 
   const [displayName, setDisplayName] = useState("");
   const [alias, setAlias] = useState("");
@@ -45,9 +50,14 @@ const Settings: React.FC = () => {
   const [showEmail, setShowEmail] = useState(false);
   const [showWeight, setShowWeight] = useState(false);
   const [showFitnessLevel, setShowFitnessLevel] = useState(false);
-  const [savingSection, setSavingSection] = useState<"profile" | "preferences" | "privacy" | null>(
-    null,
-  );
+  const [vibeformTemplate, setVibeformTemplate] = useState<"flow">("flow");
+  const [vibeformBodyProfile, setVibeformBodyProfile] = useState<
+    "shoulder-dominant" | "balanced" | "hip-dominant"
+  >("balanced");
+  const [vibeformMotionEnabled, setVibeformMotionEnabled] = useState(true);
+  const [savingSection, setSavingSection] = useState<
+    "profile" | "preferences" | "privacy" | "vibeform" | null
+  >(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,6 +87,15 @@ const Settings: React.FC = () => {
     setShowWeight(privacyQuery.data.showWeight);
     setShowFitnessLevel(privacyQuery.data.showFitnessLevel);
   }, [privacyQuery.data]);
+
+  useEffect(() => {
+    if (!vibeformQuery.data) {
+      return;
+    }
+    setVibeformTemplate(vibeformQuery.data.preferences.templateCode);
+    setVibeformBodyProfile(vibeformQuery.data.preferences.bodyProfile);
+    setVibeformMotionEnabled(vibeformQuery.data.preferences.motionEnabled);
+  }, [vibeformQuery.data]);
 
   const saveProfile = async () => {
     setSavingSection("profile");
@@ -113,6 +132,24 @@ const Settings: React.FC = () => {
     }
   };
 
+  const saveVibeform = async () => {
+    setSavingSection("vibeform");
+    setFeedback(null);
+    try {
+      await updateMyVibeformPreferences({
+        templateCode: vibeformTemplate,
+        bodyProfile: vibeformBodyProfile,
+        motionEnabled: vibeformMotionEnabled,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["vibeform", "me"] });
+      setFeedback(t("settings.vibeform.savedMessage"));
+    } catch {
+      setFeedback(t("settings.vibeform.saveError"));
+    } finally {
+      setSavingSection(null);
+    }
+  };
+
   const savePrivacy = async () => {
     setSavingSection("privacy");
     setFeedback(null);
@@ -137,7 +174,8 @@ const Settings: React.FC = () => {
     profileQuery.isError ||
     preferencesQuery.isError ||
     privacyQuery.isError ||
-    twoFactorQuery.isError;
+    twoFactorQuery.isError ||
+    vibeformQuery.isError;
 
   if (primaryError) {
     return (
@@ -151,13 +189,15 @@ const Settings: React.FC = () => {
               preferencesQuery.refetch(),
               privacyQuery.refetch(),
               twoFactorQuery.refetch(),
+              vibeformQuery.refetch(),
             ]);
           }}
           isRetrying={
             profileQuery.isFetching ||
             preferencesQuery.isFetching ||
             privacyQuery.isFetching ||
-            twoFactorQuery.isFetching
+            twoFactorQuery.isFetching ||
+            vibeformQuery.isFetching
           }
         />
       </main>
@@ -243,6 +283,48 @@ const Settings: React.FC = () => {
                 isLoading={savingSection === "preferences"}
               >
                 {t("settings.preferences.saveButton")}
+              </Button>
+            </div>
+          )}
+        </TrainingPanel>
+
+        <TrainingPanel title={t("settings.vibeform.title")}>
+          {vibeformQuery.isLoading ? (
+            <div className="training-empty">{t("common.loading")}</div>
+          ) : (
+            <div className="form">
+              <label className="form-label">
+                <span className="form-label-text">{t("settings.vibeform.template")}</span>
+                <SelectControl
+                  value={vibeformTemplate}
+                  onChange={(event) => setVibeformTemplate(event.target.value as "flow")}
+                >
+                  <option value="flow">{t("settings.vibeform.templates.flow")}</option>
+                </SelectControl>
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("settings.vibeform.bodyProfile")}</span>
+                <SelectControl
+                  value={vibeformBodyProfile}
+                  onChange={(event) =>
+                    setVibeformBodyProfile(
+                      event.target.value as "shoulder-dominant" | "balanced" | "hip-dominant",
+                    )
+                  }
+                >
+                  <option value="shoulder-dominant">{t("settings.vibeform.bodyProfiles.shoulderDominant")}</option>
+                  <option value="balanced">{t("settings.vibeform.bodyProfiles.balanced")}</option>
+                  <option value="hip-dominant">{t("settings.vibeform.bodyProfiles.hipDominant")}</option>
+                </SelectControl>
+              </label>
+              <Switch
+                label={t("settings.vibeform.motion")}
+                checked={vibeformMotionEnabled}
+                onChange={(event) => setVibeformMotionEnabled(event.target.checked)}
+              />
+              <p>{t("settings.vibeform.description")}</p>
+              <Button type="button" onClick={() => void saveVibeform()} isLoading={savingSection === "vibeform"}>
+                {t("common.save")}
               </Button>
             </div>
           )}

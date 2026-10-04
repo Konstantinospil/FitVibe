@@ -658,6 +658,23 @@
       "remove": "Remove",
       "loadError": "Failed to load measurement catalogue.",
       "saveError": "Failed to update profile measurements."
+    },
+    "vibeform": {
+      "title": "Vibeform",
+      "description": "Choose how your Vibeform is presented. Dashboard uses these persisted preferences with your current calculated training state.",
+      "template": "Base Vibeform",
+      "bodyProfile": "Body profile",
+      "motion": "Enable Vibeform motion",
+      "savedMessage": "Vibeform preferences have been updated",
+      "saveError": "Vibeform preferences could not be updated",
+      "templates": {
+        "flow": "Flow"
+      },
+      "bodyProfiles": {
+        "shoulderDominant": "Shoulder dominant",
+        "balanced": "Balanced",
+        "hipDominant": "Hip dominant"
+      }
     }
   },
   "common": {

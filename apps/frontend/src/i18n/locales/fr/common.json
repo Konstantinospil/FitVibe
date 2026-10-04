@@ -753,6 +753,23 @@
       "remove": "Retirer",
       "loadError": "Impossible de charger le catalogue des mesures.",
       "saveError": "Impossible de mettre à jour les mesures du profil."
+    },
+    "vibeform": {
+      "title": "Vibeform",
+      "description": "Choisissez la présentation de votre Vibeform. Le tableau de bord utilise ces préférences enregistrées avec votre état d’entraînement actuellement calculé.",
+      "template": "Vibeform de base",
+      "bodyProfile": "Profil corporel",
+      "motion": "Activer le mouvement du Vibeform",
+      "savedMessage": "Les préférences Vibeform ont été mises à jour",
+      "saveError": "Les préférences Vibeform n’ont pas pu être mises à jour",
+      "templates": {
+        "flow": "Flow"
+      },
+      "bodyProfiles": {
+        "shoulderDominant": "Dominante épaules",
+        "balanced": "Équilibré",
+        "hipDominant": "Dominante hanches"
+      }
     }
   },
   "admin": {
