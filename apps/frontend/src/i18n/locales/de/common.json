@@ -637,6 +637,23 @@
       "remove": "Entfernen",
       "loadError": "Messkatalog konnte nicht geladen werden.",
       "saveError": "Profil-Messgrößen konnten nicht aktualisiert werden."
+    },
+    "vibeform": {
+      "title": "Vibeform",
+      "description": "Lege fest, wie dein Vibeform dargestellt wird. Das Dashboard verwendet diese gespeicherten Einstellungen zusammen mit deinem aktuell berechneten Trainingszustand.",
+      "template": "Basis-Vibeform",
+      "bodyProfile": "Körperprofil",
+      "motion": "Vibeform-Bewegung aktivieren",
+      "savedMessage": "Vibeform-Einstellungen wurden aktualisiert",
+      "saveError": "Vibeform-Einstellungen konnten nicht aktualisiert werden",
+      "templates": {
+        "flow": "Flow"
+      },
+      "bodyProfiles": {
+        "shoulderDominant": "Schulterbetont",
+        "balanced": "Ausgewogen",
+        "hipDominant": "Hüftbetont"
+      }
     }
   },
   "common": {

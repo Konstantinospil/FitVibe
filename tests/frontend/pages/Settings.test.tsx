@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Settings from "../../src/pages/Settings";
 import * as api from "../../src/services/api";
+import * as vibeApi from "../../src/lib/vibeform/api";
 import { cleanupQueryClient, createTestQueryClient } from "../helpers/testQueryClient";
 
 vi.mock("react-i18next", () => ({
@@ -23,6 +24,11 @@ vi.mock("../../src/services/api", async () => {
     get2FAStatus: vi.fn(),
   };
 });
+
+vi.mock("../../src/lib/vibeform/api", () => ({
+  getMyVibeformProfile: vi.fn(),
+  updateMyVibeformPreferences: vi.fn(),
+}));
 
 describe("Settings", () => {
   let queryClient: QueryClient;
@@ -48,6 +54,29 @@ describe("Settings", () => {
       showFitnessLevel: false,
     });
     vi.mocked(api.get2FAStatus).mockResolvedValue({ enabled: true });
+    vi.mocked(vibeApi.getMyVibeformProfile).mockResolvedValue({
+      preferences: { templateCode: "flow", templateVersion: 1, bodyProfile: "balanced", motionEnabled: true },
+      metrics: {
+        intelligence: 0.4,
+        regeneration: 0.5,
+        agility: 0.6,
+        explosivity: 0.7,
+        endurance: 0.8,
+        strength: 0.9,
+        upperBodyLoad: 0.5,
+        lowerBodyLoad: 0.5,
+        bmi: null,
+        heightCm: null,
+      },
+      calculationVersion: "2",
+      calculatedAt: "2026-10-04T00:00:00.000Z",
+    });
+    vi.mocked(vibeApi.updateMyVibeformPreferences).mockResolvedValue({
+      templateCode: "flow",
+      templateVersion: 1,
+      bodyProfile: "hip-dominant",
+      motionEnabled: false,
+    });
     vi.mocked(api.updateProfile).mockResolvedValue({
       id: "u1",
       username: "athlete",
@@ -99,13 +128,30 @@ describe("Settings", () => {
     });
   });
 
+  it("persists Vibeform preferences through the canonical profile API", async () => {
+    renderSettings();
+
+    const bodyProfile = await screen.findByLabelText("settings.vibeform.bodyProfile");
+    fireEvent.change(bodyProfile, { target: { value: "hip-dominant" } });
+    fireEvent.click(screen.getByRole("switch", { name: "settings.vibeform.motion" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[1]);
+
+    await waitFor(() => {
+      expect(vibeApi.updateMyVibeformPreferences).toHaveBeenCalledWith({
+        templateCode: "flow",
+        bodyProfile: "hip-dominant",
+        motionEnabled: false,
+      });
+    });
+  });
+
   it("persists privacy toggles through the canonical privacy API", async () => {
     renderSettings();
     const followers = await screen.findByRole("switch", {
       name: "settings.privacy.allowFollowers",
     });
     fireEvent.click(followers);
-    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[1]);
+    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[2]);
 
     await waitFor(() => {
       expect(api.updatePrivacySettings).toHaveBeenCalledWith(
