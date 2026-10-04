@@ -5,6 +5,14 @@ import type { Knex } from "knex";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
 import {
+  getLegalDocumentDefinition,
+  getLegalLanguageDefinition,
+  LEGAL_DOCUMENT_TYPES,
+  SUPPORTED_LEGAL_LANGUAGES,
+  toSupportedLegalLanguage,
+} from "./legal.registry.js";
+import type { SupportedLegalLanguage } from "./legal.registry.js";
+import {
   getActiveLegalTranslationRows,
   getCurrentLegalVersion,
   getLatestAcceptanceForDocument,
@@ -31,39 +39,13 @@ import type {
   PublishedLegalDocument,
 } from "./legal.types.js";
 
-const ALLOWED_ACTIONS: Record<LegalDocumentType, Set<LegalUserAction>> = {
-  terms: new Set(["none", "accept"]),
-  privacy: new Set(["none", "acknowledge", "accept", "renew_consent"]),
-  cookie: new Set(["none", "renew_consent"]),
-};
-
-type SupportedLegalLanguage = "en" | "de" | "fr" | "es" | "el";
-
-const SUPPORTED_LEGAL_LANGUAGES: readonly SupportedLegalLanguage[] = ["en", "de", "fr", "es", "el"];
-
-function toSupportedLegalLanguage(language: string): SupportedLegalLanguage | null {
-  switch (language) {
-    case "en":
-      return "en";
-    case "de":
-      return "de";
-    case "fr":
-      return "fr";
-    case "es":
-      return "es";
-    case "el":
-      return "el";
-    default:
-      return null;
-  }
-}
-
 function assertPublicationPolicy(
   documentType: LegalDocumentType,
   changeClass: Exclude<LegalChangeClass, "legacy">,
   userAction: LegalUserAction,
 ): void {
-  if (!ALLOWED_ACTIONS[documentType].has(userAction)) {
+  const definition = getLegalDocumentDefinition(documentType);
+  if (!(definition.allowedActions as readonly LegalUserAction[]).includes(userAction)) {
     throw new HttpError(400, "LEGAL_ACTION_INVALID", "Invalid user action for legal document");
   }
   if (changeClass === "editorial" && userAction !== "none") {
@@ -114,28 +96,12 @@ function loadAuthoringDocument(
   documentType: LegalDocumentType,
   language: SupportedLegalLanguage,
 ): Record<string, unknown> | null {
+  const { filename } = getLegalDocumentDefinition(documentType);
+  const { directory } = getLegalLanguageDefinition(language);
   const candidates = [
-    path.resolve(process.cwd(), "legal-authoring-locales", language, `${documentType}.json`),
-    path.resolve(
-      process.cwd(),
-      "apps",
-      "frontend",
-      "src",
-      "i18n",
-      "locales",
-      language,
-      `${documentType}.json`,
-    ),
-    path.resolve(
-      process.cwd(),
-      "..",
-      "frontend",
-      "src",
-      "i18n",
-      "locales",
-      language,
-      `${documentType}.json`,
-    ),
+    path.resolve(process.cwd(), "legal-authoring-locales", directory, filename),
+    path.resolve(process.cwd(), "apps", "frontend", "src", "i18n", "locales", directory, filename),
+    path.resolve(process.cwd(), "..", "frontend", "src", "i18n", "locales", directory, filename),
   ];
 
   for (const candidate of candidates) {
@@ -320,16 +286,13 @@ export async function getCurrentLegalPublication(
 }
 
 export async function getCurrentLegalVersions(): Promise<Record<LegalDocumentType, string>> {
-  const [terms, privacy, cookie] = await Promise.all([
-    getCurrentLegalPublication("terms"),
-    getCurrentLegalPublication("privacy"),
-    getCurrentLegalPublication("cookie"),
-  ]);
-  return {
-    terms: terms.version,
-    privacy: privacy.version,
-    cookie: cookie.version,
-  };
+  const entries = await Promise.all(
+    LEGAL_DOCUMENT_TYPES.map(async (documentType) => {
+      const publication = await getCurrentLegalPublication(documentType);
+      return [documentType, publication.version] as const;
+    }),
+  );
+  return Object.fromEntries(entries) as Record<LegalDocumentType, string>;
 }
 
 export async function getCurrentLegalDocument(
