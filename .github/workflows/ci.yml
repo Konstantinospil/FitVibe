@@ -2554,6 +2554,7 @@ jobs:
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
 
       - name: Install postgresql-client
         timeout-minutes: 2
@@ -2750,12 +2751,40 @@ jobs:
             exit 1
           fi
 
+      - name: Pull backoffice image
+        timeout-minutes: 5
+        run: docker pull ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+
+      - name: Start backoffice container
+        timeout-minutes: 5
+        run: |
+          docker network create fitvibe-verification
+          docker network connect fitvibe-verification test-backend
+          docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+
+      - name: Verify backoffice production image
+        timeout-minutes: 5
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null; then
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              docker logs test-backoffice
+              exit 1
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
+          curl -fsS http://127.0.0.1:8081/health | grep -qi 'status\|ok'
+
       - name: Cleanup containers
         if: always()
         timeout-minutes: 2
         run: |
-          docker stop test-backend test-frontend 2>/dev/null || true
-          docker rm test-backend test-frontend 2>/dev/null || true
+          docker stop test-backend test-frontend test-backoffice 2>/dev/null || true
+          docker rm test-backend test-frontend test-backoffice 2>/dev/null || true
+          docker network rm fitvibe-verification 2>/dev/null || true
 
       - name: Job summary
         if: always()
@@ -2764,6 +2793,7 @@ jobs:
           if [ "${{ job.status }}" == "success" ]; then
             echo "- ✅ Backend container starts and health check passes" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ Frontend container starts and serves HTML" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Backoffice container starts, serves the SPA, and proxies backend health" >> $GITHUB_STEP_SUMMARY
             echo "- ℹ️ Image sizes reported for observability; no size budget is enforced in this job" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Build verification failed" >> $GITHUB_STEP_SUMMARY
