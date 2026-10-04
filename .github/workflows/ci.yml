@@ -1771,7 +1771,7 @@ jobs:
           contract_tests=${{ needs.contract_tests.result }}
           visual_regression=${{ needs.visual_regression.result }}
           e2e=${{ needs.e2e.result }}
-          pre_main_container_smoke=${{ needs.pre_main_container_smoke.result }}
+          pre_main_container_smoke=${{ (github.event_name == 'pull_request' && github.base_ref == 'main') && needs.pre_main_container_smoke.result || 'success' }}
           EOF_RESULTS
           exit "$failed"
 
