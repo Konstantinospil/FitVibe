@@ -1599,6 +1599,7 @@ jobs:
         run: |
           docker build -f infra/docker/prod/Dockerfile.backend -t fitvibe-backend:pre-main .
           docker build -f infra/docker/prod/Dockerfile.frontend -t fitvibe-frontend:pre-main .
+          docker build -f infra/docker/prod/Dockerfile.backoffice -t fitvibe-backoffice:pre-main .
 
       - name: Start backend production container
         run: |
@@ -1659,10 +1660,33 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8080/ | grep -qi '<!doctype html\|<html'
 
+      - name: Start backoffice production container
+        run: |
+          docker network create pre-main-fitvibe
+          docker network connect pre-main-fitvibe pre-main-backend
+          docker run -d             --name pre-main-backoffice             --network pre-main-fitvibe             -p 8081:8080             fitvibe-backoffice:pre-main
+
+      - name: Verify backoffice production startup
+        timeout-minutes: 5
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null; then
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              docker logs pre-main-backoffice
+              exit 1
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
+          curl -fsS http://127.0.0.1:8081/health | grep -qi 'status\|ok'
+
       - name: Cleanup production smoke containers
         if: always()
         run: |
-          docker rm -f pre-main-backend pre-main-frontend 2>/dev/null || true
+          docker rm -f pre-main-backend pre-main-frontend pre-main-backoffice 2>/dev/null || true
+          docker network rm pre-main-fitvibe 2>/dev/null || true
 
 
   pre_main_arm64_build:
@@ -1696,6 +1720,17 @@ jobs:
         with:
           context: .
           file: infra/docker/prod/Dockerfile.frontend
+          platforms: linux/arm64
+          push: false
+          provenance: false
+          sbom: false
+
+      - name: Build arm64 backoffice production image
+        timeout-minutes: 25
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: infra/docker/prod/Dockerfile.backoffice
           platforms: linux/arm64
           push: false
           provenance: false
