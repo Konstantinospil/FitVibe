@@ -2225,6 +2225,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     env:
       DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_test
     steps:
@@ -2331,6 +2340,9 @@ jobs:
             -e CLAMAV_ENABLED=true \
             -e CLAMAV_HOST=host.docker.internal \
             -e CLAMAV_PORT=3310 \
+            -e REDIS_ENABLED=true \
+            -e REDIS_HOST=host.docker.internal \
+            -e REDIS_PORT=6379 \
             ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
           echo "Backend container started"
 
