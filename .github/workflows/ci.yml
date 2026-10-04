@@ -2141,6 +2141,7 @@ jobs:
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
           echo "PLATFORM_PAIR=${platform_pair}" >> "$GITHUB_ENV"
 
       - name: Setup Docker Buildx
@@ -2183,13 +2184,30 @@ jobs:
           cache-from: type=gha,scope=frontend-${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=frontend-${{ env.PLATFORM_PAIR }}
 
+      - name: Build and push backoffice image by digest
+        id: backoffice
+        timeout-minutes: 25
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: infra/docker/prod/Dockerfile.backoffice
+          platforms: ${{ matrix.platform }}
+          provenance: true
+          sbom: true
+          tags: ${{ env.BACKOFFICE_IMAGE }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=backoffice-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=backoffice-${{ env.PLATFORM_PAIR }}
+
       - name: Export digests
         run: |
-          mkdir -p "${RUNNER_TEMP}/backend-digests" "${RUNNER_TEMP}/frontend-digests"
+          mkdir -p "${RUNNER_TEMP}/backend-digests" "${RUNNER_TEMP}/frontend-digests" "${RUNNER_TEMP}/backoffice-digests"
           backend_digest="${{ steps.backend.outputs.digest }}"
           frontend_digest="${{ steps.frontend.outputs.digest }}"
+          backoffice_digest="${{ steps.backoffice.outputs.digest }}"
           touch "${RUNNER_TEMP}/backend-digests/${backend_digest#sha256:}"
           touch "${RUNNER_TEMP}/frontend-digests/${frontend_digest#sha256:}"
+          touch "${RUNNER_TEMP}/backoffice-digests/${backoffice_digest#sha256:}"
 
       - name: Upload backend digest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -2204,6 +2222,14 @@ jobs:
         with:
           name: frontend-digests-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/frontend-digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload backoffice digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: backoffice-digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/backoffice-digests/*
           if-no-files-found: error
           retention-days: 1
 
