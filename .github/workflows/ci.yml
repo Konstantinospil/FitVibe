@@ -7,7 +7,7 @@ concurrency:
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["main", "dev", "feature"]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
@@ -1818,7 +1818,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
     timeout-minutes: 30
     needs: integration
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'))
     permissions:
       contents: read
     steps:
