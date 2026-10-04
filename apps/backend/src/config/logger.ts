@@ -33,7 +33,11 @@ const baseConfig: LoggerOptions = {
   },
 };
 
-if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
+if (
+  process.env.CI !== "true" &&
+  process.env.NODE_ENV !== "development" &&
+  process.env.NODE_ENV !== "test"
+) {
   baseConfig.transport = {
     target: "pino-pretty",
     options: {
