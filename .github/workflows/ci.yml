@@ -2440,18 +2440,36 @@ jobs:
             image="$1"
             inspect="$(docker buildx imagetools inspect "$image")"
 
-            if ! printf '%s\n' "$inspect" | grep -Eq 'Platform:[[:space:]]+linux/amd64([[:space:]]|$)'; then
+            printf '%s\n' "$inspect" | grep -q 'Platform:.*linux/amd64' || {
               echo "$image does not provide linux/amd64; refusing to publish it for production." >&2
               exit 1
-            fi
+            }
 
-            if ! printf '%s\n' "$inspect" | grep -Eq 'Platform:[[:space:]]+linux/arm64(/v8)?([[:space:]]|$)'; then
+            printf '%s\n' "$inspect" | grep -Eq 'Platform:.*linux/arm64(/v8)?' || {
               echo "$image does not provide linux/arm64; refusing to publish it for production." >&2
               exit 1
-            fi
+            }
 
             digest="$(printf '%s\n' "$inspect" | awk '/^Digest:/ {print $2; exit}')"
-            if ! printf '%s\n' "$digest" | grep -Eq '^sha256:[0-9a-f]{64}
+            case "$digest" in
+              sha256:????????????????????????????????????????????????????????????????) ;;
+              *)
+                echo "Invalid immutable digest for $image: $digest" >&2
+                exit 1
+                ;;
+            esac
+
+            printf '%s\n' "$digest"
+          }
+
+          postgres_digest="$(resolve_multiarch_digest postgres:16)"
+          clamav_digest="$(resolve_multiarch_digest clamav/clamav:1.4.6-debian13-slim)"
+          redis_digest="$(resolve_multiarch_digest redis:7-alpine)"
+
+          echo "postgres_image=postgres@$postgres_digest" >> "$GITHUB_OUTPUT"
+          echo "clamav_image=clamav/clamav@$clamav_digest" >> "$GITHUB_OUTPUT"
+          echo "redis_image=redis@$redis_digest" >> "$GITHUB_OUTPUT"
+
       - name: Record image digests
         timeout-minutes: 2
         run: |
