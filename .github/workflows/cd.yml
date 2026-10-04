@@ -146,6 +146,7 @@ jobs:
 
           backend="$(sed -n 's/^backend=//p' "${digest_file}" | head -n 1)"
           frontend="$(sed -n 's/^frontend=//p' "${digest_file}" | head -n 1)"
+          backoffice="$(sed -n 's/^backoffice=//p' "${digest_file}" | head -n 1)"
           stack_version="$(sed -n 's/^stack_version=//p' "${digest_file}" | head -n 1)"
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
 
@@ -165,6 +166,14 @@ jobs:
               ;;
           esac
 
+          case "${backoffice}" in
+            "${REGISTRY}/${owner}/fitvibe-backoffice@sha256:"*) ;;
+            *)
+              echo "Unexpected backoffice image reference: ${backoffice}" >&2
+              exit 1
+              ;;
+          esac
+
           if [[ ! "${stack_version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
             echo "Unexpected stack version: ${stack_version}" >&2
             exit 1
@@ -172,6 +181,7 @@ jobs:
 
           echo "backend_image=${backend}" >> "${GITHUB_OUTPUT}"
           echo "frontend_image=${frontend}" >> "${GITHUB_OUTPUT}"
+          echo "backoffice_image=${backoffice}" >> "${GITHUB_OUTPUT}"
           echo "stack_version=${stack_version}" >> "${GITHUB_OUTPUT}"
           echo "deploy_sha=${{ needs.resolve_ci.outputs.head_sha }}" >> "${GITHUB_OUTPUT}"
 
@@ -191,6 +201,13 @@ jobs:
           --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@refs/heads/main"
           --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
           ${{ steps.deployment.outputs.frontend_image }}
+
+      - name: Verify backoffice signature
+        run: >
+          cosign verify
+          --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@refs/heads/main"
+          --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+          ${{ steps.deployment.outputs.backoffice_image }}
 
       - name: Resolve infrastructure image digests
         id: infra_images
@@ -229,12 +246,13 @@ jobs:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: BACKEND_IMAGE,FRONTEND_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
+          envs: BACKEND_IMAGE,FRONTEND_IMAGE,BACKOFFICE_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
           script: |
             set -eu
 
             : "${BACKEND_IMAGE:?BACKEND_IMAGE is required}"
             : "${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}"
+            : "${BACKOFFICE_IMAGE:?BACKOFFICE_IMAGE is required}"
             : "${POSTGRES_IMAGE:?POSTGRES_IMAGE is required}"
             : "${CLAMAV_IMAGE:?CLAMAV_IMAGE is required}"
             : "${REDIS_IMAGE:?REDIS_IMAGE is required}"
@@ -276,7 +294,7 @@ jobs:
             install -m 0644 "${canonical_compose}" "${PROD_STACK_DIR}/compose.yml"
 
             cd "${PROD_STACK_DIR}"
-            export BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
+            export BACKEND_IMAGE FRONTEND_IMAGE BACKOFFICE_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
 
             compose() {
               docker compose --env-file .env -f compose.yml "$@"
@@ -306,6 +324,12 @@ jobs:
               exit 1
             fi
 
+            if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKOFFICE_IMAGE}" >/dev/null; then
+              echo "compose.yml does not resolve backoffice to ${BACKOFFICE_IMAGE}." >&2
+              echo "The production stack must consume the BACKOFFICE_IMAGE variable from CD." >&2
+              exit 1
+            fi
+
             compose pull
             compose up -d --remove-orphans
 
@@ -328,10 +352,13 @@ jobs:
 
             curl -fsS http://127.0.0.1:4000/metrics >/dev/null
             curl -fsS http://127.0.0.1/ >/dev/null
+            curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null
+            curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
             compose ps
         env:
           BACKEND_IMAGE: ${{ steps.deployment.outputs.backend_image }}
           FRONTEND_IMAGE: ${{ steps.deployment.outputs.frontend_image }}
+          BACKOFFICE_IMAGE: ${{ steps.deployment.outputs.backoffice_image }}
           POSTGRES_IMAGE: ${{ steps.infra_images.outputs.postgres_image }}
           CLAMAV_IMAGE: ${{ steps.infra_images.outputs.clamav_image }}
           REDIS_IMAGE: ${{ steps.infra_images.outputs.redis_image }}
