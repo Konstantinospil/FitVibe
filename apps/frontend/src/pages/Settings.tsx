@@ -312,9 +312,13 @@ const Settings: React.FC = () => {
                     )
                   }
                 >
-                  <option value="shoulder-dominant">{t("settings.vibeform.bodyProfiles.shoulderDominant")}</option>
+                  <option value="shoulder-dominant">
+                    {t("settings.vibeform.bodyProfiles.shoulderDominant")}
+                  </option>
                   <option value="balanced">{t("settings.vibeform.bodyProfiles.balanced")}</option>
-                  <option value="hip-dominant">{t("settings.vibeform.bodyProfiles.hipDominant")}</option>
+                  <option value="hip-dominant">
+                    {t("settings.vibeform.bodyProfiles.hipDominant")}
+                  </option>
                 </SelectControl>
               </label>
               <Switch
@@ -323,7 +327,11 @@ const Settings: React.FC = () => {
                 onChange={(event) => setVibeformMotionEnabled(event.target.checked)}
               />
               <p>{t("settings.vibeform.description")}</p>
-              <Button type="button" onClick={() => void saveVibeform()} isLoading={savingSection === "vibeform"}>
+              <Button
+                type="button"
+                onClick={() => void saveVibeform()}
+                isLoading={savingSection === "vibeform"}
+              >
                 {t("common.save")}
               </Button>
             </div>
