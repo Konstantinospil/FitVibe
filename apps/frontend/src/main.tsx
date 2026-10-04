@@ -6,7 +6,7 @@ import "./styles/global.css";
 import "./utils/suppressConsole";
 import { minimalTranslationsReady } from "./i18n/config";
 // Theme store is small and needed immediately to prevent FOUC
-import { useThemeStore } from "./store/theme.store";
+import { applyTheme, useThemeStore } from "./store/theme.store";
 
 const schedulePublicFonts = (): void => {
   const load = (): void => {
@@ -28,7 +28,7 @@ const schedulePublicFonts = (): void => {
 // This is synchronous to prevent flash of unstyled content
 if (typeof document !== "undefined") {
   const initialTheme = useThemeStore.getState().theme;
-  document.documentElement.setAttribute("data-theme", initialTheme);
+  applyTheme(initialTheme);
   schedulePublicFonts();
 }
 
