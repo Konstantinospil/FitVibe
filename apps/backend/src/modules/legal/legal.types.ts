@@ -1,6 +1,7 @@
-export type LegalDocumentType = "terms" | "privacy" | "cookie";
+import type { LegalDocumentType, LegalUserAction } from "./legal.registry.js";
+
+export type { LegalDocumentType, LegalUserAction } from "./legal.registry.js";
 export type LegalChangeClass = "legacy" | "editorial" | "material";
-export type LegalUserAction = "none" | "acknowledge" | "accept" | "renew_consent";
 
 export interface LegalDocumentVersionRow {
   id: string;
