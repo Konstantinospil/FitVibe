@@ -34,7 +34,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "80:80"
+      - "80:4173"
 
   db:
     image: ${POSTGRES_IMAGE:?POSTGRES_IMAGE digest reference is required}
