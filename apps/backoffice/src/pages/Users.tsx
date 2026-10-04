@@ -444,7 +444,7 @@ const UsersPage: React.FC = () => {
                 {filteredUsers.map((user) => {
                   const API_URL =
                     import.meta.env.VITE_API_URL ||
-                    (import.meta.env.DEV ? "" : "http://localhost:4000");
+                    "";
                   let avatarUrl: string | null = null;
                   if (user.avatar_url) {
                     if (user.avatar_url.startsWith("http")) {
