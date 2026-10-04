@@ -6,15 +6,20 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-ENV HUSKY=0
+# Docker needs pnpm >=12.9.0 for the fixed legacy deploy handling of
+# relative file:/link: dependencies. Keep this override scoped to the
+# image build; the repository-wide packageManager pin remains unchanged.
+ENV HUSKY=0 \
+    COREPACK_ENABLE_PROJECT_SPEC=0
 
 # 1) Copy only the lockfile/config inputs needed by pnpm fetch.
 #    Avoid wildcard COPY destinations for workspace manifests because
 #    Docker treats the destination wildcard literally as /app/packages/*.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc .pnpmfile.cjs ./
 
-# 2) Use the repository-declared pnpm version and pre-fetch dependencies.
-RUN corepack enable && corepack prepare pnpm@12.5.1 --activate
+# 2) Use the fixed Docker-local pnpm release and pre-fetch dependencies.
+RUN corepack enable && corepack prepare pnpm@12.9.0 --activate
+RUN test "$(pnpm --version)" = "12.9.0"
 RUN pnpm fetch --prod=false
 
 # 3) Copy the complete workspace after the dependency cache is populated.
@@ -27,7 +32,7 @@ RUN pnpm install --frozen-lockfile --prod=false --offline
 RUN pnpm --filter @fitvibe/frontend run build:ssr
 
 # 6) Isolate the frontend package + production node_modules
-RUN pnpm deploy --filter @fitvibe/frontend --prod /app/frontend-deploy
+RUN pnpm deploy --legacy --filter @fitvibe/frontend --prod /app/frontend-deploy
 
 # ---------- Runtime Stage ----------
 FROM node:24-alpine AS runtime
