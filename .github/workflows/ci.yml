@@ -1237,19 +1237,15 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           failed=0
-          for outcome in "$DEPENDENCY_AUDIT" "$OSV" "$TRUFFLEHOG" "$STATIC_SECRETS" "$TRIVY"; do
+          for outcome in "$DEPENDENCY_AUDIT" "$OSV" "$TRUFFLEHOG" "$STATIC_SECRETS" "$TRIVY" "$SNYK"; do
             if [ "$outcome" != "success" ]; then
               failed=1
             fi
           done
 
           if [ "$failed" -ne 0 ]; then
-            echo "::error::One or more required deterministic security controls failed."
+            echo "::error::One or more required security controls failed."
             exit 1
-          fi
-
-          if [ -n "${SNYK:-}" ] && [ "$SNYK" != "success" ] && [ "$SNYK" != "skipped" ]; then
-            echo "::warning::Snyk was unavailable or failed. Repository-native security controls still completed; investigate the external scanner separately."
           fi
 
   codeql_compatibility:
