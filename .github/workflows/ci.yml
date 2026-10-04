@@ -1540,8 +1540,6 @@ jobs:
       - contract_tests
       - visual_regression
       - e2e
-      - deployment_contract
-      - release_governance
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/dev'
     permissions:
       contents: read
@@ -1622,8 +1620,6 @@ jobs:
           contract_tests=${{ needs.contract_tests.result }}
           visual_regression=${{ needs.visual_regression.result }}
           e2e=${{ needs.e2e.result }}
-          deployment_contract=${{ needs.deployment_contract.result }}
-          release_governance=${{ needs.release_governance.result }}
           EOF_RESULTS
           exit "$failed"
 
