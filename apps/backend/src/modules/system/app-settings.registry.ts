@@ -104,7 +104,11 @@ export function isAppSettingKey(key: string): key is AppSettingKey {
   return Object.hasOwn(APP_SETTINGS_REGISTRY, key);
 }
 
-export function validateAppSetting(key: AppSettingKey, value: unknown): unknown {
+export function validateAppSetting(key: string, value: unknown): unknown {
+  if (!isAppSettingKey(key)) {
+    throw new Error(`Unknown governed application setting: ${key}`);
+  }
+
   return APP_SETTINGS_REGISTRY[key].schema.parse(value);
 }
 
