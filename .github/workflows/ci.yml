@@ -2074,7 +2074,13 @@ jobs:
       - deployment_contract
       - release_governance
       - qa_summary
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.deployment_contract.result == 'success' &&
+      needs.release_governance.result == 'success' &&
+      needs.qa_summary.result == 'success'
     permissions:
       contents: read
       packages: write
@@ -2172,7 +2178,11 @@ jobs:
     timeout-minutes: 20
     needs:
       - build-platform
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build-platform.result == 'success'
     permissions:
       contents: write
       packages: write
@@ -2382,7 +2392,11 @@ jobs:
     timeout-minutes: 20
     needs:
       - build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build.result == 'success'
     permissions:
       contents: read
       packages: read
