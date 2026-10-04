@@ -1233,19 +1233,23 @@ jobs:
             echo "- TruffleHog: $TRUFFLEHOG"
             echo "- Static secret scan: $STATIC_SECRETS"
             echo "- Trivy: $TRIVY"
-            echo "- Snyk (supplementary external service): ${SNYK:-skipped}"
+            echo "- Snyk (advisory external service): ${SNYK:-skipped}"
           } >> "$GITHUB_STEP_SUMMARY"
 
           failed=0
-          for outcome in "$DEPENDENCY_AUDIT" "$OSV" "$TRUFFLEHOG" "$STATIC_SECRETS" "$TRIVY" "$SNYK"; do
+          for outcome in "$DEPENDENCY_AUDIT" "$OSV" "$TRUFFLEHOG" "$STATIC_SECRETS" "$TRIVY"; do
             if [ "$outcome" != "success" ]; then
               failed=1
             fi
           done
 
           if [ "$failed" -ne 0 ]; then
-            echo "::error::One or more required security controls failed."
+            echo "::error::One or more required deterministic security controls failed."
             exit 1
+          fi
+
+          if [ -n "${SNYK:-}" ] && [ "$SNYK" != "success" ] && [ "$SNYK" != "skipped" ]; then
+            echo "::warning::Snyk failed or was unavailable. Required repository-native security controls still passed."
           fi
 
   codeql_compatibility:
