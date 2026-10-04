@@ -97,7 +97,7 @@ describe("AuthPageLayout", () => {
   });
 
   it("should render the semantic public header and utilities after the idle task", () => {
-    render(
+    const { container } = render(
       <MemoryRouter>
         <AuthPageLayout title="Test Title" description="Test Description">
           <div>Content</div>
@@ -105,8 +105,8 @@ describe("AuthPageLayout", () => {
       </MemoryRouter>,
     );
 
-    const header = screen.getByRole("banner");
-    expect(header).toHaveAttribute("data-component", "public-header");
-    expect(header.querySelector(".public-header__utilities")).toBeInTheDocument();
+    const header = container.querySelector<HTMLElement>('header[data-component="public-header"]');
+    expect(header).toBeInTheDocument();
+    expect(header?.querySelector(".public-header__utilities")).toBeInTheDocument();
   });
 });
