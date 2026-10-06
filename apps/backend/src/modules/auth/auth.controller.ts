@@ -49,11 +49,19 @@ function authCookieOptions(maxAge?: number) {
 }
 
 function setRefreshCookie(res: Response, token: string) {
-  res.cookie(env.REFRESH_COOKIE_NAME, token, authCookieOptions(env.REFRESH_TOKEN_TTL * 1000));
+  res.cookie(
+    env.REFRESH_COOKIE_NAME,
+    token,
+    authCookieOptions(env.REFRESH_TOKEN_TTL * 1000),
+  );
 }
 
 function setAccessCookie(res: Response, token: string) {
-  res.cookie(env.ACCESS_COOKIE_NAME, token, authCookieOptions(env.ACCESS_TOKEN_TTL * 1000));
+  res.cookie(
+    env.ACCESS_COOKIE_NAME,
+    token,
+    authCookieOptions(env.ACCESS_TOKEN_TTL * 1000),
+  );
 }
 
 function clearAuthCookies(res: Response) {
