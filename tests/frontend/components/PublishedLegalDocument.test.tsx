@@ -26,7 +26,9 @@ vi.mock("react-i18next", () => ({
       get language() {
         return i18nState.language;
       },
-      getResourceBundle: vi.fn(() => i18nState.bundle),
+      getResourceBundle: vi.fn((_language: string, namespace: string) =>
+        namespace === "translation" ? i18nState.bundle : undefined,
+      ),
     },
     t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
   }),
@@ -152,9 +154,11 @@ describe("PublishedLegalDocument", () => {
   it("falls back to retained localized legacy content and metadata", async () => {
     i18nState.language = "de-DE";
     i18nState.bundle = {
-      title: "Historische Bedingungen",
-      effectiveDateValue: 20261001,
-      section1: { content: "Legacy content" },
+      terms: {
+        title: "Historische Bedingungen",
+        effectiveDateValue: 20261001,
+        section1: { content: "Legacy content" },
+      },
     };
     getPublishedLegalDocument.mockResolvedValue(
       published(null as never, {
