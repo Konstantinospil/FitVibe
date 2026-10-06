@@ -478,3 +478,12 @@
     overflow-x: auto;
   }
 }
+
+/* Library page composition */
+[data-component="library-header"]{display:flex;gap:var(--space-md);justify-content:space-between;align-items:center;flex-wrap:wrap}
+[data-slot="library-actions"],[data-slot="library-card-actions"]{display:flex;gap:var(--space-sm);flex-wrap:wrap}
+[data-slot="library-card-actions"]{gap:var(--space-xs)}
+[data-component="library-filter-grid"]{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--space-sm)}
+[data-component="library-result-grid"]{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--space-md)}
+[data-component="library-pagination"]{display:flex;justify-content:space-between;gap:var(--space-sm);padding-top:var(--space-sm)}
+[data-component="library-detail"]{display:grid;gap:var(--space-sm)}
