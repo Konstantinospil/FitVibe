@@ -53,7 +53,10 @@ const ForgotPassword: React.FC = () => {
   }
 
   return (
-    <AuthPageLayout title={t("auth.forgotPassword.title")} description={t("auth.forgotPassword.description")}>
+    <AuthPageLayout
+      title={t("auth.forgotPassword.title")}
+      description={t("auth.forgotPassword.description")}
+    >
       <FormStack
         ref={formRef}
         onSubmit={(e) => {
