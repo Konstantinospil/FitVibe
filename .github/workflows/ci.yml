@@ -31,7 +31,7 @@ jobs:
   architecture_hardcoding:
     name: Architecture & Hardcoding
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 10
     permissions:
       contents: read
@@ -99,7 +99,7 @@ jobs:
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 20
     permissions:
       contents: read
@@ -207,7 +207,7 @@ jobs:
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 20
     permissions:
       contents: read
@@ -343,7 +343,7 @@ jobs:
   frontend_tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 15
     permissions:
       contents: read
@@ -474,7 +474,7 @@ jobs:
   database_tests:
     name: Database Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -583,7 +583,7 @@ jobs:
   coverage:
     name: Coverage Gate
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - backend_tests
@@ -851,7 +851,7 @@ jobs:
   integration:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 30
     needs:
       - backend_tests
@@ -1110,7 +1110,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 35
     needs:
       - quality
@@ -1599,6 +1599,7 @@ jobs:
         run: |
           docker build -f infra/docker/prod/Dockerfile.backend -t fitvibe-backend:pre-main .
           docker build -f infra/docker/prod/Dockerfile.frontend -t fitvibe-frontend:pre-main .
+          docker build -f infra/docker/prod/Dockerfile.backoffice -t fitvibe-backoffice:pre-main .
 
       - name: Start backend production container
         run: |
@@ -1659,10 +1660,33 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8080/ | grep -qi '<!doctype html\|<html'
 
+      - name: Start backoffice production container
+        run: |
+          docker network create pre-main-fitvibe
+          docker network connect pre-main-fitvibe pre-main-backend
+          docker run -d             --name pre-main-backoffice             --network pre-main-fitvibe             -p 8081:8080             fitvibe-backoffice:pre-main
+
+      - name: Verify backoffice production startup
+        timeout-minutes: 5
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null; then
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              docker logs pre-main-backoffice
+              exit 1
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
+          curl -fsS http://127.0.0.1:8081/health | grep -qi 'status\|ok'
+
       - name: Cleanup production smoke containers
         if: always()
         run: |
-          docker rm -f pre-main-backend pre-main-frontend 2>/dev/null || true
+          docker rm -f pre-main-backend pre-main-frontend pre-main-backoffice 2>/dev/null || true
+          docker network rm pre-main-fitvibe 2>/dev/null || true
 
 
   pre_main_arm64_build:
@@ -1696,6 +1720,17 @@ jobs:
         with:
           context: .
           file: infra/docker/prod/Dockerfile.frontend
+          platforms: linux/arm64
+          push: false
+          provenance: false
+          sbom: false
+
+      - name: Build arm64 backoffice production image
+        timeout-minutes: 25
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: infra/docker/prod/Dockerfile.backoffice
           platforms: linux/arm64
           push: false
           provenance: false
@@ -2074,7 +2109,13 @@ jobs:
       - deployment_contract
       - release_governance
       - qa_summary
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.deployment_contract.result == 'success' &&
+      needs.release_governance.result == 'success' &&
+      needs.qa_summary.result == 'success'
     permissions:
       contents: read
       packages: write
@@ -2098,8 +2139,10 @@ jobs:
           platform_pair="${{ matrix.platform }}"
           platform_pair="${platform_pair//\//-}"
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
+          echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
           echo "PLATFORM_PAIR=${platform_pair}" >> "$GITHUB_ENV"
 
       - name: Setup Docker Buildx
@@ -2111,6 +2154,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ingress image by digest
+        id: ingress
+        timeout-minutes: 10
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: infra/docker/prod/Dockerfile.ingress
+          platforms: ${{ matrix.platform }}
+          provenance: true
+          sbom: true
+          tags: ${{ env.INGRESS_IMAGE }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=ingress-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=ingress-${{ env.PLATFORM_PAIR }}
 
       - name: Build and push backend image by digest
         id: backend
@@ -2142,13 +2200,40 @@ jobs:
           cache-from: type=gha,scope=frontend-${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=frontend-${{ env.PLATFORM_PAIR }}
 
+      - name: Build and push backoffice image by digest
+        id: backoffice
+        timeout-minutes: 25
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: infra/docker/prod/Dockerfile.backoffice
+          platforms: ${{ matrix.platform }}
+          provenance: true
+          sbom: true
+          tags: ${{ env.BACKOFFICE_IMAGE }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=backoffice-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=backoffice-${{ env.PLATFORM_PAIR }}
+
       - name: Export digests
         run: |
-          mkdir -p "${RUNNER_TEMP}/backend-digests" "${RUNNER_TEMP}/frontend-digests"
+          mkdir -p "${RUNNER_TEMP}/ingress-digests" "${RUNNER_TEMP}/backend-digests" "${RUNNER_TEMP}/frontend-digests" "${RUNNER_TEMP}/backoffice-digests"
+          ingress_digest="${{ steps.ingress.outputs.digest }}"
           backend_digest="${{ steps.backend.outputs.digest }}"
           frontend_digest="${{ steps.frontend.outputs.digest }}"
+          backoffice_digest="${{ steps.backoffice.outputs.digest }}"
+          touch "${RUNNER_TEMP}/ingress-digests/${ingress_digest#sha256:}"
           touch "${RUNNER_TEMP}/backend-digests/${backend_digest#sha256:}"
           touch "${RUNNER_TEMP}/frontend-digests/${frontend_digest#sha256:}"
+          touch "${RUNNER_TEMP}/backoffice-digests/${backoffice_digest#sha256:}"
+
+      - name: Upload ingress digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ingress-digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/ingress-digests/*
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload backend digest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -2166,13 +2251,25 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Upload backoffice digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: backoffice-digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/backoffice-digests/*
+          if-no-files-found: error
+          retention-days: 1
+
   build:
     name: Build & Publish Images
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs:
       - build-platform
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build-platform.result == 'success'
     permissions:
       contents: write
       packages: write
@@ -2186,21 +2283,25 @@ jobs:
         run: |
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
+          echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
 
       - name: Determine package versions
         id: versions
         timeout-minutes: 2
         run: |
-          if [ ! -f apps/backend/package.json ] || [ ! -f apps/frontend/package.json ]; then
+          if [ ! -f apps/backend/package.json ] || [ ! -f apps/frontend/package.json ] || [ ! -f apps/backoffice/package.json ]; then
             echo "Error: package.json files not found" >&2
             exit 1
           fi
           backend=$(node -p "require('./apps/backend/package.json').version")
           frontend=$(node -p "require('./apps/frontend/package.json').version")
+          backoffice=$(node -p "require('./apps/backoffice/package.json').version")
           echo "backend=${backend}" >> "$GITHUB_OUTPUT"
           echo "frontend=${frontend}" >> "$GITHUB_OUTPUT"
+          echo "backoffice=${backoffice}" >> "$GITHUB_OUTPUT"
 
       - name: Determine release eligibility
         id: release_guard
@@ -2223,6 +2324,13 @@ jobs:
             echo "Release tag ${tag} does not exist; this build may publish it."
           fi
 
+      - name: Download ingress digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: ${{ runner.temp }}/ingress-digests
+          pattern: ingress-digests-*
+          merge-multiple: true
+
       - name: Download backend digests
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -2235,6 +2343,13 @@ jobs:
         with:
           path: ${{ runner.temp }}/frontend-digests
           pattern: frontend-digests-*
+          merge-multiple: true
+
+      - name: Download backoffice digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: ${{ runner.temp }}/backoffice-digests
+          pattern: backoffice-digests-*
           merge-multiple: true
 
       - name: Setup Docker Buildx
@@ -2253,13 +2368,20 @@ jobs:
         run: |
           set -euo pipefail
 
+          ingress_count=$(find "${RUNNER_TEMP}/ingress-digests" -type f | wc -l)
           backend_count=$(find "${RUNNER_TEMP}/backend-digests" -type f | wc -l)
           frontend_count=$(find "${RUNNER_TEMP}/frontend-digests" -type f | wc -l)
-          if [ "${backend_count}" -lt 2 ] || [ "${frontend_count}" -lt 2 ]; then
+          backoffice_count=$(find "${RUNNER_TEMP}/backoffice-digests" -type f | wc -l)
+          if [ "${ingress_count}" -lt 2 ] || [ "${backend_count}" -lt 2 ] || [ "${frontend_count}" -lt 2 ] || [ "${backoffice_count}" -lt 2 ]; then
             echo "Expected 2 platform digests per image (amd64 + arm64)." >&2
-            echo "backend=${backend_count} frontend=${frontend_count}" >&2
+            echo "ingress=${ingress_count} backend=${backend_count} frontend=${frontend_count} backoffice=${backoffice_count}" >&2
             exit 1
           fi
+
+          ingress_refs=""
+          for digest_file in "${RUNNER_TEMP}/ingress-digests"/*; do
+            ingress_refs="${ingress_refs} ${INGRESS_IMAGE}@sha256:$(basename "${digest_file}")"
+          done
 
           backend_refs=""
           for digest_file in "${RUNNER_TEMP}/backend-digests"/*; do
@@ -2271,13 +2393,26 @@ jobs:
             frontend_refs="${frontend_refs} ${FRONTEND_IMAGE}@sha256:$(basename "${digest_file}")"
           done
 
+          backoffice_refs=""
+          for digest_file in "${RUNNER_TEMP}/backoffice-digests"/*; do
+            backoffice_refs="${backoffice_refs} ${BACKOFFICE_IMAGE}@sha256:$(basename "${digest_file}")"
+          done
+
+          ingress_tags=(-t "${INGRESS_IMAGE}:sha-${GITHUB_SHA}")
           backend_tags=(-t "${BACKEND_IMAGE}:sha-${GITHUB_SHA}")
           frontend_tags=(-t "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}")
+          backoffice_tags=(-t "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}")
 
           if [ "${{ steps.release_guard.outputs.should_release }}" = "true" ]; then
+            ingress_tags+=(-t "${INGRESS_IMAGE}:v${{ steps.versions.outputs.backend }}")
             backend_tags+=(-t "${BACKEND_IMAGE}:v${{ steps.versions.outputs.backend }}")
             frontend_tags+=(-t "${FRONTEND_IMAGE}:v${{ steps.versions.outputs.frontend }}")
+            backoffice_tags+=(-t "${BACKOFFICE_IMAGE}:v${{ steps.versions.outputs.backoffice }}")
           fi
+
+          docker buildx imagetools create \
+            "${ingress_tags[@]}" \
+            ${ingress_refs}
 
           docker buildx imagetools create \
             "${backend_tags[@]}" \
@@ -2287,19 +2422,31 @@ jobs:
             "${frontend_tags[@]}" \
             ${frontend_refs}
 
+          docker buildx imagetools create \
+            "${backoffice_tags[@]}" \
+            ${backoffice_refs}
+
+          ingress_digest=$(docker buildx imagetools inspect "${INGRESS_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
           backend_digest=$(docker buildx imagetools inspect "${BACKEND_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
           frontend_digest=$(docker buildx imagetools inspect "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
+          backoffice_digest=$(docker buildx imagetools inspect "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
 
-          if [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ]; then
+          if [ -z "${ingress_digest}" ] || [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ] || [ -z "${backoffice_digest}" ]; then
             echo "Failed to resolve merged image digests" >&2
             exit 1
           fi
 
+          echo "ingress_digest=${ingress_digest}" >> "$GITHUB_OUTPUT"
           echo "backend_digest=${backend_digest}" >> "$GITHUB_OUTPUT"
           echo "frontend_digest=${frontend_digest}" >> "$GITHUB_OUTPUT"
+          echo "backoffice_digest=${backoffice_digest}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign ingress image
+        timeout-minutes: 5
+        run: cosign sign --yes ${{ env.INGRESS_IMAGE }}@${{ steps.manifests.outputs.ingress_digest }}
 
       - name: Sign backend image
         timeout-minutes: 5
@@ -2308,6 +2455,17 @@ jobs:
       - name: Sign frontend image
         timeout-minutes: 5
         run: cosign sign --yes ${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}
+
+      - name: Sign backoffice image
+        timeout-minutes: 5
+        run: cosign sign --yes ${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}
+
+      - name: Generate ingress SBOM
+        timeout-minutes: 5
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.INGRESS_IMAGE }}@${{ steps.manifests.outputs.ingress_digest }}
+          output-file: sbom-ingress.spdx.json
 
       - name: Generate backend SBOM
         timeout-minutes: 5
@@ -2323,12 +2481,65 @@ jobs:
           image: ${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}
           output-file: sbom-frontend.spdx.json
 
+      - name: Generate backoffice SBOM
+        timeout-minutes: 5
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}
+          output-file: sbom-backoffice.spdx.json
+
+      - name: Resolve infrastructure image digests
+        id: infra_images
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          resolve_multiarch_digest() {
+            image="$1"
+            inspect="$(docker buildx imagetools inspect "$image")"
+
+            printf '%s\n' "$inspect" | grep -q 'Platform:.*linux/amd64' || {
+              echo "$image does not provide linux/amd64; refusing to publish it for production." >&2
+              exit 1
+            }
+
+            printf '%s\n' "$inspect" | grep -Eq 'Platform:.*linux/arm64(/v8)?' || {
+              echo "$image does not provide linux/arm64; refusing to publish it for production." >&2
+              exit 1
+            }
+
+            digest="$(printf '%s\n' "$inspect" | awk '/^Digest:/ {print $2; exit}')"
+            case "$digest" in
+              sha256:????????????????????????????????????????????????????????????????) ;;
+              *)
+                echo "Invalid immutable digest for $image: $digest" >&2
+                exit 1
+                ;;
+            esac
+
+            printf '%s\n' "$digest"
+          }
+
+          postgres_digest="$(resolve_multiarch_digest postgres:16)"
+          clamav_digest="$(resolve_multiarch_digest clamav/clamav:1.4.6-debian13-slim)"
+          redis_digest="$(resolve_multiarch_digest redis:7-alpine)"
+
+          echo "postgres_image=postgres@$postgres_digest" >> "$GITHUB_OUTPUT"
+          echo "clamav_image=clamav/clamav@$clamav_digest" >> "$GITHUB_OUTPUT"
+          echo "redis_image=redis@$redis_digest" >> "$GITHUB_OUTPUT"
+
       - name: Record image digests
         timeout-minutes: 2
         run: |
-          printf "backend=%s@%s\nfrontend=%s@%s\nstack_version=v%s\n" \
+          printf "ingress=%s@%s\nbackend=%s@%s\nfrontend=%s@%s\nbackoffice=%s@%s\npostgres=%s\nclamav=%s\nredis=%s\nstack_version=v%s\n" \
+            "${{ env.INGRESS_IMAGE }}" "${{ steps.manifests.outputs.ingress_digest }}" \
             "${{ env.BACKEND_IMAGE }}" "${{ steps.manifests.outputs.backend_digest }}" \
             "${{ env.FRONTEND_IMAGE }}" "${{ steps.manifests.outputs.frontend_digest }}" \
+            "${{ env.BACKOFFICE_IMAGE }}" "${{ steps.manifests.outputs.backoffice_digest }}" \
+            "${{ steps.infra_images.outputs.postgres_image }}" \
+            "${{ steps.infra_images.outputs.clamav_image }}" \
+            "${{ steps.infra_images.outputs.redis_image }}" \
             "${{ steps.versions.outputs.backend }}" > image-digests.txt
 
       - name: Download OpenAPI artifact
@@ -2342,8 +2553,10 @@ jobs:
         with:
           name: container-artifacts-${{ github.run_id }}
           path: |
+            sbom-ingress.spdx.json
             sbom-backend.spdx.json
             sbom-frontend.spdx.json
+            sbom-backoffice.spdx.json
             image-digests.txt
             artifacts/openapi/openapi.json
           retention-days: 90
@@ -2359,11 +2572,13 @@ jobs:
           commit: ${{ github.sha }}
           name: Release v${{ steps.versions.outputs.backend }}
           body: |
+            - Ingress image: ${{ env.INGRESS_IMAGE }}:v${{ steps.versions.outputs.backend }}
             - Backend image: ${{ env.BACKEND_IMAGE }}:v${{ steps.versions.outputs.backend }}
             - Frontend image: ${{ env.FRONTEND_IMAGE }}:v${{ steps.versions.outputs.frontend }}
+            - Backoffice image: ${{ env.BACKOFFICE_IMAGE }}:v${{ steps.versions.outputs.backoffice }}
           draft: false
           prerelease: false
-          artifacts: "sbom-backend.spdx.json,sbom-frontend.spdx.json,image-digests.txt,artifacts/openapi/openapi.json"
+          artifacts: "sbom-backend.spdx.json,sbom-frontend.spdx.json,sbom-backoffice.spdx.json,image-digests.txt,artifacts/openapi/openapi.json"
           artifactErrorsFailBuild: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -2373,6 +2588,7 @@ jobs:
           echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Backend image: \`${{ env.BACKEND_IMAGE }}@${{ steps.manifests.outputs.backend_digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Frontend image: \`${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backoffice image: \`${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Images signed with cosign" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ SBOMs generated" >> $GITHUB_STEP_SUMMARY
 
@@ -2382,7 +2598,11 @@ jobs:
     timeout-minutes: 20
     needs:
       - build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build.result == 'success'
     permissions:
       contents: read
       packages: read
@@ -2440,6 +2660,7 @@ jobs:
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
+          echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
 
       - name: Install postgresql-client
         timeout-minutes: 2
@@ -2636,12 +2857,40 @@ jobs:
             exit 1
           fi
 
+      - name: Pull backoffice image
+        timeout-minutes: 5
+        run: docker pull ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+
+      - name: Start backoffice container
+        timeout-minutes: 5
+        run: |
+          docker network create fitvibe-verification
+          docker network connect fitvibe-verification test-backend
+          docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+
+      - name: Verify backoffice production image
+        timeout-minutes: 5
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null; then
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              docker logs test-backoffice
+              exit 1
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
+          curl -fsS http://127.0.0.1:8081/health | grep -qi 'status\|ok'
+
       - name: Cleanup containers
         if: always()
         timeout-minutes: 2
         run: |
-          docker stop test-backend test-frontend 2>/dev/null || true
-          docker rm test-backend test-frontend 2>/dev/null || true
+          docker stop test-backend test-frontend test-backoffice 2>/dev/null || true
+          docker rm test-backend test-frontend test-backoffice 2>/dev/null || true
+          docker network rm fitvibe-verification 2>/dev/null || true
 
       - name: Job summary
         if: always()
@@ -2650,6 +2899,7 @@ jobs:
           if [ "${{ job.status }}" == "success" ]; then
             echo "- ✅ Backend container starts and health check passes" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ Frontend container starts and serves HTML" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ Backoffice container starts, serves the SPA, and proxies backend health" >> $GITHUB_STEP_SUMMARY
             echo "- ℹ️ Image sizes reported for observability; no size budget is enforced in this job" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Build verification failed" >> $GITHUB_STEP_SUMMARY

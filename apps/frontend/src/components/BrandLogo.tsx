@@ -1,29 +1,28 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../store/theme.store";
-import logoFull from "../assets/logo_full.webp";
-import logoFullDark from "../assets/logo_full_dark.webp";
 
 type BrandLogoSize = "sm" | "lg";
+
+const BRAND_MARK_DARK_SRC = "/fitvibe-mark-dark.svg";
+const BRAND_MARK_LIGHT_SRC = "/fitvibe-mark-light.svg";
 
 const SIZE_STYLES: Record<BrandLogoSize, React.CSSProperties> = {
   sm: {
     height: "32px",
-    width: "auto",
-    maxWidth: "160px",
+    width: "32px",
     display: "block",
   },
   lg: {
-    height: "clamp(48px, 8vw, 72px)",
-    width: "auto",
-    maxWidth: "min(100%, 260px)",
+    height: "clamp(64px, 10vw, 96px)",
+    width: "clamp(64px, 10vw, 96px)",
     display: "block",
   },
 };
 
 const SIZE_DIMS: Record<BrandLogoSize, { width: number; height: number }> = {
-  sm: { width: 110, height: 32 },
-  lg: { width: 240, height: 70 },
+  sm: { width: 32, height: 32 },
+  lg: { width: 96, height: 96 },
 };
 
 type BrandLogoProps = {
@@ -34,7 +33,7 @@ type BrandLogoProps = {
 const BrandLogo: React.FC<BrandLogoProps> = ({ size = "lg", priority = false }) => {
   const { t } = useTranslation();
   const theme = useThemeStore((state) => state.theme);
-  const src = theme === "dark" ? logoFullDark : logoFull;
+  const src = theme === "dark" ? BRAND_MARK_DARK_SRC : BRAND_MARK_LIGHT_SRC;
   const dims = SIZE_DIMS[size];
 
   return (
@@ -46,7 +45,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({ size = "lg", priority = false }) 
       decoding={priority ? "sync" : "async"}
       loading={priority ? "eager" : "lazy"}
       style={SIZE_STYLES[size]}
-      {...(priority ? { fetchpriority: "high" } : {})}
+      {...(priority ? { fetchPriority: "high" } : {})}
     />
   );
 };

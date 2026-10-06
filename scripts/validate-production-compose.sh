@@ -25,8 +25,10 @@ if [[ "${compose_file}" == "${canonical_path}" ]]; then
 fi
 
 dummy_digest="$(printf 'a%.0s' {1..64})"
+export INGRESS_IMAGE="ghcr.io/example/fitvibe-ingress@sha256:${dummy_digest}"
 export BACKEND_IMAGE="ghcr.io/example/fitvibe-backend@sha256:${dummy_digest}"
 export FRONTEND_IMAGE="ghcr.io/example/fitvibe-frontend@sha256:${dummy_digest}"
+export BACKOFFICE_IMAGE="ghcr.io/example/fitvibe-backoffice@sha256:${dummy_digest}"
 export POSTGRES_IMAGE="postgres@sha256:${dummy_digest}"
 export CLAMAV_IMAGE="clamav/clamav@sha256:${dummy_digest}"
 export REDIS_IMAGE="redis@sha256:${dummy_digest}"
@@ -49,7 +51,7 @@ python3 - "${resolved_config}" <<'PY'
 import json, sys
 data = json.loads(sys.argv[1])
 services = data.get("services", {})
-required = {"backend", "frontend", "db", "clamav", "redis"}
+required = {"ingress", "backend", "frontend", "backoffice", "db", "clamav", "redis"}
 missing = sorted(required - set(services))
 if missing:
     raise SystemExit(f"Missing production services: {', '.join(missing)}")
@@ -64,14 +66,36 @@ for dependency in ("db", "clamav", "redis"):
     if dependency not in backend_depends:
         raise SystemExit(f"backend must depend on {dependency}")
 
-frontend_ports = services["frontend"].get("ports") or []
+ingress_ports = services["ingress"].get("ports") or []
 if not any(
     isinstance(port, dict)
-    and int(port.get("target", 0)) == 4173
+    and int(port.get("target", 0)) == 80
     and str(port.get("published", "")) == "80"
-    for port in frontend_ports
+    for port in ingress_ports
 ):
-    raise SystemExit("frontend must publish host port 80 to SSR container port 4173")
+    raise SystemExit("ingress must publish host port 80")
+
+ingress_depends = services["ingress"].get("depends_on") or {}
+for dependency in ("backend", "frontend"):
+    if dependency not in ingress_depends:
+        raise SystemExit(f"ingress must depend on {dependency}")
+
+frontend_ports = services["frontend"].get("ports") or []
+if frontend_ports:
+    raise SystemExit("frontend SSR must not publish a host port; traffic must pass through ingress")
+
+backoffice_ports = services["backoffice"].get("ports") or []
+if not any(
+    isinstance(port, dict)
+    and int(port.get("target", 0)) == 8080
+    and str(port.get("published", "")) == "8081"
+    for port in backoffice_ports
+):
+    raise SystemExit("backoffice must publish host port 8081 to container port 8080")
+
+backoffice_depends = services["backoffice"].get("depends_on") or {}
+if "backend" not in backoffice_depends:
+    raise SystemExit("backoffice must depend on backend")
 
 clamav_volumes = services["clamav"].get("volumes") or []
 if not any(
