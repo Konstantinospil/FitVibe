@@ -485,12 +485,15 @@
   --color-border-strong: #818C90;
 
   --color-text-primary: #243036;
-  --color-text-secondary: #606F75;
-  --color-text-muted: #606F75;
+  /* WCAG AA on both light surface (#FAF8F4) and muted surface (#ECE7DE). */
+  --color-text-secondary: #59676C;
+  --color-text-muted: #59676C;
 
   --color-primary: #4F7282;
   --color-primary-hover: #3F5F6D;
   --color-primary-on: #FAF8F4;
+  /* TextLink resolves through the semantic info role; use the accessible light-theme action tone. */
+  --color-info-text: var(--color-primary-hover);
 
   --color-secondary: #557263;
   --color-secondary-hover: #476052;
