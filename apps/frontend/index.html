@@ -29,11 +29,26 @@
       name="twitter:description"
       content="Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration."
     />
-    <meta name="theme-color" content="#0B0C10" />
+    <meta name="theme-color" content="#11191D" />
     <link rel="icon" type="image/svg+xml" href="/fitvibe-mark-dark.svg" />
     <!-- Fonts are loaded asynchronously after initial render to reduce initial resource size -->
     <style>
-      /* Minimal inline styles for login fallback form (before CSS loads) - WCAG 2.2 AA compliant */
+      /* Performance bootstrap mirrors the canonical semantic theme roles.
+       * tests/qa/check-architecture-hardcoding.mjs verifies these values against the design-system authority. */
+      :root {
+        --bootstrap-bg: #11191D;
+        --bootstrap-surface: #182329;
+        --bootstrap-border: #556A73;
+        --bootstrap-text: #F7F3EA;
+        --bootstrap-link: #7FA8B8;
+      }
+      [data-theme="light"] {
+        --bootstrap-bg: #F4F0E8;
+        --bootstrap-surface: #FAF8F4;
+        --bootstrap-border: #818C90;
+        --bootstrap-text: #243036;
+        --bootstrap-link: #3F5F6D;
+      }
       html,
       body,
       #root {
@@ -41,8 +56,8 @@
         min-height: 100vh;
       }
       html {
-        background: #0b0c10;
-        color: #ffffff;
+        background: var(--bootstrap-bg);
+        color: var(--bootstrap-text);
       }
       .login-fallback {
         min-height: 100vh;
@@ -50,8 +65,8 @@
         align-items: center;
         justify-content: center;
         padding: 2rem;
-        background: #0b0c10;
-        color: #ffffff;
+        background: var(--bootstrap-bg);
+        color: var(--bootstrap-text);
         font-family:
           "Segoe UI",
           -apple-system,
@@ -60,12 +75,12 @@
           sans-serif;
       }
       .login-fallback__field {
-        border: 1px solid #2e5b49;
-        background: #0d1a15;
-        color: #ffffff;
+        border: 1px solid var(--bootstrap-border);
+        background: var(--bootstrap-surface);
+        color: var(--bootstrap-text);
       }
       .login-fallback__links a {
-        color: #6fd9b9;
+        color: var(--bootstrap-link);
         text-decoration: underline;
         padding: 0.75rem 0.5rem;
         min-height: 24px;
@@ -88,6 +103,7 @@
         min-height: 24px;
       }
     </style>
+    <script src="/theme-bootstrap.js"></script>
     <title>FitVibe</title>
   </head>
   <body>

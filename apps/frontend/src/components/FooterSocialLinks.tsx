@@ -44,13 +44,6 @@ const FooterSocialLinks: React.FC = () => {
     <nav
       aria-label={t("footer.socialMediaLabel", { defaultValue: "Social media" })}
       data-component="footer-social-links"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "var(--space-xs)",
-        flexWrap: "wrap",
-      }}
     >
       {socialPlatforms().map(({ key, label, href, icon }) => (
         <IconButton

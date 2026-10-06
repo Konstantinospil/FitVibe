@@ -1,5 +1,6 @@
 import React, { Component, type ReactNode } from "react";
 import { withTranslation, type WithTranslation } from "react-i18next";
+import { Button } from "@fitvibe/ui";
 import { logger } from "../utils/logger.js";
 
 interface Props extends WithTranslation {
@@ -38,38 +39,22 @@ class ErrorBoundaryComponent extends Component<Props, State> {
       }
 
       return (
-        <div
-          style={{
-            padding: "2rem",
-            textAlign: "center",
-            color: "var(--color-text-secondary)",
-            background: "var(--surface-danger-subtle)",
-            borderRadius: "var(--radius-md)",
-            border: "1px solid var(--border-danger-subtle)",
-          }}
-        >
-          <strong
-            style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-danger)" }}
-          >
+        <div data-component="error-boundary">
+          <strong data-slot="error-boundary-title">
             {this.props.t("components.errorBoundary.title")}
           </strong>
-          <p style={{ margin: 0, fontSize: "var(--type-body-size)" }}>
+          <p data-slot="error-boundary-message">
             {this.state.error?.message || this.props.t("components.errorBoundary.message")}
           </p>
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            style={{
-              marginTop: "1rem",
-              padding: "0.5rem 1rem",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-              background: "var(--color-surface-glass)",
-              color: "var(--color-text-primary)",
-              cursor: "pointer",
-            }}
-          >
-            {this.props.t("components.errorBoundary.tryAgain")}
-          </button>
+          <div data-slot="error-boundary-action">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => this.setState({ hasError: false, error: null })}
+            >
+              {this.props.t("components.errorBoundary.tryAgain")}
+            </Button>
+          </div>
         </div>
       );
     }

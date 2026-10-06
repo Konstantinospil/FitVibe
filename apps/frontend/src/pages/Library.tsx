@@ -112,27 +112,13 @@ const Library: React.FC = () => {
 
   return (
     <main className="training-page" aria-labelledby="library-title" data-app-surface="library">
-      <div
-        style={{
-          display: "flex",
-          gap: "var(--space-md)",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}
-      >
+      <div data-component="library-header">
         <div>
           <h1 id="library-title">{t("librarySurface.title")}</h1>
           <p>{t("librarySurface.description")}</p>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "var(--space-sm)",
-            flexWrap: "wrap",
-          }}
-        >
+        <div data-slot="library-actions">
           <Button
             variant="secondary"
             leadingIcon={<Plus />}
@@ -147,13 +133,7 @@ const Library: React.FC = () => {
       </div>
 
       <TrainingPanel title={t("librarySurface.sections.search")}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(12rem, 1fr))",
-            gap: "var(--space-sm)",
-          }}
-        >
+        <div data-component="library-filter-grid">
           <label className="form-label">
             <span className="form-label-text">{t("librarySurface.filters.search")}</span>
             <InputControl value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -202,13 +182,7 @@ const Library: React.FC = () => {
           <div className="training-empty">{t("librarySurface.states.noResults")}</div>
         ) : (
           <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(16rem, 1fr))",
-                gap: "var(--space-md)",
-              }}
-            >
+            <div data-component="library-result-grid">
               {data.map((exercise) => (
                 <TrainingSummaryCard
                   key={exercise.id}
@@ -218,13 +192,7 @@ const Library: React.FC = () => {
                     .filter(Boolean)
                     .join(" · ")}
                   trailing={
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "var(--space-xs)",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div data-slot="library-card-actions">
                       <Button
                         size="sm"
                         variant="ghost"
@@ -269,14 +237,7 @@ const Library: React.FC = () => {
               ))}
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "var(--space-sm)",
-                paddingTop: "var(--space-sm)",
-              }}
-            >
+            <div data-component="library-pagination">
               <Button
                 size="sm"
                 variant="ghost"
@@ -313,12 +274,7 @@ const Library: React.FC = () => {
 
       <Modal open={Boolean(detail)} onClose={() => setDetail(null)} title={detail?.name ?? ""}>
         {detail ? (
-          <div
-            style={{
-              display: "grid",
-              gap: "var(--space-sm)",
-            }}
-          >
+          <div data-component="library-detail">
             <div>{t(`librarySurface.source.${source(detail)}`)}</div>
             <div>{detail.description_en || t("librarySurface.details.noDescription")}</div>
           </div>

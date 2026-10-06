@@ -117,13 +117,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
         }}
       >
         <FormFeedback tone="info">
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "var(--space-sm)",
-            }}
-          >
+          <span data-component="security-notice-content">
             <Shield aria-hidden="true" />
             <span>
               {t("auth.twoFactor.securityNotice") ||

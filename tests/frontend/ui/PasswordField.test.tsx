@@ -19,7 +19,7 @@ describe("PasswordField", () => {
 
     rerender(<PasswordField label="Password" disabled data-testid="password" />);
     expect(field).toHaveAttribute("data-state", "disabled");
-    expect(field).toHaveStyle({ opacity: "var(--opacity-disabled)" });
+    expect(input).toBeDisabled();
   });
 
   it("reveals only while the visibility control is held", () => {

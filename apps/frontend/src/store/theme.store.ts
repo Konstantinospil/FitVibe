@@ -32,6 +32,15 @@ export const applyTheme = (theme: Theme) => {
     if (favicon) {
       favicon.href = getThemeMarkSrc(theme);
     }
+
+    const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    const semanticBackground = window
+      .getComputedStyle(document.documentElement)
+      .getPropertyValue("--color-bg")
+      .trim();
+    if (themeColor && semanticBackground) {
+      themeColor.content = semanticBackground;
+    }
   }
 };
 

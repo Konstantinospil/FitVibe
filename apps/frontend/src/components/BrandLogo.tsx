@@ -7,19 +7,6 @@ type BrandLogoSize = "sm" | "lg";
 const BRAND_MARK_DARK_SRC = "/fitvibe-mark-dark.svg";
 const BRAND_MARK_LIGHT_SRC = "/fitvibe-mark-light.svg";
 
-const SIZE_STYLES: Record<BrandLogoSize, React.CSSProperties> = {
-  sm: {
-    height: "32px",
-    width: "32px",
-    display: "block",
-  },
-  lg: {
-    height: "clamp(64px, 10vw, 96px)",
-    width: "clamp(64px, 10vw, 96px)",
-    display: "block",
-  },
-};
-
 const SIZE_DIMS: Record<BrandLogoSize, { width: number; height: number }> = {
   sm: { width: 32, height: 32 },
   lg: { width: 96, height: 96 },
@@ -44,7 +31,8 @@ const BrandLogo: React.FC<BrandLogoProps> = ({ size = "lg", priority = false }) 
       height={dims.height}
       decoding={priority ? "sync" : "async"}
       loading={priority ? "eager" : "lazy"}
-      style={SIZE_STYLES[size]}
+      data-component="brand-logo"
+      data-size={size}
       {...(priority ? { fetchPriority: "high" } : {})}
     />
   );
