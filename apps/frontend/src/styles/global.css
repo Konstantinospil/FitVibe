@@ -485,7 +485,7 @@
   --color-border-strong: #818C90;
 
   --color-text-primary: #243036;
-  /* WCAG AA on both light surface (#FAF8F4) and muted surface (#ECE7DE). */
+  /* WCAG AA on both the light surface and light muted-surface semantic roles. */
   --color-text-secondary: #59676C;
   --color-text-muted: #59676C;
 
