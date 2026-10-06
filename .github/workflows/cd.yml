@@ -144,6 +144,7 @@ jobs:
             exit 1
           fi
 
+          ingress="$(sed -n 's/^ingress=//p' "${digest_file}" | head -n 1)"
           backend="$(sed -n 's/^backend=//p' "${digest_file}" | head -n 1)"
           frontend="$(sed -n 's/^frontend=//p' "${digest_file}" | head -n 1)"
           backoffice="$(sed -n 's/^backoffice=//p' "${digest_file}" | head -n 1)"
@@ -152,6 +153,14 @@ jobs:
           redis="$(sed -n 's/^redis=//p' "${digest_file}" | head -n 1)"
           stack_version="$(sed -n 's/^stack_version=//p' "${digest_file}" | head -n 1)"
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+
+          case "${ingress}" in
+            "${REGISTRY}/${owner}/fitvibe-ingress@sha256:"*) ;;
+            *)
+              echo "Unexpected ingress image reference: ${ingress}" >&2
+              exit 1
+              ;;
+          esac
 
           case "${backend}" in
             "${REGISTRY}/${owner}/fitvibe-backend@sha256:"*) ;;
@@ -197,6 +206,7 @@ jobs:
             exit 1
           fi
 
+          echo "ingress_image=${ingress}" >> "${GITHUB_OUTPUT}"
           echo "backend_image=${backend}" >> "${GITHUB_OUTPUT}"
           echo "frontend_image=${frontend}" >> "${GITHUB_OUTPUT}"
           echo "backoffice_image=${backoffice}" >> "${GITHUB_OUTPUT}"
@@ -208,6 +218,13 @@ jobs:
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Verify ingress signature
+        run: >
+          cosign verify
+          --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/ci.yml@refs/heads/main"
+          --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+          ${{ steps.deployment.outputs.ingress_image }}
 
       - name: Verify backend signature
         run: >
@@ -244,10 +261,11 @@ jobs:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: BACKEND_IMAGE,FRONTEND_IMAGE,BACKOFFICE_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
+          envs: INGRESS_IMAGE,BACKEND_IMAGE,FRONTEND_IMAGE,BACKOFFICE_IMAGE,POSTGRES_IMAGE,CLAMAV_IMAGE,REDIS_IMAGE,STACK_VERSION,DEPLOY_SHA,PROD_SOURCE_DIR,PROD_STACK_DIR
           script: |
             set -eu
 
+            : "${INGRESS_IMAGE:?INGRESS_IMAGE is required}"
             : "${BACKEND_IMAGE:?BACKEND_IMAGE is required}"
             : "${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}"
             : "${BACKOFFICE_IMAGE:?BACKOFFICE_IMAGE is required}"
@@ -292,7 +310,7 @@ jobs:
             install -m 0644 "${canonical_compose}" "${PROD_STACK_DIR}/compose.yml"
 
             cd "${PROD_STACK_DIR}"
-            export BACKEND_IMAGE FRONTEND_IMAGE BACKOFFICE_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
+            export INGRESS_IMAGE BACKEND_IMAGE FRONTEND_IMAGE BACKOFFICE_IMAGE POSTGRES_IMAGE CLAMAV_IMAGE REDIS_IMAGE STACK_VERSION
 
             compose() {
               docker compose --env-file .env -f compose.yml "$@"
@@ -311,6 +329,11 @@ jobs:
             ${resolved_images}
             EOF_IMAGES
 
+            if ! printf '%s\n' "${resolved_images}" | grep -Fx "${INGRESS_IMAGE}" >/dev/null; then
+              echo "compose.yml does not resolve ingress to ${INGRESS_IMAGE}." >&2
+              echo "The production stack must consume the INGRESS_IMAGE variable from CD." >&2
+              exit 1
+            fi
             if ! printf '%s\n' "${resolved_images}" | grep -Fx "${BACKEND_IMAGE}" >/dev/null; then
               echo "compose.yml does not resolve backend to ${BACKEND_IMAGE}." >&2
               echo "The production stack must consume the BACKEND_IMAGE variable from CD." >&2
@@ -349,11 +372,14 @@ jobs:
             done
 
             curl -fsS http://127.0.0.1:4000/metrics >/dev/null
-            curl -fsS http://127.0.0.1/ >/dev/null
+            curl -fsS http://127.0.0.1/__ingress_health | grep -qx 'ok'
+            curl -fsS http://127.0.0.1/ | grep -qi '<!doctype html\|<html'
+            curl -fsS -c /tmp/fitvibe-cookies http://127.0.0.1/api/v1/csrf-token | grep -q '"csrfToken"'
             curl -fsS http://127.0.0.1:8081/__backoffice_health >/dev/null
             curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
             compose ps
         env:
+          INGRESS_IMAGE: ${{ steps.deployment.outputs.ingress_image }}
           BACKEND_IMAGE: ${{ steps.deployment.outputs.backend_image }}
           FRONTEND_IMAGE: ${{ steps.deployment.outputs.frontend_image }}
           BACKOFFICE_IMAGE: ${{ steps.deployment.outputs.backoffice_image }}
