@@ -492,6 +492,43 @@ async function checkFrontendTokens() {
       }
     }
   }
+
+  const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
+  const themeSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/themes.css"), "utf8");
+  const bootstrapSource = await fs.readFile(path.join(ROOT, "apps/frontend/index.html"), "utf8");
+  const tokenValue = (source, token) => {
+    const start = source.indexOf(token + ":");
+    if (start < 0) return null;
+    const valueStart = start + token.length + 1;
+    const end = source.indexOf(";", valueStart);
+    return end > valueStart ? source.slice(valueStart, end).trim() : null;
+  };
+  const bootstrapBlock = (selector) => {
+    const start = bootstrapSource.indexOf(selector);
+    if (start < 0) return "";
+    const open = bootstrapSource.indexOf("{", start);
+    const close = bootstrapSource.indexOf("}", open);
+    return open >= 0 && close > open ? bootstrapSource.slice(open + 1, close) : "";
+  };
+  const darkBootstrap = bootstrapBlock(":root");
+  const lightBootstrap = bootstrapBlock('[data-theme="light"]');
+  const bootstrapPairs = [
+    ["--bootstrap-bg", "--color-bg", "--color-bg"],
+    ["--bootstrap-surface", "--color-surface", "--color-surface"],
+    ["--bootstrap-border", "--color-border-strong", "--color-border-strong"],
+    ["--bootstrap-text", "--color-text-primary", "--color-text-primary"],
+    ["--bootstrap-link", "--color-primary", "--color-primary-hover"],
+  ];
+  for (const [bootstrapToken, darkToken, lightToken] of bootstrapPairs) {
+    const darkValue = tokenValue(tokenSource, darkToken);
+    const lightValue = tokenValue(themeSource, lightToken);
+    if (!darkValue || tokenValue(darkBootstrap, bootstrapToken) !== darkValue) {
+      report(path.join(ROOT, "apps/frontend/index.html"), bootstrapSource, Math.max(0, bootstrapSource.indexOf(bootstrapToken)), "Bootstrap theme mirror drift: " + bootstrapToken + " must match dark " + darkToken + ".");
+    }
+    if (!lightValue || tokenValue(lightBootstrap, bootstrapToken) !== lightValue) {
+      report(path.join(ROOT, "apps/frontend/index.html"), bootstrapSource, Math.max(0, bootstrapSource.indexOf(bootstrapToken)), "Bootstrap theme mirror drift: " + bootstrapToken + " must match light " + lightToken + ".");
+    }
+  }
 }
 
 
