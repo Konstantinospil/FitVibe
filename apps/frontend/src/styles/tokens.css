@@ -1,0 +1,465 @@
+/* Fonts are loaded asynchronously via JavaScript after initial render.
+ * Initial render uses system fonts. Inter woff2 subsets load on public pages;
+ * Roboto Flex loads after authentication (see fontLoader.ts).
+ */
+
+:root {
+
+  /* Derived effects may only mix Figma palette tokens with transparency. */
+  --surface-muted-subtle: color-mix(in srgb, var(--color-surface-muted) var(--transparency-disabled), transparent);
+  --border-subtle: color-mix(in srgb, var(--color-border) var(--transparency-disabled), transparent);
+  --surface-success-subtle: color-mix(in srgb, var(--color-success) var(--transparency-disabled), transparent);
+  --border-success-subtle: color-mix(in srgb, var(--color-success) var(--transparency-subtle), transparent);
+  --surface-danger-subtle: color-mix(in srgb, var(--color-danger) var(--transparency-disabled), transparent);
+  --border-danger-subtle: color-mix(in srgb, var(--color-danger) var(--transparency-subtle), transparent);
+  --surface-warning-subtle: color-mix(in srgb, var(--color-warning) var(--transparency-disabled), transparent);
+  --border-warning-subtle: color-mix(in srgb, var(--color-warning) var(--transparency-subtle), transparent);
+  --surface-focus-subtle: color-mix(in srgb, var(--color-focus) var(--transparency-disabled), transparent);
+  --border-focus-subtle: color-mix(in srgb, var(--color-focus) var(--transparency-subtle), transparent);
+
+  color-scheme: dark;
+
+  /* Typography authority — FitVibe Figma Design System v2 */
+  --font-family-body: "Inter", system-ui, sans-serif;
+  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-control-large: 582;
+  --font-weight-semibold: 600;
+
+  --type-display-size: 3rem;
+  --type-display-line-height: 3.5rem;
+  --type-display-letter-spacing: -0.01em;
+
+  --type-page-title-size: 2rem;
+  --type-page-title-line-height: 2.5rem;
+  --type-page-title-letter-spacing: -0.005em;
+
+  --type-section-title-size: 1.5rem;
+  --type-section-title-line-height: 2rem;
+  --type-section-title-letter-spacing: -0.005em;
+
+  --type-card-title-size: 1.125rem;
+  --type-card-title-line-height: 1.5rem;
+  --type-card-title-letter-spacing: 0;
+
+  --type-body-size: 1rem;
+  --type-body-line-height: 1.5rem;
+  --type-body-letter-spacing: 0;
+
+  --type-supporting-size: 0.875rem;
+  --type-supporting-line-height: 1.25rem;
+  --type-supporting-letter-spacing: 0;
+
+  --type-control-size: 0.875rem;
+  --type-control-line-height: 1.25rem;
+  --type-control-letter-spacing: 0;
+
+  --type-control-large-size: 1rem;
+  --type-control-large-line-height: 1.5rem;
+  --type-control-large-letter-spacing: 0;
+
+  --type-primary-metric-size: 2rem;
+  --type-primary-metric-line-height: 2.25rem;
+  --type-primary-metric-letter-spacing: -0.005em;
+
+  --type-secondary-metric-size: 1.5rem;
+  --type-secondary-metric-line-height: 1.75rem;
+  --type-secondary-metric-letter-spacing: -0.005em;
+
+  --type-metric-small-size: 0.875rem;
+  --type-metric-small-line-height: 0.75rem;
+  --type-metric-small-letter-spacing: 0.02em;
+
+  /* Radius authority — Figma Layout variables */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+  --radius-none: 0;
+
+  /* Transparency authority — Figma Layout variables */
+  --opacity-full: 1;
+  --opacity-subtle: 0.7;
+  --opacity-disabled: 0.45;
+  --transparency-full: 100%;
+  --transparency-subtle: 70%;
+  --transparency-disabled: 45%;
+
+  /* Scrollbar authority — Figma component */
+  --scrollbar-track: var(--color-surface-muted);
+  --scrollbar-thumb: color-mix(
+    in srgb,
+    var(--color-info-text) var(--transparency-subtle),
+    transparent
+  );
+  --scrollbar-thumb-hover: var(--color-info-text);
+  --scrollbar-thumb-active: var(--color-focus);
+
+  /* Compatibility aliases: every alias resolves to an existing Figma text style. */
+  --font-family-base: var(--font-family-body);
+  --font-size-xs: var(--type-supporting-size);
+  --font-size-sm: var(--type-supporting-size);
+  --font-size-md: var(--type-body-size);
+  --font-size-lg: var(--type-card-title-size);
+  --font-size-xl: var(--type-section-title-size);
+  --font-size-2xl: var(--type-page-title-size);
+  --font-size-3xl: var(--type-display-size);
+  --line-height-tight: var(--type-card-title-line-height);
+  --line-height-snug: var(--type-supporting-line-height);
+  --line-height-normal: var(--type-body-line-height);
+  --line-height-relaxed: var(--type-body-line-height);
+  --letter-spacing-wide: var(--type-metric-small-letter-spacing);
+  --letter-spacing-tight: var(--type-page-title-letter-spacing);
+
+  /* Spacing */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 2.5rem;
+  --space-3xl: 3.5rem;
+
+  /* Component dimension authority */
+  --modal-width-sm: 28rem;
+  --modal-width-md: 40rem;
+  --modal-width-lg: 56rem;
+  --textarea-min-height: 10rem;
+
+  /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
+
+  /* Core surfaces */
+  --color-bg: #11191D;
+  --color-surface: #182329;
+  --color-surface-muted: #223039;
+  --color-surface-glass: color-mix(
+    in srgb,
+    var(--color-surface) var(--transparency-subtle),
+    transparent
+  );
+  --color-bg-card: var(--color-surface);
+
+  /* Borders */
+  --color-border: #33454D;
+  --color-border-strong: #556A73;
+
+  /* Inputs inherit the same semantic surface system. */
+  --color-input-bg: var(--color-surface);
+  --color-input-border: var(--color-border-strong);
+
+  /* Text */
+  --color-text-primary: #F7F3EA;
+  --color-text-secondary: #BCC8CC;
+  --color-text-muted: #8D9CA2;
+
+  /* Six canonical Vibe colors */
+  --vibe-strength: #C89B6D;
+  --vibe-agility: #8BAEBB;
+  --vibe-endurance: #4F7282;
+  --vibe-explosivity: #B65F56;
+  --vibe-intelligence: #A7ADB4;
+  --vibe-regeneration: #6F8F7A;
+
+  /* Figma Design System v2 — accessible Vibe label colors, dark theme */
+  --vibe-label-strength: #D6A36D;
+  --vibe-label-agility: #73BDD0;
+  --vibe-label-endurance: #739CE0;
+  --vibe-label-explosivity: #E48491;
+  --vibe-label-intelligence: #B49ADC;
+  --vibe-label-regeneration: #BED17A;
+
+  /* Actions */
+  --color-primary: #7FA8B8;
+  --color-primary-hover: #96B9C6;
+  --color-primary-active: color-mix(
+    in srgb,
+    var(--color-primary) var(--transparency-subtle),
+    var(--color-bg)
+  );
+  --color-primary-on: #11191D;
+
+  --color-secondary: #7FA18F;
+  --color-secondary-hover: #92B19F;
+  --color-secondary-active: color-mix(
+    in srgb,
+    var(--color-secondary) var(--transparency-subtle),
+    var(--color-bg)
+  );
+  --color-secondary-on: #11191D;
+
+  /* Semantic emphasis */
+  --color-focus: #8FC2D4;
+  --color-success: #78A58D;
+  --color-warning: #C7A669;
+  --color-danger: #D8786F;
+  --color-danger-hover: #E38F87;
+
+  /* Compatibility aliases resolve only to canonical semantic roles. */
+  --color-accent: var(--color-primary);
+  --color-accent-strong: var(--color-secondary);
+  --color-highlight: var(--color-focus);
+  --color-link-form: var(--color-primary);
+  --color-link-form-hover: var(--color-primary-hover);
+
+  /* Status surfaces are derived from the canonical palette only. */
+  --color-success-bg: color-mix(
+    in srgb,
+    var(--color-success) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-success-text: var(--color-success);
+  --color-success-border: color-mix(
+    in srgb,
+    var(--color-success) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --color-info-bg: color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-info-text: var(--color-focus);
+  --color-info-border: color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --color-warning-bg: color-mix(
+    in srgb,
+    var(--color-warning) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-warning-text: var(--color-warning);
+  --color-warning-border: color-mix(
+    in srgb,
+    var(--color-warning) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --color-danger-bg: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-danger-text: var(--color-danger);
+  --color-danger-border: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  /* Planner and legacy element aliases stay inside the Figma palette. */
+  --color-planned: linear-gradient(90deg, var(--color-primary), var(--color-focus));
+  --color-completed: var(--color-success);
+
+  --element-fire-highlight: color-mix(
+    in srgb,
+    var(--vibe-explosivity) var(--transparency-subtle),
+    var(--color-text-primary)
+  );
+  --element-fire-base: var(--vibe-explosivity);
+  --element-fire-shadow: color-mix(
+    in srgb,
+    var(--vibe-explosivity) var(--transparency-subtle),
+    var(--color-bg)
+  );
+
+  --element-water-highlight: color-mix(
+    in srgb,
+    var(--vibe-endurance) var(--transparency-subtle),
+    var(--color-text-primary)
+  );
+  --element-water-base: var(--vibe-endurance);
+  --element-water-shadow: color-mix(
+    in srgb,
+    var(--vibe-endurance) var(--transparency-subtle),
+    var(--color-bg)
+  );
+
+  --element-earth-highlight: color-mix(
+    in srgb,
+    var(--vibe-regeneration) var(--transparency-subtle),
+    var(--color-text-primary)
+  );
+  --element-earth-base: var(--vibe-regeneration);
+  --element-earth-shadow: color-mix(
+    in srgb,
+    var(--vibe-regeneration) var(--transparency-subtle),
+    var(--color-bg)
+  );
+
+  --element-air-highlight: color-mix(
+    in srgb,
+    var(--vibe-agility) var(--transparency-subtle),
+    var(--color-text-primary)
+  );
+  --element-air-base: var(--vibe-agility);
+  --element-air-shadow: color-mix(
+    in srgb,
+    var(--vibe-agility) var(--transparency-subtle),
+    var(--color-bg)
+  );
+
+  --gradient-fire-air: linear-gradient(90deg, var(--vibe-explosivity), var(--vibe-agility));
+  --gradient-water-earth: linear-gradient(90deg, var(--vibe-endurance), var(--vibe-regeneration));
+  --gradient-four-element: linear-gradient(
+    270deg,
+    var(--vibe-explosivity),
+    var(--vibe-endurance),
+    var(--vibe-regeneration),
+    var(--vibe-agility)
+  );
+
+  /* The application page background is intentionally calm and flat. */
+  --gradient-primary: linear-gradient(180deg, var(--color-bg), var(--color-bg));
+  --gradient-secondary: linear-gradient(180deg, transparent, transparent);
+
+  /* Elevation derives from border/focus semantics instead of introducing colors. */
+  --shadow-e1: 0 1px 2px color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-disabled),
+    transparent
+  );
+  --shadow-e2: 0 4px 10px color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-disabled),
+    transparent
+  );
+  --shadow-e3: 0 8px 24px color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-subtle),
+    transparent
+  );
+  --focus-glow: 0 0 0 2px color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-disabled),
+    transparent
+  );
+
+  /* Shared UI primitive semantics */
+  --card-background: var(--color-bg-card);
+  --card-radius: var(--radius-xl);
+  --card-shadow: var(--shadow-e2);
+  --card-backdrop-filter: blur(18px);
+  --card-header-divider-color: color-mix(
+    in srgb,
+    var(--color-border) var(--transparency-disabled),
+    transparent
+  );
+  --card-footer-divider-color: color-mix(
+    in srgb,
+    var(--color-border) var(--transparency-disabled),
+    transparent
+  );
+  --button-shadow: none;
+
+  /* Toast semantics */
+  --toast-success-bg: var(--color-success-bg);
+  --toast-success-border: var(--color-success-border);
+  --toast-success-icon: var(--color-success);
+  --toast-error-bg: var(--color-danger-bg);
+  --toast-error-border: var(--color-danger-border);
+  --toast-error-icon: var(--color-danger);
+  --toast-warning-bg: var(--color-warning-bg);
+  --toast-warning-border: var(--color-warning-border);
+  --toast-warning-icon: var(--color-warning);
+  --toast-info-bg: var(--color-info-bg);
+  --toast-info-border: var(--color-info-border);
+  --toast-info-icon: var(--color-focus);
+  --toast-text: var(--color-text-primary);
+  --toast-shadow: var(--shadow-e2);
+  --font-size-toast: var(--type-supporting-size);
+
+  /* Chart semantics */
+  --chart-tooltip-bg: var(--color-surface);
+  --chart-tooltip-border: var(--color-border);
+  --chart-tooltip-shadow: var(--shadow-e3);
+  --chart-grid-strong: color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-disabled),
+    transparent
+  );
+  --chart-grid-soft: color-mix(
+    in srgb,
+    var(--color-border) var(--transparency-disabled),
+    transparent
+  );
+  --chart-axis-text: var(--color-text-muted);
+  --chart-cursor-fill: color-mix(
+    in srgb,
+    var(--color-primary) var(--transparency-disabled),
+    transparent
+  );
+  --chart-cursor-stroke: color-mix(
+    in srgb,
+    var(--color-primary) var(--transparency-subtle),
+    transparent
+  );
+
+  /* Vibe contrast semantics */
+  --vibe-on-light: #243036;
+  --vibe-on-dark: #F7F3EA;
+  --vibe-fallback: var(--color-text-muted);
+
+  /* Feature-surface semantics */
+  --surface-accent-subtle: color-mix(
+    in srgb,
+    var(--color-primary) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --border-accent-subtle: color-mix(
+    in srgb,
+    var(--color-primary) var(--transparency-subtle),
+    var(--color-border)
+  );
+  --control-disabled-bg: color-mix(
+    in srgb,
+    var(--color-surface-muted) var(--transparency-disabled),
+    var(--color-bg)
+  );
+  --color-accent-on: var(--color-primary-on);
+  --surface-planner-item: var(--color-surface-muted);
+  --border-planner-item: var(--color-border);
+  --surface-danger-subtle: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --surface-deleted-subtle: color-mix(
+    in srgb,
+    var(--vibe-explosivity) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --border-danger-subtle: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-subtle),
+    var(--color-border)
+  );
+  --modal-backdrop: color-mix(
+    in srgb,
+    var(--color-bg) var(--transparency-subtle),
+    transparent
+  );
+  --dialog-backdrop: color-mix(
+    in srgb,
+    var(--color-bg) var(--transparency-disabled),
+    transparent
+  );
+  --dialog-shadow: var(--shadow-e3);
+  --surface-warning-subtle: color-mix(
+    in srgb,
+    var(--color-warning) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --surface-info-subtle: color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-warning-icon: var(--color-warning);
+  --color-info-icon: var(--color-focus);
+}
