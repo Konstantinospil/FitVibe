@@ -4,12 +4,7 @@ export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
   as?: "section" | "div" | "article";
 }
 
-export const Section: React.FC<SectionProps> = ({
-  as = "section",
-  children,
-  style,
-  ...props
-}) => {
+export const Section: React.FC<SectionProps> = ({ as = "section", children, style, ...props }) => {
   const Component = as;
 
   return (
@@ -19,10 +14,7 @@ export const Section: React.FC<SectionProps> = ({
   );
 };
 
-export interface SectionHeaderProps extends Omit<
-  React.HTMLAttributes<HTMLElement>,
-  "title"
-> {
+export interface SectionHeaderProps extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
   title: React.ReactNode;
   description?: React.ReactNode;
   actions?: React.ReactNode;
