@@ -127,6 +127,20 @@
   --modal-width-md: 40rem;
   --modal-width-lg: 56rem;
   --textarea-min-height: 10rem;
+  --control-height-sm: 34px;
+  --control-height-md: 40px;
+  --control-height-lg: 48px;
+  --control-icon-sm: 14px;
+  --control-icon-md: 16px;
+  --control-icon-lg: 20px;
+  --control-checkbox-size: 24px;
+  --control-switch-width: 48px;
+  --control-switch-height: 24px;
+  --control-switch-thumb: 18px;
+  --control-switch-inset: 3px;
+  --control-transition-duration: 150ms;
+  --control-border-width: 1px;
+  --control-strong-border-width: 2px;
 
   /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
 
