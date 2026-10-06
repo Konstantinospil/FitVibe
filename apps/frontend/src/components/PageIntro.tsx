@@ -1,5 +1,11 @@
 import React from "react";
-import {Card,CardContent,CardDescription,CardHeader,CardTitle} from "@fitvibe/ui";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@fitvibe/ui";
 
 interface PageIntroProps {
   eyebrow?: string;
@@ -12,10 +18,20 @@ interface PageIntroProps {
 }
 
 const PageIntro: React.FC<PageIntroProps> = ({
-  eyebrow,title,description,children,priorityLcp=false,brand,actions,
+  eyebrow,
+  title,
+  description,
+  children,
+  priorityLcp = false,
+  brand,
+  actions,
 }) => (
   <section data-component="page-intro">
-    <Card as="article" data-slot="page-intro-card" data-priority-lcp={priorityLcp ? "true" : undefined}>
+    <Card
+      as="article"
+      data-slot="page-intro-card"
+      data-priority-lcp={priorityLcp ? "true" : undefined}
+    >
       <CardHeader>
         {brand ? <div data-slot="page-intro-brand">{brand}</div> : null}
         {eyebrow ? (
@@ -25,7 +41,9 @@ const PageIntro: React.FC<PageIntroProps> = ({
           </span>
         ) : null}
         <CardTitle data-slot="page-intro-title">{title}</CardTitle>
-        <CardDescription data-slot="page-intro-description">{description}</CardDescription>
+        <CardDescription data-slot="page-intro-description">
+          {description}
+        </CardDescription>
       </CardHeader>
       {actions ? <div data-slot="page-intro-actions">{actions}</div> : null}
       {children ? <CardContent>{children}</CardContent> : null}
