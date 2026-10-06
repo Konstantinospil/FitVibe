@@ -362,3 +362,22 @@
 [data-component="legal-table"]{width:100%;border-collapse:collapse}
 [data-component="legal-table"] th{padding:var(--space-sm);border-bottom:var(--control-border-width) solid var(--color-border);text-align:left}
 [data-component="legal-table"] td{padding:var(--space-sm);border-bottom:var(--control-border-width) solid var(--color-border);vertical-align:top}
+
+[data-component="auth-supporting-prompt"]{margin:0;text-align:center;color:var(--color-text-secondary);font-family:var(--font-family-body);font-size:var(--type-supporting-size);line-height:var(--type-supporting-line-height)}
+[data-component="password-requirements-panel"]{background:var(--color-surface-glass);border:var(--control-border-width) solid var(--color-border)}
+[data-component="security-notice-content"]{display:inline-flex;align-items:center;gap:var(--space-sm)}
+
+[data-component="verify-email-status"]{text-align:center;padding:var(--space-xl)}
+[data-slot="verify-spinner"]{width:var(--status-spinner-size);height:var(--status-spinner-size);border:var(--status-spinner-border-width) solid var(--surface-focus-subtle);border-top-color:var(--color-focus);border-radius:var(--radius-full);margin:0 auto;animation:spin var(--motion-spin-duration) linear infinite}
+[data-slot="verify-status-icon"]{width:var(--status-illustration-size);height:var(--status-illustration-size);margin:0 auto var(--space-md);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full)}
+[data-slot="verify-status-icon"][data-tone="success"]{background:var(--surface-success-subtle)}
+[data-slot="verify-status-icon"][data-tone="danger"]{background:var(--surface-danger-subtle)}
+[data-slot="verify-status-icon"] svg{width:var(--status-illustration-icon-size);height:var(--status-illustration-icon-size)}
+[data-slot="verify-success-message"]{color:var(--color-success);margin-bottom:var(--space-md)}
+[data-component="verify-resend-form"]{max-width:var(--form-narrow-max-width);margin:0 auto}
+[data-slot="verify-field"]{margin-bottom:var(--space-md)}
+[data-slot="verify-label"]{display:block;margin-bottom:var(--space-xs);font-weight:var(--font-weight-regular);text-align:left}
+[data-slot="verify-error"]{margin-bottom:var(--space-md)}
+[data-slot="verify-error-message"]{color:var(--color-danger);font-size:var(--type-supporting-size);margin-bottom:calc(var(--space-xs) / 2)}
+[data-slot="verify-retry"]{color:var(--color-text-muted);font-size:var(--type-supporting-size)}
+[data-component="verify-resend-form"] [data-ui="button"]{width:100%}
