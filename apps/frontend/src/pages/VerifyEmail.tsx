@@ -134,9 +134,7 @@ const VerifyEmail: React.FC = () => {
 
           {resendSuccess ? (
             <div className="mb-1">
-              <p data-slot="verify-success-message">
-                {t("verifyEmail.resendSuccess")}
-              </p>
+              <p data-slot="verify-success-message">{t("verifyEmail.resendSuccess")}</p>
               <Button onClick={() => void navigate("/login")} className="mt-1">
                 {t("verifyEmail.goToLogin")}
               </Button>
@@ -222,9 +220,7 @@ const VerifyEmail: React.FC = () => {
               </div>
               {resendError && (
                 <div data-slot="verify-error">
-                  <p data-slot="verify-error-message">
-                    {resendError}
-                  </p>
+                  <p data-slot="verify-error-message">{resendError}</p>
                   {retryAfter !== null && countdown > 0 && (
                     <p data-slot="verify-retry">
                       {t("verifyEmail.retryAfter", { seconds: countdown })}
@@ -232,11 +228,7 @@ const VerifyEmail: React.FC = () => {
                   )}
                 </div>
               )}
-              <Button
-                type="submit"
-                disabled={isResending}
-                className="mt-1"
-              >
+              <Button type="submit" disabled={isResending} className="mt-1">
                 {isResending ? t("verifyEmail.resending") : t("verifyEmail.resendButton")}
               </Button>
               <Button
