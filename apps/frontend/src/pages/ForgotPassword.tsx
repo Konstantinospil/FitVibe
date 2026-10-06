@@ -27,9 +27,9 @@ const ForgotPassword: React.FC = () => {
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-        setError(axiosError.response?.data?.error?.message || t("forgotPassword.errorSend"));
+        setError(axiosError.response?.data?.error?.message || t("auth.forgotPassword.errorSend"));
       } else {
-        setError(t("forgotPassword.errorSend"));
+        setError(t("auth.forgotPassword.errorSend"));
       }
     } finally {
       setIsSubmitting(false);
@@ -39,13 +39,13 @@ const ForgotPassword: React.FC = () => {
   if (success) {
     return (
       <AuthPageLayout
-        title={t("forgotPassword.titleSuccess")}
-        description={t("forgotPassword.descSuccess")}
+        title={t("auth.forgotPassword.titleSuccess")}
+        description={t("auth.forgotPassword.descSuccess")}
       >
         <FormStack as="div">
-          <FormFeedback tone="success">{t("forgotPassword.successMessage")}</FormFeedback>
+          <FormFeedback tone="success">{t("auth.forgotPassword.successMessage")}</FormFeedback>
           <TextLink as={NavLink} to="/login">
-            {t("forgotPassword.backToLogin")}
+            {t("auth.forgotPassword.backToLogin")}
           </TextLink>
         </FormStack>
       </AuthPageLayout>
@@ -53,7 +53,7 @@ const ForgotPassword: React.FC = () => {
   }
 
   return (
-    <AuthPageLayout title={t("forgotPassword.title")} description={t("forgotPassword.description")}>
+    <AuthPageLayout title={t("auth.forgotPassword.title")} description={t("auth.forgotPassword.description")}>
       <FormStack
         ref={formRef}
         onSubmit={(e) => {
@@ -61,10 +61,10 @@ const ForgotPassword: React.FC = () => {
         }}
       >
         <InputField
-          label={t("forgotPassword.emailLabel")}
+          label={t("auth.forgotPassword.emailLabel")}
           name="email"
           type="email"
-          placeholder={t("forgotPassword.emailPlaceholder")}
+          placeholder={t("auth.forgotPassword.emailPlaceholder")}
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -73,10 +73,10 @@ const ForgotPassword: React.FC = () => {
         />
         {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
-          {isSubmitting ? t("forgotPassword.sending") : t("forgotPassword.sendLink")}
+          {isSubmitting ? t("auth.forgotPassword.sending") : t("auth.forgotPassword.sendLink")}
         </Button>
         <TextLink as={NavLink} to="/login">
-          {t("forgotPassword.backToLogin")}
+          {t("auth.forgotPassword.backToLogin")}
         </TextLink>
       </FormStack>
     </AuthPageLayout>
