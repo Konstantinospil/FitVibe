@@ -220,8 +220,12 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
           if (cancelled) {
             return;
           }
-          const bundle = i18n.getResourceBundle(language, documentType) as unknown;
-          setLegacyContent(isRecord(bundle) ? bundle : null);
+          const translationBundle = i18n.getResourceBundle(language, "translation") as unknown;
+          const legacyDocument =
+            isRecord(translationBundle) && isRecord(translationBundle[documentType])
+              ? translationBundle[documentType]
+              : null;
+          setLegacyContent(legacyDocument);
         } else {
           setLegacyContent(null);
         }
