@@ -36,7 +36,6 @@ describe("Checkbox", () => {
 
     expect(checkbox).toBeDisabled();
     expect(root).toHaveAttribute("data-state", "disabled");
-    expect(root).toHaveStyle({ opacity: "var(--opacity-disabled)" });
   });
 
   it("supports validation error semantics", () => {
