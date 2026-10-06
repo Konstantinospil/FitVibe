@@ -60,18 +60,13 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
   }
 
   return (
-    <div key={key} style={{ overflowX: "auto", marginBottom: "var(--space-md)" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div key={key} data-component="legal-table-scroll">
+      <table data-component="legal-table">
         <thead>
           <tr>
             {headers.map((header, index) => (
               <th
                 key={index}
-                style={{
-                  textAlign: "left",
-                  padding: "var(--space-sm)",
-                  borderBottom: "1px solid var(--color-border)",
-                }}
               >
                 {String(header)}
               </th>
@@ -86,11 +81,6 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
                 {cells.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}
-                    style={{
-                      padding: "var(--space-sm)",
-                      borderBottom: "1px solid var(--color-border)",
-                      verticalAlign: "top",
-                    }}
                   >
                     {String(cell)}
                   </td>
