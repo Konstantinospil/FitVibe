@@ -154,6 +154,14 @@
   --avatar-status-dot-sm: 10px;
   --avatar-status-dot-lg: 18px;
   --avatar-status-ring-width: 3px;
+  --brand-mark-sm: 32px;
+  --brand-mark-lg: 96px;
+  --page-intro-max-width: 900px;
+  --footer-content-max-width: 1100px;
+  --header-skeleton-width: 48px;
+  --header-skeleton-height: 40px;
+  --motion-pulse-duration: 1.4s;
+  --motion-spin-duration: 1s;
 
   /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
 

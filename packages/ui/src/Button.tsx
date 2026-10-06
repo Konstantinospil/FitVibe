@@ -24,7 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(({children,vari
   const resolvedLeadingIcon=isLoading?null:(leadingIcon??leftIcon);
   const resolvedTrailingIcon=isLoading?null:(trailingIcon??rightIcon);
   return <button ref={ref} disabled={isDisabled||isLoading} aria-disabled={isDisabled||isLoading} aria-busy={isLoading}
-    data-component="button" data-variant={variant} data-size={size} data-state={state} data-full-width={fullWidth||undefined} style={style} {...rest}>
+    data-ui="button" data-component="button" data-variant={variant} data-size={size} data-state={state} data-full-width={fullWidth||undefined} style={style} {...rest}>
     <span data-slot="content">
       {isLoading?<span aria-hidden="true" data-testid="button-spinner" data-slot="spinner"/>:resolvedLeadingIcon?<span aria-hidden="true" data-slot="leading-icon">{resolvedLeadingIcon}</span>:null}
       <span>{children}</span>
