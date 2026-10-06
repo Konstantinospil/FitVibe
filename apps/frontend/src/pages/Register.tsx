@@ -334,16 +334,7 @@ const Register: React.FC = () => {
           {isSubmitting ? t("auth.register.submitting") : t("auth.register.submit")}
         </Button>
 
-        <p
-          style={{
-            margin: 0,
-            textAlign: "center",
-            color: "var(--color-text-secondary)",
-            fontFamily: "var(--font-family-body)",
-            fontSize: "var(--type-supporting-size)",
-            lineHeight: "var(--type-supporting-line-height)",
-          }}
-        >
+        <p data-component="auth-supporting-prompt">
           {t("auth.register.loginPrompt")}{" "}
           <TextLink as={NavLink} to="/login">
             {t("auth.register.loginLink")}
