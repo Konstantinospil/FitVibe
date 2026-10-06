@@ -184,9 +184,9 @@ app.use(readOnlyGuard);
 
 const apiRouter = Router();
 
-if (env.csrf.enabled) {
-  apiRouter.get("/csrf-token", csrfTokenRoute);
-}
+// Keep the token endpoint available in every environment so browser clients have
+// a stable API contract. CSRF validation itself remains conditional above.
+apiRouter.get("/csrf-token", csrfTokenRoute);
 
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", usersRouter);

@@ -337,7 +337,7 @@ export async function forgotPassword(
       };
       if (!env.isProduction && resetToken) {
         response.debugResetToken = resetToken;
-        response.resetUrl = `${env.appBaseUrl}/auth/password/reset?token=${resetToken}`;
+        response.resetUrl = `${env.frontendUrl}/reset-password?token=${resetToken}`;
       }
       return response;
     };

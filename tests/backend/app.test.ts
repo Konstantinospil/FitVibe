@@ -47,11 +47,12 @@ describe("App Configuration", () => {
       }
     });
 
-    it("should provide CSRF token route when CSRF is enabled", async () => {
+    it("should always provide the CSRF token route", async () => {
       const response = await request(app).get("/api/v1/csrf-token");
 
-      // CSRF might be disabled in test environment, so we check for either success or 404
-      expect([200, 404]).toContain(response.status);
+      expect(response.status).toBe(200);
+      expect(typeof response.body.csrfToken).toBe("string");
+      expect(response.body.csrfToken.length).toBeGreaterThan(10);
     });
   });
 
