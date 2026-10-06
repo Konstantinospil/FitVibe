@@ -17,11 +17,7 @@ const PublicReturnButton: React.FC = () => {
         variant="secondary"
         size="sm"
         leftIcon={
-          <Icon
-            size={16}
-            aria-hidden="true"
-            data-icon={isAuthenticated ? "home" : "login"}
-          />
+          <Icon size={16} aria-hidden="true" data-icon={isAuthenticated ? "home" : "login"} />
         }
         onClick={() => {
           void navigate(isAuthenticated ? "/" : "/login");
