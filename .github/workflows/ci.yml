@@ -31,7 +31,7 @@ jobs:
   architecture_hardcoding:
     name: Architecture & Hardcoding
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 10
     permissions:
       contents: read
@@ -99,7 +99,7 @@ jobs:
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 20
     permissions:
       contents: read
@@ -207,7 +207,7 @@ jobs:
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 20
     permissions:
       contents: read
@@ -343,7 +343,7 @@ jobs:
   frontend_tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 15
     permissions:
       contents: read
@@ -474,7 +474,7 @@ jobs:
   database_tests:
     name: Database Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -583,7 +583,7 @@ jobs:
   coverage:
     name: Coverage Gate
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - backend_tests
@@ -851,7 +851,7 @@ jobs:
   integration:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || (github.base_ref == 'dev' || github.base_ref == 'main')
     timeout-minutes: 30
     needs:
       - backend_tests
@@ -1110,7 +1110,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 35
     needs:
       - quality
