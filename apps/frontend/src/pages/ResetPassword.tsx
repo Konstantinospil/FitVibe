@@ -75,13 +75,7 @@ const ResetPassword: React.FC = () => {
           void handleSubmit(e);
         }}
       >
-        <div
-          className="rounded-md p-md text-sm text-secondary"
-          style={{
-            background: "var(--color-surface-glass)",
-            border: "1px solid var(--color-border)",
-          }}
-        >
+        <div className="rounded-md p-md text-sm text-secondary" data-component="password-requirements-panel">
           <div className="font-weight-600 mb-05">
             {t("resetPassword.passwordRequirements.title")}
           </div>
