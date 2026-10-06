@@ -326,3 +326,34 @@
 [data-slot="language-option"]{display:flex;align-items:center;gap:var(--space-xs);padding:var(--space-sm) var(--space-md);cursor:pointer;font-size:var(--font-size-sm);width:100%;text-align:left;color:var(--color-text-primary);background:transparent}
 [data-slot="language-option"][data-selected="true"],[data-slot="language-option"][data-focused="true"]{background:var(--color-surface-muted)}
 [data-slot="language-option"][data-selected="true"]{font-weight:var(--font-weight-semibold)}
+
+[data-component="vibe-badge"]{position:relative;padding:0;border-radius:var(--radius-none);background:transparent;box-shadow:none}
+[data-component="vibe-badge"][data-size="sm"]{width:var(--control-height-sm);height:var(--control-height-sm);min-width:var(--control-height-sm);min-height:var(--control-height-sm);--vibe-icon-size:var(--control-icon-sm)}
+[data-component="vibe-badge"][data-size="md"]{width:var(--control-height-md);height:var(--control-height-md);min-width:var(--control-height-md);min-height:var(--control-height-md);--vibe-icon-size:var(--control-icon-md)}
+[data-component="vibe-badge"][data-size="lg"]{width:var(--control-height-lg);height:var(--control-height-lg);min-width:var(--control-height-lg);min-height:var(--control-height-lg);--vibe-icon-size:var(--control-icon-lg)}
+[data-component="vibe-badge"] [data-slot="vibe-frame"]{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+[data-component="vibe-badge"] [data-slot="vibe-frame-shape"]{fill:var(--color-surface);stroke-width:6;vector-effect:non-scaling-stroke}
+[data-component="vibe-badge"][data-vibe="strength"] [data-slot="vibe-frame-shape"]{stroke:var(--vibe-strength)}
+[data-component="vibe-badge"][data-vibe="agility"] [data-slot="vibe-frame-shape"]{stroke:var(--vibe-agility)}
+[data-component="vibe-badge"][data-vibe="endurance"] [data-slot="vibe-frame-shape"]{stroke:var(--vibe-endurance)}
+[data-component="vibe-badge"][data-vibe="explosivity"] [data-slot="vibe-frame-shape"]{stroke:var(--vibe-explosivity)}
+[data-component="vibe-badge"][data-vibe="intelligence"] [data-slot="vibe-frame-shape"]{stroke:var(--vibe-intelligence)}
+[data-component="vibe-badge"][data-vibe="regeneration"] [data-slot="vibe-frame-shape"]{stroke:var(--vibe-regeneration)}
+[data-component="vibe-badge"]:is(:hover,:focus-visible){box-shadow:var(--shadow-e2)}
+[data-component="vibe-badge"][data-vibe="strength"]:is(:hover,:focus-visible) [data-slot="vibe-frame-shape"]{fill:var(--vibe-strength)}
+[data-component="vibe-badge"][data-vibe="agility"]:is(:hover,:focus-visible) [data-slot="vibe-frame-shape"]{fill:var(--vibe-agility)}
+[data-component="vibe-badge"][data-vibe="endurance"]:is(:hover,:focus-visible) [data-slot="vibe-frame-shape"]{fill:var(--vibe-endurance)}
+[data-component="vibe-badge"][data-vibe="explosivity"]:is(:hover,:focus-visible) [data-slot="vibe-frame-shape"]{fill:var(--vibe-explosivity)}
+[data-component="vibe-badge"][data-vibe="intelligence"]:is(:hover,:focus-visible) [data-slot="vibe-frame-shape"]{fill:var(--vibe-intelligence)}
+[data-component="vibe-badge"][data-vibe="regeneration"]:is(:hover,:focus-visible) [data-slot="vibe-frame-shape"]{fill:var(--vibe-regeneration)}
+[data-slot="vibe-level"],[data-slot="vibe-icon"]{position:relative;z-index:1}
+[data-slot="vibe-level"]{font-family:var(--font-family-heading);font-weight:var(--font-weight-semibold);font-size:var(--type-metric-small-size);line-height:var(--type-metric-small-line-height);letter-spacing:var(--type-metric-small-letter-spacing)}
+[data-slot="vibe-icon"]{width:var(--vibe-icon-size);height:var(--vibe-icon-size);mask-repeat:no-repeat;mask-position:center;mask-size:contain;-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain}
+[data-component="vibe-badge"][data-vibe="strength"] [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="strength"] [data-slot="vibe-icon"]{color:var(--vibe-strength);background:var(--vibe-strength)}
+[data-component="vibe-badge"][data-vibe="agility"] [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="agility"] [data-slot="vibe-icon"]{color:var(--vibe-agility);background:var(--vibe-agility)}
+[data-component="vibe-badge"][data-vibe="endurance"] [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="endurance"] [data-slot="vibe-icon"]{color:var(--vibe-endurance);background:var(--vibe-endurance)}
+[data-component="vibe-badge"][data-vibe="explosivity"] [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="explosivity"] [data-slot="vibe-icon"]{color:var(--vibe-explosivity);background:var(--vibe-explosivity)}
+[data-component="vibe-badge"][data-vibe="intelligence"] [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="intelligence"] [data-slot="vibe-icon"]{color:var(--vibe-intelligence);background:var(--vibe-intelligence)}
+[data-component="vibe-badge"][data-vibe="regeneration"] [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="regeneration"] [data-slot="vibe-icon"]{color:var(--vibe-regeneration);background:var(--vibe-regeneration)}
+[data-component="vibe-badge"][data-vibe="strength"]:is(:hover,:focus-visible) [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="strength"]:is(:hover,:focus-visible) [data-slot="vibe-icon"],[data-component="vibe-badge"][data-vibe="agility"]:is(:hover,:focus-visible) [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="agility"]:is(:hover,:focus-visible) [data-slot="vibe-icon"]{color:var(--vibe-on-light);background:var(--vibe-on-light)}
+[data-component="vibe-badge"][data-vibe="endurance"]:is(:hover,:focus-visible) [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="endurance"]:is(:hover,:focus-visible) [data-slot="vibe-icon"],[data-component="vibe-badge"][data-vibe="explosivity"]:is(:hover,:focus-visible) [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="explosivity"]:is(:hover,:focus-visible) [data-slot="vibe-icon"],[data-component="vibe-badge"][data-vibe="intelligence"]:is(:hover,:focus-visible) [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="intelligence"]:is(:hover,:focus-visible) [data-slot="vibe-icon"],[data-component="vibe-badge"][data-vibe="regeneration"]:is(:hover,:focus-visible) [data-slot="vibe-level"],[data-component="vibe-badge"][data-vibe="regeneration"]:is(:hover,:focus-visible) [data-slot="vibe-icon"]{color:var(--vibe-on-dark);background:var(--vibe-on-dark)}
