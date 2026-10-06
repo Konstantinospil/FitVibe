@@ -2140,7 +2140,6 @@ jobs:
           platform_pair="${platform_pair//\//-}"
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
           echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
-          echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
@@ -2284,6 +2283,7 @@ jobs:
         run: |
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
+          echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
