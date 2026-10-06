@@ -66,10 +66,7 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
         preserveAspectRatio="none"
         data-slot="vibe-frame"
       >
-        <polygon
-          data-slot="vibe-frame-shape"
-          points="50,3 93,25 93,75 50,97 7,75 7,25"
-        />
+        <polygon data-slot="vibe-frame-shape" points="50,3 93,25 93,75 50,97 7,75 7,25" />
       </svg>
 
       {showLevel && canRevealLevel ? (
