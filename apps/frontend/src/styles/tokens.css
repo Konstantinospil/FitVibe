@@ -141,6 +141,19 @@
   --control-transition-duration: 150ms;
   --control-border-width: 1px;
   --control-strong-border-width: 2px;
+  --field-control-height: 38px;
+  --field-label-height: 20px;
+  --field-label-prominent-height: 32px;
+  --field-helper-height: 24px;
+  --code-field-height: 64px;
+  --dropdown-trigger-height: 56px;
+  --dropdown-item-height: 52px;
+  --dropdown-icon-size: 24px;
+  --avatar-size-sm: 48px;
+  --avatar-size-lg: 96px;
+  --avatar-status-dot-sm: 10px;
+  --avatar-status-dot-lg: 18px;
+  --avatar-status-ring-width: 3px;
 
   /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
 
