@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@fitvibe/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@fitvibe/ui";
 
 interface PageIntroProps {
   eyebrow?: string;
@@ -41,9 +35,7 @@ const PageIntro: React.FC<PageIntroProps> = ({
           </span>
         ) : null}
         <CardTitle data-slot="page-intro-title">{title}</CardTitle>
-        <CardDescription data-slot="page-intro-description">
-          {description}
-        </CardDescription>
+        <CardDescription data-slot="page-intro-description">{description}</CardDescription>
       </CardHeader>
       {actions ? <div data-slot="page-intro-actions">{actions}</div> : null}
       {children ? <CardContent>{children}</CardContent> : null}
