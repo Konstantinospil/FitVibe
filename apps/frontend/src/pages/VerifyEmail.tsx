@@ -87,37 +87,14 @@ const VerifyEmail: React.FC = () => {
       }
     >
       {status === "verifying" && (
-        <div className="text-center p-2rem">
-          <div
-            className="rounded-full"
-            style={{
-              width: "48px",
-              height: "48px",
-              border: "4px solid var(--surface-focus-subtle)",
-              borderTopColor: "var(--color-focus)",
-              margin: "0 auto",
-              animation: "spin 1s linear infinite",
-            }}
-          />
-          <style>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
+        <div data-component="verify-email-status">
+          <div data-slot="verify-spinner" />
         </div>
       )}
 
       {status === "success" && (
-        <div className="text-center p-2rem">
-          <div
-            className="flex flex--center mb-1 rounded-full"
-            style={{
-              width: "64px",
-              height: "64px",
-              margin: "0 auto 1rem",
-              backgroundColor: "var(--surface-success-subtle)",
-            }}
-          >
+        <div data-component="verify-email-status">
+          <div data-slot="verify-status-icon" data-tone="success">
             <svg
               width="32"
               height="32"
@@ -138,16 +115,8 @@ const VerifyEmail: React.FC = () => {
       )}
 
       {status === "expired" && (
-        <div className="text-center p-2rem">
-          <div
-            className="flex flex--center mb-1 rounded-full"
-            style={{
-              width: "64px",
-              height: "64px",
-              margin: "0 auto 1rem",
-              backgroundColor: "var(--surface-danger-subtle)",
-            }}
-          >
+        <div data-component="verify-email-status">
+          <div data-slot="verify-status-icon" data-tone="danger">
             <svg
               width="32"
               height="32"
@@ -165,7 +134,7 @@ const VerifyEmail: React.FC = () => {
 
           {resendSuccess ? (
             <div className="mb-1">
-              <p style={{ color: "var(--color-success)", marginBottom: "1rem" }}>
+              <p data-slot="verify-success-message">
                 {t("verifyEmail.resendSuccess")}
               </p>
               <Button onClick={() => void navigate("/login")} className="mt-1">
@@ -235,18 +204,10 @@ const VerifyEmail: React.FC = () => {
                   }
                 })();
               }}
-              style={{ maxWidth: "400px", margin: "0 auto" }}
+              data-component="verify-resend-form"
             >
-              <div style={{ marginBottom: "1rem" }}>
-                <label
-                  htmlFor="resend-email"
-                  style={{
-                    display: "block",
-                    marginBottom: "0.5rem",
-                    fontWeight: "var(--font-weight-regular)",
-                    textAlign: "left",
-                  }}
-                >
+              <div data-slot="verify-field">
+                <label htmlFor="resend-email" data-slot="verify-label">
                   {t("verifyEmail.resendEmailLabel")}
                 </label>
                 <InputControl
@@ -257,33 +218,15 @@ const VerifyEmail: React.FC = () => {
                   placeholder={t("verifyEmail.resendEmailPlaceholder")}
                   required
                   disabled={isResending}
-                  style={{
-                    width: "100%",
-                    padding: "0.75rem",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-sm)",
-                    fontSize: "var(--type-body-size)",
-                  }}
                 />
               </div>
               {resendError && (
-                <div style={{ marginBottom: "1rem" }}>
-                  <p
-                    style={{
-                      color: "var(--color-danger)",
-                      fontSize: "var(--type-supporting-size)",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
+                <div data-slot="verify-error">
+                  <p data-slot="verify-error-message">
                     {resendError}
                   </p>
                   {retryAfter !== null && countdown > 0 && (
-                    <p
-                      style={{
-                        color: "var(--color-text-muted)",
-                        fontSize: "var(--type-supporting-size)",
-                      }}
-                    >
+                    <p data-slot="verify-retry">
                       {t("verifyEmail.retryAfter", { seconds: countdown })}
                     </p>
                   )}
@@ -293,7 +236,6 @@ const VerifyEmail: React.FC = () => {
                 type="submit"
                 disabled={isResending}
                 className="mt-1"
-                style={{ width: "100%" }}
               >
                 {isResending ? t("verifyEmail.resending") : t("verifyEmail.resendButton")}
               </Button>
@@ -301,12 +243,7 @@ const VerifyEmail: React.FC = () => {
                 type="button"
                 onClick={() => void navigate("/register")}
                 className="mt-1"
-                style={{
-                  width: "100%",
-                  backgroundColor: "transparent",
-                  color: "var(--color-text-muted)",
-                  border: "1px solid var(--color-border)",
-                }}
+                data-slot="verify-secondary-action"
               >
                 {t("verifyEmail.backToRegister")}
               </Button>
@@ -316,16 +253,8 @@ const VerifyEmail: React.FC = () => {
       )}
 
       {status === "error" && (
-        <div className="text-center p-2rem">
-          <div
-            className="flex flex--center mb-1 rounded-full"
-            style={{
-              width: "64px",
-              height: "64px",
-              margin: "0 auto 1rem",
-              backgroundColor: "var(--surface-danger-subtle)",
-            }}
-          >
+        <div data-component="verify-email-status">
+          <div data-slot="verify-status-icon" data-tone="danger">
             <svg
               width="32"
               height="32"
