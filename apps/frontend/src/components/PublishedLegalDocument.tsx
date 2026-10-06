@@ -65,11 +65,7 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
         <thead>
           <tr>
             {headers.map((header, index) => (
-              <th
-                key={index}
-              >
-                {String(header)}
-              </th>
+              <th key={index}>{String(header)}</th>
             ))}
           </tr>
         </thead>
@@ -79,11 +75,7 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
             return (
               <tr key={rowIndex}>
                 {cells.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                  >
-                    {String(cell)}
-                  </td>
+                  <td key={cellIndex}>{String(cell)}</td>
                 ))}
               </tr>
             );
