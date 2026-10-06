@@ -494,6 +494,7 @@ describe("Auth Controller", () => {
         expect.objectContaining({
           message: expect.stringContaining("reset link will be sent"),
           debugResetToken: "reset-token",
+          resetUrl: "http://localhost:3000/reset-password?token=reset-token",
         }),
       );
       expect(mockNext).not.toHaveBeenCalled();
