@@ -147,8 +147,8 @@ const ExerciseCreator: React.FC<ExerciseCreatorProps> = ({
     >
       <form
         id="exercise-creator-form"
+        data-component="exercise-creator-form"
         onSubmit={(event) => void submit(event)}
-        style={{ display: "grid", gap: "var(--space-md)" }}
       >
         {saveError ? (
           <div className="training-error" role="alert">
