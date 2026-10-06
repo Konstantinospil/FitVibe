@@ -316,3 +316,13 @@
 [data-component="status-panel"][data-kind="loading"] [data-slot="status-icon"]>svg{animation:spin var(--motion-spin-duration) linear infinite}
 [data-slot="status-actions"]{display:flex;gap:var(--space-sm);flex-wrap:wrap;justify-content:center}
 [data-component="exercise-creator-form"]{display:grid;gap:var(--space-md)}
+
+[data-component="language-switcher"]{position:relative;display:inline-flex}
+[data-component="language-switcher"] [data-slot="language-trigger"]{min-height:var(--language-control-height);padding:var(--space-xs) var(--space-sm);border-radius:var(--radius-full);border:var(--control-border-width) solid var(--color-border);background:var(--color-surface-glass);color:var(--color-text-secondary);font-family:var(--font-family-body);font-weight:var(--font-weight-regular);font-size:var(--type-control-size);line-height:var(--type-control-line-height);letter-spacing:var(--type-control-letter-spacing)}
+[data-component="language-switcher"][data-variant="header"] [data-slot="language-trigger"]{min-height:var(--language-control-header-height);border-radius:var(--radius-md);border-color:transparent;background:transparent}
+[data-component="language-switcher"] [data-slot="language-trigger"]:hover{background:var(--color-surface-muted)}
+[data-slot="language-chevron"]{opacity:var(--opacity-subtle)}
+[data-slot="language-menu"]{position:absolute;top:calc(100% + var(--space-xs));right:0;background:var(--color-surface);border:var(--control-border-width) solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--dialog-shadow);min-width:var(--language-menu-width);z-index:1000;overflow:hidden}
+[data-slot="language-option"]{display:flex;align-items:center;gap:var(--space-xs);padding:var(--space-sm) var(--space-md);cursor:pointer;font-size:var(--font-size-sm);width:100%;text-align:left;color:var(--color-text-primary);background:transparent}
+[data-slot="language-option"][data-selected="true"],[data-slot="language-option"][data-focused="true"]{background:var(--color-surface-muted)}
+[data-slot="language-option"][data-selected="true"]{font-weight:var(--font-weight-semibold)}
