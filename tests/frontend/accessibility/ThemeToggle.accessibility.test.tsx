@@ -177,25 +177,19 @@ describe("ThemeToggle Accessibility", () => {
       // CSS focus styles should be applied via :focus-visible
     });
 
-    it("should have sufficient color contrast", () => {
-      const { container } = render(<ThemeToggle />);
+    it("should use the semantic secondary button variant", () => {
+      render(<ThemeToggle />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Should use semantic color variables
-      expect(styles).toContain("--color-secondary");
-      expect(styles).toContain("--color-secondary-on");
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("data-ui", "button");
+      expect(button).toHaveAttribute("data-variant", "secondary");
+      expect(button).toHaveAttribute("data-control", "theme-toggle");
     });
 
-    it("should have minimum touch target size", () => {
-      const { container } = render(<ThemeToggle />);
+    it("should use the shared medium control-size contract", () => {
+      render(<ThemeToggle />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Should have padding for adequate touch target (44x44px minimum)
-      expect(styles).toContain("padding");
+      expect(screen.getByRole("button")).toHaveAttribute("data-size", "md");
     });
   });
 
@@ -275,26 +269,22 @@ describe("ThemeToggle Accessibility", () => {
   });
 
   describe("High contrast mode", () => {
-    it("should use border for contrast in high contrast mode", () => {
-      const { container } = render(<ThemeToggle />);
+    it("should retain a stable semantic control hook for high-contrast styling", () => {
+      render(<ThemeToggle />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Should have border for high contrast mode support
-      expect(styles).toContain("border");
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("data-control", "theme-toggle");
+      expect(button).toHaveAttribute("data-variant", "secondary");
     });
   });
 
   describe("Reduced motion", () => {
-    it("should respect prefers-reduced-motion", () => {
-      const { container } = render(<ThemeToggle />);
+    it("should delegate motion presentation to the centralized button stylesheet", () => {
+      render(<ThemeToggle />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Transitions should be defined but browsers will disable if prefers-reduced-motion
-      expect(styles).toContain("transition");
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("data-ui", "button");
+      expect(button).toHaveAttribute("data-control", "theme-toggle");
     });
   });
 });
