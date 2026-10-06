@@ -162,6 +162,9 @@
   --header-skeleton-height: 40px;
   --motion-pulse-duration: 1.4s;
   --motion-spin-duration: 1s;
+  --language-control-height: 40px;
+  --language-control-header-height: 44px;
+  --language-menu-width: 160px;
 
   /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
 
