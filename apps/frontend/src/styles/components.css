@@ -381,3 +381,5 @@
 [data-slot="verify-error-message"]{color:var(--color-danger);font-size:var(--type-supporting-size);margin-bottom:calc(var(--space-xs) / 2)}
 [data-slot="verify-retry"]{color:var(--color-text-muted);font-size:var(--type-supporting-size)}
 [data-component="verify-resend-form"] [data-ui="button"]{width:100%}
+
+[data-slot="verify-secondary-action"]{background:transparent;color:var(--color-text-muted);border:var(--control-border-width) solid var(--color-border)}
