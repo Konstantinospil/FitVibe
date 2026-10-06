@@ -165,6 +165,11 @@
   --language-control-height: 40px;
   --language-control-header-height: 44px;
   --language-menu-width: 160px;
+  --form-narrow-max-width: 400px;
+  --status-spinner-size: 48px;
+  --status-illustration-size: 64px;
+  --status-illustration-icon-size: 32px;
+  --status-spinner-border-width: 4px;
 
   /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
 
