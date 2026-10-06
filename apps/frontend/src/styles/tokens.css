@@ -170,6 +170,16 @@
   --status-illustration-size: 64px;
   --status-illustration-icon-size: 32px;
   --status-spinner-border-width: 4px;
+  --app-header-max-width: 1440px;
+  --app-header-height: 72px;
+  --app-header-writing-height: 88px;
+  --app-header-nav-target: 48px;
+  --app-header-nav-indicator-height: 2px;
+  --app-header-icon-size: 22px;
+  --app-header-brand-min: 128px;
+  --app-header-brand-basis: 220px;
+  --app-header-brand-basis-compact: 160px;
+  --app-header-brand-min-narrow: 110px;
 
   /* === FIGMA DESIGN SYSTEM V2 — DARK SEMANTIC PALETTE === */
 
