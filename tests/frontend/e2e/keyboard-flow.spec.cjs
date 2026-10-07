@@ -2,6 +2,7 @@ const { test, expect } = require("@playwright/test");
 const {
   jsonResponse,
   SEEDED_USER,
+  TEST_USER,
   preparePage,
   prepareRealPage,
   waitForApp,
@@ -60,9 +61,9 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     await page.keyboard.type(loginPayload.email);
     await page.locator("form input[name='username']").fill("jamie");
     await focusByTab(page, passwordInput(page));
-    await page.keyboard.type(loginPayload.password);
+    await page.keyboard.type(TEST_USER.password);
     await focusByTab(page, confirmPasswordInput(page));
-    await page.keyboard.type(loginPayload.password);
+    await page.keyboard.type(TEST_USER.password);
     const legalCheckboxes = page.getByRole("checkbox");
     for (let index = 0; index < 2; index += 1) {
       await focusByTab(page, legalCheckboxes.nth(index));
