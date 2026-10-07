@@ -1606,12 +1606,12 @@ jobs:
           docker run -d \
             --name pre-main-backend \
             --add-host=host.docker.internal:host-gateway \
-            -p 4100:4100 \
+            -p 4100:4000 \
             -v "$RUNNER_TEMP/fitvibe-jwt/private.pem:/run/secrets/jwt-private.pem:ro" \
             -v "$RUNNER_TEMP/fitvibe-jwt/public.pem:/run/secrets/jwt-public.pem:ro" \
             -e DATABASE_URL="postgresql://postgres@host.docker.internal:5432/fitvibe_test" \
             -e NODE_ENV=production \
-            -e PORT=4100 \
+            -e PORT=4000 \
             -e JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem \
             -e JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem \
             -e CLAMAV_ENABLED=true \
