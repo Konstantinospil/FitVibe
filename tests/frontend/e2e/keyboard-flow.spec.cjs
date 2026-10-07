@@ -1,8 +1,9 @@
 const { test, expect } = require("@playwright/test");
 const {
   jsonResponse,
-  loginUserBody,
+  SEEDED_USER,
   preparePage,
+  prepareRealPage,
   waitForApp,
   emailInput,
   passwordInput,
@@ -11,8 +12,8 @@ const {
 } = require("./helpers.cjs");
 
 const loginPayload = {
-  email: "jamie@fitvibe.test",
-  password: "SuperSecure123!",
+  email: SEEDED_USER.email,
+  password: SEEDED_USER.password,
 };
 
 async function focusByTab(page, locator, maxTabs = 50) {
@@ -26,20 +27,7 @@ async function focusByTab(page, locator, maxTabs = 50) {
 
 test.describe("Keyboard-only flows on active surfaces", () => {
   test("user can complete login with keyboard navigation", async ({ page }) => {
-    await preparePage(page);
-    await page.route("**/api/v1/auth/login", async (route) => {
-      await route.fulfill(
-        jsonResponse(
-          loginUserBody({
-            id: "user-123",
-            email: loginPayload.email,
-            username: "jamie",
-            role: "athlete",
-          }),
-        ),
-      );
-    });
-
+    await prepareRealPage(page);
     await page.goto("/login");
     await waitForApp(page);
     await focusByTab(page, emailInput(page));
@@ -47,7 +35,12 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     await focusByTab(page, passwordInput(page));
     await page.keyboard.type(loginPayload.password);
     await focusByTab(page, page.getByRole("button", { name: /sign in/i }));
+    const loginResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/auth/login") && response.request().method() === "POST",
+    );
     await page.keyboard.press("Enter");
+    expect((await loginResponse).ok()).toBeTruthy();
 
     await page.waitForURL((url) => url.pathname === "/");
     await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
@@ -83,9 +76,19 @@ test.describe("Keyboard-only flows on active surfaces", () => {
   });
 
   test("current application navigation is keyboard reachable", async ({ page }) => {
-    await preparePage(page, { authenticated: true });
-    await page.goto("/");
+    await prepareRealPage(page);
+    await page.goto("/login");
     await waitForApp(page);
+    await emailInput(page).fill(SEEDED_USER.email);
+    await passwordInput(page).fill(SEEDED_USER.password);
+    const loginResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/auth/login") && response.request().method() === "POST",
+    );
+    await page.getByRole("button", { name: /sign in/i }).click();
+    expect((await loginResponse).ok()).toBeTruthy();
+    await page.waitForURL((url) => url.pathname === "/");
+    await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
 
     const calendar = page.getByRole("link", { name: /^calendar$/i });
     await focusByTab(page, calendar);

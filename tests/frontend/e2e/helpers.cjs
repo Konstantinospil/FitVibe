@@ -9,6 +9,11 @@ const TEST_USER = {
   role: "athlete",
 };
 
+const SEEDED_USER = {
+  email: "admin@fitvibe.local",
+  password: "admin",
+};
+
 const jsonResponse = (body, status = 200) => ({
   status,
   headers: { "content-type": "application/json" },
@@ -108,7 +113,7 @@ async function installCommonMocks(page) {
   });
 }
 
-async function preparePage(page, { authenticated = false } = {}) {
+async function installBrowserState(page, { authenticated = false } = {}) {
   await page.addInitScript(
     ({ authenticated: isAuthed, authKey, consentKey }) => {
       window.localStorage.setItem(consentKey, "true");
@@ -118,7 +123,15 @@ async function preparePage(page, { authenticated = false } = {}) {
     },
     { authenticated, authKey: AUTH_FLAG_KEY, consentKey: CONSENT_KEY },
   );
+}
+
+async function preparePage(page, { authenticated = false } = {}) {
+  await installBrowserState(page, { authenticated });
   await installCommonMocks(page);
+}
+
+async function prepareRealPage(page) {
+  await installBrowserState(page);
 }
 
 async function waitForApp(page) {
@@ -153,10 +166,12 @@ async function acceptRegisterLegal(page) {
 module.exports = {
   AUTH_FLAG_KEY,
   TEST_USER,
+  SEEDED_USER,
   jsonResponse,
   loginUserBody,
   installCommonMocks,
   preparePage,
+  prepareRealPage,
   waitForApp,
   emailInput,
   passwordInput,
