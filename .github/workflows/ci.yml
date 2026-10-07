@@ -1663,7 +1663,7 @@ jobs:
       - name: Start backoffice production container
         run: |
           docker network create pre-main-fitvibe
-          docker network connect pre-main-fitvibe pre-main-backend
+          docker network connect --alias backend pre-main-fitvibe pre-main-backend
           docker run -d             --name pre-main-backoffice             --network pre-main-fitvibe             -p 8081:8080             fitvibe-backoffice:pre-main
 
       - name: Verify backoffice production startup
