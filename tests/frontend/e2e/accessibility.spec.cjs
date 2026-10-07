@@ -1,6 +1,6 @@
 const { test, expect } = require("@playwright/test");
 const { AxeBuilder } = require("@axe-core/playwright");
-const { preparePage, waitForApp } = require("./helpers.cjs");
+const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 const accessibilityPages = [
   { name: "Login", path: "/login" },

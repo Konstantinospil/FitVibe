@@ -1,23 +1,9 @@
 const { test, expect } = require("@playwright/test");
-const { jsonResponse, preparePage, waitForApp } = require("./helpers.cjs");
-
-async function mockActiveSurfaceData(page) {
-  await page.route("**/api/v1/feed**", async (route) => {
-    await route.fulfill(jsonResponse({ items: [], total: 0, limit: 20, offset: 0 }));
-  });
-  await page.route("**/api/v1/sessions**", async (route) => {
-    if (route.request().url().includes("/auth/sessions")) {
-      await route.fallback();
-      return;
-    }
-    await route.fulfill(jsonResponse({ data: [], total: 0, limit: 100, offset: 0 }));
-  });
-}
+const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 test.describe("Active application surfaces", () => {
   test.beforeEach(async ({ page }) => {
     await preparePage(page, { authenticated: true });
-    await mockActiveSurfaceData(page);
   });
 
   test("authenticated Home renders the current production shell", async ({ page }) => {

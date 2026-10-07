@@ -1,5 +1,5 @@
 const { test, expect } = require("@playwright/test");
-const { preparePage, waitForApp } = require("./helpers.cjs");
+const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 test.describe("Library surface contract", () => {
   test.beforeEach(async ({ page }) => {
