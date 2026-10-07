@@ -1,26 +1,25 @@
 const { test, expect } = require("@playwright/test");
 const {
-  prepareRealPage,
+  preparePage,
   waitForApp,
   emailInput,
   passwordInput,
   confirmPasswordInput,
   displayNameInput,
   acceptRegisterLegal,
-} = require("./helpers.cjs");
+} = require("./server-helpers.cjs");
 
 const registerPayload = {
-  email: "jamie@fitvibe.test",
   password: "SuperSecure123!",
   name: "Jamie Carter",
 };
 
 test("user can register, verify, login, and reach the current Calendar surface", async ({ page }, testInfo) => {
-  await prepareRealPage(page);
+  await preparePage(page);
 
-  const retrySuffix = String(testInfo.retry);
-  const email = `jamie.e2e.${retrySuffix}@fitvibe.test`;
-  const username = `jamie.e2e.${retrySuffix}`;
+  const suffix = `${testInfo.workerIndex}-${testInfo.retry}`;
+  const email = `onboarding.e2e.${suffix}@fitvibe.test`;
+  const username = `onboarding.e2e.${suffix}`;
 
   await page.goto("/register");
   await waitForApp(page);
@@ -33,9 +32,11 @@ test("user can register, verify, login, and reach the current Calendar surface",
 
   const registrationResponsePromise = page.waitForResponse(
     (response) =>
-      response.url().includes("/api/v1/auth/register") && response.request().method() === "POST",
+      response.url().includes("/api/v1/auth/register") &&
+      response.request().method() === "POST",
   );
   await page.getByRole("button", { name: /create account/i }).click();
+
   const registrationResponse = await registrationResponsePromise;
   expect(registrationResponse.status()).toBe(202);
   const registrationBody = await registrationResponse.json();
@@ -53,7 +54,8 @@ test("user can register, verify, login, and reach the current Calendar surface",
   await passwordInput(page).fill(registerPayload.password);
   const loginResponsePromise = page.waitForResponse(
     (response) =>
-      response.url().includes("/api/v1/auth/login") && response.request().method() === "POST",
+      response.url().includes("/api/v1/auth/login") &&
+      response.request().method() === "POST",
   );
   await page.getByRole("button", { name: /sign in/i }).click();
   expect((await loginResponsePromise).ok()).toBeTruthy();
