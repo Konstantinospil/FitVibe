@@ -205,7 +205,7 @@ jobs:
 
       - name: Document non-release branch policy
         if: github.ref != 'refs/heads/main'
-        run: echo "dev/stage are working branches; release provenance enforcement applies to main."
+        run: echo "feature/dev are working branches; release provenance enforcement applies to main."
 
   backend_tests:
     name: Backend Tests
