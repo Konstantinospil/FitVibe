@@ -268,10 +268,9 @@ export async function renderPage(url: string): Promise<string> {
 
   const isProduction = process.env.NODE_ENV === "production";
   const { scripts, styles } = getClientAssets();
-  // Hydration can produce the final login LCP candidate, so do not deprioritize the entry script.
-  // Keep it out of <head> to preserve the server-rendered first paint, but let the browser fetch it normally.
+  // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
   const hydrationScript = scripts
-    .map((src) => `<script type="module" src="${src}"></script>`)
+    .map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`)
     .join("");
   const styleTags = styleTagsFor(styles, resolve(root, "dist/client"));
 
