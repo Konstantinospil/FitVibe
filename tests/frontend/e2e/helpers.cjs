@@ -135,9 +135,17 @@ async function acceptRegisterLegal(page) {
   const checkboxes = page.getByRole("checkbox");
 
   for (let index = 0; index < 2; index += 1) {
-    await controls.nth(index).locator("label").click();
+    const visibleBox = controls.nth(index).locator("[data-slot='checkbox-box']");
+    await visibleBox.scrollIntoViewIfNeeded();
+
+    const bounds = await visibleBox.boundingBox();
+    if (!bounds) {
+      throw new Error(`Registration legal checkbox ${index + 1} visible hit target has no bounding box.`);
+    }
+
+    await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     if (!(await checkboxes.nth(index).isChecked())) {
-      throw new Error(`Registration legal checkbox ${index + 1} did not toggle through its visible label hit target.`);
+      throw new Error(`Registration legal checkbox ${index + 1} did not toggle through its visible checkbox hit target.`);
     }
   }
 }
