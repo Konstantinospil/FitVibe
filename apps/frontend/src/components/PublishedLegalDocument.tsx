@@ -60,21 +60,12 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
   }
 
   return (
-    <div key={key} style={{ overflowX: "auto", marginBottom: "var(--space-md)" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <div key={key} data-component="legal-table-scroll">
+      <table data-component="legal-table">
         <thead>
           <tr>
             {headers.map((header, index) => (
-              <th
-                key={index}
-                style={{
-                  textAlign: "left",
-                  padding: "var(--space-sm)",
-                  borderBottom: "1px solid var(--color-border)",
-                }}
-              >
-                {String(header)}
-              </th>
+              <th key={index}>{String(header)}</th>
             ))}
           </tr>
         </thead>
@@ -84,16 +75,7 @@ function renderTable(value: Record<string, unknown>, key: string): React.ReactNo
             return (
               <tr key={rowIndex}>
                 {cells.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    style={{
-                      padding: "var(--space-sm)",
-                      borderBottom: "1px solid var(--color-border)",
-                      verticalAlign: "top",
-                    }}
-                  >
-                    {String(cell)}
-                  </td>
+                  <td key={cellIndex}>{String(cell)}</td>
                 ))}
               </tr>
             );
@@ -238,8 +220,12 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
           if (cancelled) {
             return;
           }
-          const bundle = i18n.getResourceBundle(language, documentType) as unknown;
-          setLegacyContent(isRecord(bundle) ? bundle : null);
+          const translationBundle = i18n.getResourceBundle(language, "translation") as unknown;
+          const legacyDocument =
+            isRecord(translationBundle) && isRecord(translationBundle[documentType])
+              ? translationBundle[documentType]
+              : null;
+          setLegacyContent(legacyDocument);
         } else {
           setLegacyContent(null);
         }

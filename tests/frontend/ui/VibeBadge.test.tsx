@@ -3,15 +3,16 @@ import { describe, expect, it } from "vitest";
 import { VibeBadge } from "../../src/components/domain/VibeBadge";
 
 describe("VibeBadge", () => {
-  it("uses default and hover as the only visual states", () => {
+  it("exposes the vibe and delegates hover presentation to CSS", () => {
     render(<VibeBadge vibe="strength" label="Strength" level="12.4" />);
     const badge = screen.getByRole("button", { name: "Strength. Show level" });
 
-    expect(badge).toHaveAttribute("data-state", "default");
+    expect(badge).toHaveAttribute("data-component", "vibe-badge");
+    expect(badge).toHaveAttribute("data-vibe", "strength");
+    expect(badge).toHaveAttribute("data-content", "icon");
+
     fireEvent.mouseEnter(badge);
-    expect(badge).toHaveAttribute("data-state", "hover");
-    fireEvent.mouseLeave(badge);
-    expect(badge).toHaveAttribute("data-state", "default");
+    expect(badge).toHaveAttribute("data-content", "icon");
   });
 
   it("toggles glyph and supplied level on click", () => {
@@ -25,7 +26,7 @@ describe("VibeBadge", () => {
       name: "Endurance: 12.4. Show vibe icon",
     });
     expect(revealed).toHaveAttribute("data-content", "level");
-    expect(revealed).toHaveAttribute("data-state", "default");
+    expect(revealed).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("12.4")).toBeVisible();
   });
 

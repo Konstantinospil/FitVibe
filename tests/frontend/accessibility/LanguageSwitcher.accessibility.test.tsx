@@ -368,16 +368,13 @@ describe("LanguageSwitcher Accessibility", () => {
       expect(flags.length).toBeGreaterThan(0);
     });
 
-    it("should use semantic color variables for theming", () => {
+    it("should expose stable semantic hooks for theme styling", () => {
       const { container } = renderWithI18n(<LanguageSwitcher />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Should use CSS custom properties
-      expect(styles).toContain("--color-surface-glass");
-      expect(styles).toContain("--color-border");
-      expect(styles).toContain("--color-text-secondary");
+      expect(container.querySelector("[data-component='language-switcher']")).toBeInTheDocument();
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("data-slot", "language-trigger");
+      expect(button).toHaveAttribute("data-variant", "ghost");
     });
 
     it("should have visible focus indicator", () => {
@@ -388,14 +385,10 @@ describe("LanguageSwitcher Accessibility", () => {
       // CSS focus styles should be applied via :focus-visible
     });
 
-    it("should have minimum touch target size", () => {
-      const { container } = renderWithI18n(<LanguageSwitcher />);
+    it("should use the shared control-size contract", () => {
+      renderWithI18n(<LanguageSwitcher />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Should have padding for adequate touch target (44x44px minimum)
-      expect(styles).toContain("padding");
+      expect(screen.getByRole("button")).toHaveAttribute("data-size", "sm");
     });
   });
 
@@ -507,14 +500,12 @@ describe("LanguageSwitcher Accessibility", () => {
   });
 
   describe("Reduced motion", () => {
-    it("should respect prefers-reduced-motion for transitions", () => {
-      const { container } = renderWithI18n(<LanguageSwitcher />);
+    it("should delegate transitions to the centralized component stylesheet", () => {
+      renderWithI18n(<LanguageSwitcher />);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-
-      // Transitions should be defined but browsers will disable if prefers-reduced-motion
-      expect(styles).toContain("transition");
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("data-slot", "language-trigger");
+      expect(button).toHaveAttribute("data-component", "button");
     });
   });
 });

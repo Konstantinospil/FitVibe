@@ -2,6 +2,8 @@ import React from "react";
 import { hydrateRoot, createRoot } from "react-dom/client";
 import App from "./App";
 import "./styles/global.css";
+import "./styles/components.css";
+import "./styles/surfaces.css";
 // Suppress console errors in production for Lighthouse compliance
 import "./utils/suppressConsole";
 import { minimalTranslationsReady } from "./i18n/config";

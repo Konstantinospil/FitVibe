@@ -1,12 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, beforeEach } from "vitest";
-// Import CSS at module level - Vitest processes CSS imports safely
+import { beforeEach, describe, expect, it } from "vitest";
 import "../../src/styles/global.css";
 import { CardTitle } from "../../../packages/ui/src";
 
 describe("Design tokens", () => {
   beforeEach(() => {
-    // Set CSS custom properties manually since jsdom doesn't parse CSS files
     document.documentElement.style.setProperty(
       "--font-family-base",
       '"Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif',
@@ -22,11 +20,9 @@ describe("Design tokens", () => {
     expect(rootStyle.getPropertyValue("--font-size-lg").trim()).toBe("1.125rem");
   });
 
-  it("applies heading font family in CardTitle", () => {
+  it("marks CardTitle as the canonical card-title component", () => {
     const { unmount } = render(<CardTitle>Typography Check</CardTitle>);
-    const heading = screen.getByText("Typography Check");
-    expect(heading.style.fontFamily).toBe("var(--font-family-heading)");
-    // Explicitly unmount to ensure cleanup
+    expect(screen.getByText("Typography Check")).toHaveAttribute("data-component", "card-title");
     unmount();
   });
 });

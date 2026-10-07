@@ -12,7 +12,7 @@ const PublicReturnButton: React.FC = () => {
   const Icon = isAuthenticated ? Home : LogIn;
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+    <div data-component="public-return">
       <Button
         variant="secondary"
         size="sm"

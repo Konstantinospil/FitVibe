@@ -223,50 +223,6 @@ function supportsEmojiFlag(): boolean {
   }
 }
 
-const buttonStyle: React.CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.4rem",
-  background: "var(--color-surface-glass)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-full)",
-  color: "var(--color-text-secondary)",
-  fontSize: "var(--font-size-sm)",
-  padding: "0.35rem 0.75rem",
-  cursor: "pointer",
-  transition: "background 150ms ease",
-  position: "relative",
-};
-
-const dropdownStyle: React.CSSProperties = {
-  position: "absolute",
-  top: "calc(100% + 0.5rem)",
-  right: 0,
-  background: "var(--color-surface)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-md)",
-  boxShadow: "var(--dialog-shadow)",
-  minWidth: "160px",
-  zIndex: 1000,
-  overflow: "hidden",
-};
-
-const optionStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  padding: "0.6rem 1rem",
-  cursor: "pointer",
-  transition: "background 150ms ease",
-  fontSize: "var(--font-size-sm)",
-  border: "none",
-  background: "transparent",
-  width: "100%",
-  textAlign: "left",
-  color: "var(--color-text-primary)",
-};
-
 function FlagIcon({ option, size = 20 }: { option: LanguageOption; size?: number }) {
   const [supportsEmoji, setSupportsEmoji] = useState<boolean | null>(null);
 
@@ -309,7 +265,6 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [isChanging, setIsChanging] = useState(false);
-  const [triggerHovered, setTriggerHovered] = useState(false);
   const activeLanguage = (i18n.language?.slice(0, 2) || "en") as LangCode;
 
   // Fallback to 'en' if language is not in LANGUAGES
@@ -428,13 +383,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
   }, [isOpen, focusedIndex]);
 
   return (
-    <div
-      ref={dropdownRef}
-      style={{
-        position: "relative",
-        display: "inline-flex",
-      }}
-    >
+    <div ref={dropdownRef} data-component="language-switcher" data-variant={variant}>
       <Button
         ref={buttonRef}
         variant="ghost"
@@ -446,28 +395,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
           setFocusedIndex(-1);
         }}
         onKeyDown={handleKeyDown}
-        onMouseEnter={() => setTriggerHovered(true)}
-        onMouseLeave={() => setTriggerHovered(false)}
         className={variant === "header" ? "app-header__language-control" : undefined}
-        style={{
-          ...buttonStyle,
-          minHeight: variant === "header" ? "44px" : "40px",
-          padding: "var(--space-xs) var(--space-sm)",
-          borderRadius: variant === "header" ? "var(--radius-md)" : "var(--radius-full)",
-          border: variant === "header" ? "none" : "1px solid var(--color-border)",
-          borderColor: variant === "header" ? "transparent" : "var(--color-border)",
-          background: triggerHovered
-            ? "var(--color-surface-muted)"
-            : variant === "header"
-              ? "none"
-              : "var(--color-surface-glass)",
-          color: "var(--color-text-secondary)",
-          fontFamily: "var(--font-family-body)",
-          fontWeight: "var(--font-weight-regular)",
-          fontSize: "var(--type-control-size)",
-          lineHeight: "var(--type-control-line-height)",
-          letterSpacing: "var(--type-control-letter-spacing)",
-        }}
+        data-slot="language-trigger"
         aria-label={t("language.label")}
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -477,11 +406,11 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
         {variant === "header" ? (
           <span className="language-switcher__code">{currentLanguage.displayCode}</span>
         ) : null}
-        <ChevronDown size={16} style={{ opacity: "var(--opacity-subtle)" }} />
+        <ChevronDown size={16} data-slot="language-chevron" />
       </Button>
 
       {isOpen && (
-        <div style={dropdownStyle} role="menu" aria-label={t("language.select")}>
+        <div data-slot="language-menu" role="menu" aria-label={t("language.select")}>
           {LANGUAGES.map((option, index) => (
             <Button
               key={option.code}
@@ -495,17 +424,9 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
                   handleLanguageChange(option.code);
                 }
               }}
-              style={{
-                ...optionStyle,
-                background:
-                  option.code === validLanguage || index === focusedIndex
-                    ? "var(--color-surface-muted)"
-                    : "transparent",
-                fontWeight:
-                  option.code === validLanguage
-                    ? "var(--font-weight-semibold)"
-                    : "var(--font-weight-regular)",
-              }}
+              data-slot="language-option"
+              data-selected={option.code === validLanguage ? "true" : undefined}
+              data-focused={index === focusedIndex ? "true" : undefined}
               onMouseEnter={() => {
                 setFocusedIndex(index);
               }}

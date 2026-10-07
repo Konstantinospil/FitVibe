@@ -1,3 +1,4 @@
+import "./styles.css";
 export * from "./CardPatterns";
 export * from "./TextLink";
 export * from "./IconButton";

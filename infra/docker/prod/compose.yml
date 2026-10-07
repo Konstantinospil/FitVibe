@@ -1,6 +1,19 @@
 name: fitvibe
 
 services:
+  ingress:
+    image: ${INGRESS_IMAGE:?INGRESS_IMAGE digest reference is required}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+      frontend:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+
   backend:
     image: ${BACKEND_IMAGE:?BACKEND_IMAGE digest reference is required}
     env_file:
@@ -33,8 +46,8 @@ services:
         condition: service_started
     security_opt:
       - no-new-privileges:true
-    ports:
-      - "80:4173"
+    expose:
+      - "4173"
 
   backoffice:
     image: ${BACKOFFICE_IMAGE:?BACKOFFICE_IMAGE digest reference is required}

@@ -27,11 +27,14 @@ env:
   TURBO_REMOTE_CACHE: "false"
   PNPM_STORE_DIR: "/tmp/pnpm-store"
 
+# Full verification runs before promotion on feature, and is repeated on dev/main.
+# Release governance and image publishing remain main-only.
+
 jobs:
   architecture_hardcoding:
     name: Architecture & Hardcoding
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     permissions:
       contents: read
@@ -99,7 +102,7 @@ jobs:
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -161,7 +164,7 @@ jobs:
   deployment_contract:
     name: Deployment Contract
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     permissions:
       contents: read
@@ -202,12 +205,12 @@ jobs:
 
       - name: Document non-release branch policy
         if: github.ref != 'refs/heads/main'
-        run: echo "dev/stage are working branches; release provenance enforcement applies to main."
+        run: echo "feature/dev are working branches; release provenance enforcement applies to main."
 
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -343,7 +346,7 @@ jobs:
   frontend_tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     permissions:
       contents: read
@@ -421,7 +424,7 @@ jobs:
   backoffice_tests:
     name: Backoffice E2E
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -474,7 +477,7 @@ jobs:
   database_tests:
     name: Database Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -583,7 +586,7 @@ jobs:
   coverage:
     name: Coverage Gate
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - backend_tests
@@ -667,7 +670,7 @@ jobs:
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     needs:
       - quality
@@ -762,7 +765,7 @@ jobs:
   i18n:
     name: i18n Coverage Check
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     needs:
       - quality
@@ -801,10 +804,11 @@ jobs:
   contract_tests:
     name: API Contract Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - quality
+      - deployment_contract
       - backend_tests
     permissions:
       contents: read
@@ -851,7 +855,7 @@ jobs:
   integration:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main' || github.head_ref == 'feature' || github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - backend_tests
@@ -1028,7 +1032,7 @@ jobs:
   openapi_spec:
     name: Build OpenAPI spec
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - quality
@@ -1088,7 +1092,7 @@ jobs:
   metrics_contract:
     name: Metrics Contract
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 5
     needs:
       - quality
@@ -1110,7 +1114,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 35
     needs:
       - quality
@@ -1259,7 +1263,7 @@ jobs:
   codeql_compatibility:
     name: CodeQL Compatibility (javascript)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - quality
@@ -1290,7 +1294,7 @@ jobs:
   zap_baseline:
     name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -1378,7 +1382,7 @@ jobs:
   performance:
     name: Performance Budgets (real backend)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -1523,7 +1527,7 @@ jobs:
     name: Pre-main amd64 Production Smoke
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     permissions:
       contents: read
     services:
@@ -1606,12 +1610,12 @@ jobs:
           docker run -d \
             --name pre-main-backend \
             --add-host=host.docker.internal:host-gateway \
-            -p 4100:4100 \
+            -p 4100:4000 \
             -v "$RUNNER_TEMP/fitvibe-jwt/private.pem:/run/secrets/jwt-private.pem:ro" \
             -v "$RUNNER_TEMP/fitvibe-jwt/public.pem:/run/secrets/jwt-public.pem:ro" \
             -e DATABASE_URL="postgresql://postgres@host.docker.internal:5432/fitvibe_test" \
             -e NODE_ENV=production \
-            -e PORT=4100 \
+            -e PORT=4000 \
             -e JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem \
             -e JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem \
             -e CLAMAV_ENABLED=true \
@@ -1663,7 +1667,7 @@ jobs:
       - name: Start backoffice production container
         run: |
           docker network create pre-main-fitvibe
-          docker network connect pre-main-fitvibe pre-main-backend
+          docker network connect --alias backend pre-main-fitvibe pre-main-backend
           docker run -d             --name pre-main-backoffice             --network pre-main-fitvibe             -p 8081:8080             fitvibe-backoffice:pre-main
 
       - name: Verify backoffice production startup
@@ -1693,7 +1697,7 @@ jobs:
     name: Pre-main arm64 Production Build
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     permissions:
       contents: read
     steps:
@@ -1743,6 +1747,7 @@ jobs:
     needs:
       - architecture_hardcoding
       - quality
+      - deployment_contract
       - backend_tests
       - frontend_tests
       - backoffice_tests
@@ -1763,7 +1768,7 @@ jobs:
       - e2e
       - pre_main_amd64_smoke
       - pre_main_arm64_build
-    if: always() && ((github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main'))
+    if: always() && ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main')))
     permissions:
       contents: read
     steps:
@@ -1825,6 +1830,7 @@ jobs:
           done <<'EOF_RESULTS'
           architecture_hardcoding=${{ needs.architecture_hardcoding.result }}
           quality=${{ needs.quality.result }}
+          deployment_contract=${{ needs.deployment_contract.result }}
           backend_tests=${{ needs.backend_tests.result }}
           frontend_tests=${{ needs.frontend_tests.result }}
           backoffice_tests=${{ needs.backoffice_tests.result }}
@@ -1843,20 +1849,60 @@ jobs:
           contract_tests=${{ needs.contract_tests.result }}
           visual_regression=${{ needs.visual_regression.result }}
           e2e=${{ needs.e2e.result }}
-          pre_main_amd64_smoke=${{ (github.event_name == 'pull_request' && github.base_ref == 'main') && needs.pre_main_amd64_smoke.result || 'success' }}
-          pre_main_arm64_build=${{ (github.event_name == 'pull_request' && github.base_ref == 'main') && needs.pre_main_arm64_build.result || 'success' }}
+          pre_main_amd64_smoke=${{ needs.pre_main_amd64_smoke.result }}
+          pre_main_arm64_build=${{ needs.pre_main_arm64_build.result }}
           EOF_RESULTS
           exit "$failed"
 
   accessibility:
     name: Accessibility (axe)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     needs:
       - quality
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: fitvibe_accessibility
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://postgres@postgres:5432/fitvibe_accessibility
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: fitvibe_accessibility
+      NODE_ENV: development
+      PORT: "4000"
+      FRONTEND_URL: http://127.0.0.1:4173
+      APP_BASE_URL: http://127.0.0.1:4173
+      ALLOWED_ORIGINS: http://127.0.0.1:4173
+      CSRF_ALLOWED_ORIGINS: http://127.0.0.1:4173
+      CSRF_ENABLED: "true"
+      COOKIE_SECURE: "false"
+      TRUST_PROXY: "true"
+      TRUSTED_PROXY_IPS: "127.0.0.1,::1,::ffff:127.0.0.1"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CLAMAV_ENABLED: "false"
+      EMAIL_ENABLED: "false"
     # Pin the browser runtime and OS dependencies to the same Playwright version
     # as @playwright/test. Do not provision browsers/apt packages at runtime.
     container:
@@ -1880,9 +1926,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Build frontend bundle
+      - name: Migrate and seed accessibility database
         timeout-minutes: 10
-        run: pnpm --filter @fitvibe/frontend run build
+        run: |
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
+
+      - name: Build backend and frontend
+        timeout-minutes: 10
+        run: |
+          pnpm --filter @fitvibe/backend run build
+          pnpm --filter @fitvibe/frontend run build
+
+      - name: Start real backend
+        timeout-minutes: 5
+        run: |
+          pnpm --filter @fitvibe/backend start > /tmp/fitvibe-a11y-backend.log 2>&1 &
+          echo $! > /tmp/fitvibe-a11y-backend.pid
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
+              echo "Real FitVibe backend is ready for accessibility testing"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/fitvibe-a11y-backend.log || true
+          exit 1
 
       - name: Run axe accessibility suite
         timeout-minutes: 10
@@ -1891,6 +1960,14 @@ jobs:
           tests/frontend/e2e/accessibility.spec.cjs
           --config tests/frontend/e2e/playwright.config.cjs
           --workers=1
+
+      - name: Stop accessibility backend
+        if: always()
+        timeout-minutes: 1
+        run: |
+          if [ -f /tmp/fitvibe-a11y-backend.pid ]; then
+            kill "$(cat /tmp/fitvibe-a11y-backend.pid)" 2>/dev/null || true
+          fi
 
       - name: Upload accessibility artifacts
         if: always()
@@ -1906,7 +1983,7 @@ jobs:
   visual_regression:
     name: Visual Regression Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - quality
@@ -2036,11 +2113,55 @@ jobs:
   e2e:
     name: E2E Playwright
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs: integration
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: fitvibe_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_e2e
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: fitvibe_e2e
+      NODE_ENV: development
+      PORT: "4000"
+      FRONTEND_URL: http://127.0.0.1:4180
+      APP_BASE_URL: http://127.0.0.1:4180
+      ALLOWED_ORIGINS: http://127.0.0.1:4180
+      CSRF_ALLOWED_ORIGINS: http://127.0.0.1:4180
+      CSRF_ENABLED: "true"
+      COOKIE_SECURE: "false"
+      TRUST_PROXY: "true"
+      TRUSTED_PROXY_IPS: "127.0.0.1,::1,::ffff:127.0.0.1"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      CLAMAV_ENABLED: "false"
+      EMAIL_ENABLED: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -2053,7 +2174,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install native canvas prerequisites
+      - name: Install native E2E prerequisites
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
@@ -2063,7 +2184,8 @@ jobs:
             libjpeg-dev \
             libgif-dev \
             librsvg2-dev \
-            postgresql-client
+            postgresql-client \
+            nginx
 
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile --no-offline
@@ -2072,12 +2194,55 @@ jobs:
         timeout-minutes: 10
         run: pnpm exec playwright install --with-deps
 
-      - name: Build frontend
+      - name: Migrate and seed E2E database
         timeout-minutes: 10
-        run: pnpm --filter @fitvibe/frontend exec pnpm run build
+        run: |
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
+
+      - name: Build backend and frontend
+        timeout-minutes: 10
+        run: |
+          pnpm --filter @fitvibe/backend run build
+          pnpm --filter @fitvibe/frontend run build
+
+      - name: Start real backend
+        timeout-minutes: 5
+        run: |
+          pnpm --filter @fitvibe/backend start > /tmp/fitvibe-e2e-backend.log 2>&1 &
+          echo $! > /tmp/fitvibe-e2e-backend.pid
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
+              echo "Real FitVibe backend is ready for browser E2E"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/fitvibe-e2e-backend.log || true
+          exit 1
+
+      - name: Start production-contract ingress
+        timeout-minutes: 5
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("infra/docker/prod/nginx.conf").read_text()
+          source = source.replace("events {}", "pid /tmp/fitvibe-e2e-nginx.pid;\nerror_log /tmp/fitvibe-e2e-nginx-error.log;\n\nevents {}")
+          source = source.replace("server backend:4000;", "server 127.0.0.1:4000;")
+          source = source.replace("server frontend:4173;", "server 127.0.0.1:4173;")
+          source = source.replace("listen 80;", "listen 4180;")
+          Path("/tmp/fitvibe-e2e-nginx.conf").write_text(source)
+          PY
+          sudo nginx -t -c /tmp/fitvibe-e2e-nginx.conf
+          sudo nginx -c /tmp/fitvibe-e2e-nginx.conf
+          curl -fsS http://127.0.0.1:4180/__ingress_health
+          curl -fsS http://127.0.0.1:4180/api/v1/csrf-token | grep -q 'csrfToken'
 
       - name: Run authoritative Playwright e2e suite
         timeout-minutes: 20
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4180
+          PLAYWRIGHT_FRONTEND_SERVER_URL: http://127.0.0.1:4173
         run: |
           specs="$(find tests/frontend/e2e -maxdepth 1 -name '*.spec.cjs' ! -name 'accessibility.spec.cjs' -print | sort)"
           if [ -z "$specs" ]; then
@@ -2086,7 +2251,18 @@ jobs:
           fi
           echo "$specs"
           # Accessibility has its own hard gate; every other E2E spec is discovered automatically.
-          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --reporter=line
+          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --workers=1
+
+      - name: Stop E2E runtime
+        if: always()
+        timeout-minutes: 2
+        run: |
+          if [ -f /tmp/fitvibe-e2e-backend.pid ]; then
+            kill "$(cat /tmp/fitvibe-e2e-backend.pid)" 2>/dev/null || true
+          fi
+          if [ -f /tmp/fitvibe-e2e-nginx.conf ]; then
+            sudo nginx -c /tmp/fitvibe-e2e-nginx.conf -s stop 2>/dev/null || true
+          fi
 
       - name: Upload Playwright artifacts
         if: always()
@@ -2139,6 +2315,7 @@ jobs:
           platform_pair="${{ matrix.platform }}"
           platform_pair="${platform_pair//\//-}"
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
+          echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
@@ -2153,6 +2330,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ingress image by digest
+        id: ingress
+        timeout-minutes: 10
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: infra/docker/prod/Dockerfile.ingress
+          platforms: ${{ matrix.platform }}
+          provenance: true
+          sbom: true
+          tags: ${{ env.INGRESS_IMAGE }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=ingress-${{ env.PLATFORM_PAIR }}
+          cache-to: type=gha,mode=max,scope=ingress-${{ env.PLATFORM_PAIR }}
 
       - name: Build and push backend image by digest
         id: backend
@@ -2201,13 +2393,23 @@ jobs:
 
       - name: Export digests
         run: |
-          mkdir -p "${RUNNER_TEMP}/backend-digests" "${RUNNER_TEMP}/frontend-digests" "${RUNNER_TEMP}/backoffice-digests"
+          mkdir -p "${RUNNER_TEMP}/ingress-digests" "${RUNNER_TEMP}/backend-digests" "${RUNNER_TEMP}/frontend-digests" "${RUNNER_TEMP}/backoffice-digests"
+          ingress_digest="${{ steps.ingress.outputs.digest }}"
           backend_digest="${{ steps.backend.outputs.digest }}"
           frontend_digest="${{ steps.frontend.outputs.digest }}"
           backoffice_digest="${{ steps.backoffice.outputs.digest }}"
+          touch "${RUNNER_TEMP}/ingress-digests/${ingress_digest#sha256:}"
           touch "${RUNNER_TEMP}/backend-digests/${backend_digest#sha256:}"
           touch "${RUNNER_TEMP}/frontend-digests/${frontend_digest#sha256:}"
           touch "${RUNNER_TEMP}/backoffice-digests/${backoffice_digest#sha256:}"
+
+      - name: Upload ingress digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ingress-digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/ingress-digests/*
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload backend digest
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -2257,6 +2459,7 @@ jobs:
         run: |
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           echo "OWNER=${owner}" >> "$GITHUB_ENV"
+          echo "INGRESS_IMAGE=ghcr.io/${owner}/fitvibe-ingress" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE=ghcr.io/${owner}/fitvibe-backend" >> "$GITHUB_ENV"
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
@@ -2297,6 +2500,13 @@ jobs:
             echo "Release tag ${tag} does not exist; this build may publish it."
           fi
 
+      - name: Download ingress digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: ${{ runner.temp }}/ingress-digests
+          pattern: ingress-digests-*
+          merge-multiple: true
+
       - name: Download backend digests
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -2334,14 +2544,20 @@ jobs:
         run: |
           set -euo pipefail
 
+          ingress_count=$(find "${RUNNER_TEMP}/ingress-digests" -type f | wc -l)
           backend_count=$(find "${RUNNER_TEMP}/backend-digests" -type f | wc -l)
           frontend_count=$(find "${RUNNER_TEMP}/frontend-digests" -type f | wc -l)
           backoffice_count=$(find "${RUNNER_TEMP}/backoffice-digests" -type f | wc -l)
-          if [ "${backend_count}" -lt 2 ] || [ "${frontend_count}" -lt 2 ] || [ "${backoffice_count}" -lt 2 ]; then
+          if [ "${ingress_count}" -lt 2 ] || [ "${backend_count}" -lt 2 ] || [ "${frontend_count}" -lt 2 ] || [ "${backoffice_count}" -lt 2 ]; then
             echo "Expected 2 platform digests per image (amd64 + arm64)." >&2
-            echo "backend=${backend_count} frontend=${frontend_count} backoffice=${backoffice_count}" >&2
+            echo "ingress=${ingress_count} backend=${backend_count} frontend=${frontend_count} backoffice=${backoffice_count}" >&2
             exit 1
           fi
+
+          ingress_refs=""
+          for digest_file in "${RUNNER_TEMP}/ingress-digests"/*; do
+            ingress_refs="${ingress_refs} ${INGRESS_IMAGE}@sha256:$(basename "${digest_file}")"
+          done
 
           backend_refs=""
           for digest_file in "${RUNNER_TEMP}/backend-digests"/*; do
@@ -2358,15 +2574,21 @@ jobs:
             backoffice_refs="${backoffice_refs} ${BACKOFFICE_IMAGE}@sha256:$(basename "${digest_file}")"
           done
 
+          ingress_tags=(-t "${INGRESS_IMAGE}:sha-${GITHUB_SHA}")
           backend_tags=(-t "${BACKEND_IMAGE}:sha-${GITHUB_SHA}")
           frontend_tags=(-t "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}")
           backoffice_tags=(-t "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}")
 
           if [ "${{ steps.release_guard.outputs.should_release }}" = "true" ]; then
+            ingress_tags+=(-t "${INGRESS_IMAGE}:v${{ steps.versions.outputs.backend }}")
             backend_tags+=(-t "${BACKEND_IMAGE}:v${{ steps.versions.outputs.backend }}")
             frontend_tags+=(-t "${FRONTEND_IMAGE}:v${{ steps.versions.outputs.frontend }}")
             backoffice_tags+=(-t "${BACKOFFICE_IMAGE}:v${{ steps.versions.outputs.backoffice }}")
           fi
+
+          docker buildx imagetools create \
+            "${ingress_tags[@]}" \
+            ${ingress_refs}
 
           docker buildx imagetools create \
             "${backend_tags[@]}" \
@@ -2380,21 +2602,27 @@ jobs:
             "${backoffice_tags[@]}" \
             ${backoffice_refs}
 
+          ingress_digest=$(docker buildx imagetools inspect "${INGRESS_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
           backend_digest=$(docker buildx imagetools inspect "${BACKEND_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
           frontend_digest=$(docker buildx imagetools inspect "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
           backoffice_digest=$(docker buildx imagetools inspect "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}" | awk '/^Digest:/ && !digest {digest=$2} END {print digest}')
 
-          if [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ] || [ -z "${backoffice_digest}" ]; then
+          if [ -z "${ingress_digest}" ] || [ -z "${backend_digest}" ] || [ -z "${frontend_digest}" ] || [ -z "${backoffice_digest}" ]; then
             echo "Failed to resolve merged image digests" >&2
             exit 1
           fi
 
+          echo "ingress_digest=${ingress_digest}" >> "$GITHUB_OUTPUT"
           echo "backend_digest=${backend_digest}" >> "$GITHUB_OUTPUT"
           echo "frontend_digest=${frontend_digest}" >> "$GITHUB_OUTPUT"
           echo "backoffice_digest=${backoffice_digest}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign ingress image
+        timeout-minutes: 5
+        run: cosign sign --yes ${{ env.INGRESS_IMAGE }}@${{ steps.manifests.outputs.ingress_digest }}
 
       - name: Sign backend image
         timeout-minutes: 5
@@ -2407,6 +2635,13 @@ jobs:
       - name: Sign backoffice image
         timeout-minutes: 5
         run: cosign sign --yes ${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}
+
+      - name: Generate ingress SBOM
+        timeout-minutes: 5
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.INGRESS_IMAGE }}@${{ steps.manifests.outputs.ingress_digest }}
+          output-file: sbom-ingress.spdx.json
 
       - name: Generate backend SBOM
         timeout-minutes: 5
@@ -2473,7 +2708,8 @@ jobs:
       - name: Record image digests
         timeout-minutes: 2
         run: |
-          printf "backend=%s@%s\nfrontend=%s@%s\nbackoffice=%s@%s\npostgres=%s\nclamav=%s\nredis=%s\nstack_version=v%s\n" \
+          printf "ingress=%s@%s\nbackend=%s@%s\nfrontend=%s@%s\nbackoffice=%s@%s\npostgres=%s\nclamav=%s\nredis=%s\nstack_version=v%s\n" \
+            "${{ env.INGRESS_IMAGE }}" "${{ steps.manifests.outputs.ingress_digest }}" \
             "${{ env.BACKEND_IMAGE }}" "${{ steps.manifests.outputs.backend_digest }}" \
             "${{ env.FRONTEND_IMAGE }}" "${{ steps.manifests.outputs.frontend_digest }}" \
             "${{ env.BACKOFFICE_IMAGE }}" "${{ steps.manifests.outputs.backoffice_digest }}" \
@@ -2493,6 +2729,7 @@ jobs:
         with:
           name: container-artifacts-${{ github.run_id }}
           path: |
+            sbom-ingress.spdx.json
             sbom-backend.spdx.json
             sbom-frontend.spdx.json
             sbom-backoffice.spdx.json
@@ -2511,6 +2748,7 @@ jobs:
           commit: ${{ github.sha }}
           name: Release v${{ steps.versions.outputs.backend }}
           body: |
+            - Ingress image: ${{ env.INGRESS_IMAGE }}:v${{ steps.versions.outputs.backend }}
             - Backend image: ${{ env.BACKEND_IMAGE }}:v${{ steps.versions.outputs.backend }}
             - Frontend image: ${{ env.FRONTEND_IMAGE }}:v${{ steps.versions.outputs.frontend }}
             - Backoffice image: ${{ env.BACKOFFICE_IMAGE }}:v${{ steps.versions.outputs.backoffice }}

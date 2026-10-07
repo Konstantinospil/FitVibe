@@ -1,0 +1,43 @@
+/* === FIGMA DESIGN SYSTEM V2 — LIGHT SEMANTIC PALETTE === */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #F4F0E8;
+  --color-surface: #FAF8F4;
+  --color-surface-muted: #ECE7DE;
+  --color-border: #D8D2C8;
+  --color-border-strong: #818C90;
+
+  --color-text-primary: #243036;
+  /* WCAG AA on both the light surface and light muted-surface semantic roles. */
+  --color-text-secondary: #59676C;
+  --color-text-muted: #59676C;
+
+  --color-primary: #4F7282;
+  --color-primary-hover: #3F5F6D;
+  --color-primary-on: #FAF8F4;
+  /* TextLink resolves through the semantic info role; use the accessible light-theme action tone. */
+  --color-info-text: var(--color-primary-hover);
+
+  --color-secondary: #557263;
+  --color-secondary-hover: #476052;
+  --color-secondary-on: #FAF8F4;
+
+  --color-focus: #5E8797;
+  --color-success: #557263;
+  --color-warning: #9A7B4F;
+  --color-danger: #A9544D;
+  --color-danger-hover: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-subtle),
+    var(--color-text-primary)
+  );
+
+  /* Figma Design System v2 — accessible Vibe label colors, light theme */
+  --vibe-label-strength: #946129;
+  --vibe-label-agility: #23748E;
+  --vibe-label-endurance: #315C9A;
+  --vibe-label-explosivity: #A94654;
+  --vibe-label-intelligence: #7757A7;
+  --vibe-label-regeneration: #65772D;
+}

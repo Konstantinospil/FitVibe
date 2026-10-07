@@ -37,33 +37,27 @@ import { verifyAccess } from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 
-function setRefreshCookie(res: Response, token: string) {
-  res.cookie(env.REFRESH_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.COOKIE_SECURE,
-    domain: env.COOKIE_DOMAIN,
-    maxAge: env.REFRESH_TOKEN_TTL * 1000,
-  });
-}
-
-function setAccessCookie(res: Response, token: string) {
-  res.cookie(env.ACCESS_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: env.COOKIE_SECURE,
-    domain: env.COOKIE_DOMAIN,
-    maxAge: env.ACCESS_TOKEN_TTL * 1000,
-  });
-}
-
-function clearAuthCookies(res: Response) {
-  const options = {
-    domain: env.COOKIE_DOMAIN,
+function authCookieOptions(maxAge?: number) {
+  return {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: env.COOKIE_SECURE,
+    path: "/",
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+    ...(maxAge !== undefined ? { maxAge } : {}),
   };
+}
+
+function setRefreshCookie(res: Response, token: string) {
+  res.cookie(env.REFRESH_COOKIE_NAME, token, authCookieOptions(env.REFRESH_TOKEN_TTL * 1000));
+}
+
+function setAccessCookie(res: Response, token: string) {
+  res.cookie(env.ACCESS_COOKIE_NAME, token, authCookieOptions(env.ACCESS_TOKEN_TTL * 1000));
+}
+
+function clearAuthCookies(res: Response) {
+  const options = authCookieOptions();
   res.clearCookie(env.REFRESH_COOKIE_NAME, options);
   res.clearCookie(env.ACCESS_COOKIE_NAME, options);
 }
@@ -343,7 +337,7 @@ export async function forgotPassword(
       };
       if (!env.isProduction && resetToken) {
         response.debugResetToken = resetToken;
-        response.resetUrl = `${env.appBaseUrl}/auth/password/reset?token=${resetToken}`;
+        response.resetUrl = `${env.frontendUrl}/reset-password?token=${resetToken}`;
       }
       return response;
     };

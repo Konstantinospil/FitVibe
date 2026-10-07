@@ -195,20 +195,26 @@ describe("Button Accessibility", () => {
       });
     });
 
-    it("should reduce opacity when disabled for visual feedback", () => {
-      const { container } = render(<Button disabled>Disabled</Button>);
+    it("should expose disabled visual state through the design-system contract", () => {
+      render(<Button disabled>Disabled</Button>);
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-      expect(styles).toContain("opacity: var(--opacity-disabled)");
+      const button = screen.getByRole("button", { name: "Disabled" });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAttribute("data-state", "disabled");
     });
 
-    it("should change cursor to not-allowed when disabled", () => {
-      const { container } = render(<Button disabled>Disabled</Button>);
+    it("should keep disabled controls non-interactive", async () => {
+      const user = userEvent.setup();
+      const onClick = vi.fn();
+      render(
+        <Button disabled onClick={onClick}>
+          Disabled
+        </Button>,
+      );
 
-      const button = container.querySelector("button");
-      const styles = button?.getAttribute("style");
-      expect(styles).toContain("cursor: not-allowed");
+      await user.click(screen.getByRole("button", { name: "Disabled" }));
+      expect(onClick).not.toHaveBeenCalled();
     });
   });
 

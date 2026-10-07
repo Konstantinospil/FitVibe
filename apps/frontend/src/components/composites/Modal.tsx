@@ -14,12 +14,6 @@ export interface ModalProps {
   width?: "sm" | "md" | "lg";
 }
 
-const maxWidthBySize = {
-  sm: "var(--modal-width-sm)",
-  md: "var(--modal-width-md)",
-  lg: "var(--modal-width-lg)",
-} as const;
-
 export const Modal: React.FC<ModalProps> = ({
   open,
   title,
@@ -64,15 +58,6 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <div
       data-component="modal-layer"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        display: "grid",
-        placeItems: "center",
-        padding: "var(--space-md)",
-        background: "var(--dialog-backdrop)",
-      }}
       onClick={(event) => {
         if (closeOnBackdrop && event.target === event.currentTarget) {
           onClose();
@@ -87,56 +72,15 @@ export const Modal: React.FC<ModalProps> = ({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         data-component="modal"
-        style={{
-          width: "min(100%, " + maxWidthBySize[width] + ")",
-          maxHeight: "calc(100vh - var(--space-2xl))",
-          display: "grid",
-          gridTemplateRows: "auto minmax(0, 1fr) auto",
-          overflow: "hidden",
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--dialog-shadow)",
-        }}
+        data-size={width}
       >
-        <header
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) auto",
-            gap: "var(--space-md)",
-            alignItems: "start",
-            padding: "var(--space-md)",
-            borderBottom: "1px solid var(--color-border)",
-          }}
-        >
-          <div style={{ display: "grid", gap: "var(--space-xs)" }}>
-            <h2
-              id={titleId}
-              style={{
-                margin: 0,
-                color: "var(--color-text-primary)",
-                fontFamily: "var(--font-family-heading)",
-                fontWeight: "var(--font-weight-semibold)",
-                fontSize: "var(--type-card-title-size)",
-                lineHeight: "var(--type-card-title-line-height)",
-                letterSpacing: "var(--type-card-title-letter-spacing)",
-              }}
-            >
+        <header data-slot="modal-header">
+          <div data-slot="modal-copy">
+            <h2 id={titleId} data-slot="modal-title">
               {title}
             </h2>
             {description ? (
-              <p
-                id={descriptionId}
-                style={{
-                  margin: 0,
-                  color: "var(--color-text-secondary)",
-                  fontFamily: "var(--font-family-body)",
-                  fontWeight: "var(--font-weight-regular)",
-                  fontSize: "var(--type-supporting-size)",
-                  lineHeight: "var(--type-supporting-line-height)",
-                  letterSpacing: "var(--type-supporting-letter-spacing)",
-                }}
-              >
+              <p id={descriptionId} data-slot="modal-description">
                 {description}
               </p>
             ) : null}
@@ -148,31 +92,10 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={onClose}
           />
         </header>
-
-        <div
-          className="fitvibe-scrollbar"
-          style={{
-            minHeight: 0,
-            overflow: "auto",
-            padding: "var(--space-md)",
-          }}
-        >
+        <div className="fitvibe-scrollbar" data-slot="modal-body">
           {children}
         </div>
-
-        {footer ? (
-          <footer
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "var(--space-sm)",
-              padding: "var(--space-md)",
-              borderTop: "1px solid var(--color-border)",
-            }}
-          >
-            {footer}
-          </footer>
-        ) : null}
+        {footer ? <footer data-slot="modal-footer">{footer}</footer> : null}
       </div>
     </div>
   );

@@ -23,62 +23,28 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   variant = "warning",
   onConfirm,
   onCancel,
-}) => {
-  const toneColor =
-    variant === "danger"
-      ? "var(--color-danger-text)"
-      : variant === "warning"
-        ? "var(--color-warning-text)"
-        : "var(--color-info-text)";
-
-  return (
-    <Modal
-      open={isOpen}
-      title={title}
-      onClose={onCancel}
-      width="sm"
-      footer={
-        <>
-          <Button variant="secondary" onClick={onCancel}>
-            {cancelLabel}
-          </Button>
-          <Button variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
-            {confirmLabel}
-          </Button>
-        </>
-      }
-    >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "auto minmax(0, 1fr)",
-          gap: "var(--space-md)",
-          alignItems: "start",
-        }}
-      >
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-flex",
-            color: toneColor,
-          }}
-        >
-          <AlertTriangle />
-        </span>
-        <p
-          style={{
-            margin: 0,
-            color: "var(--color-text-secondary)",
-            fontFamily: "var(--font-family-body)",
-            fontWeight: "var(--font-weight-regular)",
-            fontSize: "var(--type-body-size)",
-            lineHeight: "var(--type-body-line-height)",
-            letterSpacing: "var(--type-body-letter-spacing)",
-          }}
-        >
-          {message}
-        </p>
-      </div>
-    </Modal>
-  );
-};
+}) => (
+  <Modal
+    open={isOpen}
+    title={title}
+    onClose={onCancel}
+    width="sm"
+    footer={
+      <>
+        <Button variant="secondary" onClick={onCancel}>
+          {cancelLabel}
+        </Button>
+        <Button variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
+          {confirmLabel}
+        </Button>
+      </>
+    }
+  >
+    <div data-component="confirm-dialog" data-tone={variant}>
+      <span aria-hidden="true" data-slot="confirm-dialog-icon">
+        <AlertTriangle />
+      </span>
+      <p data-slot="confirm-dialog-message">{message}</p>
+    </div>
+  </Modal>
+);

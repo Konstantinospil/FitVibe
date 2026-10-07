@@ -36,7 +36,6 @@ describe("Checkbox", () => {
 
     expect(checkbox).toBeDisabled();
     expect(root).toHaveAttribute("data-state", "disabled");
-    expect(root).toHaveStyle({ opacity: "var(--opacity-disabled)" });
   });
 
   it("supports validation error semantics", () => {
@@ -47,6 +46,17 @@ describe("Checkbox", () => {
     expect(root).toHaveAttribute("data-state", "error");
     expect(checkbox).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("alert")).toHaveTextContent("Required");
+  });
+
+  it("toggles when the visible checkbox box is clicked", () => {
+    render(<Checkbox label="Accept" />);
+    const checkbox = screen.getByRole("checkbox", { name: "Accept" });
+    const root = checkbox.closest("[data-component='checkbox']");
+    const box = root?.querySelector("[data-slot='checkbox-box']");
+
+    expect(box).toBeInTheDocument();
+    fireEvent.click(box!);
+    expect(checkbox).toBeChecked();
   });
 
   it("supports uncontrolled interaction", () => {

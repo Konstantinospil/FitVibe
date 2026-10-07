@@ -2,7 +2,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 import axios from "axios";
 import { useAuthStore } from "../store/auth.store";
 // Use relative URLs in development (Vite proxy handles /api -> localhost:4000)
-// Use full URL in production or when VITE_API_URL is explicitly set
+// Use same-origin relative URLs in the production browser; SSR may use an internal backend URL
 // SSR-safe: Check if we're on the server (Node.js) - use process.env, otherwise use import.meta.env
 const getApiUrl = () => {
   // During server-side rendering, backend is reachable through
@@ -21,8 +21,9 @@ const getApiUrl = () => {
     return "";
   }
 
-  // Production browser: backend runs on the same Pi on port 4000.
-  return `${window.location.protocol}//${window.location.hostname}:4000`;
+  // Production browser traffic must stay on the application origin.
+  // The production ingress proxies /api/* to the Docker-private backend.
+  return "";
 };
 
 const API_URL = getApiUrl();
@@ -35,7 +36,6 @@ const API_URL = getApiUrl();
  *
  * The backend sets HttpOnly cookies (accessToken, refreshToken) on:
  * - POST /api/v1/auth/login
- * - POST /api/v1/auth/register
  * - POST /api/v1/auth/refresh
  *
  * Axios sends cookies automatically with withCredentials: true.
