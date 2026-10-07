@@ -2036,11 +2036,55 @@ jobs:
   e2e:
     name: E2E Playwright
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && github.base_ref == 'main')
     timeout-minutes: 30
     needs: integration
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: fitvibe_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/fitvibe_e2e
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: fitvibe_e2e
+      NODE_ENV: development
+      PORT: "4000"
+      FRONTEND_URL: http://127.0.0.1:4180
+      APP_BASE_URL: http://127.0.0.1:4180
+      ALLOWED_ORIGINS: http://127.0.0.1:4180
+      CSRF_ALLOWED_ORIGINS: http://127.0.0.1:4180
+      CSRF_ENABLED: "true"
+      COOKIE_SECURE: "false"
+      TRUST_PROXY: "true"
+      TRUSTED_PROXY_IPS: "127.0.0.1,::1,::ffff:127.0.0.1"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      CLAMAV_ENABLED: "false"
+      EMAIL_ENABLED: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -2053,7 +2097,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install native canvas prerequisites
+      - name: Install native E2E prerequisites
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
@@ -2063,7 +2107,8 @@ jobs:
             libjpeg-dev \
             libgif-dev \
             librsvg2-dev \
-            postgresql-client
+            postgresql-client \
+            nginx
 
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile --no-offline
@@ -2072,12 +2117,55 @@ jobs:
         timeout-minutes: 10
         run: pnpm exec playwright install --with-deps
 
-      - name: Build frontend
+      - name: Migrate and seed E2E database
         timeout-minutes: 10
-        run: pnpm --filter @fitvibe/frontend exec pnpm run build
+        run: |
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
+
+      - name: Build backend and frontend
+        timeout-minutes: 10
+        run: |
+          pnpm --filter @fitvibe/backend run build
+          pnpm --filter @fitvibe/frontend run build
+
+      - name: Start real backend
+        timeout-minutes: 5
+        run: |
+          pnpm --filter @fitvibe/backend start > /tmp/fitvibe-e2e-backend.log 2>&1 &
+          echo $! > /tmp/fitvibe-e2e-backend.pid
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
+              echo "Real FitVibe backend is ready for browser E2E"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/fitvibe-e2e-backend.log || true
+          exit 1
+
+      - name: Start production-contract ingress
+        timeout-minutes: 5
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("infra/docker/prod/nginx.conf").read_text()
+          source = source.replace("events {}", "pid /tmp/fitvibe-e2e-nginx.pid;\\nerror_log /tmp/fitvibe-e2e-nginx-error.log;\\n\\nevents {}")
+          source = source.replace("server backend:4000;", "server 127.0.0.1:4000;")
+          source = source.replace("server frontend:4173;", "server 127.0.0.1:4173;")
+          source = source.replace("listen 80;", "listen 4180;")
+          Path("/tmp/fitvibe-e2e-nginx.conf").write_text(source)
+          PY
+          sudo nginx -t -c /tmp/fitvibe-e2e-nginx.conf
+          sudo nginx -c /tmp/fitvibe-e2e-nginx.conf
+          curl -fsS http://127.0.0.1:4180/__ingress_health
+          curl -fsS http://127.0.0.1:4180/api/v1/csrf-token | grep -q 'csrfToken'
 
       - name: Run authoritative Playwright e2e suite
         timeout-minutes: 20
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4180
+          PLAYWRIGHT_FRONTEND_SERVER_URL: http://127.0.0.1:4173
         run: |
           specs="$(find tests/frontend/e2e -maxdepth 1 -name '*.spec.cjs' ! -name 'accessibility.spec.cjs' -print | sort)"
           if [ -z "$specs" ]; then
@@ -2086,7 +2174,18 @@ jobs:
           fi
           echo "$specs"
           # Accessibility has its own hard gate; every other E2E spec is discovered automatically.
-          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --reporter=line
+          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --workers=1
+
+      - name: Stop E2E runtime
+        if: always()
+        timeout-minutes: 2
+        run: |
+          if [ -f /tmp/fitvibe-e2e-backend.pid ]; then
+            kill "$(cat /tmp/fitvibe-e2e-backend.pid)" 2>/dev/null || true
+          fi
+          if [ -f /tmp/fitvibe-e2e-nginx.conf ]; then
+            sudo nginx -c /tmp/fitvibe-e2e-nginx.conf -s stop 2>/dev/null || true
+          fi
 
       - name: Upload Playwright artifacts
         if: always()
