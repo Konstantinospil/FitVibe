@@ -1943,7 +1943,7 @@ jobs:
         run: |
           pnpm --filter @fitvibe/backend start > /tmp/fitvibe-a11y-backend.log 2>&1 &
           echo $! > /tmp/fitvibe-a11y-backend.pid
-          for i in {1..40}; do
+          for i in $(seq 1 40); do
             if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
               echo "Real FitVibe backend is ready for accessibility testing"
               exit 0
