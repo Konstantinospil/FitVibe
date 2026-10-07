@@ -1863,6 +1863,46 @@ jobs:
       - quality
     permissions:
       contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: fitvibe_accessibility
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql://postgres@postgres:5432/fitvibe_accessibility
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: fitvibe_accessibility
+      NODE_ENV: development
+      PORT: "4000"
+      FRONTEND_URL: http://127.0.0.1:4173
+      APP_BASE_URL: http://127.0.0.1:4173
+      ALLOWED_ORIGINS: http://127.0.0.1:4173
+      CSRF_ALLOWED_ORIGINS: http://127.0.0.1:4173
+      CSRF_ENABLED: "true"
+      COOKIE_SECURE: "false"
+      TRUST_PROXY: "true"
+      TRUSTED_PROXY_IPS: "127.0.0.1,::1,::ffff:127.0.0.1"
+      REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CLAMAV_ENABLED: "false"
+      EMAIL_ENABLED: "false"
     # Pin the browser runtime and OS dependencies to the same Playwright version
     # as @playwright/test. Do not provision browsers/apt packages at runtime.
     container:
@@ -1886,9 +1926,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Build frontend bundle
+      - name: Migrate and seed accessibility database
         timeout-minutes: 10
-        run: pnpm --filter @fitvibe/frontend run build
+        run: |
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
+          pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
+
+      - name: Build backend and frontend
+        timeout-minutes: 10
+        run: |
+          pnpm --filter @fitvibe/backend run build
+          pnpm --filter @fitvibe/frontend run build
+
+      - name: Start real backend
+        timeout-minutes: 5
+        run: |
+          pnpm --filter @fitvibe/backend start > /tmp/fitvibe-a11y-backend.log 2>&1 &
+          echo $! > /tmp/fitvibe-a11y-backend.pid
+          for i in {1..40}; do
+            if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
+              echo "Real FitVibe backend is ready for accessibility testing"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/fitvibe-a11y-backend.log || true
+          exit 1
 
       - name: Run axe accessibility suite
         timeout-minutes: 10
@@ -1897,6 +1960,14 @@ jobs:
           tests/frontend/e2e/accessibility.spec.cjs
           --config tests/frontend/e2e/playwright.config.cjs
           --workers=1
+
+      - name: Stop accessibility backend
+        if: always()
+        timeout-minutes: 1
+        run: |
+          if [ -f /tmp/fitvibe-a11y-backend.pid ]; then
+            kill "$(cat /tmp/fitvibe-a11y-backend.pid)" 2>/dev/null || true
+          fi
 
       - name: Upload accessibility artifacts
         if: always()
