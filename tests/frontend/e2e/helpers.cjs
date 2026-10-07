@@ -135,9 +135,9 @@ async function acceptRegisterLegal(page) {
   const checkboxes = page.getByRole("checkbox");
 
   for (let index = 0; index < 2; index += 1) {
-    await controls.nth(index).locator("[data-slot='checkbox-box']").click();
+    await controls.nth(index).locator("label").click();
     if (!(await checkboxes.nth(index).isChecked())) {
-      throw new Error(`Registration legal checkbox ${index + 1} did not toggle through its visible control.`);
+      throw new Error(`Registration legal checkbox ${index + 1} did not toggle through its visible label hit target.`);
     }
   }
 }
