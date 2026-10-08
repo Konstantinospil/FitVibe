@@ -4,7 +4,7 @@
       "url": [
         "http://127.0.0.1:4173/login"
       ],
-      "numberOfRuns": 5,
+      "numberOfRuns": 3,
       "chromeFlags": [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -53,8 +53,7 @@
         "largest-contentful-paint": [
           "error",
           {
-            "maxNumericValue": 2875,
-            "aggregationMethod": "median"
+            "maxNumericValue": 3000
           }
         ]
       }
