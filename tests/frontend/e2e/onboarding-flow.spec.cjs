@@ -1,4 +1,5 @@
 const { test, expect } = require("@playwright/test");
+const { observeMutation } = require("./request-observer.cjs");
 const {
   preparePage,
   waitForApp,
@@ -30,6 +31,7 @@ test("user can register, verify, login, and reach the current Calendar surface",
   await confirmPasswordInput(page).fill(registerPayload.password);
   await acceptRegisterLegal(page);
 
+  const registrationMutation = observeMutation(page, "POST", "/api/v1/auth/register");
   const registrationResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/auth/register") &&
@@ -43,6 +45,8 @@ test("user can register, verify, login, and reach the current Calendar surface",
   expect(registrationBody.debugVerificationToken).toEqual(expect.any(String));
 
   await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible();
+  registrationMutation.assertExactlyOnce(202);
+  registrationMutation.stop();
 
   await page.goto(`/verify?token=${encodeURIComponent(registrationBody.debugVerificationToken)}`);
   await waitForApp(page);
@@ -52,6 +56,7 @@ test("user can register, verify, login, and reach the current Calendar surface",
 
   await emailInput(page).fill(email);
   await passwordInput(page).fill(registerPayload.password);
+  const loginMutation = observeMutation(page, "POST", "/api/v1/auth/login");
   const loginResponsePromise = page.waitForResponse(
     (response) =>
       response.url().includes("/api/v1/auth/login") &&
@@ -62,6 +67,13 @@ test("user can register, verify, login, and reach the current Calendar surface",
 
   await page.waitForURL((url) => url.pathname === "/");
   await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
+  loginMutation.assertExactlyOnce(200);
+  loginMutation.stop();
+
+  const origin = new URL(page.url()).origin;
+  const profileResponse = await page.context().request.get(`${origin}/api/v1/users/me`);
+  expect(profileResponse.status()).toBe(200);
+  expect(await profileResponse.json()).toMatchObject({ email, username });
 
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await page.waitForURL((url) => url.pathname === "/calendar");
