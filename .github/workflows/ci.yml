@@ -2214,11 +2214,14 @@ jobs:
           pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
           pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
 
-      - name: Build backend and production SSR frontend
+      - name: Build backend
         timeout-minutes: 10
-        run: |
-          pnpm --filter @fitvibe/backend run build
-          pnpm --filter @fitvibe/frontend run build:ssr
+        run: pnpm --filter @fitvibe/backend run build
+
+      # This is the exact Dockerfile used by pre-main smoke and deployment.
+      - name: Build production frontend image for browser E2E
+        timeout-minutes: 15
+        run: docker build -f infra/docker/prod/Dockerfile.frontend -t fitvibe-frontend:e2e .
 
       - name: Start real backend
         timeout-minutes: 5
@@ -2233,6 +2236,28 @@ jobs:
             sleep 2
           done
           cat /tmp/fitvibe-e2e-backend.log || true
+          exit 1
+
+      - name: Start isolated production frontend container
+        timeout-minutes: 3
+        run: |
+          docker run -d --name fitvibe-e2e-frontend \
+            --publish 127.0.0.1:4173:4173 \
+            --env NODE_ENV=production \
+            --env PORT=4173 \
+            fitvibe-frontend:e2e
+          for i in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4173/health >/dev/null; then
+              echo "Production frontend container is ready"
+              exit 0
+            fi
+            if ! docker inspect -f '{{.State.Running}}' fitvibe-e2e-frontend | grep -qx true; then
+              docker logs fitvibe-e2e-frontend
+              exit 1
+            fi
+            sleep 2
+          done
+          docker logs fitvibe-e2e-frontend
           exit 1
 
       - name: Start production-contract ingress
@@ -2252,15 +2277,35 @@ jobs:
           curl -fsS http://127.0.0.1:4180/__ingress_health
           curl -fsS http://127.0.0.1:4180/api/v1/csrf-token | grep -q 'csrfToken'
 
+      - name: Verify production frontend actually renders behind ingress
+        timeout-minutes: 2
+        run: |
+          node - <<'NODE'
+          (async () => {
+            for (const route of ["/login", "/register", "/"]) {
+              const response = await fetch("http://127.0.0.1:4180" + route);
+              const html = await response.text();
+              if (!response.ok || !html.includes("<html") || !html.includes('id="root"')) {
+                throw new Error("Production SSR preflight failed for " + route +
+                  " (HTTP " + response.status + "); response: " + html.slice(0, 300));
+              }
+              console.log("Production SSR preflight OK:", route, response.status);
+            }
+          })().catch((error) => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          NODE
+        # Keep the renderer's error log visible if the preflight fails.
+
       - name: Verify mutation observer regression tests
         run: node --test tests/frontend/e2e/request-observer.test.cjs
 
       - name: Run authoritative Playwright e2e suite
         timeout-minutes: 20
         env:
-          PLAYWRIGHT_USE_SSR: "true"
+          PLAYWRIGHT_EXTERNAL_FRONTEND: "true"
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4180
-          PLAYWRIGHT_FRONTEND_SERVER_URL: http://127.0.0.1:4173
         run: |
           specs="$(find tests/frontend/e2e -maxdepth 1 -name '*.spec.cjs' ! -name 'accessibility.spec.cjs' -print | sort)"
           if [ -z "$specs" ]; then
@@ -2275,6 +2320,8 @@ jobs:
         if: always()
         timeout-minutes: 2
         run: |
+          docker logs fitvibe-e2e-frontend 2>/dev/null || true
+          docker rm -f fitvibe-e2e-frontend 2>/dev/null || true
           if [ -f /tmp/fitvibe-e2e-backend.pid ]; then
             kill "$(cat /tmp/fitvibe-e2e-backend.pid)" 2>/dev/null || true
           fi
