@@ -1935,11 +1935,11 @@ jobs:
           pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
           pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
 
-      - name: Build backend and frontend
+      - name: Build backend and production SSR frontend
         timeout-minutes: 10
         run: |
           pnpm --filter @fitvibe/backend run build
-          pnpm --filter @fitvibe/frontend run build
+          pnpm --filter @fitvibe/frontend run build:ssr
 
       - name: Start real backend
         timeout-minutes: 5
@@ -2241,9 +2241,13 @@ jobs:
           curl -fsS http://127.0.0.1:4180/__ingress_health
           curl -fsS http://127.0.0.1:4180/api/v1/csrf-token | grep -q 'csrfToken'
 
+      - name: Verify mutation observer regression tests
+        run: node --test tests/frontend/e2e/request-observer.test.cjs
+
       - name: Run authoritative Playwright e2e suite
         timeout-minutes: 20
         env:
+          PLAYWRIGHT_USE_SSR: "true"
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4180
           PLAYWRIGHT_FRONTEND_SERVER_URL: http://127.0.0.1:4173
         run: |
