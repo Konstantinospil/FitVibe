@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./fixtures.cjs");
 const { observeMutation } = require("./request-observer.cjs");
 const {
   TEST_USER,
