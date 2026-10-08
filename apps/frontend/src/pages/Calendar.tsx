@@ -86,7 +86,9 @@ const CalendarPage: React.FC = () => {
           limit: remaining,
           offset: data.length,
         });
-        if (next.data.length === 0) break;
+        if (next.data.length === 0) {
+          break;
+        }
         data.push(...next.data);
       }
       return { ...first, data, limit: calendarLimit };
