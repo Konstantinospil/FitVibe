@@ -1,5 +1,4 @@
 import React, { createContext, useState, useContext, useCallback } from "react";
-// Tree-shakeable imports from lucide-react - only import used icons
 import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
 
 type ToastType = "success" | "error" | "warning" | "info";
@@ -40,9 +39,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     (type: ToastType, message: string, duration = 5000) => {
       const id = `${Date.now()}-${Math.random()}`;
       const toast: Toast = { id, type, message, duration };
-
       setToasts((prev) => [...prev, toast]);
-
       if (duration > 0) {
         setTimeout(() => removeToast(id), duration);
       }
@@ -66,6 +63,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
+const iconByType = {
+  success: CheckCircle,
+  error: XCircle,
+  warning: AlertCircle,
+  info: Info,
+} satisfies Record<ToastType, React.ComponentType<{ "aria-hidden"?: boolean }>>;
+
 const ToastContainer: React.FC<{
   toasts: Toast[];
   onRemove: (id: string) => void;
@@ -75,18 +79,7 @@ const ToastContainer: React.FC<{
   }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: "var(--space-md)",
-        right: "var(--space-md)",
-        zIndex: 9999,
-        display: "flex",
-        flexDirection: "column",
-        gap: "var(--space-sm)",
-        maxWidth: "420px",
-      }}
-    >
+    <div data-component="toast-container" role="region" aria-label="Notifications">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -98,94 +91,20 @@ const ToastItem: React.FC<{
   toast: Toast;
   onRemove: (id: string) => void;
 }> = ({ toast, onRemove }) => {
-  const config = {
-    success: {
-      icon: CheckCircle,
-      bg: "var(--toast-success-bg)",
-      border: "var(--toast-success-border)",
-      color: "var(--toast-success-icon)",
-    },
-    error: {
-      icon: XCircle,
-      bg: "var(--toast-error-bg)",
-      border: "var(--toast-error-border)",
-      color: "var(--toast-error-icon)",
-    },
-    warning: {
-      icon: AlertCircle,
-      bg: "var(--toast-warning-bg)",
-      border: "var(--toast-warning-border)",
-      color: "var(--toast-warning-icon)",
-    },
-    info: {
-      icon: Info,
-      bg: "var(--toast-info-bg)",
-      border: "var(--toast-info-border)",
-      color: "var(--toast-info-icon)",
-    },
-  }[toast.type];
-
-  const Icon = config.icon;
+  const Icon = iconByType[toast.type];
 
   return (
-    <div
-      style={{
-        background: config.bg,
-        border: `1px solid ${config.border}`,
-        borderRadius: "var(--radius-md)",
-        padding: "var(--space-md)",
-        display: "flex",
-        alignItems: "flex-start",
-        gap: "var(--space-sm)",
-        boxShadow: "var(--toast-shadow)",
-        animation: "slideIn 0.2s ease-out",
-      }}
-    >
-      <Icon size={20} color={config.color} style={{ flexShrink: 0, marginTop: "0.1rem" }} />
-      <p
-        style={{
-          flex: 1,
-          margin: 0,
-          fontSize: "var(--font-size-toast)",
-          color: "var(--toast-text)",
-        }}
-      >
-        {toast.message}
-      </p>
+    <div data-component="toast" data-tone={toast.type}>
+      <Icon aria-hidden={true} />
+      <p data-slot="toast-message">{toast.message}</p>
       <button
+        type="button"
+        data-slot="toast-close"
         onClick={() => onRemove(toast.id)}
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "0.25rem",
-          color: "var(--color-text-secondary)",
-          display: "flex",
-          alignItems: "center",
-          transition: "color 150ms ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--color-text-primary)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--color-text-secondary)";
-        }}
         aria-label="Close notification"
       >
-        <X size={16} />
+        <X aria-hidden={true} />
       </button>
-      <style>
-        {`
-          @keyframes slideIn {
-            from {
-              transform: translateX(100%);
-            }
-            to {
-              transform: translateX(0);
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };
