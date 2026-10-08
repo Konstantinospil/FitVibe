@@ -6,7 +6,6 @@ export interface PageShellProps {
   children: React.ReactNode;
   mainId?: string;
   skipLinkLabel?: string;
-  mainStyle?: React.CSSProperties;
 }
 
 export const PageShell: React.FC<PageShellProps> = ({
@@ -15,32 +14,15 @@ export const PageShell: React.FC<PageShellProps> = ({
   children,
   mainId,
   skipLinkLabel,
-  mainStyle,
 }) => (
-  <div
-    data-component="page-shell"
-    style={{
-      position: "relative",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-    }}
-  >
+  <div data-component="page-shell">
     {mainId && skipLinkLabel ? (
       <a href={`#${mainId}`} className="skip-link">
         {skipLinkLabel}
       </a>
     ) : null}
     {header}
-    <main
-      id={mainId}
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        ...mainStyle,
-      }}
-    >
+    <main id={mainId} data-slot="page-shell-main">
       {children}
     </main>
     {footer}

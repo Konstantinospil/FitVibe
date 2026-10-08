@@ -426,6 +426,9 @@
   --toast-text: var(--color-text-primary);
   --toast-shadow: var(--shadow-e2);
   --font-size-toast: var(--type-supporting-size);
+  --toast-max-width: 26.25rem;
+  --toast-layer: 9999;
+  --toast-motion-duration: 200ms;
 
   /* Chart semantics */
   --chart-tooltip-bg: var(--color-surface);
