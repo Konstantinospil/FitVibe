@@ -73,7 +73,7 @@ test("user can register, verify, login, and reach the current Calendar surface",
   const origin = new URL(page.url()).origin;
   const profileResponse = await page.context().request.get(`${origin}/api/v1/users/me`);
   expect(profileResponse.status()).toBe(200);
-  expect(await profileResponse.json()).toMatchObject({ email, username });
+  expect(await profileResponse.json()).toMatchObject({ primaryEmail: email, username });
 
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await page.waitForURL((url) => url.pathname === "/calendar");
