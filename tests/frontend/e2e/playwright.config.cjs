@@ -7,6 +7,8 @@ const frontendServerURL =
   process.env.PLAYWRIGHT_FRONTEND_SERVER_URL || DEFAULT_FRONTEND_SERVER_URL;
 const frontendDir = path.resolve(__dirname, "../../../apps/frontend");
 const productionSsr = process.env.PLAYWRIGHT_USE_SSR === "true";
+// CI supplies the production Docker container; never start a second workspace frontend.
+const externalFrontend = process.env.PLAYWRIGHT_EXTERNAL_FRONTEND === "true";
 
 module.exports = defineConfig({
   testDir: __dirname,
@@ -23,16 +25,21 @@ module.exports = defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
-  webServer: {
-    command: productionSsr
-      ? "corepack pnpm run start:ssr"
-      : "corepack pnpm exec vite preview --host 127.0.0.1 --port 4173 --strictPort --outDir dist/client",
-    cwd: frontendDir,
-    url: productionSsr ? `${frontendServerURL}/health` : frontendServerURL,
-    env: productionSsr ? { NODE_ENV: "production", PORT: "4173" } : {},
-    timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
-  },
+  // When running against the deployed production image, infrastructure owns its lifecycle.
+  ...(externalFrontend
+    ? {}
+    : {
+        webServer: {
+          command: productionSsr
+            ? "corepack pnpm run start:ssr"
+            : "corepack pnpm exec vite preview --host 127.0.0.1 --port 4173 --strictPort --outDir dist/client",
+          cwd: frontendDir,
+          url: productionSsr ? `${frontendServerURL}/health` : frontendServerURL,
+          env: productionSsr ? { NODE_ENV: "production", PORT: "4173" } : {},
+          timeout: 120_000,
+          reuseExistingServer: !process.env.CI,
+        },
+      }),
   reporter: [
     ["line"],
     ["html", { outputFolder: "playwright-report", open: "never" }],
