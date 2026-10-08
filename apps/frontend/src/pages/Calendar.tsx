@@ -68,12 +68,29 @@ const CalendarPage: React.FC = () => {
 
   const sessions = useQuery({
     queryKey: ["calendar", dateKey(range.gridStart), dateKey(range.gridEnd)],
-    queryFn: () =>
-      listSessions({
+    queryFn: async () => {
+      const filters = {
         planned_from: range.gridStart.toISOString(),
         planned_to: range.gridEnd.toISOString(),
-        limit: TRAINING_DATA_CONFIG.calendarSessionLimit,
-      }),
+      };
+      const pageSize = TRAINING_DATA_CONFIG.calendarApiPageLimit;
+      const calendarLimit = TRAINING_DATA_CONFIG.calendarSessionLimit;
+      const first = await listSessions({ ...filters, limit: pageSize, offset: 0 });
+      const data = [...first.data];
+      // Preserve the calendar's 200-session coverage without exceeding the
+      // sessions endpoint's per-request pagination limit.
+      while (data.length < first.total && data.length < calendarLimit) {
+        const remaining = Math.min(pageSize, calendarLimit - data.length);
+        const next = await listSessions({
+          ...filters,
+          limit: remaining,
+          offset: data.length,
+        });
+        if (next.data.length === 0) break;
+        data.push(...next.data);
+      }
+      return { ...first, data, limit: calendarLimit };
+    },
     staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
   });
 
