@@ -87,7 +87,7 @@ describe("bootstrap entrypoint", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("initializes the SPA and removes the shell when a session is active", async () => {
+  it("initializes the SPA without removing the shell before React takes ownership", async () => {
     setSessionFlag("1");
     setWindowPath("/dashboard");
     const shell = document.createElement("div");
@@ -96,11 +96,11 @@ describe("bootstrap entrypoint", () => {
 
     await importBootstrap();
 
-    // Wait for dynamic import to complete (void import is fire-and-forget)
+    // Wait for the fire-and-forget main import to resolve. main.tsx is mocked in
+    // this test, so the shell should remain until the real React mount replaces it.
     await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // Verify the important behaviors: shell removed and no redirect
-    expect(document.getElementById("login-shell")).toBeNull();
+    expect(document.getElementById("login-shell")).toBe(shell);
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
@@ -138,52 +138,6 @@ describe("bootstrap entrypoint", () => {
 
       expect(mockReplace).not.toHaveBeenCalled();
     }
-  });
-
-  it("uses requestIdleCallback when available", async () => {
-    setSessionFlag("1");
-    setWindowPath("/dashboard");
-
-    const mockIdleCallback = vi.fn((callback: () => void) => {
-      setTimeout(callback, 0);
-      return 1;
-    });
-    const originalIdleCallback = window.requestIdleCallback;
-    (window as { requestIdleCallback?: typeof mockIdleCallback }).requestIdleCallback =
-      mockIdleCallback;
-
-    await importBootstrap();
-
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    expect(mockIdleCallback).toHaveBeenCalled();
-    expect(mockIdleCallback).toHaveBeenCalledWith(expect.any(Function), { timeout: 3000 });
-
-    // Restore
-    (window as { requestIdleCallback?: typeof originalIdleCallback }).requestIdleCallback =
-      originalIdleCallback;
-  });
-
-  it("falls back to setTimeout when requestIdleCallback is not available", async () => {
-    setSessionFlag("1");
-    setWindowPath("/dashboard");
-
-    const originalIdleCallback = window.requestIdleCallback;
-    delete (window as { requestIdleCallback?: unknown }).requestIdleCallback;
-
-    const mockSetTimeout = vi.spyOn(global, "setTimeout");
-
-    await importBootstrap();
-
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    // Should have called setTimeout as fallback
-    expect(mockSetTimeout).toHaveBeenCalled();
-
-    // Restore
-    (window as { requestIdleCallback?: typeof originalIdleCallback }).requestIdleCallback =
-      originalIdleCallback;
-    mockSetTimeout.mockRestore();
   });
 
   it("handles missing sessionStorage gracefully", async () => {

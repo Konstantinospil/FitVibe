@@ -204,6 +204,28 @@ app.get("/robots.txt", (_req: Request, res: Response) => {
   });
 });
 
+// Serve versionless public-root assets before the SSR catch-all.
+// Vite copies public/* into dist/client at build time. Without this handler,
+// requests such as /theme-bootstrap.js and /fitvibe-mark-*.svg fall through
+// to SSR and incorrectly return the full HTML document.
+const publicRoot = isProduction ? resolve(root, "dist/client") : resolve(root, "public");
+app.use(
+  express.static(publicRoot, {
+    maxAge: isProduction ? 300000 : 0,
+    etag: true,
+    lastModified: true,
+    immutable: false,
+    index: false,
+    fallthrough: true,
+    setHeaders: (res: Response) => {
+      if (isProduction) {
+        // Root public assets are not content-hashed, so keep their cache bounded.
+        res.setHeader("Cache-Control", "public, max-age=300");
+      }
+    },
+  }),
+);
+
 // SSR route handler with caching and metrics
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 const ssrHandler: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {

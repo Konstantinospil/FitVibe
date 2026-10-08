@@ -24,13 +24,6 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
 
   const currentPath = normalizePath(window.location.pathname.toLowerCase());
 
-  const removeLoginShell = () => {
-    const shell = document.getElementById("login-shell");
-    if (shell) {
-      shell.remove();
-    }
-  };
-
   const hasSessionFlag = (() => {
     if (typeof window === "undefined" || !window.sessionStorage) {
       return false;
@@ -38,40 +31,17 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
     return window.sessionStorage.getItem(AUTH_STORAGE_KEY) === "1";
   })();
 
-  // Always load React app for all routes - let React Router handle routing
-  // The static login shell in HTML is just a fallback for no-JS scenarios
+  // Always load React app for all routes - let React Router handle routing.
+  // Keep the static login shell in place until React actually renders into #root.
+  // Removing it here races minimalTranslationsReady in main.tsx and can create
+  // a blank interval that pushes Largest Contentful Paint later.
   if (!hasSessionFlag && !PUBLIC_ROUTES.has(currentPath)) {
     // Redirect to login if not authenticated and not on a public route
     window.location.replace("/login");
   } else {
-    // Defer font loading to after LCP - use requestIdleCallback for non-blocking load
-    if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(
-        () => {
-          void import("./utils/fontLoader").then(({ loadPublicFonts }) => {
-            loadPublicFonts();
-          });
-        },
-        { timeout: 3000 },
-      );
-    } else {
-      // Fallback: delay font loading to ensure LCP has occurred
-      setTimeout(() => {
-        void import("./utils/fontLoader").then(({ loadPublicFonts }) => {
-          loadPublicFonts();
-        });
-      }, 2000);
-    }
-    // Load main app - this is the critical path
-    // Remove static login shell AFTER React has mounted to ensure LCP uses static HTML
-    void import("./main").then(() => {
-      // Use requestAnimationFrame to ensure React has rendered before removing shell
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          removeLoginShell();
-        });
-      });
-    });
+    // Font loading is scheduled by main.tsx. Keeping it out of bootstrap avoids
+    // duplicate idle callbacks/imports on the initial critical rendering path.
+    void import("./main");
   }
 }
 
