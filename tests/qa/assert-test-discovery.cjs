@@ -24,6 +24,11 @@ const owners = [
     matches: (path) => /^tests\/frontend\/e2e\/[^/]+\.spec\.cjs$/.test(path),
   },
   {
+    // Executed explicitly by the E2E job with node --test before Playwright.
+    name: "frontend-e2e-observer-contract",
+    matches: (path) => path === "tests/frontend/e2e/request-observer.test.cjs",
+  },
+  {
     name: "frontend-visual",
     matches: (path) => /^tests\/frontend\/visual\/.*\.spec\.ts$/.test(path),
   },

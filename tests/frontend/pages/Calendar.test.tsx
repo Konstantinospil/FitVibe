@@ -130,6 +130,40 @@ describe("Calendar", () => {
     expect(await screen.findAllByText("Today Plan")).not.toHaveLength(0);
   });
 
+  it("loads a full 200-session calendar with backend-safe pages", async () => {
+    const previousDays = Array.from({ length: 100 }, (_, i) => ({
+      id: `completed-${i}`,
+      owner_id: "user-1",
+      title: `Previous workout ${i}`,
+      planned_at: atLocalHour(addDays(today, -3), 12).toISOString(),
+      status: "completed" as const,
+      visibility: "private" as const,
+      exercises: [],
+    }));
+    mockedListSessions.mockReset();
+    mockedListSessions
+      .mockResolvedValueOnce({ data: previousDays, total: 101, limit: 100, offset: 0 })
+      .mockResolvedValueOnce({
+        data: [{
+          id: "more-session",
+          owner_id: "user-1",
+          title: "Second page workout",
+          planned_at: atLocalHour(today, 18).toISOString(),
+          status: "planned",
+          visibility: "private",
+          exercises: [],
+        }],
+        total: 101,
+        limit: 100,
+        offset: 100,
+      });
+    renderCalendar();
+    expect(await screen.findAllByText("Second page workout")).not.toHaveLength(0);
+    expect(mockedListSessions).toHaveBeenCalledTimes(2);
+    expect(mockedListSessions.mock.calls[0][0]).toMatchObject({ limit: 100, offset: 0 });
+    expect(mockedListSessions.mock.calls[1][0]).toMatchObject({ limit: 100, offset: 100 });
+  });
+
   it("selects a day and exposes its sessions", async () => {
     renderCalendar();
     expect(await screen.findAllByText("Today Plan")).not.toHaveLength(0);

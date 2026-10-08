@@ -1,4 +1,5 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./fixtures.cjs");
+const { observeMutation } = require("./request-observer.cjs");
 const {
   TEST_USER,
   preparePage,
@@ -24,11 +25,7 @@ test.describe("Authentication flows on active surfaces", () => {
       (request) =>
         request.url().includes("/api/v1/csrf-token") && request.method() === "GET",
     );
-    const loginRequests = trackRequests(
-      page,
-      (request) =>
-        request.url().includes("/api/v1/auth/login") && request.method() === "POST",
-    );
+    const loginMutation = observeMutation(page, "POST", "/api/v1/auth/login");
 
     const [loginResponse] = await Promise.all([
       page.waitForResponse(
@@ -43,9 +40,9 @@ test.describe("Authentication flows on active surfaces", () => {
     const loginBody = await loginResponse.json();
     expect(loginBody).toMatchObject({ requires2FA: false });
     expect(csrfRequests.requests).toHaveLength(1);
-    expect(loginRequests.requests).toHaveLength(1);
+    loginMutation.assertExactlyOnce(200);
     csrfRequests.stop();
-    loginRequests.stop();
+    loginMutation.stop();
 
     await page.waitForURL((url) => url.pathname === "/");
     await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
@@ -62,11 +59,7 @@ test.describe("Authentication flows on active surfaces", () => {
     await emailInput(page).fill("missing-e2e-user@fitvibe.test");
     await passwordInput(page).fill("wrongpassword");
 
-    const loginRequests = trackRequests(
-      page,
-      (request) =>
-        request.url().includes("/api/v1/auth/login") && request.method() === "POST",
-    );
+    const loginMutation = observeMutation(page, "POST", "/api/v1/auth/login");
 
     const [loginResponse] = await Promise.all([
       page.waitForResponse(
@@ -83,8 +76,8 @@ test.describe("Authentication flows on active surfaces", () => {
       requires2FA: true,
       pendingSessionId: expect.any(String),
     });
-    expect(loginRequests.requests).toHaveLength(1);
-    loginRequests.stop();
+    loginMutation.assertExactlyOnce(200);
+    loginMutation.stop();
 
     await expect(page).toHaveURL(/\/login\/verify-2fa/);
     await expect(page.getByText(/invalid email or password/i)).toHaveCount(0);
@@ -99,11 +92,7 @@ test.describe("Authentication flows on active surfaces", () => {
     await page.getByRole("button", { name: /sign in/i }).click();
     await page.waitForURL((url) => url.pathname === "/");
 
-    const logoutRequests = trackRequests(
-      page,
-      (request) =>
-        request.url().includes("/api/v1/auth/logout") && request.method() === "POST",
-    );
+    const logoutMutation = observeMutation(page, "POST", "/api/v1/auth/logout");
     const logoutResponsePromise = page.waitForResponse(
       (response) =>
         response.url().includes("/api/v1/auth/logout") &&
@@ -114,8 +103,8 @@ test.describe("Authentication flows on active surfaces", () => {
     const logoutResponse = await logoutResponsePromise;
 
     expect(logoutResponse.status()).toBe(204);
-    expect(logoutRequests.requests).toHaveLength(1);
-    logoutRequests.stop();
+    logoutMutation.assertExactlyOnce(204);
+    logoutMutation.stop();
     await expect(page).toHaveURL(/\/login$/);
 
     const meResponse = await page.context().request.get(

@@ -1,4 +1,4 @@
-const { test, expect } = require("@playwright/test");
+const { test, expect } = require("./fixtures.cjs");
 const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 test.describe("Active application surfaces", () => {
