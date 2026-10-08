@@ -3041,7 +3041,7 @@ jobs:
         timeout-minutes: 5
         run: |
           docker network create fitvibe-verification
-          docker network connect fitvibe-verification test-backend
+          docker network connect --alias backend fitvibe-verification test-backend
           docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
 
       - name: Verify backoffice production image
