@@ -1669,6 +1669,7 @@ jobs:
           docker network create pre-main-fitvibe
           docker network connect --alias backend pre-main-fitvibe pre-main-backend
           docker run -d             --name pre-main-backoffice             --network pre-main-fitvibe             -p 8081:8080             fitvibe-backoffice:pre-main
+          docker exec pre-main-backoffice nginx -T 2>&1 | grep -F 'location = /__backoffice_health'
 
       - name: Verify backoffice production startup
         timeout-minutes: 5
@@ -1685,6 +1686,8 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8081/login | grep -qi '<!doctype html\|<html'
           curl -fsS http://127.0.0.1:8081/health | grep -qi 'status\|ok'
+          # Verify the published-image contract: this endpoint must be served locally by Nginx.
+          docker exec pre-main-backoffice sh -c 'grep -F "return 200" /etc/nginx/conf.d/default.conf'
 
       - name: Cleanup production smoke containers
         if: always()
