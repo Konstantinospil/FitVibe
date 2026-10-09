@@ -10,7 +10,12 @@ import { asyncHandler } from "../../utils/async-handler.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
-import { listLogsHandler, recentActivityHandler, updateLogHandler, bulkUpdateLogsHandler } from "./logs.controller.js";
+import {
+  listLogsHandler,
+  recentActivityHandler,
+  updateLogHandler,
+  bulkUpdateLogsHandler,
+} from "./logs.controller.js";
 
 export const logsRouter = Router();
 
