@@ -63,6 +63,18 @@ for name, service in services.items():
         raise SystemExit(f"Service {name} must not depend on itself")
 
 backend_env = services["backend"].get("environment") or {}
+db_env = services["db"].get("environment") or {}
+expected_db_env = {
+    "PGHOST": "db",
+    "PGPORT": "5432",
+    "PGDATABASE": db_env.get("POSTGRES_DB"),
+    "PGUSER": db_env.get("POSTGRES_USER"),
+    "PGPASSWORD": db_env.get("POSTGRES_PASSWORD"),
+}
+for key, expected in expected_db_env.items():
+    if str(backend_env.get(key)) != str(expected):
+        raise SystemExit(f"backend {key} must match the Docker database service contract")
+
 if str(backend_env.get("PORT")) != "4000":
     raise SystemExit("production backend must listen on container port 4000")
 

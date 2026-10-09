@@ -20,6 +20,11 @@ services:
       - ${FITVIBE_ENV_FILE:-.env}
     environment:
       PORT: "4000"
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:-fitvibe}
+      PGUSER: ${POSTGRES_USER:-fitvibe}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       CLAMAV_ENABLED: "true"
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
