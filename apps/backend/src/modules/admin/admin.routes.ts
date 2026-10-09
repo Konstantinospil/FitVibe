@@ -33,8 +33,16 @@ adminRouter.post(
   asyncHandler(moderateReportHandler),
 );
 
-adminRouter.get("/action-mappings", rateLimit("admin_users_search"), asyncHandler(listActionMappingsHandler));
-adminRouter.post("/action-mappings", rateLimit("admin_users_action"), asyncHandler(upsertActionMappingHandler));
+adminRouter.get(
+  "/action-mappings",
+  rateLimit("admin_users_search"),
+  asyncHandler(listActionMappingsHandler),
+);
+adminRouter.post(
+  "/action-mappings",
+  rateLimit("admin_users_action"),
+  asyncHandler(upsertActionMappingHandler),
+);
 
 adminRouter.get("/users/search", rateLimit("admin_users_search"), asyncHandler(searchUsersHandler));
 
