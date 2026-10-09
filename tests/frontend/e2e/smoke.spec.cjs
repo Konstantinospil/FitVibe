@@ -115,7 +115,7 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   const selectedExerciseId = await option.getAttribute("value");
   expect(selectedExerciseId).toBeTruthy();
   await exerciseSelect.selectOption(selectedExerciseId);
-  await editor.getByRole("button", { name: /add exercise/i }).click();
+  await editor.getByRole("button", { name: /^add exercise$/i }).click();
   const title = `E2E smoke plan ${testInfo.workerIndex}-${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const mutation = observeMutation(page, "POST", "/api/v1/sessions");
@@ -223,7 +223,7 @@ test("athlete starts an exercise workout and backend records an in-progress sess
   const select = editor.getByRole("combobox").first();
   await expect.poll(async () => select.locator("option").count()).toBeGreaterThan(1);
   await select.selectOption({ index: 1 });
-  await editor.getByRole("button", { name: /add exercise/i }).click();
+  await editor.getByRole("button", { name: /^add exercise$/i }).click();
   const title = `E2E smoke started ${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const create = observeMutation(page, "POST", "/api/v1/sessions");
