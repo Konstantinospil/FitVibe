@@ -549,8 +549,8 @@
 
 
 /* Shared page-shell authority */
-[data-component="page-shell"]{position:relative;min-height:100vh;display:flex;flex-direction:column}
-[data-slot="page-shell-main"]{flex:1;display:flex;flex-direction:column}
+[data-component="page-shell"]{position:relative;min-height:100vh;width:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+[data-slot="page-shell-main"]{min-width:0;width:100%;display:flex;flex-direction:column}
 
 /* Shared toast authority */
 [data-component="toast-container"]{position:fixed;top:var(--space-md);right:var(--space-md);z-index:var(--toast-layer);display:flex;flex-direction:column;gap:var(--space-sm);width:min(calc(100% - var(--space-xl)),var(--toast-max-width))}
