@@ -214,10 +214,16 @@ export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchRe
         )
       ) as "reportCount"`),
     )
-    .where(function () {
-      this.where("c.value", "ilike", `%${searchQuery}%`)
-        .orWhere("p.alias", "ilike", `%${searchQuery}%`)
-        .orWhere("u.id", "=", searchQuery);
+    .modify((builder) => {
+      if (searchQuery.trim()) {
+        builder.where(function () {
+          this.where("c.value", "ilike", `%${searchQuery}%`)
+            .orWhere("p.alias", "ilike", `%${searchQuery}%`);
+          if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(searchQuery)) {
+            this.orWhere("u.id", "=", searchQuery);
+          }
+        });
+      }
     })
     .whereNull("u.deleted_at")
     .orderBy("u.created_at", "desc")
