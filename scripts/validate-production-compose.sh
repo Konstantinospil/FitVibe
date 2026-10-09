@@ -61,6 +61,20 @@ for name, service in services.items():
     if name in depends:
         raise SystemExit(f"Service {name} must not depend on itself")
 
+backend_env = services["backend"].get("environment") or {}
+if str(backend_env.get("PORT")) != "4000":
+    raise SystemExit("production backend must listen on container port 4000")
+
+backend_ports = services["backend"].get("ports") or []
+if not any(
+    isinstance(port, dict)
+    and int(port.get("target", 0)) == 4000
+    and str(port.get("published", "")) == "4000"
+    and port.get("host_ip") == "127.0.0.1"
+    for port in backend_ports
+):
+    raise SystemExit("backend must bind 127.0.0.1:4000 to container port 4000")
+
 backend_depends = services["backend"].get("depends_on") or {}
 for dependency in ("db", "clamav", "redis"):
     if dependency not in backend_depends:
@@ -93,6 +107,7 @@ if not any(
 ):
     raise SystemExit("backoffice must publish host port 8081 to container port 8080")
 
+backoffice_env = services["backoffice"].get("environment") or {}
 backoffice_depends = services["backoffice"].get("depends_on") or {}
 if "backend" not in backoffice_depends:
     raise SystemExit("backoffice must depend on backend")

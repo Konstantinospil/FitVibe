@@ -3,6 +3,7 @@ services:
     image: ${BACKEND_IMAGE:-ghcr.io/${GITHUB_REPOSITORY_OWNER}/fitvibe-backend:latest}
     env_file: .env.staging
     environment:
+      PORT: "4000"
       CLAMAV_ENABLED: "true"
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
@@ -32,7 +33,7 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "4173:80"
+      - "4173:4173"
 
   db:
     image: postgres:18-alpine
