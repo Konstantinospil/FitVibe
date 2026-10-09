@@ -263,25 +263,22 @@ describe("Admin Service", () => {
       expect(mockAdminRepo.searchUsers).toHaveBeenCalledWith(query);
     });
 
-    it("should throw error when query is empty", async () => {
-      const query: SearchUsersQuery = {
-        query: "",
-        limit: 10,
-      };
+    it("allows an empty query to list users", async () => {
+      const query: SearchUsersQuery = { query: "", limit: 10 };
+      const mockUsers = [{ id: "user-123" }];
+      mockAdminRepo.searchUsers.mockResolvedValue(mockUsers);
 
-      await expect(adminService.searchUsersService(query)).rejects.toThrow(HttpError);
-      await expect(adminService.searchUsersService(query)).rejects.toThrow(
-        "Search query is required",
-      );
+      await expect(adminService.searchUsersService(query)).resolves.toEqual(mockUsers);
+      expect(mockAdminRepo.searchUsers).toHaveBeenCalledWith(query);
     });
 
-    it("should throw error when query is only whitespace", async () => {
-      const query: SearchUsersQuery = {
-        query: "   ",
-        limit: 10,
-      };
+    it("allows whitespace-only queries without rejecting the user listing", async () => {
+      const query: SearchUsersQuery = { query: "   ", limit: 10 };
+      const mockUsers = [{ id: "user-123" }];
+      mockAdminRepo.searchUsers.mockResolvedValue(mockUsers);
 
-      await expect(adminService.searchUsersService(query)).rejects.toThrow(HttpError);
+      await expect(adminService.searchUsersService(query)).resolves.toEqual(mockUsers);
+      expect(mockAdminRepo.searchUsers).toHaveBeenCalledWith(query);
     });
   });
 
