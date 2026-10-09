@@ -421,7 +421,7 @@ async function checkFrontendTokens() {
       },
       {
         pattern: /\bfont-size\s*:\s*([^;]+);/g,
-        allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
+        allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--typography-") || value.includes("var(--font-size-"),
         message: "CSS font-size must reference a canonical Figma typography token.",
       },
       {
