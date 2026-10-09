@@ -1394,9 +1394,6 @@ small {
  * palette/typography authority and a responsive application shell.
  */
 :root {
-  /* Fluid root sizing makes all rem-based FitVibe type/spacing tokens respond to viewport width. */
-  font-size: clamp(14px, calc(12.75px + 0.22vw), 17px);
-
   --color-bg: #11191D;
   --color-surface: #182329;
   --color-surface-muted: #223039;
@@ -1688,10 +1685,6 @@ body {
 }
 
 @media (max-width: 960px) {
-  :root {
-    font-size: clamp(14px, calc(13px + 0.18vw), 16px);
-  }
-
   .backoffice-shell {
     grid-template-columns: clamp(12.5rem, 24vw, 15rem) minmax(0, 1fr);
   }
@@ -1702,10 +1695,6 @@ body {
 }
 
 @media (max-width: 720px) {
-  :root {
-    font-size: clamp(14px, calc(13.5px + 0.12vw), 15px);
-  }
-
   .backoffice-shell {
     display: flex;
     flex-direction: column;
