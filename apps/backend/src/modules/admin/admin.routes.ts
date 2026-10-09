@@ -12,6 +12,8 @@ import {
   listReportsHandler,
   moderateReportHandler,
   searchUsersHandler,
+  listActionMappingsHandler,
+  upsertActionMappingHandler,
   userActionHandler,
 } from "./admin.controller.js";
 
@@ -30,6 +32,9 @@ adminRouter.post(
   rateLimit("admin_reports_moderate"),
   asyncHandler(moderateReportHandler),
 );
+
+adminRouter.get("/action-mappings", rateLimit("admin_users_search"), asyncHandler(listActionMappingsHandler));
+adminRouter.post("/action-mappings", rateLimit("admin_users_action"), asyncHandler(upsertActionMappingHandler));
 
 adminRouter.get("/users/search", rateLimit("admin_users_search"), asyncHandler(searchUsersHandler));
 
