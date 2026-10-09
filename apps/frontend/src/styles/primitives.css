@@ -429,7 +429,10 @@
 }
 
 .section-title {
-  font-size: var(--font-size-lg);
+  font-family: var(--font-family-heading);
+  font-size: var(--type-section-title-size);
+  line-height: var(--type-section-title-line-height);
+  letter-spacing: var(--type-section-title-letter-spacing);
   font-weight: var(--font-weight-semibold);
   margin-bottom: var(--space-sm);
   color: var(--color-text-primary);
@@ -496,6 +499,8 @@
 
 /* Responsive Utilities */
 .clamp-title {
-  font-size: clamp(var(--type-page-title-size), 4vw, var(--type-display-size));
+  font-size: var(--type-page-title-size);
+  line-height: var(--type-page-title-line-height);
+  letter-spacing: var(--type-page-title-letter-spacing);
   margin: 0.5rem 0;
 }
