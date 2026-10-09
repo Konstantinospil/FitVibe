@@ -5,6 +5,9 @@ const {
   waitForApp,
   emailInput,
   passwordInput,
+  confirmPasswordInput,
+  displayNameInput,
+  acceptRegisterLegal,
 } = require("./server-helpers.cjs");
 
 test("login page renders the FitVibe welcome heading", async ({ page }) => {
@@ -35,6 +38,38 @@ test("authenticated shell shows Home after real login", async ({ page }) => {
 
 
 const { observeMutation } = require("./request-observer.cjs");
+
+async function createDisposableAthlete(page, testInfo) {
+  await preparePage(page);
+  const suffix = `${testInfo.workerIndex}-${testInfo.retry}-${Date.now()}`;
+  const email = `smoke.${suffix}@fitvibe.test`;
+  const password = "SuperSecure123!";
+  await page.goto("/register");
+  await waitForApp(page);
+  await displayNameInput(page).fill("Smoke Athlete");
+  await emailInput(page).fill(email);
+  await page.locator("form input[name='username']").fill(`smoke.${suffix}`);
+  await passwordInput(page).fill(password);
+  await confirmPasswordInput(page).fill(password);
+  await acceptRegisterLegal(page);
+  const registration = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/v1/auth/register" && res.request().method() === "POST");
+  await page.getByRole("button", { name: /create account/i }).click();
+  const response = await registration;
+  expect(response.status()).toBe(202);
+  const payload = await response.json();
+  expect(payload.debugVerificationToken).toBeTruthy();
+  await page.goto(`/verify?token=${encodeURIComponent(payload.debugVerificationToken)}`);
+  await waitForApp(page);
+  await page.getByRole("button", { name: /go to login/i }).click();
+  await page.waitForURL((url) => url.pathname === "/login");
+  await emailInput(page).fill(email);
+  await passwordInput(page).fill(password);
+  await page.getByRole("button", { name: /sign in/i }).click();
+  await page.waitForURL((url) => url.pathname === "/");
+  await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
+  expect((await apiGet(page, "/api/v1/users/me")).primaryEmail).toBe(email);
+}
 
 async function authenticatedPage(page) {
   await preparePage(page, { authenticated: true });
