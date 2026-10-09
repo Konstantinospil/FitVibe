@@ -105,6 +105,29 @@ h6 {
   margin: 0;
 }
 
+/* Canonical semantic heading roles. Component-specific headings may use their
+ * documented role, but no page relies on browser default heading sizes. */
+h1 {
+  font-size: var(--type-page-title-size);
+  line-height: var(--type-page-title-line-height);
+  letter-spacing: var(--type-page-title-letter-spacing);
+}
+
+h2 {
+  font-size: var(--type-section-title-size);
+  line-height: var(--type-section-title-line-height);
+  letter-spacing: var(--type-section-title-letter-spacing);
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--type-card-title-size);
+  line-height: var(--type-card-title-line-height);
+  letter-spacing: var(--type-card-title-letter-spacing);
+}
+
 p {
   margin: 0;
   color: var(--color-text-secondary);
