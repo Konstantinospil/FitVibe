@@ -42,7 +42,10 @@ const API_URL = getApiUrl();
  * No Authorization header needed - cookies are immune to XSS attacks.
  */
 
-type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _csrfRetry?: boolean;
+};
 
 export type HealthStatusResponse = {
   status: string;
@@ -101,6 +104,39 @@ async function attachCsrfToken(config: InternalAxiosRequestConfig) {
 apiClient.interceptors.request.use(attachCsrfToken);
 rawHttpClient.interceptors.request.use(attachCsrfToken);
 
+// A browser may retain an outdated CSRF cookie/token pair after a deployment or
+// when another tab changes authentication state. Retry only the explicit CSRF
+// rejection once, preserving server-side CSRF enforcement.
+function isInvalidCsrfResponse(error: AxiosError): boolean {
+  const data = error.response?.data as { error?: { code?: string } } | undefined;
+  return error.response?.status === 403 && data?.error?.code === "CSRF_TOKEN_INVALID";
+}
+
+async function retryWithFreshCsrf(
+  error: AxiosError,
+  client: typeof apiClient,
+): Promise<unknown> {
+  const request = error.config as RetryableRequestConfig | undefined;
+  if (!request || request._csrfRetry || !isInvalidCsrfResponse(error)) {
+    return Promise.reject(error);
+  }
+  request._csrfRetry = true;
+  cachedCsrfToken = null;
+  csrfTokenPromise = null;
+  try {
+    await getCsrfToken();
+    return client.request(request);
+  } catch (refreshError) {
+    return Promise.reject(refreshError);
+  }
+}
+
+// Authentication endpoints use rawHttpClient, so they need the same CSRF recovery.
+rawHttpClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => retryWithFreshCsrf(error, rawHttpClient),
+);
+
 let isRefreshing = false;
 
 type QueueEntry = {
@@ -144,6 +180,10 @@ apiClient.interceptors.response.use(
 
     if (!originalRequest || !response) {
       return Promise.reject(error);
+    }
+
+    if (isInvalidCsrfResponse(error)) {
+      return retryWithFreshCsrf(error, apiClient);
     }
 
     // Only attempt refresh on 401, and only once per request
