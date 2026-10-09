@@ -128,9 +128,7 @@ function renderObject(
   }
 
   const itemTitle = typeof value.title === "string" ? value.title : null;
-  const entries = Object.entries(value)
-    .filter(([childKey]) => childKey !== "title")
-    .sort(([a], [b]) => compareNatural(a, b));
+  const entries = Object.entries(value).filter(([childKey]) => childKey !== "title");
 
   const body = entries.map(([childKey, childValue]) =>
     renderValue(childValue, `${key}-${childKey}`, childKey),
@@ -169,7 +167,7 @@ function renderValue(value: unknown, key: string, sourceKey: string): React.Reac
 }
 
 function documentBody(content: Record<string, unknown>): React.ReactNode {
-  const excluded = new Set(["title", "description", "effectiveDate", "effectiveDateValue"]);
+  const excluded = new Set(["eyebrow", "title", "description", "effectiveDate", "effectiveDateValue"]);
   return Object.entries(content)
     .filter(([key]) => !excluded.has(key))
     .sort(([a], [b]) => compareNatural(a, b))
@@ -181,12 +179,18 @@ const resolveEffectiveDate = (
   content: Record<string, unknown> | null,
   language: string,
 ): string | null => {
+  const localizedDate = content?.effectiveDateValue ?? content?.effectiveDate;
+  if (publication?.legacyWithoutSnapshot) {
+    return typeof localizedDate === "string" || typeof localizedDate === "number"
+      ? String(localizedDate)
+      : null;
+  }
   if (publication?.effectiveAt) {
     return new Date(publication.effectiveAt).toLocaleDateString(language);
   }
-
-  const fallback = content?.effectiveDateValue ?? content?.effectiveDate;
-  return typeof fallback === "string" || typeof fallback === "number" ? String(fallback) : null;
+  return typeof localizedDate === "string" || typeof localizedDate === "number"
+    ? String(localizedDate)
+    : null;
 };
 
 export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
@@ -251,12 +255,6 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
   const content = publication?.content ?? legacyContent;
   const effectiveDate = resolveEffectiveDate(publication, content, language);
 
-  const legacyNotice = publication?.legacyWithoutSnapshot
-    ? t("common.legacyLegalDocument", {
-        defaultValue:
-          "This pre-publication legacy version is displayed from the retained localized source.",
-      })
-    : undefined;
 
   if (loading) {
     return (
@@ -281,8 +279,7 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
     <LegalDocumentShell
       title={authoritativeTitle}
       effectiveDate={effectiveDate}
-      version={publication?.version ?? (publication?.legacyWithoutSnapshot ? "legacy" : undefined)}
-      legacyNotice={legacyNotice}
+      version={publication?.legacyWithoutSnapshot ? undefined : publication?.version}
       footerAction={footerAction}
     >
       {documentBody(content)}
