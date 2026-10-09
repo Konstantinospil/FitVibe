@@ -1,3 +1,5 @@
+@import "../../../../packages/ui/src/typography.css";
+
 /* Inter Variable Font - supports weights 100-900 */
 /* Using font-display: optional to improve LCP - if font isn't ready quickly, use fallback permanently */
 @font-face {
@@ -1350,6 +1352,11 @@ small {
 .text-2xl {
   font-size: var(--type-page-title-size);
 }
+
+/* Canonical heading roles shared with the athlete surface. */
+h1 { font-size: var(--typography-page-title-size); line-height: var(--typography-page-title-line-height); letter-spacing: var(--type-page-title-letter-spacing); }
+h2, .section-title { font-size: var(--typography-section-title-size); line-height: var(--typography-section-title-line-height); letter-spacing: var(--type-section-title-letter-spacing); }
+h3, h4, h5, h6 { font-size: var(--typography-card-title-size); line-height: var(--typography-card-title-line-height); letter-spacing: var(--type-card-title-letter-spacing); }
 
 /* Tab Navigation */
 .tabs {
