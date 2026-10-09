@@ -215,7 +215,7 @@ async function checkFrontendTokens() {
   const visualAuthorityFiles = new Set([
     "apps/frontend/src/styles/tokens.css",
     "apps/frontend/src/styles/themes.css",
-    "apps/frontend/src/styles/typography.css",
+    "packages/ui/src/typography.css",
     "apps/backoffice/src/styles/global.css",
   ]);
   const literalTokenFallbackPattern =
