@@ -61,7 +61,9 @@ describe("apiClient authentication flow", () => {
         : [200, { success: true }];
     });
 
-    const response = await rawHttpClient.post("/api/v1/auth/register", { email: "test@example.com" });
+    const response = await rawHttpClient.post("/api/v1/auth/register", {
+      email: "test@example.com",
+    });
     expect(response.status).toBe(200);
     expect(headers).toHaveLength(2);
     expect(headers[1]).toBe("fresh");
