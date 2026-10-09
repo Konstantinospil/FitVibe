@@ -5,6 +5,7 @@
 import type { Request, Response } from "express";
 import { HttpError, readRouteParam } from "../../utils/http.js";
 import * as service from "./admin.service.js";
+import { db } from "../../db/index.js";
 import type { ListReportsQuery, SearchUsersQuery } from "./admin.types.js";
 
 /**
@@ -121,4 +122,29 @@ export async function userActionHandler(req: Request, res: Response): Promise<vo
   const pastTense = actionPastTense[action] || `${action}d`;
 
   res.json({ success: true, message: `User ${pastTense} successfully` });
+}
+
+/** GET /api/v1/admin/action-mappings */
+export async function listActionMappingsHandler(_req: Request, res: Response): Promise<void> {
+  const rows = await db("audit_log as al")
+    .distinct("al.action")
+    .leftJoin("audit_action_mappings as am", "am.action", "al.action")
+    .select("al.action", "am.ui_name as uiName")
+    .orderBy("al.action", "asc");
+  res.json({ mappings: rows });
+}
+
+/** POST /api/v1/admin/action-mappings */
+export async function upsertActionMappingHandler(req: Request, res: Response): Promise<void> {
+  const { action, uiName } = req.body as { action?: unknown; uiName?: unknown };
+  if (typeof action !== "string" || !action.trim() || action.length > 255 ||
+      typeof uiName !== "string" || !uiName.trim() || uiName.length > 255) {
+    throw new HttpError(400, "INVALID_ACTION_MAPPING", "Action and display name are required");
+  }
+  const [row] = await db("audit_action_mappings")
+    .insert({ action: action.trim(), ui_name: uiName.trim(), updated_at: db.fn.now() })
+    .onConflict("action")
+    .merge(["ui_name", "updated_at"])
+    .returning(["action", "ui_name as uiName"]);
+  res.json({ mapping: row });
 }
