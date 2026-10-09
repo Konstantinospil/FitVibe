@@ -1,5 +1,5 @@
 @import "./tokens.css";
-@import "./typography.css";
+@import "../../../../packages/ui/src/typography.css";
 @import "./themes.css";
 @import "./foundations.css";
 @import "./primitives.css";
