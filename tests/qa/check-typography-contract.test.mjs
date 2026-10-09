@@ -14,8 +14,9 @@ try {
     fs.copyFileSync(path.join(root, p), target);
   };
   copy("design/typography.schema.json");
-  copy("apps/frontend/src/styles/typography.css");
+  copy("packages/ui/src/typography.css");
   copy("apps/frontend/src/styles/global.css");
+  copy("apps/backoffice/src/styles/global.css");
   fs.mkdirSync(path.join(workspace, "packages/ui/src"), { recursive: true });
   const gate = path.join(root, "tests/qa/check-typography-contract.mjs");
   const run = () => spawnSync(process.execPath, [gate], { cwd: workspace, encoding: "utf8" });
@@ -24,7 +25,7 @@ try {
   fs.writeFileSync(rogue, ".bad { --typography-page-title-size: 42px; }\n");
   assert.notEqual(run().status, 0, "Local role redeclaration must fail");
   fs.rmSync(rogue);
-  const css = path.join(workspace, "apps/frontend/src/styles/typography.css");
+  const css = path.join(workspace, "packages/ui/src/typography.css");
   const original = fs.readFileSync(css, "utf8");
   fs.writeFileSync(css, original.replace("--typography-page-title-size: 2rem;", "--typography-page-title-size: 3rem;"));
   assert.notEqual(run().status, 0, "Changed desktop Figma value must fail");
