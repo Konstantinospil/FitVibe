@@ -46,7 +46,8 @@
     "architecture:frontend-reuse": "node tests/qa/check-architecture-hardcoding.mjs frontend-reuse",
     "architecture:check": "node tests/qa/check-architecture-hardcoding.mjs all",
     "quality:package-json": "node tests/qa/check-package-json.cjs",
-    "test:backoffice": "pnpm --filter @fitvibe/backoffice run build && playwright test --config tests/backoffice/e2e/playwright.config.cjs"
+    "test:backoffice": "pnpm --filter @fitvibe/backoffice run build && playwright test --config tests/backoffice/e2e/playwright.config.cjs",
+    "typography:check": "node tests/qa/check-typography-contract.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
