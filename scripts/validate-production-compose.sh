@@ -75,6 +75,18 @@ if not any(
 ):
     raise SystemExit("backend must bind 127.0.0.1:4000 to container port 4000")
 
+backend_volumes = services["backend"].get("volumes") or []
+if not any(
+    isinstance(v, dict)
+    and v.get("type") == "bind"
+    and v.get("source") == "/srv/stacks/fitvibe/keys"
+    and v.get("target") == "/app/keys"
+    and v.get("read_only") is True
+    and (v.get("bind") or {}).get("create_host_path") is False
+    for v in backend_volumes
+):
+    raise SystemExit("backend must mount persistent JWT signing keys read-only without creating an empty host directory")
+
 backend_depends = services["backend"].get("depends_on") or {}
 for dependency in ("db", "clamav", "redis"):
     if dependency not in backend_depends:
