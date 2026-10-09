@@ -7,7 +7,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: optional;
-  src: url("/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("../../../frontend/public/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 /* Inter Variable Font Italic - supports weights 100-900 */
@@ -17,7 +17,7 @@
   font-style: italic;
   font-weight: 100 900;
   font-display: optional;
-  src: url("/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("../../../frontend/public/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 /* Roboto Flex Variable Font - supports weights 100-900, variable width and optical size */
@@ -28,7 +28,7 @@
   font-weight: 100 900;
   font-stretch: 75% 100%;
   font-display: optional;
-  src: url("/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf")
+  src: url("../../../frontend/public/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf")
     format("truetype");
 }
 
