@@ -167,7 +167,13 @@ function renderValue(value: unknown, key: string, sourceKey: string): React.Reac
 }
 
 function documentBody(content: Record<string, unknown>): React.ReactNode {
-  const excluded = new Set(["eyebrow", "title", "description", "effectiveDate", "effectiveDateValue"]);
+  const excluded = new Set([
+    "eyebrow",
+    "title",
+    "description",
+    "effectiveDate",
+    "effectiveDateValue",
+  ]);
   return Object.entries(content)
     .filter(([key]) => !excluded.has(key))
     .sort(([a], [b]) => compareNatural(a, b))
@@ -254,7 +260,6 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
 
   const content = publication?.content ?? legacyContent;
   const effectiveDate = resolveEffectiveDate(publication, content, language);
-
 
   if (loading) {
     return (
