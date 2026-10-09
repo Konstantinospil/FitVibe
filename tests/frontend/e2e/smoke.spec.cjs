@@ -69,13 +69,9 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   await authenticatedPage(page);
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await expect(page.getByRole("grid")).toBeVisible();
-  const sessionsResponse = await page.waitForResponse(
-    (response) => response.url().includes("/api/v1/sessions") && response.request().method() === "GET" && response.ok(),
-  ).catch(() => null);
-  // React Query may already have cached the successful request; assert with a direct real API read too.
-  if (!sessionsResponse) await apiGet(page, "/api/v1/sessions?limit=20&offset=0");
+  await apiGet(page, "/api/v1/sessions?limit=20&offset=0");
 
-  await page.getByRole("button", { name: /^plan (a )?workout$/i }).first().click();
+  await page.getByRole("button", { name: /plan/i }).first().click();
   const editor = page.getByRole("dialog");
   await expect(editor).toBeVisible();
   const exerciseSelect = editor.getByRole("combobox").first();
@@ -88,7 +84,7 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   const title = `E2E smoke plan ${testInfo.workerIndex}-${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const mutation = observeMutation(page, "POST", "/api/v1/sessions");
-  await editor.getByRole("button", { name: /^plan (a )?workout$/i }).last().click();
+  await editor.getByRole("button", { name: /plan/i }).last().click();
   await expect(editor).not.toBeVisible();
   mutation.assertExactlyOnce(201);
   mutation.stop();
