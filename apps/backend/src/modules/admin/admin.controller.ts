@@ -68,13 +68,9 @@ export async function moderateReportHandler(req: Request, res: Response): Promis
  * GET /api/v1/admin/users/search
  */
 export async function searchUsersHandler(req: Request, res: Response): Promise<void> {
-  const query = req.query.q as string;
+  const query = typeof req.query.q === "string" ? req.query.q.trim() : "";
   const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 20;
   const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
-
-  if (!query) {
-    throw new HttpError(400, "MISSING_QUERY", "Query parameter 'q' is required");
-  }
 
   const searchQuery: SearchUsersQuery = {
     query,
