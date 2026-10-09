@@ -200,3 +200,37 @@ test("athlete logout rejects subsequent authenticated profile retrieval", async 
   const res = await page.context().request.get(new URL("/api/v1/users/me", page.url()).toString());
   expect([401, 403]).toContain(res.status());
 });
+
+test("athlete searches exercise library against the real catalog", async ({ page }) => {
+  await authenticatedPage(page);
+  await page.getByRole("link", { name: /^library$/i }).click();
+  await page.waitForURL((url) => url.pathname === "/library");
+  const catalog = await apiGet(page, "/api/v1/exercises?limit=20&offset=0");
+  expect(catalog.data.length).toBeGreaterThan(0);
+  const entry = catalog.data[0];
+  const searchField = page.locator("[data-component='library-filter-grid'] input").first();
+  await searchField.fill(entry.name);
+  await expect(page.getByText(entry.name, { exact: true }).first()).toBeVisible();
+});
+
+test("athlete starts an exercise workout and backend records an in-progress session", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.getByRole("link", { name: /^calendar$/i }).click();
+  await expect(page.getByRole("grid")).toBeVisible();
+  await page.getByRole("button", { name: /^start/i }).first().click();
+  const editor = page.getByRole("dialog");
+  await expect(editor).toBeVisible();
+  const select = editor.getByRole("combobox").first();
+  await expect.poll(async () => select.locator("option").count()).toBeGreaterThan(1);
+  await select.selectOption({ index: 1 });
+  await editor.getByRole("button", { name: /add exercise/i }).click();
+  const title = `E2E smoke started ${Date.now()}`;
+  await editor.getByRole("textbox").first().fill(title);
+  const create = observeMutation(page, "POST", "/api/v1/sessions");
+  await editor.getByRole("button", { name: /^start/i }).last().click();
+  await expect(editor).not.toBeVisible();
+  create.assertExactlyOnce(201);
+  create.stop();
+  const sessions = await apiGet(page, "/api/v1/sessions?limit=100&offset=0");
+  expect(sessions.data.some((session) => session.title === title && session.status === "in_progress")).toBe(true);
+});
