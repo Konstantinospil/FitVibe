@@ -134,3 +134,34 @@ test("athlete privacy acknowledgement withdrawal and reacceptance persist on bac
   accept.assertExactlyOnce(200);
   accept.stop();
 });
+
+test("athlete can revoke Terms and the account session is invalidated", async ({ page }) => {
+  await authenticatedPage(page);
+  const before = await apiGet(page, "/api/v1/auth/legal-documents/status");
+  expect(before.terms.needsAcceptance).toBe(false);
+  await page.goto("/terms");
+  await waitForApp(page);
+  const revoke = observeMutation(page, "POST", "/api/v1/auth/terms/revoke");
+  await page.getByRole("button", { name: /^revoke consent$/i }).click();
+  const confirm = page.getByRole("dialog");
+  await expect(confirm).toBeVisible();
+  await confirm.getByRole("button", { name: /revoke|confirm/i }).click();
+  await page.waitForURL((url) => url.pathname === "/login");
+  revoke.assertExactlyOnce(200);
+  revoke.stop();
+  await page.goto("/");
+  await waitForApp(page);
+  await expect(page).toHaveURL(/\/login$/);
+});
+
+test("athlete logout rejects subsequent authenticated profile retrieval", async ({ page }) => {
+  await authenticatedPage(page);
+  await apiGet(page, "/api/v1/users/me");
+  const logout = observeMutation(page, "POST", "/api/v1/auth/logout");
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await page.waitForURL((url) => url.pathname === "/login");
+  logout.assertExactlyOnce(200);
+  logout.stop();
+  const res = await page.context().request.get(new URL("/api/v1/users/me", page.url()).toString());
+  expect([401, 403]).toContain(res.status());
+});
