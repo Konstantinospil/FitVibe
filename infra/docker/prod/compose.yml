@@ -36,6 +36,13 @@ services:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true
+    volumes:
+      - type: bind
+        source: /srv/stacks/fitvibe/keys
+        target: /app/keys
+        read_only: true
+        bind:
+          create_host_path: false
     ports:
       - "127.0.0.1:4000:4000"
 
