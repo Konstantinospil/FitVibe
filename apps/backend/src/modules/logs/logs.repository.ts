@@ -133,10 +133,9 @@ export async function updateAuditLog(
   if (updates.resolved !== undefined) {
     update.resolved_at = updates.resolved ? db.fn.now() : null;
   }
-  const rows = (await db("audit_log")
-    .where("id", id)
-    .update(update)
-    .returning("id")) as Array<{ id: string }>;
+  const rows = (await db("audit_log").where("id", id).update(update).returning("id")) as Array<{
+    id: string;
+  }>;
   if (!rows.length) {
     return null;
   }
@@ -163,5 +162,7 @@ export async function updateAuditLog(
 }
 
 export async function bulkResolveAuditLogs(ids: string[], resolved: boolean): Promise<number> {
-  return await db("audit_log").whereIn("id", ids).update({ resolved_at: resolved ? db.fn.now() : null });
+  return await db("audit_log")
+    .whereIn("id", ids)
+    .update({ resolved_at: resolved ? db.fn.now() : null });
 }
