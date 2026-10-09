@@ -32,6 +32,8 @@
 
 .training-page {
   width: 100%;
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line-height);
   min-width: 0;
   padding: var(--space-lg);
   display: grid;
@@ -326,3 +328,24 @@
 [data-component="library-result-grid"]{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--space-md)}
 [data-component="library-pagination"]{display:flex;justify-content:space-between;gap:var(--space-sm);padding-top:var(--space-sm)}
 [data-component="library-detail"]{display:grid;gap:var(--space-sm)}
+
+/* Keep content fluid at narrow viewports and browser zoom. The typography
+ * roles above remain token-driven; wrapping must not force horizontal scroll. */
+.training-page :is(h1, h2, h3, h4, h5, h6, p),
+.training-summary-card__copy,
+[data-component="library-header"] > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  [data-component="library-header"] {
+    align-items: stretch;
+  }
+
+  [data-component="library-header"] > div,
+  [data-slot="library-actions"] {
+    width: 100%;
+    min-width: 0;
+  }
+}
