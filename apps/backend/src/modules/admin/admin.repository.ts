@@ -173,7 +173,7 @@ export async function hideComment(commentId: string): Promise<void> {
 export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchResult[]> {
   const { query: searchQuery, limit = 20, offset = 0 } = query;
 
-  const rows = await db("users as u")
+  const rows = (await db("users as u")
     .leftJoin("profiles as p", "p.user_id", "u.id")
     .leftJoin("user_contacts as c", function () {
       this.on("c.user_id", "=", "u.id")
@@ -217,8 +217,11 @@ export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchRe
     .modify((builder) => {
       if (searchQuery.trim()) {
         builder.where(function () {
-          this.where("c.value", "ilike", `%${searchQuery}%`)
-            .orWhere("p.alias", "ilike", `%${searchQuery}%`);
+          this.where("c.value", "ilike", `%${searchQuery}%`).orWhere(
+            "p.alias",
+            "ilike",
+            `%${searchQuery}%`,
+          );
           if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(searchQuery)) {
             this.orWhere("u.id", "=", searchQuery);
           }
@@ -228,9 +231,9 @@ export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchRe
     .whereNull("u.deleted_at")
     .orderBy("u.created_at", "desc")
     .limit(limit)
-    .offset(offset);
+    .offset(offset)) as UserSearchResult[];
 
-  return rows as UserSearchResult[];
+  return rows;
 }
 
 /**
