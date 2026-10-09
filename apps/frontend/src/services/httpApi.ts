@@ -112,10 +112,7 @@ function isInvalidCsrfResponse(error: AxiosError): boolean {
   return error.response?.status === 403 && data?.error?.code === "CSRF_TOKEN_INVALID";
 }
 
-async function retryWithFreshCsrf(
-  error: AxiosError,
-  client: typeof apiClient,
-): Promise<unknown> {
+async function retryWithFreshCsrf(error: AxiosError, client: typeof apiClient): Promise<unknown> {
   const request = error.config as RetryableRequestConfig | undefined;
   if (!request || request._csrfRetry || !isInvalidCsrfResponse(error)) {
     return Promise.reject(error);
@@ -127,7 +124,7 @@ async function retryWithFreshCsrf(
     await getCsrfToken();
     return client.request(request);
   } catch (refreshError) {
-    return Promise.reject(refreshError);
+    throw refreshError instanceof Error ? refreshError : new Error(String(refreshError));
   }
 }
 
