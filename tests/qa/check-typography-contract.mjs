@@ -10,7 +10,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const schema = JSON.parse(fs.readFileSync(path.join(root, "design/typography.schema.json"), "utf8"));
-const authority = "apps/frontend/src/styles/typography.css";
+const authority = "packages/ui/src/typography.css";
 const roles = schema.roles;
 const issues = [];
 
@@ -82,7 +82,10 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
 // separate token authority is reported by the existing architecture check.
 const globalFile = "apps/frontend/src/styles/global.css";
 const globalCss = fs.readFileSync(path.join(root, globalFile), "utf8");
-if (!globalCss.includes('@import "./typography.css";')) emit(globalFile, globalCss, 0, "Typography contract must be imported.");
+const backofficeFile = "apps/backoffice/src/styles/global.css";
+const backofficeCss = fs.readFileSync(path.join(root, backofficeFile), "utf8");
+if (!backofficeCss.includes('@import "../../../../packages/ui/src/typography.css";')) emit(backofficeFile, backofficeCss, 0, "Backoffice must import the shared typography contract.");
+if (!globalCss.includes('@import "../../../../packages/ui/src/typography.css";')) emit(globalFile, globalCss, 0, "Typography contract must be imported.");
 
 for (const finding of issues) console.error("::error file=" + finding.file + ",line=" + finding.line + "::" + finding.message);
 if (issues.length) process.exit(1);
