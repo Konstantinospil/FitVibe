@@ -96,10 +96,12 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 }) => {
   const { t } = useTranslation();
   const nextDraftId = useRef(0);
+  const [exerciseSearch, setExerciseSearch] = useState("");
   const exercises = useQuery({
-    queryKey: ["workout-editor", "exercises"],
+    queryKey: ["workout-editor", "exercises", exerciseSearch.trim()],
     queryFn: () =>
       listExercises({
+        q: exerciseSearch.trim() || undefined,
         limit: TRAINING_DATA_CONFIG.exerciseCatalogLimit,
       }),
     staleTime: TRAINING_DATA_CONFIG.exerciseCatalogStaleMs,
@@ -126,6 +128,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 
     setSaveError(null);
     setSelectedExerciseId("");
+    setExerciseSearch("");
 
     if (!session) {
       setName("");
@@ -412,24 +415,35 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         <div className="training-grid workout-editor__main">
           <TrainingPanel title={t("workoutEditor.sections.activity")}>
             <div className="workout-editor__activity-toolbar">
-              <label className="form-label">
+              <div className="form-label">
                 <span className="form-label-text">{t("workoutEditor.fields.exercise")}</span>
                 <div className="workout-editor__search-control">
                   <Search aria-hidden="true" size={BUTTON_ICON_SIZES.md} />
-                  <SelectControl
-                    value={selectedExerciseId}
-                    onChange={(event) => setSelectedExerciseId(event.target.value)}
-                    disabled={isBusy || exercises.isLoading}
-                  >
-                    <option value="">{t("workoutEditor.placeholders.exercise")}</option>
-                    {exercises.data?.data.map((exercise) => (
-                      <option key={exercise.id} value={exercise.id}>
-                        {exercise.name}
-                      </option>
-                    ))}
-                  </SelectControl>
+                  <InputControl
+                    value={exerciseSearch}
+                    onChange={(event) => {
+                      setExerciseSearch(event.target.value);
+                      setSelectedExerciseId("");
+                    }}
+                    placeholder={t("planner.exerciseSearchPlaceholder")}
+                    aria-label={`${t("workoutEditor.fields.exercise")} ${t("librarySurface.filters.search")}`}
+                    disabled={isBusy}
+                  />
                 </div>
-              </label>
+                <SelectControl
+                  aria-label={t("workoutEditor.fields.exercise")}
+                  value={selectedExerciseId}
+                  onChange={(event) => setSelectedExerciseId(event.target.value)}
+                  disabled={isBusy || exercises.isLoading}
+                >
+                  <option value="">{t("workoutEditor.placeholders.exercise")}</option>
+                  {exercises.data?.data.map((exercise) => (
+                    <option key={exercise.id} value={exercise.id}>
+                      {exercise.name}
+                    </option>
+                  ))}
+                </SelectControl>
+              </div>
 
               <Button
                 variant="ghost"
