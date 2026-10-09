@@ -60,7 +60,9 @@ jobs:
       - name: Canonical desktop/mobile typography contract
         id: typography_contract
         continue-on-error: true
-        run: node tests/qa/check-typography-contract.mjs
+        run: |
+          node tests/qa/check-typography-contract.test.mjs
+          node tests/qa/check-typography-contract.mjs
 
       - name: Frontend component reuse
         id: architecture_frontend_reuse
