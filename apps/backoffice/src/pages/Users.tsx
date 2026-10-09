@@ -23,7 +23,7 @@ const UsersPage: React.FC = () => {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["users", search, filter],
-    queryFn: () => usersApi.search(search || "a", 100, filter === "blacklisted" ? true : undefined), // Search for "a" if empty to get all users
+    queryFn: () => usersApi.search(search.trim(), 50, filter === "blacklisted" ? true : undefined),
     enabled: isAuthenticated && !!user, // Only run query when authenticated and user is loaded
   });
 
