@@ -74,8 +74,20 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
   if (!/\.(css|scss)$/.test(abs)) continue;
   const file = path.relative(root, abs).replaceAll(path.sep, "/");
   if (file === authority) continue;
-  scan(file, ({ name, index, content }) => {
+  scan(file, ({ name, value, index, content }) => {
     if (name.startsWith("--typography-")) emit(file, content, index, "Typography role may only be declared by " + authority);
+    if (["font-size", "font-family", "font-weight", "line-height", "letter-spacing"].includes(name)) {
+      const prefix = content.slice(0, index);
+      const face = prefix.lastIndexOf("@font-face");
+      const open = face >= 0 ? content.indexOf("{", face) : -1;
+      const close = open >= 0 ? content.indexOf("}", open) : -1;
+      const isFontFace = face >= 0 && open >= 0 && open < index && (close < 0 || close > index);
+      const accepted = /var\(--(?:type-|typography-|font-size-|font-family-|font-weight-|line-height-|letter-spacing-)/.test(value);
+      if (!isFontFace && !accepted) emit(file, content, index, "Typography declarations must use approved role tokens, not raw values: " + name);
+    }
+    if (name === "font" && !/^var\(--typography-[a-z-]+\)$/.test(value))
+      emit(file, content, index, "Font shorthand must reference a canonical typography role.");
+
   });
 }
 // The authority is imported once and is shared by the athlete app. Backoffice's
