@@ -45,7 +45,7 @@ for (const [role, values] of Object.entries(roles)) {
   required.set("--typography-" + role + "-line-height", [size(desktopLine), size(mobileLine)]);
   required.set("--typography-" + role + "-family", ["var(--font-family-" + (family === "Inter" ? "body" : "heading") + ")", null]);
   required.set("--typography-" + role + "-weight", ["var(--font-weight-" + (weight === 400 ? "regular" : weight === 582 ? "control-large" : "semibold") + ")", null]);
-  required.set("--typography-" + role + "-letter-spacing", ["var(--type-" + role + "-letter-spacing)", null]);
+  required.set("--typography-" + role + "-letter-spacing", [spacing === 0 ? "0" : spacing + "em", null]);
   required.set("--typography-" + role, ["var(--typography-" + role + "-weight) var(--typography-" + role + "-size)/var(--typography-" + role + "-line-height) var(--typography-" + role + "-family)", null]);
 }
 const text = fs.readFileSync(path.join(root, authority), "utf8");
