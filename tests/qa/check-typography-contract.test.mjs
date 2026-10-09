@@ -24,6 +24,10 @@ try {
   const rogue = path.join(workspace, "packages/ui/src/rogue.css");
   fs.writeFileSync(rogue, ".bad { --typography-page-title-size: 42px; }\n");
   assert.notEqual(run().status, 0, "Local role redeclaration must fail");
+  fs.writeFileSync(rogue, ".bad { font-size: 27px; }\n");
+  assert.notEqual(run().status, 0, "Raw CSS font sizes must fail");
+  fs.writeFileSync(rogue, ".bad { font: 600 27px Arial; }\n");
+  assert.notEqual(run().status, 0, "Font shorthand bypasses must fail");
   fs.rmSync(rogue);
   const css = path.join(workspace, "packages/ui/src/typography.css");
   const original = fs.readFileSync(css, "utf8");
@@ -31,7 +35,7 @@ try {
   assert.notEqual(run().status, 0, "Changed desktop Figma value must fail");
   fs.writeFileSync(css, original.replace("--typography-page-title-size: 1.75rem;", "--typography-page-title-size: 2rem;"));
   assert.notEqual(run().status, 0, "Changed mobile value must fail");
-  console.log("Typography gate fixtures passed: valid, divergent, desktop drift, mobile drift.");
+  console.log("Typography gate fixtures passed: valid, unauthorized role, raw font size, shorthand, desktop drift, mobile drift.");
 } finally {
   fs.rmSync(workspace, { recursive: true, force: true });
 }
