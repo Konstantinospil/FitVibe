@@ -215,6 +215,7 @@ async function checkFrontendTokens() {
   const visualAuthorityFiles = new Set([
     "apps/frontend/src/styles/tokens.css",
     "apps/frontend/src/styles/themes.css",
+    "apps/frontend/src/styles/typography.css",
     "apps/backoffice/src/styles/global.css",
   ]);
   const literalTokenFallbackPattern =
@@ -236,12 +237,12 @@ async function checkFrontendTokens() {
     },
     {
       pattern: /\bfontSize\s*:\s*([^,}\n]+)/g,
-      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--typography-") || value.includes("var(--font-size-"),
       message: "Frontend font size must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\blineHeight\s*:\s*([^,}\n]+)/g,
-      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--line-height-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--typography-") || value.includes("var(--line-height-"),
       message: "Frontend line height must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
@@ -425,7 +426,7 @@ async function checkFrontendTokens() {
       },
       {
         pattern: /\bline-height\s*:\s*([^;]+);/g,
-        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--line-height-"),
+        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--typography-") || value.startsWith("var(--line-height-"),
         message: "CSS line-height must reference a canonical Figma typography token.",
       },
       {
