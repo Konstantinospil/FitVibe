@@ -234,3 +234,99 @@ test("athlete starts an exercise workout and backend records an in-progress sess
   const sessions = await apiGet(page, "/api/v1/sessions?limit=100&offset=0");
   expect(sessions.data.some((session) => session.title === title && session.status === "in_progress")).toBe(true);
 });
+
+
+test("athlete creates personal exercise and finds it after reload", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/library");
+  await waitForApp(page);
+  await page.getByRole("button", { name: /create exercise/i }).click();
+  const modal = page.getByRole("dialog");
+  await expect(modal).toBeVisible();
+  const form = modal.locator("#exercise-creator-form");
+  const name = `Smoke movement ${Date.now()}`;
+  await form.getByRole("textbox").first().fill(name);
+  const typeSelect = form.getByRole("combobox").first();
+  await expect.poll(async () => typeSelect.locator("option").count()).toBeGreaterThan(1);
+  await typeSelect.selectOption({ index: 1 });
+  const create = observeMutation(page, "POST", "/api/v1/exercises");
+  await modal.getByRole("button", { name: /^save$/i }).click();
+  await expect(modal).not.toBeVisible();
+  create.assertExactlyOnce(201);
+  create.stop();
+  await page.reload();
+  await waitForApp(page);
+  await page.locator("[data-component='library-filter-grid'] input").first().fill(name);
+  await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+});
+
+test("athlete saves profile and preference changes across navigation", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/settings");
+  await waitForApp(page);
+  const name = `Smoke Profile ${Date.now()}`;
+  await page.getByRole("textbox", { name: /display name/i }).fill(name);
+  const profilePatch = observeMutation(page, "PATCH", "/api/v1/users/me");
+  await page.getByRole("button", { name: /^save$/i }).first().click();
+  await expect.poll(async () => (await apiGet(page, "/api/v1/users/me")).displayName).toBe(name);
+  profilePatch.assertExactlyOnce(200);
+  profilePatch.stop();
+  await page.reload();
+  await waitForApp(page);
+  await expect(page.getByRole("textbox", { name: /display name/i })).toHaveValue(name);
+});
+
+test("athlete changes Vibeform and Dashboard reflects saved profile", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/settings");
+  await waitForApp(page);
+  const before = await apiGet(page, "/api/v1/users/me");
+  expect(before.id).toBeTruthy();
+  const bodyProfile = page.getByRole("combobox", { name: /body profile/i });
+  await expect(bodyProfile).toBeVisible();
+  const original = await bodyProfile.inputValue();
+  const changed = original === "balanced" ? "hip-dominant" : "balanced";
+  await bodyProfile.selectOption(changed);
+  const save = page.getByRole("button", { name: /^save$/i }).nth(2);
+  await save.click();
+  await page.goto("/dashboard");
+  await waitForApp(page);
+  await expect(page.locator("[data-app-surface='dashboard']")).toBeVisible();
+  await page.goto("/settings");
+  await waitForApp(page);
+  await expect(page.getByRole("combobox", { name: /body profile/i })).toHaveValue(changed);
+});
+
+test("Home and Dashboard retrieve real feed, completed activity, badges and Vibeform", async ({ page }) => {
+  await authenticatedPage(page);
+  await apiGet(page, "/api/v1/sessions?status=completed&limit=10");
+  await apiGet(page, "/api/v1/feed?scope=public&limit=10&sort=date");
+  await page.getByRole("link", { name: /^dashboard$/i }).click();
+  await expect(page.locator("[data-app-surface='dashboard']")).toBeVisible();
+  await expect(page.locator("[data-app-surface='dashboard'] button[aria-pressed]")).toHaveCount(6);
+});
+
+test("athlete uses Library exercise to open workout planning across surfaces", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/library");
+  await waitForApp(page);
+  const exercises = await apiGet(page, "/api/v1/exercises?limit=20&offset=0");
+  expect(exercises.data.length).toBeGreaterThan(0);
+  const exercise = exercises.data[0];
+  await page.locator("[data-component='library-filter-grid'] input").first().fill(exercise.name);
+  const grid = page.locator("[data-component='library-result-grid']");
+  await expect(grid.getByText(exercise.name, { exact: true }).first()).toBeVisible();
+  await grid.getByRole("button", { name: /add to workout/i }).first().click();
+  const editor = page.getByRole("dialog");
+  await expect(editor).toBeVisible();
+  const title = `Library linked workout ${Date.now()}`;
+  await editor.getByRole("textbox").first().fill(title);
+  const create = observeMutation(page, "POST", "/api/v1/sessions");
+  await editor.getByRole("button", { name: /plan/i }).last().click();
+  await expect(editor).not.toBeVisible();
+  create.assertExactlyOnce(201);
+  create.stop();
+  const sessions = await apiGet(page, "/api/v1/sessions?limit=100&offset=0");
+  expect(sessions.data.some((session) => session.title === title &&
+    session.exercises.some((item) => item.exercise_id === exercise.id))).toBe(true);
+});
