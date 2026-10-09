@@ -57,6 +57,11 @@ jobs:
         continue-on-error: true
         run: node tests/qa/check-architecture-hardcoding.mjs frontend-tokens
 
+      - name: Canonical desktop/mobile typography contract
+        id: typography_contract
+        continue-on-error: true
+        run: node tests/qa/check-typography-contract.mjs
+
       - name: Frontend component reuse
         id: architecture_frontend_reuse
         continue-on-error: true
@@ -68,6 +73,7 @@ jobs:
           BACKEND_OUTCOME: ${{ steps.architecture_backend.outcome }}
           FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
+          TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
         run: |
           failed=0
           if [ "$BACKEND_OUTCOME" != "success" ]; then
@@ -82,6 +88,10 @@ jobs:
             echo "::error::Frontend component-reuse diagnostic failed."
             failed=1
           fi
+          if [ "$TYPOGRAPHY_OUTCOME" != "success" ]; then
+            echo "::error::Typography contract diagnostic failed."
+            failed=1
+          fi
           if [ "$failed" -ne 0 ]; then
             exit 1
           fi
@@ -93,11 +103,13 @@ jobs:
           BACKEND_OUTCOME: ${{ steps.architecture_backend.outcome }}
           FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
+          TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
         run: |
           echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
           echo "- Backend policy authority: $BACKEND_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend design tokens: $FRONTEND_TOKENS_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend component reuse: $FRONTEND_REUSE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Typography contract: $TYPOGRAPHY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
 
   quality:
     name: Quality Gates (Lint & Type Check)
