@@ -92,16 +92,16 @@ if not any(
 # while retaining the normalized runtime checks for the mount itself.
 source_text = Path(sys.argv[2]).read_text()
 backend_source = re.search(
-    r"(?ms)^  backend:\\n(.*?)(?=^  [A-Za-z][A-Za-z0-9_-]*:\\n|\\Z)", source_text
+    r"(?ms)^  backend:\n(.*?)(?=^  [A-Za-z][A-Za-z0-9_-]*:\n|\Z)", source_text
 )
 if not backend_source:
     raise SystemExit("production Compose must define a backend service")
 
 bind_mounts = re.findall(
-    r"(?m)^      - type: bind\\s*\\n((?:^        .*\\n)+)", backend_source.group(1)
+    r"(?m)^      - type: bind\s*\n((?:^        .*\n)+)", backend_source.group(1)
 )
 if not any(
-    all(re.search(r"(?m)^\\s*" + re.escape(key) + r":\\s*" + re.escape(value) + r"\\s*$", mount)
+    all(re.search(r"(?m)^\s*" + re.escape(key) + r":\s*" + re.escape(value) + r"\s*$", mount)
         for key, value in (
             ("source", "/srv/stacks/fitvibe/keys"),
             ("target", "/app/keys"),
