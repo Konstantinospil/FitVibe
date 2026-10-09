@@ -78,6 +78,11 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
   if (!/\.(css|scss)$/.test(abs)) continue;
   const file = path.relative(root, abs).replaceAll(path.sep, "/");
   if (file === authority) continue;
+  const stylesheet = fs.readFileSync(abs, "utf8");
+  for (const ref of stylesheet.matchAll(/var\(--typography-[a-z-]+\)/g)) {
+    const token = ref[0].slice(4, -1);
+    if (!required.has(token)) emit(file, stylesheet, ref.index, "Unknown typography role reference " + token);
+  }
   scan(file, ({ name, value, index, content }) => {
     if (name.startsWith("--typography-")) emit(file, content, index, "Typography role may only be declared by " + authority);
     if (["font-size", "font-family", "font-weight", "line-height", "letter-spacing"].includes(name)) {
@@ -94,8 +99,8 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
 
   });
 }
-// The authority is imported once and is shared by the athlete app. Backoffice's
-// separate token authority is reported by the existing architecture check.
+// Both apps import the shared authority. Older --type-* consumers are bridged
+// to mobile role values by the same stylesheet.
 const globalFile = "apps/frontend/src/styles/global.css";
 const globalCss = fs.readFileSync(path.join(root, globalFile), "utf8");
 const backofficeFile = "apps/backoffice/src/styles/global.css";
