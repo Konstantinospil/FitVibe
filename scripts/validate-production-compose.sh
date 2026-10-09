@@ -47,8 +47,9 @@ while IFS= read -r image; do
 done <<< "${resolved_images}"
 
 resolved_config="$(docker compose -f "${compose_file}" config --format json)"
-python3 - "${resolved_config}" <<'PY'
-import json, sys
+python3 - "${resolved_config}" "${compose_file}" <<'PY'
+import json, re, sys
+from pathlib import Path
 data = json.loads(sys.argv[1])
 services = data.get("services", {})
 required = {"ingress", "backend", "frontend", "backoffice", "db", "clamav", "redis"}
@@ -82,10 +83,34 @@ if not any(
     and v.get("source") == "/srv/stacks/fitvibe/keys"
     and v.get("target") == "/app/keys"
     and v.get("read_only") is True
-    and (v.get("bind") or {}).get("create_host_path") is False
     for v in backend_volumes
 ):
-    raise SystemExit("backend must mount persistent JWT signing keys read-only without creating an empty host directory")
+    raise SystemExit("backend must mount persistent JWT signing keys read-only")
+
+# Some Compose versions drop explicit false-valued bind options from their
+# normalized JSON model. Validate create_host_path in the authored config,
+# while retaining the normalized runtime checks for the mount itself.
+source_text = Path(sys.argv[2]).read_text()
+backend_source = re.search(
+    r"(?ms)^  backend:\\n(.*?)(?=^  [A-Za-z][A-Za-z0-9_-]*:\\n|\\Z)", source_text
+)
+if not backend_source:
+    raise SystemExit("production Compose must define a backend service")
+
+bind_mounts = re.findall(
+    r"(?m)^      - type: bind\\s*\\n((?:^        .*\\n)+)", backend_source.group(1)
+)
+if not any(
+    all(re.search(r"(?m)^\\s*" + re.escape(key) + r":\\s*" + re.escape(value) + r"\\s*$", mount)
+        for key, value in (
+            ("source", "/srv/stacks/fitvibe/keys"),
+            ("target", "/app/keys"),
+            ("read_only", "true"),
+            ("create_host_path", "false"),
+        ))
+    for mount in bind_mounts
+):
+    raise SystemExit("backend JWT bind mount must explicitly prevent host-directory creation")
 
 backend_depends = services["backend"].get("depends_on") or {}
 for dependency in ("db", "clamav", "redis"):
