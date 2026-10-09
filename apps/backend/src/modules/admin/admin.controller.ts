@@ -137,14 +137,20 @@ export async function listActionMappingsHandler(_req: Request, res: Response): P
 /** POST /api/v1/admin/action-mappings */
 export async function upsertActionMappingHandler(req: Request, res: Response): Promise<void> {
   const { action, uiName } = req.body as { action?: unknown; uiName?: unknown };
-  if (typeof action !== "string" || !action.trim() || action.length > 255 ||
-      typeof uiName !== "string" || !uiName.trim() || uiName.length > 255) {
+  if (
+    typeof action !== "string" ||
+    !action.trim() ||
+    action.length > 255 ||
+    typeof uiName !== "string" ||
+    !uiName.trim() ||
+    uiName.length > 255
+  ) {
     throw new HttpError(400, "INVALID_ACTION_MAPPING", "Action and display name are required");
   }
-  const [row] = await db("audit_action_mappings")
+  const rows = (await db("audit_action_mappings")
     .insert({ action: action.trim(), ui_name: uiName.trim(), updated_at: db.fn.now() })
     .onConflict("action")
     .merge(["ui_name", "updated_at"])
-    .returning(["action", "ui_name as uiName"]);
-  res.json({ mapping: row });
+    .returning(["action", "ui_name as uiName"])) as { action: string; uiName: string }[];
+  res.json({ mapping: rows[0] ?? null });
 }
