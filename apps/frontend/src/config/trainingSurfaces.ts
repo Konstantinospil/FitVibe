@@ -3,6 +3,8 @@ export const TRAINING_DATA_CONFIG = {
   homeTrendingFeedLimit: 10,
   homePreviousActivitiesLimit: 6,
   calendarSessionLimit: 200,
+  // GET /sessions accepts at most 100 records per request.
+  calendarApiPageLimit: 100,
   calendarGridDayCount: 42,
   exerciseCatalogLimit: 250,
   standardQueryStaleMs: 60_000,
