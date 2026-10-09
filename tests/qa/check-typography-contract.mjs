@@ -43,6 +43,10 @@ for (const [role, values] of Object.entries(roles)) {
   }
   required.set("--typography-" + role + "-size", [size(desktop), size(mobile)]);
   required.set("--typography-" + role + "-line-height", [size(desktopLine), size(mobileLine)]);
+  required.set("--typography-" + role + "-family", ["var(--font-family-" + (family === "Inter" ? "body" : "heading") + ")", null]);
+  required.set("--typography-" + role + "-weight", ["var(--font-weight-" + (weight === 400 ? "regular" : weight === 582 ? "control-large" : "semibold") + ")", null]);
+  required.set("--typography-" + role + "-letter-spacing", ["var(--type-" + role + "-letter-spacing)", null]);
+  required.set("--typography-" + role, ["var(--typography-" + role + "-weight) var(--typography-" + role + "-size)/var(--typography-" + role + "-line-height) var(--typography-" + role + "-family)", null]);
 }
 const text = fs.readFileSync(path.join(root, authority), "utf8");
 const breakpoint = new RegExp("@media\\s*\\(max-width:\\s*" + schema.mobileBreakpointPx + "px\\s*\\)");
@@ -57,10 +61,10 @@ scan(authority, ({ name, value, index, content }) => {
   const key = name + ":" + mode;
   if (declarations.has(key)) emit(authority, content, index, "Duplicate role declaration " + key);
   declarations.set(key, value);
-  if (value !== expected[mode]) emit(authority, content, index, name + " must equal " + expected[mode] + ", got " + value);
+  if (expected[mode] === null || value !== expected[mode]) emit(authority, content, index, name + " must equal " + expected[mode] + ", got " + value);
 });
-for (const [name] of required) for (const mode of [0,1])
-  if (!declarations.has(name + ":" + mode)) emit(authority, text, 0, "Missing " + (mode ? "mobile" : "desktop") + " declaration " + name);
+for (const [name, values] of required) for (const mode of [0,1])
+  if (values[mode] !== null && !declarations.has(name + ":" + mode)) emit(authority, text, 0, "Missing " + (mode ? "mobile" : "desktop") + " declaration " + name);
 
 const paths = ["apps/frontend/src", "apps/backoffice/src", "packages/ui/src"];
 function walk(dir) {
@@ -101,4 +105,4 @@ if (!globalCss.includes('@import "../../../../packages/ui/src/typography.css";')
 
 for (const finding of issues) console.error("::error file=" + finding.file + ",line=" + finding.line + "::" + finding.message);
 if (issues.length) process.exit(1);
-console.log("Typography contract check passed: " + required.size / 2 + " roles, desktop and mobile.");
+console.log("Typography contract check passed: " + Object.keys(roles).length + " complete roles, desktop and mobile.");
