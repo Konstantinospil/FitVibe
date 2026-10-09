@@ -151,8 +151,10 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
             if (!open) {
               setOpen(true);
               window.setTimeout(e.key === "ArrowDown" ? focusFirst : focusLast, 0);
+            } else if (e.key === "ArrowDown") {
+              focusRelative(1);
             } else {
-              e.key === "ArrowDown" ? focusRelative(1) : focusRelative(-1);
+              focusRelative(-1);
             }
           }
           if (e.key === "Escape" && open) {
