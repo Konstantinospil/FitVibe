@@ -293,10 +293,7 @@ export async function verify2FALogin(payload: Verify2FALoginRequest): Promise<Ve
   return res.data;
 }
 
-export async function register(
-  payload: RegisterRequest,
-  avatar?: File,
-): Promise<RegisterResponse> {
+export async function register(payload: RegisterRequest, avatar?: File): Promise<RegisterResponse> {
   if (!avatar) {
     const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", payload);
     return res.data;
