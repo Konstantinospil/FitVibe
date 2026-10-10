@@ -13,7 +13,12 @@ import {
 import AuthPageLayout from "../components/AuthPageLayout";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
-import { register as registerAccount, resendVerificationEmail } from "../services/api";
+import {
+  getRegistrationOptions,
+  register as registerAccount,
+  resendVerificationEmail,
+  type RegistrationOptions,
+} from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 import { useCountdown } from "../hooks/useCountdown";
 
@@ -39,6 +44,7 @@ const Register: React.FC = () => {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
   const [activityIntensity, setActivityIntensity] = useState("");
+  const [registrationOptions, setRegistrationOptions] = useState<RegistrationOptions | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [email, setEmail] = useState("");
@@ -68,6 +74,24 @@ const Register: React.FC = () => {
       setUsername(email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_"));
     }
   }, [email, username]);
+
+  useEffect(() => {
+    let active = true;
+    void getRegistrationOptions()
+      .then((options) => {
+        if (active) {
+          setRegistrationOptions(options);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError(t("auth.register.optionsLoadError"));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [t]);
 
   const handleAvatarSelection = (file: File | undefined) => {
     if (!file) {
@@ -109,9 +133,23 @@ const Register: React.FC = () => {
       return;
     }
 
+    if (!registrationOptions) {
+      setError(t("auth.register.optionsLoadError"));
+      return;
+    }
+
     const numericWeight = Number(weight);
-    if (!Number.isFinite(numericWeight) || numericWeight < 20 || numericWeight > 400) {
-      setError(t("auth.register.weightInvalid"));
+    if (
+      !Number.isFinite(numericWeight) ||
+      numericWeight < registrationOptions.weight.minKg ||
+      numericWeight > registrationOptions.weight.maxKg
+    ) {
+      setError(
+        t("auth.register.weightInvalidConfigured", {
+          min: registrationOptions.weight.minKg,
+          max: registrationOptions.weight.maxKg,
+        }),
+      );
       return;
     }
 
@@ -173,13 +211,8 @@ const Register: React.FC = () => {
           display_name: name.trim(),
           weight_kg: numericWeight,
           date_of_birth: dateOfBirth,
-          sex: gender as "man" | "woman" | "diverse" | "prefer_not_to_say",
-          fitness_level: activityIntensity as
-            | "beginner"
-            | "intermediate"
-            | "advanced"
-            | "elite"
-            | "rehab",
+          sex: gender,
+          fitness_level: activityIntensity,
         },
       };
 
@@ -353,8 +386,8 @@ const Register: React.FC = () => {
           label={t("auth.register.weightLabel")}
           name="weight"
           type="number"
-          min="20"
-          max="400"
+          min={registrationOptions?.weight.minKg}
+          max={registrationOptions?.weight.maxKg}
           step="0.1"
           required
           value={weight}
@@ -383,10 +416,11 @@ const Register: React.FC = () => {
           disabled={isSubmitting}
         >
           <option value="">{t("auth.register.selectPlaceholder")}</option>
-          <option value="man">{t("auth.register.genderMan")}</option>
-          <option value="woman">{t("auth.register.genderWoman")}</option>
-          <option value="diverse">{t("auth.register.genderDiverse")}</option>
-          <option value="prefer_not_to_say">{t("auth.register.genderPreferNot")}</option>
+          {registrationOptions?.genders.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.description}
+            </option>
+          ))}
         </SelectField>
 
         <SelectField
@@ -399,11 +433,11 @@ const Register: React.FC = () => {
           disabled={isSubmitting}
         >
           <option value="">{t("auth.register.selectPlaceholder")}</option>
-          <option value="beginner">{t("auth.register.activityIntensityLow")}</option>
-          <option value="intermediate">{t("auth.register.activityIntensityModerate")}</option>
-          <option value="advanced">{t("auth.register.activityIntensityHigh")}</option>
-          <option value="elite">{t("auth.register.activityIntensityVeryHigh")}</option>
-          <option value="rehab">{t("auth.register.activityIntensityRehab")}</option>
+          {registrationOptions?.fitnessLevels.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.description}
+            </option>
+          ))}
         </SelectField>
 
         <InputField
