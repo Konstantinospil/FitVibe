@@ -71,7 +71,7 @@ const Settings: React.FC = () => {
     setAlias(profileQuery.data.alias ?? "");
     setBio(profileQuery.data.bio ?? "");
     const storedWeightKg = profileQuery.data.weight;
-    if (storedWeightKg == null) {
+    if (storedWeightKg === null || storedWeightKg === undefined) {
       setWeight("");
     } else if (preferencesQuery.data?.measurementSystem === "imperial") {
       setWeight((storedWeightKg / 0.453592).toFixed(2).replace(/\.00$/, ""));
@@ -120,20 +120,17 @@ const Settings: React.FC = () => {
         alias: alias.trim(),
         bio: bio.trim(),
         weight: parsedWeight,
-        weightUnit: parsedWeight === undefined
-          ? undefined
-          : preferencesQuery.data?.measurementSystem === "imperial"
-            ? "lb"
-            : "kg",
+        weightUnit:
+          parsedWeight === undefined
+            ? undefined
+            : preferencesQuery.data?.measurementSystem === "imperial"
+              ? "lb"
+              : "kg",
         fitnessLevel: fitnessLevel
           ? (fitnessLevel as "beginner" | "intermediate" | "advanced" | "elite")
           : undefined,
         trainingFrequency: trainingFrequency
-          ? (trainingFrequency as
-              | "rarely"
-              | "1_2_per_week"
-              | "3_4_per_week"
-              | "5_plus_per_week")
+          ? (trainingFrequency as "rarely" | "1_2_per_week" | "3_4_per_week" | "5_plus_per_week")
           : undefined,
       });
       await queryClient.invalidateQueries({ queryKey: ["settings", "profile"] });
