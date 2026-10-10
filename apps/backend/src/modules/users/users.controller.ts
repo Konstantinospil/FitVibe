@@ -35,39 +35,55 @@ const usernameSchema = z
     "Username may only contain letters, numbers, underscores, dots, or dashes",
   );
 
-const updateProfileSchema = z.object({
-  username: usernameSchema.optional(),
-  displayName: z.string().min(1).max(120).optional(),
-  bio: z.string().max(500).optional(),
-  alias: z
-    .string()
-    .min(3)
-    .max(50)
-    .regex(
-      /^[a-zA-Z0-9_.-]+$/,
-      "Alias may only contain letters, numbers, underscores, dots, or dashes",
-    )
-    .optional(),
-  weight: z
-    .number()
-    .positive()
-    .min(20)
-    .max(500)
-    .refine(
-      (val) => {
-        // Check that weight has at most 2 decimal places
-        const decimalPart = val.toString().split(".")[1];
-        return !decimalPart || decimalPart.length <= 2;
-      },
-      { message: "Weight must have at most 2 decimal places" },
-    )
-    .optional(),
-  weightUnit: z.enum(["kg", "lb"]).optional(),
-  fitnessLevel: z.enum(["beginner", "intermediate", "advanced", "elite"]).optional(),
-  trainingFrequency: z
-    .enum(["rarely", "1_2_per_week", "3_4_per_week", "5_plus_per_week"])
-    .optional(),
-});
+const KG_PER_LB = 0.453592;
+const IMMUTABLE_PROFILE_FIELDS = ["date_of_birth", "gender", "dateOfBirth", "genderCode"] as const;
+
+const updateProfileSchema = z
+  .object({
+    username: usernameSchema.optional(),
+    displayName: z.string().min(1).max(120).optional(),
+    bio: z.string().max(500).optional(),
+    alias: z
+      .string()
+      .min(3)
+      .max(32)
+      .regex(
+        /^[a-zA-Z0-9_.-]+$/,
+        "Alias may only contain letters, numbers, underscores, dots, or dashes",
+      )
+      .optional(),
+    weight: z
+      .number()
+      .positive()
+      .refine(
+        (val) => {
+          const decimalPart = val.toString().split(".")[1];
+          return !decimalPart || decimalPart.length <= 2;
+        },
+        { message: "Weight must have at most 2 decimal places" },
+      )
+      .optional(),
+    weightUnit: z.enum(["kg", "lb"]).optional(),
+    fitnessLevel: z.enum(["beginner", "intermediate", "advanced", "elite"]).optional(),
+    trainingFrequency: z
+      .enum(["rarely", "1_2_per_week", "3_4_per_week", "5_plus_per_week"])
+      .optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.weight === undefined) {
+      return;
+    }
+
+    const weightKg = value.weightUnit === "lb" ? value.weight * KG_PER_LB : value.weight;
+    if (weightKg < 20 || weightKg > 400) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["weight"],
+        message: "Weight must be between 20 and 400 kg equivalent",
+      });
+    }
+  });
 
 export const UpdateProfileSchema = updateProfileSchema;
 
@@ -186,9 +202,30 @@ export async function updateMe(req: Request, res: Response): Promise<void> {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const parsed = updateProfileSchema.safeParse(req.body);
+
+  const requestBody = req.body && typeof req.body === "object" ? req.body : {};
+  const immutableField = IMMUTABLE_PROFILE_FIELDS.find((field) =>
+    Object.prototype.hasOwnProperty.call(requestBody, field),
+  );
+  if (immutableField) {
+    res.status(403).json({
+      error: {
+        code: "E.USER.IMMUTABLE_FIELD",
+        message: `Profile field '${immutableField}' is immutable`,
+      },
+    });
+    return;
+  }
+
+  const parsed = updateProfileSchema.safeParse(requestBody);
   if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.flatten() });
+    res.status(422).json({
+      error: {
+        code: "E.VALIDATION_ERROR",
+        message: "Invalid profile update",
+        details: parsed.error.flatten(),
+      },
+    });
     return;
   }
 
