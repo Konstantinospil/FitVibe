@@ -254,6 +254,7 @@ const Settings: React.FC = () => {
               <AvatarEditor
                 currentAvatarUrl={profileQuery.data?.avatarUrl}
                 displayName={displayName}
+                username={profileQuery.data?.username ?? ""}
                 onChanged={() => profileQuery.refetch()}
               />
               <label className="form-label">
