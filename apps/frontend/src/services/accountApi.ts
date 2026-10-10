@@ -20,6 +20,10 @@ export type RegisterRequest = {
   terms_accepted: boolean;
   profile?: {
     display_name?: string;
+    sex?: "man" | "woman" | "diverse" | "prefer_not_to_say";
+    weight_kg?: number;
+    fitness_level?: "beginner" | "intermediate" | "advanced" | "elite" | "rehab";
+    date_of_birth?: string;
   };
 };
 
@@ -289,9 +293,21 @@ export async function verify2FALogin(payload: Verify2FALoginRequest): Promise<Ve
   return res.data;
 }
 
-export async function register(payload: RegisterRequest): Promise<RegisterResponse> {
-  // Backend sets HttpOnly cookies (accessToken, refreshToken) and returns user data
-  const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", payload);
+export async function register(
+  payload: RegisterRequest,
+  avatar?: File,
+): Promise<RegisterResponse> {
+  if (!avatar) {
+    const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", payload);
+    return res.data;
+  }
+
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payload));
+  formData.append("avatar", avatar);
+  const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return res.data;
 }
 
