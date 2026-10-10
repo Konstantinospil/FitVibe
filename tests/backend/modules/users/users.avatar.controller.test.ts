@@ -77,6 +77,7 @@ describe("Users Avatar Controller", () => {
 
     // Mock sharp
     const mockSharpInstance = {
+      metadata: jest.fn().mockResolvedValue({ format: "jpeg" }),
       rotate: jest.fn().mockReturnThis(),
       resize: jest.fn().mockReturnThis(),
       png: jest.fn().mockReturnThis(),
@@ -86,16 +87,16 @@ describe("Users Avatar Controller", () => {
   });
 
   describe("uploadAvatarHandler", () => {
-    it("should return 400 when no file is provided", async () => {
+    it("should return 422 when no file is provided", async () => {
       mockRequest.file = undefined;
 
       await avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.status).toHaveBeenCalledWith(422);
       expect(mockResponse.json).toHaveBeenCalledWith({ error: "UPLOAD_NO_FILE" });
     });
 
-    it("should return 400 when file type is not allowed", async () => {
+    it("should return 422 when file type is not allowed", async () => {
       mockRequest.file = {
         ...mockRequest.file!,
         mimetype: "application/pdf",
@@ -103,11 +104,11 @@ describe("Users Avatar Controller", () => {
 
       await avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.status).toHaveBeenCalledWith(422);
       expect(mockResponse.json).toHaveBeenCalledWith({ error: "UPLOAD_UNSUPPORTED_TYPE" });
     });
 
-    it("should return 400 when file is too large", async () => {
+    it("should return 422 when file is too large", async () => {
       mockRequest.file = {
         ...mockRequest.file!,
         size: 6 * 1024 * 1024, // 6 MB > 5 MB limit
@@ -115,7 +116,7 @@ describe("Users Avatar Controller", () => {
 
       await avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.status).toHaveBeenCalledWith(422);
       expect(mockResponse.json).toHaveBeenCalledWith({ error: "UPLOAD_TOO_LARGE" });
     });
 
@@ -123,6 +124,7 @@ describe("Users Avatar Controller", () => {
       await avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response);
 
       expect(mockAntivirus.scanBuffer).toHaveBeenCalled();
+      expect(mockSharp().resize).toHaveBeenCalledWith(128, 128, { fit: "cover" });
       expect(mockMediaStorage.saveUserAvatarFile).toHaveBeenCalled();
       expect(mockAvatarRepo.saveUserAvatarMetadata).toHaveBeenCalled();
       expect(mockAudit.insertAudit).toHaveBeenCalled();
