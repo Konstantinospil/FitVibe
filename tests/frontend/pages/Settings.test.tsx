@@ -130,19 +130,42 @@ describe("Settings", () => {
     expect(screen.getByText("settings.security.enabled")).toBeInTheDocument();
   });
 
-  it("shows an accessible avatar placeholder when no avatar exists", async () => {
+  it("shows the user's initials when no avatar exists", async () => {
+    vi.mocked(api.getCurrentUser).mockResolvedValue({
+      id: "u1",
+      username: "athlete",
+      displayName: "Athlete Stone",
+      avatarUrl: null,
+    });
+
     renderSettings();
 
     const placeholder = await screen.findByTestId("avatar-placeholder");
-    expect(placeholder).toHaveAttribute("aria-label", "Athlete");
+    expect(placeholder).toHaveAttribute("aria-label", "Athlete Stone");
     expect(placeholder).toHaveAttribute("data-size", "lg");
     expect(placeholder).toHaveAttribute("data-format", "initials");
     expect(placeholder).toHaveAttribute("data-status", "unknown");
+    expect(screen.getByText("AS")).toBeInTheDocument();
     expect(placeholder.querySelector("[data-slot='status-dot']")).not.toBeInTheDocument();
     expect(screen.getByLabelText("settings.profile.avatarSelect")).toHaveAttribute(
       "accept",
       "image/jpeg,image/png,image/webp",
     );
+  });
+
+  it("falls back to username initials when display name is empty", async () => {
+    vi.mocked(api.getCurrentUser).mockResolvedValue({
+      id: "u1",
+      username: "athlete",
+      displayName: "",
+      avatarUrl: null,
+    });
+
+    renderSettings();
+
+    const placeholder = await screen.findByTestId("avatar-placeholder");
+    expect(placeholder).toHaveAttribute("aria-label", "athlete");
+    expect(screen.getByText("A")).toBeInTheDocument();
   });
 
   it("uploads a selected avatar and refreshes the profile", async () => {
