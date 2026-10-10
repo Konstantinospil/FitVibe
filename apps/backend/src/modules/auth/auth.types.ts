@@ -20,9 +20,9 @@ export interface RefreshTokenPayload {
 
 export interface RegisterProfileInput {
   display_name?: string;
-  sex?: "man" | "woman" | "diverse" | "prefer_not_to_say";
+  sex?: string;
   weight_kg?: number | null;
-  fitness_level?: "beginner" | "intermediate" | "advanced" | "elite" | "rehab" | null;
+  fitness_level?: string | null;
   date_of_birth?: string | null;
   /** @deprecated Send date_of_birth instead. */
   age?: number | null;
