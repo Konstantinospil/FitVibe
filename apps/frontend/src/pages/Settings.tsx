@@ -14,6 +14,7 @@ import {
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { getMyVibeformProfile, updateMyVibeformPreferences } from "../lib/vibeform/api";
 import { TrainingPanel } from "../components/composites/TrainingSurface";
+import { AvatarEditor } from "../components/profile/AvatarEditor";
 
 const Settings: React.FC = () => {
   const { t } = useTranslation();
@@ -250,6 +251,11 @@ const Settings: React.FC = () => {
             <div className="training-empty">{t("common.loading")}</div>
           ) : (
             <div className="form">
+              <AvatarEditor
+                currentAvatarUrl={profileQuery.data?.avatarUrl}
+                displayName={displayName}
+                onChanged={() => profileQuery.refetch()}
+              />
               <label className="form-label">
                 <span className="form-label-text">{t("settings.profile.displayName")}</span>
                 <InputControl
