@@ -27,7 +27,7 @@ You may use the equivalent `.typography-page-title` class or the individual `--t
 
 Roles: `display`, `page-title`, `section-title`, `card-title`, `body`, `supporting`, `control`, `control-large`, `primary-metric`, `secondary-metric`, `metric-small`.
 
-The legacy `--type-*` tokens remain for compatibility. On mobile, their size and line-height values resolve to the responsive shared role definitions. Avoid introducing new legacy aliases.
+The legacy `--type-*` aliases are declared once in the shared stylesheet and resolve directly to responsive typography role variables. The athlete and Backoffice stylesheets do not own typography values. Avoid introducing new legacy aliases.
 
 ## Enforcement
 
@@ -43,7 +43,7 @@ The CI Architecture & Hardcoding job runs all checks on `feature`, `fix/*`, `dev
 
 ### Guard boundaries
 
-The automated checker rejects raw typography declarations, unknown or duplicated role declarations and references, and divergent canonical values in active CSS. The existing hardcoding gate covers React inline design values. It does not yet prove that every legacy component uses the correct *semantic* role; this requires a source and computed-style migration audit. Backend email templates and archived code are outside the active application CSS gate.
+The checker uses the PostCSS AST for active CSS and the TypeScript compiler AST for literal React/TSX typography styles. It rejects unknown or duplicate roles, unauthorized local typography declarations, and schema drift. The existing hardcoding gate provides additional coverage. A static check cannot infer every intended semantic role from an arbitrary component: computed-style and component role tests are still required for that higher-level guarantee. Backend email templates and archived code are outside the active application CSS gate.
 
 ## Changes
 
