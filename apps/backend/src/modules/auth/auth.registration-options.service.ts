@@ -7,6 +7,7 @@ interface RegistrationReferenceRow {
 }
 
 interface WeightAttributeRow {
+  key: string;
   min_value_metric: number | string | null;
   max_value_metric: number | string | null;
 }
@@ -25,10 +26,7 @@ export interface RegistrationOptions {
   };
 }
 
-function parseConfiguredNumber(
-  value: number | string | null,
-  fieldName: string,
-): number {
+function parseConfiguredNumber(value: number | string | null, fieldName: string): number {
   const parsed = typeof value === "number" ? value : Number(value);
   if (value === null || !Number.isFinite(parsed)) {
     throw new HttpError(
@@ -45,9 +43,7 @@ export async function getRegistrationOptions(): Promise<RegistrationOptions> {
     db<RegistrationReferenceRow>("genders")
       .select("code", "description")
       .orderBy("code", "asc"),
-    db<RegistrationReferenceRow>("fitness_levels")
-      .select("code", "description")
-      .orderBy("code", "asc"),
+    db<RegistrationReferenceRow>("fitness_levels").select("code", "description").orderBy("code", "asc"),
     db<WeightAttributeRow>("bio_attributes")
       .select("min_value_metric", "max_value_metric")
       .where({ key: "weight_kg" })
