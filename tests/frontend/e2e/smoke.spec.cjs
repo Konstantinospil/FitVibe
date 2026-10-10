@@ -39,14 +39,41 @@ test("authenticated shell shows Home after real login", async ({ page }) => {
 
 const { observeMutation } = require("./request-observer.cjs");
 
-async function createDisposableAthlete(page, testInfo) {
+async function createDisposableAthlete(page, testInfo, options = {}) {
   await preparePage(page);
   const suffix = `${testInfo.workerIndex}-${testInfo.retry}-${Date.now()}`;
   const email = `smoke.${suffix}@fitvibe.test`;
   const password = "SuperSecure123!";
+  const profile = {
+    displayName: options.displayName ?? "Smoke Athlete",
+    weight: options.weight ?? "75",
+    dateOfBirth: options.dateOfBirth ?? "2000-01-15",
+    gender: options.gender ?? "prefer_not_to_say",
+    activityIntensity: options.activityIntensity ?? "intermediate",
+  };
+
   await page.goto("/register");
   await waitForApp(page);
-  await displayNameInput(page).fill("Smoke Athlete");
+  await displayNameInput(page).fill(profile.displayName);
+  await page.getByRole("spinbutton", { name: /weight/i }).fill(profile.weight);
+  await page.getByLabel(/date of birth/i).fill(profile.dateOfBirth);
+  await page.getByRole("combobox", { name: /^gender$/i }).selectOption(profile.gender);
+  await page
+    .getByRole("combobox", { name: /current activity intensity/i })
+    .selectOption(profile.activityIntensity);
+
+  if (options.withAvatar) {
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8AARAwMjDAGAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+      "base64",
+    );
+    await page.getByLabel(/select photo/i).setInputFiles({
+      name: "registration-avatar.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+  }
+
   await emailInput(page).fill(email);
   await page.locator("form input[name='username']").fill(`smoke.${suffix}`);
   await passwordInput(page).fill(password);
@@ -69,7 +96,34 @@ async function createDisposableAthlete(page, testInfo) {
   await page.waitForURL((url) => url.pathname === "/");
   await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
   expect((await apiGet(page, "/api/v1/users/me")).primaryEmail).toBe(email);
+  return { email, password, profile };
 }
+
+test("registration persists profile fields and scanned avatar", async ({ page }, testInfo) => {
+  const created = await createDisposableAthlete(page, testInfo, {
+    withAvatar: true,
+    displayName: "Registration Athlete",
+    weight: "78.5",
+    dateOfBirth: "2000-02-20",
+    gender: "diverse",
+    activityIntensity: "advanced",
+  });
+
+  const profile = await apiGet(page, "/api/v1/users/me");
+  expect(profile.displayName).toBe(created.profile.displayName);
+  expect(profile.profile?.weight).toBe(78.5);
+  expect(profile.profile?.weightUnit).toBe("kg");
+  expect(profile.profile?.fitnessLevel).toBe("advanced");
+  expect(profile.avatar?.url).toBeTruthy();
+
+  await page.goto("/settings");
+  await waitForApp(page);
+  await expect(page.getByTestId("avatar-preview")).toBeVisible();
+  await testInfo.attach("registration-profile-with-avatar", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+});
 
 async function authenticatedPage(page) {
   await preparePage(page, { authenticated: true });
