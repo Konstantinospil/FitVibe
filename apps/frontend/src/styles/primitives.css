@@ -513,7 +513,7 @@
   justify-items: start;
 }
 
-.avatar-editor__preview[data-component="avatar"] {
+.avatar-editor .avatar-editor__preview[data-component="avatar"] {
   width: var(--avatar-editor-preview-size);
   height: var(--avatar-editor-preview-size);
 }
