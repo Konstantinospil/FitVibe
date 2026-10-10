@@ -57,9 +57,9 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
     setBusy(true);
     setMessage(null);
     try {
-      await uploadAvatar(selectedFile, idempotencyKey);
+      const uploaded = await uploadAvatar(selectedFile, idempotencyKey);
       setSelectedFile(null);
-      setPreviewUrl(null);
+      setPreviewUrl(uploaded.preview);
       if (inputRef.current) {
         inputRef.current.value = "";
       }
@@ -77,6 +77,9 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
     setMessage(null);
     try {
       await deleteAvatar();
+      setPreviewUrl(null);
+      setSelectedFile(null);
+      setIdempotencyKey(null);
       await onChanged();
       setMessage(t("settings.profile.avatarDeleteSuccess"));
     } catch {
@@ -90,16 +93,24 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
   const avatarName = displayName.trim() || t("settings.profile.avatarAlt");
 
   return (
-    <div className="avatar-editor">
-      <Avatar
-        className="avatar-editor__preview"
-        name={avatarName}
-        src={shownAvatar}
-        format={shownAvatar ? "photo" : "initials"}
-        size="lg"
-        statusDisplay="embedded"
-        data-testid={shownAvatar ? "avatar-preview" : "avatar-placeholder"}
-      />
+    <div className="grid grid--gap-md" aria-labelledby="avatar-editor-title">
+      <div className="flex flex--align-center flex--gap-md flex--wrap">
+        <Avatar
+          name={avatarName}
+          src={shownAvatar}
+          format={shownAvatar ? "photo" : "initials"}
+          size="lg"
+          status="unknown"
+          data-testid={shownAvatar ? "avatar-preview" : "avatar-placeholder"}
+        />
+
+        <div className="grid grid--gap-xs">
+          <p id="avatar-editor-title" className="form-label-text m-0">
+            {t("settings.profile.avatar")}
+          </p>
+          <p className="text-sm text-muted m-0">{t("settings.profile.avatarHelp")}</p>
+        </div>
+      </div>
 
       <input
         ref={inputRef}
@@ -110,7 +121,7 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
         onChange={(event) => selectFile(event.target.files?.[0])}
       />
 
-      <div className="avatar-editor__actions">
+      <div className="flex flex--gap-sm flex--wrap">
         <Button
           type="button"
           variant="secondary"
@@ -131,7 +142,6 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
         ) : null}
       </div>
 
-      <p className="text-sm text-muted">{t("settings.profile.avatarHelp")}</p>
       {message ? <div role="status">{message}</div> : null}
     </div>
   );
