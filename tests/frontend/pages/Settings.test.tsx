@@ -135,6 +135,10 @@ describe("Settings", () => {
 
     const placeholder = await screen.findByTestId("avatar-placeholder");
     expect(placeholder).toHaveAttribute("aria-label", "Athlete");
+    expect(placeholder).toHaveAttribute("data-size", "lg");
+    expect(placeholder).toHaveAttribute("data-format", "initials");
+    expect(placeholder).toHaveAttribute("data-status", "unknown");
+    expect(placeholder.querySelector("[data-slot='status-dot']")).not.toBeInTheDocument();
     expect(screen.getByLabelText("settings.profile.avatarSelect")).toHaveAttribute(
       "accept",
       "image/jpeg,image/png,image/webp",
