@@ -619,7 +619,7 @@
       "avatarSelect": "Επιλογή εικόνας",
       "avatarUpload": "Μεταφόρτωση",
       "avatarDelete": "Διαγραφή",
-      "avatarHelp": "Μεταφορτώστε εικόνα JPEG, PNG ή WebP (μέγ. 5MB). Προτεινόμενο μέγεθος: 256×256 pixel.",
+      "avatarHelp": "Μεταφορτώστε εικόνα JPEG, PNG ή WebP (μέγ. 5MB). Προτεινόμενο μέγεθος: 128×128 pixel.",
       "avatarInvalidType": "Μη έγκυρος τύπος αρχείου. Χρησιμοποιήστε JPEG, PNG ή WebP.",
       "avatarTooLarge": "Το αρχείο είναι πολύ μεγάλο. Μέγιστο μέγεθος 5MB.",
       "avatarNoFile": "Επιλέξτε ένα αρχείο για μεταφόρτωση.",
