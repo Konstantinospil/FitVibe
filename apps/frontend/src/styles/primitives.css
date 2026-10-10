@@ -505,21 +505,3 @@
   margin: 0.5rem 0;
 }
 
-
-/* Avatar editor */
-.avatar-editor {
-  display: grid;
-  gap: var(--space-md);
-  justify-items: start;
-}
-
-.avatar-editor .avatar-editor__preview[data-component="avatar"] {
-  width: var(--avatar-editor-preview-size);
-  height: var(--avatar-editor-preview-size);
-}
-
-.avatar-editor__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-}
