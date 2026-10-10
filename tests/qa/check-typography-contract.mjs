@@ -7,6 +7,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import postcss from "postcss";
 
 const root = process.cwd();
 const schema = JSON.parse(fs.readFileSync(path.join(root, "design/typography.schema.json"), "utf8"));
@@ -21,12 +22,11 @@ const emit = (file, source, offset, message) => {
 };
 const scan = (file, visit) => {
   const content = fs.readFileSync(path.join(root, file), "utf8");
-  // Extract declarations within blocks. Comments removed but newlines preserved to
-  // keep GitHub annotations useful. Ignore @media nesting for declaration inspection.
-  const clean = content.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
-  for (const match of clean.matchAll(/([\w-]+)\s*:\s*([^;{}]+);/g)) {
-    visit({ name: match[1], value: match[2].trim(), index: match.index, content });
-  }
+  const ast = postcss.parse(content, { from: file });
+  ast.walkDecls(decl => visit({
+    name: decl.prop, value: decl.value.trim(),
+    index: decl.source.start.offset, content, node: decl,
+  }));
   return content;
 };
 const required = new Map();
@@ -53,9 +53,10 @@ const breakpoint = new RegExp("@media\\s*\\(max-width:\\s*" + schema.mobileBreak
 const splitAt = text.search(breakpoint);
 if (splitAt < 0) emit(authority, text, 0, "Missing canonical mobile breakpoint.");
 const declarations = new Map();
-scan(authority, ({ name, value, index, content }) => {
+scan(authority, ({ name, value, index, content, node }) => {
   if (!name.startsWith("--typography-")) return;
-  const mode = index > splitAt && splitAt >= 0 ? 1 : 0;
+  const media = node.parent?.type === "rule" ? node.parent.parent : node.parent;
+  const mode = media?.type === "atrule" && media.name === "media" && media.params.replace(/\\s/g, "").includes("max-width:"+schema.mobileBreakpointPx+"px") ? 1 : 0;
   const expected = required.get(name);
   if (!expected) return emit(authority, content, index, "Unknown typography token " + name);
   const key = name + ":" + mode;
@@ -83,14 +84,10 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
     const token = ref[0].slice(4, -1);
     if (!required.has(token)) emit(file, stylesheet, ref.index, "Unknown typography role reference " + token);
   }
-  scan(file, ({ name, value, index, content }) => {
+  scan(file, ({ name, value, index, content, node }) => {
     if (name.startsWith("--typography-")) emit(file, content, index, "Typography role may only be declared by " + authority);
     if (["font-size", "font-family", "font-weight", "line-height", "letter-spacing"].includes(name)) {
-      const prefix = content.slice(0, index);
-      const face = prefix.lastIndexOf("@font-face");
-      const open = face >= 0 ? content.indexOf("{", face) : -1;
-      const close = open >= 0 ? content.indexOf("}", open) : -1;
-      const isFontFace = face >= 0 && open >= 0 && open < index && (close < 0 || close > index);
+      const isFontFace = node.parent?.type === "atrule" && node.parent.name === "font-face";
       const accepted = /var\(--(?:type-|typography-|font-size-|font-family-|font-weight-|line-height-|letter-spacing-)/.test(value);
       if (!isFontFace && !accepted) emit(file, content, index, "Typography declarations must use approved role tokens, not raw values: " + name);
     }
