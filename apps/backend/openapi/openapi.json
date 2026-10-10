@@ -67,11 +67,30 @@
               "schema": {
                 "$ref": "#/components/schemas/RegisterRequest"
               }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payload": {
+                    "type": "string",
+                    "description": "JSON-encoded RegisterRequest payload"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional JPEG, PNG, or WebP profile photo up to 5 MB"
+                  }
+                },
+                "required": [
+                  "payload"
+                ]
+              }
             }
           }
         },
         "responses": {
-          "201": {
+          "202": {
             "content": {
               "application/json": {
                 "schema": {
@@ -90,6 +109,15 @@
             }
           },
           "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1172,7 +1200,7 @@
               "weight_kg": {
                 "type": "number",
                 "minimum": 20,
-                "maximum": 500
+                "maximum": 400
               },
               "fitness_level": {
                 "type": "string",
