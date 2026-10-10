@@ -97,8 +97,9 @@ const paths = {
       requestBody: jsonContent("#/components/schemas/UpdateProfileRequest"),
       responses: {
         200: jsonContent("#/components/schemas/UserProfile"),
-        400: jsonContent("#/components/schemas/ErrorResponse"),
         401: jsonContent("#/components/schemas/ErrorResponse"),
+        403: jsonContent("#/components/schemas/ErrorResponse"),
+        422: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
   },
@@ -633,8 +634,12 @@ const schemas = {
       username: { type: "string", minLength: 3, maxLength: 50 },
       displayName: { type: "string", minLength: 1, maxLength: 120 },
       bio: { type: "string", maxLength: 500 },
-      alias: { type: "string", minLength: 3, maxLength: 50 },
-      weight: { type: "number", minimum: 20, maximum: 500 },
+      alias: { type: "string", minLength: 3, maxLength: 32 },
+      weight: {
+        type: "number",
+        exclusiveMinimum: 0,
+        description: "Weight in weightUnit; must be within the 20–400 kg equivalent range.",
+      },
       weightUnit: { type: "string", enum: ["kg", "lb"] },
       fitnessLevel: { type: "string", enum: ["beginner", "intermediate", "advanced", "elite"] },
       trainingFrequency: {
@@ -642,6 +647,21 @@ const schemas = {
         enum: ["rarely", "1_2_per_week", "3_4_per_week", "5_plus_per_week"],
       },
     },
+    allOf: [
+      {
+        if: {
+          properties: { weightUnit: { const: "lb" } },
+          required: ["weightUnit"],
+        },
+        then: {
+          properties: { weight: { minimum: 44.09, maximum: 881.85 } },
+        },
+        else: {
+          properties: { weight: { minimum: 20, maximum: 400 } },
+        },
+      },
+    ],
+    additionalProperties: false,
   },
   UpdatePreferencesRequest: {
     type: "object",
