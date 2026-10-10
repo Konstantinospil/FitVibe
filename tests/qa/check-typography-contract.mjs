@@ -8,6 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import postcss from "postcss";
+import ts from "typescript";
 
 const root = process.cwd();
 const schema = JSON.parse(fs.readFileSync(path.join(root, "design/typography.schema.json"), "utf8"));
@@ -85,7 +86,7 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
     if (!required.has(token)) emit(file, stylesheet, ref.index, "Unknown typography role reference " + token);
   }
   scan(file, ({ name, value, index, content, node }) => {
-    if (name.startsWith("--typography-")) emit(file, content, index, "Typography role may only be declared by " + authority);
+    if (name.startsWith("--typography-") || name.startsWith("--type-") || name.startsWith("--font-family-") || name.startsWith("--font-weight-")) emit(file, content, index, "Typography tokens may only be declared by " + authority);
     if (["font-size", "font-family", "font-weight", "line-height", "letter-spacing"].includes(name)) {
       const isFontFace = node.parent?.type === "atrule" && node.parent.name === "font-face";
       const accepted = /var\(--(?:type-|typography-|font-size-|font-family-|font-weight-|line-height-|letter-spacing-)/.test(value);
@@ -96,6 +97,30 @@ for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
 
   });
 }
+// Parse active TypeScript/JSX with the TypeScript compiler AST. This complements
+// PostCSS and detects literal inline typography values without regex over source.
+const inlineProperties = new Set(["fontSize", "fontFamily", "fontWeight", "lineHeight", "letterSpacing", "font"]);
+for (const dir of paths) for (const abs of walk(path.join(root, dir))) {
+  if (!/\\.(?:ts|tsx|js|jsx)$/.test(abs) || /\\.(?:test|spec)\\./.test(abs)) continue;
+  const file = path.relative(root, abs).replaceAll(path.sep, "/");
+  const content = fs.readFileSync(abs, "utf8");
+  const tree = ts.createSourceFile(file, content, ts.ScriptTarget.Latest, true,
+    /\\.(?:tsx|jsx)$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const visit = (node) => {
+    if (ts.isPropertyAssignment(node)) {
+      const name = ts.isIdentifier(node.name) || ts.isStringLiteral(node.name) ? node.name.text : "";
+      if (inlineProperties.has(name) && (ts.isStringLiteral(node.initializer) || ts.isNumericLiteral(node.initializer))) {
+        const value = node.initializer.text;
+        if (!/^var\\(--(?:type-|typography-|font-size-|font-family-|font-weight-|line-height-|letter-spacing-)[a-z0-9-]+\\)$/.test(value)) {
+          emit(file, content, node.getStart(tree), "Inline typography value must use an approved design token: " + name);
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(tree);
+}
+
 // Both apps import the shared authority. Older --type-* consumers are bridged
 // to mobile role values by the same stylesheet.
 const globalFile = "apps/frontend/src/styles/global.css";
