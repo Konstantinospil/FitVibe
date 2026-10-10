@@ -199,7 +199,11 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
       gender_code: gender.code,
       fitness_level_code: fitnessLevel.code,
     });
-    expect(String(profile.date_of_birth).slice(0, 10)).toBe("2000-02-20");
+    const storedDateOfBirth =
+      profile.date_of_birth instanceof Date
+        ? profile.date_of_birth.toISOString().slice(0, 10)
+        : String(profile.date_of_birth);
+    expect(storedDateOfBirth).toBe("2000-02-20");
 
     const weight = await db("bio_attribute_values as values")
       .join("bio_attributes as attributes", "attributes.id", "values.attribute_id")
