@@ -20,9 +20,9 @@ export type RegisterRequest = {
   terms_accepted: boolean;
   profile?: {
     display_name?: string;
-    sex?: "man" | "woman" | "diverse" | "prefer_not_to_say";
+    sex?: string;
     weight_kg?: number;
-    fitness_level?: "beginner" | "intermediate" | "advanced" | "elite" | "rehab";
+    fitness_level?: string;
     date_of_birth?: string;
   };
 };
@@ -270,6 +270,25 @@ export type RegisterResponse = {
   user: UserResponse;
   session: unknown;
 };
+
+export interface RegistrationReferenceOption {
+  code: string;
+  description: string;
+}
+
+export interface RegistrationOptions {
+  genders: RegistrationReferenceOption[];
+  fitnessLevels: RegistrationReferenceOption[];
+  weight: {
+    minKg: number;
+    maxKg: number;
+  };
+}
+
+export async function getRegistrationOptions(): Promise<RegistrationOptions> {
+  const res = await rawHttpClient.get<RegistrationOptions>("/api/v1/auth/register/options");
+  return res.data;
+}
 
 export type Verify2FAResponse = {
   user: UserResponse;
