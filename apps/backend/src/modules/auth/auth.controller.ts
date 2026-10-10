@@ -128,7 +128,9 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const scopeUserId = `anon:${payload.email}`;
 
     const execute = async (): Promise<Record<string, unknown>> => {
-      const { verificationToken } = await doRegister(payload, preparedAvatar);
+      const { verificationToken } = preparedAvatar
+        ? await doRegister(payload, preparedAvatar)
+        : await doRegister(payload);
       const response: Record<string, unknown> = {
         message: "If the email is valid, a verification link will be sent shortly.",
       };
