@@ -38,6 +38,7 @@ import {
   persistRegistrationAvatar,
   type PersistedRegistrationAvatar,
 } from "./auth.registration-avatar.service.js";
+import { assertRegistrationReferenceValues } from "./auth.registration-options.service.js";
 
 const SECONDS_PER_MINUTE = 60;
 function emailVerificationTtlSeconds(): number {
@@ -68,6 +69,12 @@ export async function register(
       throw new HttpError(403, "AUTH_EMAIL_BLOCKED", "AUTH_EMAIL_BLOCKED");
     }
     assertPasswordPolicy(dto.password, { email, alias });
+    await assertRegistrationReferenceValues({
+      gender: dto.profile?.sex,
+      fitnessLevel: dto.profile?.fitness_level ?? undefined,
+      weightKg: dto.profile?.weight_kg ?? undefined,
+    });
+
     const existingByEmail = await findUserByEmail(email);
     const existingByUsername = await findUserByUsername(alias);
 
