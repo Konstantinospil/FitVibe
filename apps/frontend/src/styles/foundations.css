@@ -53,38 +53,11 @@ html {
   background-clip: padding-box;
 }
 
-/* Native end buttons use two short strokes to form directional chevrons.
- * This is progressive enhancement: Firefox does not support these pseudo-elements.
- */
-*::-webkit-scrollbar-button:single-button {
-  display: block;
-  background-color: var(--scrollbar-track);
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-*::-webkit-scrollbar-button:single-button:vertical {
-  height: var(--scrollbar-button-size);
-}
-
-*::-webkit-scrollbar-button:single-button:horizontal {
-  width: var(--scrollbar-button-size);
-}
-
-*::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image:
-    linear-gradient(135deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%),
-    linear-gradient(225deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%);
-  background-size: 4px 4px, 4px 4px;
-  background-position: calc(50% - 2px) center, calc(50% + 2px) center;
-}
-
-*::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image:
-    linear-gradient(45deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%),
-    linear-gradient(315deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%);
-  background-size: 4px 4px, 4px 4px;
-  background-position: calc(50% - 2px) center, calc(50% + 2px) center;
+/* The Figma scrollbar has no end controls. */
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 *::-webkit-scrollbar-corner {
