@@ -20,6 +20,8 @@ import { createUser } from "../../../apps/backend/src/modules/auth/auth.reposito
 import {
   truncateAll,
   ensureRolesSeeded,
+  ensureWeightAttributeSeeded,
+  ensureFitnessLevelsSeeded,
   withDatabaseErrorHandling,
   ensureUsernameColumnExists,
 } from "../../setup/test-helpers.js";
@@ -46,8 +48,10 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
       // Keep the integration fixture aligned with a fresh deployed database:
       // schema migration first, then deterministic catalog/legal seeds.
       await seedLegalPublications(db);
-      // Ensure roles are seeded before creating users
+      // Ensure catalogs required by expanded registration are available.
       await ensureRolesSeeded();
+      await ensureWeightAttributeSeeded();
+      await ensureFitnessLevelsSeeded();
     }, "beforeEach");
   });
 
@@ -145,6 +149,104 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
     const sessionInDb = await db("sessions").where({ id: sessionResponse.body.id }).first();
     expect(sessionInDb).toBeDefined();
     expect(sessionInDb.owner_id).toBe(userId);
+  });
+
+  it("should persist expanded registration profile and clean avatar", async () => {
+    const payload = {
+      email: "profile-registration@example.com",
+      username: "profile-registration",
+      password: "SecureP@ssw0rd123!",
+      terms_accepted: true,
+      profile: {
+        display_name: "Profile Registration",
+        weight_kg: 78.5,
+        date_of_birth: "2000-02-20",
+        sex: "diverse",
+        fitness_level: "advanced",
+      },
+    };
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8AARAwMjDAGAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+      "base64",
+    );
+
+    const response = await request(app)
+      .post("/api/v1/auth/register")
+      .field("payload", JSON.stringify(payload))
+      .attach("avatar", png, {
+        filename: "registration-avatar.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(202);
+
+    const { findUserByEmail } =
+      await import("../../../apps/backend/src/modules/auth/auth.repository.js");
+    const user = await findUserByEmail(payload.email);
+    expect(user).toBeDefined();
+
+    const profile = await db("profiles").where({ user_id: user?.id }).first();
+    expect(profile).toMatchObject({
+      gender_code: "diverse",
+      fitness_level_code: "advanced",
+    });
+    expect(String(profile.date_of_birth).slice(0, 10)).toBe("2000-02-20");
+
+    const weight = await db("bio_attribute_values as values")
+      .join("bio_attributes as attributes", "attributes.id", "values.attribute_id")
+      .where("values.user_id", user?.id)
+      .andWhere("attributes.key", "weight_kg")
+      .select("values.value_number")
+      .first();
+    expect(Number(weight?.value_number)).toBe(78.5);
+
+    const avatar = await db("media")
+      .where({
+        owner_id: user?.id,
+        target_type: "user_avatar",
+        target_id: user?.id,
+      })
+      .first();
+    expect(avatar).toBeDefined();
+    expect(avatar.mime_type).toBe("image/png");
+    expect(avatar.bytes).toBeGreaterThan(0);
+  });
+
+  it("should reject a malware registration avatar before creating the account", async () => {
+    const email = "malware-registration@example.com";
+    const eicar = Buffer.from(
+      "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
+    );
+
+    const response = await request(app)
+      .post("/api/v1/auth/register")
+      .field(
+        "payload",
+        JSON.stringify({
+          email,
+          username: "malware-registration",
+          password: "SecureP@ssw0rd123!",
+          terms_accepted: true,
+          profile: {
+            display_name: "Malware Registration",
+            weight_kg: 75,
+            date_of_birth: "2000-01-15",
+            sex: "prefer_not_to_say",
+            fitness_level: "intermediate",
+          },
+        }),
+      )
+      .attach("avatar", eicar, {
+        filename: "eicar.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error?.code).toBe("E.UPLOAD.MALWARE_DETECTED");
+
+    const { findUserByEmail } =
+      await import("../../../apps/backend/src/modules/auth/auth.repository.js");
+    expect(await findUserByEmail(email)).toBeUndefined();
   });
 
   it("should handle login failure with incorrect password", async () => {
