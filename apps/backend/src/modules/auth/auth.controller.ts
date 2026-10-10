@@ -37,6 +37,7 @@ import { verifyAccess } from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 import { prepareRegistrationAvatar } from "./auth.registration-avatar.service.js";
+import { getRegistrationOptions } from "./auth.registration-options.service.js";
 
 function authCookieOptions(maxAge?: number) {
   return {
@@ -107,6 +108,18 @@ type RegisterInput = z.infer<typeof RegisterSchema>;
 type LoginInput = z.infer<typeof LoginSchema>;
 type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
+
+export async function registrationOptions(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    res.status(200).json(await getRegistrationOptions());
+  } catch (error) {
+    next(error);
+  }
+}
 
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
