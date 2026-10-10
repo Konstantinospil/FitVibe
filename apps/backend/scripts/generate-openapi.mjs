@@ -34,6 +34,16 @@ const bearerAuth = {
 };
 
 const paths = {
+  "/auth/register/options": {
+    get: {
+      summary: "Get registration reference options",
+      tags: ["Auth"],
+      responses: {
+        200: jsonContent("#/components/schemas/RegistrationOptions"),
+        500: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
   "/auth/register": {
     post: {
       summary: "Register a new account",
@@ -477,6 +487,39 @@ const schemas = {
     },
     required: ["accessToken", "refreshToken", "expiresIn"],
   },
+  RegistrationReferenceOption: {
+    type: "object",
+    properties: {
+      code: { type: "string" },
+      description: { type: "string" },
+    },
+    required: ["code", "description"],
+    additionalProperties: false,
+  },
+  RegistrationOptions: {
+    type: "object",
+    properties: {
+      genders: {
+        type: "array",
+        items: { $ref: "#/components/schemas/RegistrationReferenceOption" },
+      },
+      fitnessLevels: {
+        type: "array",
+        items: { $ref: "#/components/schemas/RegistrationReferenceOption" },
+      },
+      weight: {
+        type: "object",
+        properties: {
+          minKg: { type: "number" },
+          maxKg: { type: "number" },
+        },
+        required: ["minKg", "maxKg"],
+        additionalProperties: false,
+      },
+    },
+    required: ["genders", "fitnessLevels", "weight"],
+    additionalProperties: false,
+  },
   RegisterRequest: {
     type: "object",
     properties: {
@@ -510,12 +553,15 @@ const schemas = {
           display_name: { type: "string", minLength: 1, maxLength: 100 },
           sex: {
             type: "string",
-            enum: ["man", "woman", "diverse", "prefer_not_to_say"],
+            description: "Opaque reference code validated against the genders catalog.",
           },
-          weight_kg: { type: "number", minimum: 20, maximum: 400 },
+          weight_kg: {
+            type: "number",
+            description: "Validated against the configured weight bio-attribute range.",
+          },
           fitness_level: {
             type: "string",
-            enum: ["beginner", "intermediate", "advanced", "elite", "rehab"],
+            description: "Opaque reference code validated against the fitness_levels catalog.",
           },
           date_of_birth: { type: "string", format: "date" },
           age: { type: "integer", minimum: 13, maximum: 120, deprecated: true },
