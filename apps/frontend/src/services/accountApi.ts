@@ -161,6 +161,34 @@ export async function updateProfile(payload: UpdateProfileRequest): Promise<User
   };
 }
 
+export interface AvatarUploadResponse {
+  success: true;
+  fileUrl: string;
+  bytes: number;
+  mimeType: "image/png";
+  updatedAt: string;
+  preview: string;
+}
+
+export async function uploadAvatar(
+  file: File,
+  idempotencyKey: string,
+): Promise<AvatarUploadResponse> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const res = await apiClient.post<AvatarUploadResponse>("/api/v1/users/me/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      "Idempotency-Key": idempotencyKey,
+    },
+  });
+  return res.data;
+}
+
+export async function deleteAvatar(): Promise<void> {
+  await apiClient.delete("/api/v1/users/me/avatar");
+}
+
 export interface BodyWeightEntry {
   id: string;
   weightKg: number;
