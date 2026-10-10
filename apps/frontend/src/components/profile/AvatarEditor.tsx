@@ -6,6 +6,7 @@ import { deleteAvatar, uploadAvatar } from "../../services/api";
 interface AvatarEditorProps {
   currentAvatarUrl?: string | null;
   displayName: string;
+  username: string;
   onChanged: () => unknown;
 }
 
@@ -15,6 +16,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 export const AvatarEditor: React.FC<AvatarEditorProps> = ({
   currentAvatarUrl,
   displayName,
+  username,
   onChanged,
 }) => {
   const { t } = useTranslation();
@@ -90,7 +92,7 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
   };
 
   const shownAvatar = previewUrl ?? currentAvatarUrl ?? undefined;
-  const avatarName = displayName.trim() || t("settings.profile.avatarAlt");
+  const avatarName = displayName.trim() || username.trim();
 
   return (
     <div className="grid grid--gap-md" aria-labelledby="avatar-editor-title">
