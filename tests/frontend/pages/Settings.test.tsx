@@ -41,6 +41,10 @@ describe("Settings", () => {
       displayName: "Athlete",
       alias: "athlete",
       bio: "Training",
+      weight: 75,
+      weightUnit: "kg",
+      fitnessLevel: "intermediate",
+      trainingFrequency: "3_4_per_week",
     });
     vi.mocked(api.getUserPreferences).mockResolvedValue({
       language: "en",
@@ -124,6 +128,56 @@ describe("Settings", () => {
     await waitFor(() => {
       expect(api.updateProfile).toHaveBeenCalledWith(
         expect.objectContaining({ displayName: "Updated" }),
+      );
+    });
+  });
+
+  it("edits weight, fitness level and training frequency through the profile API", async () => {
+    renderSettings();
+
+    const weight = await screen.findByLabelText("settings.profile.weight");
+    const fitnessLevel = screen.getByLabelText("settings.profile.fitnessLevel");
+    const trainingFrequency = screen.getByLabelText("settings.profile.trainingFrequency");
+
+    expect(weight).toHaveValue(75);
+
+    fireEvent.change(weight, { target: { value: "80.5" } });
+    fireEvent.change(fitnessLevel, { target: { value: "advanced" } });
+    fireEvent.change(trainingFrequency, { target: { value: "5_plus_per_week" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[0]);
+
+    await waitFor(() => {
+      expect(api.updateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          weight: 80.5,
+          weightUnit: "kg",
+          fitnessLevel: "advanced",
+          trainingFrequency: "5_plus_per_week",
+        }),
+      );
+    });
+  });
+
+  it("displays stored kg weight in pounds for imperial preferences and saves pounds", async () => {
+    vi.mocked(api.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "imperial",
+    });
+
+    renderSettings();
+
+    const weight = await screen.findByLabelText("settings.profile.weight");
+    expect(weight).toHaveValue(165.35);
+
+    fireEvent.change(weight, { target: { value: "170" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[0]);
+
+    await waitFor(() => {
+      expect(api.updateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          weight: 170,
+          weightUnit: "lb",
+        }),
       );
     });
   });
