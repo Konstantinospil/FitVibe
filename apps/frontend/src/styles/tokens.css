@@ -41,12 +41,10 @@
   --scrollbar-track-width: 8px;
   --scrollbar-thumb-inset: 1px;
   --scrollbar-thumb-min-height: 72px;
-  --scrollbar-button-size: 12px;
   --scrollbar-track: var(--color-surface-muted);
   --scrollbar-thumb: var(--color-border-strong);
   --scrollbar-thumb-hover: var(--color-text-secondary);
   --scrollbar-thumb-active: var(--color-primary);
-  --scrollbar-chevron: var(--color-text-secondary);
 
   /* Compatibility aliases: every alias resolves to an existing Figma text style. */
   --font-family-base: var(--font-family-body);
