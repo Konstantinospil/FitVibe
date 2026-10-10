@@ -260,20 +260,66 @@ test("athlete creates personal exercise and finds it after reload", async ({ pag
   await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
 });
 
-test("athlete saves profile and preference changes across navigation", async ({ page }, testInfo) => {
+test("athlete saves complete editable profile across navigation", async ({ page }, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
   await waitForApp(page);
+
   const name = `Smoke Profile ${Date.now()}`;
+  const alias = `smoke-profile-${Date.now()}`;
+  const weight = "82.5";
+  const fitnessLevel = "advanced";
+  const trainingFrequency = "5_plus_per_week";
+
   await page.getByRole("textbox", { name: /display name/i }).fill(name);
+  await page.getByRole("textbox", { name: /^alias$/i }).fill(alias);
+  await page.getByRole("spinbutton", { name: /^weight$/i }).fill(weight);
+  await page.getByRole("combobox", { name: /fitness level/i }).selectOption(fitnessLevel);
+  await page
+    .getByRole("combobox", { name: /training frequency/i })
+    .selectOption(trainingFrequency);
+
   const profilePatch = observeMutation(page, "PATCH", "/api/v1/users/me");
   await page.getByRole("button", { name: /^save$/i }).first().click();
-  await expect.poll(async () => (await apiGet(page, "/api/v1/users/me")).displayName).toBe(name);
+
+  await expect
+    .poll(async () => {
+      const profile = await apiGet(page, "/api/v1/users/me");
+      return {
+        displayName: profile.displayName,
+        alias: profile.profile?.alias,
+        weight: profile.profile?.weight,
+        weightUnit: profile.profile?.weightUnit,
+        fitnessLevel: profile.profile?.fitnessLevel,
+        trainingFrequency: profile.profile?.trainingFrequency,
+      };
+    })
+    .toEqual({
+      displayName: name,
+      alias,
+      weight: 82.5,
+      weightUnit: "kg",
+      fitnessLevel,
+      trainingFrequency,
+    });
+
   profilePatch.assertExactlyOnce(200);
   profilePatch.stop();
+
   await page.reload();
   await waitForApp(page);
   await expect(page.getByRole("textbox", { name: /display name/i })).toHaveValue(name);
+  await expect(page.getByRole("textbox", { name: /^alias$/i })).toHaveValue(alias);
+  await expect(page.getByRole("spinbutton", { name: /^weight$/i })).toHaveValue(weight);
+  await expect(page.getByRole("combobox", { name: /fitness level/i })).toHaveValue(fitnessLevel);
+  await expect(page.getByRole("combobox", { name: /training frequency/i })).toHaveValue(
+    trainingFrequency,
+  );
+
+  await testInfo.attach("profile-settings-saved", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
 });
 
 test("athlete changes Vibeform and Dashboard reflects saved profile", async ({ page }, testInfo) => {
