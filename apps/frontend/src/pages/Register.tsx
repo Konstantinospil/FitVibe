@@ -22,9 +22,7 @@ const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 function dateYearsAgo(years: number): string {
   const today = new Date();
-  return new Date(
-    Date.UTC(today.getUTCFullYear() - years, today.getUTCMonth(), today.getUTCDate()),
-  )
+  return new Date(Date.UTC(today.getUTCFullYear() - years, today.getUTCMonth(), today.getUTCDate()))
     .toISOString()
     .slice(0, 10);
 }
@@ -176,12 +174,7 @@ const Register: React.FC = () => {
           weight_kg: numericWeight,
           date_of_birth: dateOfBirth,
           sex: gender as "man" | "woman" | "diverse" | "prefer_not_to_say",
-          fitness_level: activityIntensity as
-            | "beginner"
-            | "intermediate"
-            | "advanced"
-            | "elite"
-            | "rehab",
+          fitness_level: activityIntensity as "beginner" | "intermediate" | "advanced" | "elite" | "rehab",
         },
       };
 
