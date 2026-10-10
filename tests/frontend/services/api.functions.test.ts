@@ -964,6 +964,12 @@ describe("API Service Functions", () => {
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-02T00:00:00.000Z",
     primaryEmail: "alex@example.com",
+    avatar: {
+      url: "/api/v1/users/avatar/u1",
+      mimeType: "image/png",
+      bytes: 4096,
+      updatedAt: "2026-10-10T12:34:56.000Z",
+    },
     profile: {
       alias: "A",
       bio: "lifter",
@@ -983,6 +989,8 @@ describe("API Service Functions", () => {
         bio: "lifter",
         alias: "A",
         weight: 80,
+        avatarUrl:
+          "/api/v1/users/avatar/u1?v=2026-10-10T12%3A34%3A56.000Z",
       });
 
       apiMock.onGet("/api/v1/users/me").replyOnce(200, {
