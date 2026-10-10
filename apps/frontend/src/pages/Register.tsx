@@ -174,7 +174,12 @@ const Register: React.FC = () => {
           weight_kg: numericWeight,
           date_of_birth: dateOfBirth,
           sex: gender as "man" | "woman" | "diverse" | "prefer_not_to_say",
-          fitness_level: activityIntensity as "beginner" | "intermediate" | "advanced" | "elite" | "rehab",
+          fitness_level: activityIntensity as
+            | "beginner"
+            | "intermediate"
+            | "advanced"
+            | "elite"
+            | "rehab",
         },
       };
 
