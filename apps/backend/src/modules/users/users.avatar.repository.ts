@@ -1,3 +1,4 @@
+import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 
 const MEDIA_TABLE = "media";
@@ -25,14 +26,16 @@ export async function saveUserAvatarMetadata(
     mimeType: string;
     bytes: number;
   },
+  trx?: Knex.Transaction,
 ): Promise<{ previousKey: string | null; record: AvatarMeta }> {
-  const existing = await db<AvatarMeta>(MEDIA_TABLE)
+  const connection = trx ?? db;
+  const existing = await connection<AvatarMeta>(MEDIA_TABLE)
     .where({ owner_id: userId, target_type: TARGET_TYPE, target_id: userId })
     .first();
   const now = new Date().toISOString();
 
   if (existing) {
-    await db(MEDIA_TABLE).where({ id: existing.id }).update({
+    await connection(MEDIA_TABLE).where({ id: existing.id }).update({
       storage_key: meta.storageKey,
       file_url: meta.fileUrl,
       mime_type: meta.mimeType,
@@ -40,14 +43,14 @@ export async function saveUserAvatarMetadata(
       // Note: media table doesn't have updated_at column, only created_at
     });
 
-    const updated = await db<AvatarMeta>(MEDIA_TABLE).where({ id: existing.id }).first();
+    const updated = await connection<AvatarMeta>(MEDIA_TABLE).where({ id: existing.id }).first();
     return {
       previousKey: existing.storage_key,
       record: updated ?? existing,
     };
   }
 
-  const [created] = await db<AvatarMeta>(MEDIA_TABLE)
+  const [created] = await connection<AvatarMeta>(MEDIA_TABLE)
     .insert({
       owner_id: userId,
       target_type: TARGET_TYPE,
