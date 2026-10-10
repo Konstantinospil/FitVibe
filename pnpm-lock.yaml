@@ -307,6 +307,9 @@ importers:
       pnpm:
         specifier: 12.7.0
         version: 12.7.0
+      postcss:
+        specifier: 8.5.28
+        version: 8.5.28
       prettier:
         specifier: 3.9.9
         version: 3.9.9
