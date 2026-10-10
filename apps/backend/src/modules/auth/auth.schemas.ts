@@ -18,9 +18,9 @@ const aliasSchema = z
 const registerProfileSchema = z
   .object({
     display_name: z.string().min(1).max(100).optional(),
-    sex: z.enum(["man", "woman", "diverse", "prefer_not_to_say"]).optional(),
-    weight_kg: z.number().min(20).max(400).optional(),
-    fitness_level: z.enum(["beginner", "intermediate", "advanced", "elite", "rehab"]).optional(),
+    sex: z.string().trim().min(1).max(100).optional(),
+    weight_kg: z.number().finite().optional(),
+    fitness_level: z.string().trim().min(1).max(100).optional(),
     date_of_birth: z.string().date().optional(),
     /** @deprecated Send date_of_birth instead. */
     age: z.number().int().min(13).max(120).optional(),
