@@ -40,10 +40,10 @@ function parseConfiguredNumber(value: number | string | null, fieldName: string)
 
 export async function getRegistrationOptions(): Promise<RegistrationOptions> {
   const [genderRows, fitnessRows, weightAttribute] = await Promise.all([
-    db<RegistrationReferenceRow>("genders")
+    db<RegistrationReferenceRow>("genders").select("code", "description").orderBy("code", "asc"),
+    db<RegistrationReferenceRow>("fitness_levels")
       .select("code", "description")
       .orderBy("code", "asc"),
-    db<RegistrationReferenceRow>("fitness_levels").select("code", "description").orderBy("code", "asc"),
     db<WeightAttributeRow>("bio_attributes")
       .select("min_value_metric", "max_value_metric")
       .where({ key: "weight_kg" })
