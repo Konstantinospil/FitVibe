@@ -156,6 +156,11 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
   });
 
   it("should persist expanded registration profile and clean avatar", async () => {
+    const gender = await db("genders").select("code").orderBy("code", "asc").first();
+    const fitnessLevel = await db("fitness_levels").select("code").orderBy("code", "asc").first();
+    expect(gender?.code).toBeTruthy();
+    expect(fitnessLevel?.code).toBeTruthy();
+
     const payload = {
       email: "profile-registration@example.com",
       username: "profile-registration",
@@ -165,12 +170,12 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
         display_name: "Profile Registration",
         weight_kg: 78.5,
         date_of_birth: "2000-02-20",
-        sex: "diverse",
-        fitness_level: "advanced",
+        sex: String(gender.code),
+        fitness_level: String(fitnessLevel.code),
       },
     };
     const png = Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8AARAwMjDAGAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z8Dwn4GBgYGJAQoAHxcCAk+Uzr4AAAAASUVORK5CYII=",
       "base64",
     );
 
@@ -191,8 +196,8 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
 
     const profile = await db("profiles").where({ user_id: user?.id }).first();
     expect(profile).toMatchObject({
-      gender_code: "diverse",
-      fitness_level_code: "advanced",
+      gender_code: gender.code,
+      fitness_level_code: fitnessLevel.code,
     });
     expect(String(profile.date_of_birth).slice(0, 10)).toBe("2000-02-20");
 
@@ -214,6 +219,14 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
     expect(avatar).toBeDefined();
     expect(avatar.mime_type).toBe("image/png");
     expect(avatar.bytes).toBeGreaterThan(0);
+
+    const storedAvatar = await readStorageObject(avatar.storage_key);
+    const storedMetadata = await sharp(storedAvatar).metadata();
+    expect(storedMetadata).toMatchObject({
+      format: "png",
+      width: 128,
+      height: 128,
+    });
   });
 
   it("should reject a malware registration avatar before creating the account", async () => {
