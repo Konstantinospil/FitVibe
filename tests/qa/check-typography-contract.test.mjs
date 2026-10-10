@@ -29,6 +29,13 @@ try {
   fs.writeFileSync(rogue, ".bad { font: 600 27px Arial; }\n");
   assert.notEqual(run().status, 0, "Font shorthand bypasses must fail");
   fs.rmSync(rogue);
+  const rogueTsx = path.join(workspace, "apps/frontend/src/rogue.tsx");
+  fs.mkdirSync(path.dirname(rogueTsx), { recursive: true });
+  fs.writeFileSync(rogueTsx, 'export const Example = () => <h1 style={{ fontSize: "27px" }}>Heading</h1>;\\n');
+  assert.notEqual(run().status, 0, "TypeScript AST must reject raw inline typography");
+  fs.writeFileSync(rogueTsx, 'export const Example = () => <h1 style={{ fontSize: "var(--typography-page-title-size)" }}>Heading</h1>;\\n');
+  assert.equal(run().status, 0, "TypeScript AST must accept role-backed inline typography");
+  fs.rmSync(rogueTsx);
   const css = path.join(workspace, "packages/ui/src/typography.css");
   const original = fs.readFileSync(css, "utf8");
   fs.writeFileSync(css, original.replace("--typography-page-title-size: 2rem;", "--typography-page-title-size: 3rem;"));
