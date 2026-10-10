@@ -1,3 +1,45 @@
+/* Sole legacy typography compatibility authority. Do not reintroduce app-local roles. */
+:root {
+  --font-family-body: "Inter", system-ui, sans-serif;
+  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-control-large: 582;
+  --font-weight-semibold: 600;
+  --type-display-size: var(--typography-display-size);
+  --type-display-line-height: var(--typography-display-line-height);
+  --type-display-letter-spacing: -0.01em;
+  --type-page-title-size: var(--typography-page-title-size);
+  --type-page-title-line-height: var(--typography-page-title-line-height);
+  --type-page-title-letter-spacing: -0.005em;
+  --type-section-title-size: var(--typography-section-title-size);
+  --type-section-title-line-height: var(--typography-section-title-line-height);
+  --type-section-title-letter-spacing: -0.005em;
+  --type-card-title-size: var(--typography-card-title-size);
+  --type-card-title-line-height: var(--typography-card-title-line-height);
+  --type-card-title-letter-spacing: 0;
+  --type-body-size: var(--typography-body-size);
+  --type-body-line-height: var(--typography-body-line-height);
+  --type-body-letter-spacing: 0;
+  --type-supporting-size: var(--typography-supporting-size);
+  --type-supporting-line-height: var(--typography-supporting-line-height);
+  --type-supporting-letter-spacing: 0;
+  --type-control-size: var(--typography-control-size);
+  --type-control-line-height: var(--typography-control-line-height);
+  --type-control-letter-spacing: 0;
+  --type-control-large-size: var(--typography-control-large-size);
+  --type-control-large-line-height: var(--typography-control-large-line-height);
+  --type-control-large-letter-spacing: 0;
+  --type-primary-metric-size: var(--typography-primary-metric-size);
+  --type-primary-metric-line-height: var(--typography-primary-metric-line-height);
+  --type-primary-metric-letter-spacing: -0.005em;
+  --type-secondary-metric-size: var(--typography-secondary-metric-size);
+  --type-secondary-metric-line-height: var(--typography-secondary-metric-line-height);
+  --type-secondary-metric-letter-spacing: -0.005em;
+  --type-metric-small-size: var(--typography-metric-small-size);
+  --type-metric-small-line-height: var(--typography-metric-small-line-height);
+  --type-metric-small-letter-spacing: 0.02em;
+}
+
 /* Generated typography role aliases; authority: design/typography.schema.json. */
 :root {
   --typography-display-size: 3rem;
