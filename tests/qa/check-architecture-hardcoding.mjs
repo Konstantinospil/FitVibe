@@ -481,10 +481,14 @@ async function checkFrontendTokens() {
         const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
         const isAuthorityDeclaration =
           isAuthorityFile && /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+        const isCanonicalTypographyStyle =
+          rel === "packages/ui/src/typography.css" &&
+          /^\s*letter-spacing\s*:\s*var\(--typography-[a-z-]+-letter-spacing\)/.test(line);
         const isFontFaceDescriptor = insideFontFaceBlock(source, match.index);
         if (
           !isAuthorityDeclaration &&
           !isFontFaceDescriptor &&
+          !isCanonicalTypographyStyle &&
           !rule.allowedValue(value) &&
           !sourceException(source, match.index, "token")
         ) {
