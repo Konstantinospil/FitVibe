@@ -38,11 +38,35 @@ const paths = {
     post: {
       summary: "Register a new account",
       tags: ["Auth"],
-      requestBody: jsonContent("#/components/schemas/RegisterRequest"),
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/RegisterRequest" },
+          },
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                payload: {
+                  type: "string",
+                  description: "JSON-encoded RegisterRequest payload",
+                },
+                avatar: {
+                  type: "string",
+                  format: "binary",
+                  description: "Optional JPEG, PNG, or WebP profile photo up to 5 MB",
+                },
+              },
+              required: ["payload"],
+            },
+          },
+        },
+      },
       responses: {
-        201: jsonContent("#/components/schemas/AuthSuccessResponse"),
+        202: jsonContent("#/components/schemas/AuthSuccessResponse"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
         409: jsonContent("#/components/schemas/ErrorResponse"),
+        422: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
   },
@@ -488,7 +512,7 @@ const schemas = {
             type: "string",
             enum: ["man", "woman", "diverse", "prefer_not_to_say"],
           },
-          weight_kg: { type: "number", minimum: 20, maximum: 500 },
+          weight_kg: { type: "number", minimum: 20, maximum: 400 },
           fitness_level: {
             type: "string",
             enum: ["beginner", "intermediate", "advanced", "elite", "rehab"],
