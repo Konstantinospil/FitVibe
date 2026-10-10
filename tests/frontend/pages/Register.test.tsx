@@ -14,6 +14,7 @@ vi.mock("../../src/services/api", async () => {
     ...actual,
     register: vi.fn(),
     resendVerificationEmail: vi.fn(),
+    getRegistrationOptions: vi.fn(),
   };
 });
 
@@ -132,6 +133,22 @@ const fillRequiredProfileFields = () => {
 describe("Register", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.getRegistrationOptions).mockResolvedValue({
+      genders: [
+        { code: "woman", description: "Woman" },
+        { code: "man", description: "Man" },
+        { code: "diverse", description: "Diverse / non-binary" },
+        { code: "prefer_not_to_say", description: "Prefer not to say" },
+      ],
+      fitnessLevels: [
+        { code: "beginner", description: "Getting started with consistent training" },
+        { code: "intermediate", description: "Trains 3-4 times per week" },
+        { code: "advanced", description: "Highly trained athlete" },
+        { code: "elite", description: "Lives every story at a high level" },
+        { code: "rehab", description: "Returning from injury / rehab focus" },
+      ],
+      weight: { minKg: 20, maxKg: 400 },
+    });
     // Real timers are now the default in setupTests.ts
   });
 
