@@ -73,9 +73,9 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       };
     }
 
-    let imageMetadata: sharp.Metadata;
+    let imageFormat: string | undefined;
     try {
-      imageMetadata = await sharp(file.buffer).metadata();
+      imageFormat = (await sharp(file.buffer).metadata()).format;
     } catch {
       return {
         status: 422,
@@ -83,7 +83,7 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       };
     }
 
-    if (!imageMetadata.format || !["jpeg", "png", "webp"].includes(imageMetadata.format)) {
+    if (!imageFormat || !["jpeg", "png", "webp"].includes(imageFormat)) {
       return {
         status: 422,
         body: { error: "UPLOAD_UNSUPPORTED_TYPE" },
