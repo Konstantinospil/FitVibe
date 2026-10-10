@@ -69,7 +69,8 @@ const registrationMultipart: RequestHandler = (req, res, next) => {
         return;
       }
       try {
-        req.body = JSON.parse(rawPayload) as unknown;
+        const parsedPayload: unknown = JSON.parse(rawPayload);
+        req.body = parsedPayload;
       } catch {
         next(new HttpError(400, "VALIDATION_ERROR", "Registration payload is invalid"));
         return;
