@@ -203,7 +203,11 @@ export async function updateMe(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const requestBody = req.body && typeof req.body === "object" ? req.body : {};
+  const rawBody: unknown = req.body;
+  const requestBody: Record<string, unknown> =
+    rawBody !== null && typeof rawBody === "object" && !Array.isArray(rawBody)
+      ? (rawBody as Record<string, unknown>)
+      : {};
   const immutableField = IMMUTABLE_PROFILE_FIELDS.find((field) =>
     Object.prototype.hasOwnProperty.call(requestBody, field),
   );
