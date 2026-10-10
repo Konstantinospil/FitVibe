@@ -37,15 +37,16 @@
   --transparency-subtle: 70%;
   --transparency-disabled: 45%;
 
-  /* Scrollbar authority — Figma component */
+  /* Scrollbar dimensions and states — Figma scrollbar design */
+  --scrollbar-track-width: 8px;
+  --scrollbar-thumb-inset: 1px;
+  --scrollbar-thumb-min-height: 72px;
+  --scrollbar-button-size: 12px;
   --scrollbar-track: var(--color-surface-muted);
-  --scrollbar-thumb: color-mix(
-    in srgb,
-    var(--color-info-text) var(--transparency-subtle),
-    transparent
-  );
-  --scrollbar-thumb-hover: var(--color-info-text);
-  --scrollbar-thumb-active: var(--color-focus);
+  --scrollbar-thumb: var(--color-border-strong);
+  --scrollbar-thumb-hover: var(--color-text-secondary);
+  --scrollbar-thumb-active: var(--color-primary);
+  --scrollbar-chevron: var(--color-text-secondary);
 
   /* Compatibility aliases: every alias resolves to an existing Figma text style. */
   --font-family-base: var(--font-family-body);
