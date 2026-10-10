@@ -6,7 +6,7 @@ import { deleteAvatar, uploadAvatar } from "../../services/api";
 interface AvatarEditorProps {
   currentAvatarUrl?: string | null;
   displayName: string;
-  onChanged: () => Promise<unknown> | unknown;
+  onChanged: () => unknown;
 }
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
