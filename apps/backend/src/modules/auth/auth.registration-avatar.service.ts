@@ -2,10 +2,7 @@ import type { Knex } from "knex";
 import sharp from "sharp";
 import { HttpError } from "../../utils/http.js";
 import { scanBuffer } from "../../services/antivirus.service.js";
-import {
-  deleteStorageObject,
-  saveUserAvatarFile,
-} from "../../services/mediaStorage.service.js";
+import { deleteStorageObject, saveUserAvatarFile } from "../../services/mediaStorage.service.js";
 import { insertAudit } from "../common/audit.util.js";
 import { saveUserAvatarMetadata } from "../users/users.avatar.repository.js";
 
@@ -35,15 +32,10 @@ export async function prepareRegistrationAvatar(file: RegistrationAvatarFile): P
 
   const scanResult = await scanBuffer(file.buffer, file.originalname);
   if (scanResult.isInfected) {
-    throw new HttpError(
-      422,
-      "E.UPLOAD.MALWARE_DETECTED",
-      "UPLOAD_MALWARE_DETECTED",
-      {
-        reason: "malware_detected",
-        viruses: scanResult.viruses,
-      },
-    );
+    throw new HttpError(422, "E.UPLOAD.MALWARE_DETECTED", "UPLOAD_MALWARE_DETECTED", {
+      reason: "malware_detected",
+      viruses: scanResult.viruses,
+    });
   }
 
   let imageFormat: string | undefined;
