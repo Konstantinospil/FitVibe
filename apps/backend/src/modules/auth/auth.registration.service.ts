@@ -32,6 +32,12 @@ import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { toSafeUser } from "./auth.mapping.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
+import {
+  auditRegistrationAvatar,
+  cleanupRegistrationAvatar,
+  persistRegistrationAvatar,
+  type PersistedRegistrationAvatar,
+} from "./auth.registration-avatar.service.js";
 
 const SECONDS_PER_MINUTE = 60;
 function emailVerificationTtlSeconds(): number {
@@ -51,6 +57,7 @@ function dateOfBirthFromAge(age?: number | null): string | undefined {
 
 export async function register(
   dto: RegisterDTO,
+  preparedAvatar?: Buffer,
 ): Promise<{ verificationToken?: string; user?: UserSafe }> {
   const startTime = Date.now();
 
@@ -100,29 +107,43 @@ export async function register(
     const now = new Date().toISOString();
     const currentTerms = await getCurrentLegalPublication("terms");
 
-    await db.transaction(async (trx) => {
-      await createUser(
-        {
-          id,
-          alias,
-          display_name: dto.profile?.display_name ?? alias,
-          status: "pending_verification",
-          role_code: "athlete",
-          password_hash,
-          primaryEmail: email,
-          terms_accepted: true,
-          terms_accepted_at: now,
-          terms_version: currentTerms.version,
-          gender_code: dto.profile?.sex,
-          fitness_level_code: dto.profile?.fitness_level ?? undefined,
-          date_of_birth: dto.profile?.date_of_birth ?? dateOfBirthFromAge(dto.profile?.age),
-          weight_kg: dto.profile?.weight_kg ?? undefined,
-        },
-        trx,
-      );
+    let persistedAvatar: PersistedRegistrationAvatar | null = null;
+    try {
+      await db.transaction(async (trx) => {
+        await createUser(
+          {
+            id,
+            alias,
+            display_name: dto.profile?.display_name ?? alias,
+            status: "pending_verification",
+            role_code: "athlete",
+            password_hash,
+            primaryEmail: email,
+            terms_accepted: true,
+            terms_accepted_at: now,
+            terms_version: currentTerms.version,
+            gender_code: dto.profile?.sex,
+            fitness_level_code: dto.profile?.fitness_level ?? undefined,
+            date_of_birth: dto.profile?.date_of_birth ?? dateOfBirthFromAge(dto.profile?.age),
+            weight_kg: dto.profile?.weight_kg ?? undefined,
+          },
+          trx,
+        );
 
-      await acceptLegalDocumentVersion(id, currentTerms.id, "registration", trx);
-    });
+        if (preparedAvatar) {
+          persistedAvatar = await persistRegistrationAvatar(id, preparedAvatar, trx);
+        }
+
+        await acceptLegalDocumentVersion(id, currentTerms.id, "registration", trx);
+      });
+    } catch (error) {
+      await cleanupRegistrationAvatar(persistedAvatar);
+      throw error;
+    }
+
+    if (persistedAvatar) {
+      await auditRegistrationAvatar(id, persistedAvatar);
+    }
 
     const verificationToken = await issueAuthToken(
       id,
