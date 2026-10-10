@@ -3,7 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { env } from "../config/env.js";
 
-const STORAGE_ROOT = path.resolve(env.mediaStorageRoot);
+function getStorageRoot(): string {
+  if (!env.mediaStorageRoot) {
+    throw new Error("MEDIA_STORAGE_ROOT is not configured");
+  }
+  return path.resolve(env.mediaStorageRoot);
+}
 
 async function ensureDir(dir: string) {
   await fs.mkdir(dir, { recursive: true });
@@ -41,12 +46,13 @@ function resolveStoragePath(storageKey: string): string {
     return part && part !== "." && part !== ".." && part.length > 0;
   });
 
-  const resolvedPath = path.join(STORAGE_ROOT, ...parts);
+  const storageRoot = getStorageRoot();
+  const resolvedPath = path.join(storageRoot, ...parts);
 
   // CRITICAL SECURITY CHECK: Ensure the resolved path is within STORAGE_ROOT
   // This prevents path traversal attacks (OWASP A01:2021 - Broken Access Control)
   const normalizedResolved = path.resolve(resolvedPath);
-  const normalizedRoot = path.resolve(STORAGE_ROOT);
+  const normalizedRoot = storageRoot;
 
   if (!normalizedResolved.startsWith(normalizedRoot)) {
     throw new Error(`Path traversal attempt detected: ${storageKey}`);
@@ -57,7 +63,7 @@ function resolveStoragePath(storageKey: string): string {
 
 export async function saveUserAvatarFile(userId: string, buffer: Buffer, mimeType: string) {
   const ext = extensionFromMime(mimeType) || ".bin";
-  const dir = path.join(STORAGE_ROOT, "avatars", userId);
+  const dir = path.join(getStorageRoot(), "avatars", userId);
   await ensureDir(dir);
   const fileName = `${crypto.randomUUID()}${ext}`;
   const fullPath = path.join(dir, fileName);
@@ -71,7 +77,7 @@ export async function saveUserAvatarFile(userId: string, buffer: Buffer, mimeTyp
 
 export async function saveUserProgressPhotoFile(userId: string, buffer: Buffer, mimeType: string) {
   const ext = extensionFromMime(mimeType) || ".bin";
-  const dir = path.join(STORAGE_ROOT, "progress", userId);
+  const dir = path.join(getStorageRoot(), "progress", userId);
   await ensureDir(dir);
   const fileName = `${crypto.randomUUID()}${ext}`;
   const fullPath = path.join(dir, fileName);
