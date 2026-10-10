@@ -48,57 +48,7 @@
 
   color-scheme: dark;
 
-  /* Typography authority — FitVibe Figma Design System v2 */
-  --font-family-body: "Inter", system-ui, sans-serif;
-  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
-
-  --font-weight-regular: 400;
-  --font-weight-control-large: 582;
-  --font-weight-semibold: 600;
-
-  --type-display-size: 3rem;
-  --type-display-line-height: 3.5rem;
-  --type-display-letter-spacing: -0.01em;
-
-  --type-page-title-size: 2rem;
-  --type-page-title-line-height: 2.5rem;
-  --type-page-title-letter-spacing: -0.005em;
-
-  --type-section-title-size: 1.5rem;
-  --type-section-title-line-height: 2rem;
-  --type-section-title-letter-spacing: -0.005em;
-
-  --type-card-title-size: 1.125rem;
-  --type-card-title-line-height: 1.5rem;
-  --type-card-title-letter-spacing: 0;
-
-  --type-body-size: 1rem;
-  --type-body-line-height: 1.5rem;
-  --type-body-letter-spacing: 0;
-
-  --type-supporting-size: 0.875rem;
-  --type-supporting-line-height: 1.25rem;
-  --type-supporting-letter-spacing: 0;
-
-  --type-control-size: 0.875rem;
-  --type-control-line-height: 1.25rem;
-  --type-control-letter-spacing: 0;
-
-  --type-control-large-size: 1rem;
-  --type-control-large-line-height: 1.5rem;
-  --type-control-large-letter-spacing: 0;
-
-  --type-primary-metric-size: 2rem;
-  --type-primary-metric-line-height: 2.25rem;
-  --type-primary-metric-letter-spacing: -0.005em;
-
-  --type-secondary-metric-size: 1.5rem;
-  --type-secondary-metric-line-height: 1.75rem;
-  --type-secondary-metric-letter-spacing: -0.005em;
-
-  --type-metric-small-size: 0.875rem;
-  --type-metric-small-line-height: 0.75rem;
-  --type-metric-small-letter-spacing: 0.02em;
+  /* Typography roles are imported from @fitvibe/ui's shared contract. */
 
   /* Radius authority — Figma Layout variables */
   --radius-sm: 8px;
