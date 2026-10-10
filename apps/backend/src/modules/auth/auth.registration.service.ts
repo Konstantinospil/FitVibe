@@ -69,11 +69,17 @@ export async function register(
       throw new HttpError(403, "AUTH_EMAIL_BLOCKED", "AUTH_EMAIL_BLOCKED");
     }
     assertPasswordPolicy(dto.password, { email, alias });
-    await assertRegistrationReferenceValues({
-      gender: dto.profile?.sex,
-      fitnessLevel: dto.profile?.fitness_level ?? undefined,
-      weightKg: dto.profile?.weight_kg ?? undefined,
-    });
+    if (
+      dto.profile?.sex !== undefined ||
+      dto.profile?.fitness_level !== undefined ||
+      dto.profile?.weight_kg !== undefined
+    ) {
+      await assertRegistrationReferenceValues({
+        gender: dto.profile?.sex,
+        fitnessLevel: dto.profile?.fitness_level ?? undefined,
+        weightKg: dto.profile?.weight_kg ?? undefined,
+      });
+    }
 
     const existingByEmail = await findUserByEmail(email);
     const existingByUsername = await findUserByUsername(alias);
