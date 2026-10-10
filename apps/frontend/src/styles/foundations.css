@@ -17,16 +17,17 @@ html {
 }
 
 /* === SCROLLBAR ===
- * Shared Figma scrollbar: muted rounded track with a compact rounded thumb.
+ * Shared native scrollbar styling. Native thumb length follows the scrollable
+ * content and cannot be fixed to the static Figma specimen in every browser.
  */
 * {
-  scrollbar-width: auto;
+  scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar {
-  width: var(--space-lg);
-  height: var(--space-lg);
+  width: var(--scrollbar-track-width);
+  height: var(--scrollbar-track-width);
 }
 
 *::-webkit-scrollbar-track {
@@ -35,9 +36,9 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  min-height: var(--space-2xl);
+  min-height: var(--scrollbar-thumb-min-height);
   background: var(--scrollbar-thumb);
-  border: calc(var(--space-xs) / 2) solid transparent;
+  border: var(--scrollbar-thumb-inset) solid transparent;
   border-radius: var(--radius-full);
   background-clip: padding-box;
 }
@@ -50,6 +51,40 @@ html {
 *::-webkit-scrollbar-thumb:active {
   background: var(--scrollbar-thumb-active);
   background-clip: padding-box;
+}
+
+/* Native end buttons use two short strokes to form directional chevrons.
+ * This is progressive enhancement: Firefox does not support these pseudo-elements.
+ */
+*::-webkit-scrollbar-button:single-button {
+  display: block;
+  background-color: var(--scrollbar-track);
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+*::-webkit-scrollbar-button:single-button:vertical {
+  height: var(--scrollbar-button-size);
+}
+
+*::-webkit-scrollbar-button:single-button:horizontal {
+  width: var(--scrollbar-button-size);
+}
+
+*::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image:
+    linear-gradient(135deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%),
+    linear-gradient(225deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%);
+  background-size: 4px 4px, 4px 4px;
+  background-position: calc(50% - 2px) center, calc(50% + 2px) center;
+}
+
+*::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image:
+    linear-gradient(45deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%),
+    linear-gradient(315deg, transparent 45%, var(--scrollbar-chevron) 46%, var(--scrollbar-chevron) 60%, transparent 61%);
+  background-size: 4px 4px, 4px 4px;
+  background-position: calc(50% - 2px) center, calc(50% + 2px) center;
 }
 
 *::-webkit-scrollbar-corner {
