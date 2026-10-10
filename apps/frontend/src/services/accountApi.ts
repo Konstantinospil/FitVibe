@@ -103,6 +103,18 @@ interface UserDetail {
   };
 }
 
+function versionedAvatarUrl(avatar: UserDetail["avatar"]): string | null {
+  if (!avatar?.url) {
+    return null;
+  }
+  if (!avatar.updatedAt) {
+    return avatar.url;
+  }
+
+  const separator = avatar.url.includes("?") ? "&" : "?";
+  return `${avatar.url}${separator}v=${encodeURIComponent(avatar.updatedAt)}`;
+}
+
 /**
  * Get current user profile
  */
@@ -114,7 +126,7 @@ export async function getCurrentUser(): Promise<UserProfile> {
     username: data.username,
     displayName: data.displayName,
     email: data.primaryEmail || undefined,
-    avatarUrl: data.avatar?.url ?? null,
+    avatarUrl: versionedAvatarUrl(data.avatar),
     bio: data.profile?.bio ?? null,
     alias: data.profile?.alias ?? null,
     weight: data.profile?.weight ?? null,
@@ -143,7 +155,7 @@ export async function updateProfile(payload: UpdateProfileRequest): Promise<User
     username: data.username,
     displayName: data.displayName,
     email: data.primaryEmail || undefined,
-    avatarUrl: data.avatar?.url ?? null,
+    avatarUrl: versionedAvatarUrl(data.avatar),
     bio: data.profile?.bio ?? null,
     alias: data.profile?.alias ?? null,
     weight: data.profile?.weight ?? null,
