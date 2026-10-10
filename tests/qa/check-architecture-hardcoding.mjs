@@ -339,6 +339,7 @@ async function checkFrontendTokens() {
     const rel = normalize(path.relative(ROOT, file));
     if (figmaAuthorityFiles.has(rel)) {
       for (const [token, expected] of figmaAuthorityDeclarations) {
+        if (token.startsWith("--type-") || token.startsWith("--font-weight-")) continue; // Verified by the shared typography schema gate.
         if (!source.includes(token + ": " + expected + ";")) {
           report(file, source, 0, "Figma design authority drift: " + token + " must equal " + expected + ".");
         }
