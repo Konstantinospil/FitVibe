@@ -322,6 +322,48 @@ test("athlete saves complete editable profile across navigation", async ({ page 
   });
 });
 
+test("athlete uploads and removes avatar from Settings", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/settings");
+  await waitForApp(page);
+
+  const placeholder = page.getByTestId("avatar-placeholder");
+  await expect(placeholder).toBeVisible();
+  await testInfo.attach("avatar-placeholder", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8AARAwMjDAGAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  const fileInput = page.getByLabel(/select image/i);
+  await fileInput.setInputFiles({
+    name: "avatar.png",
+    mimeType: "image/png",
+    buffer: png,
+  });
+
+  const upload = observeMutation(page, "POST", "/api/v1/users/me/avatar");
+  await page.getByRole("button", { name: /^upload$/i }).click();
+  await expect(page.getByTestId("avatar-preview")).toBeVisible();
+  await expect.poll(async () => (await apiGet(page, "/api/v1/users/me")).avatar?.url).toBeTruthy();
+  upload.assertExactlyOnce(201);
+  upload.stop();
+
+  await page.reload();
+  await waitForApp(page);
+  await expect(page.getByTestId("avatar-preview")).toBeVisible();
+
+  const remove = observeMutation(page, "DELETE", "/api/v1/users/me/avatar");
+  await page.getByRole("button", { name: /^delete$/i }).click();
+  await expect(page.getByTestId("avatar-placeholder")).toBeVisible();
+  await expect.poll(async () => (await apiGet(page, "/api/v1/users/me")).avatar).toBeNull();
+  remove.assertExactlyOnce(204);
+  remove.stop();
+});
+
 test("athlete changes Vibeform and Dashboard reflects saved profile", async ({ page }, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
