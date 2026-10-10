@@ -14,6 +14,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from "@jest/globals";
 import request from "supertest";
 import bcrypt from "bcryptjs";
+import sharp from "sharp";
 import app from "../../../apps/backend/src/app.js";
 import db from "../../../apps/backend/src/db/index.js";
 import { createUser } from "../../../apps/backend/src/modules/auth/auth.repository.js";
@@ -29,6 +30,8 @@ import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { seed as seedLegalPublications } from "../../../apps/backend/src/db/seeds/005_legal_publications.js";
+import { seed as seedGenders } from "../../../apps/backend/src/db/seeds/002_genders.js";
+import { readStorageObject } from "../../../apps/backend/src/services/mediaStorage.service.js";
 
 describeWithTestDatabase("Integration: Auth → Session Flow", () => {
   beforeAll(async () => {
@@ -48,6 +51,7 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
       // Keep the integration fixture aligned with a fresh deployed database:
       // schema migration first, then deterministic catalog/legal seeds.
       await seedLegalPublications(db);
+      await seedGenders(db);
       // Ensure catalogs required by expanded registration are available.
       await ensureRolesSeeded();
       await ensureWeightAttributeSeeded();
