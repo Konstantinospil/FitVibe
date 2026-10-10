@@ -130,6 +130,17 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
     expect(responseLb.status).toBe(200);
     // 165 lb ≈ 74.84 kg
     expect(responseLb.body.profile?.weight).toBeCloseTo(74.84, 1);
+
+    const persistedWeight = await db("bio_attribute_values as values")
+      .join("bio_attributes as attributes", "attributes.id", "values.attribute_id")
+      .where("values.user_id", userId)
+      .andWhere("attributes.key", "weight_kg")
+      .orderBy("values.measured_at", "desc")
+      .select<{ value_number: number | string }[]>("values.value_number")
+      .first();
+
+    expect(persistedWeight).toBeDefined();
+    expect(Number(persistedWeight?.value_number)).toBeCloseTo(74.84, 1);
   });
 
   it("should update fitness level", async () => {
@@ -266,12 +277,20 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
     expect(response.status).toBe(422);
   });
 
-  it("should verify audit log entry is created", async () => {
-    await request(app).patch("/api/v1/users/me").set("Authorization", `Bearer ${authToken}`).send({
-      alias: "audittest",
-    });
+  it("should audit profile updates and record state history for every changed field", async () => {
+    const response = await request(app)
+      .patch("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        alias: "audittest",
+        weight: 82.5,
+        weightUnit: "kg",
+        fitnessLevel: "advanced",
+        trainingFrequency: "5_plus_per_week",
+      });
 
-    // Check audit log
+    expect(response.status).toBe(200);
+
     const auditLogs = await db("audit_log")
       .where({ actor_user_id: userId, action: "profile_update" })
       .orderBy("created_at", "desc")
@@ -281,6 +300,16 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
     expect(auditLogs[0].entity_type).toBe("users");
     expect(auditLogs[0].entity_id).toBe(userId);
     expect(auditLogs[0].metadata).toHaveProperty("changes");
+
+    const expectedFields = ["alias", "weight", "fitness_level", "training_frequency"];
+    const stateHistory = await db("user_state_history")
+      .where({ user_id: userId })
+      .whereIn("field", expectedFields)
+      .select("field", "actor_user_id", "old_value", "new_value");
+
+    expect(stateHistory).toHaveLength(expectedFields.length);
+    expect(new Set(stateHistory.map((entry) => entry.field))).toEqual(new Set(expectedFields));
+    expect(stateHistory.every((entry) => entry.actor_user_id === userId)).toBe(true);
   });
 
   it("should respond within 500ms", async () => {
