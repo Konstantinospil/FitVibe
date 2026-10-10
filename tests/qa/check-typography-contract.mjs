@@ -57,7 +57,7 @@ const declarations = new Map();
 scan(authority, ({ name, value, index, content, node }) => {
   if (!name.startsWith("--typography-")) return;
   const media = node.parent?.type === "rule" ? node.parent.parent : node.parent;
-  const mode = media?.type === "atrule" && media.name === "media" && media.params.replace(/\\s/g, "").includes("max-width:"+schema.mobileBreakpointPx+"px") ? 1 : 0;
+  const mode = media?.type === "atrule" && media.name === "media" && media.params.replace(/\s/g, "").includes("max-width:"+schema.mobileBreakpointPx+"px") ? 1 : 0;
   const expected = required.get(name);
   if (!expected) return emit(authority, content, index, "Unknown typography token " + name);
   const key = name + ":" + mode;
