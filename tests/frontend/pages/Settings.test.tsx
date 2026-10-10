@@ -22,6 +22,8 @@ vi.mock("../../src/services/api", async () => {
     getPrivacySettings: vi.fn(),
     updatePrivacySettings: vi.fn(),
     get2FAStatus: vi.fn(),
+    uploadAvatar: vi.fn(),
+    deleteAvatar: vi.fn(),
   };
 });
 
@@ -58,6 +60,15 @@ describe("Settings", () => {
       showFitnessLevel: false,
     });
     vi.mocked(api.get2FAStatus).mockResolvedValue({ enabled: true });
+    vi.mocked(api.uploadAvatar).mockResolvedValue({
+      success: true,
+      fileUrl: "/api/v1/users/avatar/u1",
+      bytes: 128,
+      mimeType: "image/png",
+      updatedAt: "2026-10-10T00:00:00.000Z",
+      preview: "data:image/png;base64,preview",
+    });
+    vi.mocked(api.deleteAvatar).mockResolvedValue();
     vi.mocked(vibeApi.getMyVibeformProfile).mockResolvedValue({
       preferences: { templateCode: "flow", templateVersion: 1, bodyProfile: "balanced", motionEnabled: true },
       metrics: {
@@ -117,6 +128,35 @@ describe("Settings", () => {
     expect(screen.getByText("settings.preferences.title")).toBeInTheDocument();
     expect(screen.getByText("settings.privacy.title")).toBeInTheDocument();
     expect(screen.getByText("settings.security.enabled")).toBeInTheDocument();
+  });
+
+  it("shows an accessible avatar placeholder when no avatar exists", async () => {
+    renderSettings();
+
+    const placeholder = await screen.findByTestId("avatar-placeholder");
+    expect(placeholder).toHaveAttribute("aria-label", "Athlete");
+    expect(screen.getByLabelText("settings.profile.avatarSelect")).toHaveAttribute(
+      "accept",
+      "image/jpeg,image/png,image/webp",
+    );
+  });
+
+  it("uploads a selected avatar and refreshes the profile", async () => {
+    renderSettings();
+
+    const input = await screen.findByLabelText("settings.profile.avatarSelect");
+    const file = new File([new Uint8Array([1, 2, 3])], "avatar.png", { type: "image/png" });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    const upload = await screen.findByRole("button", { name: "settings.profile.avatarUpload" });
+    fireEvent.click(upload);
+
+    await waitFor(() => {
+      expect(api.uploadAvatar).toHaveBeenCalledWith(file, expect.any(String));
+    });
+    await waitFor(() => {
+      expect(api.getCurrentUser).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("persists profile changes through the canonical account API", async () => {
