@@ -74,6 +74,7 @@ Every pull request should include:
 - Use test doubles for external services; do not hit live third-party APIs.
 - For new endpoints, document the contract in the TDD and add an integration or contract test.
 - Performance tests (k6) and security scans run in CI; trigger them locally when practical.
+- Tests that call `jest.useFakeTimers()` must restore real timers with `jest.useRealTimers()` in an `afterEach` owned by the same test file or suite. Do not rely on global Jest setup/teardown or `jest.clearAllTimers()` as a cleanup fallback. Apply the equivalent `vi.useFakeTimers()` / `vi.useRealTimers()` pattern to Vitest tests.
 
 ---
 
