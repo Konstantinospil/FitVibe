@@ -2,6 +2,7 @@ import { Router, type RequestHandler } from "express";
 import multer from "multer";
 import {
   register,
+  registrationOptions,
   login,
   verify2FALogin,
   refresh,
@@ -80,6 +81,12 @@ const registrationMultipart: RequestHandler = (req, res, next) => {
     next();
   });
 };
+
+authRouter.get(
+  "/register/options",
+  rateLimit("auth_register_options"),
+  asyncHandler(registrationOptions),
+);
 
 authRouter.post(
   "/register",
