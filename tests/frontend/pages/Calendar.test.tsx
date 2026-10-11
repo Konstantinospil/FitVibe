@@ -69,7 +69,7 @@ describe("Calendar", () => {
           status: "completed",
           visibility: "private",
           completed_at: atLocalHour(addDays(today, -1), 10).toISOString(),
-          exercises: [],
+          exercise_count: 0,
         },
         {
           id: "planned-today",
@@ -78,7 +78,7 @@ describe("Calendar", () => {
           planned_at: atLocalHour(today, 18).toISOString(),
           status: "planned",
           visibility: "private",
-          exercises: [],
+          exercise_count: 0,
         },
         {
           id: "planned-tomorrow",
@@ -87,7 +87,7 @@ describe("Calendar", () => {
           planned_at: atLocalHour(tomorrow, 9).toISOString(),
           status: "planned",
           visibility: "private",
-          exercises: [],
+          exercise_count: 0,
         },
       ],
       total: 3,
@@ -138,7 +138,7 @@ describe("Calendar", () => {
       planned_at: atLocalHour(addDays(today, -3), 12).toISOString(),
       status: "completed" as const,
       visibility: "private" as const,
-      exercises: [],
+      exercise_count: 0,
     }));
     mockedListSessions.mockReset();
     mockedListSessions
@@ -151,7 +151,7 @@ describe("Calendar", () => {
           planned_at: atLocalHour(today, 18).toISOString(),
           status: "planned",
           visibility: "private",
-          exercises: [],
+          exercise_count: 0,
         }],
         total: 101,
         limit: 100,
