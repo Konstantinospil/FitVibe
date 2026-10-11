@@ -1,5 +1,9 @@
 const { test, expect } = require("./fixtures.cjs");
 const { observeMutation } = require("./request-observer.cjs");
+const { createRequire } = require("node:module");
+const path = require("node:path");
+const backendRequire = createRequire(path.resolve(__dirname, "../../../apps/backend/package.json"));
+const { authenticator } = backendRequire("@otplib/preset-default");
 const {
   preparePage,
   waitForApp,
@@ -15,7 +19,7 @@ const registerPayload = {
   name: "Jamie Carter",
 };
 
-test("user can register, verify, login, and reach the current Calendar surface", async ({ page }, testInfo) => {
+test("user registers with accepted Terms, verifies email, logs in, enables 2FA, and logs out", async ({ page }, testInfo) => {
   await preparePage(page);
 
   const suffix = `${testInfo.workerIndex}-${testInfo.retry}`;
@@ -36,6 +40,10 @@ test("user can register, verify, login, and reach the current Calendar surface",
   await passwordInput(page).fill(registerPayload.password);
   await confirmPasswordInput(page).fill(registerPayload.password);
   await acceptRegisterLegal(page);
+  await expect(page.getByRole("checkbox")).toHaveCount(2);
+  for (const checkbox of await page.getByRole("checkbox").all()) {
+    await expect(checkbox).toBeChecked();
+  }
 
   const registrationMutation = observeMutation(page, "POST", "/api/v1/auth/register");
   const registrationResponsePromise = page.waitForResponse(
@@ -81,7 +89,87 @@ test("user can register, verify, login, and reach the current Calendar surface",
   expect(profileResponse.status()).toBe(200);
   expect(await profileResponse.json()).toMatchObject({ primaryEmail: email, username });
 
+  const legalResponse = await page.context().request.get(
+    `${origin}/api/v1/auth/legal-documents/status`,
+  );
+  expect(legalResponse.status()).toBe(200);
+  expect(await legalResponse.json()).toMatchObject({
+    terms: { accepted: true, needsAcceptance: false },
+  });
+
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await page.waitForURL((url) => url.pathname === "/calendar");
-  await expect(page.getByRole("heading", { name: /^calendar$/i, level: 1 })).toBeVisible();
+  await expect(page.locator("[data-app-surface='calendar']")).toBeVisible();
+
+  // Configure real TOTP on this newly registered disposable athlete.
+  // The production UI currently exposes status, not a 2FA enrollment form.
+  const setupResponse = await page.context().request.get(`${origin}/api/v1/auth/2fa/setup`);
+  expect(setupResponse.status()).toBe(200);
+  const { secret } = await setupResponse.json();
+  expect(secret).toEqual(expect.any(String));
+
+  const csrfResponse = await page.context().request.get(`${origin}/api/v1/csrf-token`);
+  expect(csrfResponse.status()).toBe(200);
+  const { csrfToken } = await csrfResponse.json();
+  const enableResponse = await page.context().request.post(`${origin}/api/v1/auth/2fa/enable`, {
+    data: { code: authenticator.generate(secret) },
+    headers: { Origin: origin, "X-CSRF-Token": csrfToken },
+  });
+  expect(enableResponse.status()).toBe(200);
+  const statusResponse = await page.context().request.get(`${origin}/api/v1/auth/2fa/status`);
+  expect(statusResponse.status()).toBe(200);
+  expect(await statusResponse.json()).toMatchObject({ enabled: true });
+
+  // End the first session and check server-side invalidation.
+  const firstLogout = observeMutation(page, "POST", "/api/v1/auth/logout");
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await page.waitForURL((url) => url.pathname === "/login");
+  firstLogout.assertExactlyOnce(204);
+  firstLogout.stop();
+  const loggedOut = await page.context().request.get(`${origin}/api/v1/users/me`);
+  expect(loggedOut.status()).toBe(401);
+
+  // The same valid password now requires an actual second factor.
+  await emailInput(page).fill(email);
+  await passwordInput(page).fill(registerPayload.password);
+  const secondLogin = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/login" &&
+    response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: /sign in/i }).click();
+  const challenge = await secondLogin;
+  expect(challenge.status()).toBe(200);
+  expect(await challenge.json()).toMatchObject({
+    requires2FA: true,
+    pendingSessionId: expect.any(String),
+  });
+  await page.waitForURL((url) => url.pathname === "/login/verify-2fa");
+  const unauthenticated = await page.context().request.get(`${origin}/api/v1/users/me`);
+  expect(unauthenticated.status()).toBe(401);
+
+  // Verify a genuine TOTP in the browser, never a synthetic/mocked login.
+  const twoFactorMutation = observeMutation(page, "POST", "/api/v1/auth/login/verify-2fa");
+  const verifiedResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/login/verify-2fa" &&
+    response.request().method() === "POST",
+  );
+  await page.locator("form input[name='code']").fill(authenticator.generate(secret));
+  await page.getByRole("button", { name: /verify and continue/i }).click();
+  expect((await verifiedResponse).status()).toBe(200);
+  twoFactorMutation.assertExactlyOnce(200);
+  twoFactorMutation.stop();
+  await page.waitForURL((url) => url.pathname === "/");
+  await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
+
+  const authenticated = await page.context().request.get(`${origin}/api/v1/users/me`);
+  expect(authenticated.status()).toBe(200);
+  expect(await authenticated.json()).toMatchObject({ primaryEmail: email });
+
+  const finalLogout = observeMutation(page, "POST", "/api/v1/auth/logout");
+  await page.getByRole("button", { name: /sign out/i }).click();
+  await page.waitForURL((url) => url.pathname === "/login");
+  finalLogout.assertExactlyOnce(204);
+  finalLogout.stop();
+  const afterLogout = await page.context().request.get(`${origin}/api/v1/users/me`);
+  expect(afterLogout.status()).toBe(401);
 });
