@@ -221,31 +221,34 @@ describe("Rate Limiter Middleware", () => {
   });
 
   describe("rateLimitFromPolicy", () => {
-    it("uses an explicit identity resolver without changing the governed quota", async () => {
+    it("always uses the client IP for global limiting, even for authenticated users", async () => {
       const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
         RateLimiterMemory: jest.Mock;
       };
-      const identity = jest.fn().mockReturnValue("user:verified-athlete");
-      const middleware = rateLimitFromPolicy(
-        "global",
-        () => getRouteRateLimitPolicy("user_me"),
-        identity,
-      );
-      const nextCalled = new Promise<void>((resolve) => {
+      const middleware = rateLimitFromPolicy("global", () => ({
+        points: 120,
+        duration: 60,
+      }));
+      mockRequest.user = { sub: "athlete-a", role: "athlete" };
+      const first = new Promise<void>((resolve) => {
         mockNext = jest.fn(() => resolve());
       });
-
       middleware(mockRequest as Request, mockResponse as Response, mockNext);
-      await nextCalled;
-      expect(identity).toHaveBeenCalledWith(mockRequest);
-      expect(RateLimiterMemory).toHaveBeenCalledWith({
-        keyPrefix: "global",
-        ...getRouteRateLimitPolicy("user_me"),
+      await first;
+
+      mockRequest.user = { sub: "athlete-b", role: "athlete" };
+      const second = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
       });
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await second;
+
       const limiter = RateLimiterMemory.mock.results.at(-1)?.value as {
         consume: jest.Mock;
       };
-      expect(limiter.consume).toHaveBeenCalledWith("user:verified-athlete");
+      expect(limiter.consume).toHaveBeenCalledTimes(2);
+      expect(limiter.consume).toHaveBeenNthCalledWith(1, "127.0.0.1");
+      expect(limiter.consume).toHaveBeenNthCalledWith(2, "127.0.0.1");
     });
 
     it("re-evaluates governed runtime policy on every request", async () => {
