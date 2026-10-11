@@ -380,6 +380,28 @@ test("athlete saves complete editable profile across navigation", async ({ page 
   });
 });
 
+test("Settings rejects invalid profile edits and preserves persisted data", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/settings");
+  await waitForApp(page);
+
+  const before = await apiGet(page, "/api/v1/users/me");
+  const alias = page.getByRole("textbox", { name: /^alias$/i });
+  await alias.fill("invalid alias with spaces!");
+
+  const mutation = observeMutation(page, "PATCH", "/api/v1/users/me");
+  await page.getByRole("button", { name: /^save$/i }).first().click();
+  await expect(page.getByRole("status")).toContainText(/could not|failed|error|unable/i);
+  mutation.assertExactlyOnce(422);
+  mutation.stop();
+
+  const after = await apiGet(page, "/api/v1/users/me");
+  expect(after.profile?.alias).toBe(before.profile?.alias);
+  await page.reload();
+  await waitForApp(page);
+  await expect(page.getByRole("textbox", { name: /^alias$/i })).toHaveValue(before.profile?.alias ?? "");
+});
+
 test("athlete uploads and removes avatar from Settings", async ({ page }, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
