@@ -263,7 +263,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setSaveError(null);
 
     const resolvedPlannedAt = session?.planned_at ?? plannedAt ?? new Date().toISOString();
-    const exercisesPayload = drafts.map(toSessionExercise);
+    const exercisesPayload = drafts.map((draft, index) => toSessionExercise(draft, index + 1));
 
     try {
       const saved = session
