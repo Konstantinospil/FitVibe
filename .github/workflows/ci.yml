@@ -2261,7 +2261,7 @@ jobs:
           FROM revision;
           UPDATE app_settings_state SET active_revision = 1 WHERE id = 1;
           COMMIT;
-          DO $
+          DO $$
           BEGIN
             IF NOT EXISTS (
               SELECT 1 FROM app_setting_revision_items
@@ -2271,7 +2271,7 @@ jobs:
               RAISE EXCEPTION 'E2E request budget revision was not applied';
             END IF;
           END
-          $;
+          $$;
           SQL
 
       - name: Build backend
