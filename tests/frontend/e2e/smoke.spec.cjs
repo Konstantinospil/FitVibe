@@ -150,7 +150,7 @@ test("athlete navigates all active surfaces with real authenticated data", async
   ]) {
     await page.getByRole("link", { name: new RegExp(`^${label}$`, "i") }).click();
     await page.waitForURL((url) => url.pathname === route);
-    await expect(page.getByRole("heading", { name: new RegExp(`^${label}$`, "i"), level: 1 })).toBeVisible();
+    await expect(page.locator(`[data-app-surface="${label.toLowerCase()}"] h1`)).toBeVisible();
   }
 });
 
@@ -169,7 +169,7 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   const selectedExerciseId = await option.getAttribute("value");
   expect(selectedExerciseId).toBeTruthy();
   await exerciseSelect.selectOption(selectedExerciseId);
-  await editor.getByRole("button", { name: /^add exercise$/i }).click();
+  await editor.locator('button[data-component="button"]').getByText(/^Add exercise$/i).click();
   const title = `E2E smoke plan ${testInfo.workerIndex}-${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const mutation = observeMutation(page, "POST", "/api/v1/sessions");
@@ -277,7 +277,7 @@ test("athlete starts an exercise workout and backend records an in-progress sess
   const select = editor.getByRole("combobox").first();
   await expect.poll(async () => select.locator("option").count()).toBeGreaterThan(1);
   await select.selectOption({ index: 1 });
-  await editor.getByRole("button", { name: /^add exercise$/i }).click();
+  await editor.locator('button[data-component="button"]').getByText(/^Add exercise$/i).click();
   const title = `E2E smoke started ${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const create = observeMutation(page, "POST", "/api/v1/sessions");
@@ -294,7 +294,7 @@ test("athlete creates personal exercise and finds it after reload", async ({ pag
   await createDisposableAthlete(page, testInfo);
   await page.goto("/library");
   await waitForApp(page);
-  await page.getByRole("button", { name: /create exercise/i }).click();
+  await page.getByRole("button", { name: /new exercise/i }).click();
   const modal = page.getByRole("dialog");
   await expect(modal).toBeVisible();
   const form = modal.locator("#exercise-creator-form");
@@ -429,8 +429,19 @@ test("athlete changes Vibeform and Dashboard reflects saved profile", async ({ p
   const original = await bodyProfile.inputValue();
   const changed = original === "balanced" ? "hip-dominant" : "balanced";
   await bodyProfile.selectOption(changed);
-  const save = page.getByRole("button", { name: /^save$/i }).nth(2);
+  const save = page.locator(".training-panel")
+    .filter({ has: page.getByText("Vibeform", { exact: true }) })
+    .getByRole("button", { name: /^save$/i });
+  const mutation = observeMutation(page, "PUT", "/api/v1/vibeforms/me/preferences");
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/v1/vibeforms/me/preferences" &&
+      response.request().method() === "PUT",
+  );
   await save.click();
+  expect((await responsePromise).status()).toBe(200);
+  mutation.assertExactlyOnce(200);
+  mutation.stop();
   await page.goto("/dashboard");
   await waitForApp(page);
   await expect(page.locator("[data-app-surface='dashboard']")).toBeVisible();
