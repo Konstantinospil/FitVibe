@@ -2238,6 +2238,37 @@ jobs:
           pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
           pnpm --filter @fitvibe/backend exec tsx src/db/utils/seedAll.ts
 
+      # Browser smoke suites drive many independent sessions against one ephemeral
+      # backend. Configure that disposable database via the same governed settings
+      # revision consumed in production; never bypass or weaken the middleware.
+      - name: Configure isolated E2E request budget
+        run: |
+          psql -v ON_ERROR_STOP=1 <<'SQL'
+          BEGIN;
+          WITH revision AS (
+            INSERT INTO app_setting_revisions
+              (id, revision, status, reason, created_by, committed_at)
+            SELECT gen_random_uuid(), 1, 'committed',
+                   'Disposable E2E database request budget', id, now()
+            FROM users
+            ORDER BY created_at
+            LIMIT 1
+            RETURNING id
+          )
+          INSERT INTO app_setting_revision_items
+            (revision_id, setting_key, old_value, new_value)
+          SELECT id, 'security.global_rate_limit_points', '120'::jsonb, '1000'::jsonb
+          FROM revision;
+          UPDATE app_settings_state SET active_revision = 1 WHERE id = 1;
+          COMMIT;
+          SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM app_setting_revision_items
+            WHERE setting_key = 'security.global_rate_limit_points'
+              AND new_value = '1000'::jsonb
+          ) THEN 'E2E governance configured'
+          ELSE CAST(1 / 0 AS text) END AS result;
+          SQL
+
       - name: Build backend
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/backend run build
