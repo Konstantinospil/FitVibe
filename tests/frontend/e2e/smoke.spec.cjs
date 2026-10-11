@@ -64,7 +64,7 @@ async function createDisposableAthlete(page, testInfo, options = {}) {
 
   if (options.withAvatar) {
     const png = Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8AARAwMjDAGAAANHQEDasKb6QAAAABJRU5ErkJggg==",
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z8Dwn4GBgYGJAQoAHxcCAk+Uzr4AAAAASUVORK5CYII=",
       "base64",
     );
     await page.getByLabel(/select photo/i).setInputFiles({
