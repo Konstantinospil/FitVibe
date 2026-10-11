@@ -2250,7 +2250,7 @@ jobs:
       - name: Start real backend
         timeout-minutes: 5
         run: |
-          pnpm --filter @fitvibe/backend start > /tmp/fitvibe-e2e-backend.log 2>&1 &
+          TOTP_ENCRYPTION_KEY="$(openssl rand -hex 32)" pnpm --filter @fitvibe/backend start > /tmp/fitvibe-e2e-backend.log 2>&1 &
           echo $! > /tmp/fitvibe-e2e-backend.pid
           for i in {1..40}; do
             if curl -fsS http://127.0.0.1:4000/health >/dev/null 2>&1; then
