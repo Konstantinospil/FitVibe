@@ -116,13 +116,17 @@ export function rateLimitByIPAndEmail(key: string, points?: number, duration?: n
 }
 
 /** Apply a runtime-governed policy without capturing it during module import. */
-export function rateLimitFromPolicy(key: string, getPolicy: () => RateLimitPolicy) {
+export function rateLimitFromPolicy(
+  key: string,
+  getPolicy: () => RateLimitPolicy,
+  identityForRequest: (req: Request) => string = extractClientIpForRateLimit,
+) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const policy = getPolicy();
     const limiter = getLimiter(key, policy.points, policy.duration);
-    const ip = extractClientIpForRateLimit(req);
+    const identity = identityForRequest(req);
     limiter
-      .consume(ip)
+      .consume(identity)
       .then(() => next())
       .catch((rejRes: { msBeforeNext?: number }) =>
         rejectRateLimited(res, policy.duration, rejRes),
