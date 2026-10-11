@@ -500,6 +500,19 @@ async function checkFrontendTokens() {
   }
 
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
+  const foundationSource = await fs.readFile(
+    path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
+    "utf8",
+  );
+  if (!foundationSource.includes("scrollbar-gutter: stable;")) {
+    report(
+      path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
+      foundationSource,
+      Math.max(0, foundationSource.indexOf("html {")),
+      "The root scrolling element must reserve a stable scrollbar gutter so the scrollbar track never overlays page content.",
+    );
+  }
+
   const sharedUiSource = await fs.readFile(path.join(ROOT, "packages/ui/src/styles.css"), "utf8");
   const expectedMediumFieldGeometry =
     '[data-component$="-control"][data-size="md"]{padding:var(--space-xs) var(--space-md);font-size:var(--font-size-md)}';
