@@ -240,7 +240,11 @@ test("athlete can revoke Terms and the account session is invalidated", async ({
   revoke.stop();
   await page.goto("/");
   await waitForApp(page);
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(emailInput(page)).toBeVisible();
+  const unauthenticated = await page.context().request.get(
+    new URL("/api/v1/users/me", page.url()).toString(),
+  );
+  expect(unauthenticated.status()).toBe(401);
 });
 
 test("athlete logout rejects subsequent authenticated profile retrieval", async ({ page }, testInfo) => {
