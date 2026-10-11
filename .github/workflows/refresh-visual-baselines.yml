@@ -1,4 +1,5 @@
 # Manual refresh regenerates only changed Linux visual baselines after intentional UI changes.
+# Changes to this workflow intentionally trigger the same full visual-suite refresh on feature.
 name: Refresh Visual Linux Baselines
 
 on:
