@@ -20,7 +20,9 @@ const registerPayload = {
   name: "Jamie Carter",
 };
 
-test("user registers with accepted Terms, verifies email, logs in, enables 2FA, and logs out", async ({ page }, testInfo) => {
+test(
+  "user registers with accepted Terms, verifies email, logs in, enables 2FA, and logs out",
+  async ({ page }, testInfo) => {
   await preparePage(page);
 
   const suffix = `${testInfo.workerIndex}-${testInfo.retry}`;
@@ -207,4 +209,5 @@ test("user registers with accepted Terms, verifies email, logs in, enables 2FA, 
   finalLogout.stop();
   const afterLogout = await page.context().request.get(`${origin}/api/v1/users/me`);
   expect(afterLogout.status()).toBe(401);
-});
+  },
+);
