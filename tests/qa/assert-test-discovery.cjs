@@ -31,7 +31,9 @@ const owners = [
   {
     // Executed explicitly by the E2E job with node --test before Playwright.
     name: "frontend-e2e-observer-contract",
-    matches: (path) => path === "tests/frontend/e2e/request-observer.test.cjs",
+    matches: (path) =>
+      path === "tests/frontend/e2e/request-observer.test.cjs" ||
+      path === "tests/frontend/e2e/browser-diagnostics.test.cjs",
   },
   {
     name: "frontend-visual",
