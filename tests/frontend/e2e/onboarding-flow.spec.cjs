@@ -25,6 +25,10 @@ test("user can register, verify, login, and reach the current Calendar surface",
   await page.goto("/register");
   await waitForApp(page);
   await displayNameInput(page).fill(registerPayload.name);
+  await page.getByRole("spinbutton", { name: /weight/i }).fill("75");
+  await page.getByLabel(/date of birth/i).fill("2000-01-15");
+  await page.getByRole("combobox", { name: /^gender$/i }).selectOption("prefer_not_to_say");
+  await page.getByRole("combobox", { name: /current activity intensity/i }).selectOption("intermediate");
   await emailInput(page).fill(email);
   await page.locator("form input[name='username']").fill(username);
   await passwordInput(page).fill(registerPayload.password);
