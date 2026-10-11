@@ -221,6 +221,33 @@ describe("Rate Limiter Middleware", () => {
   });
 
   describe("rateLimitFromPolicy", () => {
+    it("uses an explicit identity resolver without changing the governed quota", async () => {
+      const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
+        RateLimiterMemory: jest.Mock;
+      };
+      const identity = jest.fn().mockReturnValue("user:verified-athlete");
+      const middleware = rateLimitFromPolicy(
+        "global",
+        () => getRouteRateLimitPolicy("user_me"),
+        identity,
+      );
+      const nextCalled = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await nextCalled;
+      expect(identity).toHaveBeenCalledWith(mockRequest);
+      expect(RateLimiterMemory).toHaveBeenCalledWith({
+        keyPrefix: "global",
+        ...getRouteRateLimitPolicy("user_me"),
+      });
+      const limiter = RateLimiterMemory.mock.results.at(-1)?.value as {
+        consume: jest.Mock;
+      };
+      expect(limiter.consume).toHaveBeenCalledWith("user:verified-athlete");
+    });
+
     it("re-evaluates governed runtime policy on every request", async () => {
       const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
         RateLimiterMemory: jest.Mock;
