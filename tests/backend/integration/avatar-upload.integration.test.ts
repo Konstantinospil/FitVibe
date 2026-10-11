@@ -244,6 +244,15 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
 
     expect(metadata.width).toBe(128);
     expect(metadata.height).toBe(128);
+
+    // Verify the persisted, HTTP-served preview rather than only the inline response.
+    const served = await request(app).get(`/api/v1/users/avatar/${userId}`);
+    expect(served.status).toBe(200);
+    const storedImage = await sharp(served.body as Buffer).metadata();
+    expect(storedImage.format).toBe("png");
+    expect(storedImage.width).toBe(128);
+    expect(storedImage.height).toBe(128);
+    expect(served.body).toEqual(processedBuffer);
   });
 
   it("should retrieve uploaded avatar", async () => {
@@ -357,8 +366,21 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     expect(response2.status).toBe(201);
     expect(response2.headers["idempotent-replayed"]).toBe("true");
     expect(response2.headers["idempotency-key"]).toBe(idempotencyKey);
+    expect(response2.body).toEqual(response1.body);
     expect(response2.body.fileUrl).toBe(firstFileUrl);
     expect(response2.body.bytes).toBe(firstBytes);
+
+    const avatars = await db("media").where({
+      owner_id: userId,
+      target_type: "user_avatar",
+      target_id: userId,
+    });
+    expect(avatars).toHaveLength(1);
+    const uploads = await db("audit_log").where({
+      actor_user_id: userId,
+      action: "avatar_upload",
+    });
+    expect(uploads).toHaveLength(1);
   });
 
   it("rejects reuse of an idempotency key with different image contents", async () => {
