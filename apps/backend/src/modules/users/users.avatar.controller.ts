@@ -90,11 +90,16 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       };
     }
 
-    const processed = await sharp(file.buffer)
-      .rotate()
-      .resize(128, 128, { fit: "cover" })
-      .png({ quality: 80 })
-      .toBuffer();
+    let processed: Buffer;
+    try {
+      processed = await sharp(file.buffer)
+        .rotate()
+        .resize(128, 128, { fit: "cover" })
+        .png({ quality: 80 })
+        .toBuffer();
+    } catch {
+      return { status: 422, body: { error: "UPLOAD_UNSUPPORTED_TYPE" } };
+    }
 
     const fileMeta = await saveUserAvatarFile(userId, processed, "image/png");
     const publicUrl = `/api/v1/users/avatar/${userId}`;
