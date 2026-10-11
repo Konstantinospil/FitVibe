@@ -249,7 +249,7 @@ test("athlete logout rejects subsequent authenticated profile retrieval", async 
   const logout = observeMutation(page, "POST", "/api/v1/auth/logout");
   await page.getByRole("button", { name: /sign out/i }).click();
   await page.waitForURL((url) => url.pathname === "/login");
-  logout.assertExactlyOnce(200);
+  logout.assertExactlyOnce(204);
   logout.stop();
   const res = await page.context().request.get(new URL("/api/v1/users/me", page.url()).toString());
   expect([401, 403]).toContain(res.status());
