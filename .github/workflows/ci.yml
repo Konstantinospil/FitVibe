@@ -2261,12 +2261,17 @@ jobs:
           FROM revision;
           UPDATE app_settings_state SET active_revision = 1 WHERE id = 1;
           COMMIT;
-          SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM app_setting_revision_items
-            WHERE setting_key = 'security.global_rate_limit_points'
-              AND new_value = '1000'::jsonb
-          ) THEN 'E2E governance configured'
-          ELSE CAST(1 / 0 AS text) END AS result;
+          DO $
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM app_setting_revision_items
+              WHERE setting_key = 'security.global_rate_limit_points'
+                AND new_value = '1000'::jsonb
+            ) THEN
+              RAISE EXCEPTION 'E2E request budget revision was not applied';
+            END IF;
+          END
+          $;
           SQL
 
       - name: Build backend
