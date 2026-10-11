@@ -6,6 +6,7 @@ const backendRequire = createRequire(path.resolve(__dirname, "../../../apps/back
 const { authenticator } = backendRequire("@otplib/preset-default");
 const {
   preparePage,
+  trackRequests,
   waitForApp,
   emailInput,
   passwordInput,
@@ -39,6 +40,21 @@ test("user registers with accepted Terms, verifies email, logs in, enables 2FA, 
   await page.locator("form input[name='username']").fill(username);
   await passwordInput(page).fill(registerPayload.password);
   await confirmPasswordInput(page).fill(registerPayload.password);
+
+  // The real registration form must reject an unconsented submission.
+  const rejectedSubmission = trackRequests(
+    page,
+    (request) =>
+      new URL(request.url()).pathname === "/api/v1/auth/register" &&
+      request.method() === "POST",
+  );
+  await page.getByRole("button", { name: /create account/i }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    /accept the Terms and Conditions and Privacy Policy/i,
+  );
+  expect(rejectedSubmission.requests).toHaveLength(0);
+  rejectedSubmission.stop();
+
   await acceptRegisterLegal(page);
   await expect(page.getByRole("checkbox")).toHaveCount(2);
   for (const checkbox of await page.getByRole("checkbox").all()) {
@@ -146,6 +162,25 @@ test("user registers with accepted Terms, verifies email, logs in, enables 2FA, 
   await page.waitForURL((url) => url.pathname === "/login/verify-2fa");
   const unauthenticated = await page.context().request.get(`${origin}/api/v1/users/me`);
   expect(unauthenticated.status()).toBe(401);
+
+  // A wrong second factor must not create an authenticated session.
+  const freshCsrf = await page.context().request.get(`${origin}/api/v1/csrf-token`);
+  expect(freshCsrf.status()).toBe(200);
+  const currentCode = authenticator.generate(secret);
+  const wrongDigit = currentCode.endsWith("0") ? "1" : "0";
+  const invalidCode = currentCode.slice(0, -1) + wrongDigit;
+  const invalidVerification = await page.context().request.post(
+    `${origin}/api/v1/auth/login/verify-2fa`,
+    {
+      data: { pendingSessionId: (await challenge.json()).pendingSessionId, code: invalidCode },
+      headers: { Origin: origin, "X-CSRF-Token": (await freshCsrf.json()).csrfToken },
+    },
+  );
+  expect(invalidVerification.status()).toBe(401);
+  expect((await invalidVerification.json()).error?.code).toBe("AUTH_VERIFICATION_FAILED");
+  expect(
+    (await page.context().request.get(`${origin}/api/v1/users/me`)).status(),
+  ).toBe(401);
 
   // Verify a genuine TOTP in the browser, never a synthetic/mocked login.
   const twoFactorMutation = observeMutation(page, "POST", "/api/v1/auth/login/verify-2fa");
