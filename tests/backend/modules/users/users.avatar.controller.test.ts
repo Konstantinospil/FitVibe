@@ -120,6 +120,15 @@ describe("Users Avatar Controller", () => {
       expect(mockResponse.json).toHaveBeenCalledWith({ error: "UPLOAD_TOO_LARGE" });
     });
 
+    it("rejects an image whose metadata passes but decoding fails", async () => {
+      const instance = mockSharp();
+      jest.mocked(instance.toBuffer).mockRejectedValueOnce(new Error("corrupt image"));
+      await avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(422);
+      expect(mockResponse.json).toHaveBeenCalledWith({ error: "UPLOAD_UNSUPPORTED_TYPE" });
+      expect(mockMediaStorage.saveUserAvatarFile).not.toHaveBeenCalled();
+    });
+
     it("should upload avatar successfully without idempotency key", async () => {
       await avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response);
 
