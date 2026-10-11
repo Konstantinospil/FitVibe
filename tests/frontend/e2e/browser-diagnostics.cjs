@@ -8,6 +8,7 @@ function watchBrowser(page) {
     consoleErrors: [],
     failedRequests: [],
     apiHttpErrors: [],
+    expectedApiHttpErrors: [],
   };
   const pathOf = (request) => new URL(request.url()).pathname;
   const apiRequest = (request) => pathOf(request).startsWith("/api/v1/");
@@ -27,6 +28,17 @@ function watchBrowser(page) {
     if (!apiRequest(request) || response.status() < 400) return;
     // The login page legitimately asks for user state without a session.
     if (response.status() === 401 && pathOf(request) === "/api/v1/users/me") return;
+    const expected = diagnostics.expectedApiHttpErrors.find(
+      (entry) =>
+        entry.method === request.method() &&
+        entry.path === pathOf(request) &&
+        entry.status === response.status() &&
+        entry.observed === 0,
+    );
+    if (expected) {
+      expected.observed += 1;
+      return;
+    }
     diagnostics.apiHttpErrors.push(
       `${request.method()} ${pathOf(request)}: ${response.status()}`,
     );
@@ -37,10 +49,27 @@ function watchBrowser(page) {
   page.on("response", onResponse);
   return {
     snapshot: () => diagnostics,
+    expectApiHttpError(method, path, status) {
+      assert.match(method, /^[A-Z]+$/, "Expected API method must be uppercase");
+      assert.match(path, /^\/api\/v1\//, "Expected API path must be explicit");
+      assert.ok(Number.isInteger(status) && status >= 400 && status < 600);
+      assert.ok(
+        !diagnostics.expectedApiHttpErrors.some(
+          (entry) => entry.method === method && entry.path === path && entry.status === status,
+        ),
+        "Duplicate expected API error registration",
+      );
+      diagnostics.expectedApiHttpErrors.push({ method, path, status, observed: 0 });
+    },
     assertHealthy() {
       assert.deepEqual(diagnostics.pageErrors, [], "Uncaught browser errors");
       assert.deepEqual(diagnostics.failedRequests, [], "Unexpected API transport failures");
       assert.deepEqual(diagnostics.apiHttpErrors, [], "Unexpected API errors");
+      assert.deepEqual(
+        diagnostics.expectedApiHttpErrors.filter((entry) => entry.observed !== 1),
+        [],
+        "Expected API errors must be observed exactly once",
+      );
     },
     stop() {
       page.off("pageerror", onPageError);
