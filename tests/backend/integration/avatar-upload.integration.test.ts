@@ -361,6 +361,54 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     expect(response2.body.bytes).toBe(firstBytes);
   });
 
+  it("rejects reuse of an idempotency key with different image contents", async () => {
+    const first = await createTestImageBuffer(400, 400, "png");
+    const second = await createTestImageBuffer(400, 400, "jpeg");
+    const key = `avatar-contents-${uuidv4()}`;
+    const upload = (buffer: Buffer, filename: string) =>
+      request(app)
+        .post("/api/v1/users/me/avatar")
+        .set("Authorization", `Bearer ${authToken}`)
+        .set("Idempotency-Key", key)
+        .attach("avatar", buffer, {
+          filename,
+          contentType: "image/png",
+        });
+
+    const firstResponse = await upload(first, "same-name.png");
+    expect(firstResponse.status).toBe(201);
+
+    const secondResponse = await upload(second, "same-name.png");
+    expect(secondResponse.status).toBe(409);
+    expect(secondResponse.body.error?.code).toBe("E.IDEMPOTENCY.MISMATCH");
+  });
+
+  it("invalidates the avatar URL when an image is replaced", async () => {
+    const first = await createTestImageBuffer(500, 500, "png");
+    const second = await createTestImageBuffer(600, 600, "png");
+    const upload = (buffer: Buffer) =>
+      request(app)
+        .post("/api/v1/users/me/avatar")
+        .set("Authorization", `Bearer ${authToken}`)
+        .attach("avatar", buffer, "avatar.png");
+
+    expect((await upload(first)).status).toBe(201);
+    const before = await request(app)
+      .get("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`);
+    expect(before.status).toBe(200);
+    const firstUrl = before.body.avatar?.url;
+    expect(firstUrl).toContain("rev=");
+
+    expect((await upload(second)).status).toBe(201);
+    const after = await request(app)
+      .get("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`);
+    expect(after.status).toBe(200);
+    expect(after.body.avatar?.url).toContain("rev=");
+    expect(after.body.avatar?.url).not.toBe(firstUrl);
+  });
+
   it("should support idempotency for delete", async () => {
     // Upload avatar first
     const imageBuffer = await createTestImageBuffer(500, 500, "png");

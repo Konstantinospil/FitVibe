@@ -70,15 +70,7 @@ const sessions: api.SessionsListResponse = {
       visibility: "private",
       completed_at: "2026-01-14T10:00:00.000Z",
       points: 12,
-      exercises: [
-        {
-          id: "session-ex-1",
-          session_id: "session-1",
-          exercise_id: "exercise-1",
-          order_index: 0,
-          sets: [],
-        },
-      ],
+      exercise_count: 1,
     },
   ],
   total: 1,

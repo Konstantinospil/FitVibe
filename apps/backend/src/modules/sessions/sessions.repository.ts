@@ -3,6 +3,7 @@ import { db } from "../../db/connection.js";
 import type {
   PaginatedResult,
   Session,
+  SessionListItem,
   SessionExercise,
   SessionExerciseAttributes,
   SessionExerciseSet,
@@ -121,7 +122,7 @@ function buildAttributes(
 export async function listSessions(
   userId: string,
   q: SessionQuery,
-): Promise<PaginatedResult<Session>> {
+): Promise<PaginatedResult<SessionListItem>> {
   const { status, plan_id, planned_from, planned_to, search, limit = 10, offset = 0 } = q;
   const query = executor()<Session>("sessions").where({ owner_id: userId }).whereNull("deleted_at");
 
@@ -145,8 +146,26 @@ export async function listSessions(
   const total = parseInt(totalRow[0].count, 10);
 
   const data = await query.clone().orderBy("planned_at", "desc").limit(limit).offset(offset);
+  if (data.length === 0) {
+    return { data: [], total, limit, offset };
+  }
 
-  return { data, total, limit, offset };
+  // Count exercises in one query for the selected page, not one query per session.
+  const counts = await executor()("session_exercises")
+    .whereIn(
+      "session_id",
+      data.map((session) => session.id),
+    )
+    .select("session_id")
+    .count<{ session_id: string; exercise_count: string }[]>("* as exercise_count")
+    .groupBy("session_id");
+  const countBySession = new Map(counts.map((row) => [row.session_id, Number(row.exercise_count)]));
+  const summaries = data.map((session) => ({
+    ...session,
+    exercise_count: countBySession.get(session.id) ?? 0,
+  }));
+
+  return { data: summaries, total, limit, offset };
 }
 
 export async function getSessionById(

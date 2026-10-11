@@ -1,4 +1,5 @@
 const { test, expect } = require("./fixtures.cjs");
+const { expectApiHttpError } = require("./browser-diagnostics.cjs");
 const {
   TEST_USER,
   preparePage,
@@ -150,7 +151,11 @@ test("athlete navigates all active surfaces with real authenticated data", async
   ]) {
     await page.getByRole("link", { name: new RegExp(`^${label}$`, "i") }).click();
     await page.waitForURL((url) => url.pathname === route);
-    await expect(page.locator(`[data-app-surface="${label.toLowerCase()}"] h1`)).toBeVisible();
+    if (label === "Calendar") {
+      await expect(page.getByRole("grid", { name: /calendar/i })).toBeVisible();
+    } else {
+      await expect(page.locator(`[data-app-surface="${label.toLowerCase()}"] h1`)).toBeVisible();
+    }
   }
 });
 
@@ -380,6 +385,29 @@ test("athlete saves complete editable profile across navigation", async ({ page 
   });
 });
 
+test("Settings rejects invalid profile edits and preserves persisted data", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
+  await page.goto("/settings");
+  await waitForApp(page);
+
+  const before = await apiGet(page, "/api/v1/users/me");
+  const alias = page.getByRole("textbox", { name: /^alias$/i });
+  await alias.fill("invalid alias with spaces!");
+
+  expectApiHttpError(page, "PATCH", "/api/v1/users/me", 422);
+  const mutation = observeMutation(page, "PATCH", "/api/v1/users/me");
+  await page.getByRole("button", { name: /^save$/i }).first().click();
+  await expect(page.getByRole("status")).toContainText(/could not|failed|error|unable/i);
+  mutation.assertExactlyOnce(422);
+  mutation.stop();
+
+  const after = await apiGet(page, "/api/v1/users/me");
+  expect(after.profile?.alias).toBe(before.profile?.alias);
+  await page.reload();
+  await waitForApp(page);
+  await expect(page.getByRole("textbox", { name: /^alias$/i })).toHaveValue(before.profile?.alias ?? "");
+});
+
 test("athlete uploads and removes avatar from Settings", async ({ page }, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
@@ -484,6 +512,8 @@ test("athlete uses Library exercise to open workout planning across surfaces", a
   create.assertExactlyOnce(201);
   create.stop();
   const sessions = await apiGet(page, "/api/v1/sessions?limit=100&offset=0");
-  expect(sessions.data.some((session) => session.title === title &&
-    session.exercises.some((item) => item.exercise_id === exercise.id))).toBe(true);
+  const created = sessions.data.find((session) => session.title === title);
+  expect(created?.id).toBeTruthy();
+  const detail = await apiGet(page, `/api/v1/sessions/${created.id}`);
+  expect(detail.exercises.some((item) => item.exercise_id === exercise.id)).toBe(true);
 });

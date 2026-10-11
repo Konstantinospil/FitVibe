@@ -153,6 +153,37 @@ describe("Rate Limiter Middleware", () => {
       expect(mockNext).toHaveBeenCalled();
     });
 
+    it("isolates authenticated users sharing an IP using the canonical quota", async () => {
+      const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
+        RateLimiterMemory: jest.Mock;
+      };
+      const middleware = rateLimitByUser("user_me");
+      const firstNext = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+      mockRequest.user = { sub: "athlete-a", role: "athlete" };
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await firstNext;
+
+      const limiter = RateLimiterMemory.mock.results.at(-1)?.value as {
+        consume: jest.Mock;
+      };
+      expect(RateLimiterMemory).toHaveBeenCalledWith({
+        keyPrefix: "user_me:user",
+        ...getRouteRateLimitPolicy("user_me"),
+      });
+      expect(limiter.consume).toHaveBeenCalledWith("user:athlete-a");
+
+      const secondNext = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+      mockRequest.user = { sub: "athlete-b", role: "athlete" };
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await secondNext;
+      expect(limiter.consume).toHaveBeenCalledWith("user:athlete-b");
+      expect(extractClientIpForRateLimit).toHaveBeenCalled();
+    });
+
     it("should fall back to IP when not authenticated", async () => {
       const middleware = rateLimitByUser("test", 10, 60);
 
@@ -190,6 +221,36 @@ describe("Rate Limiter Middleware", () => {
   });
 
   describe("rateLimitFromPolicy", () => {
+    it("always uses the client IP for global limiting, even for authenticated users", async () => {
+      const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
+        RateLimiterMemory: jest.Mock;
+      };
+      const middleware = rateLimitFromPolicy("global", () => ({
+        points: 120,
+        duration: 60,
+      }));
+      mockRequest.user = { sub: "athlete-a", role: "athlete" };
+      const first = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await first;
+
+      mockRequest.user = { sub: "athlete-b", role: "athlete" };
+      const second = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await second;
+
+      const limiter = RateLimiterMemory.mock.results.at(-1)?.value as {
+        consume: jest.Mock;
+      };
+      expect(limiter.consume).toHaveBeenCalledTimes(2);
+      expect(limiter.consume).toHaveBeenNthCalledWith(1, "127.0.0.1");
+      expect(limiter.consume).toHaveBeenNthCalledWith(2, "127.0.0.1");
+    });
+
     it("re-evaluates governed runtime policy on every request", async () => {
       const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
         RateLimiterMemory: jest.Mock;

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Request, Response } from "express";
 import { readRouteParam } from "../../utils/http.js";
 import sharp from "sharp";
@@ -139,6 +140,7 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
     filename: file.originalname,
     mimetype: file.mimetype,
     size: file.size,
+    sha256: createHash("sha256").update(file.buffer).digest("hex"),
   };
   const handled = await handleIdempotentRequest(req, res, userId, payload, execute);
 
