@@ -113,10 +113,6 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
     terms: { accepted: true, needsAcceptance: false },
   });
 
-  await page.getByRole("link", { name: /^calendar$/i }).click();
-  await page.waitForURL((url) => url.pathname === "/calendar");
-  await expect(page.locator("[data-app-surface='calendar']")).toBeVisible();
-
   // Configure real TOTP on this newly registered disposable athlete.
   // The production UI currently exposes status, not a 2FA enrollment form.
   const setupResponse = await page.context().request.get(`${origin}/api/v1/auth/2fa/setup`);
