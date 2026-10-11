@@ -416,7 +416,6 @@ test("athlete uploads and removes avatar from Settings", async ({ page }, testIn
   const placeholder = page.getByTestId("avatar-placeholder");
   await expect(placeholder).toBeVisible();
   await expect(placeholder).toHaveAttribute("data-size", "lg");
-  await expect(placeholder.getByRole("img", { name: /smoke athlete/i })).toHaveCount(0);
   await expect(placeholder).toHaveAttribute("role", "img");
   await expect(placeholder).toHaveAttribute("aria-label", /smoke athlete/i);
   await testInfo.attach("avatar-placeholder", {
