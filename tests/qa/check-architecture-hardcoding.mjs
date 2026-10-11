@@ -500,6 +500,18 @@ async function checkFrontendTokens() {
   }
 
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
+  const sharedUiSource = await fs.readFile(path.join(ROOT, "packages/ui/src/styles.css"), "utf8");
+  const expectedMediumFieldGeometry =
+    '[data-component$="-control"][data-size="md"]{padding:var(--space-xs) var(--space-md);font-size:var(--font-size-md)}';
+  if (!sharedUiSource.includes(expectedMediumFieldGeometry)) {
+    report(
+      path.join(ROOT, "packages/ui/src/styles.css"),
+      sharedUiSource,
+      Math.max(0, sharedUiSource.indexOf('[data-component$="-control"][data-size="md"]')),
+      "Medium field controls must use space-xs vertical padding so canonical control typography fits inside the fixed field-control height without clipping.",
+    );
+  }
+
   const themeSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/themes.css"), "utf8");
   const bootstrapSource = await fs.readFile(path.join(ROOT, "apps/frontend/index.html"), "utf8");
   const tokenValue = (source, token) => {
