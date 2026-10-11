@@ -142,6 +142,7 @@ describe("WorkoutEditor", () => {
           exercises: [
             expect.objectContaining({
               exercise_id: "exercise-1",
+              order: 1,
               planned: expect.objectContaining({
                 sets: 1,
                 reps: 12,
