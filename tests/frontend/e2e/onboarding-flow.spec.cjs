@@ -49,9 +49,9 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
       request.method() === "POST",
   );
   await page.getByRole("button", { name: /create account/i }).click();
-  await expect(page.getByRole("alert")).toContainText(
-    /accept the Terms and Conditions and Privacy Policy/i,
-  );
+  await expect(
+    page.locator("form [data-component='form-feedback'][data-tone='danger']"),
+  ).toContainText(/accept the Terms and Conditions and Privacy Policy/i);
   expect(rejectedSubmission.requests).toHaveLength(0);
   rejectedSubmission.stop();
 
