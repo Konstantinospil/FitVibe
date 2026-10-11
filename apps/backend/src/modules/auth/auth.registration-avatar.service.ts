@@ -49,11 +49,16 @@ export async function prepareRegistrationAvatar(file: RegistrationAvatarFile): P
     throw new HttpError(422, "UPLOAD_UNSUPPORTED_TYPE", "UPLOAD_UNSUPPORTED_TYPE");
   }
 
-  return sharp(file.buffer)
-    .rotate()
-    .resize(128, 128, { fit: "cover" })
-    .png({ quality: 80 })
-    .toBuffer();
+  try {
+    return await sharp(file.buffer)
+      .rotate()
+      .resize(128, 128, { fit: "cover" })
+      .png({ quality: 80 })
+      .toBuffer();
+  } catch {
+    // Decoding can fail even when image metadata is readable.
+    throw new HttpError(422, "UPLOAD_UNSUPPORTED_TYPE", "UPLOAD_UNSUPPORTED_TYPE");
+  }
 }
 
 export async function persistRegistrationAvatar(
