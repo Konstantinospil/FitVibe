@@ -9,9 +9,6 @@ import { randomUUID } from "node:crypto";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { rateLimitFromPolicy } from "./middlewares/rate-limit.js";
-import { extractClientIpForRateLimit } from "./utils/ip-extractor.js";
-import { verifyAccess } from "./modules/auth/auth.session-tokens.js";
-import type { Request } from "express";
 import { getRuntimeAppSetting } from "./modules/system/app-settings.runtime.js";
 import { csrfProtection, csrfTokenRoute, validateOrigin } from "./middlewares/csrf.js";
 import { httpLogger } from "./middlewares/request-logger.js";
@@ -163,23 +160,7 @@ app.use(
   rateLimitFromPolicy("global", () => ({
     points: getRuntimeAppSetting<number>("security.global_rate_limit_points"),
     duration: getRuntimeAppSetting<number>("security.global_rate_limit_duration_seconds"),
-  }), (req: Request) => {
-    // Verify the signature before accepting a user identity for rate-limit isolation.
-    // Missing, malformed and expired credentials continue to share the IP bucket.
-    const cookie = req.cookies?.[env.ACCESS_COOKIE_NAME];
-    const authorization = req.headers.authorization;
-    const bearer = authorization?.match(/^Bearer (\S+)$/i)?.[1];
-    const token = typeof cookie === "string" ? cookie : bearer;
-    if (token) {
-      try {
-        const subject = verifyAccess(token).sub;
-        if (subject) return `user:${subject}`;
-      } catch {
-        // Invalid credentials must never create independent rate-limit identities.
-      }
-    }
-    return extractClientIpForRateLimit(req);
-  }),
+  })),
 );
 
 // CSRF protection enabled for all state-changing requests (POST/PUT/PATCH/DELETE)
