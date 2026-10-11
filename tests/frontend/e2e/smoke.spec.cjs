@@ -1,4 +1,5 @@
 const { test, expect } = require("./fixtures.cjs");
+const { expectApiHttpError } = require("./browser-diagnostics.cjs");
 const {
   TEST_USER,
   preparePage,
@@ -389,6 +390,7 @@ test("Settings rejects invalid profile edits and preserves persisted data", asyn
   const alias = page.getByRole("textbox", { name: /^alias$/i });
   await alias.fill("invalid alias with spaces!");
 
+  expectApiHttpError(page, "PATCH", "/api/v1/users/me", 422);
   const mutation = observeMutation(page, "PATCH", "/api/v1/users/me");
   await page.getByRole("button", { name: /^save$/i }).first().click();
   await expect(page.getByRole("status")).toContainText(/could not|failed|error|unable/i);
