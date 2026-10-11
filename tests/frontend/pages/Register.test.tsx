@@ -14,6 +14,7 @@ vi.mock("../../src/services/api", async () => {
     ...actual,
     register: vi.fn(),
     resendVerificationEmail: vi.fn(),
+    getRegistrationOptions: vi.fn(),
   };
 });
 
@@ -31,6 +32,32 @@ void testI18n.use(initReactI18next).init({
         "auth.register.successTitle": "Account Created!",
         "auth.register.successDescription": "Check your email to verify your account",
         "auth.register.nameLabel": "Full Name",
+        "auth.register.weightLabel": "Weight (kg)",
+        "auth.register.dateOfBirthLabel": "Date of birth",
+        "auth.register.genderLabel": "Gender",
+        "auth.register.genderMan": "Man",
+        "auth.register.genderWoman": "Woman",
+        "auth.register.genderDiverse": "Diverse",
+        "auth.register.genderPreferNot": "Prefer not to say",
+        "auth.register.activityIntensityLabel": "Current activity intensity",
+        "auth.register.activityIntensityHelp": "Choose current training activity",
+        "auth.register.activityIntensityLow": "Low",
+        "auth.register.activityIntensityModerate": "Moderate",
+        "auth.register.activityIntensityHigh": "High",
+        "auth.register.activityIntensityVeryHigh": "Very high",
+        "auth.register.activityIntensityRehab": "Rehabilitation",
+        "auth.register.selectPlaceholder": "Select an option",
+        "auth.register.photoLabel": "Profile photo",
+        "auth.register.photoHelp": "Optional profile photo",
+        "auth.register.photoSelect": "Select photo",
+        "auth.register.photoChange": "Change photo",
+        "auth.register.avatarFallback": "Athlete",
+        "auth.register.avatarInvalidType": "Use JPEG, PNG or WebP",
+        "auth.register.avatarTooLarge": "Photo too large",
+        "auth.register.weightInvalid": "Weight must be between 20 and 400 kg.",
+        "auth.register.weightInvalidConfigured": "Weight must be between {{min}} and {{max}} kg.",
+        "auth.register.optionsLoadError": "Registration options could not be loaded.",
+        "auth.register.dateOfBirthInvalid": "Enter a valid date of birth.",
         "auth.register.emailLabel": "Email",
         "auth.register.passwordLabel": "Password",
         "auth.register.confirmPasswordLabel": "Confirm Password",
@@ -90,9 +117,43 @@ const renderWithProviders = (ui: React.ReactElement, initialEntries?: string[]) 
   );
 };
 
+const fillRequiredProfileFields = async () => {
+  await screen.findByRole("option", { name: "Prefer not to say" });
+  await screen.findByRole("option", { name: "Trains 3-4 times per week" });
+
+  fireEvent.change(screen.getByRole("spinbutton", { name: /weight/i }), {
+    target: { value: "75" },
+  });
+  fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    target: { value: "2000-01-15" },
+  });
+  fireEvent.change(screen.getByRole("combobox", { name: /^gender$/i }), {
+    target: { value: "prefer_not_to_say" },
+  });
+  fireEvent.change(screen.getByRole("combobox", { name: /current activity intensity/i }), {
+    target: { value: "intermediate" },
+  });
+};
+
 describe("Register", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(api.getRegistrationOptions).mockResolvedValue({
+      genders: [
+        { code: "woman", description: "Woman" },
+        { code: "man", description: "Man" },
+        { code: "diverse", description: "Diverse / non-binary" },
+        { code: "prefer_not_to_say", description: "Prefer not to say" },
+      ],
+      fitnessLevels: [
+        { code: "beginner", description: "Getting started with consistent training" },
+        { code: "intermediate", description: "Trains 3-4 times per week" },
+        { code: "advanced", description: "Highly trained athlete" },
+        { code: "elite", description: "Lives every story at a high level" },
+        { code: "rehab", description: "Returning from injury / rehab focus" },
+      ],
+      weight: { minKg: 20, maxKg: 400 },
+    });
     // Real timers are now the default in setupTests.ts
   });
 
@@ -100,8 +161,9 @@ describe("Register", () => {
     // Cleanup is handled by setupTests.ts
   });
 
-  it("renders registration form", () => {
+  it("renders registration form", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /full name/i })).toBeInTheDocument();
@@ -111,8 +173,9 @@ describe("Register", () => {
     expect(screen.getByRole("button", { name: /^create account$/i })).toBeInTheDocument();
   });
 
-  it("shows password visibility toggles", () => {
+  it("shows password visibility toggles", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const passwordToggles = screen.getAllByLabelText(/show password/i);
     expect(passwordToggles).toHaveLength(2); // One for password, one for confirm password
@@ -137,6 +200,7 @@ describe("Register", () => {
 
   it("validates password match", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -174,6 +238,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -208,8 +273,57 @@ describe("Register", () => {
         terms_accepted: true,
         profile: expect.objectContaining({
           display_name: "John Doe",
+          weight_kg: 75,
+          date_of_birth: "2000-01-15",
+          sex: "prefer_not_to_say",
+          fitness_level: "intermediate",
         }),
       }),
+    );
+  });
+
+  it("passes an optional profile photo with the expanded registration profile", async () => {
+    vi.mocked(api.register).mockResolvedValue({
+      user: { id: "123", username: "john", email: "john@example.com" },
+      session: { id: "session123" },
+    });
+
+    renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
+
+    const nameInput = screen.getByRole("textbox", { name: /full name/i });
+    const emailInput = screen.getByRole("textbox", { name: /email/i });
+    const passwordInput = screen.getByPlaceholderText(/create a strong password/i);
+    const confirmPasswordInput = screen.getByPlaceholderText(/confirm your password/i);
+    const photoInput = screen.getByLabelText(/select photo/i);
+    const form = nameInput.closest("form");
+    const photo = new File([new Uint8Array([1, 2, 3])], "avatar.png", { type: "image/png" });
+
+    fireEvent.change(nameInput, { target: { value: "John Doe" } });
+    fireEvent.change(emailInput, { target: { value: "john@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "Password123!" } });
+    fireEvent.change(confirmPasswordInput, { target: { value: "Password123!" } });
+    fireEvent.change(photoInput, { target: { files: [photo] } });
+
+    const checkboxes = screen.getAllByRole("checkbox", { name: /accept the/i });
+    fireEvent.click(checkboxes[0]);
+    fireEvent.click(checkboxes[1]);
+    if (form) {
+      fireEvent.submit(form);
+    }
+
+    await screen.findByText("Account Created!", {}, { timeout: 2000 });
+    expect(api.register).toHaveBeenCalledWith(
+      expect.objectContaining({
+        profile: expect.objectContaining({
+          display_name: "John Doe",
+          weight_kg: 75,
+          date_of_birth: "2000-01-15",
+          sex: "prefer_not_to_say",
+          fitness_level: "intermediate",
+        }),
+      }),
+      photo,
     );
   });
 
@@ -217,6 +331,7 @@ describe("Register", () => {
     vi.mocked(api.register).mockRejectedValue(new Error("Registration failed"));
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -256,6 +371,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -290,6 +406,7 @@ describe("Register", () => {
     );
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -329,8 +446,9 @@ describe("Register", () => {
     expect(checkboxesAfter[0]).toBeDisabled();
   });
 
-  it("renders login link", () => {
+  it("renders login link", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const loginLink = screen.getByRole("link", { name: /sign in/i });
     expect(loginLink).toHaveAttribute("href", "/login");
@@ -343,6 +461,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -377,12 +496,17 @@ describe("Register", () => {
       terms_accepted: true,
       profile: {
         display_name: "Test User",
+        weight_kg: 75,
+        date_of_birth: "2000-01-15",
+        sex: "prefer_not_to_say",
+        fitness_level: "intermediate",
       },
     });
   });
 
   it("validates password minimum length", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -415,6 +539,7 @@ describe("Register", () => {
 
   it("validates password contains lowercase letter", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -447,6 +572,7 @@ describe("Register", () => {
 
   it("validates password contains uppercase letter", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -479,6 +605,7 @@ describe("Register", () => {
 
   it("validates password contains digit", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -511,6 +638,7 @@ describe("Register", () => {
 
   it("validates password contains symbol", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -543,6 +671,7 @@ describe("Register", () => {
 
   it("requires terms acceptance", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -599,6 +728,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -641,6 +771,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -673,6 +804,7 @@ describe("Register", () => {
     vi.mocked(api.register).mockRejectedValue(new Error("Network error"));
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -701,8 +833,9 @@ describe("Register", () => {
     expect(alert).toBeInTheDocument();
   });
 
-  it("handles input focus and blur events", () => {
+  it("handles input focus and blur events", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -737,8 +870,9 @@ describe("Register", () => {
     expect(confirmPasswordInput).toBeInTheDocument();
   });
 
-  it("handles password toggle functionality", () => {
+  it("handles password toggle functionality", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const passwordToggles = screen.getAllByLabelText(/show password/i);
     const passwordToggle = passwordToggles[0];
@@ -761,6 +895,7 @@ describe("Register", () => {
 
   it("shows error styling on terms checkbox when error exists", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -801,6 +936,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -843,6 +979,7 @@ describe("Register", () => {
 
   it("handles empty name validation", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -875,6 +1012,7 @@ describe("Register", () => {
 
   it("handles empty email validation", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const nameInput = screen.getByRole("textbox", { name: /full name/i });
     const emailInput = screen.getByRole("textbox", { name: /email/i });
@@ -907,6 +1045,7 @@ describe("Register", () => {
 
   it("should show i18n validation message for empty required fields", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const form = screen.getByRole("textbox", { name: /email/i }).closest("form");
     expect(form).toBeInTheDocument();
@@ -951,8 +1090,9 @@ describe("Register", () => {
     expect(emailInput.value).toBe("prefilled@example.com");
   });
 
-  it("does not pre-fill email when location state is null", () => {
+  it("does not pre-fill email when location state is null", async () => {
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     const emailInput = screen.getByRole("textbox", { name: /email/i }) as HTMLInputElement;
     expect(emailInput.value).toBe("");
@@ -981,6 +1121,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     // Fill form and submit
     fireEvent.change(screen.getByLabelText(/full name/i), {
@@ -1040,6 +1181,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     // Fill form and submit
     fireEvent.change(screen.getByLabelText(/full name/i), {
@@ -1117,6 +1259,7 @@ describe("Register", () => {
     });
 
     renderWithProviders(<Register />);
+    await fillRequiredProfileFields();
 
     // Fill form and submit
     fireEvent.change(screen.getByLabelText(/full name/i), {

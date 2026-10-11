@@ -6,7 +6,8 @@ export const TRAINING_DATA_CONFIG = {
   // GET /sessions accepts at most 100 records per request.
   calendarApiPageLimit: 100,
   calendarGridDayCount: 42,
-  exerciseCatalogLimit: 250,
+  // GET /exercises accepts at most 100 records per request.
+  exerciseCatalogLimit: 100,
   standardQueryStaleMs: 60_000,
   exerciseCatalogStaleMs: 300_000,
 } as const;

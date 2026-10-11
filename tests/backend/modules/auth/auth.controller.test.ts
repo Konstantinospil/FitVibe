@@ -1,12 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 import * as authController from "../../../../apps/backend/src/modules/auth/auth.controller.js";
 import * as authService from "../../../../apps/backend/src/modules/auth/auth.service.js";
+import * as registrationOptionsService from "../../../../apps/backend/src/modules/auth/auth.registration-options.service.js";
 import * as idempotencyService from "../../../../apps/backend/src/modules/common/idempotency.service.js";
 import * as tokensService from "../../../../apps/backend/src/modules/auth/auth.session-tokens.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/auth/auth.service.js");
+jest.mock("../../../../apps/backend/src/modules/auth/auth.registration-options.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/idempotency.service.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.session-tokens.js");
 jest.mock("../../../../apps/backend/src/services/mailer.service.js", () => ({
@@ -38,6 +40,7 @@ jest.mock("../../../../apps/backend/src/config/env.js", () => ({
 }));
 
 const mockAuthService = jest.mocked(authService);
+const mockRegistrationOptionsService = jest.mocked(registrationOptionsService);
 const mockIdempotencyService = jest.mocked(idempotencyService);
 const mockTokensService = jest.mocked(tokensService);
 
@@ -78,6 +81,45 @@ describe("Auth Controller", () => {
     };
 
     mockNext = jest.fn();
+  });
+
+  describe("registrationOptions", () => {
+    it("returns the current database-backed registration options", async () => {
+      mockRegistrationOptionsService.getRegistrationOptions.mockResolvedValue({
+        genders: [{ code: "gender-a", description: "Gender A" }],
+        fitnessLevels: [{ code: "level-a", description: "Level A" }],
+        weight: { minKg: 20, maxKg: 400 },
+      });
+
+      await authController.registrationOptions(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockRegistrationOptionsService.getRegistrationOptions).toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        genders: [{ code: "gender-a", description: "Gender A" }],
+        fitnessLevels: [{ code: "level-a", description: "Level A" }],
+        weight: { minKg: 20, maxKg: 400 },
+      });
+      expect(mockNext).not.toHaveBeenCalled();
+    });
+
+    it("forwards registration-options failures to Express error handling", async () => {
+      const error = new Error("catalog unavailable");
+      mockRegistrationOptionsService.getRegistrationOptions.mockRejectedValue(error);
+
+      await authController.registrationOptions(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+      expect(mockResponse.json).not.toHaveBeenCalled();
+    });
   });
 
   describe("register", () => {

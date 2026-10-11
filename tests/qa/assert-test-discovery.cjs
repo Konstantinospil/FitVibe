@@ -12,6 +12,11 @@ const isArchived = (path) => path.startsWith("apps/frontend/archive/");
 
 const owners = [
   {
+    // Explicitly executed in the Architecture & Hardcoding job.
+    name: "typography-contract-regressions",
+    matches: (path) => path === "tests/qa/check-typography-contract.test.mjs",
+  },
+  {
     name: "backend-jest",
     matches: (path) => /^tests\/backend\/.*\.(?:test|spec)\.ts$/.test(path),
   },

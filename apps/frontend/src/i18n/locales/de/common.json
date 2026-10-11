@@ -493,7 +493,7 @@
       "avatarSelect": "Bild auswählen",
       "avatarUpload": "Hochladen",
       "avatarDelete": "Löschen",
-      "avatarHelp": "Lade ein JPEG-, PNG- oder WebP-Bild hoch (max. 5 MB). Empfohlene Größe: 256×256 Pixel.",
+      "avatarHelp": "Lade ein JPEG-, PNG- oder WebP-Bild hoch (max. 5 MB). Empfohlene Größe: 128×128 Pixel.",
       "avatarInvalidType": "Ungültiger Dateityp. Bitte JPEG, PNG oder WebP verwenden.",
       "avatarTooLarge": "Die Datei ist zu groß. Maximale Größe ist 5 MB.",
       "avatarNoFile": "Bitte wähle eine Datei zum Hochladen aus.",

@@ -18,9 +18,9 @@ const aliasSchema = z
 const registerProfileSchema = z
   .object({
     display_name: z.string().min(1).max(100).optional(),
-    sex: z.enum(["man", "woman", "diverse", "prefer_not_to_say"]).optional(),
-    weight_kg: z.number().min(20).max(500).optional(),
-    fitness_level: z.enum(["beginner", "intermediate", "advanced", "elite", "rehab"]).optional(),
+    sex: z.string().trim().min(1).max(100).optional(),
+    weight_kg: z.number().finite().optional(),
+    fitness_level: z.string().trim().min(1).max(100).optional(),
     date_of_birth: z.string().date().optional(),
     /** @deprecated Send date_of_birth instead. */
     age: z.number().int().min(13).max(120).optional(),
@@ -28,7 +28,27 @@ const registerProfileSchema = z
   .refine((profile) => !(profile.date_of_birth && profile.age !== undefined), {
     message: "DATE_OF_BIRTH_AGE_CONFLICT",
     path: ["date_of_birth"],
-  });
+  })
+  .refine(
+    (profile) => {
+      if (!profile.date_of_birth) {
+        return true;
+      }
+      const birthDate = new Date(`${profile.date_of_birth}T00:00:00.000Z`);
+      const today = new Date();
+      const minimumBirthDate = new Date(
+        Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()),
+      );
+      const maximumBirthDate = new Date(
+        Date.UTC(today.getUTCFullYear() - 120, today.getUTCMonth(), today.getUTCDate()),
+      );
+      return birthDate <= minimumBirthDate && birthDate >= maximumBirthDate;
+    },
+    {
+      message: "DATE_OF_BIRTH_OUT_OF_RANGE",
+      path: ["date_of_birth"],
+    },
+  );
 
 export const RegisterSchema = z
   .object({

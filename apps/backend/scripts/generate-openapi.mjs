@@ -34,15 +34,49 @@ const bearerAuth = {
 };
 
 const paths = {
+  "/auth/register/options": {
+    get: {
+      summary: "Get registration reference options",
+      tags: ["Auth"],
+      responses: {
+        200: jsonContent("#/components/schemas/RegistrationOptions"),
+        500: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
   "/auth/register": {
     post: {
       summary: "Register a new account",
       tags: ["Auth"],
-      requestBody: jsonContent("#/components/schemas/RegisterRequest"),
+      requestBody: {
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/RegisterRequest" },
+          },
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                payload: {
+                  type: "string",
+                  description: "JSON-encoded RegisterRequest payload",
+                },
+                avatar: {
+                  type: "string",
+                  format: "binary",
+                  description: "Optional JPEG, PNG, or WebP profile photo up to 5 MB",
+                },
+              },
+              required: ["payload"],
+            },
+          },
+        },
+      },
       responses: {
-        201: jsonContent("#/components/schemas/AuthSuccessResponse"),
+        202: jsonContent("#/components/schemas/AuthSuccessResponse"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
         409: jsonContent("#/components/schemas/ErrorResponse"),
+        422: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
   },
@@ -97,8 +131,9 @@ const paths = {
       requestBody: jsonContent("#/components/schemas/UpdateProfileRequest"),
       responses: {
         200: jsonContent("#/components/schemas/UserProfile"),
-        400: jsonContent("#/components/schemas/ErrorResponse"),
         401: jsonContent("#/components/schemas/ErrorResponse"),
+        403: jsonContent("#/components/schemas/ErrorResponse"),
+        422: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
   },
@@ -452,6 +487,39 @@ const schemas = {
     },
     required: ["accessToken", "refreshToken", "expiresIn"],
   },
+  RegistrationReferenceOption: {
+    type: "object",
+    properties: {
+      code: { type: "string" },
+      description: { type: "string" },
+    },
+    required: ["code", "description"],
+    additionalProperties: false,
+  },
+  RegistrationOptions: {
+    type: "object",
+    properties: {
+      genders: {
+        type: "array",
+        items: { $ref: "#/components/schemas/RegistrationReferenceOption" },
+      },
+      fitnessLevels: {
+        type: "array",
+        items: { $ref: "#/components/schemas/RegistrationReferenceOption" },
+      },
+      weight: {
+        type: "object",
+        properties: {
+          minKg: { type: "number" },
+          maxKg: { type: "number" },
+        },
+        required: ["minKg", "maxKg"],
+        additionalProperties: false,
+      },
+    },
+    required: ["genders", "fitnessLevels", "weight"],
+    additionalProperties: false,
+  },
   RegisterRequest: {
     type: "object",
     properties: {
@@ -485,12 +553,15 @@ const schemas = {
           display_name: { type: "string", minLength: 1, maxLength: 100 },
           sex: {
             type: "string",
-            enum: ["man", "woman", "diverse", "prefer_not_to_say"],
+            description: "Opaque reference code validated against the genders catalog.",
           },
-          weight_kg: { type: "number", minimum: 20, maximum: 500 },
+          weight_kg: {
+            type: "number",
+            description: "Validated against the configured weight bio-attribute range.",
+          },
           fitness_level: {
             type: "string",
-            enum: ["beginner", "intermediate", "advanced", "elite", "rehab"],
+            description: "Opaque reference code validated against the fitness_levels catalog.",
           },
           date_of_birth: { type: "string", format: "date" },
           age: { type: "integer", minimum: 13, maximum: 120, deprecated: true },
@@ -633,8 +704,12 @@ const schemas = {
       username: { type: "string", minLength: 3, maxLength: 50 },
       displayName: { type: "string", minLength: 1, maxLength: 120 },
       bio: { type: "string", maxLength: 500 },
-      alias: { type: "string", minLength: 3, maxLength: 50 },
-      weight: { type: "number", minimum: 20, maximum: 500 },
+      alias: { type: "string", minLength: 3, maxLength: 32 },
+      weight: {
+        type: "number",
+        exclusiveMinimum: 0,
+        description: "Weight in weightUnit; must be within the 20–400 kg equivalent range.",
+      },
       weightUnit: { type: "string", enum: ["kg", "lb"] },
       fitnessLevel: { type: "string", enum: ["beginner", "intermediate", "advanced", "elite"] },
       trainingFrequency: {
@@ -642,6 +717,21 @@ const schemas = {
         enum: ["rarely", "1_2_per_week", "3_4_per_week", "5_plus_per_week"],
       },
     },
+    allOf: [
+      {
+        if: {
+          properties: { weightUnit: { const: "lb" } },
+          required: ["weightUnit"],
+        },
+        then: {
+          properties: { weight: { minimum: 44.09, maximum: 881.85 } },
+        },
+        else: {
+          properties: { weight: { minimum: 20, maximum: 400 } },
+        },
+      },
+    ],
+    additionalProperties: false,
   },
   UpdatePreferencesRequest: {
     type: "object",

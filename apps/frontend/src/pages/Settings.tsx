@@ -14,6 +14,7 @@ import {
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { getMyVibeformProfile, updateMyVibeformPreferences } from "../lib/vibeform/api";
 import { TrainingPanel } from "../components/composites/TrainingSurface";
+import { AvatarEditor } from "../components/profile/AvatarEditor";
 
 const Settings: React.FC = () => {
   const { t } = useTranslation();
@@ -43,6 +44,9 @@ const Settings: React.FC = () => {
   const [displayName, setDisplayName] = useState("");
   const [alias, setAlias] = useState("");
   const [bio, setBio] = useState("");
+  const [weight, setWeight] = useState("");
+  const [fitnessLevel, setFitnessLevel] = useState("");
+  const [trainingFrequency, setTrainingFrequency] = useState("");
   const [language, setLanguage] = useState("en");
   const [measurementSystem, setMeasurementSystem] = useState("metric");
   const [defaultVisibility, setDefaultVisibility] = useState("private");
@@ -67,7 +71,17 @@ const Settings: React.FC = () => {
     setDisplayName(profileQuery.data.displayName ?? "");
     setAlias(profileQuery.data.alias ?? "");
     setBio(profileQuery.data.bio ?? "");
-  }, [profileQuery.data]);
+    const storedWeightKg = profileQuery.data.weight;
+    if (storedWeightKg === null || storedWeightKg === undefined) {
+      setWeight("");
+    } else if (preferencesQuery.data?.measurementSystem === "imperial") {
+      setWeight((storedWeightKg / 0.453592).toFixed(2).replace(/\.00$/, ""));
+    } else {
+      setWeight(String(storedWeightKg));
+    }
+    setFitnessLevel(profileQuery.data.fitnessLevel ?? "");
+    setTrainingFrequency(profileQuery.data.trainingFrequency ?? "");
+  }, [profileQuery.data, preferencesQuery.data?.measurementSystem]);
 
   useEffect(() => {
     if (!preferencesQuery.data) {
@@ -101,10 +115,24 @@ const Settings: React.FC = () => {
     setSavingSection("profile");
     setFeedback(null);
     try {
+      const parsedWeight = weight.trim() === "" ? undefined : Number(weight);
       await updateProfile({
         displayName: displayName.trim(),
         alias: alias.trim(),
         bio: bio.trim(),
+        weight: parsedWeight,
+        weightUnit:
+          parsedWeight === undefined
+            ? undefined
+            : preferencesQuery.data?.measurementSystem === "imperial"
+              ? "lb"
+              : "kg",
+        fitnessLevel: fitnessLevel
+          ? (fitnessLevel as "beginner" | "intermediate" | "advanced" | "elite")
+          : undefined,
+        trainingFrequency: trainingFrequency
+          ? (trainingFrequency as "rarely" | "1_2_per_week" | "3_4_per_week" | "5_plus_per_week")
+          : undefined,
       });
       await queryClient.invalidateQueries({ queryKey: ["settings", "profile"] });
       setFeedback(t("settings.profile.savedMessage"));
@@ -223,6 +251,12 @@ const Settings: React.FC = () => {
             <div className="training-empty">{t("common.loading")}</div>
           ) : (
             <div className="form">
+              <AvatarEditor
+                currentAvatarUrl={profileQuery.data?.avatarUrl}
+                displayName={displayName}
+                username={profileQuery.data?.username ?? ""}
+                onChanged={() => profileQuery.refetch()}
+              />
               <label className="form-label">
                 <span className="form-label-text">{t("settings.profile.displayName")}</span>
                 <InputControl
@@ -237,6 +271,58 @@ const Settings: React.FC = () => {
               <label className="form-label">
                 <span className="form-label-text">{t("settings.profile.bio")}</span>
                 <TextareaControl value={bio} onChange={(event) => setBio(event.target.value)} />
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("settings.profile.weight")}</span>
+                <InputControl
+                  type="number"
+                  min={preferencesQuery.data?.measurementSystem === "imperial" ? 44.09 : 20}
+                  max={preferencesQuery.data?.measurementSystem === "imperial" ? 881.85 : 400}
+                  step="0.01"
+                  value={weight}
+                  onChange={(event) => setWeight(event.target.value)}
+                />
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("settings.profile.weightUnit")}</span>
+                <InputControl
+                  value={
+                    preferencesQuery.data?.measurementSystem === "imperial"
+                      ? t("settings.profile.weightLb")
+                      : t("settings.profile.weightKg")
+                  }
+                  readOnly
+                />
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("settings.profile.fitnessLevel")}</span>
+                <SelectControl
+                  value={fitnessLevel}
+                  onChange={(event) => setFitnessLevel(event.target.value)}
+                >
+                  <option value="">{t("common.select")}</option>
+                  <option value="beginner">{t("settings.profile.fitnessLevelBeginner")}</option>
+                  <option value="intermediate">
+                    {t("settings.profile.fitnessLevelIntermediate")}
+                  </option>
+                  <option value="advanced">{t("settings.profile.fitnessLevelAdvanced")}</option>
+                  <option value="elite">{t("settings.profile.fitnessLevelElite")}</option>
+                </SelectControl>
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("settings.profile.trainingFrequency")}</span>
+                <SelectControl
+                  value={trainingFrequency}
+                  onChange={(event) => setTrainingFrequency(event.target.value)}
+                >
+                  <option value="">{t("common.select")}</option>
+                  <option value="rarely">{t("settings.profile.trainingFrequencyRarely")}</option>
+                  <option value="1_2_per_week">{t("settings.profile.trainingFrequency1_2")}</option>
+                  <option value="3_4_per_week">{t("settings.profile.trainingFrequency3_4")}</option>
+                  <option value="5_plus_per_week">
+                    {t("settings.profile.trainingFrequency5Plus")}
+                  </option>
+                </SelectControl>
               </label>
               <Button
                 type="button"

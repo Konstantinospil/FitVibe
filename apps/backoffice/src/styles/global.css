@@ -1,3 +1,5 @@
+@import "../../../../packages/ui/src/typography.css";
+
 /* Inter Variable Font - supports weights 100-900 */
 /* Using font-display: optional to improve LCP - if font isn't ready quickly, use fallback permanently */
 @font-face {
@@ -5,7 +7,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: optional;
-  src: url("/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("../../../frontend/public/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 /* Inter Variable Font Italic - supports weights 100-900 */
@@ -15,7 +17,7 @@
   font-style: italic;
   font-weight: 100 900;
   font-display: optional;
-  src: url("/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("../../../frontend/public/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
 }
 
 /* Roboto Flex Variable Font - supports weights 100-900, variable width and optical size */
@@ -26,7 +28,7 @@
   font-weight: 100 900;
   font-stretch: 75% 100%;
   font-display: optional;
-  src: url("/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf")
+  src: url("../../../frontend/public/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf")
     format("truetype");
 }
 
@@ -46,57 +48,7 @@
 
   color-scheme: dark;
 
-  /* Typography authority — FitVibe Figma Design System v2 */
-  --font-family-body: "Inter", system-ui, sans-serif;
-  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
-
-  --font-weight-regular: 400;
-  --font-weight-control-large: 582;
-  --font-weight-semibold: 600;
-
-  --type-display-size: 3rem;
-  --type-display-line-height: 3.5rem;
-  --type-display-letter-spacing: -0.01em;
-
-  --type-page-title-size: 2rem;
-  --type-page-title-line-height: 2.5rem;
-  --type-page-title-letter-spacing: -0.005em;
-
-  --type-section-title-size: 1.5rem;
-  --type-section-title-line-height: 2rem;
-  --type-section-title-letter-spacing: -0.005em;
-
-  --type-card-title-size: 1.125rem;
-  --type-card-title-line-height: 1.5rem;
-  --type-card-title-letter-spacing: 0;
-
-  --type-body-size: 1rem;
-  --type-body-line-height: 1.5rem;
-  --type-body-letter-spacing: 0;
-
-  --type-supporting-size: 0.875rem;
-  --type-supporting-line-height: 1.25rem;
-  --type-supporting-letter-spacing: 0;
-
-  --type-control-size: 0.875rem;
-  --type-control-line-height: 1.25rem;
-  --type-control-letter-spacing: 0;
-
-  --type-control-large-size: 1rem;
-  --type-control-large-line-height: 1.5rem;
-  --type-control-large-letter-spacing: 0;
-
-  --type-primary-metric-size: 2rem;
-  --type-primary-metric-line-height: 2.25rem;
-  --type-primary-metric-letter-spacing: -0.005em;
-
-  --type-secondary-metric-size: 1.5rem;
-  --type-secondary-metric-line-height: 1.75rem;
-  --type-secondary-metric-letter-spacing: -0.005em;
-
-  --type-metric-small-size: 0.875rem;
-  --type-metric-small-line-height: 0.75rem;
-  --type-metric-small-letter-spacing: 0.02em;
+  /* Typography roles are imported from @fitvibe/ui's shared contract. */
 
   /* Radius authority — Figma Layout variables */
   --radius-sm: 8px;
@@ -113,22 +65,6 @@
   --transparency-full: 100%;
   --transparency-subtle: 70%;
   --transparency-disabled: 45%;
-
-  /* Compatibility aliases: every alias resolves to an existing Figma text style. */
-  --font-family-base: var(--font-family-body);
-  --font-size-xs: var(--type-supporting-size);
-  --font-size-sm: var(--type-supporting-size);
-  --font-size-md: var(--type-body-size);
-  --font-size-lg: var(--type-card-title-size);
-  --font-size-xl: var(--type-section-title-size);
-  --font-size-2xl: var(--type-page-title-size);
-  --font-size-3xl: var(--type-display-size);
-  --line-height-tight: var(--type-card-title-line-height);
-  --line-height-snug: var(--type-supporting-line-height);
-  --line-height-normal: var(--type-body-line-height);
-  --line-height-relaxed: var(--type-body-line-height);
-  --letter-spacing-wide: var(--type-metric-small-letter-spacing);
-  --letter-spacing-tight: var(--type-page-title-letter-spacing);
 
   /* Spacing */
   --space-xs: 0.5rem;
@@ -1351,6 +1287,11 @@ small {
   font-size: var(--type-page-title-size);
 }
 
+/* Canonical heading roles shared with the athlete surface. */
+h1 { font-size: var(--typography-page-title-size); line-height: var(--typography-page-title-line-height); letter-spacing: var(--type-page-title-letter-spacing); }
+h2, .section-title { font-size: var(--typography-section-title-size); line-height: var(--typography-section-title-line-height); letter-spacing: var(--type-section-title-letter-spacing); }
+h3, h4, h5, h6 { font-size: var(--typography-card-title-size); line-height: var(--typography-card-title-line-height); letter-spacing: var(--type-card-title-letter-spacing); }
+
 /* Tab Navigation */
 .tabs {
   display: flex;
@@ -1383,4 +1324,402 @@ small {
 
 .block {
   display: block;
+}
+
+
+/* === BACKOFFICE ALIGNMENT WITH ATHLETE SURFACE === */
+
+/*
+ * The backoffice consumes the same semantic visual language as the athlete surface.
+ * Existing page-level utility classes remain intact; these overrides establish one
+ * palette/typography authority and a responsive application shell.
+ */
+:root {
+  --color-bg: #11191D;
+  --color-surface: #182329;
+  --color-surface-muted: #223039;
+  --color-surface-glass: color-mix(
+    in srgb,
+    var(--color-surface) var(--transparency-subtle),
+    transparent
+  );
+  --color-bg-card: var(--color-surface);
+
+  --color-border: #33454D;
+  --color-border-strong: #556A73;
+  --color-input-bg: var(--color-surface);
+  --color-input-border: var(--color-border-strong);
+
+  --color-text-primary: #F7F3EA;
+  --color-text-secondary: #BCC8CC;
+  --color-text-muted: #8D9CA2;
+
+  --vibe-strength: #C89B6D;
+  --vibe-agility: #8BAEBB;
+  --vibe-endurance: #4F7282;
+  --vibe-explosivity: #B65F56;
+  --vibe-intelligence: #A7ADB4;
+  --vibe-regeneration: #6F8F7A;
+
+  --color-primary: #7FA8B8;
+  --color-primary-hover: #96B9C6;
+  --color-primary-active: color-mix(
+    in srgb,
+    var(--color-primary) var(--transparency-subtle),
+    var(--color-bg)
+  );
+  --color-primary-on: #11191D;
+
+  --color-secondary: #7FA18F;
+  --color-secondary-hover: #92B19F;
+  --color-secondary-active: color-mix(
+    in srgb,
+    var(--color-secondary) var(--transparency-subtle),
+    var(--color-bg)
+  );
+  --color-secondary-on: #11191D;
+
+  --color-focus: #8FC2D4;
+  --color-success: #78A58D;
+  --color-warning: #C7A669;
+  --color-danger: #D8786F;
+  --color-danger-hover: #E38F87;
+
+  --color-accent: var(--color-primary);
+  --color-accent-strong: var(--color-secondary);
+  --color-highlight: var(--color-focus);
+  --color-link-form: var(--color-primary);
+  --color-link-form-hover: var(--color-primary-hover);
+
+  --color-success-bg: color-mix(
+    in srgb,
+    var(--color-success) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-success-text: var(--color-success);
+  --color-success-border: color-mix(
+    in srgb,
+    var(--color-success) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --color-info-bg: color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-info-text: var(--color-focus);
+  --color-info-border: color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --color-warning-bg: color-mix(
+    in srgb,
+    var(--color-warning) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-warning-text: var(--color-warning);
+  --color-warning-border: color-mix(
+    in srgb,
+    var(--color-warning) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --color-danger-bg: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-disabled),
+    var(--color-surface)
+  );
+  --color-danger-text: var(--color-danger);
+  --color-danger-border: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-subtle),
+    var(--color-border)
+  );
+
+  --element-fire-base: var(--vibe-explosivity);
+  --element-water-base: var(--vibe-endurance);
+  --element-earth-base: var(--vibe-regeneration);
+  --element-air-base: var(--vibe-agility);
+
+  --gradient-primary: linear-gradient(180deg, var(--color-bg), var(--color-bg));
+  --gradient-secondary: linear-gradient(180deg, transparent, transparent);
+
+  --shadow-e1: 0 1px 2px color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-disabled),
+    transparent
+  );
+  --shadow-e2: 0 4px 10px color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-disabled),
+    transparent
+  );
+  --shadow-e3: 0 8px 24px color-mix(
+    in srgb,
+    var(--color-border-strong) var(--transparency-subtle),
+    transparent
+  );
+  --focus-glow: 0 0 0 2px color-mix(
+    in srgb,
+    var(--color-focus) var(--transparency-disabled),
+    transparent
+  );
+}
+
+[data-theme="light"] {
+  --color-bg: #F4F0E8;
+  --color-surface: #FAF8F4;
+  --color-surface-muted: #ECE7DE;
+  --color-surface-glass: color-mix(
+    in srgb,
+    var(--color-surface) var(--transparency-subtle),
+    transparent
+  );
+  --color-bg-card: var(--color-surface);
+
+  --color-border: #D8D2C8;
+  --color-border-strong: #818C90;
+  --color-input-bg: var(--color-surface);
+  --color-input-border: var(--color-border-strong);
+
+  --color-text-primary: #243036;
+  --color-text-secondary: #59676C;
+  --color-text-muted: #59676C;
+
+  --color-primary: #4F7282;
+  --color-primary-hover: #3F5F6D;
+  --color-primary-on: #FAF8F4;
+  --color-secondary: #557263;
+  --color-secondary-hover: #476052;
+  --color-secondary-on: #FAF8F4;
+  --color-focus: #5E8797;
+  --color-success: #557263;
+  --color-warning: #9A7B4F;
+  --color-danger: #A9544D;
+  --color-danger-hover: color-mix(
+    in srgb,
+    var(--color-danger) var(--transparency-subtle),
+    var(--color-text-primary)
+  );
+
+  --color-accent: var(--color-primary);
+  --color-accent-strong: var(--color-secondary);
+  --color-highlight: var(--color-focus);
+  --color-link-form: var(--color-primary);
+  --color-link-form-hover: var(--color-primary-hover);
+  --color-info-text: var(--color-primary-hover);
+}
+
+html {
+  background: var(--gradient-primary), var(--gradient-secondary);
+  background-color: var(--color-bg);
+  background-attachment: fixed;
+}
+
+body {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.backoffice-shell {
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  grid-template-columns: clamp(14rem, 18vw, 18rem) minmax(0, 1fr);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+.backoffice-sidebar {
+  min-width: 0;
+  min-height: 100vh;
+  max-height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+}
+
+.backoffice-brand {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+
+.backoffice-brand__logo {
+  display: block;
+  width: min(100%, 10rem);
+  height: auto;
+  max-height: 2.5rem;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.backoffice-navigation {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--space-xs);
+}
+
+.backoffice-account {
+  flex: 0 0 auto;
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.backoffice-account__identity {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-secondary);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.backoffice-account__logout {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--type-control-size);
+  line-height: var(--type-control-line-height);
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.backoffice-account__logout:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.backoffice-main {
+  min-width: 0;
+  width: 100%;
+  padding: clamp(var(--space-md), 2.25vw, var(--space-xl));
+  overflow: auto;
+  background: transparent;
+}
+
+/* Old backoffice cards now use the same flat surface treatment as athlete cards. */
+.card,
+.metric-card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-e1);
+}
+
+@media (max-width: 960px) {
+  .backoffice-shell {
+    grid-template-columns: clamp(12.5rem, 24vw, 15rem) minmax(0, 1fr);
+  }
+
+  .backoffice-sidebar {
+    padding: var(--space-md);
+  }
+}
+
+@media (max-width: 720px) {
+  .backoffice-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .backoffice-sidebar {
+    position: static;
+    width: 100%;
+    min-height: 0;
+    max-height: none;
+    padding: var(--space-md);
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .backoffice-brand {
+    min-height: auto;
+  }
+
+  .backoffice-brand__logo {
+    width: min(8rem, 42vw);
+  }
+
+  .backoffice-navigation {
+    max-height: min(38vh, 18rem);
+    padding-right: 0;
+  }
+
+  .backoffice-account {
+    grid-template-columns: minmax(0, 1fr) auto minmax(7rem, auto);
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .backoffice-account__identity {
+    font-size: var(--font-size-xs);
+  }
+
+  .backoffice-main {
+    flex: 1 1 auto;
+    overflow: visible;
+    padding: var(--space-md);
+  }
+
+  .tabs {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    padding-inline: var(--space-md);
+  }
+
+  .metric-card {
+    min-width: min(100%, 12rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .backoffice-account {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .backoffice-navigation {
+    max-height: none;
+  }
+
+  .backoffice-main {
+    padding: var(--space-sm);
+  }
+
+  .card,
+  .card--compact,
+  .metric-card,
+  .card-content,
+  .card-content--padded {
+    padding: var(--space-md);
+  }
+
+  .empty-state,
+  .empty-state--padded {
+    padding: var(--space-lg) var(--space-md);
+  }
 }

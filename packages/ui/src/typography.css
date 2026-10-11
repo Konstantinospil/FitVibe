@@ -1,0 +1,214 @@
+/* Sole legacy typography compatibility authority. Do not reintroduce app-local roles. */
+:root {
+  --font-family-body: "Inter", system-ui, sans-serif;
+  --font-family-heading: "Roboto Flex", "Inter", system-ui, sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-control-large: 582;
+  --font-weight-semibold: 600;
+  /* Compatibility aliases: every alias resolves to an existing Figma text style. */
+  --font-family-base: var(--font-family-body);
+  --font-size-xs: var(--type-supporting-size);
+  --font-size-sm: var(--type-supporting-size);
+  --font-size-md: var(--type-body-size);
+  --font-size-lg: var(--type-card-title-size);
+  --font-size-xl: var(--type-section-title-size);
+  --font-size-2xl: var(--type-page-title-size);
+  --font-size-3xl: var(--type-display-size);
+  --line-height-tight: var(--type-card-title-line-height);
+  --line-height-snug: var(--type-supporting-line-height);
+  --line-height-normal: var(--type-body-line-height);
+  --line-height-relaxed: var(--type-body-line-height);
+  --letter-spacing-wide: var(--type-metric-small-letter-spacing);
+  --letter-spacing-tight: var(--type-page-title-letter-spacing);
+  --type-display-size: var(--typography-display-size);
+  --type-display-line-height: var(--typography-display-line-height);
+  --type-display-letter-spacing: -0.01em;
+  --type-page-title-size: var(--typography-page-title-size);
+  --type-page-title-line-height: var(--typography-page-title-line-height);
+  --type-page-title-letter-spacing: -0.005em;
+  --type-section-title-size: var(--typography-section-title-size);
+  --type-section-title-line-height: var(--typography-section-title-line-height);
+  --type-section-title-letter-spacing: -0.005em;
+  --type-card-title-size: var(--typography-card-title-size);
+  --type-card-title-line-height: var(--typography-card-title-line-height);
+  --type-card-title-letter-spacing: 0;
+  --type-body-size: var(--typography-body-size);
+  --type-body-line-height: var(--typography-body-line-height);
+  --type-body-letter-spacing: 0;
+  --type-supporting-size: var(--typography-supporting-size);
+  --type-supporting-line-height: var(--typography-supporting-line-height);
+  --type-supporting-letter-spacing: 0;
+  --type-control-size: var(--typography-control-size);
+  --type-control-line-height: var(--typography-control-line-height);
+  --type-control-letter-spacing: 0;
+  --type-control-large-size: var(--typography-control-large-size);
+  --type-control-large-line-height: var(--typography-control-large-line-height);
+  --type-control-large-letter-spacing: 0;
+  --type-primary-metric-size: var(--typography-primary-metric-size);
+  --type-primary-metric-line-height: var(--typography-primary-metric-line-height);
+  --type-primary-metric-letter-spacing: -0.005em;
+  --type-secondary-metric-size: var(--typography-secondary-metric-size);
+  --type-secondary-metric-line-height: var(--typography-secondary-metric-line-height);
+  --type-secondary-metric-letter-spacing: -0.005em;
+  --type-metric-small-size: var(--typography-metric-small-size);
+  --type-metric-small-line-height: var(--typography-metric-small-line-height);
+  --type-metric-small-letter-spacing: 0.02em;
+}
+
+/* Generated typography role aliases; authority: design/typography.schema.json. */
+:root {
+  --typography-display-size: 3rem;
+  --typography-display-line-height: 3.5rem;
+  --typography-page-title-size: 2rem;
+  --typography-page-title-line-height: 2.5rem;
+  --typography-section-title-size: 1.5rem;
+  --typography-section-title-line-height: 2rem;
+  --typography-card-title-size: 1.125rem;
+  --typography-card-title-line-height: 1.5rem;
+  --typography-body-size: 1rem;
+  --typography-body-line-height: 1.5rem;
+  --typography-supporting-size: 0.875rem;
+  --typography-supporting-line-height: 1.25rem;
+  --typography-control-size: 0.875rem;
+  --typography-control-line-height: 1.25rem;
+  --typography-control-large-size: 1rem;
+  --typography-control-large-line-height: 1.5rem;
+  --typography-primary-metric-size: 2rem;
+  --typography-primary-metric-line-height: 2.25rem;
+  --typography-secondary-metric-size: 1.5rem;
+  --typography-secondary-metric-line-height: 1.75rem;
+  --typography-metric-small-size: 0.875rem;
+  --typography-metric-small-line-height: 0.75rem;
+}
+/* Complete Figma text styles. Sizes/line heights are responsive;
+ * families, weights and tracking stay anchored to verified Figma tokens. */
+:root {
+  --typography-display-family: var(--font-family-heading);
+  --typography-display-weight: var(--font-weight-semibold);
+  --typography-display-letter-spacing: -0.01em;
+  --typography-display: var(--typography-display-weight) var(--typography-display-size)/var(--typography-display-line-height) var(--typography-display-family);
+  --typography-page-title-family: var(--font-family-heading);
+  --typography-page-title-weight: var(--font-weight-semibold);
+  --typography-page-title-letter-spacing: -0.005em;
+  --typography-page-title: var(--typography-page-title-weight) var(--typography-page-title-size)/var(--typography-page-title-line-height) var(--typography-page-title-family);
+  --typography-section-title-family: var(--font-family-heading);
+  --typography-section-title-weight: var(--font-weight-semibold);
+  --typography-section-title-letter-spacing: -0.005em;
+  --typography-section-title: var(--typography-section-title-weight) var(--typography-section-title-size)/var(--typography-section-title-line-height) var(--typography-section-title-family);
+  --typography-card-title-family: var(--font-family-heading);
+  --typography-card-title-weight: var(--font-weight-semibold);
+  --typography-card-title-letter-spacing: 0;
+  --typography-card-title: var(--typography-card-title-weight) var(--typography-card-title-size)/var(--typography-card-title-line-height) var(--typography-card-title-family);
+  --typography-body-family: var(--font-family-body);
+  --typography-body-weight: var(--font-weight-regular);
+  --typography-body-letter-spacing: 0;
+  --typography-body: var(--typography-body-weight) var(--typography-body-size)/var(--typography-body-line-height) var(--typography-body-family);
+  --typography-supporting-family: var(--font-family-body);
+  --typography-supporting-weight: var(--font-weight-regular);
+  --typography-supporting-letter-spacing: 0;
+  --typography-supporting: var(--typography-supporting-weight) var(--typography-supporting-size)/var(--typography-supporting-line-height) var(--typography-supporting-family);
+  --typography-control-family: var(--font-family-body);
+  --typography-control-weight: var(--font-weight-regular);
+  --typography-control-letter-spacing: 0;
+  --typography-control: var(--typography-control-weight) var(--typography-control-size)/var(--typography-control-line-height) var(--typography-control-family);
+  --typography-control-large-family: var(--font-family-body);
+  --typography-control-large-weight: var(--font-weight-control-large);
+  --typography-control-large-letter-spacing: 0;
+  --typography-control-large: var(--typography-control-large-weight) var(--typography-control-large-size)/var(--typography-control-large-line-height) var(--typography-control-large-family);
+  --typography-primary-metric-family: var(--font-family-heading);
+  --typography-primary-metric-weight: var(--font-weight-semibold);
+  --typography-primary-metric-letter-spacing: -0.005em;
+  --typography-primary-metric: var(--typography-primary-metric-weight) var(--typography-primary-metric-size)/var(--typography-primary-metric-line-height) var(--typography-primary-metric-family);
+  --typography-secondary-metric-family: var(--font-family-heading);
+  --typography-secondary-metric-weight: var(--font-weight-semibold);
+  --typography-secondary-metric-letter-spacing: -0.005em;
+  --typography-secondary-metric: var(--typography-secondary-metric-weight) var(--typography-secondary-metric-size)/var(--typography-secondary-metric-line-height) var(--typography-secondary-metric-family);
+  --typography-metric-small-family: var(--font-family-heading);
+  --typography-metric-small-weight: var(--font-weight-semibold);
+  --typography-metric-small-letter-spacing: 0.02em;
+  --typography-metric-small: var(--typography-metric-small-weight) var(--typography-metric-small-size)/var(--typography-metric-small-line-height) var(--typography-metric-small-family);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --typography-display-size: 2.25rem;
+    --typography-display-line-height: 2.75rem;
+    --typography-page-title-size: 1.75rem;
+    --typography-page-title-line-height: 2.25rem;
+    --typography-section-title-size: 1.375rem;
+    --typography-section-title-line-height: 1.875rem;
+    --typography-card-title-size: 1.125rem;
+    --typography-card-title-line-height: 1.5rem;
+    --typography-body-size: 1rem;
+    --typography-body-line-height: 1.5rem;
+    --typography-supporting-size: 0.875rem;
+    --typography-supporting-line-height: 1.25rem;
+    --typography-control-size: 0.875rem;
+    --typography-control-line-height: 1.25rem;
+    --typography-control-large-size: 1rem;
+    --typography-control-large-line-height: 1.5rem;
+    --typography-primary-metric-size: 1.75rem;
+    --typography-primary-metric-line-height: 2rem;
+    --typography-secondary-metric-size: 1.375rem;
+    --typography-secondary-metric-line-height: 1.75rem;
+    --typography-metric-small-size: 0.875rem;
+    --typography-metric-small-line-height: 0.75rem;
+  }
+}
+
+/* Semantic composition utilities: choose a whole role, not mixed properties. */
+.typography-display {
+  font: var(--typography-display);
+  letter-spacing: var(--typography-display-letter-spacing);
+}
+
+.typography-page-title {
+  font: var(--typography-page-title);
+  letter-spacing: var(--typography-page-title-letter-spacing);
+}
+
+.typography-section-title {
+  font: var(--typography-section-title);
+  letter-spacing: var(--typography-section-title-letter-spacing);
+}
+
+.typography-card-title {
+  font: var(--typography-card-title);
+  letter-spacing: var(--typography-card-title-letter-spacing);
+}
+
+.typography-body {
+  font: var(--typography-body);
+  letter-spacing: var(--typography-body-letter-spacing);
+}
+
+.typography-supporting {
+  font: var(--typography-supporting);
+  letter-spacing: var(--typography-supporting-letter-spacing);
+}
+
+.typography-control {
+  font: var(--typography-control);
+  letter-spacing: var(--typography-control-letter-spacing);
+}
+
+.typography-control-large {
+  font: var(--typography-control-large);
+  letter-spacing: var(--typography-control-large-letter-spacing);
+}
+
+.typography-primary-metric {
+  font: var(--typography-primary-metric);
+  letter-spacing: var(--typography-primary-metric-letter-spacing);
+}
+
+.typography-secondary-metric {
+  font: var(--typography-secondary-metric);
+  letter-spacing: var(--typography-secondary-metric-letter-spacing);
+}
+
+.typography-metric-small {
+  font: var(--typography-metric-small);
+  letter-spacing: var(--typography-metric-small-letter-spacing);
+}
+

@@ -64,21 +64,18 @@ describe("Q-10 email verification policies", () => {
     terms_version: "2024-01-01",
   };
 
-  beforeAll(() => {
-    jest.useFakeTimers().setSystemTime(BASE_TIME);
-  });
-
-  afterAll(() => {
-    jest.useRealTimers();
-  });
-
   beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(BASE_TIME);
     jest.clearAllMocks();
     mockFindUserByEmail.mockResolvedValue(pendingUser);
     mockFindUserByUsername.mockResolvedValue(undefined);
     mockCreateAuthToken.mockResolvedValue([]);
     mockMarkAuthTokensConsumed.mockResolvedValue(0);
     mockPurgeAuthTokensOlderThan.mockResolvedValue(0);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("issues a verification token with 15 minute TTL and purges stale tokens older than 7 days", async () => {

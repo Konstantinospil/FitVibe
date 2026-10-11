@@ -22,13 +22,13 @@ describe("RegisterSchema profile", () => {
     ).toBe(true);
   });
 
-  it("rejects the obsolete gender code and unknown fitness levels", () => {
+  it("accepts opaque reference codes for database validation", () => {
     expect(
       RegisterSchema.safeParse({
         ...baseRegistration,
-        profile: { sex: "na", fitness_level: "professional" },
+        profile: { sex: "catalog_defined_gender", fitness_level: "catalog_defined_level" },
       }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("does not accept both date_of_birth and deprecated age", () => {

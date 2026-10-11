@@ -36,6 +36,8 @@ import { HttpError } from "../../utils/http.js";
 import { verifyAccess } from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
+import { prepareRegistrationAvatar } from "./auth.registration-avatar.service.js";
+import { getRegistrationOptions } from "./auth.registration-options.service.js";
 
 function authCookieOptions(maxAge?: number) {
   return {
@@ -107,13 +109,28 @@ type LoginInput = z.infer<typeof LoginSchema>;
 type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 
+export async function registrationOptions(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    res.status(200).json(await getRegistrationOptions());
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const payload: RegisterInput = RegisterSchema.parse(req.body);
+    const preparedAvatar = req.file ? await prepareRegistrationAvatar(req.file) : undefined;
     const scopeUserId = `anon:${payload.email}`;
 
     const execute = async (): Promise<Record<string, unknown>> => {
-      const { verificationToken } = await doRegister(payload);
+      const { verificationToken } = preparedAvatar
+        ? await doRegister(payload, preparedAvatar)
+        : await doRegister(payload);
       const response: Record<string, unknown> = {
         message: "If the email is valid, a verification link will be sent shortly.",
       };
@@ -124,10 +141,26 @@ export async function register(req: Request, res: Response, next: NextFunction):
       return response;
     };
 
-    const handled = await handleIdempotentRequest(req, res, scopeUserId, payload, async () => ({
-      status: 202,
-      body: await execute(),
-    }));
+    const idempotencyPayload = {
+      ...payload,
+      avatar: req.file
+        ? {
+            filename: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size,
+          }
+        : null,
+    };
+    const handled = await handleIdempotentRequest(
+      req,
+      res,
+      scopeUserId,
+      idempotencyPayload,
+      async () => ({
+        status: 202,
+        body: await execute(),
+      }),
+    );
 
     if (!handled) {
       res.status(202).json(await execute());

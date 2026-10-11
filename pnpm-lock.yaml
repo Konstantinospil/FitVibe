@@ -173,7 +173,7 @@ overrides:
   immutable: 4.3.9
   basic-ftp: ^6.2.1
   nanoid: 3.3.18
-  postcss: '>=8.5.26'
+  postcss: '8.5.28'
   vite: ^8.2.2
   vitest: ^5.0.1
   '@remix-run/router': 1.23.2
@@ -307,6 +307,9 @@ importers:
       pnpm:
         specifier: 12.7.0
         version: 12.7.0
+      postcss:
+        specifier: 8.5.28
+        version: 8.5.28
       prettier:
         specifier: 3.9.9
         version: 3.9.9

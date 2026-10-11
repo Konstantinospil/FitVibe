@@ -20,6 +20,10 @@ export type RegisterRequest = {
   terms_accepted: boolean;
   profile?: {
     display_name?: string;
+    sex?: string;
+    weight_kg?: number;
+    fitness_level?: string;
+    date_of_birth?: string;
   };
 };
 
@@ -103,6 +107,18 @@ interface UserDetail {
   };
 }
 
+function versionedAvatarUrl(avatar: UserDetail["avatar"]): string | null {
+  if (!avatar?.url) {
+    return null;
+  }
+  if (!avatar.updatedAt) {
+    return avatar.url;
+  }
+
+  const separator = avatar.url.includes("?") ? "&" : "?";
+  return `${avatar.url}${separator}v=${encodeURIComponent(avatar.updatedAt)}`;
+}
+
 /**
  * Get current user profile
  */
@@ -114,7 +130,7 @@ export async function getCurrentUser(): Promise<UserProfile> {
     username: data.username,
     displayName: data.displayName,
     email: data.primaryEmail || undefined,
-    avatarUrl: data.avatar?.url ?? null,
+    avatarUrl: versionedAvatarUrl(data.avatar),
     bio: data.profile?.bio ?? null,
     alias: data.profile?.alias ?? null,
     weight: data.profile?.weight ?? null,
@@ -143,7 +159,7 @@ export async function updateProfile(payload: UpdateProfileRequest): Promise<User
     username: data.username,
     displayName: data.displayName,
     email: data.primaryEmail || undefined,
-    avatarUrl: data.avatar?.url ?? null,
+    avatarUrl: versionedAvatarUrl(data.avatar),
     bio: data.profile?.bio ?? null,
     alias: data.profile?.alias ?? null,
     weight: data.profile?.weight ?? null,
@@ -159,6 +175,34 @@ export async function updateProfile(payload: UpdateProfileRequest): Promise<User
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
+}
+
+export interface AvatarUploadResponse {
+  success: true;
+  fileUrl: string;
+  bytes: number;
+  mimeType: "image/png";
+  updatedAt: string;
+  preview: string;
+}
+
+export async function uploadAvatar(
+  file: File,
+  idempotencyKey: string,
+): Promise<AvatarUploadResponse> {
+  const formData = new FormData();
+  formData.append("avatar", file);
+  const res = await apiClient.post<AvatarUploadResponse>("/api/v1/users/me/avatar", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      "Idempotency-Key": idempotencyKey,
+    },
+  });
+  return res.data;
+}
+
+export async function deleteAvatar(): Promise<void> {
+  await apiClient.delete("/api/v1/users/me/avatar");
 }
 
 export interface BodyWeightEntry {
@@ -227,6 +271,25 @@ export type RegisterResponse = {
   session: unknown;
 };
 
+export interface RegistrationReferenceOption {
+  code: string;
+  description: string;
+}
+
+export interface RegistrationOptions {
+  genders: RegistrationReferenceOption[];
+  fitnessLevels: RegistrationReferenceOption[];
+  weight: {
+    minKg: number;
+    maxKg: number;
+  };
+}
+
+export async function getRegistrationOptions(): Promise<RegistrationOptions> {
+  const res = await rawHttpClient.get<RegistrationOptions>("/api/v1/auth/register/options");
+  return res.data;
+}
+
 export type Verify2FAResponse = {
   user: UserResponse;
   session: unknown;
@@ -249,9 +312,18 @@ export async function verify2FALogin(payload: Verify2FALoginRequest): Promise<Ve
   return res.data;
 }
 
-export async function register(payload: RegisterRequest): Promise<RegisterResponse> {
-  // Backend sets HttpOnly cookies (accessToken, refreshToken) and returns user data
-  const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", payload);
+export async function register(payload: RegisterRequest, avatar?: File): Promise<RegisterResponse> {
+  if (!avatar) {
+    const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", payload);
+    return res.data;
+  }
+
+  const formData = new FormData();
+  formData.append("payload", JSON.stringify(payload));
+  formData.append("avatar", avatar);
+  const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return res.data;
 }
 

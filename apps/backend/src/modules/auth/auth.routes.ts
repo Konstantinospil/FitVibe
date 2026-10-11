@@ -1,6 +1,8 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
+import multer from "multer";
 import {
   register,
+  registrationOptions,
   login,
   verify2FALogin,
   refresh,
@@ -36,12 +38,60 @@ import {
 import { requireAccessToken } from "./auth.middleware.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import twoFactorRoutes from "./two-factor.routes.js";
+import { HttpError } from "../../utils/http.js";
 
 export const authRouter = Router();
+
+const registrationUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+const registrationMultipart: RequestHandler = (req, res, next) => {
+  registrationUpload.single("avatar")(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError) {
+      res.status(422).json({
+        error: error.code === "LIMIT_FILE_SIZE" ? "UPLOAD_TOO_LARGE" : "UPLOAD_INVALID",
+      });
+      return;
+    }
+    if (error) {
+      next(error);
+      return;
+    }
+
+    if (req.is("multipart/form-data")) {
+      const rawPayload =
+        req.body && typeof req.body === "object"
+          ? (req.body as Record<string, unknown>).payload
+          : undefined;
+      if (typeof rawPayload !== "string") {
+        next(new HttpError(400, "VALIDATION_ERROR", "Registration payload is required"));
+        return;
+      }
+      try {
+        const parsedPayload: unknown = JSON.parse(rawPayload);
+        req.body = parsedPayload;
+      } catch {
+        next(new HttpError(400, "VALIDATION_ERROR", "Registration payload is invalid"));
+        return;
+      }
+    }
+
+    next();
+  });
+};
+
+authRouter.get(
+  "/register/options",
+  rateLimit("auth_register_options"),
+  asyncHandler(registrationOptions),
+);
 
 authRouter.post(
   "/register",
   rateLimit("auth_register"),
+  registrationMultipart,
   validate(RegisterSchema),
   asyncHandler(register),
 );

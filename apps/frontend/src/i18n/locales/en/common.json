@@ -514,7 +514,7 @@
       "avatarSelect": "Select Image",
       "avatarUpload": "Upload",
       "avatarDelete": "Delete",
-      "avatarHelp": "Upload a JPEG, PNG, or WebP image (max 5MB). Recommended size: 256×256 pixels.",
+      "avatarHelp": "Upload a JPEG, PNG, or WebP image (max 5MB). Recommended size: 128×128 pixels.",
       "avatarInvalidType": "Invalid file type. Please use JPEG, PNG, or WebP.",
       "avatarTooLarge": "File is too large. Maximum size is 5MB.",
       "avatarNoFile": "Please select a file to upload.",

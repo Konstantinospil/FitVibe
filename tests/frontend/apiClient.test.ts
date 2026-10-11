@@ -47,6 +47,49 @@ describe("apiClient authentication flow", () => {
     expect(response.data).toEqual({ ok: true });
   });
 
+  it("refreshes a stale CSRF token and retries registration exactly once", async () => {
+    let tokenCalls = 0;
+    rawMock.onGet("/api/v1/csrf-token").reply(() => {
+      tokenCalls += 1;
+      return [200, { csrfToken: "fresh" }];
+    });
+    const headers: string[] = [];
+    rawMock.onPost("/api/v1/auth/register").reply((config) => {
+      headers.push(String(config.headers?.["X-CSRF-Token"]));
+      return headers.length === 1
+        ? [403, { error: { code: "CSRF_TOKEN_INVALID" } }]
+        : [200, { success: true }];
+    });
+
+    const response = await rawHttpClient.post("/api/v1/auth/register", {
+      email: "test@example.com",
+    });
+    expect(response.status).toBe(200);
+    expect(headers).toHaveLength(2);
+    expect(headers[1]).toBe("fresh");
+    expect(tokenCalls).toBeGreaterThanOrEqual(1);
+  });
+
+  it("does not retry non-CSRF 403 responses", async () => {
+    let calls = 0;
+    apiMock.onPost("/api/v1/private").reply(() => {
+      calls += 1;
+      return [403, { error: { code: "FORBIDDEN" } }];
+    });
+    await expect(apiClient.post("/api/v1/private")).rejects.toBeDefined();
+    expect(calls).toBe(1);
+  });
+
+  it("stops after one unsuccessful CSRF retry", async () => {
+    let calls = 0;
+    rawMock.onPost("/api/v1/auth/register").reply(() => {
+      calls += 1;
+      return [403, { error: { code: "CSRF_TOKEN_INVALID" } }];
+    });
+    await expect(rawHttpClient.post("/api/v1/auth/register")).rejects.toBeDefined();
+    expect(calls).toBe(2);
+  });
+
   it("refreshes the session on the first 401", async () => {
     // Set authenticated state
     useAuthStore.getState().signIn(mockUser);

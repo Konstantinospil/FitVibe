@@ -173,7 +173,7 @@ export async function hideComment(commentId: string): Promise<void> {
 export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchResult[]> {
   const { query: searchQuery, limit = 20, offset = 0 } = query;
 
-  const rows = await db("users as u")
+  let queryBuilder = db("users as u")
     .leftJoin("profiles as p", "p.user_id", "u.id")
     .leftJoin("user_contacts as c", function () {
       this.on("c.user_id", "=", "u.id")
@@ -214,17 +214,26 @@ export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchRe
         )
       ) as "reportCount"`),
     )
-    .where(function () {
-      this.where("c.value", "ilike", `%${searchQuery}%`)
-        .orWhere("p.alias", "ilike", `%${searchQuery}%`)
-        .orWhere("u.id", "=", searchQuery);
-    })
     .whereNull("u.deleted_at")
     .orderBy("u.created_at", "desc")
-    .limit(limit)
-    .offset(offset);
+    .limit(limit);
 
-  return rows as UserSearchResult[];
+  if (searchQuery.trim()) {
+    queryBuilder = queryBuilder.where(function () {
+      this.where("c.value", "ilike", `%${searchQuery}%`).orWhere(
+        "p.alias",
+        "ilike",
+        `%${searchQuery}%`,
+      );
+      if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(searchQuery)) {
+        this.orWhere("u.id", "=", searchQuery);
+      }
+    });
+  }
+
+  const rows = (await queryBuilder.offset(offset)) as UserSearchResult[];
+
+  return rows;
 }
 
 /**

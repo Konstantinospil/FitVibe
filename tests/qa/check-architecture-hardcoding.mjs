@@ -215,6 +215,7 @@ async function checkFrontendTokens() {
   const visualAuthorityFiles = new Set([
     "apps/frontend/src/styles/tokens.css",
     "apps/frontend/src/styles/themes.css",
+    "packages/ui/src/typography.css",
     "apps/backoffice/src/styles/global.css",
   ]);
   const literalTokenFallbackPattern =
@@ -236,12 +237,12 @@ async function checkFrontendTokens() {
     },
     {
       pattern: /\bfontSize\s*:\s*([^,}\n]+)/g,
-      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--typography-") || value.includes("var(--font-size-"),
       message: "Frontend font size must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
       pattern: /\blineHeight\s*:\s*([^,}\n]+)/g,
-      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--line-height-"),
+      allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--typography-") || value.includes("var(--line-height-"),
       message: "Frontend line height must reference a canonical Figma typography token; manual values are forbidden.",
     },
     {
@@ -338,6 +339,7 @@ async function checkFrontendTokens() {
     const rel = normalize(path.relative(ROOT, file));
     if (figmaAuthorityFiles.has(rel)) {
       for (const [token, expected] of figmaAuthorityDeclarations) {
+        if (token.startsWith("--type-") || token.startsWith("--font-weight-")) continue; // Verified by the shared typography schema gate.
         if (!source.includes(token + ": " + expected + ";")) {
           report(file, source, 0, "Figma design authority drift: " + token + " must equal " + expected + ".");
         }
@@ -420,12 +422,12 @@ async function checkFrontendTokens() {
       },
       {
         pattern: /\bfont-size\s*:\s*([^;]+);/g,
-        allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--font-size-"),
+        allowedValue: (value) => value.includes("var(--type-") || value.includes("var(--typography-") || value.includes("var(--font-size-"),
         message: "CSS font-size must reference a canonical Figma typography token.",
       },
       {
         pattern: /\bline-height\s*:\s*([^;]+);/g,
-        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--line-height-"),
+        allowedValue: (value) => value.startsWith("var(--type-") || value.startsWith("var(--typography-") || value.startsWith("var(--line-height-"),
         message: "CSS line-height must reference a canonical Figma typography token.",
       },
       {
@@ -480,10 +482,14 @@ async function checkFrontendTokens() {
         const value = String(match[1] ?? "").trim().replace(/^["']|["']$/g, "");
         const isAuthorityDeclaration =
           isAuthorityFile && /^\s*--[a-zA-Z0-9_-]+\s*:/.test(line);
+        const isCanonicalTypographyStyle =
+          rel === "packages/ui/src/typography.css" &&
+          /^\s*letter-spacing\s*:\s*var\(--typography-[a-z-]+-letter-spacing\)/.test(line);
         const isFontFaceDescriptor = insideFontFaceBlock(source, match.index);
         if (
           !isAuthorityDeclaration &&
           !isFontFaceDescriptor &&
+          !isCanonicalTypographyStyle &&
           !rule.allowedValue(value) &&
           !sourceException(source, match.index, "token")
         ) {
@@ -494,6 +500,31 @@ async function checkFrontendTokens() {
   }
 
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
+  const foundationSource = await fs.readFile(
+    path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
+    "utf8",
+  );
+  if (!foundationSource.includes("scrollbar-gutter: stable;")) {
+    report(
+      path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
+      foundationSource,
+      Math.max(0, foundationSource.indexOf("html {")),
+      "The root scrolling element must reserve a stable scrollbar gutter so the scrollbar track never overlays page content.",
+    );
+  }
+
+  const sharedUiSource = await fs.readFile(path.join(ROOT, "packages/ui/src/styles.css"), "utf8");
+  const expectedMediumFieldGeometry =
+    '[data-component$="-control"][data-size="md"]{padding:var(--space-xs) var(--space-md);font-size:var(--font-size-md)}';
+  if (!sharedUiSource.includes(expectedMediumFieldGeometry)) {
+    report(
+      path.join(ROOT, "packages/ui/src/styles.css"),
+      sharedUiSource,
+      Math.max(0, sharedUiSource.indexOf('[data-component$="-control"][data-size="md"]')),
+      "Medium field controls must use space-xs vertical padding so canonical control typography fits inside the fixed field-control height without clipping.",
+    );
+  }
+
   const themeSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/themes.css"), "utf8");
   const bootstrapSource = await fs.readFile(path.join(ROOT, "apps/frontend/index.html"), "utf8");
   const tokenValue = (source, token) => {
