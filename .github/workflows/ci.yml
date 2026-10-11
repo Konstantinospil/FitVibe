@@ -2359,7 +2359,7 @@ jobs:
         # Keep the renderer's error log visible if the preflight fails.
 
       - name: Verify mutation observer regression tests
-        run: node --test tests/frontend/e2e/request-observer.test.cjs
+        run: node --test tests/frontend/e2e/request-observer.test.cjs tests/frontend/e2e/browser-diagnostics.test.cjs
 
       - name: Run authoritative Playwright e2e suite
         timeout-minutes: 20
