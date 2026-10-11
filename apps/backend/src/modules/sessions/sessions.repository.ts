@@ -152,13 +152,14 @@ export async function listSessions(
 
   // Count exercises in one query for the selected page, not one query per session.
   const counts = await executor()("session_exercises")
-    .whereIn("session_id", data.map((session) => session.id))
+    .whereIn(
+      "session_id",
+      data.map((session) => session.id),
+    )
     .select("session_id")
     .count<{ session_id: string; exercise_count: string }[]>("* as exercise_count")
     .groupBy("session_id");
-  const countBySession = new Map(
-    counts.map((row) => [row.session_id, Number(row.exercise_count)]),
-  );
+  const countBySession = new Map(counts.map((row) => [row.session_id, Number(row.exercise_count)]));
   const summaries = data.map((session) => ({
     ...session,
     exercise_count: countBySession.get(session.id) ?? 0,
