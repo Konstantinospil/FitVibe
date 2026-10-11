@@ -500,6 +500,22 @@ async function checkFrontendTokens() {
   }
 
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
+  const componentStylesSource = await fs.readFile(
+    path.join(ROOT, "apps/frontend/src/styles/components.css"),
+    "utf8",
+  );
+  const priorityPageTitleRule =
+    componentStylesSource.match(/\[data-priority-lcp="true"\]\s+\[data-slot="page-intro-title"\]\{([^}]*)\}/)?.[1] ??
+    "";
+  if (priorityPageTitleRule.includes("font-family:var(--font-family-body)")) {
+    report(
+      path.join(ROOT, "apps/frontend/src/styles/components.css"),
+      componentStylesSource,
+      Math.max(0, componentStylesSource.indexOf('[data-priority-lcp="true"]')),
+      "Priority page titles must retain the canonical heading family; LCP styling may not replace it with the body family.",
+    );
+  }
+
   const foundationSource = await fs.readFile(
     path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
     "utf8",
