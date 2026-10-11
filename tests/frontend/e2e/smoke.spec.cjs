@@ -151,7 +151,11 @@ test("athlete navigates all active surfaces with real authenticated data", async
   ]) {
     await page.getByRole("link", { name: new RegExp(`^${label}$`, "i") }).click();
     await page.waitForURL((url) => url.pathname === route);
-    await expect(page.locator(`[data-app-surface="${label.toLowerCase()}"] h1`)).toBeVisible();
+    if (label === "Calendar") {
+      await expect(page.getByRole("grid", { name: /calendar/i })).toBeVisible();
+    } else {
+      await expect(page.locator(`[data-app-surface="${label.toLowerCase()}"] h1`)).toBeVisible();
+    }
   }
 });
 
@@ -508,6 +512,8 @@ test("athlete uses Library exercise to open workout planning across surfaces", a
   create.assertExactlyOnce(201);
   create.stop();
   const sessions = await apiGet(page, "/api/v1/sessions?limit=100&offset=0");
-  expect(sessions.data.some((session) => session.title === title &&
-    session.exercises.some((item) => item.exercise_id === exercise.id))).toBe(true);
+  const created = sessions.data.find((session) => session.title === title);
+  expect(created?.id).toBeTruthy();
+  const detail = await apiGet(page, `/api/v1/sessions/${created.id}`);
+  expect(detail.exercises.some((item) => item.exercise_id === exercise.id)).toBe(true);
 });
