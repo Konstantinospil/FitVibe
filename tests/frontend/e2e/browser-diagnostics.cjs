@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const activeDiagnostics = new WeakMap();
 
 function watchBrowser(page) {
   const diagnostics = {
@@ -47,7 +48,7 @@ function watchBrowser(page) {
   page.on("console", onConsole);
   page.on("requestfailed", onRequestFailed);
   page.on("response", onResponse);
-  return {
+  const observer = {
     snapshot: () => diagnostics,
     expectApiHttpError(method, path, status) {
       assert.match(method, /^[A-Z]+$/, "Expected API method must be uppercase");
@@ -76,7 +77,15 @@ function watchBrowser(page) {
       page.off("console", onConsole);
       page.off("requestfailed", onRequestFailed);
       page.off("response", onResponse);
+      activeDiagnostics.delete(page);
     },
   };
+  activeDiagnostics.set(page, observer);
+  return observer;
 }
-module.exports = { watchBrowser };
+function expectApiHttpError(page, method, path, status) {
+  const observer = activeDiagnostics.get(page);
+  assert.ok(observer, "Browser diagnostics are not active for this page");
+  observer.expectApiHttpError(method, path, status);
+}
+module.exports = { watchBrowser, expectApiHttpError };
