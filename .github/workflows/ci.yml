@@ -2145,12 +2145,12 @@ jobs:
           fi
 
   e2e:
-    name: E2E Playwright (shard ${{ matrix.shard }}/2)
+    name: E2E Playwright (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs: integration
@@ -2338,7 +2338,7 @@ jobs:
           fi
           echo "$specs"
           # Accessibility has its own hard gate; every other E2E spec is discovered automatically.
-          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --workers=1 --shard=${{ matrix.shard }}/2
+          pnpm exec playwright test $specs --config tests/frontend/e2e/playwright.config.cjs --workers=1 --shard=${{ matrix.shard }}/4
 
       - name: Stop E2E runtime
         if: always()
