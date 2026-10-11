@@ -415,6 +415,10 @@ test("athlete uploads and removes avatar from Settings", async ({ page }, testIn
 
   const placeholder = page.getByTestId("avatar-placeholder");
   await expect(placeholder).toBeVisible();
+  await expect(placeholder).toHaveAttribute("data-size", "lg");
+  await expect(placeholder.getByRole("img", { name: /smoke athlete/i })).toHaveCount(0);
+  await expect(placeholder).toHaveAttribute("role", "img");
+  await expect(placeholder).toHaveAttribute("aria-label", /smoke athlete/i);
   await testInfo.attach("avatar-placeholder", {
     body: await page.screenshot({ fullPage: true }),
     contentType: "image/png",
@@ -440,7 +444,17 @@ test("athlete uploads and removes avatar from Settings", async ({ page }, testIn
 
   await page.reload();
   await waitForApp(page);
-  await expect(page.getByTestId("avatar-preview")).toBeVisible();
+  const persistedPreview = page.getByTestId("avatar-preview");
+  await expect(persistedPreview).toBeVisible();
+  const avatarImage = persistedPreview.getByRole("img", { name: /smoke athlete/i });
+  await expect(avatarImage).toBeVisible();
+  await expect.poll(async () =>
+    avatarImage.evaluate((img) => ({
+      complete: img.complete,
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+    })),
+  ).toEqual({ complete: true, width: 128, height: 128 });
 
   const remove = observeMutation(page, "DELETE", "/api/v1/users/me/avatar");
   await page.getByRole("button", { name: /^delete$/i }).click();
