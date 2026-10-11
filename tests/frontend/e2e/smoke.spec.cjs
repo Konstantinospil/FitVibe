@@ -224,8 +224,8 @@ test("athlete privacy acknowledgement withdrawal and reacceptance persist on bac
   accept.stop();
 });
 
-test("athlete can revoke Terms and the account session is invalidated", async ({ page }) => {
-  await authenticatedPage(page);
+test("athlete can revoke Terms and the account session is invalidated", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
   const before = await apiGet(page, "/api/v1/auth/legal-documents/status");
   expect(before.terms.needsAcceptance).toBe(false);
   await page.goto("/terms");
@@ -243,8 +243,8 @@ test("athlete can revoke Terms and the account session is invalidated", async ({
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test("athlete logout rejects subsequent authenticated profile retrieval", async ({ page }) => {
-  await authenticatedPage(page);
+test("athlete logout rejects subsequent authenticated profile retrieval", async ({ page }, testInfo) => {
+  await createDisposableAthlete(page, testInfo);
   await apiGet(page, "/api/v1/users/me");
   const logout = observeMutation(page, "POST", "/api/v1/auth/logout");
   await page.getByRole("button", { name: /sign out/i }).click();
