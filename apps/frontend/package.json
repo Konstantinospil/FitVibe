@@ -27,7 +27,7 @@
     "express": "^5.1.0",
     "i18next": "^23.10.1",
     "lucide-react": "^1.45.0",
-    "preact": "^10.29.8",
+    "preact": "^11.0.0",
     "react": "^19.2.8",
     "react-dom": "19.2.8",
     "react-i18next": "^13.5.0",
