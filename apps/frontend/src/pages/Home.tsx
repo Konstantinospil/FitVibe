@@ -109,8 +109,8 @@ const Home: React.FC = () => {
   };
 
   return (
-    <main className="training-page home-surface" aria-labelledby="home-title">
-      <h1 id="home-title" className="sr-only">
+    <main className="training-page home-surface" aria-labelledby="home-title" data-app-surface="home">
+      <h1 id="home-title">
         {t("homeSurface.title")}
       </h1>
 
