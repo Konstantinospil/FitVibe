@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "debug": "^4.1.1",
-    "get-stream": "^5.1.0",
+    "get-stream": "^9.0.1",
     "yauzl": "^3.4.0"
   },
   "optionalDependencies": {
