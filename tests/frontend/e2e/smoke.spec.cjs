@@ -204,26 +204,37 @@ test("published legal documents render their actual backend content", async ({ p
 });
 
 test("athlete privacy acknowledgement withdrawal and reacceptance persist on backend", async ({ page }) => {
+  const waitForPrivacyResponse = (path) =>
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" && new URL(response.url()).pathname === path,
+    );
   await authenticatedPage(page);
   const before = await apiGet(page, "/api/v1/auth/legal-documents/status");
   await page.goto("/privacy");
   await waitForApp(page);
   if (before.privacy.needsAcceptance) {
     const accept = observeMutation(page, "POST", "/api/v1/auth/privacy/accept");
+    const acceptResponse = waitForPrivacyResponse("/api/v1/auth/privacy/accept");
     await page.getByRole("button", { name: /acknowledge/i }).click();
+    await acceptResponse;
     await expect.poll(async () => (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance).toBe(false);
     accept.assertExactlyOnce(200);
     accept.stop();
   }
   const revoke = observeMutation(page, "POST", "/api/v1/auth/privacy/revoke");
+  const revokeResponse = waitForPrivacyResponse("/api/v1/auth/privacy/revoke");
   await page.getByRole("button", { name: /revoke acknowledgement/i }).click();
+  await revokeResponse;
   await expect.poll(async () => (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance).toBe(true);
   revoke.assertExactlyOnce(200);
   revoke.stop();
   await page.reload();
   await waitForApp(page);
   const accept = observeMutation(page, "POST", "/api/v1/auth/privacy/accept");
+  const acceptResponse = waitForPrivacyResponse("/api/v1/auth/privacy/accept");
   await page.getByRole("button", { name: /acknowledge/i }).click();
+  await acceptResponse;
   await expect.poll(async () => (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance).toBe(false);
   accept.assertExactlyOnce(200);
   accept.stop();
