@@ -18,7 +18,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile --prod=false --offline
 RUN pnpm --filter @fitvibe/backoffice run build
 
-FROM nginx:1.29-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 
 COPY infra/docker/prod/backoffice.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/apps/backoffice/dist /usr/share/nginx/html
