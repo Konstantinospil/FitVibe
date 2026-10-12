@@ -184,6 +184,37 @@ describe("Rate Limiter Middleware", () => {
       expect(extractClientIpForRateLimit).toHaveBeenCalled();
     });
 
+    it("isolates legal-status reads across authenticated users sharing an IP", async () => {
+      const { RateLimiterMemory } = jest.requireMock("rate-limiter-flexible") as {
+        RateLimiterMemory: jest.Mock;
+      };
+      const middleware = rateLimitByUser("auth_legal_status");
+      const first = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+      mockRequest.user = { sub: "legal-athlete-a", role: "athlete" };
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await first;
+
+      const limiter = RateLimiterMemory.mock.results.at(-1)?.value as {
+        consume: jest.Mock;
+      };
+      expect(RateLimiterMemory).toHaveBeenCalledWith({
+        keyPrefix: "auth_legal_status:user",
+        ...getRouteRateLimitPolicy("auth_legal_status"),
+      });
+      expect(limiter.consume).toHaveBeenCalledWith("user:legal-athlete-a");
+
+      const second = new Promise<void>((resolve) => {
+        mockNext = jest.fn(() => resolve());
+      });
+      mockRequest.user = { sub: "legal-athlete-b", role: "athlete" };
+      middleware(mockRequest as Request, mockResponse as Response, mockNext);
+      await second;
+      expect(limiter.consume).toHaveBeenCalledWith("user:legal-athlete-b");
+      expect(limiter.consume).not.toHaveBeenCalledWith("127.0.0.1");
+    });
+
     it("should fall back to IP when not authenticated", async () => {
       const middleware = rateLimitByUser("test", 10, 60);
 

@@ -108,6 +108,10 @@ describe("Home", () => {
   it("renders the production Home contract", async () => {
     renderHome();
 
+    const home = screen.getByRole("main", { name: "homeSurface.title" });
+    expect(home).toHaveAttribute("data-app-surface", "home");
+    expect(screen.getByRole("heading", { level: 1, name: "homeSurface.title" })).toBeVisible();
+
     expect(screen.getByText("homeSurface.sections.recentActivity")).toBeInTheDocument();
     expect(screen.getByText("homeSurface.sections.trending")).toBeInTheDocument();
     expect(screen.getByText("homeSurface.sections.newsFeed")).toBeInTheDocument();

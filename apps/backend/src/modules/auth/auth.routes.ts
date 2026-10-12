@@ -22,7 +22,7 @@ import {
   jwksHandler,
 } from "./auth.controller.js";
 // Removed twofa.controller imports - using two-factor.controller via two-factor.routes.ts instead
-import { rateLimit } from "../common/rateLimiter.js";
+import { rateLimit, rateLimitByUser } from "../common/rateLimiter.js";
 import { validate } from "../../utils/validation.js";
 import {
   RegisterSchema,
@@ -170,8 +170,8 @@ authRouter.get(
 );
 authRouter.get(
   "/legal-documents/status",
-  rateLimit("auth_legal_status"),
   requireAccessToken,
+  rateLimitByUser("auth_legal_status"),
   asyncHandler(getLegalDocumentsStatus),
 );
 

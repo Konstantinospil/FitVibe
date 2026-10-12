@@ -299,6 +299,48 @@ describe("Exercise Controller", () => {
       expect(mockExerciseService.createOne).toHaveBeenCalledWith(userId, exerciseData, false);
     });
 
+    it("creates a personal exercise with empty optional fields represented as null", async () => {
+      const exerciseData = {
+        name: "Minimal Exercise",
+        type_code: "strength",
+        muscle_group: null,
+        equipment: null,
+        description_en: null,
+        description_de: null,
+        met_value: null,
+        seconds_per_rep: null,
+        tags: [],
+        is_public: false,
+      };
+      const created = {
+        id: exerciseId,
+        ...exerciseData,
+        owner_id: userId,
+        archived_at: null,
+      };
+      mockRequest.body = exerciseData;
+      mockRequest.method = "POST";
+      mockExerciseService.createOne.mockResolvedValue(created);
+
+      await exerciseController.createExerciseHandler(mockRequest as Request, mockResponse as Response);
+
+      expect(mockExerciseService.createOne).toHaveBeenCalledWith(userId, exerciseData, false);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(created);
+    });
+
+    it("rejects malformed optional text instead of silently accepting it", async () => {
+      mockRequest.body = {
+        name: "Invalid Exercise",
+        type_code: "strength",
+        muscle_group: 42,
+        equipment: [],
+      };
+      await exerciseController.createExerciseHandler(mockRequest as Request, mockResponse as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockExerciseService.createOne).not.toHaveBeenCalled();
+    });
+
     it("should create exercise with idempotency key", async () => {
       const exerciseData = {
         name: "Test Exercise",
@@ -471,6 +513,42 @@ describe("Exercise Controller", () => {
         userId,
         updateData,
         false,
+      );
+    });
+
+    it("accepts clearing optional exercise fields during editing", async () => {
+      const clearedFields = {
+        muscle_group: null,
+        equipment: null,
+        description_en: null,
+        description_de: null,
+        met_value: null,
+        seconds_per_rep: null,
+      };
+      mockRequest.params = { id: exerciseId };
+      mockRequest.body = clearedFields;
+      mockRequest.method = "PUT";
+      mockExerciseService.updateOne.mockResolvedValue({
+        id: exerciseId,
+        name: "Edited Exercise",
+        type_code: "strength",
+        owner_id: userId,
+        tags: [],
+        is_public: false,
+        ...clearedFields,
+      });
+
+      await exerciseController.updateExerciseHandler(mockRequest as Request, mockResponse as Response);
+
+      expect(mockExerciseService.updateOne).toHaveBeenCalledWith(
+        exerciseId,
+        userId,
+        clearedFields,
+        false,
+      );
+      expect(mockResponse.status).not.toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining(clearedFields),
       );
     });
 
