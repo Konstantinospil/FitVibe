@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { AvatarRow, ContactRow, UserRow } from "./users.repository.js";
 import { getLatestUserMetrics, getProfileByUserId } from "./users.repository.js";
 import type { UserAvatar, UserContact, UserDetail, UserSafe, UserStatus } from "./users.types.js";
@@ -27,8 +28,16 @@ function toUserAvatar(row: AvatarRow | null | undefined): UserAvatar | null {
   if (!row) {
     return null;
   }
+  // A replacement retains the media row but receives a new storage key.
+  // Version the public URL by that key so cached images cannot survive a replacement.
+  const revision = row.storage_key
+    ? createHash("sha256").update(row.storage_key).digest("hex")
+    : null;
+  const url = revision
+    ? `${row.file_url}${row.file_url.includes("?") ? "&" : "?"}rev=${revision}`
+    : row.file_url;
   return {
-    url: row.file_url,
+    url,
     mimeType: row.mime_type ?? null,
     bytes: row.bytes ?? null,
     updatedAt: row.created_at ?? null,

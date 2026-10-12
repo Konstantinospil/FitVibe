@@ -79,6 +79,10 @@ describe("enhanced security middleware", () => {
     return res;
   };
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it("generates a cryptographically random nonce", () => {
     const nonce = generateNonce();
     expect(nonce).toMatch(/^[A-Za-z0-9+/=]+$/);
@@ -159,7 +163,6 @@ describe("enhanced security middleware", () => {
     );
 
     res.emit("finish");
-    jest.useRealTimers();
   });
 
   it("validates forwarded IP values and logs sanitised failures", () => {

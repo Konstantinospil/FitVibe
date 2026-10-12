@@ -84,7 +84,7 @@
   outline:none;box-shadow:none
 }
 [data-component$="-control"][data-size="sm"]{padding:var(--space-xs) var(--space-sm);font-size:var(--font-size-sm)}
-[data-component$="-control"][data-size="md"]{padding:var(--space-sm) var(--space-md);font-size:var(--font-size-md)}
+[data-component$="-control"][data-size="md"]{padding:var(--space-xs) var(--space-md);font-size:var(--font-size-md)}
 [data-component$="-control"][data-size="lg"]{padding:var(--space-md) var(--space-lg);font-size:var(--font-size-lg)}
 [data-component$="-control"]:focus{border-color:var(--color-highlight)}
 [data-component$="-control"][data-variant="error"]{border-color:var(--color-danger-border)}

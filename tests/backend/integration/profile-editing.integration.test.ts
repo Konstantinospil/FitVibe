@@ -130,6 +130,17 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
     expect(responseLb.status).toBe(200);
     // 165 lb ≈ 74.84 kg
     expect(responseLb.body.profile?.weight).toBeCloseTo(74.84, 1);
+
+    const persistedWeight = await db("bio_attribute_values as values")
+      .join("bio_attributes as attributes", "attributes.id", "values.attribute_id")
+      .where("values.user_id", userId)
+      .andWhere("attributes.key", "weight_kg")
+      .orderBy("values.measured_at", "desc")
+      .select<{ value_number: number | string }[]>("values.value_number")
+      .first();
+
+    expect(persistedWeight).toBeDefined();
+    expect(Number(persistedWeight?.value_number)).toBeCloseTo(74.84, 1);
   });
 
   it("should update fitness level", async () => {
@@ -175,18 +186,29 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
     expect(response.body.profile?.trainingFrequency).toBe("5_plus_per_week");
   });
 
-  it("should reject invalid alias format", async () => {
-    const response = await request(app)
+  it("should reject invalid alias format and aliases longer than 32 characters", async () => {
+    const invalidFormat = await request(app)
       .patch("/api/v1/users/me")
       .set("Authorization", `Bearer ${authToken}`)
       .send({
         alias: "invalid alias with spaces!",
       });
 
-    expect(response.status).toBe(400);
+    expect(invalidFormat.status).toBe(422);
+    expect(invalidFormat.body.error?.code).toBe("E.VALIDATION_ERROR");
+
+    const tooLong = await request(app)
+      .patch("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        alias: "a".repeat(33),
+      });
+
+    expect(tooLong.status).toBe(422);
+    expect(tooLong.body.error?.code).toBe("E.VALIDATION_ERROR");
   });
 
-  it("should reject weight outside valid range", async () => {
+  it("should reject weight outside valid kg-equivalent range", async () => {
     // Test weight too low
     const responseLow = await request(app)
       .patch("/api/v1/users/me")
@@ -196,18 +218,41 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
         weightUnit: "kg",
       });
 
-    expect(responseLow.status).toBe(400);
+    expect(responseLow.status).toBe(422);
 
-    // Test weight too high
     const responseHigh = await request(app)
       .patch("/api/v1/users/me")
       .set("Authorization", `Bearer ${authToken}`)
       .send({
-        weight: 600,
+        weight: 401,
         weightUnit: "kg",
       });
 
-    expect(responseHigh.status).toBe(400);
+    expect(responseHigh.status).toBe(422);
+
+    const responseHighLb = await request(app)
+      .patch("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        weight: 882,
+        weightUnit: "lb",
+      });
+
+    expect(responseHighLb.status).toBe(422);
+  });
+
+  it("should reject immutable profile fields with the required error code", async () => {
+    const response = await request(app)
+      .patch("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        date_of_birth: "2000-01-01",
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error).toMatchObject({
+      code: "E.USER.IMMUTABLE_FIELD",
+    });
   });
 
   it("should reject invalid fitness level", async () => {
@@ -218,7 +263,7 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
         fitnessLevel: "invalid_level",
       });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
   it("should reject invalid training frequency", async () => {
@@ -229,15 +274,23 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
         trainingFrequency: "invalid_frequency",
       });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
-  it("should verify audit log entry is created", async () => {
-    await request(app).patch("/api/v1/users/me").set("Authorization", `Bearer ${authToken}`).send({
-      alias: "audittest",
-    });
+  it("should audit profile updates and record state history for every changed field", async () => {
+    const response = await request(app)
+      .patch("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`)
+      .send({
+        alias: "audittest",
+        weight: 82.5,
+        weightUnit: "kg",
+        fitnessLevel: "advanced",
+        trainingFrequency: "5_plus_per_week",
+      });
 
-    // Check audit log
+    expect(response.status).toBe(200);
+
     const auditLogs = await db("audit_log")
       .where({ actor_user_id: userId, action: "profile_update" })
       .orderBy("created_at", "desc")
@@ -247,6 +300,16 @@ describeWithTestDatabase("Integration: Profile Editing", () => {
     expect(auditLogs[0].entity_type).toBe("users");
     expect(auditLogs[0].entity_id).toBe(userId);
     expect(auditLogs[0].metadata).toHaveProperty("changes");
+
+    const expectedFields = ["alias", "weight", "fitness_level", "training_frequency"];
+    const stateHistory = await db("user_state_history")
+      .where({ user_id: userId })
+      .whereIn("field", expectedFields)
+      .select("field", "actor_user_id", "old_value", "new_value");
+
+    expect(stateHistory).toHaveLength(expectedFields.length);
+    expect(new Set(stateHistory.map((entry) => entry.field))).toEqual(new Set(expectedFields));
+    expect(stateHistory.every((entry) => entry.actor_user_id === userId)).toBe(true);
   });
 
   it("should respond within 500ms", async () => {

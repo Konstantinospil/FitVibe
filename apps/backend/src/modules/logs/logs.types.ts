@@ -13,13 +13,20 @@ export interface AuditLogEntry {
   requestId: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
+  severity: "info" | "warning" | "error" | "critical";
+  resolvedAt: string | null;
 }
 
 export interface ListAuditLogsQuery {
-  action?: string;
+  action?: string | string[];
   entityType?: string;
   actorUserId?: string;
   outcome?: string;
   limit?: number;
   offset?: number;
+  requestId?: string;
+  severity?: string;
+  resolved?: boolean;
+  createdFrom?: string;
+  createdTo?: string;
 }

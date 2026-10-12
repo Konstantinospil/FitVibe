@@ -316,6 +316,32 @@ export async function mockSystemConfig(
   });
 }
 
+const DEFAULT_REGISTRATION_OPTIONS = {
+  genders: [
+    { code: "female", description: "Female" },
+    { code: "male", description: "Male" },
+    { code: "diverse", description: "Diverse" },
+  ],
+  fitnessLevels: [
+    { code: "beginner", description: "Beginner" },
+    { code: "intermediate", description: "Intermediate" },
+    { code: "advanced", description: "Advanced" },
+  ],
+  weight: {
+    minKg: 20,
+    maxKg: 400,
+  },
+};
+
+export async function mockRegistrationOptions(page: Page) {
+  await page.route("**/api/v1/auth/register/options", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, DEFAULT_REGISTRATION_OPTIONS);
+  });
+}
+
 export async function mockCurrentUser(page: Page, overrides?: Partial<typeof DEFAULT_USER>) {
   await page.route("**/api/v1/users/me", async (route) => {
     if (route.request().method() !== "GET") {
@@ -805,6 +831,7 @@ export async function installDefaultMocks(page: Page): Promise<void> {
   });
 
   await mockSystemConfig(page);
+  await mockRegistrationOptions(page);
   await mockCurrentUser(page);
   await mockUserAttributes(page);
   await mockMeasurements(page);

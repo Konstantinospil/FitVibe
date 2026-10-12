@@ -247,21 +247,19 @@ describe("Admin Controller", () => {
       });
     });
 
-    it("should throw 400 when query is missing", async () => {
+    it("lists users when query is missing", async () => {
+      const mockUsers = [{ id: "user-1" }];
       mockRequest.query = {};
+      mockAdminService.searchUsersService.mockResolvedValue(mockUsers);
 
-      await expect(
-        searchUsersHandler(mockRequest as Request, mockResponse as Response),
-      ).rejects.toThrow(HttpError);
+      await searchUsersHandler(mockRequest as Request, mockResponse as Response);
 
-      const error = await searchUsersHandler(
-        mockRequest as Request,
-        mockResponse as Response,
-      ).catch((e) => e);
-      expect(error).toBeInstanceOf(HttpError);
-      expect((error as HttpError).status).toBe(400);
-      expect((error as HttpError).code).toBe("MISSING_QUERY");
-      expect(mockAdminService.searchUsersService).not.toHaveBeenCalled();
+      expect(mockAdminService.searchUsersService).toHaveBeenCalledWith({
+        query: "",
+        limit: 20,
+        offset: 0,
+      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ users: mockUsers });
     });
   });
 

@@ -1,4 +1,7 @@
 # Manual refresh regenerates only changed Linux visual baselines after intentional UI changes.
+# Changes to this workflow intentionally trigger the same full visual-suite refresh on feature.
+# Manual trigger after the visual suite's non-snapshot contracts are green.
+# Refresh merged fix-branch Home screenshot baselines on 2026-10-12.
 name: Refresh Visual Linux Baselines
 
 on:

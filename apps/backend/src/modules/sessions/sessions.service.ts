@@ -14,6 +14,7 @@ import type {
   CreateSessionDTO,
   UpdateSessionDTO,
   Session,
+  SessionListItem,
   SessionQuery,
   PaginatedResult,
   SessionWithExercises,
@@ -44,7 +45,7 @@ const allowedTransitions: Record<string, string[]> = {
 export async function getAll(
   userId: string,
   query: SessionQuery,
-): Promise<PaginatedResult<Session>> {
+): Promise<PaginatedResult<SessionListItem>> {
   return listSessions(userId, query);
 }
 

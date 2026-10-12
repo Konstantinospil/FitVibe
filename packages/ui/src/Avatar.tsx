@@ -39,7 +39,14 @@ export const Avatar: React.FC<AvatarProps> = ({
       data-format={resolvedFormat}
       data-status={status}
       data-status-display={resolvedStatusDisplay}
-      aria-label={status === "unknown" ? name : `${name}, ${status}`}
+      role={resolvedFormat === "initials" ? "img" : undefined}
+      aria-label={
+        resolvedFormat === "initials"
+          ? status === "unknown"
+            ? name
+            : `${name}, ${status}`
+          : undefined
+      }
       style={style}
       {...rest}
     >
