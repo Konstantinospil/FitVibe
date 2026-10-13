@@ -1121,5 +1121,45 @@
         "types": "Übungstypen konnten nicht geladen werden."
       }
     }
+  },
+  "trainingPlans": {
+    "title": "Trainingspläne",
+    "description": "Trainingspläne erstellen, bearbeiten und archivieren.",
+    "listTitle": "Deine Trainingspläne",
+    "createTitle": "Trainingsplan erstellen",
+    "editTitle": "Trainingsplan bearbeiten",
+    "noDate": "Nicht festgelegt",
+    "dateRange": "{{start}} – {{end}}",
+    "sessionCount": "{{count}} Trainingseinheiten",
+    "loading": "Trainingspläne werden geladen…",
+    "empty": "Noch keine Trainingspläne vorhanden.",
+    "fields": {
+      "name": "Name",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum"
+    },
+    "actions": {
+      "manage": "Trainingspläne verwalten",
+      "close": "Schließen",
+      "create": "Neuer Plan",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "reload": "Aktuelle Version laden"
+    },
+    "delete": {
+      "title": "Trainingsplan archivieren",
+      "message": "{{name}} archivieren? Bereits vorhandene Trainingseinheiten bleiben erhalten."
+    },
+    "errors": {
+      "list": "Trainingspläne konnten nicht geladen werden.",
+      "loadDetail": "Trainingsplan konnte nicht zur Bearbeitung geladen werden.",
+      "required": "Bitte einen Namen eingeben.",
+      "dateOrder": "Das Enddatum darf nicht vor dem Startdatum liegen.",
+      "save": "Der Trainingsplan konnte nicht gespeichert werden.",
+      "delete": "Der Trainingsplan konnte nicht archiviert werden.",
+      "conflict": "Dieser Plan wurde zwischenzeitlich geändert. Bitte die aktuelle Version laden, bevor du ihn erneut bearbeitest."
+    }
   }
 }

@@ -1121,5 +1121,45 @@
         "types": "Les types d’exercice n’ont pas pu être chargés."
       }
     }
+  },
+  "trainingPlans": {
+    "title": "Plans d’entraînement",
+    "description": "Créer, modifier et archiver des plans d’entraînement.",
+    "listTitle": "Vos plans",
+    "createTitle": "Créer un plan",
+    "editTitle": "Modifier le plan",
+    "noDate": "Non définie",
+    "dateRange": "{{start}} – {{end}}",
+    "sessionCount": "{{count}} séances",
+    "loading": "Chargement des plans…",
+    "empty": "Aucun plan pour le moment.",
+    "fields": {
+      "name": "Nom",
+      "startDate": "Date de début",
+      "endDate": "Date de fin"
+    },
+    "actions": {
+      "manage": "Gérer les plans",
+      "close": "Fermer",
+      "create": "Nouveau plan",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "reload": "Charger la dernière version"
+    },
+    "delete": {
+      "title": "Archiver le plan",
+      "message": "Archiver {{name}} ? Les séances existantes seront conservées."
+    },
+    "errors": {
+      "list": "Impossible de charger les plans.",
+      "loadDetail": "Impossible de charger ce plan.",
+      "required": "Saisissez un nom.",
+      "dateOrder": "La date de fin ne peut pas précéder la date de début.",
+      "save": "Impossible d’enregistrer le plan.",
+      "delete": "Impossible d’archiver le plan.",
+      "conflict": "Ce plan a été modifié ailleurs. Chargez la dernière version avant de le modifier à nouveau."
+    }
   }
 }
