@@ -67,7 +67,9 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
   };
 
   const dismiss = () => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setDraft(null);
     resetMessages();
     onClose();
@@ -97,7 +99,9 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
 
   const savePlan = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!draft || busy) return;
+    if (!draft || busy) {
+      return;
+    }
     if (!draft.name.trim()) {
       setError(t("trainingPlans.errors.required"));
       return;
@@ -142,7 +146,9 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
   };
 
   const deletePlan = async () => {
-    if (!pendingDelete || busy) return;
+    if (!pendingDelete || busy) {
+      return;
+    }
     const id = pendingDelete.id;
     setBusy(true);
     resetMessages();
@@ -159,7 +165,9 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
   };
 
   const reloadPlan = async () => {
-    if (!draft?.id || busy) return;
+    if (!draft?.id || busy) {
+      return;
+    }
     const id = draft.id;
     setBusy(true);
     try {
@@ -179,26 +187,47 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
     <>
       <Modal
         open={open && !pendingDelete}
-        title={draft ? t(draft.id ? "trainingPlans.editTitle" : "trainingPlans.createTitle") : t("trainingPlans.title")}
+        title={
+          draft
+            ? t(draft.id ? "trainingPlans.editTitle" : "trainingPlans.createTitle")
+            : t("trainingPlans.title")
+        }
         description={t("trainingPlans.description")}
         closeLabel={t("trainingPlans.actions.close")}
         onClose={dismiss}
         closeOnBackdrop={!busy}
         width="lg"
-        footer={draft ? (
-          <>
-            <Button type="button" variant="secondary" disabled={busy} onClick={() => { setDraft(null); resetMessages(); }}>
-              {t("trainingPlans.actions.cancel")}
+        footer={
+          draft ? (
+            <>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  setDraft(null);
+                  resetMessages();
+                }}
+              >
+                {t("trainingPlans.actions.cancel")}
+              </Button>
+              <Button type="submit" form="training-plan-form" isLoading={busy} disabled={conflict}>
+                {t("trainingPlans.actions.save")}
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                resetMessages();
+                setDraft(emptyDraft());
+              }}
+            >
+              {t("trainingPlans.actions.create")}
             </Button>
-            <Button type="submit" form="training-plan-form" isLoading={busy}>
-              {t("trainingPlans.actions.save")}
-            </Button>
-          </>
-        ) : (
-          <Button type="button" disabled={busy} onClick={() => { resetMessages(); setDraft(emptyDraft()); }}>
-            {t("trainingPlans.actions.create")}
-          </Button>
-        )}
+          )
+        }
       >
         <Section>
           {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
@@ -208,7 +237,12 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                 <StatusPanel
                   kind="warning"
                   actions={
-                    <Button type="button" variant="secondary" onClick={() => void reloadPlan()} disabled={busy}>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => void reloadPlan()}
+                      disabled={busy}
+                    >
                       {t("trainingPlans.actions.reload")}
                     </Button>
                   }
@@ -249,7 +283,9 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
           ) : (
             <Section>
               <SectionHeader title={t("trainingPlans.listTitle")} />
-              {plans.isPending ? <StatusPanel kind="loading">{t("trainingPlans.loading")}</StatusPanel> : null}
+              {plans.isPending ? (
+                <StatusPanel kind="loading">{t("trainingPlans.loading")}</StatusPanel>
+              ) : null}
               {plans.isError ? (
                 <RetryErrorPanel
                   message={t("trainingPlans.errors.list")}
@@ -265,14 +301,32 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                 <TrainingSummaryCard
                   key={plan.id}
                   title={plan.name}
-                  meta={t("trainingPlans.dateRange", { start: dateLabel(plan.start_date), end: dateLabel(plan.end_date) })}
+                  meta={t("trainingPlans.dateRange", {
+                    start: dateLabel(plan.start_date),
+                    end: dateLabel(plan.end_date),
+                  })}
                   supporting={t("trainingPlans.sessionCount", { count: plan.session_count })}
                   trailing={
                     <FormActions>
-                      <Button type="button" size="sm" variant="secondary" disabled={busy} onClick={() => void editPlan(plan)}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        disabled={busy}
+                        onClick={() => void editPlan(plan)}
+                      >
                         {t("trainingPlans.actions.edit")}
                       </Button>
-                      <Button type="button" size="sm" variant="danger" disabled={busy} onClick={() => { resetMessages(); setPendingDelete(plan); }}>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="danger"
+                        disabled={busy}
+                        onClick={() => {
+                          resetMessages();
+                          setPendingDelete(plan);
+                        }}
+                      >
                         {t("trainingPlans.actions.delete")}
                       </Button>
                     </FormActions>
@@ -291,7 +345,11 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
         cancelLabel={t("trainingPlans.actions.cancel")}
         variant="danger"
         onConfirm={() => void deletePlan()}
-        onCancel={() => { if (!busy) setPendingDelete(null); }}
+        onCancel={() => {
+          if (!busy) {
+            setPendingDelete(null);
+          }
+        }}
       />
     </>
   );
