@@ -248,8 +248,8 @@
 
 .workout-editor__rest-row {
   padding: var(--space-sm);
-  background: var(--color-info-text);
-  color: var(--color-info-bg);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
   border-radius: var(--radius-md);
 }
 
