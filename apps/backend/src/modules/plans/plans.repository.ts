@@ -15,6 +15,7 @@ export interface PlanRow {
   end_date: string | null;
   duration_weeks?: number | null;
   target_frequency?: number | null;
+  time_zone?: string;
   activated_at?: string | null;
   created_at: string;
   updated_at: string;
@@ -30,6 +31,7 @@ export interface CreatePlanInput {
   end_date?: string | null;
   duration_weeks?: number | null;
   target_frequency?: number | null;
+  time_zone?: string;
 }
 
 export interface UpdatePlanInput {
@@ -42,6 +44,7 @@ export interface UpdatePlanInput {
   end_date?: string | null;
   duration_weeks?: number | null;
   target_frequency?: number | null;
+  time_zone?: string;
 }
 
 export interface ListPlansFilters {
@@ -128,6 +131,7 @@ export async function createPlan(input: CreatePlanInput, trx?: Knex.Transaction)
     end_date: input.end_date ?? null,
     duration_weeks: input.duration_weeks ?? null,
     target_frequency: input.target_frequency ?? null,
+    time_zone: input.time_zone ?? "UTC",
     created_at: now,
     updated_at: now,
     archived_at: null,
@@ -183,11 +187,18 @@ export async function updatePlan(
   if (updates.target_frequency !== undefined) {
     patch.target_frequency = updates.target_frequency;
   }
+  if (updates.time_zone !== undefined) {
+    patch.time_zone = updates.time_zone;
+  }
 
-  return withDb(trx)<PlanRow>(PLANS_TABLE)
-    .where({ id: planId })
-    .whereNull("archived_at")
-    .update(patch);
+  const query = withDb(trx)<PlanRow>(PLANS_TABLE)
+    .where({ id: planId }).whereNull("archived_at");
+  if (updates.start_date !== undefined || updates.end_date !== undefined ||
+      updates.duration_weeks !== undefined || updates.target_frequency !== undefined ||
+      updates.time_zone !== undefined) {
+    query.whereNull("activated_at");
+  }
+  return query.update(patch);
 }
 
 /**

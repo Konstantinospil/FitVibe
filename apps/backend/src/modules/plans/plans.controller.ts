@@ -11,6 +11,7 @@ import {
   activateUserPlan,
 } from "./plans.service.js";
 import { HttpError, readRouteParam } from "../../utils/http.js";
+import { validTimeZone } from "./plans.activation.schedule.js";
 
 /**
  * Helper to get authenticated user ID from request
@@ -83,6 +84,7 @@ const createPlanSchema = z.object({
   end_date: z.iso.date().nullable().optional(),
   duration_weeks: z.number().int().min(1).max(52).nullable().optional(),
   target_frequency: z.number().int().min(1).max(7).nullable().optional(),
+  time_zone: z.string().max(128).refine(validTimeZone).optional(),
 });
 
 /**
@@ -108,6 +110,7 @@ const updatePlanSchema = z.object({
   end_date: z.iso.date().nullable().optional(),
   duration_weeks: z.number().int().min(1).max(52).nullable().optional(),
   target_frequency: z.number().int().min(1).max(7).nullable().optional(),
+  time_zone: z.string().max(128).refine(validTimeZone).optional(),
 });
 
 /**

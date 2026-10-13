@@ -11,7 +11,6 @@ import {
   sessionsExistAtDates,
 } from "../sessions/sessions.repository.js";
 import {
-  cloneExerciseInputsForReuse,
   convertExistingExerciseToInput,
   normalizeSessionExercises,
 } from "../sessions/sessions.normalization.js";
@@ -53,6 +52,7 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
       Number(plan.duration_weeks),
       Number(plan.target_frequency),
       sourceRows.map(({ id, planned_at }) => ({ id, planned_at: new Date(planned_at).toISOString() })),
+      plan.time_zone ?? "UTC",
     );
     const endDate = planEndDate(startDate, Number(plan.duration_weeks));
     if (plan.end_date && new Date(plan.end_date).toISOString().slice(0, 10) !== endDate) {
@@ -66,6 +66,9 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
       }
       if (detail.recurrence_rule && !/^(?:RRULE:)?FREQ=WEEKLY(?:;INTERVAL=1)?$/i.test(detail.recurrence_rule.trim())) {
         throw new HttpError(422, "E.PLAN.UNSUPPORTED_RECURRENCE", "Only weekly recurrence is supported for plan templates");
+      }
+      if (detail.exercises.some((exercise) => exercise.sets.some((set) => Boolean(set.recorded_at)))) {
+        throw new HttpError(422, "E.PLAN.INVALID_TEMPLATE", "Template contains performed results");
       }
       sources.set(source.id, detail);
     }
@@ -86,12 +89,23 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
         notes: source.notes ?? null, recurrence_rule: source.recurrence_rule ?? null,
         created_at: now, updated_at: now,
       }, trx);
-      const exercises = normalizeSessionExercises(cloneExerciseInputsForReuse(
-        source.exercises.map((exercise) => convertExistingExerciseToInput(exercise, false)),
-      ));
+      const exercises = normalizeSessionExercises(source.exercises.map((exercise) => ({
+        ...convertExistingExerciseToInput(exercise, false),
+        sets: exercise.sets.map((set) => ({
+          order: set.order_index,
+          reps: set.reps ?? null, weight_kg: set.weight_kg ?? null,
+          distance_m: set.distance_m ?? null, duration_sec: set.duration_sec ?? null,
+          rpe: set.rpe ?? null, rest_sec: set.rest_sec ?? null,
+          extras: set.extras ?? {}, notes: set.notes ?? null,
+        })),
+      })));
       await replaceSessionExercises(trx, id, exercises);
     }
-    await updatePlanProgress(planId, sourceRows.length + occurrences.length, 0, trx);
+    const [stats] = await trx("sessions")
+      .where({ owner_id: userId, plan_id: planId }).whereNull("deleted_at")
+      .select(trx.raw("COUNT(*) AS total"))
+      .select(trx.raw("COUNT(*) FILTER (WHERE status = 'completed') AS completed"));
+    await updatePlanProgress(planId, Number(stats.total), Number(stats.completed), trx);
     const [updated] = await trx<PlanRow>("plans")
       .where({ id: planId, user_id: userId })
       .update({ status: "active", end_date: endDate, activated_at: now, updated_at: now })
@@ -104,7 +118,11 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
   await insertAudit({ actorUserId: userId, entityType: "plans", action: "activate", entityId: planId,
     metadata: { generated_sessions: result.createdCount, duration_weeks: result.plan.duration_weeks } });
   if (result.createdCount) {
-    await refreshSessionSummary();
+    try {
+      await refreshSessionSummary();
+    } catch (error) {
+      logger.error({ err: error, planId }, "[plans] Summary refresh failed after commit");
+    }
   }
   logger.info({ planId, createdCount: result.createdCount }, "[plans] Plan activated");
   return result.plan;

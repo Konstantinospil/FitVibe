@@ -78,6 +78,7 @@ export async function createUserPlan(
     end_date: data.end_date,
     ...(data.duration_weeks !== undefined ? { duration_weeks: data.duration_weeks } : {}),
     ...(data.target_frequency !== undefined ? { target_frequency: data.target_frequency } : {}),
+    ...(data.time_zone !== undefined ? { time_zone: data.time_zone } : {}),
   };
 
   return createPlan(input);
@@ -97,7 +98,8 @@ export async function updateUserPlan(
     (updates.start_date !== undefined ||
       updates.end_date !== undefined ||
       updates.duration_weeks !== undefined ||
-      updates.target_frequency !== undefined)
+      updates.target_frequency !== undefined ||
+      updates.time_zone !== undefined)
   ) {
     throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
   }
@@ -105,6 +107,10 @@ export async function updateUserPlan(
   const updatedCount = await updatePlanRepo(planId, updates);
 
   if (updatedCount === 0) {
+    const latest = await findPlanById(planId);
+    if (latest?.activated_at) {
+      throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+    }
     throw new HttpError(404, "E.PLAN.NOT_FOUND", "Plan not found or already archived");
   }
 
