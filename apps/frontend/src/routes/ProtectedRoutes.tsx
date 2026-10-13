@@ -59,14 +59,20 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
         // The account preference is authoritative after authentication (ADR-031).
         // The browser language remains a fallback if preferences cannot be fetched.
         const preferences = await getUserPreferences();
-        if (!active) return;
+        if (!active) {
+          return;
+        }
         await loadLanguageTranslations(preferences.language);
-        if (!active) return;
+        if (!active) {
+          return;
+        }
         await i18n.changeLanguage(preferences.language);
       } catch {
         // A preference read failure must not prevent access to protected routes.
       } finally {
-        if (active) setTranslationsReady(true);
+        if (active) {
+          setTranslationsReady(true);
+        }
       }
     })();
 
