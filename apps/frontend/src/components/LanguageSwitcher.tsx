@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@fitvibe/ui";
 import { loadLanguageTranslations } from "../i18n/config";
 
 /**
- * Reliable flag rendering:
- * - Tries native emoji flags first (fastest).
- * - Falls back to inline SVGs when the platform/font cannot render emoji flags (Windows w/o color emoji fonts, some Linux distros).
+ * Deterministic flag rendering:
+ * - Always uses inline SVGs so national flag colors do not vary by OS/browser emoji artwork.
+ * - Flag colors are reference data and intentionally remain independent from FitVibe theme tokens.
  */
 
 type LangCode = "en" | "de" | "fr" | "es" | "el";
@@ -16,8 +16,6 @@ type LanguageOption = {
   code: LangCode;
   displayCode: string;
   labelKey: string;
-  // Either emoji or inline SVG renderer (fallback)
-  emoji: string;
   Svg: React.FC<{ size?: number; style?: React.CSSProperties }>;
 };
 
@@ -101,7 +99,7 @@ const FrFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     }}
   >
     <rect width="1" height="2" fill={FLAG_COLORS.frBlue} />
-    <rect width="1" height="2" x="1" fill="var(--color-on-color)" />
+    <rect width="1" height="2" x="1" fill={FLAG_COLORS.white} />
     <rect width="1" height="2" x="2" fill={FLAG_COLORS.frRed} />
   </svg>
 );
@@ -143,13 +141,13 @@ const ElFlag: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size
     }}
   >
     <rect width="27" height="18" fill={FLAG_COLORS.grBlue} />
-    <rect y="2" width="27" height="2" fill="var(--color-on-color)" />
-    <rect y="6" width="27" height="2" fill="var(--color-on-color)" />
-    <rect y="10" width="27" height="2" fill="var(--color-on-color)" />
-    <rect y="14" width="27" height="2" fill="var(--color-on-color)" />
+    <rect y="2" width="27" height="2" fill={FLAG_COLORS.white} />
+    <rect y="6" width="27" height="2" fill={FLAG_COLORS.white} />
+    <rect y="10" width="27" height="2" fill={FLAG_COLORS.white} />
+    <rect y="14" width="27" height="2" fill={FLAG_COLORS.white} />
     <rect width="10" height="10" fill={FLAG_COLORS.grBlue} />
-    <rect x="4" width="2" height="10" fill="var(--color-on-color)" />
-    <rect y="4" width="10" height="2" fill="var(--color-on-color)" />
+    <rect x="4" width="2" height="10" fill={FLAG_COLORS.white} />
+    <rect y="4" width="10" height="2" fill={FLAG_COLORS.white} />
   </svg>
 );
 
@@ -159,97 +157,36 @@ const LANGUAGES: LanguageOption[] = [
     code: "en",
     displayCode: "EN",
     labelKey: "language.english",
-    emoji: "\uD83C\uDDEC\uD83C\uDDE7",
     Svg: GbFlag,
   },
   {
     code: "de",
     displayCode: "DE",
     labelKey: "language.german",
-    emoji: "\uD83C\uDDE9\uD83C\uDDEA",
     Svg: DeFlag,
   },
   {
     code: "fr",
     displayCode: "FR",
     labelKey: "language.french",
-    emoji: "\uD83C\uDDEB\uD83C\uDDF7",
     Svg: FrFlag,
   },
   {
     code: "es",
     displayCode: "ES",
     labelKey: "language.spanish",
-    emoji: "\uD83C\uDDEA\uD83C\uDDF8",
     Svg: EsFlag,
   },
   {
     code: "el",
     displayCode: "EL",
     labelKey: "language.greek",
-    emoji: "\uD83C\uDDEC\uD83C\uDDF7",
     Svg: ElFlag,
   },
 ];
 
-// --- Emoji-support detection (fast heuristic) ---
-let _emojiFlagSupport: boolean | null = null;
-function supportsEmojiFlag(): boolean {
-  if (typeof document === "undefined") {
-    _emojiFlagSupport = false;
-    return _emojiFlagSupport;
-  }
-  if (_emojiFlagSupport !== null) {
-    return _emojiFlagSupport;
-  }
-  try {
-    // Regional-indicator pairs (GB, DE, …) look like two letters when the OS
-    // has no flag emoji. A real flag glyph is ~1em; letter fallback is ~2em.
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      _emojiFlagSupport = false;
-      return _emojiFlagSupport;
-    }
-    ctx.font =
-      "16px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Twemoji Mozilla',sans-serif";
-    const flagWidth = ctx.measureText("\uD83C\uDDEC\uD83C\uDDE7").width;
-    const lettersWidth = ctx.measureText("GB").width;
-    _emojiFlagSupport = flagWidth > 0 && lettersWidth > 0 && flagWidth < lettersWidth * 0.8;
-    return _emojiFlagSupport;
-  } catch {
-    _emojiFlagSupport = false;
-    return _emojiFlagSupport;
-  }
-}
-
 function FlagIcon({ option, size = 20 }: { option: LanguageOption; size?: number }) {
-  const [supportsEmoji, setSupportsEmoji] = useState<boolean | null>(null);
-
-  useLayoutEffect(() => {
-    setSupportsEmoji(typeof document !== "undefined" ? supportsEmojiFlag() : false);
-  }, []);
-
-  // During SSR or before detection, use SVG fallback
-  if (supportsEmoji === null || !supportsEmoji) {
-    return <option.Svg size={size} />;
-  }
-
-  return (
-    <span
-      role="img"
-      aria-hidden="true"
-      style={{
-        fontSize: size,
-        // architecture-token: data-value -- Emoji line box is intrinsic icon geometry, not application typography.
-        lineHeight: 1,
-        display: "inline-flex",
-        alignItems: "center",
-      }}
-    >
-      {option.emoji}
-    </span>
-  );
+  return <option.Svg size={size} />;
 }
 
 export type LanguageSwitcherVariant = "default" | "header";

@@ -70,15 +70,7 @@ const sessions: api.SessionsListResponse = {
       visibility: "private",
       completed_at: "2026-01-14T10:00:00.000Z",
       points: 12,
-      exercises: [
-        {
-          id: "session-ex-1",
-          session_id: "session-1",
-          exercise_id: "exercise-1",
-          order_index: 0,
-          sets: [],
-        },
-      ],
+      exercise_count: 1,
     },
   ],
   total: 1,
@@ -115,6 +107,10 @@ describe("Home", () => {
 
   it("renders the production Home contract", async () => {
     renderHome();
+
+    const home = screen.getByRole("main", { name: "homeSurface.title" });
+    expect(home).toHaveAttribute("data-app-surface", "home");
+    expect(screen.getByRole("heading", { level: 1, name: "homeSurface.title" })).toBeVisible();
 
     expect(screen.getByText("homeSurface.sections.recentActivity")).toBeInTheDocument();
     expect(screen.getByText("homeSurface.sections.trending")).toBeInTheDocument();

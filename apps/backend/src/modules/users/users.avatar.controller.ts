@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Request, Response } from "express";
 import { readRouteParam } from "../../utils/http.js";
 import sharp from "sharp";
@@ -22,15 +23,15 @@ const MAX_BYTES = 5 * 1024 * 1024; // 5 MB per PRD
 export async function uploadAvatarHandler(req: Request, res: Response): Promise<void> {
   const userId = req.user?.sub as string;
   if (!req.file) {
-    res.status(400).json({ error: "UPLOAD_NO_FILE" });
+    res.status(422).json({ error: "UPLOAD_NO_FILE" });
     return;
   }
   if (!ALLOWED_MIME.has(req.file.mimetype)) {
-    res.status(400).json({ error: "UPLOAD_UNSUPPORTED_TYPE" });
+    res.status(422).json({ error: "UPLOAD_UNSUPPORTED_TYPE" });
     return;
   }
   if (req.file.size > MAX_BYTES) {
-    res.status(400).json({ error: "UPLOAD_TOO_LARGE" });
+    res.status(422).json({ error: "UPLOAD_TOO_LARGE" });
     return;
   }
 
@@ -73,11 +74,33 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       };
     }
 
-    const processed = await sharp(file.buffer)
-      .rotate()
-      .resize(256, 256, { fit: "cover" })
-      .png({ quality: 80 })
-      .toBuffer();
+    let imageFormat: string | undefined;
+    try {
+      imageFormat = (await sharp(file.buffer).metadata()).format;
+    } catch {
+      return {
+        status: 422,
+        body: { error: "UPLOAD_UNSUPPORTED_TYPE" },
+      };
+    }
+
+    if (!imageFormat || !["jpeg", "png", "webp"].includes(imageFormat)) {
+      return {
+        status: 422,
+        body: { error: "UPLOAD_UNSUPPORTED_TYPE" },
+      };
+    }
+
+    let processed: Buffer;
+    try {
+      processed = await sharp(file.buffer)
+        .rotate()
+        .resize(128, 128, { fit: "cover" })
+        .png({ quality: 80 })
+        .toBuffer();
+    } catch {
+      return { status: 422, body: { error: "UPLOAD_UNSUPPORTED_TYPE" } };
+    }
 
     const fileMeta = await saveUserAvatarFile(userId, processed, "image/png");
     const publicUrl = `/api/v1/users/avatar/${userId}`;
@@ -117,6 +140,7 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
     filename: file.originalname,
     mimetype: file.mimetype,
     size: file.size,
+    sha256: createHash("sha256").update(file.buffer).digest("hex"),
   };
   const handled = await handleIdempotentRequest(req, res, userId, payload, execute);
 

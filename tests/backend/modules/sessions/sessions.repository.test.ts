@@ -88,6 +88,30 @@ describe("Sessions Repository", () => {
       expect(result.offset).toBe(0);
     });
 
+    it("returns an exercise count for each listed session using one batched query", async () => {
+      const listed: Session[] = [
+        { id: "first", owner_id: userId, title: "A", planned_at: "2026-10-11T12:00:00Z", status: "planned", visibility: "private" },
+        { id: "second", owner_id: userId, title: "B", planned_at: "2026-10-12T12:00:00Z", status: "planned", visibility: "private" },
+      ];
+      const dbModule = await import("../../../../apps/backend/src/db/connection.js");
+      const dbFn = dbModule.db as jest.Mock;
+      dbFn("sessions");
+      queryBuilders["sessions"].count.mockResolvedValue([{ count: "2" }]);
+      queryBuilders["sessions"].offset.mockResolvedValue(listed);
+      const counts = dbFn("session_exercises");
+      counts.count.mockReturnThis();
+      counts.groupBy = jest.fn().mockResolvedValue([{ session_id: "first", exercise_count: "3" }]);
+
+      const result = await sessionsRepository.listSessions(userId, { limit: 10 });
+      expect(result.data).toEqual([
+        { ...listed[0], exercise_count: 3 },
+        { ...listed[1], exercise_count: 0 },
+      ]);
+      expect(counts.whereIn).toHaveBeenCalledWith("session_id", ["first", "second"]);
+      expect(counts.groupBy).toHaveBeenCalledWith("session_id");
+      expect(counts.groupBy).toHaveBeenCalledTimes(1);
+    });
+
     it("should filter by status", async () => {
       const query: SessionQuery = { status: "completed" };
 

@@ -10,8 +10,9 @@ describe("Avatar", () => {
     expect(avatar).toHaveAttribute("data-size", size);
   });
 
-  it("renders initials format", () => {
-    render(<Avatar name="Fit Vibe" format="initials" />);
+  it("renders initials format as a labelled accessible image placeholder", () => {
+    render(<Avatar name="Fit Vibe" format="initials" size="lg" />);
+    expect(screen.getByRole("img", { name: "Fit Vibe" })).toHaveAttribute("data-size", "lg");
     expect(screen.getByText("FV")).toBeInTheDocument();
   });
 

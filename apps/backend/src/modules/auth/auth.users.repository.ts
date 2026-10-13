@@ -99,8 +99,8 @@ export async function createUser(
     terms_accepted?: boolean;
     terms_accepted_at?: string;
     terms_version?: string;
-    gender_code?: "man" | "woman" | "diverse" | "prefer_not_to_say";
-    fitness_level_code?: "beginner" | "intermediate" | "advanced" | "elite" | "rehab";
+    gender_code?: string;
+    fitness_level_code?: string;
     date_of_birth?: string;
     weight_kg?: number;
   },

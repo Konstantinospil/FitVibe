@@ -89,6 +89,7 @@ describe("PublishedLegalDocument", () => {
     getPublishedLegalDocument.mockResolvedValue(
       published({
         title: "Authoritative Terms",
+        eyebrow: "Legal",
         description: "excluded",
         effectiveDate: "excluded",
         section10: { title: "Section 10", content: "Ten" },
@@ -132,6 +133,7 @@ describe("PublishedLegalDocument", () => {
     expect(screen.getByTestId("version")).toHaveTextContent("v2");
     expect(screen.getByTestId("effective-date").textContent).toBeTruthy();
     expect(screen.getByText("Introduction")).toBeInTheDocument();
+    expect(screen.queryByText("Legal")).not.toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("true")).toBeInTheDocument();
     expect(screen.queryByText("Symbol(ignored)")).not.toBeInTheDocument();
@@ -177,9 +179,35 @@ describe("PublishedLegalDocument", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Historische Bedingungen",
     );
-    expect(screen.getByTestId("version")).toHaveTextContent("legacy");
+    expect(screen.queryByTestId("version")).not.toBeInTheDocument();
     expect(screen.getByTestId("effective-date")).toHaveTextContent("20261001");
-    expect(screen.getByTestId("legacy-notice")).toHaveTextContent("pre-publication legacy version");
+    expect(screen.queryByTestId("legacy-notice")).not.toBeInTheDocument();
+  });
+
+  it("preserves the authored order within a privacy policy section", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        section1: {
+          title: "Privacy section",
+          subtitle: "Introduction before the list",
+          items: ["First item"],
+          conclusion: "Final explanation",
+        },
+      }),
+    );
+
+    const { container } = render(
+      <PublishedLegalDocument documentType="privacy" title="Privacy Policy" />,
+    );
+    await screen.findByText("Final explanation");
+    const section = container.querySelector(".section");
+    expect(section).not.toBeNull();
+    expect(section?.textContent?.indexOf("Introduction before the list")).toBeLessThan(
+      section?.textContent?.indexOf("First item") ?? 0,
+    );
+    expect(section?.textContent?.indexOf("First item")).toBeLessThan(
+      section?.textContent?.indexOf("Final explanation") ?? 0,
+    );
   });
 
   it("uses fallback title and effectiveDate when published content has no usable title", async () => {

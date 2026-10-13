@@ -30,6 +30,7 @@ const ROUTE_RATE_LIMIT_POLICIES = {
   auth_pw_reset: { points: 5, duration: 60 },
   auth_refresh: { points: 60, duration: 60 },
   auth_register: { points: 10, duration: 60 },
+  auth_register_options: { points: 60, duration: 60 },
   auth_sessions: { points: 60, duration: 60 },
   auth_sessions_revoke: { points: 10, duration: 60 },
   auth_terms_accept: { points: 5, duration: 60 },

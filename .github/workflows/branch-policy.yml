@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   enforce:
-    name: Keep only main, dev, and feature
+    name: Allow permanent and temporary fix branches
     runs-on: ubuntu-latest
     steps:
       - name: Delete unauthorized branches
@@ -27,6 +27,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const allowed = new Set(["main", "dev", "feature"]);
+            const isAllowed = (name) => allowed.has(name) || /^fix\/[a-z0-9][a-z0-9._-]*$/.test(name);
             const { owner, repo } = context.repo;
 
             const branches = await github.paginate(
@@ -36,10 +37,10 @@ jobs:
 
             const unauthorized = branches
               .map((branch) => branch.name)
-              .filter((name) => !allowed.has(name));
+              .filter((name) => !isAllowed(name));
 
             if (unauthorized.length === 0) {
-              core.info("Branch policy satisfied: only main, dev, and feature exist.");
+              core.info("Branch policy satisfied: permanent branches and fix/* only.");
               return;
             }
 

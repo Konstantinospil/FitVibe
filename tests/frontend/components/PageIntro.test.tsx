@@ -7,7 +7,7 @@ describe("PageIntro", () => {
   it("renders eyebrow, title, and description", () => {
     render(<PageIntro eyebrow="Test Eyebrow" title="Test Title" description="Test Description" />);
     expect(screen.getByText("Test Eyebrow")).toBeInTheDocument();
-    expect(screen.getByText("Test Title")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Test Title" })).toBeInTheDocument();
     expect(screen.getByText("Test Description")).toBeInTheDocument();
   });
 

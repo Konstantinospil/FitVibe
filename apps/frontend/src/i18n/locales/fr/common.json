@@ -609,7 +609,7 @@
       "avatarSelect": "Sélectionner une image",
       "avatarUpload": "Téléverser",
       "avatarDelete": "Supprimer",
-      "avatarHelp": "Téléversez une image JPEG, PNG ou WebP (max 5 Mo). Taille recommandée : 256×256 pixels.",
+      "avatarHelp": "Téléversez une image JPEG, PNG ou WebP (max 5 Mo). Taille recommandée : 128×128 pixels.",
       "avatarInvalidType": "Type de fichier invalide. Utilisez JPEG, PNG ou WebP.",
       "avatarTooLarge": "Le fichier est trop volumineux. Taille maximale : 5 Mo.",
       "avatarNoFile": "Veuillez sélectionner un fichier à téléverser.",

@@ -32,8 +32,11 @@ Copy `.env.example` files in the root, `apps/backend`, `apps/frontend`, and `inf
 
 ## 3. Branching, Commits, and Pull Requests
 
-- Branch from `develop` unless you have coordinated a hotfix to `main`.
-- Use descriptive branch names such as `feat/session-planner`, `fix/auth-refresh`, or `docs/i18n-guidelines`.
+- Permanent branches: `main` (production), `dev` (integration), `feature` (ongoing features).
+- Create temporary `fix/<bug-name>` branches from current `dev` and open focused PRs targeting `dev`.
+- Develop features on `feature`, promoting through PRs to `dev` and then `main` after CI succeeds.
+- After merging a fix into `dev`, synchronize `dev` into `feature` before its next promotion, resolving any conflicts without overwriting bug fixes.
+- Full CI and CodeQL run on `fix/*`; production releases remain `main`-only. Delete temporary fix branches after merge.
 - Write conventional commits when possible (`feat:`, `fix:`, `docs:`, `chore:`).
 - Sign commits (`git config --global commit.gpgSign true`) if you have a key configured.
 - Keep pull requests focused; small, reviewable changes merge faster.
@@ -71,6 +74,7 @@ Every pull request should include:
 - Use test doubles for external services; do not hit live third-party APIs.
 - For new endpoints, document the contract in the TDD and add an integration or contract test.
 - Performance tests (k6) and security scans run in CI; trigger them locally when practical.
+- Tests that call `jest.useFakeTimers()` must restore real timers with `jest.useRealTimers()` in an `afterEach` owned by the same test file or suite. Do not rely on global Jest setup/teardown or `jest.clearAllTimers()` as a cleanup fallback. Apply the equivalent `vi.useFakeTimers()` / `vi.useRealTimers()` pattern to Vitest tests.
 
 ---
 

@@ -142,6 +142,51 @@ describe("API Service Functions", () => {
 
       expect(result).toEqual(mockResponse);
     });
+
+    it("should send multipart registration when an avatar is supplied", async () => {
+      const mockResponse = {
+        user: { id: "1", username: "test", email: "test@example.com" },
+        session: { id: "session-1" },
+      };
+      rawMock.onPost("/api/v1/auth/register").reply((config) => {
+        expect(config.data).toBeInstanceOf(FormData);
+        const form = config.data as FormData;
+        expect(form.get("avatar")).toBeInstanceOf(File);
+        expect(JSON.parse(String(form.get("payload")))).toMatchObject({
+          email: "test@example.com",
+          profile: {
+            display_name: "Test User",
+            weight_kg: 75,
+            date_of_birth: "2000-01-15",
+            sex: "diverse",
+            fitness_level: "advanced",
+          },
+        });
+        return [200, mockResponse];
+      });
+
+      const avatar = new File([new Uint8Array([1, 2, 3])], "avatar.png", {
+        type: "image/png",
+      });
+      const result = await register(
+        {
+          email: "test@example.com",
+          password: "password123",
+          username: "test",
+          terms_accepted: true,
+          profile: {
+            display_name: "Test User",
+            weight_kg: 75,
+            date_of_birth: "2000-01-15",
+            sex: "diverse",
+            fitness_level: "advanced",
+          },
+        },
+        avatar,
+      );
+
+      expect(result).toEqual(mockResponse);
+    });
   });
 
   describe("verify2FALogin", () => {
@@ -964,6 +1009,12 @@ describe("API Service Functions", () => {
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-02T00:00:00.000Z",
     primaryEmail: "alex@example.com",
+    avatar: {
+      url: "/api/v1/users/avatar/u1",
+      mimeType: "image/png",
+      bytes: 4096,
+      updatedAt: "2026-10-10T12:34:56.000Z",
+    },
     profile: {
       alias: "A",
       bio: "lifter",
@@ -983,6 +1034,8 @@ describe("API Service Functions", () => {
         bio: "lifter",
         alias: "A",
         weight: 80,
+        avatarUrl:
+          "/api/v1/users/avatar/u1?v=2026-10-10T12%3A34%3A56.000Z",
       });
 
       apiMock.onGet("/api/v1/users/me").replyOnce(200, {

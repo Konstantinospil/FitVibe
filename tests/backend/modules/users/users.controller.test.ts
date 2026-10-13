@@ -272,12 +272,31 @@ describe("Users Controller", () => {
       expect(mockUsersService.updateProfile).not.toHaveBeenCalled();
     });
 
-    it("should return 400 for invalid body", async () => {
-      mockRequest.body = { username: "ab" }; // Too short
+    it("should return 422 for an invalid profile body", async () => {
+      mockRequest.body = { alias: "a".repeat(33) };
 
       await usersController.updateMe(mockRequest as Request, mockResponse as Response);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.status).toHaveBeenCalledWith(422);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "E.VALIDATION_ERROR" }),
+        }),
+      );
+      expect(mockUsersService.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it("should reject immutable profile fields with 403", async () => {
+      mockRequest.body = { gender: "man" };
+
+      await usersController.updateMe(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(403);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.objectContaining({ code: "E.USER.IMMUTABLE_FIELD" }),
+        }),
+      );
       expect(mockUsersService.updateProfile).not.toHaveBeenCalled();
     });
   });

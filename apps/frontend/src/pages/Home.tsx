@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { getFeed, listSessions, type SessionWithExercises } from "../services/api";
+import { getFeed, listSessions, type SessionListItem } from "../services/api";
 import HomeFeedCard from "../components/composites/HomeFeedCard";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import { TRAINING_DATA_CONFIG, TRAINING_TIME_UNITS } from "../config/trainingSurfaces";
 import { logger } from "../utils/logger";
 
-const sessionSummary = (session: SessionWithExercises, t: ReturnType<typeof useTranslation>["t"]) =>
+const sessionSummary = (session: SessionListItem, t: ReturnType<typeof useTranslation>["t"]) =>
   session.notes ||
   t("homeSurface.session.exercises", {
-    count: session.exercises.length,
+    count: session.exercise_count,
   });
 
 const Home: React.FC = () => {
@@ -109,10 +109,12 @@ const Home: React.FC = () => {
   };
 
   return (
-    <main className="training-page home-surface" aria-labelledby="home-title">
-      <h1 id="home-title" className="sr-only">
-        {t("homeSurface.title")}
-      </h1>
+    <main
+      className="training-page home-surface"
+      aria-labelledby="home-title"
+      data-app-surface="home"
+    >
+      <h1 id="home-title">{t("homeSurface.title")}</h1>
 
       <div className="training-grid home-surface__grid">
         <TrainingPanel

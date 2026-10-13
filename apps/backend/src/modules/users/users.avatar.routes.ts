@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 import multer from "multer";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
@@ -11,8 +11,20 @@ import {
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB per PRD (matches MAX_BYTES in controller)
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+const uploadSingleAvatar: RequestHandler = (req, res, next) => {
+  upload.single("avatar")(req, res, (error: unknown) => {
+    if (error instanceof multer.MulterError) {
+      res.status(422).json({
+        error: error.code === "LIMIT_FILE_SIZE" ? "UPLOAD_TOO_LARGE" : "UPLOAD_INVALID",
+      });
+      return;
+    }
+    next(error);
+  });
+};
 
 export const usersAvatarRouter = Router();
 
@@ -20,7 +32,7 @@ usersAvatarRouter.post(
   "/avatar",
   rateLimit("user_avatar_upload"),
   requireAccessToken,
-  upload.single("avatar"),
+  uploadSingleAvatar,
   asyncHandler(uploadAvatarHandler),
 );
 
@@ -28,7 +40,7 @@ usersAvatarRouter.post(
   "/me/avatar",
   rateLimit("user_avatar_upload_me"),
   requireAccessToken,
-  upload.single("avatar"),
+  uploadSingleAvatar,
   asyncHandler(uploadAvatarHandler),
 );
 
