@@ -173,9 +173,7 @@ export async function updatePlan(
     patch.end_date = updates.end_date;
   }
 
-  const query = withDb(trx)<PlanRow>(PLANS_TABLE)
-    .where({ id: planId })
-    .whereNull("archived_at");
+  const query = withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at");
 
   // Compare-and-swap in SQL: two simultaneous editors cannot both win.
   if (expectedRevision !== undefined) {
@@ -189,11 +187,14 @@ export async function updatePlan(
  * Archive a plan (soft delete)
  */
 export async function archivePlan(planId: string, trx?: Knex.Transaction): Promise<number> {
-  return withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at").update({
-    archived_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    revision: db.raw("revision + 1"),
-  });
+  return withDb(trx)<PlanRow>(PLANS_TABLE)
+    .where({ id: planId })
+    .whereNull("archived_at")
+    .update({
+      archived_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      revision: db.raw("revision + 1"),
+    });
 }
 
 /**

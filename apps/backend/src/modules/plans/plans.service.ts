@@ -99,9 +99,10 @@ export async function updateUserPlan(
 
   // ETag writes use an atomic version predicate rather than a check-then-write.
   // Without If-Match, updates remain last-writer-wins for legacy clients.
-  const updatedCount = ifMatch === undefined
-    ? await updatePlanRepo(planId, updates)
-    : await updatePlanRepo(planId, updates, undefined, existing.revision);
+  const updatedCount =
+    ifMatch === undefined
+      ? await updatePlanRepo(planId, updates)
+      : await updatePlanRepo(planId, updates, undefined, existing.revision);
 
   if (updatedCount === 0) {
     if (ifMatch !== undefined) {

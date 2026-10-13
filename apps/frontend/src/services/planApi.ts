@@ -29,7 +29,7 @@ export async function listTrainingPlans(): Promise<TrainingPlan[]> {
 /** Fetch a fresh strong validator before editing to prevent silent overwrites. */
 export async function getTrainingPlan(id: string): Promise<{ plan: TrainingPlan; etag: string }> {
   const response = await apiClient.get<TrainingPlan>(`/api/v1/plans/${id}`);
-  const etag: unknown = response.headers.get("etag");
+  const etag: unknown = response.headers["etag"];
   if (typeof etag !== "string" || !etag.startsWith('"')) {
     throw new Error("Plan response did not include a strong ETag");
   }

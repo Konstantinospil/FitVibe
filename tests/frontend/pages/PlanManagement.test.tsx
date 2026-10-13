@@ -71,7 +71,9 @@ describe("Training plan management", () => {
     fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.edit" }));
     expect(await screen.findByDisplayValue("Base plan")).toBeInTheDocument();
     expect(plans.getTrainingPlan).toHaveBeenCalledWith("plan-1");
-    fireEvent.change(screen.getByDisplayValue("Base plan"), { target: { value: "Revised plan" } });
+    fireEvent.change(screen.getByDisplayValue("Base plan"), {
+      target: { value: "Revised plan" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.save" }));
     await waitFor(() => {
       expect(plans.updateTrainingPlan).toHaveBeenCalledWith(
@@ -92,7 +94,9 @@ describe("Training plan management", () => {
     fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.save" }));
     await waitFor(() => {
       expect(plans.createTrainingPlan).toHaveBeenCalledWith({
-        name: "New plan", start_date: null, end_date: null,
+        name: "New plan",
+        start_date: null,
+        end_date: null,
       });
     });
   });
