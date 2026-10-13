@@ -1,0 +1,43 @@
+name: Temporary formatting for issue 85
+on:
+  push:
+    branches: ["fix/issue-85-activation-hardening"]
+    paths:
+      - ".github/workflows/temporary-format-issue-85.yml"
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: true
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "24"
+      - run: pnpm install --frozen-lockfile
+      - name: Format only issue 85 changed TypeScript files
+        run: |
+          pnpm exec prettier --write \
+            apps/backend/src/modules/plans/plans.activation.service.ts \
+            apps/backend/src/modules/plans/plans.activation.schedule.ts \
+            apps/backend/src/modules/plans/plans.repository.ts \
+            apps/backend/src/modules/plans/plans.service.ts \
+            apps/backend/src/modules/plans/plans.controller.ts \
+            apps/backend/src/modules/plans/plans.routes.ts \
+            apps/backend/src/modules/plans/plans.types.ts \
+            apps/backend/src/db/migrations/202610130001_add_plan_activation.ts \
+            tests/backend/modules/plans/plans.activation.schedule.test.ts \
+            tests/backend/modules/plans/plans.routes.test.ts \
+            tests/backend/integration/plan-activation.integration.test.ts
+      - name: Commit formatting without changing tests or quality gates
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add apps/backend/src/modules/plans apps/backend/src/db/migrations/202610130001_add_plan_activation.ts tests/backend/modules/plans tests/backend/integration/plan-activation.integration.test.ts
+            git commit -m "style(plans): format issue 85 implementation"
+            git push origin HEAD:fix/issue-85-activation-hardening
+          fi

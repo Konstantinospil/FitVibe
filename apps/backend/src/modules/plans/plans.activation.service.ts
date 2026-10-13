@@ -101,11 +101,13 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
       })));
       await replaceSessionExercises(trx, id, exercises);
     }
-    const [stats] = await trx("sessions")
-      .where({ owner_id: userId, plan_id: planId }).whereNull("deleted_at")
+    const stats = await trx("sessions")
+      .where({ owner_id: userId, plan_id: planId })
+      .whereNull("deleted_at")
       .select(trx.raw("COUNT(*) AS total"))
-      .select(trx.raw("COUNT(*) FILTER (WHERE status = 'completed') AS completed"));
-    await updatePlanProgress(planId, Number(stats.total), Number(stats.completed), trx);
+      .select(trx.raw("COUNT(*) FILTER (WHERE status = 'completed') AS completed"))
+      .first<{ total: string; completed: string }>();
+    await updatePlanProgress(planId, Number(stats?.total ?? 0), Number(stats?.completed ?? 0), trx);
     const [updated] = await trx<PlanRow>("plans")
       .where({ id: planId, user_id: userId })
       .update({ status: "active", end_date: endDate, activated_at: now, updated_at: now })

@@ -55,7 +55,9 @@ function localToUtc(target: number, timeZone: string): string {
     const d = new Date(guess);
     const actual = localEpoch(localTime(d, timeZone), d.getUTCMilliseconds());
     const difference = target - actual;
-    if (difference === 0) return d.toISOString();
+    if (difference === 0) {
+      return d.toISOString();
+    }
     guess += difference;
   }
   throw new HttpError(422, "E.PLAN.NONEXISTENT_LOCAL_TIME",
