@@ -10,6 +10,7 @@ import {
   getUserPlanStats,
 } from "./plans.service.js";
 import { HttpError, readRouteParam } from "../../utils/http.js";
+import { planETag } from "./plans.etag.js";
 
 /**
  * Helper to get authenticated user ID from request
@@ -73,6 +74,7 @@ export async function getPlanHandler(req: Request, res: Response): Promise<void>
   }
 
   const plan = await getPlanById(userId, id);
+  res.setHeader("ETag", planETag(plan));
   res.json(plan);
 }
 
@@ -95,6 +97,7 @@ export async function createPlanHandler(req: Request, res: Response): Promise<vo
   }
 
   const plan = await createUserPlan(userId, parsed.data);
+  res.setHeader("ETag", planETag(plan));
   res.status(201).json(plan);
 }
 
@@ -122,7 +125,13 @@ export async function updatePlanHandler(req: Request, res: Response): Promise<vo
     throw new HttpError(400, "E.PLAN.INVALID_INPUT", "Invalid update data", parsed.error.flatten());
   }
 
-  const plan = await updateUserPlan(userId, id, parsed.data);
+  const header = req.headers["if-match"];
+  const ifMatch = typeof header === "string" ? header : undefined;
+  if (header !== undefined && ifMatch === undefined) {
+    throw new HttpError(400, "E.PLAN.INVALID_ETAG", "If-Match must be a string");
+  }
+  const plan = await updateUserPlan(userId, id, parsed.data, ifMatch);
+  res.setHeader("ETag", planETag(plan));
   res.json(plan);
 }
 

@@ -16,6 +16,7 @@ export interface PlanRow {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  revision: number;
 }
 
 export interface CreatePlanInput {
@@ -122,6 +123,7 @@ export async function createPlan(input: CreatePlanInput, trx?: Knex.Transaction)
     created_at: now,
     updated_at: now,
     archived_at: null,
+    revision: 1,
   };
 
   const [created] = await withDb(trx)<PlanRow>(PLANS_TABLE).insert(planData).returning("*");
@@ -136,9 +138,11 @@ export async function updatePlan(
   planId: string,
   updates: UpdatePlanInput,
   trx?: Knex.Transaction,
+  expectedRevision?: number,
 ): Promise<number> {
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
+    revision: db.raw("revision + 1"),
   };
 
   if (updates.name !== undefined) {
@@ -169,10 +173,16 @@ export async function updatePlan(
     patch.end_date = updates.end_date;
   }
 
-  return withDb(trx)<PlanRow>(PLANS_TABLE)
+  const query = withDb(trx)<PlanRow>(PLANS_TABLE)
     .where({ id: planId })
-    .whereNull("archived_at")
-    .update(patch);
+    .whereNull("archived_at");
+
+  // Compare-and-swap in SQL: two simultaneous editors cannot both win.
+  if (expectedRevision !== undefined) {
+    query.where({ revision: expectedRevision });
+  }
+
+  return query.update(patch);
 }
 
 /**
@@ -182,6 +192,7 @@ export async function archivePlan(planId: string, trx?: Knex.Transaction): Promi
   return withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at").update({
     archived_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    revision: db.raw("revision + 1"),
   });
 }
 
@@ -233,5 +244,6 @@ export async function updatePlanProgress(
       completed_count: completedCount,
       progress_percent: Math.round(progressPercent * 100) / 100, // Round to 2 decimal places
       updated_at: new Date().toISOString(),
+      revision: db.raw("revision + 1"),
     });
 }
