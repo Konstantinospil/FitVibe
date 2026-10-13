@@ -101,7 +101,11 @@ export async function updateUserPlan(
       updates.target_frequency !== undefined ||
       updates.time_zone !== undefined)
   ) {
-    throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+    throw new HttpError(
+      409,
+      "E.PLAN.ALREADY_ACTIVATED",
+      "Activated plan schedule cannot be reconfigured",
+    );
   }
 
   const updatedCount = await updatePlanRepo(planId, updates);
@@ -109,7 +113,11 @@ export async function updateUserPlan(
   if (updatedCount === 0) {
     const latest = await findPlanById(planId);
     if (latest?.activated_at) {
-      throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+      throw new HttpError(
+        409,
+        "E.PLAN.ALREADY_ACTIVATED",
+        "Activated plan schedule cannot be reconfigured",
+      );
     }
     throw new HttpError(404, "E.PLAN.NOT_FOUND", "Plan not found or already archived");
   }

@@ -191,11 +191,14 @@ export async function updatePlan(
     patch.time_zone = updates.time_zone;
   }
 
-  const query = withDb(trx)<PlanRow>(PLANS_TABLE)
-    .where({ id: planId }).whereNull("archived_at");
-  if (updates.start_date !== undefined || updates.end_date !== undefined ||
-      updates.duration_weeks !== undefined || updates.target_frequency !== undefined ||
-      updates.time_zone !== undefined) {
+  const query = withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at");
+  if (
+    updates.start_date !== undefined ||
+    updates.end_date !== undefined ||
+    updates.duration_weeks !== undefined ||
+    updates.target_frequency !== undefined ||
+    updates.time_zone !== undefined
+  ) {
     query.whereNull("activated_at");
   }
   return query.update(patch);

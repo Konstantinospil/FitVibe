@@ -7,8 +7,12 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp("activated_at", { useTz: true }).nullable();
     table.string("time_zone").notNullable().defaultTo("UTC");
   });
-  await knex.raw(`ALTER TABLE plans ADD CONSTRAINT plans_duration_weeks_range CHECK (duration_weeks BETWEEN 1 AND 52)`);
-  await knex.raw(`ALTER TABLE plans ADD CONSTRAINT plans_target_frequency_range CHECK (target_frequency BETWEEN 1 AND 7)`);
+  await knex.raw(
+    `ALTER TABLE plans ADD CONSTRAINT plans_duration_weeks_range CHECK (duration_weeks BETWEEN 1 AND 52)`,
+  );
+  await knex.raw(
+    `ALTER TABLE plans ADD CONSTRAINT plans_target_frequency_range CHECK (target_frequency BETWEEN 1 AND 7)`,
+  );
 }
 
 export async function down(knex: Knex): Promise<void> {
