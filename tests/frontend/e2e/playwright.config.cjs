@@ -6,6 +6,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || DEFAULT_BASE_URL;
 const frontendServerURL =
   process.env.PLAYWRIGHT_FRONTEND_SERVER_URL || DEFAULT_FRONTEND_SERVER_URL;
 const frontendDir = path.resolve(__dirname, "../../../apps/frontend");
+const repositoryRoot = path.resolve(__dirname, "../../..");
 const productionSsr = process.env.PLAYWRIGHT_USE_SSR === "true";
 // CI supplies the production Docker container; never start a second workspace frontend.
 const externalFrontend = process.env.PLAYWRIGHT_EXTERNAL_FRONTEND === "true";
@@ -42,7 +43,10 @@ module.exports = defineConfig({
       }),
   reporter: [
     ["line"],
-    ["html", { outputFolder: "playwright-report", open: "never" }],
-    ["junit", { outputFile: "test-results/junit.xml" }],
+    [
+      "html",
+      { outputFolder: path.join(repositoryRoot, "playwright-report"), open: "never" },
+    ],
+    ["junit", { outputFile: path.join(repositoryRoot, "test-results/junit.xml") }],
   ],
 });

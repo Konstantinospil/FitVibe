@@ -2398,7 +2398,9 @@ jobs:
             playwright-report
             test-results
           retention-days: 30
-          if-no-files-found: ignore
+          # Every E2E shard produces an HTML report (including testInfo attachments).
+          # Missing evidence is a CI failure, even if the browser tests passed.
+          if-no-files-found: error
 
   # Native amd64/arm64 builds. QEMU emulation of `pnpm fetch` on GitHub's
   # x86_64 runners routinely exceeds the image-build timeout.
