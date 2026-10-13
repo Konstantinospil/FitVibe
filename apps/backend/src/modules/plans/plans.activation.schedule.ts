@@ -12,7 +12,7 @@ export function buildWeeklyOccurrences(
 ): Array<{ sourceId: string; plannedAt: string }> {
   const start = Date.parse(`${startDate}T00:00:00.000Z`);
   if (
-    !/^\\d{4}-\\d{2}-\\d{2}$/.test(startDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
     !Number.isFinite(start) ||
     new Date(start).toISOString().slice(0, 10) !== startDate ||
     !Number.isInteger(durationWeeks) ||
