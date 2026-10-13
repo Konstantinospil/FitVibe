@@ -66,7 +66,7 @@ export async function listUserPlans(
  */
 export async function createUserPlan(
   userId: string,
-  data: { name: string; start_date?: string | null; end_date?: string | null },
+  data: Omit<CreatePlanInput, "id" | "user_id" | "status">,
 ): Promise<PlanRow> {
   const planId = uuidv4();
 
@@ -76,6 +76,8 @@ export async function createUserPlan(
     name: data.name,
     start_date: data.start_date,
     end_date: data.end_date,
+    ...(data.duration_weeks !== undefined ? { duration_weeks: data.duration_weeks } : {}),
+    ...(data.target_frequency !== undefined ? { target_frequency: data.target_frequency } : {}),
   };
 
   return createPlan(input);
@@ -89,8 +91,16 @@ export async function updateUserPlan(
   planId: string,
   updates: UpdatePlanInput,
 ): Promise<PlanRow> {
-  // Verify ownership
-  await getPlanById(userId, planId);
+  const current = await getPlanById(userId, planId);
+  if (
+    current.activated_at &&
+    (updates.start_date !== undefined ||
+      updates.end_date !== undefined ||
+      updates.duration_weeks !== undefined ||
+      updates.target_frequency !== undefined)
+  ) {
+    throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+  }
 
   const updatedCount = await updatePlanRepo(planId, updates);
 
@@ -189,3 +199,5 @@ export async function getUserPlanStats(
 
   return { total, active, completed, archived };
 }
+
+export { activateUserPlan } from "./plans.activation.service.js";

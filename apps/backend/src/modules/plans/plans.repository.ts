@@ -13,6 +13,9 @@ export interface PlanRow {
   completed_count: number;
   start_date: string | null;
   end_date: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  activated_at?: string | null;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -25,6 +28,8 @@ export interface CreatePlanInput {
   status?: "active" | "completed";
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
 }
 
 export interface UpdatePlanInput {
@@ -35,6 +40,8 @@ export interface UpdatePlanInput {
   completed_count?: number;
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
 }
 
 export interface ListPlansFilters {
@@ -119,6 +126,8 @@ export async function createPlan(input: CreatePlanInput, trx?: Knex.Transaction)
     completed_count: 0,
     start_date: input.start_date ?? null,
     end_date: input.end_date ?? null,
+    duration_weeks: input.duration_weeks ?? null,
+    target_frequency: input.target_frequency ?? null,
     created_at: now,
     updated_at: now,
     archived_at: null,
@@ -167,6 +176,12 @@ export async function updatePlan(
 
   if (updates.end_date !== undefined) {
     patch.end_date = updates.end_date;
+  }
+  if (updates.duration_weeks !== undefined) {
+    patch.duration_weeks = updates.duration_weeks;
+  }
+  if (updates.target_frequency !== undefined) {
+    patch.target_frequency = updates.target_frequency;
   }
 
   return withDb(trx)<PlanRow>(PLANS_TABLE)
