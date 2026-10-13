@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, InputControl, SelectControl, Switch, TextareaControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
+import { loadLanguageTranslations } from "../i18n/config";
 import {
   get2FAStatus,
   getCurrentUser,
@@ -17,7 +18,7 @@ import { TrainingPanel } from "../components/composites/TrainingSurface";
 import { AvatarEditor } from "../components/profile/AvatarEditor";
 
 const Settings: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
 
   const profileQuery = useQuery({
@@ -27,6 +28,7 @@ const Settings: React.FC = () => {
   const preferencesQuery = useQuery({
     queryKey: ["settings", "preferences"],
     queryFn: getUserPreferences,
+    refetchOnMount: "always",
   });
   const privacyQuery = useQuery({
     queryKey: ["settings", "privacy"],
@@ -147,11 +149,13 @@ const Settings: React.FC = () => {
     setSavingSection("preferences");
     setFeedback(null);
     try {
-      await updateUserPreferences({
+      const saved = await updateUserPreferences({
         language: language as "en" | "de" | "fr" | "es" | "el",
         measurementSystem: measurementSystem as "metric" | "imperial",
       });
-      await queryClient.invalidateQueries({ queryKey: ["settings", "preferences"] });
+      queryClient.setQueryData(["settings", "preferences"], saved);
+      await loadLanguageTranslations(saved.language);
+      await i18n.changeLanguage(saved.language);
       setFeedback(t("settings.preferences.saveSuccess"));
     } catch {
       setFeedback(t("settings.preferences.saveError"));
