@@ -1051,6 +1051,30 @@
   "actions": {
     "retry": "Retry"
   },
+  "sessionDetail": {
+    "actions": {
+      "reuse": "Reuse as new workout",
+      "save": "Save results",
+      "finish": "Finish workout"
+    },
+    "title": "Workout",
+    "planned": "Planned",
+    "running": "In progress",
+    "complete": "Completed",
+    "started": "Started at",
+    "recording": "Record performed sets",
+    "set": "Set {{number}}",
+    "reps": "Performed repetitions",
+    "load": "Performed weight (kg)",
+    "duration": "Performed duration (seconds)",
+    "distance": "Performed distance (metres)",
+    "loadError": "Workout could not be loaded.",
+    "saveError": "The workout could not be updated.",
+    "requiresResults": "Record at least one performed metric to finish the workout.",
+    "empty": "No exercises have been added.",
+    "saving": "Saving…",
+    "saved": "Results saved."
+  },
   "librarySurface": {
     "title": "Library",
     "description": "Discover exercises, manage your own library, and build workouts.",

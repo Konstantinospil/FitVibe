@@ -1051,6 +1051,30 @@
   "actions": {
     "retry": "Erneut versuchen"
   },
+  "sessionDetail": {
+    "actions": {
+      "reuse": "Als neues Workout wiederverwenden",
+      "save": "Ergebnisse speichern",
+      "finish": "Workout abschließen"
+    },
+    "title": "Workout",
+    "planned": "Geplant",
+    "running": "In Bearbeitung",
+    "complete": "Abgeschlossen",
+    "started": "Begonnen am",
+    "recording": "Ausgeführte Sätze erfassen",
+    "set": "Satz {{number}}",
+    "reps": "Ausgeführte Wiederholungen",
+    "load": "Verwendetes Gewicht (kg)",
+    "duration": "Ausgeführte Dauer (Sekunden)",
+    "distance": "Zurückgelegte Strecke (Meter)",
+    "loadError": "Das Workout konnte nicht geladen werden.",
+    "saveError": "Das Workout konnte nicht aktualisiert werden.",
+    "requiresResults": "Erfasse mindestens einen Leistungswert, bevor du das Workout abschließt.",
+    "empty": "Keine Übungen vorhanden.",
+    "saving": "Wird gespeichert…",
+    "saved": "Ergebnisse gespeichert."
+  },
   "librarySurface": {
     "title": "Bibliothek",
     "description": "Übungen entdecken, die eigene Bibliothek verwalten und Workouts erstellen.",
