@@ -1051,6 +1051,30 @@
   "actions": {
     "retry": "Réessayer"
   },
+  "sessionDetail": {
+    "actions": {
+      "reuse": "Réutiliser pour un nouvel entraînement",
+      "save": "Enregistrer les résultats",
+      "finish": "Terminer l’entraînement"
+    },
+    "title": "Entraînement",
+    "planned": "Planifié",
+    "running": "En cours",
+    "complete": "Terminé",
+    "started": "Commencé le",
+    "recording": "Enregistrer les séries effectuées",
+    "set": "Série {{number}}",
+    "reps": "Répétitions réalisées",
+    "load": "Poids utilisé (kg)",
+    "duration": "Durée réalisée (secondes)",
+    "distance": "Distance parcourue (mètres)",
+    "loadError": "Impossible de charger l’entraînement.",
+    "saveError": "Impossible de mettre à jour l’entraînement.",
+    "requiresResults": "Enregistrez au moins une valeur réalisée avant de terminer.",
+    "empty": "Aucun exercice ajouté.",
+    "saving": "Enregistrement…",
+    "saved": "Résultats enregistrés."
+  },
   "librarySurface": {
     "title": "Bibliothèque",
     "description": "Découvrez des exercices, gérez votre bibliothèque et créez des entraînements.",

@@ -14,6 +14,7 @@ const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
 const MainLayout = lazy(() => import("../layouts/MainLayout"));
 const Home = lazy(() => import("../pages/Home"));
 const Calendar = lazy(() => import("../pages/Calendar"));
+const SessionDetail = lazy(() => import("../pages/SessionDetail"));
 const Library = lazy(() => import("../pages/Library"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Settings = lazy(() => import("../pages/Settings"));
@@ -69,6 +70,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
           <Route element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="calendar" element={<Calendar />} />
+            <Route path="sessions/:id" element={<SessionDetail />} />
             <Route path="library" element={<Library />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="settings" element={<Settings />} />

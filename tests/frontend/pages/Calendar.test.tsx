@@ -1,4 +1,5 @@
 import React from "react";
+import { MemoryRouter } from "react-router-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -114,7 +115,7 @@ describe("Calendar", () => {
   const renderCalendar = () =>
     render(
       <QueryClientProvider client={queryClient}>
-        <Calendar />
+        <MemoryRouter><Calendar /></MemoryRouter>
       </QueryClientProvider>,
     );
 

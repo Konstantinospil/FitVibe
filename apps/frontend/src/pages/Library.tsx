@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Eye, Pencil, Plus } from "lucide-react";
 import { Button, InputControl, SelectControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { deleteExercise, listExercises, listExerciseTypes, type Exercise } from "../services/api";
 import ExerciseCreator from "../components/composites/ExerciseCreator";
 import { Modal } from "../components/composites/Modal";
@@ -16,6 +17,7 @@ const PAGE_SIZE = 20;
 
 const Library: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const [search, setSearch] = useState("");
@@ -270,6 +272,11 @@ const Library: React.FC = () => {
         open={workoutExercise !== undefined}
         initialExercise={workoutExercise ?? null}
         onClose={() => setWorkoutExercise(undefined)}
+        onSaved={(saved) => {
+          if (saved.status === "in_progress") {
+            navigate(`/sessions/${saved.id}`);
+          }
+        }}
       />
 
       <Modal open={Boolean(detail)} onClose={() => setDetail(null)} title={detail?.name ?? ""}>

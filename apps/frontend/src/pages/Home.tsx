@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@fitvibe/ui";
 import { getFeed, listSessions, type SessionListItem } from "../services/api";
 import HomeFeedCard from "../components/composites/HomeFeedCard";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
@@ -16,6 +18,7 @@ const sessionSummary = (session: SessionListItem, t: ReturnType<typeof useTransl
 
 const Home: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
 
   const recentFeed = useQuery({
     queryKey: ["home", "feed", "date"],
@@ -215,11 +218,14 @@ const Home: React.FC = () => {
                     title={session.title || t("homeSurface.session.workoutSummary")}
                     supporting={sessionSummary(session, t)}
                     trailing={
-                      session.points !== null && session.points !== undefined
-                        ? t("homeSurface.session.points", {
-                            count: session.points,
-                          })
-                        : undefined
+                      <div data-slot="library-card-actions">
+                        {session.points !== null && session.points !== undefined
+                          ? <span>{t("homeSurface.session.points", { count: session.points })}</span>
+                          : null}
+                        <Button size="sm" variant="secondary" onClick={() => navigate(`/sessions/${session.id}`)}>
+                          {t("librarySurface.actions.details")}
+                        </Button>
+                      </div>
                     }
                   />
                 ))}
