@@ -27,15 +27,18 @@ export const CardHeader: React.FC<React.HTMLAttributes<HTMLElement>> = ({
     {children}
   </header>
 );
-export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({
-  children,
-  style,
-  ...rest
-}) => (
-  <h3 data-component="card-title" style={style} {...rest}>
-    {children}
-  </h3>
-);
+export interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  as?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+}
+
+export const CardTitle: React.FC<CardTitleProps> = ({ children, as = "h3", style, ...rest }) => {
+  const Component = as;
+  return (
+    <Component data-component="card-title" style={style} {...rest}>
+      {children}
+    </Component>
+  );
+};
 export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement>> = ({
   children,
   style,

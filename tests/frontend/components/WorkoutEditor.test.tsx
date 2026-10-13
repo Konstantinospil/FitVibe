@@ -52,7 +52,7 @@ const exerciseResponse: api.ExercisesListResponse = {
     },
   ],
   total: 1,
-  limit: 250,
+  limit: 100,
   offset: 0,
 };
 
@@ -142,6 +142,7 @@ describe("WorkoutEditor", () => {
           exercises: [
             expect.objectContaining({
               exercise_id: "exercise-1",
+              order: 1,
               planned: expect.objectContaining({
                 sets: 1,
                 reps: 12,
@@ -219,6 +220,58 @@ describe("WorkoutEditor", () => {
     expect(unavailable).toHaveLength(3);
   });
 
+  it("searches the exercise catalog within the API limit and adds a matching exercise", async () => {
+    mockedApi.listExercises.mockImplementation(async (params) => {
+      if (params?.q === "squat") {
+        return {
+          ...exerciseResponse,
+          data: [
+            {
+              ...exerciseResponse.data[0],
+              id: "exercise-squat",
+              name: "Back squat",
+            },
+          ],
+        };
+      }
+      return exerciseResponse;
+    });
+
+    renderEditor();
+
+    await waitFor(() => {
+      expect(mockedApi.listExercises).toHaveBeenCalledWith({
+        q: undefined,
+        limit: 100,
+      });
+    });
+
+    const search = screen.getByLabelText(
+      "workoutEditor.fields.exercise librarySurface.filters.search",
+    );
+    fireEvent.change(search, { target: { value: "squat" } });
+
+    await waitFor(() => {
+      expect(mockedApi.listExercises).toHaveBeenCalledWith({
+        q: "squat",
+        limit: 100,
+      });
+    });
+
+    const select = screen.getByLabelText("workoutEditor.fields.exercise");
+    await screen.findByRole("option", { name: "Back squat" });
+    fireEvent.change(select, { target: { value: "exercise-squat" } });
+
+    const addButton = screen
+      .getAllByRole("button", { name: "workoutEditor.actions.addExercise" })
+      .find((button) => button.textContent === "workoutEditor.actions.addExercise");
+
+    expect(addButton).toBeDefined();
+    await waitFor(() => expect(addButton).toBeEnabled());
+    fireEvent.click(addButton as HTMLButtonElement);
+
+    expect(await screen.findByLabelText("workoutEditor.fields.repetitions")).toBeInTheDocument();
+  });
   it("retries exercise catalog loading through the active error composite", async () => {
     mockedApi.listExercises.mockRejectedValueOnce(new Error("catalog failed"));
     renderEditor();

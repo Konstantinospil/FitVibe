@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
-import { listSessions, type SessionWithExercises } from "../services/api";
+import { listSessions, type SessionListItem } from "../services/api";
 import {
   TrainingPanel,
   TrainingSummaryCard,
@@ -34,7 +34,7 @@ const dateKey = (date: Date | string) => {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 };
 
-const statusFor = (sessions: SessionWithExercises[]): TrainingStatus => {
+const statusFor = (sessions: SessionListItem[]): TrainingStatus => {
   if (sessions.some((session) => session.status === "in_progress")) {
     return "warning";
   }
@@ -108,7 +108,7 @@ const CalendarPage: React.FC = () => {
   }, [sessions.error]);
 
   const sessionsByDay = useMemo(() => {
-    const map = new Map<string, SessionWithExercises[]>();
+    const map = new Map<string, SessionListItem[]>();
     for (const session of sessions.data?.data ?? []) {
       const key = dateKey(session.planned_at);
       const current = map.get(key) ?? [];
@@ -309,7 +309,7 @@ const CalendarPage: React.FC = () => {
                     timeStyle: "short",
                   }).format(new Date(session.planned_at))}
                   supporting={t("homeSurface.session.exercises", {
-                    count: session.exercises.length,
+                    count: session.exercise_count,
                   })}
                 />
               ))
@@ -333,7 +333,7 @@ const CalendarPage: React.FC = () => {
                   supporting={
                     session.notes ||
                     t("homeSurface.session.exercises", {
-                      count: session.exercises.length,
+                      count: session.exercise_count,
                     })
                   }
                 />
@@ -358,7 +358,7 @@ const CalendarPage: React.FC = () => {
                   supporting={
                     session.notes ||
                     t("homeSurface.session.exercises", {
-                      count: session.exercises.length,
+                      count: session.exercise_count,
                     })
                   }
                 />

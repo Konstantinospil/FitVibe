@@ -23,7 +23,7 @@ import {
 } from "./users.controller.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
-import { rateLimit } from "../common/rateLimiter.js";
+import { rateLimit, rateLimitByUser } from "../common/rateLimiter.js";
 import { usersAvatarRouter } from "./users.avatar.routes.js";
 import { usersBodyProgressRouter } from "./users.body-progress.routes.js";
 import { asyncHandler } from "../../utils/async-handler.js";
@@ -39,7 +39,8 @@ export const usersRouter = Router();
 usersRouter.use(usersAvatarRouter);
 usersRouter.use(usersBodyProgressRouter);
 
-usersRouter.get("/me", rateLimit("user_me"), requireAccessToken, asyncHandler(me));
+// An authenticated profile read is scoped to its user, not to other users behind the same IP.
+usersRouter.get("/me", requireAccessToken, rateLimitByUser("user_me"), asyncHandler(me));
 usersRouter.patch("/me", rateLimit("user_update"), requireAccessToken, asyncHandler(updateMe));
 usersRouter.post(
   "/change-password",

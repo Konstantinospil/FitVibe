@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Runs inside mcr.microsoft.com/playwright:v1.63.0-jammy (invoked by update-linux-baselines.mjs).
+# Runs inside mcr.microsoft.com/playwright:v1.64.0-jammy (invoked by update-linux-baselines.mjs).
 set -euo pipefail
 
 mkdir -p /tmp/run/tests/frontend
 cp -a /work/tests/frontend/visual /tmp/run/tests/frontend/visual
 cd /tmp/run
-printf '%s\n' '{"type":"module","devDependencies":{"@playwright/test":"1.63.0"}}' > package.json
+printf '%s\n' '{"type":"module","devDependencies":{"@playwright/test":"1.64.0"}}' > package.json
 npm install --silent
 npx playwright test --config tests/frontend/visual/config/playwright.config.ts \
   ${UPDATE_SNAPSHOTS:+--update-snapshots="$UPDATE_SNAPSHOTS"} "$@"

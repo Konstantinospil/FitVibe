@@ -26,6 +26,11 @@ export interface Session {
   updated_at?: string;
 }
 
+/** A paginated session summary; exercise detail is available via GET /sessions/:id. */
+export interface SessionListItem extends Session {
+  exercise_count: number;
+}
+
 export interface SessionExerciseAttributesInput {
   sets?: number | null;
   reps?: number | null;

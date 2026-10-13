@@ -252,7 +252,7 @@
 [data-slot="page-intro-accent"]{width:var(--dropdown-icon-size);height:var(--control-strong-border-width);background:var(--color-accent)}
 [data-slot="page-intro-eyebrow-text"]{font-size:var(--type-supporting-size);letter-spacing:var(--type-metric-small-letter-spacing);text-transform:uppercase;font-weight:var(--font-weight-semibold);color:var(--color-text-secondary)}
 [data-slot="page-intro-title"]{font-size:clamp(var(--type-page-title-size),4vw,var(--type-display-size));line-height:var(--type-page-title-line-height);letter-spacing:var(--type-page-title-letter-spacing)}
-[data-priority-lcp="true"] [data-slot="page-intro-title"]{color:var(--color-text-primary);font-family:var(--font-family-body)}
+[data-priority-lcp="true"] [data-slot="page-intro-title"]{color:var(--color-text-primary)}
 [data-slot="page-intro-description"]{font-size:var(--type-body-size);line-height:var(--type-body-line-height)}
 [data-slot="page-intro-actions"]{display:flex;justify-content:center;padding:0 clamp(var(--space-lg),4vw,var(--space-3xl)) var(--space-md)}
 [data-component="page-intro"] [data-component="card-content"]{padding:0 clamp(var(--space-lg),4vw,var(--space-3xl)) var(--space-3xl);gap:var(--space-lg)}

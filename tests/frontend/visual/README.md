@@ -47,7 +47,7 @@ A manual GitHub Actions workflow, **Update Visual Baselines**, provides the same
 
 The updater workflow is intentionally installed on the repository default branch so that GitHub exposes the `workflow_dispatch` control. It may still generate baselines from another `source_ref`.
 
-The comparison and update commands both run `mcr.microsoft.com/playwright:v1.63.0-jammy`, the same image as the `visual_regression` CI job. The update command rewrites `*-linux.png` files; commit them only after reviewing and approving the visual changes.
+The comparison and update commands both run `mcr.microsoft.com/playwright:v1.64.0-jammy`, the same image as the `visual_regression` CI job. The update command rewrites `*-linux.png` files; commit them only after reviewing and approving the visual changes.
 
 **Important**: Baseline updates require design approval and should include before/after screenshots in the PR description.
 

@@ -1,21 +1,52 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Checkbox, InputField, PasswordField, TextLink } from "@fitvibe/ui";
+import {
+  Avatar,
+  Button,
+  Checkbox,
+  InputField,
+  PasswordField,
+  SelectField,
+  TextLink,
+} from "@fitvibe/ui";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
-import { register as registerAccount, resendVerificationEmail } from "../services/api";
+import {
+  getRegistrationOptions,
+  register as registerAccount,
+  resendVerificationEmail,
+  type RegistrationOptions,
+} from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 import { useCountdown } from "../hooks/useCountdown";
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function dateYearsAgo(years: number): string {
+  const today = new Date();
+  return new Date(Date.UTC(today.getUTCFullYear() - years, today.getUTCMonth(), today.getUTCDate()))
+    .toISOString()
+    .slice(0, 10);
+}
 
 const Register: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   useRequiredFieldValidation(formRef, t);
 
   const [name, setName] = useState("");
+  const [weight, setWeight] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [gender, setGender] = useState("");
+  const [activityIntensity, setActivityIntensity] = useState("");
+  const [registrationOptions, setRegistrationOptions] = useState<RegistrationOptions | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -44,12 +75,86 @@ const Register: React.FC = () => {
     }
   }, [email, username]);
 
+  useEffect(() => {
+    let active = true;
+    void getRegistrationOptions()
+      .then((options) => {
+        if (active) {
+          setRegistrationOptions(options);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError(t("auth.register.optionsLoadError"));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [t]);
+
+  const handleAvatarSelection = (file: File | undefined) => {
+    if (!file) {
+      return;
+    }
+    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+      setError(t("auth.register.avatarInvalidType"));
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setError(t("auth.register.avatarTooLarge"));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarPreview(typeof reader.result === "string" ? reader.result : null);
+    };
+    reader.readAsDataURL(file);
+    setAvatarFile(file);
+    setError(null);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+    if (
+      !name.trim() ||
+      !weight.trim() ||
+      !dateOfBirth ||
+      !gender ||
+      !activityIntensity ||
+      !email.trim() ||
+      !password ||
+      !confirmPassword
+    ) {
       setError(t("auth.register.fillAllFields"));
+      return;
+    }
+
+    if (!registrationOptions) {
+      setError(t("auth.register.optionsLoadError"));
+      return;
+    }
+
+    const numericWeight = Number(weight);
+    if (
+      !Number.isFinite(numericWeight) ||
+      numericWeight < registrationOptions.weight.minKg ||
+      numericWeight > registrationOptions.weight.maxKg
+    ) {
+      setError(
+        t("auth.register.weightInvalidConfigured", {
+          min: registrationOptions.weight.minKg,
+          max: registrationOptions.weight.maxKg,
+        }),
+      );
+      return;
+    }
+
+    if (dateOfBirth > dateYearsAgo(13) || dateOfBirth < dateYearsAgo(120)) {
+      setError(t("auth.register.dateOfBirthInvalid"));
       return;
     }
 
@@ -97,13 +202,25 @@ const Register: React.FC = () => {
     try {
       const finalUsername = username.trim() || email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_");
 
-      await registerAccount({
+      const registrationPayload = {
         email: email.trim(),
         password,
         username: finalUsername,
         terms_accepted: true,
-        profile: { display_name: name.trim() },
-      });
+        profile: {
+          display_name: name.trim(),
+          weight_kg: numericWeight,
+          date_of_birth: dateOfBirth,
+          sex: gender,
+          fitness_level: activityIntensity,
+        },
+      };
+
+      if (avatarFile) {
+        await registerAccount(registrationPayload, avatarFile);
+      } else {
+        await registerAccount(registrationPayload);
+      }
 
       setSuccess(true);
     } catch (err: unknown) {
@@ -230,6 +347,98 @@ const Register: React.FC = () => {
           autoComplete="name"
           disabled={isSubmitting}
         />
+
+        <div className="grid grid--gap-sm">
+          <div className="flex flex--align-center flex--gap-md flex--wrap">
+            <Avatar
+              name={name.trim() || username.trim() || t("auth.register.avatarFallback")}
+              src={avatarPreview ?? undefined}
+              format={avatarPreview ? "photo" : "initials"}
+              size="lg"
+              status="unknown"
+            />
+            <div className="grid grid--gap-xs">
+              <span className="form-label-text">{t("auth.register.photoLabel")}</span>
+              <span className="text-sm text-muted">{t("auth.register.photoHelp")}</span>
+            </div>
+          </div>
+          <input
+            ref={avatarInputRef}
+            className="sr-only"
+            name="avatar"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            aria-label={t("auth.register.photoSelect")}
+            disabled={isSubmitting}
+            onChange={(event) => handleAvatarSelection(event.target.files?.[0])}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={isSubmitting}
+          >
+            {avatarFile ? t("auth.register.photoChange") : t("auth.register.photoSelect")}
+          </Button>
+        </div>
+
+        <InputField
+          label={t("auth.register.weightLabel")}
+          name="weight"
+          type="number"
+          min={registrationOptions?.weight.minKg}
+          max={registrationOptions?.weight.maxKg}
+          step="0.1"
+          required
+          value={weight}
+          onChange={(event) => setWeight(event.target.value)}
+          disabled={isSubmitting}
+        />
+
+        <InputField
+          label={t("auth.register.dateOfBirthLabel")}
+          name="dateOfBirth"
+          type="date"
+          min={dateYearsAgo(120)}
+          max={dateYearsAgo(13)}
+          required
+          value={dateOfBirth}
+          onChange={(event) => setDateOfBirth(event.target.value)}
+          disabled={isSubmitting}
+        />
+
+        <SelectField
+          label={t("auth.register.genderLabel")}
+          name="gender"
+          required
+          value={gender}
+          onChange={(event) => setGender(event.target.value)}
+          disabled={isSubmitting}
+        >
+          <option value="">{t("auth.register.selectPlaceholder")}</option>
+          {registrationOptions?.genders.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.description}
+            </option>
+          ))}
+        </SelectField>
+
+        <SelectField
+          label={t("auth.register.activityIntensityLabel")}
+          helperText={t("auth.register.activityIntensityHelp")}
+          name="activityIntensity"
+          required
+          value={activityIntensity}
+          onChange={(event) => setActivityIntensity(event.target.value)}
+          disabled={isSubmitting}
+        >
+          <option value="">{t("auth.register.selectPlaceholder")}</option>
+          {registrationOptions?.fitnessLevels.map((option) => (
+            <option key={option.code} value={option.code}>
+              {option.description}
+            </option>
+          ))}
+        </SelectField>
 
         <InputField
           label={t("auth.register.emailLabel")}

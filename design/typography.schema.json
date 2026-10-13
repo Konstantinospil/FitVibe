@@ -1,0 +1,106 @@
+{
+  "source": "FitVibe Design System v2 / local Figma text styles",
+  "figmaFileKey": "34p8LsvwoBCvnxSWFP6Sd9",
+  "mobileBreakpointPx": 768,
+  "roles": {
+    "display": [
+      "Roboto Flex",
+      600,
+      48,
+      56,
+      -0.01,
+      36,
+      44
+    ],
+    "page-title": [
+      "Roboto Flex",
+      600,
+      32,
+      40,
+      -0.005,
+      28,
+      36
+    ],
+    "section-title": [
+      "Roboto Flex",
+      600,
+      24,
+      32,
+      -0.005,
+      22,
+      30
+    ],
+    "card-title": [
+      "Roboto Flex",
+      600,
+      18,
+      24,
+      0,
+      18,
+      24
+    ],
+    "body": [
+      "Inter",
+      400,
+      16,
+      24,
+      0,
+      16,
+      24
+    ],
+    "supporting": [
+      "Inter",
+      400,
+      14,
+      20,
+      0,
+      14,
+      20
+    ],
+    "control": [
+      "Inter",
+      400,
+      14,
+      20,
+      0,
+      14,
+      20
+    ],
+    "control-large": [
+      "Inter",
+      582,
+      16,
+      24,
+      0,
+      16,
+      24
+    ],
+    "primary-metric": [
+      "Roboto Flex",
+      600,
+      32,
+      36,
+      -0.005,
+      28,
+      32
+    ],
+    "secondary-metric": [
+      "Roboto Flex",
+      600,
+      24,
+      28,
+      -0.005,
+      22,
+      28
+    ],
+    "metric-small": [
+      "Roboto Flex",
+      600,
+      14,
+      12,
+      0.02,
+      14,
+      12
+    ]
+  }
+}

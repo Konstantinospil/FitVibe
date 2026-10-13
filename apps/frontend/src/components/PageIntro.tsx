@@ -34,7 +34,9 @@ const PageIntro: React.FC<PageIntroProps> = ({
             <span data-slot="page-intro-eyebrow-text">{eyebrow}</span>
           </span>
         ) : null}
-        <CardTitle data-slot="page-intro-title">{title}</CardTitle>
+        <CardTitle as="h1" data-slot="page-intro-title">
+          {title}
+        </CardTitle>
         <CardDescription data-slot="page-intro-description">{description}</CardDescription>
       </CardHeader>
       {actions ? <div data-slot="page-intro-actions">{actions}</div> : null}

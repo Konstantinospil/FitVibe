@@ -109,10 +109,6 @@ export async function moderateReport(input: ModerateReportInput): Promise<void> 
  * Search users
  */
 export async function searchUsersService(query: SearchUsersQuery): Promise<UserSearchResult[]> {
-  if (!query.query || query.query.trim().length === 0) {
-    throw new HttpError(400, "INVALID_QUERY", "Search query is required");
-  }
-
   return await repo.searchUsers(query);
 }
 

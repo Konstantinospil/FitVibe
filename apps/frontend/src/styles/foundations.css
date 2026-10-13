@@ -8,6 +8,7 @@ html {
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  scrollbar-gutter: stable;
 }
 
 *,
@@ -17,16 +18,17 @@ html {
 }
 
 /* === SCROLLBAR ===
- * Shared Figma scrollbar: muted rounded track with a compact rounded thumb.
+ * Shared native scrollbar styling. Native thumb length follows the scrollable
+ * content and cannot be fixed to the static Figma specimen in every browser.
  */
 * {
-  scrollbar-width: auto;
+  scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
 *::-webkit-scrollbar {
-  width: var(--space-lg);
-  height: var(--space-lg);
+  width: var(--scrollbar-track-width);
+  height: var(--scrollbar-track-width);
 }
 
 *::-webkit-scrollbar-track {
@@ -35,9 +37,9 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  min-height: var(--space-2xl);
+  min-height: var(--scrollbar-thumb-min-height);
   background: var(--scrollbar-thumb);
-  border: calc(var(--space-xs) / 2) solid transparent;
+  border: var(--scrollbar-thumb-inset) solid transparent;
   border-radius: var(--radius-full);
   background-clip: padding-box;
 }
@@ -50,6 +52,13 @@ html {
 *::-webkit-scrollbar-thumb:active {
   background: var(--scrollbar-thumb-active);
   background-clip: padding-box;
+}
+
+/* The Figma scrollbar has no end controls. */
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 *::-webkit-scrollbar-corner {
@@ -103,6 +112,29 @@ h6 {
   letter-spacing: var(--letter-spacing-tight);
   color: var(--color-text-primary);
   margin: 0;
+}
+
+/* Canonical semantic heading roles. Component-specific headings may use their
+ * documented role, but no page relies on browser default heading sizes. */
+h1 {
+  font-size: var(--typography-page-title-size);
+  line-height: var(--typography-page-title-line-height);
+  letter-spacing: var(--type-page-title-letter-spacing);
+}
+
+h2 {
+  font-size: var(--typography-section-title-size);
+  line-height: var(--typography-section-title-line-height);
+  letter-spacing: var(--type-section-title-letter-spacing);
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--typography-card-title-size);
+  line-height: var(--typography-card-title-line-height);
+  letter-spacing: var(--type-card-title-letter-spacing);
 }
 
 p {

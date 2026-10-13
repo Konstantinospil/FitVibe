@@ -130,7 +130,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
       .post("/api/v1/users/avatar")
       .set("Authorization", `Bearer ${authToken}`);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
     expect(response.body.error).toBe("UPLOAD_NO_FILE");
   });
 
@@ -143,8 +143,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
       .attach("avatar", pdfBuffer, "test.pdf")
       .field("Content-Type", "application/pdf");
 
-    // Multer might reject before our handler, so we check for either 400 or 415
-    expect([400, 415]).toContain(response.status);
+    expect(response.status).toBe(422);
   });
 
   it("should reject file that is too large", async () => {
@@ -157,8 +156,8 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
       .attach("avatar", largeBuffer, "large-file.png")
       .field("Content-Type", "image/png");
 
-    // Multer might reject before our handler, so we check for either 400 or 413
-    expect([400, 413]).toContain(response.status);
+    expect(response.status).toBe(422);
+    expect(response.body.error).toBe("UPLOAD_TOO_LARGE");
   });
 
   it("should accept JPEG image", async () => {
@@ -187,7 +186,46 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     expect(response.body.mimeType).toBe("image/png"); // Should be converted to PNG
   });
 
-  it("should process and resize image to 256x256", async () => {
+  it("should reject a non-image payload even when the declared MIME type is allowed", async () => {
+    const response = await request(app)
+      .post("/api/v1/users/me/avatar")
+      .set("Authorization", `Bearer ${authToken}`)
+      .attach("avatar", Buffer.from("not-an-image"), {
+        filename: "spoofed.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error).toBe("UPLOAD_UNSUPPORTED_TYPE");
+  });
+
+  it("should reject EICAR through antivirus scanning and audit the rejection", async () => {
+    const eicar = Buffer.from(
+      "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
+    );
+
+    const response = await request(app)
+      .post("/api/v1/users/me/avatar")
+      .set("Authorization", `Bearer ${authToken}`)
+      .attach("avatar", eicar, {
+        filename: "eicar.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error?.code).toBe("E.UPLOAD.MALWARE_DETECTED");
+
+    const audit = await db("audit_log")
+      .where({ actor_user_id: userId, action: "avatar_upload_rejected" })
+      .orderBy("created_at", "desc")
+      .first();
+
+    expect(audit).toBeDefined();
+    expect(audit.entity_type).toBe("user_media");
+    expect(audit.metadata).toMatchObject({ reason: "malware_detected" });
+  });
+
+  it("should process and resize image to 128x128", async () => {
     // Create a large image (1000x1000)
     const imageBuffer = await createTestImageBuffer(1000, 1000, "png");
 
@@ -199,13 +237,22 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     expect(response.status).toBe(201);
     expect(response.body.success).toBe(true);
 
-    // Verify the processed image is 256x256 by decoding the preview
+    // Verify the processed image is 128x128 by decoding the preview
     const base64Data = response.body.preview.split(",")[1];
     const processedBuffer = Buffer.from(base64Data, "base64");
     const metadata = await sharp(processedBuffer).metadata();
 
-    expect(metadata.width).toBe(256);
-    expect(metadata.height).toBe(256);
+    expect(metadata.width).toBe(128);
+    expect(metadata.height).toBe(128);
+
+    // Verify the persisted, HTTP-served preview rather than only the inline response.
+    const served = await request(app).get(`/api/v1/users/avatar/${userId}`);
+    expect(served.status).toBe(200);
+    const storedImage = await sharp(served.body as Buffer).metadata();
+    expect(storedImage.format).toBe("png");
+    expect(storedImage.width).toBe(128);
+    expect(storedImage.height).toBe(128);
+    expect(served.body).toEqual(processedBuffer);
   });
 
   it("should retrieve uploaded avatar", async () => {
@@ -319,8 +366,69 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     expect(response2.status).toBe(201);
     expect(response2.headers["idempotent-replayed"]).toBe("true");
     expect(response2.headers["idempotency-key"]).toBe(idempotencyKey);
+    expect(response2.body).toEqual(response1.body);
     expect(response2.body.fileUrl).toBe(firstFileUrl);
     expect(response2.body.bytes).toBe(firstBytes);
+
+    const avatars = await db("media").where({
+      owner_id: userId,
+      target_type: "user_avatar",
+      target_id: userId,
+    });
+    expect(avatars).toHaveLength(1);
+    const uploads = await db("audit_log").where({
+      actor_user_id: userId,
+      action: "avatar_upload",
+    });
+    expect(uploads).toHaveLength(1);
+  });
+
+  it("rejects reuse of an idempotency key with different image contents", async () => {
+    const first = await createTestImageBuffer(400, 400, "png");
+    const second = await createTestImageBuffer(400, 400, "jpeg");
+    const key = `avatar-contents-${uuidv4()}`;
+    const upload = (buffer: Buffer, filename: string) =>
+      request(app)
+        .post("/api/v1/users/me/avatar")
+        .set("Authorization", `Bearer ${authToken}`)
+        .set("Idempotency-Key", key)
+        .attach("avatar", buffer, {
+          filename,
+          contentType: "image/png",
+        });
+
+    const firstResponse = await upload(first, "same-name.png");
+    expect(firstResponse.status).toBe(201);
+
+    const secondResponse = await upload(second, "same-name.png");
+    expect(secondResponse.status).toBe(409);
+    expect(secondResponse.body.error?.code).toBe("E.IDEMPOTENCY.MISMATCH");
+  });
+
+  it("invalidates the avatar URL when an image is replaced", async () => {
+    const first = await createTestImageBuffer(500, 500, "png");
+    const second = await createTestImageBuffer(600, 600, "png");
+    const upload = (buffer: Buffer) =>
+      request(app)
+        .post("/api/v1/users/me/avatar")
+        .set("Authorization", `Bearer ${authToken}`)
+        .attach("avatar", buffer, "avatar.png");
+
+    expect((await upload(first)).status).toBe(201);
+    const before = await request(app)
+      .get("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`);
+    expect(before.status).toBe(200);
+    const firstUrl = before.body.avatar?.url;
+    expect(firstUrl).toContain("rev=");
+
+    expect((await upload(second)).status).toBe(201);
+    const after = await request(app)
+      .get("/api/v1/users/me")
+      .set("Authorization", `Bearer ${authToken}`);
+    expect(after.status).toBe(200);
+    expect(after.body.avatar?.url).toContain("rev=");
+    expect(after.body.avatar?.url).not.toBe(firstUrl);
   });
 
   it("should support idempotency for delete", async () => {

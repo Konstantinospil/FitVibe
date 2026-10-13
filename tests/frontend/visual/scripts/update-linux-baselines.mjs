@@ -12,7 +12,7 @@ import { connect } from "node:net";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const PLAYWRIGHT_IMAGE = "mcr.microsoft.com/playwright:v1.63.0-jammy";
+const PLAYWRIGHT_IMAGE = "mcr.microsoft.com/playwright:v1.64.0-jammy";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const frontendDir = resolve(repoRoot, "apps/frontend");
 const dockerRepo = repoRoot.replaceAll("\\", "/");

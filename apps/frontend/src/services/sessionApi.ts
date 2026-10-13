@@ -66,6 +66,11 @@ export interface Session {
   updated_at?: string;
 }
 
+/** List API provides a summary; only the single-session API includes exercises. */
+export interface SessionListItem extends Session {
+  exercise_count: number;
+}
+
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
 }
@@ -81,7 +86,7 @@ export interface SessionQuery {
 }
 
 export interface SessionsListResponse {
-  data: SessionWithExercises[];
+  data: SessionListItem[];
   total: number;
   limit: number;
   offset: number;

@@ -14,12 +14,15 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from "@jest/globals";
 import request from "supertest";
 import bcrypt from "bcryptjs";
+import sharp from "sharp";
 import app from "../../../apps/backend/src/app.js";
 import db from "../../../apps/backend/src/db/index.js";
 import { createUser } from "../../../apps/backend/src/modules/auth/auth.repository.js";
 import {
   truncateAll,
   ensureRolesSeeded,
+  ensureWeightAttributeSeeded,
+  ensureFitnessLevelsSeeded,
   withDatabaseErrorHandling,
   ensureUsernameColumnExists,
 } from "../../setup/test-helpers.js";
@@ -27,6 +30,8 @@ import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { seed as seedLegalPublications } from "../../../apps/backend/src/db/seeds/005_legal_publications.js";
+import { seed as seedGenders } from "../../../apps/backend/src/db/seeds/002_genders.js";
+import { readStorageObject } from "../../../apps/backend/src/services/mediaStorage.service.js";
 
 describeWithTestDatabase("Integration: Auth → Session Flow", () => {
   beforeAll(async () => {
@@ -46,8 +51,11 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
       // Keep the integration fixture aligned with a fresh deployed database:
       // schema migration first, then deterministic catalog/legal seeds.
       await seedLegalPublications(db);
-      // Ensure roles are seeded before creating users
+      await seedGenders(db);
+      // Ensure catalogs required by expanded registration are available.
       await ensureRolesSeeded();
+      await ensureWeightAttributeSeeded();
+      await ensureFitnessLevelsSeeded();
     }, "beforeEach");
   });
 
@@ -145,6 +153,121 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
     const sessionInDb = await db("sessions").where({ id: sessionResponse.body.id }).first();
     expect(sessionInDb).toBeDefined();
     expect(sessionInDb.owner_id).toBe(userId);
+  });
+
+  it("should persist expanded registration profile and clean avatar", async () => {
+    const gender = await db("genders").select("code").orderBy("code", "asc").first();
+    const fitnessLevel = await db("fitness_levels").select("code").orderBy("code", "asc").first();
+    expect(gender?.code).toBeTruthy();
+    expect(fitnessLevel?.code).toBeTruthy();
+
+    const payload = {
+      email: "profile-registration@example.com",
+      username: "profile-registration",
+      password: "SecureP@ssw0rd123!",
+      terms_accepted: true,
+      profile: {
+        display_name: "Profile Registration",
+        weight_kg: 78.5,
+        date_of_birth: "2000-02-20",
+        sex: String(gender.code),
+        fitness_level: String(fitnessLevel.code),
+      },
+    };
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z8Dwn4GBgYGJAQoAHxcCAk+Uzr4AAAAASUVORK5CYII=",
+      "base64",
+    );
+
+    const response = await request(app)
+      .post("/api/v1/auth/register")
+      .field("payload", JSON.stringify(payload))
+      .attach("avatar", png, {
+        filename: "registration-avatar.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(202);
+
+    const { findUserByEmail } =
+      await import("../../../apps/backend/src/modules/auth/auth.repository.js");
+    const user = await findUserByEmail(payload.email);
+    expect(user).toBeDefined();
+
+    const profile = await db("profiles").where({ user_id: user?.id }).first();
+    expect(profile).toMatchObject({
+      gender_code: gender.code,
+      fitness_level_code: fitnessLevel.code,
+    });
+    const storedDateOfBirth =
+      profile.date_of_birth instanceof Date
+        ? profile.date_of_birth.toISOString().slice(0, 10)
+        : String(profile.date_of_birth);
+    expect(storedDateOfBirth).toBe("2000-02-20");
+
+    const weight = await db("bio_attribute_values as values")
+      .join("bio_attributes as attributes", "attributes.id", "values.attribute_id")
+      .where("values.user_id", user?.id)
+      .andWhere("attributes.key", "weight_kg")
+      .select("values.value_number")
+      .first();
+    expect(Number(weight?.value_number)).toBe(78.5);
+
+    const avatar = await db("media")
+      .where({
+        owner_id: user?.id,
+        target_type: "user_avatar",
+        target_id: user?.id,
+      })
+      .first();
+    expect(avatar).toBeDefined();
+    expect(avatar.mime_type).toBe("image/png");
+    expect(avatar.bytes).toBeGreaterThan(0);
+
+    const storedAvatar = await readStorageObject(avatar.storage_key);
+    const storedMetadata = await sharp(storedAvatar).metadata();
+    expect(storedMetadata).toMatchObject({
+      format: "png",
+      width: 128,
+      height: 128,
+    });
+  });
+
+  it("should reject a malware registration avatar before creating the account", async () => {
+    const email = "malware-registration@example.com";
+    const eicar = Buffer.from(
+      "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
+    );
+
+    const response = await request(app)
+      .post("/api/v1/auth/register")
+      .field(
+        "payload",
+        JSON.stringify({
+          email,
+          username: "malware-registration",
+          password: "SecureP@ssw0rd123!",
+          terms_accepted: true,
+          profile: {
+            display_name: "Malware Registration",
+            weight_kg: 75,
+            date_of_birth: "2000-01-15",
+            sex: "prefer_not_to_say",
+            fitness_level: "intermediate",
+          },
+        }),
+      )
+      .attach("avatar", eicar, {
+        filename: "eicar.png",
+        contentType: "image/png",
+      });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error?.code).toBe("E.UPLOAD.MALWARE_DETECTED");
+
+    const { findUserByEmail } =
+      await import("../../../apps/backend/src/modules/auth/auth.repository.js");
+    expect(await findUserByEmail(email)).toBeUndefined();
   });
 
   it("should handle login failure with incorrect password", async () => {

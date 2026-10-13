@@ -12,6 +12,11 @@ const isArchived = (path) => path.startsWith("apps/frontend/archive/");
 
 const owners = [
   {
+    // Explicitly executed in the Architecture & Hardcoding job.
+    name: "typography-contract-regressions",
+    matches: (path) => path === "tests/qa/check-typography-contract.test.mjs",
+  },
+  {
     name: "backend-jest",
     matches: (path) => /^tests\/backend\/.*\.(?:test|spec)\.ts$/.test(path),
   },
@@ -26,7 +31,9 @@ const owners = [
   {
     // Executed explicitly by the E2E job with node --test before Playwright.
     name: "frontend-e2e-observer-contract",
-    matches: (path) => path === "tests/frontend/e2e/request-observer.test.cjs",
+    matches: (path) =>
+      path === "tests/frontend/e2e/request-observer.test.cjs" ||
+      path === "tests/frontend/e2e/browser-diagnostics.test.cjs",
   },
   {
     name: "frontend-visual",

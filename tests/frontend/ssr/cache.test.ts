@@ -55,6 +55,7 @@ describe("SSR cache", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     process.env.NODE_ENV = originalEnv;
     clearCache();
   });
@@ -104,7 +105,6 @@ describe("SSR cache", () => {
     setCachedHtml(url, html);
     vi.advanceTimersByTime(6 * 60 * 1000); // Advance 6 minutes
     const cached = getCachedHtml(url);
-    vi.useRealTimers();
 
     // Should return null for expired cache
     expect(cached).toBeNull();
