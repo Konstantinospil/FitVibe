@@ -43,7 +43,10 @@ module.exports = defineConfig({
       }),
   reporter: [
     ["line"],
-    ["html", { outputFolder: path.join(repositoryRoot, "playwright-report"), open: "never" }],
+    [
+      "html",
+      { outputFolder: path.join(repositoryRoot, "playwright-report"), open: "never" },
+    ],
     ["junit", { outputFile: path.join(repositoryRoot, "test-results/junit.xml") }],
   ],
 });
