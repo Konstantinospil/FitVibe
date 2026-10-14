@@ -165,7 +165,7 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   await expect(page.getByRole("grid")).toBeVisible();
   await apiGet(page, "/api/v1/sessions?limit=20&offset=0");
 
-  await page.getByRole("button", { name: /plan/i }).first().click();
+  await page.getByRole("button", { name: /^plan a workout$/i }).click();
   const editor = page.getByRole("dialog");
   await expect(editor).toBeVisible();
   const exerciseSelect = editor.getByRole("combobox").first();
