@@ -28,7 +28,7 @@ const fallback = (
     role="status"
     aria-live="polite"
   >
-    Loading app…
+    {i18n.t("loading.app")}
   </div>
 );
 
