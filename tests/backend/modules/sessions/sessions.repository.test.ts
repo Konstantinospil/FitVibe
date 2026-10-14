@@ -296,6 +296,46 @@ describe("Sessions Repository", () => {
   });
 
   describe("getSessionWithDetails", () => {
+    it("converts persisted PostgreSQL intervals into valid API durations", async () => {
+      const mockSession: Session = {
+        id: sessionId,
+        owner_id: userId,
+        title: "Interval test",
+        planned_at: "2026-11-02T08:00:00.000Z",
+        status: "planned",
+        visibility: "private",
+      };
+      const builder = createMockQueryBuilder();
+      queryBuilders["sessions"] = builder;
+      queryBuilders["session_exercises as se"] = builder;
+      queryBuilders["exercise_sets"] = builder;
+      builder.first.mockResolvedValue(mockSession);
+      builder.select
+        .mockResolvedValueOnce([
+          {
+            id: "exercise-1",
+            session_id: sessionId,
+            exercise_id: null,
+            order_index: 1,
+            notes: null,
+            planned_sets: 2,
+            planned_reps: 8,
+            planned_duration: { minutes: 10 },
+            planned_rest: { minutes: 1, seconds: 30 },
+            planned_extras: {},
+          },
+        ])
+        .mockResolvedValueOnce([]);
+
+      const session = await sessionsRepository.getSessionWithDetails(sessionId, userId);
+      expect(session?.exercises[0].planned).toMatchObject({
+        sets: 2,
+        reps: 8,
+        duration: "PT10M",
+        rest: "PT1M30S",
+      });
+    });
+
     it("should get session with details", async () => {
       const mockSession: Session = {
         id: sessionId,
