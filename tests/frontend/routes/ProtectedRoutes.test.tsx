@@ -11,7 +11,13 @@ import {
 
 vi.mock("../../../apps/frontend/src/contexts/AuthContext");
 vi.mock("../../../apps/frontend/src/i18n/config", () => ({
-  ensurePrivateTranslationsLoaded: vi.fn(() => Promise.resolve()),
+  default: { changeLanguage: vi.fn().mockResolvedValue(undefined) },
+  ensurePrivateTranslationsLoaded: vi.fn().mockResolvedValue(undefined),
+  loadLanguageTranslations: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../../apps/frontend/src/services/api", () => ({
+  getUserPreferences: vi.fn().mockResolvedValue({ language: "de", measurementSystem: "metric" }),
 }));
 
 vi.mock("../../../apps/frontend/src/components/ProtectedRoute", () => ({
@@ -95,6 +101,38 @@ describe("ProtectedRoutes", () => {
     await waitFor(() => {
       expect(ensurePrivateTranslationsLoaded).toHaveBeenCalled();
     });
+  });
+
+  it("loads the signed-in account language before displaying protected content", async () => {
+    const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
+    const { default: i18n, loadLanguageTranslations } =
+      await import("../../../apps/frontend/src/i18n/config");
+    let resolvePreferences!: (value: { language: "el"; measurementSystem: "metric" }) => void;
+    vi.mocked(getUserPreferences).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolvePreferences = resolve;
+      }),
+    );
+
+    renderRoute("/");
+    expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
+    resolvePreferences({ language: "el", measurementSystem: "metric" });
+
+    await waitFor(() => {
+      expect(loadLanguageTranslations).toHaveBeenCalledWith("el");
+      expect(i18n.changeLanguage).toHaveBeenCalledWith("el");
+    });
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+  });
+
+  it("still renders private routes when account preferences cannot be loaded", async () => {
+    const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
+    const { default: i18n } = await import("../../../apps/frontend/src/i18n/config");
+    vi.mocked(getUserPreferences).mockRejectedValueOnce(new Error("Unavailable"));
+
+    renderRoute("/");
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+    expect(i18n.changeLanguage).not.toHaveBeenCalled();
   });
 
   it("renders Home at the authenticated root", async () => {

@@ -7,7 +7,8 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 import { queryClient as defaultQueryClient } from "../lib/queryClient";
-import { ensurePrivateTranslationsLoaded } from "../i18n/config";
+import i18n, { ensurePrivateTranslationsLoaded, loadLanguageTranslations } from "../i18n/config";
+import { getUserPreferences } from "../services/api";
 import { readDehydratedStateFromDocument } from "../ssr/dehydratedState";
 
 const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
@@ -50,14 +51,38 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
   const [translationsReady, setTranslationsReady] = useState(false);
 
   useEffect(() => {
-    void Promise.resolve()
-      .then(() => ensurePrivateTranslationsLoaded())
-      .finally(() => {
-        setTranslationsReady(true);
-      });
+    let active = true;
+
+    void (async () => {
+      try {
+        await ensurePrivateTranslationsLoaded();
+        // The account preference is authoritative after authentication (ADR-031).
+        // The browser language remains a fallback if preferences cannot be fetched.
+        const preferences = await getUserPreferences();
+        if (!active) {
+          return;
+        }
+        await loadLanguageTranslations(preferences.language);
+        if (!active) {
+          return;
+        }
+        await i18n.changeLanguage(preferences.language);
+      } catch {
+        // A preference read failure must not prevent access to protected routes.
+      } finally {
+        if (active) {
+          setTranslationsReady(true);
+        }
+      }
+    })();
+
     void import("../utils/fontLoader").then(({ loadAppFonts }) => {
       loadAppFonts();
     });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const dehydratedState = propDehydratedState ?? getDehydratedState();

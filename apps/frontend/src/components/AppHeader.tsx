@@ -142,7 +142,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
         <div className="app-header__utilities">
           <ThemeToggle variant="header" />
-          <LanguageSwitcher variant="header" />
+          <LanguageSwitcher variant="header" persistPreference />
           {variant === "standard" ? (
             <IconButton
               icon={<LogOut aria-hidden="true" />}
