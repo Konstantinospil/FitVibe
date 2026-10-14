@@ -13,6 +13,10 @@ export interface PlanRow {
   completed_count: number;
   start_date: string | null;
   end_date: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
+  activated_at?: string | null;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -26,6 +30,9 @@ export interface CreatePlanInput {
   status?: "active" | "completed";
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
 }
 
 export interface UpdatePlanInput {
@@ -36,6 +43,9 @@ export interface UpdatePlanInput {
   completed_count?: number;
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
 }
 
 export interface ListPlansFilters {
@@ -120,6 +130,9 @@ export async function createPlan(input: CreatePlanInput, trx?: Knex.Transaction)
     completed_count: 0,
     start_date: input.start_date ?? null,
     end_date: input.end_date ?? null,
+    duration_weeks: input.duration_weeks ?? null,
+    target_frequency: input.target_frequency ?? null,
+    time_zone: input.time_zone ?? "UTC",
     created_at: now,
     updated_at: now,
     archived_at: null,
