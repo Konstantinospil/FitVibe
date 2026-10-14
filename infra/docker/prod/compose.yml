@@ -20,6 +20,7 @@ services:
       - ${FITVIBE_ENV_FILE:-.env}
     environment:
       PORT: "4000"
+      MEDIA_STORAGE_ROOT: /app/storage
       PGHOST: db
       PGPORT: "5432"
       PGDATABASE: ${POSTGRES_DB:-fitvibe}
@@ -42,6 +43,10 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
+      # User avatars and progress photos must survive backend image replacement.
+      - type: volume
+        source: media_data
+        target: /app/storage
       - type: bind
         source: /srv/stacks/fitvibe/keys
         target: /app/keys
@@ -123,6 +128,7 @@ services:
       start_period: 60s
 
 volumes:
+  media_data:
   db_data:
   redis_data:
   clamav_signatures:
