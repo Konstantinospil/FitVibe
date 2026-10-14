@@ -72,6 +72,7 @@ const createMockPlan = (overrides?: Partial<PlanRow>): PlanRow => ({
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   archived_at: null,
+  revision: 1,
   ...overrides,
 });
 

@@ -16,6 +16,7 @@ import {
 import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
 import { logger } from "../../config/logger.js";
+import { matchesPlanIfMatch } from "./plans.etag.js";
 
 /**
  * Get a plan by ID, ensuring the user owns it
@@ -88,13 +89,25 @@ export async function updateUserPlan(
   userId: string,
   planId: string,
   updates: UpdatePlanInput,
+  ifMatch?: string,
 ): Promise<PlanRow> {
-  // Verify ownership
-  await getPlanById(userId, planId);
+  // Verify ownership before checking a client-supplied validator.
+  const existing = await getPlanById(userId, planId);
+  if (ifMatch !== undefined && !matchesPlanIfMatch(existing, ifMatch)) {
+    throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
+  }
 
-  const updatedCount = await updatePlanRepo(planId, updates);
+  // ETag writes use an atomic version predicate rather than a check-then-write.
+  // Without If-Match, updates remain last-writer-wins for legacy clients.
+  const updatedCount =
+    ifMatch === undefined
+      ? await updatePlanRepo(planId, updates)
+      : await updatePlanRepo(planId, updates, undefined, existing.revision);
 
   if (updatedCount === 0) {
+    if (ifMatch !== undefined) {
+      throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
+    }
     throw new HttpError(404, "E.PLAN.NOT_FOUND", "Plan not found or already archived");
   }
 
