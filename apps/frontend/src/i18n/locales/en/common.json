@@ -1121,5 +1121,8 @@
         "types": "Exercise types could not be loaded."
       }
     }
+  },
+  "loading": {
+    "app": "Loading app…"
   }
 }

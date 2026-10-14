@@ -20,6 +20,7 @@ permissions:
   actions: read
 
 env:
+  ADMIN_PASSWORD: "CI-only-admin-password-2026!"
   REGISTRY: ghcr.io
   NODE_VERSION: "24"
   # Disable all caching

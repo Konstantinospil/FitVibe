@@ -1121,5 +1121,8 @@
         "types": "Übungstypen konnten nicht geladen werden."
       }
     }
+  },
+  "loading": {
+    "app": "App wird geladen…"
   }
 }

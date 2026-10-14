@@ -13,6 +13,7 @@ The production host therefore must not maintain an independent Compose definitio
 `/srv/stacks/fitvibe/.env` supplies host-specific configuration and secrets. At minimum it must define:
 
 - `POSTGRES_PASSWORD`
+- `ADMIN_PASSWORD` (at least 12 characters, provisioned privately before the first database seed; never commit the password)
 - application variables required by `.env`/the backend runtime
 
 `INGRESS_IMAGE`, `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `BACKOFFICE_IMAGE`, `POSTGRES_IMAGE`, `CLAMAV_IMAGE`, and `REDIS_IMAGE` are injected by CD from the successful main CI image-digest artifact. The production host does not maintain these image references in `.env`.

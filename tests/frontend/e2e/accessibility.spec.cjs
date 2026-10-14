@@ -2,6 +2,26 @@ const { test, expect } = require("@playwright/test");
 const { AxeBuilder } = require("@axe-core/playwright");
 const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
+const APPLICATION_ORIGIN = new URL(
+  process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173",
+).origin;
+
+async function setAccountLanguage(page, locale) {
+  const request = page.context().request;
+  const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
+  expect(csrfResponse.ok()).toBe(true);
+  const { csrfToken } = await csrfResponse.json();
+  const response = await request.patch(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`, {
+    data: { language: locale },
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+  });
+  expect(response.status()).toBe(200);
+  expect((await response.json()).language).toBe(locale);
+  const persisted = await request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
+  expect(persisted.status()).toBe(200);
+  expect((await persisted.json()).language).toBe(locale);
+}
+
 const accessibilityPages = [
   { name: "Login", path: "/login" },
   { name: "Register", path: "/register" },
@@ -55,13 +75,14 @@ test.describe("Accessibility and localized UI acceptance", () => {
   for (const locale of supportedLocales) {
     test(`workout creator rest-time controls are accessible and translated: ${locale}`, async ({ page }) => {
       const messages = localeMessages[locale];
-      await page.addInitScript((code) => {
-        window.localStorage.setItem("fitvibe:language", code);
-      }, locale);
       await preparePage(page, { authenticated: true });
+      // Account preference is authoritative for signed-in users; test the persisted
+      // preference through the real API rather than overriding browser storage.
+      await setAccountLanguage(page, locale);
       await page.goto("/calendar");
       await waitForApp(page);
 
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
       const planButton = page.getByRole("button", {
         name: messages.calendarSurface.actions.plan,
         exact: true,
