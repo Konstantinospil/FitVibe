@@ -1121,5 +1121,8 @@
         "types": "Les types d’exercice n’ont pas pu être chargés."
       }
     }
+  },
+  "loading": {
+    "app": "Chargement de l’application…"
   }
 }
