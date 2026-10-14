@@ -187,6 +187,12 @@ export async function updatePlan(
   }
 
   const query = withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at");
+  // Prevent concurrent schedule edits after another request activates the plan.
+  if (updates.start_date !== undefined || updates.end_date !== undefined ||
+      updates.duration_weeks !== undefined || updates.target_frequency !== undefined ||
+      updates.time_zone !== undefined) {
+    query.whereNull("activated_at");
+  }
 
   // Compare-and-swap in SQL: two simultaneous editors cannot both win.
   if (expectedRevision !== undefined) {
