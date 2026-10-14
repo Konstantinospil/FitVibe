@@ -363,12 +363,10 @@ describe("Plans Service", () => {
         .mockResolvedValueOnce(undefined); // Plan not found after update
       mockedUpdatePlan.mockResolvedValue(0);
 
-      await expect(
-        plansService.updateUserPlan("user-123", "plan-1", { name: "Updated Plan" }),
-      ).rejects.toThrow(HttpError);
       const error = await plansService
         .updateUserPlan("user-123", "plan-1", { name: "Updated Plan" })
         .catch((e) => e);
+      expect(error).toBeInstanceOf(HttpError);
       expect((error as HttpError).code).toBe("E.PLAN.NOT_FOUND");
     });
 
