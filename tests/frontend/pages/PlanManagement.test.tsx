@@ -114,7 +114,11 @@ describe("Training plan management", () => {
     fireEvent.change(screen.getByLabelText("trainingPlans.fields.endDate"), {
       target: { value: "2026-10-01" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.save" }));
+    const endDate = screen.getByLabelText("trainingPlans.fields.endDate");
+    expect(endDate).toHaveAttribute("min", "2026-11-01");
+    // Native constraint validation blocks form submission in a real browser.
+    // Exercise the browser invalid event and its accessible localized feedback.
+    fireEvent.invalid(endDate, { target: { validity: { rangeUnderflow: true } } });
     expect(await screen.findByText("trainingPlans.errors.dateOrder")).toBeInTheDocument();
     expect(plans.createTrainingPlan).not.toHaveBeenCalled();
   });
