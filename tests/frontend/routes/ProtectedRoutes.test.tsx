@@ -11,7 +11,7 @@ import {
 
 vi.mock("../../../apps/frontend/src/contexts/AuthContext");
 vi.mock("../../../apps/frontend/src/i18n/config", () => ({
-  default: { changeLanguage: vi.fn().mockResolvedValue(undefined) },
+  default: { changeLanguage: vi.fn().mockResolvedValue(undefined), t: (key: string) => key },
   ensurePrivateTranslationsLoaded: vi.fn().mockResolvedValue(undefined),
   loadLanguageTranslations: vi.fn().mockResolvedValue(undefined),
 }));
