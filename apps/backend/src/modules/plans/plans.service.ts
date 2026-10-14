@@ -99,6 +99,12 @@ export async function updateUserPlan(
   if (ifMatch !== undefined && !matchesPlanIfMatch(existing, ifMatch)) {
     throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
   }
+  const changesSchedule = updates.start_date !== undefined ||
+    updates.end_date !== undefined || updates.duration_weeks !== undefined ||
+    updates.target_frequency !== undefined || updates.time_zone !== undefined;
+  if (existing.activated_at && changesSchedule) {
+    throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+  }
 
   // ETag writes use an atomic version predicate rather than a check-then-write.
   // Without If-Match, updates remain last-writer-wins for legacy clients.
@@ -108,6 +114,12 @@ export async function updateUserPlan(
       : await updatePlanRepo(planId, updates, undefined, existing.revision);
 
   if (updatedCount === 0) {
+    if (changesSchedule) {
+      const latest = await findPlanById(planId);
+      if (latest?.activated_at) {
+        throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+      }
+    }
     if (ifMatch !== undefined) {
       throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
     }
