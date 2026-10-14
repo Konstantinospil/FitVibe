@@ -8,7 +8,9 @@ import {
   archiveUserPlan,
   deleteUserPlan,
   getUserPlanStats,
+  activateUserPlan,
 } from "./plans.service.js";
+import { validTimeZone } from "./plans.activation.schedule.js";
 import { HttpError, readRouteParam } from "../../utils/http.js";
 import { planETag } from "./plans.etag.js";
 
@@ -128,7 +130,7 @@ export async function updatePlanHandler(req: Request, res: Response): Promise<vo
 
   const parsed = updatePlanSchema.safeParse(req.body);
   if (!parsed.success) {
-    throw new HttpError(400, "E.PLAN.INVALID_INPUT", "Invalid update data", parsed.error.flatten());
+    throw new HttpError(422, "E.PLAN.INVALID_INPUT", "Invalid update data", parsed.error.flatten());
   }
 
   const header = req.headers["if-match"];
