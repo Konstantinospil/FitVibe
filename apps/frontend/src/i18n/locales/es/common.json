@@ -1121,5 +1121,8 @@
         "types": "No se pudieron cargar los tipos de ejercicio."
       }
     }
+  },
+  "loading": {
+    "app": "Cargando la aplicación…"
   }
 }
