@@ -80,8 +80,11 @@ export async function getPlanHandler(req: Request, res: Response): Promise<void>
 
 const createPlanSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200, "Name is too long"),
-  start_date: z.string().nullable().optional(),
-  end_date: z.string().nullable().optional(),
+  start_date: z.iso.date().nullable().optional(),
+  end_date: z.iso.date().nullable().optional(),
+  duration_weeks: z.number().int().min(1).max(52).nullable().optional(),
+  target_frequency: z.number().int().min(1).max(7).nullable().optional(),
+  time_zone: z.string().max(128).refine(validTimeZone).optional(),
 });
 
 /**
@@ -93,7 +96,7 @@ export async function createPlanHandler(req: Request, res: Response): Promise<vo
 
   const parsed = createPlanSchema.safeParse(req.body);
   if (!parsed.success) {
-    throw new HttpError(400, "E.PLAN.INVALID_INPUT", "Invalid plan data", parsed.error.flatten());
+    throw new HttpError(422, "E.PLAN.INVALID_INPUT", "Invalid plan data", parsed.error.flatten());
   }
 
   const plan = await createUserPlan(userId, parsed.data);
@@ -104,8 +107,11 @@ export async function createPlanHandler(req: Request, res: Response): Promise<vo
 const updatePlanSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
   status: z.enum(["active", "completed"]).optional(),
-  start_date: z.string().nullable().optional(),
-  end_date: z.string().nullable().optional(),
+  start_date: z.iso.date().nullable().optional(),
+  end_date: z.iso.date().nullable().optional(),
+  duration_weeks: z.number().int().min(1).max(52).nullable().optional(),
+  target_frequency: z.number().int().min(1).max(7).nullable().optional(),
+  time_zone: z.string().max(128).refine(validTimeZone).optional(),
 });
 
 /**
@@ -165,4 +171,12 @@ export async function deletePlanHandler(req: Request, res: Response): Promise<vo
 
   await deleteUserPlan(userId, id);
   res.status(204).send();
+}
+
+/** POST /api/v1/plans/:id/activate */
+export async function activatePlanHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req);
+  const id = readRouteParam(req.params.id, "id");
+  const plan = await activateUserPlan(userId, id);
+  res.json(plan);
 }
