@@ -275,7 +275,6 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                   type="date"
                   value={draft.endDate}
                   onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
-                  min={draft.startDate || undefined}
                   disabled={busy}
                 />
               </label>
