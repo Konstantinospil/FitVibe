@@ -80,7 +80,7 @@ for (const locale of LOCALES) {
   const localeName = LOCALE_NAMES[locale];
   const keys = localeKeys[locale];
   // For Greek, exclude the greekCharacters section from comparison
-  const excludePrefix = locale === "el" ? "greekCharacters" : null;
+  const excludePrefix = locale === "el" ? "common.greekCharacters." : null;
   const missingInLocale = diff(enKeys, keys, excludePrefix);
   const extraInLocale = diff(keys, enKeys, excludePrefix);
 
