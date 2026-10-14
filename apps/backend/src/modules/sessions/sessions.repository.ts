@@ -75,6 +75,29 @@ function toDateString(value: unknown): string | undefined {
   return undefined;
 }
 
+/** PostgreSQL's interval parser returns an object, not the duration string used by the API. */
+type DatabaseInterval = string | Partial<Record<"years" | "months" | "days" | "hours" | "minutes" | "seconds" | "milliseconds", number>> | null;
+
+function toSessionInterval(value: DatabaseInterval): string | null {
+  if (value === null || typeof value === "string") {
+    return value;
+  }
+  const field = (name: keyof Exclude<DatabaseInterval, string | null>, unit: string) => {
+    const amount = value[name] ?? 0;
+    if (!Number.isSafeInteger(amount) || amount < 0) {
+      throw new Error(`Invalid persisted session interval field: ${name}`);
+    }
+    return amount ? `${amount}${unit}` : "";
+  };
+  // The session API only supports whole seconds. Never silently discard precision.
+  if (value.milliseconds) {
+    throw new Error("Persisted session interval has unsupported fractional seconds");
+  }
+  const date = field("years", "Y") + field("months", "M") + field("days", "D");
+  const time = field("hours", "H") + field("minutes", "M") + field("seconds", "S");
+  return `P${date}${time ? `T${time}` : date ? "" : "T0S"}`;
+}
+
 function normalizeExtras(extras: unknown): Record<string, unknown> {
   if (!extras || typeof extras !== "object" || Array.isArray(extras)) {
     return {};
@@ -194,9 +217,9 @@ type SessionExerciseRow = {
   planned_reps: number | null;
   planned_load: number | string | null;
   planned_distance: number | string | null;
-  planned_duration: string | null;
+  planned_duration: DatabaseInterval;
   planned_rpe: number | null;
-  planned_rest: string | null;
+  planned_rest: DatabaseInterval;
   planned_extras: unknown;
 };
 
@@ -303,9 +326,9 @@ export async function getSessionWithDetails(
       reps: row.planned_reps ?? null,
       load: toNumber(row.planned_load),
       distance: toNumber(row.planned_distance),
-      duration: row.planned_duration ?? null,
+      duration: toSessionInterval(row.planned_duration),
       rpe: row.planned_rpe ?? null,
-      rest: row.planned_rest ?? null,
+      rest: toSessionInterval(row.planned_rest),
       extras: normalizeExtras(row.planned_extras),
     });
 
