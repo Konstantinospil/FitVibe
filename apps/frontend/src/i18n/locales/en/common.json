@@ -1124,5 +1124,45 @@
   },
   "loading": {
     "app": "Loading app…"
+  },
+  "trainingPlans": {
+    "title": "Training plans",
+    "description": "Create, edit, and archive training plans.",
+    "listTitle": "Your plans",
+    "createTitle": "Create training plan",
+    "editTitle": "Edit training plan",
+    "noDate": "Not set",
+    "dateRange": "{{start}} – {{end}}",
+    "sessionCount": "{{count}} sessions",
+    "loading": "Loading plans…",
+    "empty": "No training plans yet.",
+    "fields": {
+      "name": "Name",
+      "startDate": "Start date",
+      "endDate": "End date"
+    },
+    "actions": {
+      "manage": "Manage training plans",
+      "close": "Close",
+      "create": "New plan",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "reload": "Load latest version"
+    },
+    "delete": {
+      "title": "Archive training plan",
+      "message": "Archive {{name}}? Existing workouts will be preserved."
+    },
+    "errors": {
+      "list": "Could not load training plans.",
+      "loadDetail": "Could not load the plan for editing.",
+      "required": "Enter a plan name.",
+      "dateOrder": "End date must not be before start date.",
+      "save": "Could not save the plan.",
+      "delete": "Could not archive the plan.",
+      "conflict": "This plan was changed elsewhere. Reload the latest version before editing again."
+    }
   }
 }
