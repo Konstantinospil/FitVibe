@@ -118,7 +118,7 @@ describe("Training plan management", () => {
     expect(endDate).toHaveAttribute("min", "2026-11-01");
     // Native constraint validation blocks form submission in a real browser.
     // Exercise the browser invalid event and its accessible localized feedback.
-    fireEvent.invalid(endDate, { target: { validity: { rangeUnderflow: true } } });
+    fireEvent.invalid(endDate);
     expect(await screen.findByText("trainingPlans.errors.dateOrder")).toBeInTheDocument();
     expect(plans.createTrainingPlan).not.toHaveBeenCalled();
   });
