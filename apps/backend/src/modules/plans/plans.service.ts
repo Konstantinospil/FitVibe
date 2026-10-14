@@ -67,7 +67,7 @@ export async function listUserPlans(
  */
 export async function createUserPlan(
   userId: string,
-  data: { name: string; start_date?: string | null; end_date?: string | null },
+  data: Omit<CreatePlanInput, "id" | "user_id" | "status">,
 ): Promise<PlanRow> {
   const planId = uuidv4();
 
@@ -77,6 +77,9 @@ export async function createUserPlan(
     name: data.name,
     start_date: data.start_date,
     end_date: data.end_date,
+    ...(data.duration_weeks !== undefined ? { duration_weeks: data.duration_weeks } : {}),
+    ...(data.target_frequency !== undefined ? { target_frequency: data.target_frequency } : {}),
+    ...(data.time_zone !== undefined ? { time_zone: data.time_zone } : {}),
   };
 
   return createPlan(input);
@@ -202,3 +205,5 @@ export async function getUserPlanStats(
 
   return { total, active, completed, archived };
 }
+
+export { activateUserPlan } from "./plans.activation.service.js";
