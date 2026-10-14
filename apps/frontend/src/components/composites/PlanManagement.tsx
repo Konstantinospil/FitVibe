@@ -274,7 +274,16 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                 <InputControl
                   type="date"
                   value={draft.endDate}
-                  onChange={(event) => setDraft({ ...draft, endDate: event.target.value })}
+                  onChange={(event) => {
+                    setDraft({ ...draft, endDate: event.target.value });
+                    setError(null);
+                  }}
+                  min={draft.startDate || undefined}
+                  onInvalid={(event) => {
+                    if (event.currentTarget.validity.rangeUnderflow) {
+                      setError(t("trainingPlans.errors.dateOrder"));
+                    }
+                  }}
                   disabled={busy}
                 />
               </label>
