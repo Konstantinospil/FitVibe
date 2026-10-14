@@ -76,7 +76,12 @@ function toDateString(value: unknown): string | undefined {
 }
 
 /** PostgreSQL's interval parser returns an object, not the duration string used by the API. */
-type DatabaseInterval = string | Partial<Record<"years" | "months" | "days" | "hours" | "minutes" | "seconds" | "milliseconds", number>> | null;
+type DatabaseInterval =
+  | string
+  | Partial<
+      Record<"years" | "months" | "days" | "hours" | "minutes" | "seconds" | "milliseconds", number>
+    >
+  | null;
 
 function toSessionInterval(value: DatabaseInterval): string | null {
   if (value === null || typeof value === "string") {
