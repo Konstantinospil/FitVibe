@@ -151,7 +151,7 @@ describe("database seed modules", () => {
         ) as {
           password_hash: string;
         };
-        expect(row.password_hash).toBe("hashed-admin");
+        expect(row.password_hash).toBe(`hashed-${process.env.ADMIN_PASSWORD}`);
       },
     },
     {
