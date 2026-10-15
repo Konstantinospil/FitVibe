@@ -45,11 +45,14 @@ jobs:
       - name: Resolve CI run
         id: resolve
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          REQUESTED_CI_RUN_ID: ${{ inputs.ci_run_id || '' }}
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const requested = '${{ inputs.ci_run_id }}'.trim();
+            // Workflow dispatch data must never be interpolated into executable JavaScript.
+            const requested = (process.env.REQUESTED_CI_RUN_ID || '').trim();
 
             let run;
 
