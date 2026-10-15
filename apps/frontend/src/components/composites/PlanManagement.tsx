@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, InputControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import {
+  activateTrainingPlan,
   createTrainingPlan,
   deleteTrainingPlan,
   getTrainingPlan,
@@ -11,6 +12,7 @@ import {
   updateTrainingPlan,
   type TrainingPlan,
   type TrainingPlanInput,
+  type TrainingPlanPatch,
 } from "../../services/planApi";
 import { logger } from "../../utils/logger";
 import { ConfirmDialog } from "../ConfirmDialog";
@@ -31,6 +33,10 @@ interface PlanDraft {
   name: string;
   startDate: string;
   endDate: string;
+  durationWeeks: string;
+  targetFrequency: string;
+  timeZone: string;
+  original?: TrainingPlan;
 }
 
 const planDraft = (plan: TrainingPlan, etag: string): PlanDraft => ({
@@ -39,12 +45,19 @@ const planDraft = (plan: TrainingPlan, etag: string): PlanDraft => ({
   name: plan.name,
   startDate: plan.start_date?.slice(0, 10) ?? "",
   endDate: plan.end_date?.slice(0, 10) ?? "",
+  durationWeeks: String(plan.duration_weeks ?? ""),
+  targetFrequency: String(plan.target_frequency ?? ""),
+  timeZone: plan.time_zone ?? "UTC",
+  original: plan,
 });
 
 const emptyDraft = (): PlanDraft => ({
   name: "",
   startDate: "",
   endDate: "",
+  durationWeeks: "",
+  targetFrequency: "",
+  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
 });
 
 const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
@@ -114,7 +127,18 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
       name: draft.name.trim(),
       start_date: draft.startDate || null,
       end_date: draft.endDate || null,
+      ...(draft.durationWeeks ? { duration_weeks: Number(draft.durationWeeks) } : {}),
+      ...(draft.targetFrequency ? { target_frequency: Number(draft.targetFrequency) } : {}),
+      time_zone: draft.timeZone,
     };
+    const patch: TrainingPlanPatch = {};
+    if (draft.original) {
+      for (const key of Object.keys(input) as Array<keyof TrainingPlanInput>) {
+        if (input[key] !== draft.original[key]) {
+          Object.assign(patch, { [key]: input[key] });
+        }
+      }
+    }
     setBusy(true);
     resetMessages();
     try {
@@ -122,7 +146,7 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
         if (!draft.etag) {
           throw new Error("Cannot save a plan without its version");
         }
-        await updateTrainingPlan(draft.id, input, draft.etag);
+        await updateTrainingPlan(draft.id, patch, draft.etag);
       } else {
         await createTrainingPlan(input);
       }
@@ -140,6 +164,22 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
         draft.id ? `/api/v1/plans/${draft.id}` : "/api/v1/plans",
         draft.id ? "PATCH" : "POST",
       );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const activatePlan = async (plan: TrainingPlan) => {
+    if (busy) return;
+    setBusy(true);
+    resetMessages();
+    try {
+      await activateTrainingPlan(plan.id);
+      await queryClient.invalidateQueries({ queryKey: ["training-plans"] });
+      await queryClient.invalidateQueries({ queryKey: ["calendar"] });
+    } catch (cause) {
+      setError(t("trainingPlans.errors.activate"));
+      logger.apiError("Failed to activate training plan", cause, `/api/v1/plans/${plan.id}/activate`, "POST");
     } finally {
       setBusy(false);
     }
@@ -284,8 +324,26 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                       setError(t("trainingPlans.errors.dateOrder"));
                     }
                   }}
-                  disabled={busy}
+                  disabled={busy || Boolean(draft.original?.activated_at)}
                 />
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("trainingPlans.fields.durationWeeks")}</span>
+                <InputControl type="number" min="1" max="52" step="1" value={draft.durationWeeks}
+                  onChange={(event) => setDraft({ ...draft, durationWeeks: event.target.value })}
+                  disabled={busy || Boolean(draft.original?.activated_at)} />
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("trainingPlans.fields.targetFrequency")}</span>
+                <InputControl type="number" min="1" max="7" step="1" value={draft.targetFrequency}
+                  onChange={(event) => setDraft({ ...draft, targetFrequency: event.target.value })}
+                  disabled={busy || Boolean(draft.original?.activated_at)} />
+              </label>
+              <label className="form-label">
+                <span className="form-label-text">{t("trainingPlans.fields.timeZone")}</span>
+                <InputControl value={draft.timeZone}
+                  onChange={(event) => setDraft({ ...draft, timeZone: event.target.value })}
+                  disabled={busy || Boolean(draft.original?.activated_at)} />
               </label>
             </FormStack>
           ) : (
@@ -316,6 +374,12 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                   supporting={t("trainingPlans.sessionCount", { count: plan.session_count })}
                   trailing={
                     <FormActions>
+                      {!plan.activated_at && plan.start_date && plan.duration_weeks && plan.target_frequency ? (
+                        <Button type="button" size="sm" variant="secondary" disabled={busy}
+                          onClick={() => void activatePlan(plan)}>
+                          {t("trainingPlans.actions.activate")}
+                        </Button>
+                      ) : null}
                       <Button
                         type="button"
                         size="sm"
