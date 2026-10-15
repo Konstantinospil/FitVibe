@@ -352,8 +352,26 @@ jobs:
               fi
             fi
             git rev-parse HEAD > "${recovery}/previous-source-sha"
-            printf '%s\\n' "${recovery}" > "${backup_dir}/latest-recovery-path"
+            printf '%s\n' "${recovery}" > "${backup_dir}/latest-recovery-path"
             echo "Recovery checkpoint: ${recovery}"
+
+            deployment_switched=0
+            migration_started=0
+            restore_previous_stack() {
+              status=$?
+              trap - EXIT
+              if [ "${status}" -ne 0 ] && [ "${deployment_switched}" -eq 1 ] && [ "${migration_started}" -eq 0 ] && [ -s "${recovery}/previous-images.txt" ]; then
+                echo "Pre-migration deployment failed; restoring previous Compose configuration." >&2
+                cp "${recovery}/compose.yml" "${PROD_STACK_DIR}/compose.yml"
+                if ! (cd "${PROD_STACK_DIR}" && env -u INGRESS_IMAGE -u BACKEND_IMAGE -u FRONTEND_IMAGE -u BACKOFFICE_IMAGE -u POSTGRES_IMAGE -u CLAMAV_IMAGE -u REDIS_IMAGE docker compose --env-file .env -f compose.yml up -d --remove-orphans); then
+                  echo "Automatic restoration failed; manual recovery required: ${recovery}" >&2
+                fi
+              elif [ "${status}" -ne 0 ] && [ "${migration_started}" -eq 1 ]; then
+                echo "Database mutation may have occurred. Manual recovery required: ${recovery}" >&2
+              fi
+              exit "${status}"
+            }
+            trap restore_previous_stack EXIT
 
             git checkout -B main "${DEPLOY_SHA}"
 
@@ -407,10 +425,12 @@ jobs:
             fi
 
             compose pull
+            deployment_switched=1
             compose up -d --remove-orphans
 
             # After this point schema/data changes may be non-reversible.
             # A failed migration requires backup-based recovery, not blind image rollback.
+            migration_started=1
             echo "Database mutation boundary reached; automatic image rollback is unsafe."
             echo "Pre-deploy state saved at ${recovery}"
             compose exec -T backend node dist/db/utils/migrateAll.js
