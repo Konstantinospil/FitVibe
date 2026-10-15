@@ -1021,12 +1021,14 @@
       "duration": "Duration (seconds)",
       "exertion": "Target exertion",
       "restSet": "Rest after each set (seconds)",
-      "restExercise": "Rest after exercise (seconds)"
+      "restExercise": "Rest after exercise (seconds)",
+      "trainingPlan": "Training plan"
     },
     "placeholders": {
       "name": "A name for the workout",
       "notes": "Describe the workout",
-      "exercise": "Select an exercise"
+      "exercise": "Select an exercise",
+      "noTrainingPlan": "No training plan"
     },
     "metrics": {
       "caloriesPerMinute": "Calories / minute",
