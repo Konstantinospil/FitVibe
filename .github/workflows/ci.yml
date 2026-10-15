@@ -196,6 +196,9 @@ jobs:
       - name: Validate canonical production Compose contract
         run: bash scripts/validate-production-compose.sh
 
+      - name: Verify CI/CD workflow safety contracts
+        run: node --test tests/qa/ci-cd-contract.test.cjs
+
   release_governance:
     name: Release Governance
     runs-on: ubuntu-latest
