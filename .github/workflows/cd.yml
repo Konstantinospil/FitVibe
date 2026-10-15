@@ -345,7 +345,7 @@ jobs:
               cp "${PROD_STACK_DIR}/compose.yml" "${recovery}/compose.yml"
               # Preserve the *resolved* immutable image references, not variables
               # inherited from the new deployment.
-              (cd "${PROD_STACK_DIR}" && docker compose --env-file .env -f compose.yml config --images) > "${recovery}/previous-images.txt"
+              (cd "${PROD_STACK_DIR}" && env -u INGRESS_IMAGE -u BACKEND_IMAGE -u FRONTEND_IMAGE -u BACKOFFICE_IMAGE -u POSTGRES_IMAGE -u CLAMAV_IMAGE -u REDIS_IMAGE docker compose --env-file .env -f compose.yml config --images) > "${recovery}/previous-images.txt"
               if ! grep -Eq '@sha256:[0-9a-fA-F]{64}"${PROD_SOURCE_DIR}/infra/docker/prod/compose.yml"
             if [ ! -f "${canonical_compose}" ]; then
               echo "Canonical production compose file not found at ${canonical_compose}" >&2
