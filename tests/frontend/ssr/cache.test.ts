@@ -154,48 +154,58 @@ describe("SSR cache", () => {
     consoleWarnSpy.mockRestore();
   });
 
-  it("should retrieve from disk cache in production mode", () => {
-    // Note: Testing disk I/O requires NODE_ENV=production which is hard to test in unit tests
-    // The disk cache functionality is tested in integration tests
-    // Here we verify the memory cache layer works correctly
-    clearCache();
-    const url = "/register";
-    const html = "<html><body>Test</body></html>";
+  it("reads fresh disk HTML in production and serves subsequent requests from memory", () => {
+    process.env.NODE_ENV = "production";
+    mockExistsSync.mockReturnValue(true);
+    mockStatSync.mockReturnValue({ mtimeMs: Date.now() - 1000 } as NodeFs.Stats);
+    mockReadFileSync.mockReturnValue("<html>from disk</html>");
 
-    // Set in memory cache (simulating what disk cache would do)
-    setCachedHtml(url, html);
-    const cached = getCachedHtml(url);
-
-    expect(cached).toBe(html);
+    expect(getCachedHtml("/privacy")).toBe("<html>from disk</html>");
+    expect(getCachedHtml("/privacy")).toBe("<html>from disk</html>");
+    expect(mockReadFileSync).toHaveBeenCalledTimes(1);
+    expect(mockExistsSync).toHaveBeenCalledTimes(1);
   });
 
-  it("should not retrieve expired disk cache", () => {
-    // Note: Expired cache handling is tested through memory cache expiration
-    clearCache();
-    const url = "/login";
-    const html = "<html><body>Test</body></html>";
+  it("does not serve an expired disk file", () => {
+    process.env.NODE_ENV = "production";
+    mockExistsSync.mockReturnValue(true);
+    mockStatSync.mockReturnValue({ mtimeMs: Date.now() - 6 * 60 * 1000 } as NodeFs.Stats);
 
-    // Set cache and verify it works when fresh
-    setCachedHtml(url, html);
-    expect(getCachedHtml(url)).toBe(html);
-
-    // Clear and verify expired cache returns null
-    clearCache();
-    expect(getCachedHtml(url)).toBeNull();
+    expect(getCachedHtml("/terms")).toBeNull();
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 
-  it("should write to disk cache in production mode", () => {
-    // Note: Testing disk I/O in production mode requires module reload which breaks mocks
-    // This is tested indirectly through integration tests
-    // Here we verify the memory cache works correctly
-    clearCache();
-    const url = "/reset-password";
-    const html = "<html><body>Test</body></html>";
+  it("writes production HTML to disk using a canonical path without query parameters", () => {
+    process.env.NODE_ENV = "production";
+    setCachedHtml("/reset-password?token=sensitive", "<html>reset</html>");
 
-    setCachedHtml(url, html);
+    expect(mockMkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
+    expect(mockWriteFileSync).toHaveBeenCalledWith(
+      expect.stringMatching(/reset-password\\.html$/),
+      "<html>reset</html>",
+      "utf-8",
+    );
+    expect(mockWriteFileSync.mock.calls[0][0]).not.toContain("sensitive");
+  });
 
-    // Verify memory cache works
-    expect(getCachedHtml(url)).toBe(html);
+  it("keeps the memory cache usable when the production disk write fails", () => {
+    process.env.NODE_ENV = "production";
+    mockWriteFileSync.mockImplementation(() => { throw new Error("disk full"); });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    setCachedHtml("/verify", "<html>verified</html>");
+    expect(getCachedHtml("/verify")).toBe("<html>verified</html>");
+    expect(warn).toHaveBeenCalledWith("Failed to write cache to disk:", expect.any(Error));
+    warn.mockRestore();
+  });
+
+  it("ignores disk metadata errors and regenerates rather than serving uncertain HTML", () => {
+    process.env.NODE_ENV = "production";
+    mockExistsSync.mockReturnValue(true);
+    mockStatSync.mockImplementation(() => { throw new Error("file disappeared"); });
+
+    expect(getCachedHtml("/login")).toBeNull();
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 
   it("should not write to disk cache in non-production mode", () => {
@@ -236,20 +246,6 @@ describe("SSR cache", () => {
     // Should return null on error, not throw
     // The error is caught in the try-catch, so it returns null
     expect(cached).toBeNull();
-  });
-
-  it("should handle disk cache write errors gracefully", () => {
-    // Note: Testing disk I/O error handling in production mode requires module reload
-    // This is tested indirectly through integration tests
-    // Here we verify the memory cache works even if disk write fails
-    clearCache();
-    const url = "/verify";
-    const html = "<html><body>Test</body></html>";
-
-    setCachedHtml(url, html);
-
-    // Verify memory cache works (disk write errors don't affect memory cache)
-    expect(getCachedHtml(url)).toBe(html);
   });
 
   it("should handle case-insensitive route matching", () => {
