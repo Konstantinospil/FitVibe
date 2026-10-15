@@ -33,8 +33,8 @@ function assertRecoveryBoundary(text) {
   assert.match(text, /deployment_switched=1/);
   assert.match(text, /migration_started=1/);
   assert.ok(text.indexOf("migration_started=1") < text.indexOf("migrateAll.js"));
-  assert.match(text, /env -u INGRESS_IMAGE/);
-  assert.match(text, /previous-images\.txt/);
+  assert.match(text, /docker inspect --format/);
+  assert.match(text, /previous-images\.env/);
 }
 
 test("workflow-dispatch data is not executable source", () => {
