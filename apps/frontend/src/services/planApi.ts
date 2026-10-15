@@ -12,6 +12,10 @@ export interface TrainingPlan {
   completed_count: number;
   progress_percent: number | string;
   revision: number;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
+  activated_at?: string | null;
   archived_at: string | null;
 }
 
@@ -19,7 +23,12 @@ export interface TrainingPlanInput {
   name: string;
   start_date: string | null;
   end_date: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
 }
+
+export type TrainingPlanPatch = Partial<TrainingPlanInput>;
 
 export async function listTrainingPlans(): Promise<TrainingPlan[]> {
   const response = await apiClient.get<{ plans: TrainingPlan[] }>("/api/v1/plans");
@@ -43,12 +52,18 @@ export async function createTrainingPlan(input: TrainingPlanInput): Promise<Trai
 
 export async function updateTrainingPlan(
   id: string,
-  input: TrainingPlanInput,
+  input: TrainingPlanPatch,
   etag: string,
 ): Promise<TrainingPlan> {
   const response = await apiClient.patch<TrainingPlan>(`/api/v1/plans/${id}`, input, {
     headers: { "If-Match": etag },
   });
+  return response.data;
+}
+
+/** Create all subsequent weekly sessions from the plan's existing first-week templates. */
+export async function activateTrainingPlan(id: string): Promise<TrainingPlan> {
+  const response = await apiClient.post<TrainingPlan>(`/api/v1/plans/${id}/activate`, {});
   return response.data;
 }
 
