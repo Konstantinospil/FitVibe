@@ -646,15 +646,17 @@ jobs:
           name: frontend-coverage-${{ github.run_id }}
           path: apps/frontend/coverage
 
-      - name: Aggregate coverage files
+      - name: Aggregate required coverage artifacts
         timeout-minutes: 5
         run: |
+          set -euo pipefail
+          backend=apps/backend/coverage/lcov.info
+          frontend=apps/frontend/coverage/lcov.info
+          test -s "${backend}" || { echo "::error::Missing backend LCOV artifact"; exit 1; }
+          test -s "${frontend}" || { echo "::error::Missing frontend LCOV artifact"; exit 1; }
           mkdir -p coverage
-          find apps packages -name "lcov.info" -exec cat {} \; > coverage/lcov.info || true
-          if [ ! -s coverage/lcov.info ]; then
-            echo "No coverage files found" > coverage/lcov.info
-          fi
-
+          cat "${backend}" "${frontend}" > coverage/lcov.info
+          test -s coverage/lcov.info
       - name: Test coverage gate failure cases
         timeout-minutes: 2
         run: node --test tests/qa/check-coverage.test.cjs
