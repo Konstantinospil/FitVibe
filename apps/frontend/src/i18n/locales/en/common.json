@@ -1139,7 +1139,10 @@
     "fields": {
       "name": "Name",
       "startDate": "Start date",
-      "endDate": "End date"
+      "endDate": "End date",
+      "durationWeeks": "Duration (weeks)",
+      "targetFrequency": "Sessions per week",
+      "timeZone": "Time zone"
     },
     "actions": {
       "manage": "Manage training plans",
@@ -1149,7 +1152,8 @@
       "cancel": "Cancel",
       "edit": "Edit",
       "delete": "Delete",
-      "reload": "Load latest version"
+      "reload": "Load latest version",
+      "activate": "Activate"
     },
     "delete": {
       "title": "Archive training plan",
@@ -1162,7 +1166,8 @@
       "dateOrder": "End date must not be before start date.",
       "save": "Could not save the plan.",
       "delete": "Could not archive the plan.",
-      "conflict": "This plan was changed elsewhere. Reload the latest version before editing again."
+      "conflict": "This plan was changed elsewhere. Reload the latest version before editing again.",
+      "activate": "Could not activate the training plan."
     }
   }
 }
