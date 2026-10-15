@@ -377,6 +377,9 @@ jobs:
               if [ "${status}" -ne 0 ] && [ "${deployment_switched}" -eq 1 ] && [ "${migration_started}" -eq 0 ] && [ -s "${recovery}/previous-images.env" ]; then
                 echo "Pre-migration deployment failed; restoring previous Compose configuration." >&2
                 cp "${recovery}/compose.yml" "${PROD_STACK_DIR}/compose.yml"
+                if ! (cd "${PROD_SOURCE_DIR}" && git checkout -B main "$(cat "${recovery}/previous-source-sha")"); then
+                  echo "Previous source checkout failed; manual recovery required: ${recovery}" >&2
+                fi
                 if ! (cd "${PROD_STACK_DIR}" && set -a && . "${recovery}/previous-images.env" && set +a && docker compose --env-file .env -f compose.yml up -d --remove-orphans); then
                   echo "Automatic restoration failed; manual recovery required: ${recovery}" >&2
                 fi
