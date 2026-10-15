@@ -17,6 +17,11 @@ const owners = [
     matches: (path) => path === "tests/qa/check-typography-contract.test.mjs",
   },
   {
+    // Explicitly exercised by the Coverage Gate job with node --test.
+    name: "coverage-gate-negative-tests",
+    matches: (path) => path === "tests/qa/check-coverage.test.cjs",
+  },
+  {
     name: "backend-jest",
     matches: (path) => /^tests\/backend\/.*\.(?:test|spec)\.ts$/.test(path),
   },
