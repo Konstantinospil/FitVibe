@@ -1021,12 +1021,14 @@
       "duration": "Duración (segundos)",
       "exertion": "Esfuerzo objetivo",
       "restSet": "Descanso tras cada serie (segundos)",
-      "restExercise": "Descanso tras el ejercicio (segundos)"
+      "restExercise": "Descanso tras el ejercicio (segundos)",
+      "trainingPlan": "Plan de entrenamiento"
     },
     "placeholders": {
       "name": "Nombre del entrenamiento",
       "notes": "Describe el entrenamiento",
-      "exercise": "Selecciona un ejercicio"
+      "exercise": "Selecciona un ejercicio",
+      "noTrainingPlan": "Sin plan de entrenamiento"
     },
     "metrics": {
       "caloriesPerMinute": "Calorías / minuto",
