@@ -111,6 +111,36 @@ jobs:
               return;
             }
 
+            // Ordinary deployments must never replay a formerly green main commit.
+            const currentMain = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            const currentSha = currentMain.data.commit.sha;
+            if (run.head_sha !== currentSha) {
+              core.setFailed(
+                'Selected CI run ' + run.id + ' tested ' + run.head_sha +
+                ', but current main is ' + currentSha + '. Refusing stale deployment.',
+              );
+              return;
+            }
+
+            // A successful workflow conclusion alone is insufficient evidence if
+            // a build or its post-build verification was skipped.
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner, repo, run_id: run.id, per_page: 100,
+            });
+            for (const requiredName of [
+              'QA Summary', 'Build & Publish Images',
+              'Build Verification (Container Smoke Tests)',
+            ]) {
+              const matching = jobs.filter((job) => job.name === requiredName);
+              if (matching.length !== 1 || matching[0].conclusion !== 'success') {
+                core.setFailed(
+                  'CI run ' + run.id + ': required job "' + requiredName +
+                  '" missing, duplicated or not successful.',
+                );
+                return;
+              }
+            }
+
             core.setOutput('run_id', String(run.id));
             core.setOutput('head_sha', run.head_sha);
 
@@ -295,8 +325,8 @@ jobs:
               exit 1
             fi
 
-            if ! git merge-base --is-ancestor "${DEPLOY_SHA}" origin/main; then
-              echo "Deployment commit ${DEPLOY_SHA} is not part of origin/main." >&2
+            if [ "$(git rev-parse origin/main)" != "${DEPLOY_SHA}" ]; then
+              echo "Deployment commit ${DEPLOY_SHA} is not current origin/main; refusing stale deployment." >&2
               exit 1
             fi
 
