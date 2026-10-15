@@ -25,7 +25,7 @@ function assertReleaseOrdering(text) {
   assert.match(release, /needs\.build_verification\.result == 'success'/);
   assert.match(release, /needs\.build\.result == 'success'/);
   assert.match(release, /already resolves to a different digest/);
-  assert.ok(release.indexOf("Refuse mismatched immutable version tags") < release.indexOf("Promote verified digests to version tags"));
+  assert.ok(release.indexOf("Refuse mismatched immutable version tags") < release.indexOf("docker buildx imagetools create -t"));
 }
 
 function assertRecoveryBoundary(text) {
