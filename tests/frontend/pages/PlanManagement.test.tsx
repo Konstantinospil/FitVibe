@@ -17,6 +17,7 @@ vi.mock("../../src/services/planApi", async () => ({
   createTrainingPlan: vi.fn(),
   getTrainingPlan: vi.fn(),
   updateTrainingPlan: vi.fn(),
+  activateTrainingPlan: vi.fn(),
   deleteTrainingPlan: vi.fn(),
   isTrainingPlanConflict: vi.fn(),
 }));
@@ -35,6 +36,8 @@ const samplePlan: plans.TrainingPlan = {
   completed_count: 1,
   progress_percent: 50,
   revision: 1,
+  time_zone: "UTC",
+  activated_at: null,
   archived_at: null,
 };
 
@@ -57,6 +60,7 @@ describe("Training plan management", () => {
     vi.mocked(plans.createTrainingPlan).mockResolvedValue(samplePlan);
     vi.mocked(plans.updateTrainingPlan).mockResolvedValue(samplePlan);
     vi.mocked(plans.deleteTrainingPlan).mockResolvedValue(undefined);
+    vi.mocked(plans.activateTrainingPlan).mockResolvedValue(samplePlan);
     vi.mocked(plans.isTrainingPlanConflict).mockReturnValue(false);
   });
 
@@ -78,7 +82,7 @@ describe("Training plan management", () => {
     await waitFor(() => {
       expect(plans.updateTrainingPlan).toHaveBeenCalledWith(
         "plan-1",
-        { name: "Revised plan", start_date: "2026-10-01", end_date: "2026-11-01" },
+        { name: "Revised plan" },
         '"plan-plan-1-1"',
       );
     });
@@ -97,6 +101,7 @@ describe("Training plan management", () => {
         name: "New plan",
         start_date: null,
         end_date: null,
+        time_zone: expect.any(String),
       });
     });
   });
@@ -121,6 +126,44 @@ describe("Training plan management", () => {
     fireEvent.invalid(endDate);
     expect(await screen.findByText("trainingPlans.errors.dateOrder")).toBeInTheDocument();
     expect(plans.createTrainingPlan).not.toHaveBeenCalled();
+  });
+
+  it("allows renaming an activated plan without writing schedule fields", async () => {
+    const activated = { ...samplePlan, activated_at: "2026-10-02T08:00:00.000Z" };
+    vi.mocked(plans.listTrainingPlans).mockResolvedValue([activated]);
+    vi.mocked(plans.getTrainingPlan).mockResolvedValue({
+      plan: activated,
+      etag: '"plan-plan-1-1"',
+    });
+    renderPlans();
+    await screen.findByText("Base plan");
+    fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.edit" }));
+    await screen.findByDisplayValue("Base plan");
+    expect(screen.getByLabelText("trainingPlans.fields.startDate")).toBeDisabled();
+    expect(screen.getByLabelText("trainingPlans.fields.endDate")).toBeDisabled();
+    fireEvent.change(screen.getByDisplayValue("Base plan"), { target: { value: "Renamed plan" } });
+    fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.save" }));
+    await waitFor(() =>
+      expect(plans.updateTrainingPlan).toHaveBeenCalledWith(
+        "plan-1",
+        { name: "Renamed plan" },
+        '"plan-plan-1-1"',
+      ),
+    );
+  });
+
+  it("allows activation when scheduling details and templates are present", async () => {
+    const configured = {
+      ...samplePlan,
+      duration_weeks: 3,
+      target_frequency: 2,
+      activated_at: null,
+    };
+    vi.mocked(plans.listTrainingPlans).mockResolvedValue([configured]);
+    renderPlans();
+    await screen.findByText("Base plan");
+    fireEvent.click(screen.getByRole("button", { name: "trainingPlans.actions.activate" }));
+    await waitFor(() => expect(plans.activateTrainingPlan).toHaveBeenCalledWith("plan-1"));
   });
 
   it("asks for confirmation before archiving a plan", async () => {
