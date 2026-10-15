@@ -343,11 +343,25 @@ jobs:
             mkdir -m 700 "${recovery}"
             if [ -f "${PROD_STACK_DIR}/compose.yml" ]; then
               cp "${PROD_STACK_DIR}/compose.yml" "${recovery}/compose.yml"
-              # Preserve the *resolved* immutable image references, not variables
-              # inherited from the new deployment.
-              (cd "${PROD_STACK_DIR}" && env -u INGRESS_IMAGE -u BACKEND_IMAGE -u FRONTEND_IMAGE -u BACKOFFICE_IMAGE -u POSTGRES_IMAGE -u CLAMAV_IMAGE -u REDIS_IMAGE docker compose --env-file .env -f compose.yml config --images) > "${recovery}/previous-images.txt"
-              if ! grep -Eq '@sha256:[0-9a-fA-F]{64}$' "${recovery}/previous-images.txt"; then
-                echo "Previous stack has no immutable image references; refusing unsafe rollback checkpoint" >&2
+              # Record the exact image references of running containers. Incoming
+              # deployment environment variables must not overwrite the old values.
+              current_count=0
+              for entry in "INGRESS_IMAGE:ingress" "BACKEND_IMAGE:backend" "FRONTEND_IMAGE:frontend" "BACKOFFICE_IMAGE:backoffice" "POSTGRES_IMAGE:db" "CLAMAV_IMAGE:clamav" "REDIS_IMAGE:redis"; do
+                variable="${entry%%:*}"
+                service="${entry#*:}"
+                container="$(docker ps --filter "label=com.docker.compose.project=fitvibe" --filter "label=com.docker.compose.service=${service}" --format "{{.ID}}" | head -n 1)"
+                if [ -n "${container}" ]; then
+                  image="$(docker inspect --format "{{.Config.Image}}" "${container}")"
+                  if ! printf '%s\n' "${image}" | grep -Eq '@sha256:[0-9a-fA-F]{64}$'; then
+                    echo "Existing ${service} container lacks an immutable image reference; cannot guarantee recovery." >&2
+                    exit 1
+                  fi
+                  printf '%s=%s\n' "${variable}" "${image}" >> "${recovery}/previous-images.env"
+                  current_count=$((current_count + 1))
+                fi
+              done
+              if [ "${current_count}" -ne 0 ] && [ "${current_count}" -ne 7 ]; then
+                echo "Partial existing Compose stack; refusing deployment without complete rollback image references." >&2
                 exit 1
               fi
             fi
@@ -360,10 +374,10 @@ jobs:
             restore_previous_stack() {
               status=$?
               trap - EXIT
-              if [ "${status}" -ne 0 ] && [ "${deployment_switched}" -eq 1 ] && [ "${migration_started}" -eq 0 ] && [ -s "${recovery}/previous-images.txt" ]; then
+              if [ "${status}" -ne 0 ] && [ "${deployment_switched}" -eq 1 ] && [ "${migration_started}" -eq 0 ] && [ -s "${recovery}/previous-images.env" ]; then
                 echo "Pre-migration deployment failed; restoring previous Compose configuration." >&2
                 cp "${recovery}/compose.yml" "${PROD_STACK_DIR}/compose.yml"
-                if ! (cd "${PROD_STACK_DIR}" && env -u INGRESS_IMAGE -u BACKEND_IMAGE -u FRONTEND_IMAGE -u BACKOFFICE_IMAGE -u POSTGRES_IMAGE -u CLAMAV_IMAGE -u REDIS_IMAGE docker compose --env-file .env -f compose.yml up -d --remove-orphans); then
+                if ! (cd "${PROD_STACK_DIR}" && set -a && . "${recovery}/previous-images.env" && set +a && docker compose --env-file .env -f compose.yml up -d --remove-orphans); then
                   echo "Automatic restoration failed; manual recovery required: ${recovery}" >&2
                 fi
               elif [ "${status}" -ne 0 ] && [ "${migration_started}" -eq 1 ]; then
