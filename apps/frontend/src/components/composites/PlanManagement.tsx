@@ -306,7 +306,7 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                   type="date"
                   value={draft.startDate}
                   onChange={(event) => setDraft({ ...draft, startDate: event.target.value })}
-                  disabled={busy}
+                  disabled={busy || Boolean(draft.original?.activated_at)}
                 />
               </label>
               <label className="form-label">
