@@ -381,9 +381,13 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                 disabled={isBusy || plans.isLoading}
               >
                 <option value="">{t("workoutEditor.placeholders.noTrainingPlan")}</option>
-                {plans.data?.filter((plan) => !plan.activated_at && plan.status !== "completed").map((plan) => (
-                  <option key={plan.id} value={plan.id}>{plan.name}</option>
-                ))}
+                {plans.data
+                  ?.filter((plan) => !plan.activated_at && plan.status !== "completed")
+                  .map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </option>
+                  ))}
               </SelectControl>
             </label>
           ) : null}
