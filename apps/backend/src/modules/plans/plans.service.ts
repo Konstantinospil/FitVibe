@@ -124,7 +124,11 @@ export async function updateUserPlan(
     if (changesSchedule) {
       const latest = await findPlanById(planId);
       if (latest?.activated_at) {
-        throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+        throw new HttpError(
+          409,
+          "E.PLAN.ALREADY_ACTIVATED",
+          "Activated plan schedule cannot be reconfigured",
+        );
       }
     }
     if (ifMatch !== undefined) {
