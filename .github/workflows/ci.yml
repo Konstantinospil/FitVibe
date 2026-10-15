@@ -2950,6 +2950,27 @@ jobs:
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
 
+      - name: Download immutable image manifest
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: container-artifacts-${{ github.run_id }}
+          path: artifacts
+
+      - name: Select image digests for smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s artifacts/image-digests.txt
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          for component in backend frontend backoffice; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            expected="ghcr.io/${owner}/fitvibe-${component}@sha256:"
+            if [[ "${reference}" != "${expected}"* ]] || [[ ! "${reference}" =~ @sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Missing or invalid immutable ${component} image reference"
+              exit 1
+            fi
+            printf "SMOKE_%s_IMAGE=%s\n" "${component^^}" "${reference}" >> "${GITHUB_ENV}"
+          done
       - name: Install postgresql-client
         timeout-minutes: 2
         run: |
@@ -3002,12 +3023,12 @@ jobs:
 
       - name: Pull backend image
         timeout-minutes: 5
-        run: docker pull ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+        run: docker pull ${SMOKE_BACKEND_IMAGE}
 
       - name: Report backend image size
         timeout-minutes: 2
         run: |
-          BACKEND_TAG="${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}"
+          BACKEND_TAG="${SMOKE_BACKEND_IMAGE}"
           SIZE=$(docker images "$BACKEND_TAG" --format "{{.Size}}" | head -1)
           echo "Backend image size: $SIZE"
           # Extract numeric size (e.g., "1.2GB" -> 1.2)
@@ -3038,7 +3059,7 @@ jobs:
             -e REDIS_ENABLED=true \
             -e REDIS_HOST=host.docker.internal \
             -e REDIS_PORT=6379 \
-            ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+            ${SMOKE_BACKEND_IMAGE}
           echo "Backend container started"
 
       - name: Wait for backend health check
@@ -3072,12 +3093,12 @@ jobs:
 
       - name: Pull frontend image
         timeout-minutes: 5
-        run: docker pull ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+        run: docker pull ${SMOKE_FRONTEND_IMAGE}
 
       - name: Report frontend image size
         timeout-minutes: 2
         run: |
-          FRONTEND_TAG="${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}"
+          FRONTEND_TAG="${SMOKE_FRONTEND_IMAGE}"
           SIZE=$(docker images "$FRONTEND_TAG" --format "{{.Size}}" | head -1)
           echo "Frontend image size: $SIZE"
           NUM_SIZE=$(echo "$SIZE" | sed 's/[^0-9.]//g' | head -c 4)
@@ -3095,7 +3116,7 @@ jobs:
             -p 8080:4173 \
             -e NODE_ENV=production \
             -e PORT=4173 \
-            ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+            ${SMOKE_FRONTEND_IMAGE}
           echo "Frontend container started"
 
       - name: Wait for frontend SSR server
@@ -3148,14 +3169,14 @@ jobs:
 
       - name: Pull backoffice image
         timeout-minutes: 5
-        run: docker pull ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+        run: docker pull ${SMOKE_BACKOFFICE_IMAGE}
 
       - name: Start backoffice container
         timeout-minutes: 5
         run: |
           docker network create fitvibe-verification
           docker network connect --alias backend fitvibe-verification test-backend
-          docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+          docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${SMOKE_BACKOFFICE_IMAGE}
 
       - name: Verify backoffice production image
         timeout-minutes: 5
