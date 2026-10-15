@@ -655,6 +655,10 @@ jobs:
             echo "No coverage files found" > coverage/lcov.info
           fi
 
+      - name: Test coverage gate failure cases
+        timeout-minutes: 2
+        run: node --test tests/qa/check-coverage.test.cjs
+
       - name: Enforce coverage gate
         timeout-minutes: 10
         run: pnpm test:coverage:gate
@@ -3150,10 +3154,11 @@ jobs:
           if echo "$RESPONSE" | grep -qi "<!doctype html\|<html"; then
             echo "✅ Frontend serves SSR HTML"
             # Verify SSR content is present
-            if echo "$RESPONSE" | grep -qi "<div id=\"root\">"; then
+            if grep -Eqi '<div[[:space:]]+id="root"[^>]*>' <<< "$RESPONSE"; then
               echo "✅ SSR content detected in HTML"
             else
-              echo "::error::Production frontend did not render the expected SSR root element"\n              exit 1
+              echo "::error::Production frontend did not render the expected SSR root element"
+              exit 1
             fi
           else
             echo "❌ Frontend does not serve HTML"
