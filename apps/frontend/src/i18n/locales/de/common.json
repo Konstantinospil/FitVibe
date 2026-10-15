@@ -1021,12 +1021,14 @@
       "duration": "Dauer (Sekunden)",
       "exertion": "Zielanstrengung",
       "restSet": "Pause nach jedem Satz (Sekunden)",
-      "restExercise": "Pause nach der Übung (Sekunden)"
+      "restExercise": "Pause nach der Übung (Sekunden)",
+      "trainingPlan": "Trainingsplan"
     },
     "placeholders": {
       "name": "Name für das Workout",
       "notes": "Workout beschreiben",
-      "exercise": "Übung auswählen"
+      "exercise": "Übung auswählen",
+      "noTrainingPlan": "Kein Trainingsplan"
     },
     "metrics": {
       "caloriesPerMinute": "Kalorien / Minute",
