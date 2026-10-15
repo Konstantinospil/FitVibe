@@ -36,6 +36,8 @@ const samplePlan: plans.TrainingPlan = {
   completed_count: 1,
   progress_percent: 50,
   revision: 1,
+  duration_weeks: null,
+  target_frequency: null,
   time_zone: "UTC",
   activated_at: null,
   archived_at: null,
@@ -101,6 +103,8 @@ describe("Training plan management", () => {
         name: "New plan",
         start_date: null,
         end_date: null,
+        duration_weeks: null,
+        target_frequency: null,
         time_zone: expect.any(String),
       });
     });
