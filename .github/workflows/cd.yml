@@ -59,7 +59,7 @@ jobs:
             if (context.eventName === 'workflow_run') {
               run = context.payload.workflow_run;
             } else if (requested) {
-              if (!/^\d+$/.test(requested)) {
+              if (!/^\d+$/.test(requested) || !Number.isSafeInteger(Number(requested)) || Number(requested) <= 0) {
                 core.setFailed('ci_run_id must be a numeric GitHub Actions run ID.');
                 return;
               }
