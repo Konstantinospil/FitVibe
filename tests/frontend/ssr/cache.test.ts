@@ -50,7 +50,9 @@ describe("SSR cache", () => {
 
   beforeEach(() => {
     clearCache();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    mockExistsSync.mockReturnValue(false);
+    mockStatSync.mockImplementation(() => ({ mtimeMs: Date.now() }));
     process.env.NODE_ENV = originalEnv;
   });
 
