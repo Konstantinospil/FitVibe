@@ -346,7 +346,18 @@ jobs:
               # Preserve the *resolved* immutable image references, not variables
               # inherited from the new deployment.
               (cd "${PROD_STACK_DIR}" && env -u INGRESS_IMAGE -u BACKEND_IMAGE -u FRONTEND_IMAGE -u BACKOFFICE_IMAGE -u POSTGRES_IMAGE -u CLAMAV_IMAGE -u REDIS_IMAGE docker compose --env-file .env -f compose.yml config --images) > "${recovery}/previous-images.txt"
-              if ! grep -Eq '@sha256:[0-9a-fA-F]{64}"${PROD_SOURCE_DIR}/infra/docker/prod/compose.yml"
+              if ! grep -Eq '@sha256:[0-9a-fA-F]{64}$' "${recovery}/previous-images.txt"; then
+                echo "Previous stack has no immutable image references; refusing unsafe rollback checkpoint" >&2
+                exit 1
+              fi
+            fi
+            git rev-parse HEAD > "${recovery}/previous-source-sha"
+            printf '%s\\n' "${recovery}" > "${backup_dir}/latest-recovery-path"
+            echo "Recovery checkpoint: ${recovery}"
+
+            git checkout -B main "${DEPLOY_SHA}"
+
+            canonical_compose="${PROD_SOURCE_DIR}/infra/docker/prod/compose.yml"
             if [ ! -f "${canonical_compose}" ]; then
               echo "Canonical production compose file not found at ${canonical_compose}" >&2
               exit 1
