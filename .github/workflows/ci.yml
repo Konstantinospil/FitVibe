@@ -2578,8 +2578,13 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       needs.build-platform.result == 'success'
+    outputs:
+      backend_version: ${{ steps.versions.outputs.backend }}
+      frontend_version: ${{ steps.versions.outputs.frontend }}
+      backoffice_version: ${{ steps.versions.outputs.backoffice }}
+      should_release: ${{ steps.release_guard.outputs.should_release }}
     permissions:
-      contents: write
+      contents: read
       packages: write
       id-token: write
       actions: read
@@ -2711,12 +2716,7 @@ jobs:
           frontend_tags=(-t "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}")
           backoffice_tags=(-t "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}")
 
-          if [ "${{ steps.release_guard.outputs.should_release }}" = "true" ]; then
-            ingress_tags+=(-t "${INGRESS_IMAGE}:v${{ steps.versions.outputs.backend }}")
-            backend_tags+=(-t "${BACKEND_IMAGE}:v${{ steps.versions.outputs.backend }}")
-            frontend_tags+=(-t "${FRONTEND_IMAGE}:v${{ steps.versions.outputs.frontend }}")
-            backoffice_tags+=(-t "${BACKOFFICE_IMAGE}:v${{ steps.versions.outputs.backoffice }}")
-          fi
+
 
           docker buildx imagetools create \
             "${ingress_tags[@]}" \
@@ -2869,26 +2869,6 @@ jobs:
             artifacts/openapi/openapi.json
           retention-days: 90
           if-no-files-found: error
-
-      - name: Create Release
-        if: github.ref == 'refs/heads/main' && steps.release_guard.outputs.should_release == 'true'
-        id: create_release
-        timeout-minutes: 5
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
-        with:
-          tag: v${{ steps.versions.outputs.backend }}
-          commit: ${{ github.sha }}
-          name: Release v${{ steps.versions.outputs.backend }}
-          body: |
-            - Ingress image: ${{ env.INGRESS_IMAGE }}:v${{ steps.versions.outputs.backend }}
-            - Backend image: ${{ env.BACKEND_IMAGE }}:v${{ steps.versions.outputs.backend }}
-            - Frontend image: ${{ env.FRONTEND_IMAGE }}:v${{ steps.versions.outputs.frontend }}
-            - Backoffice image: ${{ env.BACKOFFICE_IMAGE }}:v${{ steps.versions.outputs.backoffice }}
-          draft: false
-          prerelease: false
-          artifacts: "sbom-backend.spdx.json,sbom-frontend.spdx.json,sbom-backoffice.spdx.json,image-digests.txt,artifacts/openapi/openapi.json"
-          artifactErrorsFailBuild: true
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Job summary
         if: always()
@@ -3214,3 +3194,101 @@ jobs:
             echo "- ❌ Build verification failed" >> $GITHUB_STEP_SUMMARY
             echo "- ⚠️ Containers may not be functioning correctly" >> $GITHUB_STEP_SUMMARY
           fi
+
+  publish_release:
+    name: Publish Verified Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - build
+      - build_verification
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build.result == 'success' &&
+      needs.build_verification.result == 'success' &&
+      needs.build.outputs.should_release == 'true'
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Download verified image artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: container-artifacts-${{ github.run_id }}
+          path: artifacts
+
+      - name: Verify release inputs and current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          [ "$(git rev-parse origin/main)" = "${GITHUB_SHA}" ] || { echo "::error::main advanced; refusing stale release"; exit 1; }
+          tag="v${{ needs.build.outputs.backend_version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error::Release tag ${tag} already exists; refusing to modify it"
+            exit 1
+          fi
+          test -s artifacts/image-digests.txt
+          test -s artifacts/sbom-ingress.spdx.json
+          test -s artifacts/sbom-backend.spdx.json
+          test -s artifacts/sbom-frontend.spdx.json
+          test -s artifacts/sbom-backoffice.spdx.json
+          test -s artifacts/artifacts/openapi/openapi.json
+          grep -Fx "stack_version=${tag}" artifacts/image-digests.txt
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          for component in ingress backend frontend backoffice; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            expected="ghcr.io/${owner}/fitvibe-${component}@sha256:"
+            if [[ "${reference}" != "${expected}"* ]] || [[ ! "${reference}" =~ @sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Invalid digest reference for ${component}: ${reference}"
+              exit 1
+            fi
+          done
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote verified digests to version tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          while IFS='|' read -r component version; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            docker buildx imagetools create -t "ghcr.io/${owner}/fitvibe-${component}:v${version}" "${reference}"
+          done <<'EOF_IMAGES'
+          ingress|${{ needs.build.outputs.backend_version }}
+          backend|${{ needs.build.outputs.backend_version }}
+          frontend|${{ needs.build.outputs.frontend_version }}
+          backoffice|${{ needs.build.outputs.backoffice_version }}
+          EOF_IMAGES
+
+      - name: Create Release after container verification
+        timeout-minutes: 5
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
+        with:
+          tag: v${{ needs.build.outputs.backend_version }}
+          commit: ${{ github.sha }}
+          name: Release v${{ needs.build.outputs.backend_version }}
+          body: |
+            Verified SHA: `${{ github.sha }}`
+            Production image digests, SBOMs and the OpenAPI contract are attached.
+            Container smoke verification passed for this CI run.
+          draft: false
+          prerelease: false
+          artifacts: "artifacts/sbom-ingress.spdx.json,artifacts/sbom-backend.spdx.json,artifacts/sbom-frontend.spdx.json,artifacts/sbom-backoffice.spdx.json,artifacts/image-digests.txt,artifacts/artifacts/openapi/openapi.json"
+          artifactErrorsFailBuild: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
