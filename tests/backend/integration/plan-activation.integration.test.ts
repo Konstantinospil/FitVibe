@@ -12,6 +12,7 @@ import {
 } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
+import { getTestValidPassword } from "../test-helpers/test-passwords.js";
 
 describeWithTestDatabase("Integration: plan activation", () => {
   let token: string;
@@ -29,7 +30,7 @@ describeWithTestDatabase("Integration: plan activation", () => {
     (env as { readOnlyMode: boolean }).readOnlyMode = false;
     await truncateAll();
     await ensureRolesSeeded();
-    const password = "SecureP@ssw0rd123!";
+    const password = getTestValidPassword();
     userId = uuidv4();
     const email = `plan-${userId}@example.com`;
     await createUser({
