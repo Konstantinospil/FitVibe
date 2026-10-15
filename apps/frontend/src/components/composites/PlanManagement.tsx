@@ -170,7 +170,9 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
   };
 
   const activatePlan = async (plan: TrainingPlan) => {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setBusy(true);
     resetMessages();
     try {
@@ -179,7 +181,12 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
       await queryClient.invalidateQueries({ queryKey: ["calendar"] });
     } catch (cause) {
       setError(t("trainingPlans.errors.activate"));
-      logger.apiError("Failed to activate training plan", cause, `/api/v1/plans/${plan.id}/activate`, "POST");
+      logger.apiError(
+        "Failed to activate training plan",
+        cause,
+        `/api/v1/plans/${plan.id}/activate`,
+        "POST",
+      );
     } finally {
       setBusy(false);
     }
@@ -329,21 +336,35 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
               </label>
               <label className="form-label">
                 <span className="form-label-text">{t("trainingPlans.fields.durationWeeks")}</span>
-                <InputControl type="number" min="1" max="52" step="1" value={draft.durationWeeks}
+                <InputControl
+                  type="number"
+                  min="1"
+                  max="52"
+                  step="1"
+                  value={draft.durationWeeks}
                   onChange={(event) => setDraft({ ...draft, durationWeeks: event.target.value })}
-                  disabled={busy || Boolean(draft.original?.activated_at)} />
+                  disabled={busy || Boolean(draft.original?.activated_at)}
+                />
               </label>
               <label className="form-label">
                 <span className="form-label-text">{t("trainingPlans.fields.targetFrequency")}</span>
-                <InputControl type="number" min="1" max="7" step="1" value={draft.targetFrequency}
+                <InputControl
+                  type="number"
+                  min="1"
+                  max="7"
+                  step="1"
+                  value={draft.targetFrequency}
                   onChange={(event) => setDraft({ ...draft, targetFrequency: event.target.value })}
-                  disabled={busy || Boolean(draft.original?.activated_at)} />
+                  disabled={busy || Boolean(draft.original?.activated_at)}
+                />
               </label>
               <label className="form-label">
                 <span className="form-label-text">{t("trainingPlans.fields.timeZone")}</span>
-                <InputControl value={draft.timeZone}
+                <InputControl
+                  value={draft.timeZone}
                   onChange={(event) => setDraft({ ...draft, timeZone: event.target.value })}
-                  disabled={busy || Boolean(draft.original?.activated_at)} />
+                  disabled={busy || Boolean(draft.original?.activated_at)}
+                />
               </label>
             </FormStack>
           ) : (
@@ -375,8 +396,13 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                   trailing={
                     <FormActions>
                       {!plan.activated_at && plan.start_date && plan.duration_weeks && plan.target_frequency ? (
-                        <Button type="button" size="sm" variant="secondary" disabled={busy}
-                          onClick={() => void activatePlan(plan)}>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          disabled={busy}
+                          onClick={() => void activatePlan(plan)}
+                        >
                           {t("trainingPlans.actions.activate")}
                         </Button>
                       ) : null}
