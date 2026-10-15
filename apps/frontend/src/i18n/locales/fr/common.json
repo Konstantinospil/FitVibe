@@ -1139,7 +1139,10 @@
     "fields": {
       "name": "Nom",
       "startDate": "Date de début",
-      "endDate": "Date de fin"
+      "endDate": "Date de fin",
+      "durationWeeks": "Durée (semaines)",
+      "targetFrequency": "Séances par semaine",
+      "timeZone": "Fuseau horaire"
     },
     "actions": {
       "manage": "Gérer les plans",
@@ -1149,7 +1152,8 @@
       "cancel": "Annuler",
       "edit": "Modifier",
       "delete": "Supprimer",
-      "reload": "Charger la dernière version"
+      "reload": "Charger la dernière version",
+      "activate": "Activer"
     },
     "delete": {
       "title": "Archiver le plan",
@@ -1162,7 +1166,8 @@
       "dateOrder": "La date de fin ne peut pas précéder la date de début.",
       "save": "Impossible d’enregistrer le plan.",
       "delete": "Impossible d’archiver le plan.",
-      "conflict": "Ce plan a été modifié ailleurs. Chargez la dernière version avant de le modifier à nouveau."
+      "conflict": "Ce plan a été modifié ailleurs. Chargez la dernière version avant de le modifier à nouveau.",
+      "activate": "Impossible d’activer le programme d’entraînement."
     }
   }
 }
