@@ -335,6 +335,13 @@ describe("Plans Service", () => {
   });
 
   describe("updateUserPlan", () => {
+    beforeEach(() => {
+      // clearAllMocks does not clear queued mockResolvedValueOnce responses.
+      // Each update scenario must begin with a fresh repository response sequence.
+      mockedFindPlanById.mockReset();
+      mockedUpdatePlan.mockReset();
+    });
+
     it("should update plan when user owns it", async () => {
       const existingPlan = createMockPlan({ name: "Old Plan" });
 
@@ -359,10 +366,8 @@ describe("Plans Service", () => {
     it("should throw 404 when plan not found after update", async () => {
       const existingPlan = createMockPlan({ name: "Old Plan" });
 
-      mockedFindPlanById
-        .mockResolvedValueOnce(existingPlan) // For ownership check
-        .mockResolvedValueOnce(undefined); // Plan not found after update
-      mockedUpdatePlan.mockResolvedValue(0);
+      mockedFindPlanById.mockResolvedValueOnce(existingPlan); // Ownership check
+      mockedUpdatePlan.mockResolvedValue(0); // No database row updated
 
       const error = await plansService
         .updateUserPlan("user-123", "plan-1", { name: "Updated Plan" })
@@ -390,9 +395,7 @@ describe("Plans Service", () => {
       const existingPlan = createMockPlan({ name: "Old Plan" });
       const updatedPlan = { ...existingPlan, name: "Updated Plan" };
 
-      mockedFindPlanById
-        .mockResolvedValueOnce(existingPlan) // For ownership check
-        .mockResolvedValueOnce(updatedPlan); // For returning updated plan
+      mockedFindPlanById.mockResolvedValueOnce(existingPlan); // Ownership check
       mockedUpdatePlan.mockResolvedValue(0); // Update returns 0
 
       await expect(
