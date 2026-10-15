@@ -360,8 +360,8 @@ jobs:
                   current_count=$((current_count + 1))
                 fi
               done
-              if [ "${current_count}" -ne 0 ] && [ "${current_count}" -ne 7 ]; then
-                echo "Partial existing Compose stack; refusing deployment without complete rollback image references." >&2
+              if [ "${current_count}" -ne 7 ]; then
+                echo "Existing Compose deployment lacks all seven running digest-pinned services; refusing deployment without recoverable state." >&2
                 exit 1
               fi
             fi
