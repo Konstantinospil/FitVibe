@@ -99,11 +99,18 @@ export async function updateUserPlan(
   if (ifMatch !== undefined && !matchesPlanIfMatch(existing, ifMatch)) {
     throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
   }
-  const changesSchedule = updates.start_date !== undefined ||
-    updates.end_date !== undefined || updates.duration_weeks !== undefined ||
-    updates.target_frequency !== undefined || updates.time_zone !== undefined;
+  const changesSchedule =
+    updates.start_date !== undefined ||
+    updates.end_date !== undefined ||
+    updates.duration_weeks !== undefined ||
+    updates.target_frequency !== undefined ||
+    updates.time_zone !== undefined;
   if (existing.activated_at && changesSchedule) {
-    throw new HttpError(409, "E.PLAN.ALREADY_ACTIVATED", "Activated plan schedule cannot be reconfigured");
+    throw new HttpError(
+      409,
+      "E.PLAN.ALREADY_ACTIVATED",
+      "Activated plan schedule cannot be reconfigured",
+    );
   }
 
   // ETag writes use an atomic version predicate rather than a check-then-write.
