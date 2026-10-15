@@ -168,7 +168,7 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   await page.getByRole("button", { name: /^plan a workout$/i }).click();
   const editor = page.getByRole("dialog");
   await expect(editor).toBeVisible();
-  const exerciseSelect = editor.getByRole("combobox").first();
+  const exerciseSelect = editor.getByRole("combobox", { name: "Exercise", exact: true });
   await expect.poll(async () => exerciseSelect.locator("option").count()).toBeGreaterThan(1);
   const option = exerciseSelect.locator("option").nth(1);
   const selectedExerciseId = await option.getAttribute("value");
