@@ -3264,9 +3264,25 @@ jobs:
         run: |
           set -euo pipefail
           owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          # Refuse mismatched immutable version tags before making any mutation.
           while IFS='|' read -r component version; do
             reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
-            docker buildx imagetools create -t "ghcr.io/${owner}/fitvibe-${component}:v${version}" "${reference}"
+            tag="ghcr.io/${owner}/fitvibe-${component}:v${version}"
+            existing="$(docker buildx imagetools inspect "${tag}" 2>/dev/null | awk '/^Digest:/ {print $2; exit}' || true)"
+            if [ -n "${existing}" ] && [ "${existing}" != "${reference##*@}" ]; then
+              echo "::error::Immutable version tag ${tag} already resolves to a different digest"
+              exit 1
+            fi
+          done <<'EOF_IMAGES'
+          ingress|${{ needs.build.outputs.backend_version }}
+          backend|${{ needs.build.outputs.backend_version }}
+          frontend|${{ needs.build.outputs.frontend_version }}
+          backoffice|${{ needs.build.outputs.backoffice_version }}
+          EOF_IMAGES
+          while IFS='|' read -r component version; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            tag="ghcr.io/${owner}/fitvibe-${component}:v${version}"
+            docker buildx imagetools create -t "${tag}" "${reference}"
           done <<'EOF_IMAGES'
           ingress|${{ needs.build.outputs.backend_version }}
           backend|${{ needs.build.outputs.backend_version }}
