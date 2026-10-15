@@ -127,14 +127,14 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
       name: draft.name.trim(),
       start_date: draft.startDate || null,
       end_date: draft.endDate || null,
-      ...(draft.durationWeeks ? { duration_weeks: Number(draft.durationWeeks) } : {}),
-      ...(draft.targetFrequency ? { target_frequency: Number(draft.targetFrequency) } : {}),
+      duration_weeks: draft.durationWeeks ? Number(draft.durationWeeks) : null,
+      target_frequency: draft.targetFrequency ? Number(draft.targetFrequency) : null,
       time_zone: draft.timeZone,
     };
     const patch: TrainingPlanPatch = {};
     if (draft.original) {
       for (const key of Object.keys(input) as Array<keyof TrainingPlanInput>) {
-        if (input[key] !== draft.original[key]) {
+        if (input[key] !== (draft.original[key] ?? null)) {
           Object.assign(patch, { [key]: input[key] });
         }
       }
