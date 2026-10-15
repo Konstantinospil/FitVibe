@@ -395,7 +395,10 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                   supporting={t("trainingPlans.sessionCount", { count: plan.session_count })}
                   trailing={
                     <FormActions>
-                      {!plan.activated_at && plan.start_date && plan.duration_weeks && plan.target_frequency ? (
+                      {!plan.activated_at &&
+                      plan.start_date &&
+                      plan.duration_weeks &&
+                      plan.target_frequency ? (
                         <Button
                           type="button"
                           size="sm"
