@@ -1,4 +1,4 @@
-name: Enforce Branch Policy
+name: Audit Branch Policy
 
 on:
   create:
@@ -10,7 +10,7 @@ on:
     - cron: "17 * * * *"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: branch-policy
@@ -18,10 +18,10 @@ concurrency:
 
 jobs:
   enforce:
-    name: Allow permanent and temporary fix branches
+    name: Report branches outside policy
     runs-on: ubuntu-latest
     steps:
-      - name: Delete unauthorized branches
+      - name: Audit unauthorized branches
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,12 +45,9 @@ jobs:
             }
 
             for (const branch of unauthorized) {
-              core.warning(`Deleting unauthorized branch: ${branch}`);
-              await github.rest.git.deleteRef({
-                owner,
-                repo,
-                ref: `heads/${branch}`,
-              });
+              core.warning(`Branch requires review (no deletion): ${branch}`);
             }
-
-            core.info(`Deleted ${unauthorized.length} unauthorized branch(es).`);
+            await core.summary
+              .addHeading("Branch policy audit")
+              .addRaw(`Found ${unauthorized.length} branch(es) outside the naming policy. No branches were deleted.`)
+              .write();

@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type * as NodeFs from "node:fs";
+import { env as nodeProcessEnv } from "node:process";
 
 // Use vi.hoisted to create mocks that are available before module import
 const { mockExistsSync, mockReadFileSync, mockWriteFileSync, mockMkdirSync, mockStatSync } =
@@ -50,13 +51,16 @@ describe("SSR cache", () => {
 
   beforeEach(() => {
     clearCache();
-    vi.clearAllMocks();
-    process.env.NODE_ENV = originalEnv;
+    vi.resetAllMocks();
+    mockExistsSync.mockReturnValue(false);
+    mockStatSync.mockImplementation(() => ({ mtimeMs: Date.now() }));
+    nodeProcessEnv.NODE_ENV = originalEnv;
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    process.env.NODE_ENV = originalEnv;
+    vi.unstubAllEnvs();
+    nodeProcessEnv.NODE_ENV = originalEnv;
     clearCache();
   });
 
@@ -154,48 +158,25 @@ describe("SSR cache", () => {
     consoleWarnSpy.mockRestore();
   });
 
-  it("should retrieve from disk cache in production mode", () => {
-    // Note: Testing disk I/O requires NODE_ENV=production which is hard to test in unit tests
-    // The disk cache functionality is tested in integration tests
-    // Here we verify the memory cache layer works correctly
-    clearCache();
-    const url = "/register";
-    const html = "<html><body>Test</body></html>";
 
-    // Set in memory cache (simulating what disk cache would do)
-    setCachedHtml(url, html);
-    const cached = getCachedHtml(url);
+  it("does not serve an expired disk file", () => {
+    nodeProcessEnv.NODE_ENV = "production";
+    mockExistsSync.mockReturnValue(true);
+    mockStatSync.mockReturnValue({ mtimeMs: Date.now() - 6 * 60 * 1000 } as NodeFs.Stats);
 
-    expect(cached).toBe(html);
+    expect(getCachedHtml("/terms")).toBeNull();
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 
-  it("should not retrieve expired disk cache", () => {
-    // Note: Expired cache handling is tested through memory cache expiration
-    clearCache();
-    const url = "/login";
-    const html = "<html><body>Test</body></html>";
 
-    // Set cache and verify it works when fresh
-    setCachedHtml(url, html);
-    expect(getCachedHtml(url)).toBe(html);
 
-    // Clear and verify expired cache returns null
-    clearCache();
-    expect(getCachedHtml(url)).toBeNull();
-  });
+  it("ignores disk metadata errors and regenerates rather than serving uncertain HTML", () => {
+    nodeProcessEnv.NODE_ENV = "production";
+    mockExistsSync.mockReturnValue(true);
+    mockStatSync.mockImplementation(() => { throw new Error("file disappeared"); });
 
-  it("should write to disk cache in production mode", () => {
-    // Note: Testing disk I/O in production mode requires module reload which breaks mocks
-    // This is tested indirectly through integration tests
-    // Here we verify the memory cache works correctly
-    clearCache();
-    const url = "/reset-password";
-    const html = "<html><body>Test</body></html>";
-
-    setCachedHtml(url, html);
-
-    // Verify memory cache works
-    expect(getCachedHtml(url)).toBe(html);
+    expect(getCachedHtml("/login")).toBeNull();
+    expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 
   it("should not write to disk cache in non-production mode", () => {
@@ -213,7 +194,7 @@ describe("SSR cache", () => {
 
   it("should handle disk cache read errors gracefully", () => {
     clearCache(); // Clear memory cache first
-    process.env.NODE_ENV = "production";
+    nodeProcessEnv.NODE_ENV = "production";
     const mocks = getMocks();
     const url = "/forgot-password"; // Use different URL to avoid memory cache conflicts
 
@@ -236,20 +217,6 @@ describe("SSR cache", () => {
     // Should return null on error, not throw
     // The error is caught in the try-catch, so it returns null
     expect(cached).toBeNull();
-  });
-
-  it("should handle disk cache write errors gracefully", () => {
-    // Note: Testing disk I/O error handling in production mode requires module reload
-    // This is tested indirectly through integration tests
-    // Here we verify the memory cache works even if disk write fails
-    clearCache();
-    const url = "/verify";
-    const html = "<html><body>Test</body></html>";
-
-    setCachedHtml(url, html);
-
-    // Verify memory cache works (disk write errors don't affect memory cache)
-    expect(getCachedHtml(url)).toBe(html);
   });
 
   it("should handle case-insensitive route matching", () => {

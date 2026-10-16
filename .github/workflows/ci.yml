@@ -35,7 +35,7 @@ jobs:
   architecture_hardcoding:
     name: Architecture & Hardcoding
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     permissions:
       contents: read
@@ -123,7 +123,7 @@ jobs:
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -185,7 +185,7 @@ jobs:
   deployment_contract:
     name: Deployment Contract
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     permissions:
       contents: read
@@ -195,6 +195,9 @@ jobs:
 
       - name: Validate canonical production Compose contract
         run: bash scripts/validate-production-compose.sh
+
+      - name: Verify CI/CD workflow safety contracts
+        run: node --test tests/qa/ci-cd-contract.test.cjs
 
   release_governance:
     name: Release Governance
@@ -231,7 +234,7 @@ jobs:
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -338,6 +341,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Backend unit tests & coverage
+        id: backend_unit_tests
         timeout-minutes: 15
         run: pnpm --filter @fitvibe/backend exec jest --coverage --maxWorkers=2 --testPathIgnorePatterns="migrations/migrations\\.test\\.ts|seeds/seeds\\.test\\.ts|.*\\.integration\\.test\\.ts$" --json --outputFile=coverage/jest-unit.json
 
@@ -358,7 +362,7 @@ jobs:
         if: always()
         run: |
           echo "## Backend Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.backend_unit_tests.outcome }}" == "success" ]; then
             echo "- ✅ Backend unit tests passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Backend unit tests failed" >> $GITHUB_STEP_SUMMARY
@@ -367,7 +371,7 @@ jobs:
   frontend_tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     permissions:
       contents: read
@@ -405,6 +409,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Frontend unit tests & coverage
+        id: frontend_unit_tests
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend test -- --coverage --maxWorkers=2 --reporter=default --reporter=json --outputFile=coverage/vitest-unit.json
 
@@ -436,7 +441,7 @@ jobs:
         if: always()
         run: |
           echo "## Frontend Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.frontend_unit_tests.outcome }}" == "success" ]; then
             echo "- ✅ Frontend unit tests passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Frontend unit tests failed" >> $GITHUB_STEP_SUMMARY
@@ -445,7 +450,7 @@ jobs:
   backoffice_tests:
     name: Backoffice E2E
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -471,6 +476,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run backoffice authorization smoke tests
+        id: backoffice_smoke
         timeout-minutes: 10
         run: pnpm test:backoffice
 
@@ -489,7 +495,7 @@ jobs:
         if: always()
         run: |
           echo "## Backoffice E2E Summary" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "${{ steps.backoffice_smoke.outcome }}" = "success" ]; then
             echo "- ✅ Backoffice privilege-wall smoke tests passed." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "- ❌ Backoffice privilege-wall smoke tests failed." >> "$GITHUB_STEP_SUMMARY"
@@ -498,7 +504,7 @@ jobs:
   database_tests:
     name: Database Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -576,11 +582,13 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Run database migration tests
+        id: migration_tests
         timeout-minutes: 10
         run: |
           pnpm --filter @fitvibe/backend exec jest migrations/migrations.test.ts --maxWorkers=1
 
       - name: Run database seed tests
+        id: seed_tests
         timeout-minutes: 10
         run: |
           pnpm --filter @fitvibe/backend exec jest seeds/seeds.test.ts --maxWorkers=1
@@ -597,17 +605,13 @@ jobs:
         if: always()
         run: |
           echo "## Database Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "- ✅ Migration tests passed" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ Seed tests passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ❌ Database tests failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- Migration tests: ${{ steps.migration_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Seed tests: ${{ steps.seed_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
 
   coverage:
     name: Coverage Gate
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - backend_tests
@@ -646,16 +650,23 @@ jobs:
           name: frontend-coverage-${{ github.run_id }}
           path: apps/frontend/coverage
 
-      - name: Aggregate coverage files
+      - name: Aggregate required coverage artifacts
         timeout-minutes: 5
         run: |
+          set -euo pipefail
+          backend=apps/backend/coverage/lcov.info
+          frontend=apps/frontend/coverage/lcov.info
+          test -s "${backend}" || { echo "::error::Missing backend LCOV artifact"; exit 1; }
+          test -s "${frontend}" || { echo "::error::Missing frontend LCOV artifact"; exit 1; }
           mkdir -p coverage
-          find apps packages -name "lcov.info" -exec cat {} \; > coverage/lcov.info || true
-          if [ ! -s coverage/lcov.info ]; then
-            echo "No coverage files found" > coverage/lcov.info
-          fi
+          cat "${backend}" "${frontend}" > coverage/lcov.info
+          test -s coverage/lcov.info
+      - name: Test coverage gate failure cases
+        timeout-minutes: 2
+        run: node --test tests/qa/check-coverage.test.cjs
 
       - name: Enforce coverage gate
+        id: coverage_gate_check
         timeout-minutes: 10
         run: pnpm test:coverage:gate
 
@@ -682,7 +693,7 @@ jobs:
         if: always()
         run: |
           echo "## Coverage Gate Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.coverage_gate_check.outcome }}" == "success" ]; then
             echo "- ✅ Coverage gate passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Coverage gate failed" >> $GITHUB_STEP_SUMMARY
@@ -691,7 +702,7 @@ jobs:
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     needs:
       - quality
@@ -708,18 +719,6 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install native canvas prerequisites
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y \
-            build-essential \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libjpeg-dev \
-            libgif-dev \
-            librsvg2-dev \
-            postgresql-client
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
@@ -747,6 +746,7 @@ jobs:
           exit 1
 
       - name: Run Lighthouse CI
+        id: lighthouse_check
         timeout-minutes: 10
         env:
           LHCI_PORT: "4173"
@@ -777,7 +777,7 @@ jobs:
         if: always()
         run: |
           echo "## Lighthouse Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.lighthouse_check.outcome }}" == "success" ]; then
             echo "- ✅ Lighthouse CI passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Lighthouse CI failed" >> $GITHUB_STEP_SUMMARY
@@ -786,7 +786,7 @@ jobs:
   i18n:
     name: i18n Coverage Check
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     needs:
       - quality
@@ -809,6 +809,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Check i18n coverage
+        id: i18n_check
         timeout-minutes: 10
         run: pnpm i18n:check
 
@@ -816,7 +817,7 @@ jobs:
         if: always()
         run: |
           echo "## i18n Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.i18n_check.outcome }}" == "success" ]; then
             echo "- ✅ i18n coverage check passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ i18n coverage check failed" >> $GITHUB_STEP_SUMMARY
@@ -825,7 +826,7 @@ jobs:
   contract_tests:
     name: API Contract Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - quality
@@ -856,6 +857,7 @@ jobs:
         run: pnpm -w openapi:build
 
       - name: Run OpenAPI contract tests
+        id: openapi_contract_tests
         timeout-minutes: 10
         env:
           CI: "true"
@@ -865,7 +867,7 @@ jobs:
         if: always()
         run: |
           echo "## API Contract Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.openapi_contract_tests.outcome }}" == "success" ]; then
             echo "- ✅ OpenAPI contract tests passed" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ Zod ↔ OpenAPI schema alignment verified" >> $GITHUB_STEP_SUMMARY
           else
@@ -876,7 +878,7 @@ jobs:
   integration:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - backend_tests
@@ -1018,12 +1020,14 @@ jobs:
         run: pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
 
       - name: Run scripts.test.ts
+        id: scripts_tests
         timeout-minutes: 10
         env:
           CI: "true"
         run: pnpm --filter @fitvibe/backend exec jest tests/backend/db/utils/scripts.test.ts --maxWorkers=1
 
       - name: Run integration tests
+        id: integration_tests
         timeout-minutes: 20
         env:
           NODE_ENV: test
@@ -1043,17 +1047,13 @@ jobs:
         if: always()
         run: |
           echo "## Integration Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "- ✅ Scripts test passed" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ❌ Integration tests failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- Scripts test: ${{ steps.scripts_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Integration tests: ${{ steps.integration_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
 
   openapi_spec:
     name: Build OpenAPI spec
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - quality
@@ -1113,7 +1113,7 @@ jobs:
   metrics_contract:
     name: Metrics Contract
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 5
     needs:
       - quality
@@ -1135,7 +1135,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 35
     needs:
       - quality
@@ -1159,20 +1159,8 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install native canvas prerequisites
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y \
-            build-essential \
-            libcairo2-dev \
-            libpango1.0-dev \
-            libjpeg-dev \
-            libgif-dev \
-            librsvg2-dev \
-            postgresql-client
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --no-offline
+      # Dependency audit, OSV, TruffleHog, static secrets, and Trivy operate on
+      # source/lockfiles. Do not compile/install the entire monorepo here.
 
       - name: Dependency audit
         id: dependency_audit
@@ -1284,7 +1272,7 @@ jobs:
   codeql_compatibility:
     name: CodeQL Compatibility (javascript)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - quality
@@ -1315,7 +1303,7 @@ jobs:
   zap_baseline:
     name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -1414,7 +1402,7 @@ jobs:
   performance:
     name: Performance Budgets (real backend)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -1559,7 +1547,7 @@ jobs:
     name: Pre-main amd64 Production Smoke
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     permissions:
       contents: read
     services:
@@ -1732,7 +1720,7 @@ jobs:
     name: Pre-main arm64 Production Build
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     permissions:
       contents: read
     steps:
@@ -1803,7 +1791,7 @@ jobs:
       - e2e
       - pre_main_amd64_smoke
       - pre_main_arm64_build
-    if: always() && ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main')))
+    if: always() && ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main')))
     permissions:
       contents: read
     steps:
@@ -1892,7 +1880,7 @@ jobs:
   accessibility:
     name: Accessibility (axe)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     needs:
       - quality
@@ -2018,7 +2006,7 @@ jobs:
   visual_regression:
     name: Visual Regression Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - quality
@@ -2093,6 +2081,7 @@ jobs:
           PY
 
       - name: Run visual regression tests
+        id: visual_regression_tests
         timeout-minutes: 20
         env:
           APP_URL: "http://127.0.0.1:4173"
@@ -2137,7 +2126,7 @@ jobs:
         if: always()
         run: |
           echo "## Visual Regression Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "${{ steps.visual_regression_tests.outcome }}" = "success" ]; then
             echo "- ✅ Visual regression tests passed" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ All screenshots match baseline (maxDiffPixelRatio ≤ 0.2%)" >> $GITHUB_STEP_SUMMARY
           else
@@ -2152,7 +2141,7 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs: integration
     permissions:
@@ -2574,8 +2563,13 @@ jobs:
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       needs.build-platform.result == 'success'
+    outputs:
+      backend_version: ${{ steps.versions.outputs.backend }}
+      frontend_version: ${{ steps.versions.outputs.frontend }}
+      backoffice_version: ${{ steps.versions.outputs.backoffice }}
+      should_release: ${{ steps.release_guard.outputs.should_release }}
     permissions:
-      contents: write
+      contents: read
       packages: write
       id-token: write
       actions: read
@@ -2707,12 +2701,7 @@ jobs:
           frontend_tags=(-t "${FRONTEND_IMAGE}:sha-${GITHUB_SHA}")
           backoffice_tags=(-t "${BACKOFFICE_IMAGE}:sha-${GITHUB_SHA}")
 
-          if [ "${{ steps.release_guard.outputs.should_release }}" = "true" ]; then
-            ingress_tags+=(-t "${INGRESS_IMAGE}:v${{ steps.versions.outputs.backend }}")
-            backend_tags+=(-t "${BACKEND_IMAGE}:v${{ steps.versions.outputs.backend }}")
-            frontend_tags+=(-t "${FRONTEND_IMAGE}:v${{ steps.versions.outputs.frontend }}")
-            backoffice_tags+=(-t "${BACKOFFICE_IMAGE}:v${{ steps.versions.outputs.backoffice }}")
-          fi
+
 
           docker buildx imagetools create \
             "${ingress_tags[@]}" \
@@ -2866,26 +2855,6 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
-      - name: Create Release
-        if: github.ref == 'refs/heads/main' && steps.release_guard.outputs.should_release == 'true'
-        id: create_release
-        timeout-minutes: 5
-        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
-        with:
-          tag: v${{ steps.versions.outputs.backend }}
-          commit: ${{ github.sha }}
-          name: Release v${{ steps.versions.outputs.backend }}
-          body: |
-            - Ingress image: ${{ env.INGRESS_IMAGE }}:v${{ steps.versions.outputs.backend }}
-            - Backend image: ${{ env.BACKEND_IMAGE }}:v${{ steps.versions.outputs.backend }}
-            - Frontend image: ${{ env.FRONTEND_IMAGE }}:v${{ steps.versions.outputs.frontend }}
-            - Backoffice image: ${{ env.BACKOFFICE_IMAGE }}:v${{ steps.versions.outputs.backoffice }}
-          draft: false
-          prerelease: false
-          artifacts: "sbom-backend.spdx.json,sbom-frontend.spdx.json,sbom-backoffice.spdx.json,image-digests.txt,artifacts/openapi/openapi.json"
-          artifactErrorsFailBuild: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Job summary
         if: always()
         run: |
@@ -2966,6 +2935,27 @@ jobs:
           echo "FRONTEND_IMAGE=ghcr.io/${owner}/fitvibe-frontend" >> "$GITHUB_ENV"
           echo "BACKOFFICE_IMAGE=ghcr.io/${owner}/fitvibe-backoffice" >> "$GITHUB_ENV"
 
+      - name: Download immutable image manifest
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: container-artifacts-${{ github.run_id }}
+          path: artifacts
+
+      - name: Select image digests for smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s artifacts/image-digests.txt
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          for component in backend frontend backoffice; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            expected="ghcr.io/${owner}/fitvibe-${component}@sha256:"
+            if [[ "${reference}" != "${expected}"* ]] || [[ ! "${reference}" =~ @sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Missing or invalid immutable ${component} image reference"
+              exit 1
+            fi
+            printf "SMOKE_%s_IMAGE=%s\n" "${component^^}" "${reference}" >> "${GITHUB_ENV}"
+          done
       - name: Install postgresql-client
         timeout-minutes: 2
         run: |
@@ -3018,12 +3008,12 @@ jobs:
 
       - name: Pull backend image
         timeout-minutes: 5
-        run: docker pull ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+        run: docker pull ${SMOKE_BACKEND_IMAGE}
 
       - name: Report backend image size
         timeout-minutes: 2
         run: |
-          BACKEND_TAG="${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}"
+          BACKEND_TAG="${SMOKE_BACKEND_IMAGE}"
           SIZE=$(docker images "$BACKEND_TAG" --format "{{.Size}}" | head -1)
           echo "Backend image size: $SIZE"
           # Extract numeric size (e.g., "1.2GB" -> 1.2)
@@ -3054,7 +3044,7 @@ jobs:
             -e REDIS_ENABLED=true \
             -e REDIS_HOST=host.docker.internal \
             -e REDIS_PORT=6379 \
-            ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+            ${SMOKE_BACKEND_IMAGE}
           echo "Backend container started"
 
       - name: Wait for backend health check
@@ -3088,12 +3078,12 @@ jobs:
 
       - name: Pull frontend image
         timeout-minutes: 5
-        run: docker pull ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+        run: docker pull ${SMOKE_FRONTEND_IMAGE}
 
       - name: Report frontend image size
         timeout-minutes: 2
         run: |
-          FRONTEND_TAG="${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}"
+          FRONTEND_TAG="${SMOKE_FRONTEND_IMAGE}"
           SIZE=$(docker images "$FRONTEND_TAG" --format "{{.Size}}" | head -1)
           echo "Frontend image size: $SIZE"
           NUM_SIZE=$(echo "$SIZE" | sed 's/[^0-9.]//g' | head -c 4)
@@ -3111,7 +3101,7 @@ jobs:
             -p 8080:4173 \
             -e NODE_ENV=production \
             -e PORT=4173 \
-            ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+            ${SMOKE_FRONTEND_IMAGE}
           echo "Frontend container started"
 
       - name: Wait for frontend SSR server
@@ -3146,14 +3136,15 @@ jobs:
       - name: Verify frontend serves SSR HTML
         timeout-minutes: 2
         run: |
-          RESPONSE=$(curl -s http://127.0.0.1:8080/ | head -20)
+          RESPONSE=$(curl -fsS http://127.0.0.1:8080/)
           if echo "$RESPONSE" | grep -qi "<!doctype html\|<html"; then
             echo "✅ Frontend serves SSR HTML"
             # Verify SSR content is present
-            if echo "$RESPONSE" | grep -qi "<div id=\"root\">"; then
+            if grep -Eqi '<div[[:space:]]+id="root"[^>]*>' <<< "$RESPONSE"; then
               echo "✅ SSR content detected in HTML"
             else
-              echo "⚠️ SSR content may not be present"
+              echo "::error::Production frontend did not render the expected SSR root element"
+              exit 1
             fi
           else
             echo "❌ Frontend does not serve HTML"
@@ -3163,14 +3154,14 @@ jobs:
 
       - name: Pull backoffice image
         timeout-minutes: 5
-        run: docker pull ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+        run: docker pull ${SMOKE_BACKOFFICE_IMAGE}
 
       - name: Start backoffice container
         timeout-minutes: 5
         run: |
           docker network create fitvibe-verification
           docker network connect --alias backend fitvibe-verification test-backend
-          docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${{ env.BACKOFFICE_IMAGE }}:sha-${{ github.sha }}
+          docker run -d             --name test-backoffice             --network fitvibe-verification             -p 8081:8080             ${SMOKE_BACKOFFICE_IMAGE}
 
       - name: Verify backoffice production image
         timeout-minutes: 5
@@ -3209,3 +3200,117 @@ jobs:
             echo "- ❌ Build verification failed" >> $GITHUB_STEP_SUMMARY
             echo "- ⚠️ Containers may not be functioning correctly" >> $GITHUB_STEP_SUMMARY
           fi
+
+  publish_release:
+    name: Publish Verified Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs:
+      - build
+      - build_verification
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.build.result == 'success' &&
+      needs.build_verification.result == 'success' &&
+      needs.build.outputs.should_release == 'true'
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Download verified image artifacts
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: container-artifacts-${{ github.run_id }}
+          path: artifacts
+
+      - name: Verify release inputs and current main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --quiet
+          [ "$(git rev-parse origin/main)" = "${GITHUB_SHA}" ] || { echo "::error::main advanced; refusing stale release"; exit 1; }
+          tag="v${{ needs.build.outputs.backend_version }}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error::Release tag ${tag} already exists; refusing to modify it"
+            exit 1
+          fi
+          test -s artifacts/image-digests.txt
+          test -s artifacts/sbom-ingress.spdx.json
+          test -s artifacts/sbom-backend.spdx.json
+          test -s artifacts/sbom-frontend.spdx.json
+          test -s artifacts/sbom-backoffice.spdx.json
+          test -s artifacts/artifacts/openapi/openapi.json
+          grep -Fx "stack_version=${tag}" artifacts/image-digests.txt
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          for component in ingress backend frontend backoffice; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            expected="ghcr.io/${owner}/fitvibe-${component}@sha256:"
+            if [[ "${reference}" != "${expected}"* ]] || [[ ! "${reference}" =~ @sha256:[0-9a-f]{64}$ ]]; then
+              echo "::error::Invalid digest reference for ${component}: ${reference}"
+              exit 1
+            fi
+          done
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote verified digests to version tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          # Refuse mismatched immutable version tags before making any mutation.
+          while IFS='|' read -r component version; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            tag="ghcr.io/${owner}/fitvibe-${component}:v${version}"
+            existing="$(docker buildx imagetools inspect "${tag}" 2>/dev/null | awk '/^Digest:/ {print $2; exit}' || true)"
+            if [ -n "${existing}" ] && [ "${existing}" != "${reference##*@}" ]; then
+              echo "::error::Immutable version tag ${tag} already resolves to a different digest"
+              exit 1
+            fi
+          done <<'EOF_IMAGES'
+          ingress|${{ needs.build.outputs.backend_version }}
+          backend|${{ needs.build.outputs.backend_version }}
+          frontend|${{ needs.build.outputs.frontend_version }}
+          backoffice|${{ needs.build.outputs.backoffice_version }}
+          EOF_IMAGES
+          while IFS='|' read -r component version; do
+            reference="$(sed -n "s/^${component}=//p" artifacts/image-digests.txt)"
+            tag="ghcr.io/${owner}/fitvibe-${component}:v${version}"
+            docker buildx imagetools create -t "${tag}" "${reference}"
+          done <<'EOF_IMAGES'
+          ingress|${{ needs.build.outputs.backend_version }}
+          backend|${{ needs.build.outputs.backend_version }}
+          frontend|${{ needs.build.outputs.frontend_version }}
+          backoffice|${{ needs.build.outputs.backoffice_version }}
+          EOF_IMAGES
+
+      - name: Create Release after container verification
+        timeout-minutes: 5
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
+        with:
+          tag: v${{ needs.build.outputs.backend_version }}
+          commit: ${{ github.sha }}
+          name: Release v${{ needs.build.outputs.backend_version }}
+          body: |
+            Verified SHA: `${{ github.sha }}`
+            Production image digests, SBOMs and the OpenAPI contract are attached.
+            Container smoke verification passed for this CI run.
+          draft: false
+          prerelease: false
+          artifacts: "artifacts/sbom-ingress.spdx.json,artifacts/sbom-backend.spdx.json,artifacts/sbom-frontend.spdx.json,artifacts/sbom-backoffice.spdx.json,artifacts/image-digests.txt,artifacts/artifacts/openapi/openapi.json"
+          artifactErrorsFailBuild: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
