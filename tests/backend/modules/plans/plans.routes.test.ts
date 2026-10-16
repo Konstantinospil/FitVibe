@@ -23,6 +23,7 @@ jest.mock("../../../../apps/backend/src/modules/plans/plans.controller.js", () =
   archivePlanHandler: jest.fn(),
   deletePlanHandler: jest.fn(),
   getPlanStatsHandler: jest.fn(),
+  activatePlanHandler: jest.fn(),
 }));
 
 describe("Plans Routes", () => {
@@ -97,5 +98,13 @@ describe("Plans Routes", () => {
         (layer.route as { methods?: { delete?: boolean } })?.methods?.delete,
     );
     expect(deleteRoute).toBeDefined();
+  });
+  it("registers POST /:id/activate", () => {
+    const route = plansRouter.stack.find(
+      (layer) =>
+        layer.route?.path === "/:id/activate" &&
+        (layer.route as { methods?: { post?: boolean } }).methods?.post,
+    );
+    expect(route).toBeDefined();
   });
 });

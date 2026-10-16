@@ -19,6 +19,7 @@ import {
   type SessionWithExercises,
 } from "../../services/api";
 import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
+import { listTrainingPlans } from "../../services/planApi";
 import { logger } from "../../utils/logger";
 import { Modal } from "./Modal";
 import { RetryErrorPanel } from "./StatusPanel";
@@ -108,6 +109,13 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     enabled: open,
   });
 
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const plans = useQuery({
+    queryKey: ["training-plans"],
+    queryFn: listTrainingPlans,
+    enabled: open && !session && actions.includes("plan"),
+  });
+
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedExerciseId, setSelectedExerciseId] = useState("");
@@ -129,6 +137,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setSaveError(null);
     setSelectedExerciseId("");
     setExerciseSearch("");
+    setSelectedPlanId(session?.plan_id ?? "");
 
     if (!session) {
       setName("");
@@ -280,6 +289,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
             notes: notes.trim() || null,
             planned_at: resolvedPlannedAt,
             visibility: "private",
+            ...(mode === "plan" && selectedPlanId ? { plan_id: selectedPlanId } : {}),
             exercises: exercisesPayload,
           });
 
@@ -361,6 +371,34 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         ) : null}
 
         <TrainingPanel title={t("workoutEditor.sections.general")}>
+          {canPlan && !session ? (
+            <label className="form-label">
+              <span className="form-label-text">{t("workoutEditor.fields.trainingPlan")}</span>
+              <SelectControl
+                aria-label={t("workoutEditor.fields.trainingPlan")}
+                value={selectedPlanId}
+                onChange={(event) => setSelectedPlanId(event.target.value)}
+                disabled={isBusy || plans.isLoading}
+              >
+                <option value="">{t("workoutEditor.placeholders.noTrainingPlan")}</option>
+                {plans.data
+                  ?.filter((plan) => !plan.activated_at && plan.status !== "completed")
+                  .map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name}
+                    </option>
+                  ))}
+              </SelectControl>
+            </label>
+          ) : null}
+          {plans.isError && canPlan && !session ? (
+            <RetryErrorPanel
+              message={t("trainingPlans.errors.list")}
+              retryLabel={t("actions.retry")}
+              onRetry={() => void plans.refetch()}
+              isRetrying={plans.isFetching}
+            />
+          ) : null}
           <div className="workout-editor__general">
             <label className="form-label">
               <span className="form-label-text">{t("workoutEditor.fields.name")}</span>

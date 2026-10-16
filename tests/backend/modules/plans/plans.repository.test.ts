@@ -37,6 +37,7 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   };
 
   mockDbFunction.transaction = jest.fn((callback) => callback(mockDbFunction));
+  (mockDbFunction as any).raw = jest.fn((expression: string) => expression);
 
   return {
     db: mockDbFunction,

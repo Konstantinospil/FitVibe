@@ -16,6 +16,7 @@ import {
 import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
 import { logger } from "../../config/logger.js";
+import { matchesPlanIfMatch } from "./plans.etag.js";
 
 /**
  * Get a plan by ID, ensuring the user owns it
@@ -66,7 +67,7 @@ export async function listUserPlans(
  */
 export async function createUserPlan(
   userId: string,
-  data: { name: string; start_date?: string | null; end_date?: string | null },
+  data: Omit<CreatePlanInput, "id" | "user_id" | "status">,
 ): Promise<PlanRow> {
   const planId = uuidv4();
 
@@ -76,6 +77,9 @@ export async function createUserPlan(
     name: data.name,
     start_date: data.start_date,
     end_date: data.end_date,
+    ...(data.duration_weeks !== undefined ? { duration_weeks: data.duration_weeks } : {}),
+    ...(data.target_frequency !== undefined ? { target_frequency: data.target_frequency } : {}),
+    ...(data.time_zone !== undefined ? { time_zone: data.time_zone } : {}),
   };
 
   return createPlan(input);
@@ -88,13 +92,48 @@ export async function updateUserPlan(
   userId: string,
   planId: string,
   updates: UpdatePlanInput,
+  ifMatch?: string,
 ): Promise<PlanRow> {
-  // Verify ownership
-  await getPlanById(userId, planId);
+  // Verify ownership before checking a client-supplied validator.
+  const existing = await getPlanById(userId, planId);
+  if (ifMatch !== undefined && !matchesPlanIfMatch(existing, ifMatch)) {
+    throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
+  }
+  const changesSchedule =
+    updates.start_date !== undefined ||
+    updates.end_date !== undefined ||
+    updates.duration_weeks !== undefined ||
+    updates.target_frequency !== undefined ||
+    updates.time_zone !== undefined;
+  if (existing.activated_at && changesSchedule) {
+    throw new HttpError(
+      409,
+      "E.PLAN.ALREADY_ACTIVATED",
+      "Activated plan schedule cannot be reconfigured",
+    );
+  }
 
-  const updatedCount = await updatePlanRepo(planId, updates);
+  // ETag writes use an atomic version predicate rather than a check-then-write.
+  // Without If-Match, updates remain last-writer-wins for legacy clients.
+  const updatedCount =
+    ifMatch === undefined
+      ? await updatePlanRepo(planId, updates)
+      : await updatePlanRepo(planId, updates, undefined, existing.revision);
 
   if (updatedCount === 0) {
+    if (changesSchedule) {
+      const latest = await findPlanById(planId);
+      if (latest?.activated_at) {
+        throw new HttpError(
+          409,
+          "E.PLAN.ALREADY_ACTIVATED",
+          "Activated plan schedule cannot be reconfigured",
+        );
+      }
+    }
+    if (ifMatch !== undefined) {
+      throw new HttpError(412, "E.PLAN.STALE_VERSION", "Plan changed; reload before saving");
+    }
     throw new HttpError(404, "E.PLAN.NOT_FOUND", "Plan not found or already archived");
   }
 
@@ -189,3 +228,5 @@ export async function getUserPlanStats(
 
   return { total, active, completed, archived };
 }
+
+export { activateUserPlan } from "./plans.activation.service.js";

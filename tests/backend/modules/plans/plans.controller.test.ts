@@ -27,6 +27,7 @@ describe("Plans Controller", () => {
 
     mockResponse = {
       status: jest.fn().mockReturnThis(),
+      setHeader: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
     };
@@ -127,6 +128,7 @@ describe("Plans Controller", () => {
       await plansController.getPlanHandler(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.json).toHaveBeenCalledWith(mockPlan);
+      expect(mockResponse.setHeader).toHaveBeenCalledWith("ETag", expect.any(String));
     });
 
     it("should throw 400 when plan ID is missing", async () => {
@@ -260,6 +262,20 @@ describe("Plans Controller", () => {
       ).rejects.toThrow(HttpError);
     });
   });
+
+    it("should pass If-Match to the service and return the new validator", async () => {
+      mockRequest.params = { id: planId };
+      mockRequest.body = { name: "Changed" };
+      mockRequest.headers = { "if-match": '"plan-plan-123-1"' };
+      mockPlansService.updateUserPlan.mockResolvedValue({
+        id: planId, revision: 2, name: "Changed",
+      } as never);
+      await plansController.updatePlanHandler(mockRequest as Request, mockResponse as Response);
+      expect(mockPlansService.updateUserPlan).toHaveBeenCalledWith(
+        userId, planId, { name: "Changed" }, '"plan-plan-123-1"',
+      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith("ETag", '"plan-plan-123-2"');
+    });
 
   describe("archivePlanHandler", () => {
     it("should archive plan successfully", async () => {
