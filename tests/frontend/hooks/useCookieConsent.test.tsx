@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { useCookieConsent, shouldShowCookieBanner } from "../../src/hooks/useCookieConsent";
 import { apiClient } from "../../src/services/api";
+import { initializeAnalytics, disableAnalytics } from "../../src/utils/analytics";
+import { initializeMarketing, disableMarketing } from "../../src/utils/marketing";
+
+vi.mock("../../src/utils/analytics", () => ({ initializeAnalytics: vi.fn(), disableAnalytics: vi.fn() }));
+vi.mock("../../src/utils/marketing", () => ({ initializeMarketing: vi.fn(), disableMarketing: vi.fn() }));
 
 vi.mock("../../src/services/api", () => ({
   apiClient: {
@@ -94,6 +99,10 @@ describe("useCookieConsent", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(localStorage.getItem("cookie-consent-banner-shown")).toBe("true"));
+    expect(disableAnalytics).toHaveBeenCalledOnce();
+    expect(disableMarketing).toHaveBeenCalledOnce();
+    expect(initializeAnalytics).not.toHaveBeenCalled();
+    expect(initializeMarketing).not.toHaveBeenCalled();
   });
 
   it("saves preferences with analytics and marketing enabled", async () => {
@@ -119,6 +128,10 @@ describe("useCookieConsent", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => expect(localStorage.getItem("cookie-consent-banner-shown")).toBe("true"));
+    expect(initializeAnalytics).toHaveBeenCalledOnce();
+    expect(initializeMarketing).toHaveBeenCalledOnce();
+    expect(disableAnalytics).not.toHaveBeenCalled();
+    expect(disableMarketing).not.toHaveBeenCalled();
   });
 
   it("reports errors when saving preferences fails", async () => {
