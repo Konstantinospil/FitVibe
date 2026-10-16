@@ -4,13 +4,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import LanguageSwitcher from "../../src/components/LanguageSwitcher";
 
-const { changeLanguage, loadLanguageTranslations } = vi.hoisted(() => ({
+const { changeLanguage, loadLanguageTranslations, updateUserPreferences } = vi.hoisted(() => ({
   changeLanguage: vi.fn().mockResolvedValue(undefined),
   loadLanguageTranslations: vi.fn().mockResolvedValue(undefined),
+  updateUserPreferences: vi.fn(),
 }));
 
 vi.mock("../../src/i18n/config", () => ({
   loadLanguageTranslations,
+}));
+
+vi.mock("../../src/services/api", () => ({
+  updateUserPreferences,
 }));
 
 vi.mock("react-i18next", () => ({
@@ -39,6 +44,7 @@ describe("LanguageSwitcher", () => {
     document.body.innerHTML = "";
     changeLanguage.mockClear();
     loadLanguageTranslations.mockClear();
+    updateUserPreferences.mockReset();
   });
 
   afterEach(() => {
@@ -243,6 +249,42 @@ describe("LanguageSwitcher", () => {
     expect(flag).toHaveAttribute("viewBox", "0 0 27 18");
     expect(flag?.querySelector('rect[width="10"][height="10"]')).toBeInTheDocument();
     expect(flag?.querySelector('rect[width="2"][height="10"]')).toBeInTheDocument();
+  });
+
+  it("persists the signed-in header language before applying it", async () => {
+    updateUserPreferences.mockResolvedValue({ language: "de", measurementSystem: "metric" });
+    render(<LanguageSwitcher persistPreference variant="header" />);
+    fireEvent.click(screen.getByRole("button", { name: /select language/i }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /german/i }));
+
+    await waitFor(() => {
+      expect(updateUserPreferences).toHaveBeenCalledWith({ language: "de" });
+      expect(changeLanguage).toHaveBeenCalledWith("de");
+    });
+    expect(updateUserPreferences.mock.invocationCallOrder[0]).toBeLessThan(
+      changeLanguage.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("does not change the header language when saving the account preference fails", async () => {
+    updateUserPreferences.mockRejectedValue(new Error("Failed to save"));
+    render(<LanguageSwitcher persistPreference variant="header" />);
+    fireEvent.click(screen.getByRole("button", { name: /select language/i }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /german/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "settings.preferences.saveError",
+    );
+    expect(changeLanguage).not.toHaveBeenCalled();
+  });
+
+  it("keeps the public language switcher local without saving account preferences", async () => {
+    render(<LanguageSwitcher />);
+    fireEvent.click(screen.getByRole("button", { name: /select language/i }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /german/i }));
+
+    await waitFor(() => expect(changeLanguage).toHaveBeenCalledWith("de"));
+    expect(updateUserPreferences).not.toHaveBeenCalled();
   });
 
   it("loads locale files before changing language", async () => {

@@ -1021,12 +1021,14 @@
       "duration": "Duration (seconds)",
       "exertion": "Target exertion",
       "restSet": "Rest after each set (seconds)",
-      "restExercise": "Rest after exercise (seconds)"
+      "restExercise": "Rest after exercise (seconds)",
+      "trainingPlan": "Training plan"
     },
     "placeholders": {
       "name": "A name for the workout",
       "notes": "Describe the workout",
-      "exercise": "Select an exercise"
+      "exercise": "Select an exercise",
+      "noTrainingPlan": "No training plan"
     },
     "metrics": {
       "caloriesPerMinute": "Calories / minute",
@@ -1120,6 +1122,54 @@
         "update": "The exercise could not be updated.",
         "types": "Exercise types could not be loaded."
       }
+    }
+  },
+  "loading": {
+    "app": "Loading app…"
+  },
+  "trainingPlans": {
+    "title": "Training plans",
+    "description": "Create, edit, and archive training plans.",
+    "listTitle": "Your plans",
+    "createTitle": "Create training plan",
+    "editTitle": "Edit training plan",
+    "noDate": "Not set",
+    "dateRange": "{{start}} – {{end}}",
+    "sessionCount": "{{count}} sessions",
+    "loading": "Loading plans…",
+    "empty": "No training plans yet.",
+    "fields": {
+      "name": "Name",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "durationWeeks": "Duration (weeks)",
+      "targetFrequency": "Sessions per week",
+      "timeZone": "Time zone"
+    },
+    "actions": {
+      "manage": "Manage training plans",
+      "close": "Close",
+      "create": "New plan",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "reload": "Load latest version",
+      "activate": "Activate"
+    },
+    "delete": {
+      "title": "Archive training plan",
+      "message": "Archive {{name}}? Existing workouts will be preserved."
+    },
+    "errors": {
+      "list": "Could not load training plans.",
+      "loadDetail": "Could not load the plan for editing.",
+      "required": "Enter a plan name.",
+      "dateOrder": "End date must not be before start date.",
+      "save": "Could not save the plan.",
+      "delete": "Could not archive the plan.",
+      "conflict": "This plan was changed elsewhere. Reload the latest version before editing again.",
+      "activate": "Could not activate the training plan."
     }
   }
 }

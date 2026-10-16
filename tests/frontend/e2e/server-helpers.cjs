@@ -7,7 +7,7 @@ const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
 const TEST_USER = {
   id: "11111111-1111-1111-1111-111111111111",
   email: "admin@fitvibe.local",
-  password: "admin",
+  password: process.env.ADMIN_PASSWORD || "admin",
   username: "admin",
   role: "admin",
 };

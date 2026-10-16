@@ -7,8 +7,20 @@ import * as api from "../../src/services/api";
 import * as vibeApi from "../../src/lib/vibeform/api";
 import { cleanupQueryClient, createTestQueryClient } from "../helpers/testQueryClient";
 
+const { changeLanguage, loadLanguageTranslations } = vi.hoisted(() => ({
+  changeLanguage: vi.fn().mockResolvedValue(undefined),
+  loadLanguageTranslations: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { changeLanguage },
+  }),
+}));
+
+vi.mock("../../src/i18n/config", () => ({
+  loadLanguageTranslations,
 }));
 
 vi.mock("../../src/services/api", async () => {
@@ -37,6 +49,8 @@ describe("Settings", () => {
 
   beforeEach(() => {
     queryClient = createTestQueryClient();
+    changeLanguage.mockClear();
+    loadLanguageTranslations.mockClear();
     vi.mocked(api.getCurrentUser).mockResolvedValue({
       id: "u1",
       username: "athlete",
@@ -247,6 +261,37 @@ describe("Settings", () => {
         }),
       );
     });
+  });
+
+  it("applies the saved language to the interface and updates the preferences cache", async () => {
+    renderSettings();
+    const language = await screen.findByLabelText("settings.preferences.language");
+    fireEvent.change(language, { target: { value: "de" } });
+    fireEvent.click(screen.getByRole("button", { name: "settings.preferences.saveButton" }));
+
+    await waitFor(() => {
+      expect(api.updateUserPreferences).toHaveBeenCalledWith({
+        language: "de",
+        measurementSystem: "metric",
+      });
+      expect(loadLanguageTranslations).toHaveBeenCalledWith("de");
+      expect(changeLanguage).toHaveBeenCalledWith("de");
+    });
+    expect(queryClient.getQueryData(["settings", "preferences"])).toEqual({
+      language: "de",
+      measurementSystem: "metric",
+    });
+  });
+
+  it("does not apply a language when saving preferences fails", async () => {
+    vi.mocked(api.updateUserPreferences).mockRejectedValueOnce(new Error("Save failed"));
+    renderSettings();
+    const language = await screen.findByLabelText("settings.preferences.language");
+    fireEvent.change(language, { target: { value: "de" } });
+    fireEvent.click(screen.getByRole("button", { name: "settings.preferences.saveButton" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("settings.preferences.saveError");
+    expect(changeLanguage).not.toHaveBeenCalled();
   });
 
   it("persists Vibeform preferences through the canonical profile API", async () => {

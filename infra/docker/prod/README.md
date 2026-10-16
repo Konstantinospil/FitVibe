@@ -13,6 +13,7 @@ The production host therefore must not maintain an independent Compose definitio
 `/srv/stacks/fitvibe/.env` supplies host-specific configuration and secrets. At minimum it must define:
 
 - `POSTGRES_PASSWORD`
+- `ADMIN_PASSWORD` (at least 12 characters, provisioned privately before the first database seed; never commit the password)
 - application variables required by `.env`/the backend runtime
 
 `INGRESS_IMAGE`, `BACKEND_IMAGE`, `FRONTEND_IMAGE`, `BACKOFFICE_IMAGE`, `POSTGRES_IMAGE`, `CLAMAV_IMAGE`, and `REDIS_IMAGE` are injected by CD from the successful main CI image-digest artifact. The production host does not maintain these image references in `.env`.
@@ -41,6 +42,12 @@ CSRF_ALLOWED_ORIGINS=http://<tailscale-host-or-ip>,http://<tailscale-host-or-ip>
 ```
 
 Do not carry `COOKIE_SECURE=false` into an Internet-facing deployment. The public HTTPS profile must set `COOKIE_SECURE=true` and retain host-only cookies.
+
+### Persistent user media
+
+The backend saves uploaded avatars and progress photos under `MEDIA_STORAGE_ROOT=/app/storage`. The writable `media_data` Docker volume is mounted there in the production Compose file. This volume persists across backend container replacement and must be included in server backups alongside the database. Never run `docker compose down --volumes` on the production stack.
+
+**Migration of existing uploads:** Before switching an already-running installation to this volume, copy media from the old backend container's storage directory (usually `/app/storage`) into the new volume. Otherwise the database will retain media records pointing to images that are no longer accessible. Plan this as a stopped-backend maintenance operation: preserve an independent backup, create the new named volume, copy the complete old storage tree (including `avatars/` and `progress/`) with permissions intact, and verify representative files against `GET /api/v1/users/avatar/:id` after deployment. Do not remove the old container until migration and verification are complete. Files already lost to an earlier container recreation require recovery from backups or re-upload.
 
 ## Validation
 

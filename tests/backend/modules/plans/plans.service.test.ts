@@ -72,6 +72,7 @@ const createMockPlan = (overrides?: Partial<PlanRow>): PlanRow => ({
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   archived_at: null,
+  revision: 1,
   ...overrides,
 });
 
@@ -334,6 +335,13 @@ describe("Plans Service", () => {
   });
 
   describe("updateUserPlan", () => {
+    beforeEach(() => {
+      // clearAllMocks does not clear queued mockResolvedValueOnce responses.
+      // Each update scenario must begin with a fresh repository response sequence.
+      mockedFindPlanById.mockReset();
+      mockedUpdatePlan.mockReset();
+    });
+
     it("should update plan when user owns it", async () => {
       const existingPlan = createMockPlan({ name: "Old Plan" });
 
@@ -358,17 +366,13 @@ describe("Plans Service", () => {
     it("should throw 404 when plan not found after update", async () => {
       const existingPlan = createMockPlan({ name: "Old Plan" });
 
-      mockedFindPlanById
-        .mockResolvedValueOnce(existingPlan) // For ownership check
-        .mockResolvedValueOnce(undefined); // Plan not found after update
-      mockedUpdatePlan.mockResolvedValue(0);
+      mockedFindPlanById.mockResolvedValueOnce(existingPlan); // Ownership check
+      mockedUpdatePlan.mockResolvedValue(0); // No database row updated
 
-      await expect(
-        plansService.updateUserPlan("user-123", "plan-1", { name: "Updated Plan" }),
-      ).rejects.toThrow(HttpError);
       const error = await plansService
         .updateUserPlan("user-123", "plan-1", { name: "Updated Plan" })
         .catch((e) => e);
+      expect(error).toBeInstanceOf(HttpError);
       expect((error as HttpError).code).toBe("E.PLAN.NOT_FOUND");
     });
 
@@ -387,18 +391,17 @@ describe("Plans Service", () => {
       expect((error as HttpError).code).toBe("E.PLAN.UPDATE_FAILED");
     });
 
-    it("should handle case when update returns 0 but plan still exists", async () => {
+    it("returns 404 when an update matches no persisted row despite initial ownership", async () => {
       const existingPlan = createMockPlan({ name: "Old Plan" });
-      const updatedPlan = { ...existingPlan, name: "Updated Plan" };
+      mockedFindPlanById.mockResolvedValueOnce(existingPlan);
+      mockedUpdatePlan.mockResolvedValue(0);
 
-      mockedFindPlanById
-        .mockResolvedValueOnce(existingPlan) // For ownership check
-        .mockResolvedValueOnce(updatedPlan); // For returning updated plan
-      mockedUpdatePlan.mockResolvedValue(0); // Update returns 0
-
-      await expect(
-        plansService.updateUserPlan("user-123", "plan-1", { name: "Updated Plan" }),
-      ).rejects.toThrow("Plan not found or already archived");
+      const error = await plansService
+        .updateUserPlan("user-123", "plan-1", { name: "Updated Plan" })
+        .catch((cause) => cause);
+      expect(error).toBeInstanceOf(HttpError);
+      expect((error as HttpError).code).toBe("E.PLAN.NOT_FOUND");
+      expect(mockedUpdatePlan).toHaveBeenCalledTimes(1);
     });
 
     it("should update plan with multiple fields", async () => {

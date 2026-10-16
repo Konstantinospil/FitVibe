@@ -13,9 +13,14 @@ export interface PlanRow {
   completed_count: number;
   start_date: string | null;
   end_date: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
+  activated_at?: string | null;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  revision: number;
 }
 
 export interface CreatePlanInput {
@@ -25,6 +30,9 @@ export interface CreatePlanInput {
   status?: "active" | "completed";
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
 }
 
 export interface UpdatePlanInput {
@@ -35,6 +43,9 @@ export interface UpdatePlanInput {
   completed_count?: number;
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  time_zone?: string;
 }
 
 export interface ListPlansFilters {
@@ -119,9 +130,13 @@ export async function createPlan(input: CreatePlanInput, trx?: Knex.Transaction)
     completed_count: 0,
     start_date: input.start_date ?? null,
     end_date: input.end_date ?? null,
+    duration_weeks: input.duration_weeks ?? null,
+    target_frequency: input.target_frequency ?? null,
+    time_zone: input.time_zone ?? "UTC",
     created_at: now,
     updated_at: now,
     archived_at: null,
+    revision: 1,
   };
 
   const [created] = await withDb(trx)<PlanRow>(PLANS_TABLE).insert(planData).returning("*");
@@ -136,9 +151,11 @@ export async function updatePlan(
   planId: string,
   updates: UpdatePlanInput,
   trx?: Knex.Transaction,
+  expectedRevision?: number,
 ): Promise<number> {
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
+    revision: db.raw("revision + 1"),
   };
 
   if (updates.name !== undefined) {
@@ -169,20 +186,38 @@ export async function updatePlan(
     patch.end_date = updates.end_date;
   }
 
-  return withDb(trx)<PlanRow>(PLANS_TABLE)
-    .where({ id: planId })
-    .whereNull("archived_at")
-    .update(patch);
+  const query = withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at");
+  // Prevent concurrent schedule edits after another request activates the plan.
+  if (
+    updates.start_date !== undefined ||
+    updates.end_date !== undefined ||
+    updates.duration_weeks !== undefined ||
+    updates.target_frequency !== undefined ||
+    updates.time_zone !== undefined
+  ) {
+    query.whereNull("activated_at");
+  }
+
+  // Compare-and-swap in SQL: two simultaneous editors cannot both win.
+  if (expectedRevision !== undefined) {
+    query.where({ revision: expectedRevision });
+  }
+
+  return query.update(patch);
 }
 
 /**
  * Archive a plan (soft delete)
  */
 export async function archivePlan(planId: string, trx?: Knex.Transaction): Promise<number> {
-  return withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at").update({
-    archived_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  });
+  return withDb(trx)<PlanRow>(PLANS_TABLE)
+    .where({ id: planId })
+    .whereNull("archived_at")
+    .update({
+      archived_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      revision: db.raw("revision + 1"),
+    });
 }
 
 /**
@@ -233,5 +268,6 @@ export async function updatePlanProgress(
       completed_count: completedCount,
       progress_percent: Math.round(progressPercent * 100) / 100, // Round to 2 decimal places
       updated_at: new Date().toISOString(),
+      revision: db.raw("revision + 1"),
     });
 }

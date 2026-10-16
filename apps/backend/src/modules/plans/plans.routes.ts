@@ -9,6 +9,7 @@ import {
   archivePlanHandler,
   deletePlanHandler,
   getPlanStatsHandler,
+  activatePlanHandler,
 } from "./plans.controller.js";
 
 export const plansRouter = Router();
@@ -30,6 +31,9 @@ plansRouter.get("/:id", asyncHandler(getPlanHandler));
 
 // PATCH /api/v1/plans/:id - Update a plan
 plansRouter.patch("/:id", asyncHandler(updatePlanHandler));
+
+// POST /api/v1/plans/:id/activate
+plansRouter.post("/:id/activate", asyncHandler(activatePlanHandler));
 
 // POST /api/v1/plans/:id/archive - Archive a plan
 plansRouter.post("/:id/archive", asyncHandler(archivePlanHandler));

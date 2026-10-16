@@ -89,6 +89,23 @@ if not any(
     raise SystemExit("backend must bind 127.0.0.1:4000 to container port 4000")
 
 backend_volumes = services["backend"].get("volumes") or []
+if backend_env.get("MEDIA_STORAGE_ROOT") != "/app/storage":
+    raise SystemExit("backend MEDIA_STORAGE_ROOT must target the persistent media mount")
+
+media_volumes = [
+    v for v in backend_volumes
+    if isinstance(v, dict) and v.get("target") == "/app/storage"
+]
+if len(media_volumes) != 1 or not all(
+    v.get("type") == "volume"
+    and v.get("source") == "media_data"
+    and v.get("read_only") is not True
+    for v in media_volumes
+):
+    raise SystemExit("backend media storage must use writable media_data volume at /app/storage")
+if "media_data" not in data.get("volumes", {}):
+    raise SystemExit("production Compose must declare the media_data persistent volume")
+
 if not any(
     isinstance(v, dict)
     and v.get("type") == "bind"

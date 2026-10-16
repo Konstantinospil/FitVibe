@@ -3,7 +3,7 @@
  *
  * Tests the complete avatar upload flow:
  * 1. User registration and login
- * 2. Avatar upload via POST /api/v1/users/avatar
+ * 2. Avatar upload via POST /api/v1/users/me/avatar
  * 3. File validation (type, size, malware scanning)
  * 4. Image processing (resize, format conversion)
  * 5. Avatar retrieval via GET /api/v1/users/avatar/:id
@@ -112,7 +112,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
 
@@ -127,7 +127,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
 
   it("should reject upload without file", async () => {
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`);
 
     expect(response.status).toBe(422);
@@ -138,7 +138,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const pdfBuffer = Buffer.from("%PDF-1.4 fake pdf content");
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", pdfBuffer, "test.pdf")
       .field("Content-Type", "application/pdf");
@@ -151,7 +151,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const largeBuffer = Buffer.alloc(6 * 1024 * 1024);
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", largeBuffer, "large-file.png")
       .field("Content-Type", "image/png");
@@ -164,7 +164,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const imageBuffer = await createTestImageBuffer(500, 500, "jpeg");
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.jpg");
 
@@ -177,7 +177,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const imageBuffer = await createTestImageBuffer(500, 500, "webp");
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.webp");
 
@@ -230,7 +230,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const imageBuffer = await createTestImageBuffer(1000, 1000, "png");
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "large-avatar.png");
 
@@ -259,7 +259,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     // Upload avatar first
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
     const uploadResponse = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
 
@@ -286,7 +286,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     // Upload avatar first
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
     const uploadResponse = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
 
@@ -318,7 +318,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     // Upload first avatar
     const imageBuffer1 = await createTestImageBuffer(500, 500, "png");
     const uploadResponse1 = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer1, "avatar1.png");
 
@@ -328,7 +328,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     // Upload second avatar (should replace first)
     const imageBuffer2 = await createTestImageBuffer(600, 600, "png");
     const uploadResponse2 = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer2, "avatar2.png");
 
@@ -346,7 +346,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
 
     // First upload
     const response1 = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .set("Idempotency-Key", idempotencyKey)
       .attach("avatar", imageBuffer, "test-avatar.png");
@@ -358,7 +358,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
 
     // Second upload with same idempotency key (should replay)
     const response2 = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .set("Idempotency-Key", idempotencyKey)
       .attach("avatar", imageBuffer, "test-avatar.png");
@@ -435,7 +435,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     // Upload avatar first
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
     await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
 
@@ -465,7 +465,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
 
     await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
 
@@ -485,7 +485,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     // Upload avatar first
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
     await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
 
@@ -506,7 +506,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
     const imageBuffer = await createTestImageBuffer(500, 500, "png");
 
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .attach("avatar", imageBuffer, "test-avatar.png");
 
     expect(response.status).toBe(401);
@@ -523,7 +523,7 @@ describeWithTestDatabase("Integration: Avatar Upload", () => {
 
     const startTime = Date.now();
     const response = await request(app)
-      .post("/api/v1/users/avatar")
+      .post("/api/v1/users/me/avatar")
       .set("Authorization", `Bearer ${authToken}`)
       .attach("avatar", imageBuffer, "test-avatar.png");
     const endTime = Date.now();

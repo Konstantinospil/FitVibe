@@ -13,6 +13,7 @@ import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 import { logger } from "../utils/logger";
 import WorkoutEditor, { type WorkoutEditorAction } from "../components/composites/WorkoutEditor";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
+import PlanManagement from "../components/composites/PlanManagement";
 
 const startOfWeek = (date: Date) => {
   const copy = new Date(date);
@@ -51,6 +52,7 @@ const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [editorAction, setEditorAction] = useState<WorkoutEditorAction | null>(null);
+  const [managePlansOpen, setManagePlansOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -182,6 +184,9 @@ const CalendarPage: React.FC = () => {
           className="calendar-surface__month"
           footer={
             <>
+              <Button variant="secondary" size="sm" onClick={() => setManagePlansOpen(true)}>
+                {t("trainingPlans.actions.manage")}
+              </Button>
               <Button variant="secondary" size="sm" onClick={() => setEditorAction("plan")}>
                 {t("calendarSurface.actions.plan")}
               </Button>
@@ -367,6 +372,8 @@ const CalendarPage: React.FC = () => {
           </div>
         </TrainingPanel>
       </div>
+
+      <PlanManagement open={managePlansOpen} onClose={() => setManagePlansOpen(false)} />
 
       <WorkoutEditor
         open={editorAction !== null}
