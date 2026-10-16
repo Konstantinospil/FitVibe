@@ -56,7 +56,7 @@ export function getCachedHtml(url: string): string | null {
   }
 
   // Check disk cache
-  if (process.env.NODE_ENV === "production") {
+  if (process.env["NODE_ENV"] === "production") {
     const cachePath = getCachePath(url);
     if (existsSync(cachePath)) {
       try {
@@ -94,7 +94,7 @@ export function setCachedHtml(url: string, html: string): void {
   memoryCache.set(url, { html, timestamp: Date.now() });
 
   // Store on disk in production
-  if (process.env.NODE_ENV === "production") {
+  if (process.env["NODE_ENV"] === "production") {
     try {
       const cachePath = getCachePath(url);
       // Ensure cache directory exists
