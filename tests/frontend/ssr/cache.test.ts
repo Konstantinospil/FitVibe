@@ -185,7 +185,7 @@ describe("SSR cache", () => {
 
     expect(mockMkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
     expect(mockWriteFileSync).toHaveBeenCalledWith(
-      expect.stringMatching(/reset-password\\.html$/),
+      expect.stringMatching(/reset-password\.html$/),
       "<html>reset</html>",
       "utf-8",
     );
