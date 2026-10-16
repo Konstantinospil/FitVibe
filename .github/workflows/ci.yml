@@ -341,6 +341,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Backend unit tests & coverage
+        id: backend_unit_tests
         timeout-minutes: 15
         run: pnpm --filter @fitvibe/backend exec jest --coverage --maxWorkers=2 --testPathIgnorePatterns="migrations/migrations\\.test\\.ts|seeds/seeds\\.test\\.ts|.*\\.integration\\.test\\.ts$" --json --outputFile=coverage/jest-unit.json
 
@@ -361,7 +362,7 @@ jobs:
         if: always()
         run: |
           echo "## Backend Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.backend_unit_tests.outcome }}" == "success" ]; then
             echo "- ✅ Backend unit tests passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Backend unit tests failed" >> $GITHUB_STEP_SUMMARY
@@ -408,6 +409,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Frontend unit tests & coverage
+        id: frontend_unit_tests
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend test -- --coverage --maxWorkers=2 --reporter=default --reporter=json --outputFile=coverage/vitest-unit.json
 
@@ -439,7 +441,7 @@ jobs:
         if: always()
         run: |
           echo "## Frontend Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.frontend_unit_tests.outcome }}" == "success" ]; then
             echo "- ✅ Frontend unit tests passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Frontend unit tests failed" >> $GITHUB_STEP_SUMMARY
@@ -474,6 +476,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run backoffice authorization smoke tests
+        id: backoffice_smoke
         timeout-minutes: 10
         run: pnpm test:backoffice
 
@@ -492,7 +495,7 @@ jobs:
         if: always()
         run: |
           echo "## Backoffice E2E Summary" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "${{ steps.backoffice_smoke.outcome }}" = "success" ]; then
             echo "- ✅ Backoffice privilege-wall smoke tests passed." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "- ❌ Backoffice privilege-wall smoke tests failed." >> "$GITHUB_STEP_SUMMARY"
@@ -579,11 +582,13 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Run database migration tests
+        id: migration_tests
         timeout-minutes: 10
         run: |
           pnpm --filter @fitvibe/backend exec jest migrations/migrations.test.ts --maxWorkers=1
 
       - name: Run database seed tests
+        id: seed_tests
         timeout-minutes: 10
         run: |
           pnpm --filter @fitvibe/backend exec jest seeds/seeds.test.ts --maxWorkers=1
@@ -600,12 +605,8 @@ jobs:
         if: always()
         run: |
           echo "## Database Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "- ✅ Migration tests passed" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ Seed tests passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ❌ Database tests failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- Migration tests: ${{ steps.migration_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Seed tests: ${{ steps.seed_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
 
   coverage:
     name: Coverage Gate
@@ -665,6 +666,7 @@ jobs:
         run: node --test tests/qa/check-coverage.test.cjs
 
       - name: Enforce coverage gate
+        id: coverage_gate_check
         timeout-minutes: 10
         run: pnpm test:coverage:gate
 
@@ -691,7 +693,7 @@ jobs:
         if: always()
         run: |
           echo "## Coverage Gate Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.coverage_gate_check.outcome }}" == "success" ]; then
             echo "- ✅ Coverage gate passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Coverage gate failed" >> $GITHUB_STEP_SUMMARY
@@ -744,6 +746,7 @@ jobs:
           exit 1
 
       - name: Run Lighthouse CI
+        id: lighthouse_check
         timeout-minutes: 10
         env:
           LHCI_PORT: "4173"
@@ -774,7 +777,7 @@ jobs:
         if: always()
         run: |
           echo "## Lighthouse Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.lighthouse_check.outcome }}" == "success" ]; then
             echo "- ✅ Lighthouse CI passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ Lighthouse CI failed" >> $GITHUB_STEP_SUMMARY
@@ -806,6 +809,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Check i18n coverage
+        id: i18n_check
         timeout-minutes: 10
         run: pnpm i18n:check
 
@@ -813,7 +817,7 @@ jobs:
         if: always()
         run: |
           echo "## i18n Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.i18n_check.outcome }}" == "success" ]; then
             echo "- ✅ i18n coverage check passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "- ❌ i18n coverage check failed" >> $GITHUB_STEP_SUMMARY
@@ -853,6 +857,7 @@ jobs:
         run: pnpm -w openapi:build
 
       - name: Run OpenAPI contract tests
+        id: openapi_contract_tests
         timeout-minutes: 10
         env:
           CI: "true"
@@ -862,7 +867,7 @@ jobs:
         if: always()
         run: |
           echo "## API Contract Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
+          if [ "${{ steps.openapi_contract_tests.outcome }}" == "success" ]; then
             echo "- ✅ OpenAPI contract tests passed" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ Zod ↔ OpenAPI schema alignment verified" >> $GITHUB_STEP_SUMMARY
           else
@@ -1015,12 +1020,14 @@ jobs:
         run: pnpm --filter @fitvibe/backend exec tsx src/db/utils/migrateAll.ts
 
       - name: Run scripts.test.ts
+        id: scripts_tests
         timeout-minutes: 10
         env:
           CI: "true"
         run: pnpm --filter @fitvibe/backend exec jest tests/backend/db/utils/scripts.test.ts --maxWorkers=1
 
       - name: Run integration tests
+        id: integration_tests
         timeout-minutes: 20
         env:
           NODE_ENV: test
@@ -1040,12 +1047,8 @@ jobs:
         if: always()
         run: |
           echo "## Integration Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "- ✅ Scripts test passed" >> $GITHUB_STEP_SUMMARY
-            echo "- ✅ Integration tests passed" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ❌ Integration tests failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- Scripts test: ${{ steps.scripts_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Integration tests: ${{ steps.integration_tests.outcome }}" >> "$GITHUB_STEP_SUMMARY"
 
   openapi_spec:
     name: Build OpenAPI spec
