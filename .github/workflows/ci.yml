@@ -2218,9 +2218,10 @@ jobs:
       - name: Install project dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Install Playwright browsers
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps
+      # E2E tests use Chromium; do not download Firefox and WebKit unnecessarily.
+      - name: Install Playwright Chromium
+        timeout-minutes: 12
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Migrate and seed E2E database
         timeout-minutes: 10
