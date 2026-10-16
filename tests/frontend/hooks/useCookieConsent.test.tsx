@@ -135,6 +135,80 @@ describe("useCookieConsent", () => {
     await waitFor(() => expect(screen.getByText("Error")).toBeInTheDocument());
   });
 
+
+  it.each(["Network Error", "ERR_NETWORK", "ECONNREFUSED"])(
+    "treats %s as a connection failure without displaying an error",
+    async (message) => {
+      (apiClient.get as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(message));
+
+      render(<TestComponent />);
+
+      expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+      expect(screen.getByText("NoError")).toBeInTheDocument();
+    },
+  );
+
+  it("handles network errors represented by plain API error objects", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockRejectedValue({
+      code: "ERR_NETWORK",
+      message: "Network Error",
+    });
+
+    render(<TestComponent />);
+
+    expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+    expect(screen.getByText("NoError")).toBeInTheDocument();
+  });
+
+  it("reports non-network API error objects as fetch failures", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockRejectedValue({
+      message: "Consent service rejected request",
+    });
+
+    render(<TestComponent />);
+
+    expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+    expect(screen.getByText("Error")).toBeInTheDocument();
+  });
+
+  it("reports malformed API errors without granting consent", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockRejectedValue(null);
+
+    render(<TestComponent />);
+
+    expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+    expect(screen.getByText("Error")).toBeInTheDocument();
+  });
+
+  it("recovers from an initial fetch failure when consent status is refreshed", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>)
+      .mockRejectedValueOnce(new Error("Consent temporarily unavailable"))
+      .mockResolvedValueOnce({ data: { data: { hasConsent: true } } });
+
+    const RefreshComponent = () => {
+      const { consentStatus, error, isLoading, refreshStatus } = useCookieConsent();
+      return (
+        <div>
+          <div>{isLoading ? "Loading" : consentStatus?.hasConsent ? "HasConsent" : "NoConsent"}</div>
+          <div>{error ? "Error" : "NoError"}</div>
+          <button type="button" onClick={() => void refreshStatus()}>
+            Refresh consent
+          </button>
+        </div>
+      );
+    };
+
+    render(<RefreshComponent />);
+    expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+    expect(screen.getByText("Error")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh consent" }));
+
+    expect(await screen.findByText("HasConsent")).toBeInTheDocument();
+    expect(screen.getByText("NoError")).toBeInTheDocument();
+    expect(apiClient.get).toHaveBeenCalledTimes(2);
+  });
+
   it("respects the banner shown localStorage flag", () => {
     expect(shouldShowCookieBanner()).toBe(true);
     localStorage.setItem("cookie-consent-banner-shown", "true");
