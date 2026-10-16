@@ -4,6 +4,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from "node:fs";
+import { env } from "node:process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -56,7 +57,7 @@ export function getCachedHtml(url: string): string | null {
   }
 
   // Check disk cache
-  if (process.env["NODE_ENV"] === "production") {
+  if (env.NODE_ENV === "production") {
     const cachePath = getCachePath(url);
     if (existsSync(cachePath)) {
       try {
@@ -94,7 +95,7 @@ export function setCachedHtml(url: string, html: string): void {
   memoryCache.set(url, { html, timestamp: Date.now() });
 
   // Store on disk in production
-  if (process.env["NODE_ENV"] === "production") {
+  if (env.NODE_ENV === "production") {
     try {
       const cachePath = getCachePath(url);
       // Ensure cache directory exists
