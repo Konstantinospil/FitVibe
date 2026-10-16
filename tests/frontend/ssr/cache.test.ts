@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type * as NodeFs from "node:fs";
+import { env as nodeProcessEnv } from "node:process";
 
 // Use vi.hoisted to create mocks that are available before module import
 const { mockExistsSync, mockReadFileSync, mockWriteFileSync, mockMkdirSync, mockStatSync } =
@@ -53,13 +54,13 @@ describe("SSR cache", () => {
     vi.resetAllMocks();
     mockExistsSync.mockReturnValue(false);
     mockStatSync.mockImplementation(() => ({ mtimeMs: Date.now() }));
-    process.env.NODE_ENV = originalEnv;
+    nodeProcessEnv.NODE_ENV = originalEnv;
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();
-    process.env.NODE_ENV = originalEnv;
+    nodeProcessEnv.NODE_ENV = originalEnv;
     clearCache();
   });
 
@@ -158,7 +159,7 @@ describe("SSR cache", () => {
   });
 
   it("reads fresh disk HTML in production and serves subsequent requests from memory", () => {
-    vi.stubEnv("NODE_ENV", "production");
+    nodeProcessEnv.NODE_ENV = "production";
     mockExistsSync.mockReturnValue(true);
     mockStatSync.mockReturnValue({ mtimeMs: Date.now() - 1000 } as NodeFs.Stats);
     mockReadFileSync.mockReturnValue("<html>from disk</html>");
@@ -170,7 +171,7 @@ describe("SSR cache", () => {
   });
 
   it("does not serve an expired disk file", () => {
-    vi.stubEnv("NODE_ENV", "production");
+    nodeProcessEnv.NODE_ENV = "production";
     mockExistsSync.mockReturnValue(true);
     mockStatSync.mockReturnValue({ mtimeMs: Date.now() - 6 * 60 * 1000 } as NodeFs.Stats);
 
@@ -179,7 +180,7 @@ describe("SSR cache", () => {
   });
 
   it("writes production HTML to disk using a canonical path without query parameters", () => {
-    vi.stubEnv("NODE_ENV", "production");
+    nodeProcessEnv.NODE_ENV = "production";
     setCachedHtml("/reset-password?token=sensitive", "<html>reset</html>");
 
     expect(mockMkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
@@ -192,7 +193,7 @@ describe("SSR cache", () => {
   });
 
   it("keeps the memory cache usable when the production disk write fails", () => {
-    vi.stubEnv("NODE_ENV", "production");
+    nodeProcessEnv.NODE_ENV = "production";
     mockWriteFileSync.mockImplementation(() => { throw new Error("disk full"); });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -203,7 +204,7 @@ describe("SSR cache", () => {
   });
 
   it("ignores disk metadata errors and regenerates rather than serving uncertain HTML", () => {
-    vi.stubEnv("NODE_ENV", "production");
+    nodeProcessEnv.NODE_ENV = "production";
     mockExistsSync.mockReturnValue(true);
     mockStatSync.mockImplementation(() => { throw new Error("file disappeared"); });
 
@@ -226,7 +227,7 @@ describe("SSR cache", () => {
 
   it("should handle disk cache read errors gracefully", () => {
     clearCache(); // Clear memory cache first
-    vi.stubEnv("NODE_ENV", "production");
+    nodeProcessEnv.NODE_ENV = "production";
     const mocks = getMocks();
     const url = "/forgot-password"; // Use different URL to avoid memory cache conflicts
 
