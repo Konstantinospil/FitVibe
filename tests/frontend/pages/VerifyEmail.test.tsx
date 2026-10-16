@@ -601,4 +601,56 @@ describe("VerifyEmail", () => {
       { timeout: 5000 },
     );
   });
+  it("does not navigate when resending verification fails with a network error", async () => {
+    vi.mocked(rawHttpClient.get).mockRejectedValue({ response: { status: 410 } });
+    vi.mocked(resendVerificationEmail).mockRejectedValue(new Error("Network unavailable"));
+
+    renderWithProviders();
+    const email = await screen.findByLabelText(/email address/i);
+    fireEvent.change(email, { target: { value: "person@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: /send verification email/i }));
+
+    expect(await screen.findByText("verifyEmail.resendError")).toBeInTheDocument();
+    expect(resendVerificationEmail).toHaveBeenCalledWith({ email: "person@example.com" });
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /send verification email/i })).toBeEnabled();
+  });
+
+  it("shows the server error when verification resend is rejected with an API error code", async () => {
+    vi.mocked(rawHttpClient.get).mockRejectedValue({ response: { status: 410 } });
+    vi.mocked(resendVerificationEmail).mockRejectedValue({
+      response: { data: { error: { code: "EMAIL_NOT_FOUND", message: "Email not found" } } },
+    });
+
+    renderWithProviders();
+    const email = await screen.findByLabelText(/email address/i);
+    fireEvent.change(email, { target: { value: "unknown@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: /send verification email/i }));
+
+    expect(await screen.findByText("errors.EMAIL_NOT_FOUND")).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("allows retrying verification resend after a transient failure", async () => {
+    vi.mocked(rawHttpClient.get).mockRejectedValue({ response: { status: 410 } });
+    vi.mocked(resendVerificationEmail)
+      .mockRejectedValueOnce(new Error("Temporarily offline"))
+      .mockResolvedValueOnce({ success: true });
+
+    renderWithProviders();
+    const email = await screen.findByLabelText(/email address/i);
+    fireEvent.change(email, { target: { value: "person@example.com" } });
+    const submit = screen.getByRole("button", { name: /send verification email/i });
+    fireEvent.click(submit);
+    expect(await screen.findByText("verifyEmail.resendError")).toBeInTheDocument();
+    fireEvent.click(submit);
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/register", {
+        state: { email: "person@example.com", resendVerification: true },
+      });
+    });
+    expect(resendVerificationEmail).toHaveBeenCalledTimes(2);
+  });
+
 });
