@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import axios from "axios";
 import {
   activateTrainingPlan, createTrainingPlan, deleteTrainingPlan,
   getTrainingPlan, isTrainingPlanConflict, listTrainingPlans,
@@ -64,11 +63,7 @@ describe("training plan API contract", () => {
   it("recognizes only HTTP 412 Axios errors as write conflicts", () => {
     expect(isTrainingPlanConflict(new Error("Precondition failed"))).toBe(false);
     expect(isTrainingPlanConflict({ response: { status: 412 } })).toBe(false);
-    const makeError = (status: number) => new axios.AxiosError(
-      "HTTP error", "ERR_BAD_RESPONSE", undefined, undefined,
-      { data: {}, status, statusText: "Error", headers: {},
-        config: { headers: new axios.AxiosHeaders() } },
-    );
+    const makeError = (status: number) => ({ isAxiosError: true, response: { status } });
     expect(isTrainingPlanConflict(makeError(412))).toBe(true);
     expect(isTrainingPlanConflict(makeError(400))).toBe(false);
   });
