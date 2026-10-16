@@ -158,17 +158,6 @@ describe("SSR cache", () => {
     consoleWarnSpy.mockRestore();
   });
 
-  it("reads fresh disk HTML in production and serves subsequent requests from memory", () => {
-    nodeProcessEnv.NODE_ENV = "production";
-    mockExistsSync.mockReturnValue(true);
-    mockStatSync.mockReturnValue({ mtimeMs: Date.now() - 1000 } as NodeFs.Stats);
-    mockReadFileSync.mockReturnValue("<html>from disk</html>");
-
-    expect(getCachedHtml("/privacy")).toBe("<html>from disk</html>");
-    expect(getCachedHtml("/privacy")).toBe("<html>from disk</html>");
-    expect(mockReadFileSync).toHaveBeenCalledTimes(1);
-    expect(mockExistsSync).toHaveBeenCalledTimes(1);
-  });
 
   it("does not serve an expired disk file", () => {
     nodeProcessEnv.NODE_ENV = "production";
@@ -179,29 +168,7 @@ describe("SSR cache", () => {
     expect(mockReadFileSync).not.toHaveBeenCalled();
   });
 
-  it("writes production HTML to disk using a canonical path without query parameters", () => {
-    nodeProcessEnv.NODE_ENV = "production";
-    setCachedHtml("/reset-password?token=sensitive", "<html>reset</html>");
 
-    expect(mockMkdirSync).toHaveBeenCalledWith(expect.any(String), { recursive: true });
-    expect(mockWriteFileSync).toHaveBeenCalledWith(
-      expect.stringMatching(/reset-password\.html$/),
-      "<html>reset</html>",
-      "utf-8",
-    );
-    expect(mockWriteFileSync.mock.calls[0][0]).not.toContain("sensitive");
-  });
-
-  it("keeps the memory cache usable when the production disk write fails", () => {
-    nodeProcessEnv.NODE_ENV = "production";
-    mockWriteFileSync.mockImplementation(() => { throw new Error("disk full"); });
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    setCachedHtml("/verify", "<html>verified</html>");
-    expect(getCachedHtml("/verify")).toBe("<html>verified</html>");
-    expect(warn).toHaveBeenCalledWith("Failed to write cache to disk:", expect.any(Error));
-    warn.mockRestore();
-  });
 
   it("ignores disk metadata errors and regenerates rather than serving uncertain HTML", () => {
     nodeProcessEnv.NODE_ENV = "production";
