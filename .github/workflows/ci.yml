@@ -2081,6 +2081,7 @@ jobs:
           PY
 
       - name: Run visual regression tests
+        id: visual_regression_tests
         timeout-minutes: 20
         env:
           APP_URL: "http://127.0.0.1:4173"
@@ -2125,7 +2126,7 @@ jobs:
         if: always()
         run: |
           echo "## Visual Regression Tests Summary" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "${{ steps.visual_regression_tests.outcome }}" = "success" ]; then
             echo "- ✅ Visual regression tests passed" >> $GITHUB_STEP_SUMMARY
             echo "- ✅ All screenshots match baseline (maxDiffPixelRatio ≤ 0.2%)" >> $GITHUB_STEP_SUMMARY
           else
