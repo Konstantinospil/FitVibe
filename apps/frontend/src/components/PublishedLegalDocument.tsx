@@ -167,13 +167,6 @@ function renderValue(value: unknown, key: string, sourceKey: string): React.Reac
 }
 
 function documentBody(content: Record<string, unknown>): React.ReactNode {
-  const excluded = new Set([
-    "eyebrow",
-    "title",
-    "description",
-    "effectiveDate",
-    "effectiveDateValue",
-  ]);
   return Object.entries(content)
     .filter(([key]) => key === "intro" || /^section\d+$/i.test(key))
     .sort(([a], [b]) => compareNatural(a, b))
