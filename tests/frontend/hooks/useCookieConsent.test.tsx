@@ -222,6 +222,52 @@ describe("useCookieConsent", () => {
     expect(apiClient.get).toHaveBeenCalledTimes(2);
   });
 
+
+  it("does not persist consent or initialize tracking when saving preferences fails", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: { hasConsent: false } },
+    });
+    (apiClient.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Consent service unavailable"));
+
+    render(<TestComponent />);
+    await screen.findByText("NoConsent");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Error")).toBeInTheDocument();
+    expect(screen.getByText("NoConsent")).toBeInTheDocument();
+    expect(localStorage.getItem("cookie-consent-banner-shown")).toBeNull();
+    expect(initializeAnalytics).not.toHaveBeenCalled();
+    expect(initializeMarketing).not.toHaveBeenCalled();
+  });
+
+  it("preserves rejected optional consent categories independently of accepted categories", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: { hasConsent: false } },
+    });
+    (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: {
+        data: {
+          essential: true,
+          preferences: true,
+          analytics: true,
+          marketing: false,
+          version: "v3",
+          updatedAt: "later",
+        },
+      },
+    });
+
+    render(<TestComponent />);
+    await screen.findByText("NoConsent");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(localStorage.getItem("cookie-consent-banner-shown")).toBe("true"));
+    expect(initializeAnalytics).toHaveBeenCalledOnce();
+    expect(disableMarketing).toHaveBeenCalledOnce();
+    expect(initializeMarketing).not.toHaveBeenCalled();
+    expect(disableAnalytics).not.toHaveBeenCalled();
+  });
+
   it("respects the banner shown localStorage flag", () => {
     expect(shouldShowCookieBanner()).toBe(true);
     localStorage.setItem("cookie-consent-banner-shown", "true");
