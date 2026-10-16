@@ -19,11 +19,16 @@ function ensureFile(filePath) {
   }
 }
 
+const NAMESPACES = ["common", "auth", "terms", "privacy", "cookie"];
 const translations = {};
 for (const locale of LOCALES) {
-  const filePath = path.resolve(`apps/frontend/src/i18n/locales/${locale}/common.json`);
-  ensureFile(filePath);
-  translations[locale] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  translations[locale] = {};
+  for (const namespace of NAMESPACES) {
+    const filePath = path.resolve(`apps/frontend/src/i18n/locales/${locale}/${namespace}.json`);
+    ensureFile(filePath);
+    // Prefix the namespace: identical keys in two bundles must be checked independently.
+    translations[locale][namespace] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  }
 }
 
 const en = translations.en;
@@ -75,7 +80,7 @@ for (const locale of LOCALES) {
   const localeName = LOCALE_NAMES[locale];
   const keys = localeKeys[locale];
   // For Greek, exclude the greekCharacters section from comparison
-  const excludePrefix = locale === "el" ? "greekCharacters" : null;
+  const excludePrefix = locale === "el" ? "common.greekCharacters." : null;
   const missingInLocale = diff(enKeys, keys, excludePrefix);
   const extraInLocale = diff(keys, enKeys, excludePrefix);
 
@@ -99,6 +104,18 @@ for (const locale of LOCALES) {
   for (const [key, value] of keys.entries()) {
     if (typeof value === "string" && value.trim().length === 0) {
       emptyKeys.push({ locale: LOCALE_NAMES[locale], key });
+    }
+    if (typeof value === "string" && locale !== "en" && enKeys.has(key)) {
+      const tokens = (text) =>
+        [...text.matchAll(/\\{\\{\\s*([\\w.]+)\\s*\\}\\}/g)]
+          .map((match) => match[1])
+          .sort();
+      const reference = tokens(String(enKeys.get(key)));
+      const actual = tokens(value);
+      if (JSON.stringify(reference) !== JSON.stringify(actual)) {
+        hasErrors = true;
+        console.error(`Interpolation mismatch for ${LOCALE_NAMES[locale]} ${key}: expected ${reference.join(", ")}, got ${actual.join(", ")}`);
+      }
     }
   }
 }

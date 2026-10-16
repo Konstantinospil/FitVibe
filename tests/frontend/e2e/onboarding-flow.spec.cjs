@@ -38,6 +38,8 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
     .selectOption("intermediate");
   await emailInput(page).fill(email);
   await page.locator("form input[name='username']").fill(username);
+  // Detect frontend controlled-input races before exercising server persistence.
+  await expect(page.locator("form input[name='username']")).toHaveValue(username);
   await passwordInput(page).fill(registerPayload.password);
   await confirmPasswordInput(page).fill(registerPayload.password);
 
@@ -67,9 +69,13 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
       response.url().includes("/api/v1/auth/register") &&
       response.request().method() === "POST",
   );
+  await expect(page.locator("form input[name='username']")).toHaveValue(username);
   await page.getByRole("button", { name: /create account/i }).click();
 
   const registrationResponse = await registrationResponsePromise;
+  // Assert the browser submitted the intended username, not just HTTP 202.
+  const submittedRegistration = registrationResponse.request().postDataJSON();
+  expect(submittedRegistration.username).toBe(username);
   expect(registrationResponse.status()).toBe(202);
   const registrationBody = await registrationResponse.json();
   expect(registrationBody.debugVerificationToken).toEqual(expect.any(String));

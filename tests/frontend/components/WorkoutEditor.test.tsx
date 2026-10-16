@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WorkoutEditor from "../../src/components/composites/WorkoutEditor";
 import * as api from "../../src/services/api";
+import * as planApi from "../../src/services/planApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
 
 vi.mock("react-i18next", () => ({
@@ -21,6 +22,10 @@ vi.mock("../../src/services/api", async () => {
     updateSession: vi.fn(),
   };
 });
+
+vi.mock("../../src/services/planApi", () => ({
+  listTrainingPlans: vi.fn(),
+}));
 
 const { apiErrorSpy } = vi.hoisted(() => ({
   apiErrorSpy: vi.fn(),
@@ -73,6 +78,7 @@ describe("WorkoutEditor", () => {
   beforeEach(() => {
     queryClient = createTestQueryClient();
     mockedApi.listExercises.mockResolvedValue(exerciseResponse);
+    vi.mocked(planApi.listTrainingPlans).mockResolvedValue([]);
     mockedApi.createSession.mockResolvedValue(savedSession);
     mockedApi.updateSession.mockResolvedValue({
       ...savedSession,
@@ -154,6 +160,36 @@ describe("WorkoutEditor", () => {
       );
     });
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("saves selected unactivated plan ID with the planned workout", async () => {
+    vi.mocked(planApi.listTrainingPlans).mockResolvedValue([
+      {
+        id: "plan-1",
+        user_id: "user-1",
+        name: "Weekly strength",
+        status: "active",
+        start_date: "2026-01-12",
+        end_date: null,
+        session_count: 0,
+        completed_count: 0,
+        progress_percent: 0,
+        revision: 1,
+        archived_at: null,
+        activated_at: null,
+      },
+    ]);
+    renderEditor();
+    await addExercise();
+    const selector = await screen.findByLabelText("workoutEditor.fields.trainingPlan");
+    await screen.findByRole("option", { name: "Weekly strength" });
+    fireEvent.change(selector, { target: { value: "plan-1" } });
+    fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+    await waitFor(() =>
+      expect(mockedApi.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({ plan_id: "plan-1" }),
+      ),
+    );
   });
 
   it("starts a newly created session by transitioning the saved session", async () => {

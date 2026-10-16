@@ -131,6 +131,47 @@ describe("Home", () => {
     );
   });
 
+
+  it("renders unpublished community workouts with username and workout fallbacks", async () => {
+    mockedApi.getFeed.mockResolvedValue({
+      items: [{
+        ...feedItem,
+        user: { ...feedItem.user, displayName: "" },
+        session: { ...feedItem.session, title: "", notes: "" },
+        publishedAt: null,
+        commentsCount: 0,
+      }],
+      total: 1,
+      limit: 12,
+      offset: 0,
+    });
+
+    renderHome();
+
+    expect((await screen.findAllByText("homeSurface.session.workout")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("homeSurface.news.unpublished")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("homeSurface.news.sharedBy")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("A")).length).toBeGreaterThan(0);
+  });
+
+  it("renders community workout notes instead of the default shared-by message", async () => {
+    mockedApi.getFeed.mockResolvedValue({
+      items: [{
+        ...feedItem,
+        session: { ...feedItem.session, notes: "Focused on controlled tempo" },
+      }],
+      total: 1,
+      limit: 12,
+      offset: 0,
+    });
+
+    renderHome();
+
+    expect((await screen.findAllByText("Focused on controlled tempo")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("Tempo Strength")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("A")).length).toBeGreaterThan(0);
+  });
+
   it("shows API error states and logs them", async () => {
     mockedApi.getFeed.mockRejectedValue(new Error("feed failed"));
     mockedApi.listSessions.mockRejectedValue(new Error("sessions failed"));

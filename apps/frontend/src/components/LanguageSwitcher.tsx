@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@fitvibe/ui";
 import { loadLanguageTranslations } from "../i18n/config";
+import { updateUserPreferences } from "../services/api";
+import { queryClient } from "../lib/queryClient";
 
 /**
  * Deterministic flag rendering:
@@ -193,15 +195,21 @@ export type LanguageSwitcherVariant = "default" | "header";
 
 type LanguageSwitcherProps = {
   variant?: LanguageSwitcherVariant;
+  /** Persist account language for the authenticated app header only. */
+  persistPreference?: boolean;
 };
 
-const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default" }) => {
+const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
+  variant = "default",
+  persistPreference = false,
+}) => {
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [isChanging, setIsChanging] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const activeLanguage = (i18n.language?.slice(0, 2) || "en") as LangCode;
 
   // Fallback to 'en' if language is not in LANGUAGES
@@ -219,18 +227,29 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
       }
       setIsOpen(false);
       setFocusedIndex(-1);
+      setSaveFailed(false);
       setIsChanging(true);
       void (async () => {
         try {
           await loadLanguageTranslations(code);
+          if (persistPreference) {
+            const saved = await updateUserPreferences({ language: code });
+            if (saved.language !== code) {
+              throw new Error("Account language preference was not saved");
+            }
+            queryClient.setQueryData(["settings", "preferences"], saved);
+          }
           await i18n.changeLanguage(code);
+        } catch {
+          // Do not switch the interface to a language the account failed to save.
+          setSaveFailed(true);
         } finally {
           setIsChanging(false);
           buttonRef.current?.focus();
         }
       })();
     },
-    [i18n, isChanging],
+    [i18n, isChanging, persistPreference],
   );
 
   // Close dropdown when clicking outside
@@ -346,6 +365,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = "default"
         <ChevronDown size={16} data-slot="language-chevron" />
       </Button>
 
+      {saveFailed ? <span role="alert">{t("settings.preferences.saveError")}</span> : null}
       {isOpen && (
         <div data-slot="language-menu" role="menu" aria-label={t("language.select")}>
           {LANGUAGES.map((option, index) => (

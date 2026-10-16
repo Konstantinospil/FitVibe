@@ -165,10 +165,10 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   await expect(page.getByRole("grid")).toBeVisible();
   await apiGet(page, "/api/v1/sessions?limit=20&offset=0");
 
-  await page.getByRole("button", { name: /plan/i }).first().click();
+  await page.getByRole("button", { name: /^plan a workout$/i }).click();
   const editor = page.getByRole("dialog");
   await expect(editor).toBeVisible();
-  const exerciseSelect = editor.getByRole("combobox").first();
+  const exerciseSelect = editor.getByRole("combobox", { name: "Exercise", exact: true });
   await expect.poll(async () => exerciseSelect.locator("option").count()).toBeGreaterThan(1);
   const option = exerciseSelect.locator("option").nth(1);
   const selectedExerciseId = await option.getAttribute("value");
@@ -446,7 +446,13 @@ test("athlete uploads and removes avatar from Settings", async ({ page }, testIn
   });
 
   const upload = observeMutation(page, "POST", "/api/v1/users/me/avatar");
+  const uploadResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/users/me/avatar",
+  );
   await page.getByRole("button", { name: /^upload$/i }).click();
+  expect((await uploadResponse).status()).toBe(201);
   await expect(page.getByTestId("avatar-preview")).toBeVisible();
   await expect.poll(async () => (await apiGet(page, "/api/v1/users/me")).avatar?.url).toBeTruthy();
   upload.assertExactlyOnce(201);
@@ -467,7 +473,13 @@ test("athlete uploads and removes avatar from Settings", async ({ page }, testIn
   ).toEqual({ complete: true, width: 128, height: 128 });
 
   const remove = observeMutation(page, "DELETE", "/api/v1/users/me/avatar");
+  const removeResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === "DELETE" &&
+      new URL(response.url()).pathname === "/api/v1/users/me/avatar",
+  );
   await page.getByRole("button", { name: /^delete$/i }).click();
+  expect((await removeResponse).status()).toBe(204);
   await expect(page.getByTestId("avatar-placeholder")).toBeVisible();
   await expect.poll(async () => (await apiGet(page, "/api/v1/users/me")).avatar).toBeNull();
   remove.assertExactlyOnce(204);

@@ -696,4 +696,54 @@ describe("feature flag utilities", () => {
       );
     });
   });
+  describe("configuration outage safety", () => {
+    it("retains the last known maintenance lock and feature restrictions when refresh fails", async () => {
+      const locked = createConfig({
+        readOnlyMode: true,
+        maintenanceMessage: "Maintenance in progress",
+        features: { socialFeed: false, insights: false },
+      });
+      mockApiClient.get.mockResolvedValueOnce({ data: locked });
+      await fetchSystemConfig();
+
+      mockApiClient.get.mockRejectedValueOnce(new Error("Configuration endpoint unavailable"));
+      const result = await getSystemConfig(true);
+
+      expect(result).toEqual(locked);
+      expect(result.readOnlyMode).toBe(true);
+      expect(result.maintenanceMessage).toBe("Maintenance in progress");
+      expect(isFeatureEnabled("socialFeed")).toBe(false);
+      expect(isFeatureEnabled("insights")).toBe(false);
+      expect(mockApiClient.get).toHaveBeenCalledTimes(2);
+    });
+
+    it("uses safe disabled defaults when the first configuration request fails", async () => {
+      mockApiClient.get.mockRejectedValueOnce("service unavailable");
+
+      const result = await getSystemConfig(true);
+
+      expect(result.readOnlyMode).toBe(false);
+      expect(result.features.socialFeed).toBe(false);
+      expect(result.features.coachDashboard).toBe(false);
+      expect(result.features.insights).toBe(false);
+      expect(isFeatureEnabled("unknownFlag")).toBe(false);
+      expect(mockApiClient.get).toHaveBeenCalledWith("/api/v1/system/config");
+    });
+
+    it("does not expose a feature omitted by a later server configuration", async () => {
+      const originallyEnabled = createConfig({ features: { insights: true } });
+      mockApiClient.get.mockResolvedValueOnce({ data: originallyEnabled });
+      await fetchSystemConfig();
+      expect(isFeatureEnabled("insights")).toBe(true);
+
+      const restricted = createConfig();
+      delete (restricted.features as Partial<SystemConfig["features"]>).insights;
+      mockApiClient.get.mockResolvedValueOnce({ data: restricted });
+      await fetchSystemConfig();
+
+      expect(isFeatureEnabled("insights")).toBe(false);
+      expect(isFeatureEnabled("socialFeed")).toBe(false);
+    });
+  });
+
 });

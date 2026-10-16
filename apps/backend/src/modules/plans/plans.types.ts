@@ -8,6 +8,9 @@ export interface Plan {
   completed_count: number;
   start_date: string | null;
   end_date: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
+  activated_at?: string | null;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -17,6 +20,8 @@ export interface CreatePlanDTO {
   name: string;
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
 }
 
 export interface UpdatePlanDTO {
@@ -24,6 +29,8 @@ export interface UpdatePlanDTO {
   status?: "active" | "completed";
   start_date?: string | null;
   end_date?: string | null;
+  duration_weeks?: number | null;
+  target_frequency?: number | null;
 }
 
 export interface PlanWithProgress extends Plan {

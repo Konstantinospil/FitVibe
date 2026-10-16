@@ -1021,12 +1021,14 @@
       "duration": "Duración (segundos)",
       "exertion": "Esfuerzo objetivo",
       "restSet": "Descanso tras cada serie (segundos)",
-      "restExercise": "Descanso tras el ejercicio (segundos)"
+      "restExercise": "Descanso tras el ejercicio (segundos)",
+      "trainingPlan": "Plan de entrenamiento"
     },
     "placeholders": {
       "name": "Nombre del entrenamiento",
       "notes": "Describe el entrenamiento",
-      "exercise": "Selecciona un ejercicio"
+      "exercise": "Selecciona un ejercicio",
+      "noTrainingPlan": "Sin plan de entrenamiento"
     },
     "metrics": {
       "caloriesPerMinute": "Calorías / minuto",
@@ -1120,6 +1122,54 @@
         "update": "No se pudo actualizar el ejercicio.",
         "types": "No se pudieron cargar los tipos de ejercicio."
       }
+    }
+  },
+  "loading": {
+    "app": "Cargando la aplicación…"
+  },
+  "trainingPlans": {
+    "title": "Planes de entrenamiento",
+    "description": "Crear, editar y archivar planes de entrenamiento.",
+    "listTitle": "Tus planes",
+    "createTitle": "Crear plan",
+    "editTitle": "Editar plan",
+    "noDate": "Sin definir",
+    "dateRange": "{{start}} – {{end}}",
+    "sessionCount": "{{count}} sesiones",
+    "loading": "Cargando planes…",
+    "empty": "Todavía no hay planes.",
+    "fields": {
+      "name": "Nombre",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha de fin",
+      "durationWeeks": "Duración (semanas)",
+      "targetFrequency": "Sesiones por semana",
+      "timeZone": "Zona horaria"
+    },
+    "actions": {
+      "manage": "Gestionar planes",
+      "close": "Cerrar",
+      "create": "Nuevo plan",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "reload": "Cargar versión actual",
+      "activate": "Activar"
+    },
+    "delete": {
+      "title": "Archivar plan",
+      "message": "¿Archivar {{name}}? Se conservarán las sesiones existentes."
+    },
+    "errors": {
+      "list": "No se pudieron cargar los planes.",
+      "loadDetail": "No se pudo cargar el plan.",
+      "required": "Introduce un nombre.",
+      "dateOrder": "La fecha de fin no puede ser anterior a la de inicio.",
+      "save": "No se pudo guardar el plan.",
+      "delete": "No se pudo archivar el plan.",
+      "conflict": "Este plan se ha modificado en otro lugar. Carga la versión actual antes de volver a editarlo.",
+      "activate": "No se pudo activar el plan de entrenamiento."
     }
   }
 }

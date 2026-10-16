@@ -17,6 +17,7 @@ export const loadMinimalLoginTranslations = async () => {
       french: "French",
       greek: "Greek",
     },
+    loading: { app: "Loading app…" },
     brand: {
       logoAlt: "FitVibe",
     },

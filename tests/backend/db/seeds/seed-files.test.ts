@@ -144,14 +144,14 @@ describe("database seed modules", () => {
       assertInsert: (rows) => {
         const hashMock = bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>;
         expect(hashMock).toHaveBeenCalledTimes(1);
-        expect(hashMock).toHaveBeenCalledWith("admin", 12);
+        expect(hashMock).toHaveBeenCalledWith(process.env.ADMIN_PASSWORD, 12);
         expect(rows).toHaveLength(1);
         const row = (rows as Array<{ id?: string; password_hash?: string }>).find(
           (entry) => entry.id === ADMIN_ID,
         ) as {
           password_hash: string;
         };
-        expect(row.password_hash).toBe("hashed-admin");
+        expect(row.password_hash).toBe(`hashed-${process.env.ADMIN_PASSWORD}`);
       },
     },
     {

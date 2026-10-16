@@ -45,18 +45,21 @@ jobs:
       - name: Resolve CI run
         id: resolve
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          REQUESTED_CI_RUN_ID: ${{ inputs.ci_run_id || '' }}
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const requested = '${{ inputs.ci_run_id }}'.trim();
+            // Workflow dispatch data must never be interpolated into executable JavaScript.
+            const requested = (process.env.REQUESTED_CI_RUN_ID || '').trim();
 
             let run;
 
             if (context.eventName === 'workflow_run') {
               run = context.payload.workflow_run;
             } else if (requested) {
-              if (!/^\d+$/.test(requested)) {
+              if (!/^\d+$/.test(requested) || !Number.isSafeInteger(Number(requested)) || Number(requested) <= 0) {
                 core.setFailed('ci_run_id must be a numeric GitHub Actions run ID.');
                 return;
               }
@@ -109,6 +112,36 @@ jobs:
             if (run.conclusion !== 'success') {
               core.setFailed(`Run ${run.id} did not complete successfully.`);
               return;
+            }
+
+            // Ordinary deployments must never replay a formerly green main commit.
+            const currentMain = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            const currentSha = currentMain.data.commit.sha;
+            if (run.head_sha !== currentSha) {
+              core.setFailed(
+                'Selected CI run ' + run.id + ' tested ' + run.head_sha +
+                ', but current main is ' + currentSha + '. Refusing stale deployment.',
+              );
+              return;
+            }
+
+            // A successful workflow conclusion alone is insufficient evidence if
+            // a build or its post-build verification was skipped.
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner, repo, run_id: run.id, per_page: 100,
+            });
+            for (const requiredName of [
+              'QA Summary', 'Build & Publish Images',
+              'Build Verification (Container Smoke Tests)',
+            ]) {
+              const matching = jobs.filter((job) => job.name === requiredName);
+              if (matching.length !== 1 || matching[0].conclusion !== 'success') {
+                core.setFailed(
+                  'CI run ' + run.id + ': required job "' + requiredName +
+                  '" missing, duplicated or not successful.',
+                );
+                return;
+              }
             }
 
             core.setOutput('run_id', String(run.id));
@@ -295,10 +328,67 @@ jobs:
               exit 1
             fi
 
-            if ! git merge-base --is-ancestor "${DEPLOY_SHA}" origin/main; then
-              echo "Deployment commit ${DEPLOY_SHA} is not part of origin/main." >&2
+            if [ "$(git rev-parse origin/main)" != "${DEPLOY_SHA}" ]; then
+              echo "Deployment commit ${DEPLOY_SHA} is not current origin/main; refusing stale deployment." >&2
               exit 1
             fi
+
+            # Preserve the previously running deployment for recovery. Never
+            # copy the .env file or any secrets into CI artifacts.
+            backup_dir="${PROD_STACK_DIR}/deploy-recovery"
+            mkdir -p "${backup_dir}"
+            chmod 700 "${backup_dir}"
+            stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+            recovery="${backup_dir}/${stamp}-${DEPLOY_SHA}"
+            mkdir -m 700 "${recovery}"
+            if [ -f "${PROD_STACK_DIR}/compose.yml" ]; then
+              cp "${PROD_STACK_DIR}/compose.yml" "${recovery}/compose.yml"
+              # Record the exact image references of running containers. Incoming
+              # deployment environment variables must not overwrite the old values.
+              current_count=0
+              for entry in "INGRESS_IMAGE:ingress" "BACKEND_IMAGE:backend" "FRONTEND_IMAGE:frontend" "BACKOFFICE_IMAGE:backoffice" "POSTGRES_IMAGE:db" "CLAMAV_IMAGE:clamav" "REDIS_IMAGE:redis"; do
+                variable="${entry%%:*}"
+                service="${entry#*:}"
+                container="$(docker ps --filter "label=com.docker.compose.project=fitvibe" --filter "label=com.docker.compose.service=${service}" --format "{{.ID}}" | head -n 1)"
+                if [ -n "${container}" ]; then
+                  image="$(docker inspect --format "{{.Config.Image}}" "${container}")"
+                  if ! printf '%s\n' "${image}" | grep -Eq '@sha256:[0-9a-fA-F]{64}$'; then
+                    echo "Existing ${service} container lacks an immutable image reference; cannot guarantee recovery." >&2
+                    exit 1
+                  fi
+                  printf '%s=%s\n' "${variable}" "${image}" >> "${recovery}/previous-images.env"
+                  current_count=$((current_count + 1))
+                fi
+              done
+              if [ "${current_count}" -ne 7 ]; then
+                echo "Existing Compose deployment lacks all seven running digest-pinned services; refusing deployment without recoverable state." >&2
+                exit 1
+              fi
+            fi
+            git rev-parse HEAD > "${recovery}/previous-source-sha"
+            printf '%s\n' "${recovery}" > "${backup_dir}/latest-recovery-path"
+            echo "Recovery checkpoint: ${recovery}"
+
+            deployment_switched=0
+            migration_started=0
+            restore_previous_stack() {
+              status=$?
+              trap - EXIT
+              if [ "${status}" -ne 0 ] && [ "${deployment_switched}" -eq 1 ] && [ "${migration_started}" -eq 0 ] && [ -s "${recovery}/previous-images.env" ]; then
+                echo "Pre-migration deployment failed; restoring previous Compose configuration." >&2
+                cp "${recovery}/compose.yml" "${PROD_STACK_DIR}/compose.yml"
+                if ! (cd "${PROD_SOURCE_DIR}" && git checkout -B main "$(cat "${recovery}/previous-source-sha")"); then
+                  echo "Previous source checkout failed; manual recovery required: ${recovery}" >&2
+                fi
+                if ! (cd "${PROD_STACK_DIR}" && set -a && . "${recovery}/previous-images.env" && set +a && docker compose --env-file .env -f compose.yml up -d --remove-orphans); then
+                  echo "Automatic restoration failed; manual recovery required: ${recovery}" >&2
+                fi
+              elif [ "${status}" -ne 0 ] && [ "${migration_started}" -eq 1 ]; then
+                echo "Database mutation may have occurred. Manual recovery required: ${recovery}" >&2
+              fi
+              exit "${status}"
+            }
+            trap restore_previous_stack EXIT
 
             git checkout -B main "${DEPLOY_SHA}"
 
@@ -352,8 +442,14 @@ jobs:
             fi
 
             compose pull
+            deployment_switched=1
             compose up -d --remove-orphans
 
+            # After this point schema/data changes may be non-reversible.
+            # A failed migration requires backup-based recovery, not blind image rollback.
+            migration_started=1
+            echo "Database mutation boundary reached; automatic image rollback is unsafe."
+            echo "Pre-deploy state saved at ${recovery}"
             compose exec -T backend node dist/db/utils/migrateAll.js
             compose exec -T backend node dist/db/utils/seedAll.js
             compose exec -T backend node dist/db/utils/postDeploy.js

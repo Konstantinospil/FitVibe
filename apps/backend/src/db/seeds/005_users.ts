@@ -26,7 +26,14 @@ const INITIAL_VOLATILITY = 0.06;
  * the administrator has changed after first login.
  */
 export async function seed(knex: Knex): Promise<void> {
-  const adminPassword = await bcrypt.hash("admin", 12);
+  // Bootstrap credentials must never have a public, fixed production default.
+  const configuredPassword = process.env.ADMIN_PASSWORD;
+  if (!configuredPassword || configuredPassword.length < 12) {
+    throw new Error(
+      "ADMIN_PASSWORD must be configured with at least 12 characters before seeding the administrator",
+    );
+  }
+  const adminPassword = await bcrypt.hash(configuredPassword, 12);
   const now = new Date();
   const currentTerms = await knex("legal_document_versions")
     .where({ document_type: "terms" })
