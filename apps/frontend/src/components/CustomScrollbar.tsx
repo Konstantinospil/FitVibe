@@ -51,17 +51,12 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     if (!el) {
       return;
     }
-    el.scrollTop =
-      Math.max(0, Math.min(1, next)) *
-      Math.max(0, el.scrollHeight - el.clientHeight);
+    el.scrollTop = Math.max(0, Math.min(1, next)) * Math.max(0, el.scrollHeight - el.clientHeight);
     synchronize();
   };
 
   const travel = () =>
-    Math.max(
-      0,
-      (track.current?.clientHeight ?? 0) - (thumb.current?.offsetHeight ?? 0),
-    );
+    Math.max(0, (track.current?.clientHeight ?? 0) - (thumb.current?.offsetHeight ?? 0));
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!overflow) {
@@ -76,9 +71,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     if (drag.current?.id !== event.pointerId || !travel()) {
       return;
     }
-    scrollTo(
-      drag.current.fraction + (event.clientY - drag.current.y) / travel(),
-    );
+    scrollTo(drag.current.fraction + (event.clientY - drag.current.y) / travel());
   };
 
   const onPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -137,10 +130,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
             return;
           }
           const rect = event.currentTarget.getBoundingClientRect();
-          scrollTo(
-            (event.clientY - rect.top - (thumb.current?.offsetHeight ?? 0) / 2) /
-              travel(),
-          );
+          scrollTo((event.clientY - rect.top - (thumb.current?.offsetHeight ?? 0) / 2) / travel());
         }}
       >
         <div
