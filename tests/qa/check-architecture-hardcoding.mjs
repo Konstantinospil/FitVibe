@@ -739,6 +739,53 @@ async function checkFrontendReuse() {
   }
 }
 
+
+async function checkScrollbarArchitecture() {
+  const tokensFile = path.join(ROOT, "apps/frontend/src/styles/tokens.css");
+  const tokens = await fs.readFile(tokensFile, "utf8");
+  const required = new Map([
+    ["--scrollbar-thumb-size", "var(--control-icon-md)"],
+    ["--scrollbar-track-size", "calc(var(--scrollbar-thumb-size) * var(--scrollbar-track-ratio))"],
+    ["--scrollbar-track", "var(--color-surface-muted)"],
+    ["--scrollbar-thumb", "var(--color-primary)"],
+    ["--scrollbar-thumb-hover", "var(--color-primary-hover)"],
+  ]);
+  for (const [token, expected] of required) {
+    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\const startCount = violations.length;");
+    const actual = tokens.match(new RegExp(escaped + "\\s*:\\s*([^;]+);"))?.[1]?.replace(/\\s+/g, " ").trim();
+    if (actual !== expected) {
+      report(tokensFile, tokens, Math.max(0, tokens.indexOf(token)),
+        "Scrollbar token " + token + " must derive from the canonical design system; expected " + expected + ".");
+    }
+  }
+
+  const allowedStyles = new Set([
+    "apps/frontend/src/components/CustomScrollbar.css",
+    "apps/frontend/src/styles/foundations.css",
+  ]);
+  const allowedComponents = new Set([
+    "apps/frontend/src/components/CustomScrollbar.tsx",
+  ]);
+  for (const file of await frontendSourceFiles([".css", ".scss", ".tsx", ".ts", ".jsx", ".js"])) {
+    const relative = normalize(path.relative(ROOT, file));
+    const source = await fs.readFile(file, "utf8");
+    if (/\\.(css|scss)$/.test(relative) && !allowedStyles.has(relative)) {
+      for (const match of source.matchAll(/(?:::-(?:webkit|moz)-scrollbar(?:-[a-z-]+)?|scrollbar-(?:width|color)|--scrollbar-[a-z-]+\\s*:)/g)) {
+        report(file, source, match.index,
+          "Scrollbar appearance belongs to the shared CustomScrollbar and global token authorities, not page-specific CSS.");
+      }
+    }
+    if (/\\.(tsx?|jsx?)$/.test(relative) && !allowedComponents.has(relative)) {
+      for (const match of source.matchAll(/(?:role\\s*=\\s*["']scrollbar["']|aria-valuenow\\s*=|setPointerCapture\\s*\\()/g)) {
+        // Pointer capture is valid elsewhere; only scrollbar ARIA patterns are scrollbar-specific.
+        if (match[0].startsWith("setPointerCapture")) continue;
+        report(file, source, match.index,
+          "Scrollbar interaction/ARIA implementation must be centralized in CustomScrollbar.");
+      }
+    }
+  }
+}
+
 const startCount = violations.length;
 
 if (mode === "all" || mode === "backend") {
@@ -751,6 +798,7 @@ if (mode === "all" || mode === "frontend-reuse") {
   await checkFrontendArchiveBoundary();
   await checkFrontendPyramid();
   await checkFrontendReuse();
+  await checkScrollbarArchitecture();
 }
 
 const count = violations.length - startCount;
