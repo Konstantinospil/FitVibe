@@ -38,3 +38,17 @@
 .custom-scrollbar__thumb:hover { background: var(--scrollbar-thumb-hover); }
 .custom-scrollbar__thumb:active { background: var(--scrollbar-thumb-active); cursor: grabbing; }
 .custom-scrollbar__track[data-scrollable="false"] { visibility: hidden; }
+
+/* Touch devices scroll the same modal content by swiping, without a track taking width. */
+@media (pointer: coarse) {
+  .custom-scrollbar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .custom-scrollbar__track {
+    display: none;
+  }
+  .custom-scrollbar__viewport {
+    -webkit-overflow-scrolling: touch;
+  }
+}
