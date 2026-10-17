@@ -12,6 +12,10 @@ test.describe("Legacy scrollbar detection", () => {
     ["login", "/login"],
     ["registration", "/register"],
     ["forgot password", "/forgot-password"],
+    ["terms", "/terms"],
+    ["privacy", "/privacy"],
+    ["cookies", "/cookie"],
+    ["imprint", "/impressum"],
   ] as const) {
     test(name, async ({ page }, info) => {
       await openPublicPage(page, info, path, { viewports: ["xs", "sm", "md", "lg"] });
