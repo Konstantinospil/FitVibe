@@ -520,12 +520,12 @@ async function checkFrontendTokens() {
     path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
     "utf8",
   );
-  if (!foundationSource.includes("scrollbar-gutter: stable;")) {
+  if (!foundationSource.includes("scrollbar-gutter: auto;")) {
     report(
       path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
       foundationSource,
       Math.max(0, foundationSource.indexOf("html {")),
-      "The document must reserve a stable scrollbar gutter.",
+      "Page-level scrolling must not permanently reserve a native scrollbar gutter; only modal content uses the custom scrollbar.",
     );
   }
 
