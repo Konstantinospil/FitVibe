@@ -751,7 +751,7 @@ async function checkScrollbarArchitecture() {
     ["--scrollbar-thumb-hover", "var(--color-primary-hover)"],
   ]);
   for (const [token, expected] of required) {
-    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\const startCount = violations.length;");
+    const escaped = token;
     const actual = tokens.match(new RegExp(escaped + "\\s*:\\s*([^;]+);"))?.[1]?.replace(/\\s+/g, " ").trim();
     if (actual !== expected) {
       report(tokensFile, tokens, Math.max(0, tokens.indexOf(token)),
