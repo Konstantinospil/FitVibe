@@ -20,6 +20,24 @@ test.describe("Auth Page Visual Tests", () => {
     await capturePageScreenshot(page, testInfo, "reset-password", { waitFor: '[data-component="form-stack"]' });
   });
 
+  test("2FA challenge", async ({ page }, testInfo) => {
+    await openPublicPage(page, testInfo, "/login", { viewports: ["xs", "sm", "md", "lg"] });
+    await page.route("**/api/v1/auth/login", async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ requires2FA: true, pendingSessionId: "visual-pending-session" }),
+      });
+    });
+    await page.locator('input[name="email"]').fill("visual@example.com");
+    await page.locator('input[name="password"]').fill("Visual-only-password");
+    await page.locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/verify-2fa/);
+    await assertVerticalAuthShell(page);
+    await capturePageScreenshot(page, testInfo, "two-factor-challenge", { waitFor: '[data-component="form-stack"]' });
+    await expect(page.locator('input[name="code"]')).toBeVisible();
+  });
+
   test("register page", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/register", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
