@@ -56,6 +56,7 @@
   --space-3xl: 3.5rem;
 
   /* Component dimension authority */
+  --layer-consent: 1000;
   --modal-width-sm: 28rem;
   --modal-width-md: 40rem;
   --modal-width-lg: 56rem;
