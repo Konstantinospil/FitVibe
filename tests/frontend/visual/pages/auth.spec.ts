@@ -8,6 +8,18 @@ test.describe("Auth Page Visual Tests", () => {
     await capturePageScreenshot(page, testInfo, "login", { waitFor: '[data-component="form-stack"]' });
   });
 
+  test("forgot password", async ({ page }, testInfo) => {
+    await openPublicPage(page, testInfo, "/forgot-password", { viewports: ["xs", "sm", "md", "lg"] });
+    await assertVerticalAuthShell(page);
+    await capturePageScreenshot(page, testInfo, "forgot-password", { waitFor: '[data-component="form-stack"]' });
+  });
+
+  test("reset password", async ({ page }, testInfo) => {
+    await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", { viewports: ["xs", "sm", "md", "lg"] });
+    await assertVerticalAuthShell(page);
+    await capturePageScreenshot(page, testInfo, "reset-password", { waitFor: '[data-component="form-stack"]' });
+  });
+
   test("register page", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/register", { viewports: ["xs", "sm"] });
     await assertVerticalAuthShell(page);
