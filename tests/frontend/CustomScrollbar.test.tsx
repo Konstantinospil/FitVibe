@@ -26,7 +26,6 @@ const setup = (scrollHeight = 600, clientHeight = 200) => {
       <p>Scrollable content</p>
     </CustomScrollbar>,
   );
-  const scrollbar = screen.getByRole("scrollbar", { name: "Test scrollbar" });
   const viewport = result.container.querySelector(".custom-scrollbar__viewport") as HTMLDivElement;
   const track = result.container.querySelector(".custom-scrollbar__track") as HTMLDivElement;
   const thumb = result.container.querySelector(".custom-scrollbar__thumb") as HTMLDivElement;
@@ -35,6 +34,12 @@ const setup = (scrollHeight = 600, clientHeight = 200) => {
   setDimension(track, "clientHeight", 200);
   setDimension(thumb, "offsetHeight", 20);
   act(() => notifyResize?.());
+  const scrollbar = track;
+  if (scrollHeight > clientHeight + 1) {
+    expect(screen.getByRole("scrollbar", { name: "Test scrollbar" })).toBe(track);
+  } else {
+    expect(screen.queryByRole("scrollbar", { name: "Test scrollbar" })).toBeNull();
+  }
   return { ...result, scrollbar, viewport, track, thumb };
 };
 
