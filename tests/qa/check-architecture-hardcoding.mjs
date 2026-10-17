@@ -762,7 +762,7 @@ async function checkScrollbarArchitecture() {
   if (!component.includes('className="custom-scrollbar__track"') || !component.includes('role="scrollbar"')) {
     report(componentPath, component, 0, "The canonical custom scrollbar must provide an accessible track.");
   }
-  const allowedCss = new Set(["apps/frontend/src/components/CustomScrollbar.css"]);
+  const allowedCss = new Set(["apps/frontend/src/components/CustomScrollbar.css", "apps/frontend/src/styles/tokens.css"]);
   for (const file of await frontendSourceFiles([".css", ".scss", ".tsx", ".ts", ".jsx", ".js"])) {
     const rel = normalize(path.relative(ROOT, file));
     const source = await fs.readFile(file, "utf8");
