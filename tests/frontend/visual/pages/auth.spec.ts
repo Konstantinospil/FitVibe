@@ -21,7 +21,7 @@ test.describe("Auth Page Visual Tests", () => {
   });
 
   test("register page", async ({ page }, testInfo) => {
-    await openPublicPage(page, testInfo, "/register", { viewports: ["xs", "sm"] });
+    await openPublicPage(page, testInfo, "/register", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
     await capturePageScreenshot(page, testInfo, "register", { waitFor: '[data-component="form-stack"]' });
   });
