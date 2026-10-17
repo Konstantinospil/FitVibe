@@ -112,4 +112,48 @@ test.describe("Authentication flows on active surfaces", () => {
     );
     expect(meResponse.status()).toBe(401);
   });
+  test("renders legal publications from real backend without application labels", async ({ page }) => {
+    await page.goto("/terms");
+    await waitForApp(page);
+    const response = await page.context().request.get(
+      `${new URL(page.url()).origin}/api/v1/legal/documents/terms?language=en`,
+    );
+    expect(response.status()).toBe(200);
+    const publication = await response.json();
+    expect(publication.content).toBeTruthy();
+    const shell = page.locator('[data-component="legal-document-shell"]');
+    await expect(shell).toBeVisible();
+    await expect(shell.locator(".section").first()).toBeVisible();
+    await expect(shell.getByText(/do not render control labels/i)).toHaveCount(0);
+    await expect(shell.locator(".legal-document-shell__content")).toHaveCSS(
+      "overflow-y", "auto",
+    );
+  });
+
+  test("loads production font families and keeps login chrome vertically ordered", async ({ page }) => {
+    await page.goto("/login");
+    await waitForApp(page);
+    const geometry = await page.locator('[data-component="page-shell"]').evaluate((shell) => {
+      const header = shell.querySelector("header");
+      const main = shell.querySelector('[data-slot="page-shell-main"]');
+      const footer = shell.querySelector("footer");
+      if (!header || !main || !footer) return null;
+      return {
+        top: header.getBoundingClientRect().bottom,
+        middleStart: main.getBoundingClientRect().top,
+        middleEnd: main.getBoundingClientRect().bottom,
+        bottom: footer.getBoundingClientRect().top,
+        font: getComputedStyle(main).fontFamily,
+        token: getComputedStyle(document.documentElement).getPropertyValue("--font-family-body").trim(),
+        fontStatus: document.fonts.status,
+      };
+    });
+    expect(geometry).not.toBeNull();
+    expect(geometry.top).toBeLessThanOrEqual(geometry.middleStart + 2);
+    expect(geometry.middleEnd).toBeLessThanOrEqual(geometry.bottom + 2);
+    expect(geometry.token).toBeTruthy();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.fonts.status)).toBe("loaded");
+  });
+
 });
