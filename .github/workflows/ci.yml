@@ -1372,7 +1372,7 @@ jobs:
 
       - name: Verify ZAP container can reach SSR
         run: |
-          docker run --rm --network=host --entrypoint /bin/sh ghcr.io/zaproxy/zaproxy:stable -c '
+          docker run --rm --network=host --entrypoint /bin/sh zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78 -c '
             for i in 1 2 3 4 5; do
               if curl -fsS http://127.0.0.1:4173/health >/dev/null; then exit 0; fi
               sleep 2
@@ -1387,10 +1387,46 @@ jobs:
         with:
           target: http://127.0.0.1:4173
           rules_file_name: .zap/rules.tsv
-          cmd_options: -c .zap/rules.tsv -j --client-spider
+          docker_name: zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78
+          cmd_options: -j --client-spider
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
+
+      - name: Capture ZAP diagnostic context
+        if: failure()
+        run: |
+          echo "::group::ZAP image"
+          docker image inspect 'zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78' --format '{{json .RepoDigests}}' || true
+          echo "::endgroup::"
+          echo "::group::SSR response and process"
+          curl -fsSI http://127.0.0.1:4173/ || true
+          if [ -f /tmp/fitvibe-zap-ssr.log ]; then
+            tail -n 100 /tmp/fitvibe-zap-ssr.log
+          fi
+          echo "::endgroup::"
+          echo "::group::ZAP generated reports"
+          for report in report_md.md report_json.json report_html.html; do
+            if [ -f "$report" ]; then
+              echo "$report exists ($(wc -c < "$report") bytes)"
+              if [ "$report" = report_md.md ]; then head -n 120 "$report"; fi
+            else
+              echo "$report absent"
+            fi
+          done
+          echo "::endgroup::"
+
+      - name: Upload ZAP diagnostic reports
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: zap-diagnostics-${{ github.run_id }}
+          path: |
+            report_md.md
+            report_json.json
+            report_html.html
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Stop frontend
         if: always()
