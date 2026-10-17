@@ -1,5 +1,6 @@
 .legal-document-shell {
-  width: min(100%, 760px);
+  width: 100%;
+  max-width: 760px;
   max-height: calc(100vh - var(--space-3xl));
   min-height: min(680px, calc(100vh - var(--space-3xl)));
   margin: var(--space-lg) auto;
@@ -55,19 +56,30 @@
 }
 
 .legal-document-shell__viewport {
+  min-width: 0;
   min-height: 0;
   margin: 0 var(--space-lg);
-  overflow: hidden;
-  background: var(--color-surface-muted);
-  border-radius: var(--radius-lg);
+}
+
+/* The modal owns the available width; CustomScrollbar owns scrolling and
+   reserves a separate column for the track outside the document surface. */
+.legal-document-shell__scroll {
+  min-width: 0;
+  width: 100%;
 }
 
 .legal-document-shell__content {
+  min-width: 0;
   height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: var(--space-md) var(--space-lg);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-lg);
   color: var(--color-text-secondary);
+}
+
+.legal-document-shell__content > .custom-scrollbar__inner {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .legal-document-shell__content .section {
