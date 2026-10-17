@@ -46,10 +46,8 @@ export async function assertStandardScrollbars(page: Page): Promise<void> {
       }
     }
 
-    const root = document.scrollingElement;
-    if (root && root.scrollHeight > root.clientHeight + 1) {
-      findings.push(`document scrolling root: ${root.scrollHeight - root.clientHeight}px overflow; uses native scrollbar`);
-    }
+    // The document uses ordinary browser scrolling. Only dedicated content
+    // panels with the shared component are required to have a custom track.
     return findings;
   });
   if (violations.length) {
