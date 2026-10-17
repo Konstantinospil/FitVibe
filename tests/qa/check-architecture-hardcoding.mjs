@@ -739,6 +739,46 @@ async function checkFrontendReuse() {
   }
 }
 
+
+async function checkScrollbarArchitecture() {
+  const tokensFile = path.join(ROOT, "apps/frontend/src/styles/tokens.css");
+  const tokens = await fs.readFile(tokensFile, "utf8");
+  const expected = new Map([
+    ["--scrollbar-thumb-size", "var(--control-icon-md)"],
+    ["--scrollbar-track-size", "calc(var(--scrollbar-thumb-size) * var(--scrollbar-track-ratio))"],
+    ["--scrollbar-track", "var(--color-surface-muted)"],
+    ["--scrollbar-thumb", "var(--color-primary)"],
+    ["--scrollbar-thumb-hover", "var(--color-primary-hover)"],
+  ]);
+  for (const [token, value] of expected) {
+    const entry = tokens.split("\n").find((line) => line.trim().startsWith(token + ":"));
+    const actual = entry?.split(":").slice(1).join(":").trim().replace(/;$/, "");
+    if (actual !== value) {
+      report(tokensFile, tokens, Math.max(0, tokens.indexOf(token)), "Scrollbar " + token + " must equal " + value);
+    }
+  }
+  const componentPath = path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.tsx");
+  const component = await fs.readFile(componentPath, "utf8");
+  if (!component.includes('className="custom-scrollbar__track"') || !component.includes('role="scrollbar"')) {
+    report(componentPath, component, 0, "The canonical custom scrollbar must provide an accessible track.");
+  }
+  const allowedCss = new Set(["apps/frontend/src/components/CustomScrollbar.css", "apps/frontend/src/styles/tokens.css"]);
+  for (const file of await frontendSourceFiles([".css", ".scss", ".tsx", ".ts", ".jsx", ".js"])) {
+    const rel = normalize(path.relative(ROOT, file));
+    const source = await fs.readFile(file, "utf8");
+    if (/\.(css|scss)$/.test(rel) && !allowedCss.has(rel)) {
+      for (const match of source.matchAll(/::-(?:webkit|moz)-scrollbar(?:-[a-z-]+)?|scrollbar-(?:width|color)|--scrollbar-[a-z-]+\s*:/g)) {
+        report(file, source, match.index, "Scrollbar styling must be centralized in CustomScrollbar.css and global design tokens.");
+      }
+    }
+    if (/\.(tsx?|jsx?)$/.test(rel) && rel !== "apps/frontend/src/components/CustomScrollbar.tsx") {
+      for (const match of source.matchAll(/\brole\s*=\s*["']scrollbar["']/g)) {
+        report(file, source, match.index, "Scrollbar widgets must use the shared CustomScrollbar component.");
+      }
+    }
+  }
+}
+
 const startCount = violations.length;
 
 if (mode === "all" || mode === "backend") {
@@ -751,6 +791,7 @@ if (mode === "all" || mode === "frontend-reuse") {
   await checkFrontendArchiveBoundary();
   await checkFrontendPyramid();
   await checkFrontendReuse();
+  await checkScrollbarArchitecture();
 }
 
 const count = violations.length - startCount;

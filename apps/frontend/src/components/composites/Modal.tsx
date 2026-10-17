@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 import { IconButton } from "@fitvibe/ui";
+import { CustomScrollbar } from "../CustomScrollbar";
 
 export interface ModalProps {
   open: boolean;
@@ -92,9 +93,9 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={onClose}
           />
         </header>
-        <div className="fitvibe-scrollbar" data-slot="modal-body">
+        <CustomScrollbar data-slot="modal-body" label="Dialog content">
           {children}
-        </div>
+        </CustomScrollbar>
         {footer ? <footer data-slot="modal-footer">{footer}</footer> : null}
       </div>
     </div>

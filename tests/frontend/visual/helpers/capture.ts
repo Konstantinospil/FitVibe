@@ -2,6 +2,7 @@ import { expect, type Locator, type Page, type TestInfo } from "@playwright/test
 import { freezeTime } from "./fakeClock.js";
 import { getDynamicMasks } from "./mask.js";
 import { assertNoHorizontalOverflow } from "./responsive.js";
+import { assertStandardScrollbars } from "./scrollbarAudit.js";
 import {
   dismissCookieBanner,
   gotoAuthenticated,
@@ -194,6 +195,7 @@ export async function capturePageScreenshot(
   if (!options?.locator) {
     await assertNoHorizontalOverflow(page);
   }
+  await assertStandardScrollbars(page);
   const masks = await getDynamicMasks(page);
   const target = options?.locator ?? page;
   await expect(target).toHaveScreenshot(`${name}.png`, {

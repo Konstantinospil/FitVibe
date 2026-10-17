@@ -1,5 +1,6 @@
 import React from "react";
 import "./LegalDocumentShell.css";
+import { CustomScrollbar } from "./CustomScrollbar";
 
 export interface LegalDocumentShellProps {
   title: React.ReactNode;
@@ -41,7 +42,13 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
     </header>
 
     <div className="legal-document-shell__viewport">
-      <div className="legal-document-shell__content fitvibe-scrollbar">{children}</div>
+      <CustomScrollbar
+        className="legal-document-shell__scroll"
+        viewportClassName="legal-document-shell__content"
+        label="Legal document"
+      >
+        {children}
+      </CustomScrollbar>
     </div>
 
     {footerAction ? <footer className="legal-document-shell__footer">{footerAction}</footer> : null}

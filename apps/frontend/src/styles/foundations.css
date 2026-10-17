@@ -17,53 +17,7 @@ html {
   box-sizing: border-box;
 }
 
-/* === SCROLLBAR ===
- * Shared native scrollbar styling. Native thumb length follows the scrollable
- * content and cannot be fixed to the static Figma specimen in every browser.
- */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-
-*::-webkit-scrollbar {
-  width: var(--scrollbar-track-width);
-  height: var(--scrollbar-track-width);
-}
-
-*::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: var(--radius-full);
-}
-
-*::-webkit-scrollbar-thumb {
-  min-height: var(--scrollbar-thumb-min-height);
-  background: var(--scrollbar-thumb);
-  border: var(--scrollbar-thumb-inset) solid transparent;
-  border-radius: var(--radius-full);
-  background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-  background-clip: padding-box;
-}
-
-*::-webkit-scrollbar-thumb:active {
-  background: var(--scrollbar-thumb-active);
-  background-clip: padding-box;
-}
-
-/* The Figma scrollbar has no end controls. */
-*::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
+/* Native scrolling remains available outside shared scroll containers. */
 
 body {
   margin: 0;
