@@ -31,6 +31,15 @@ const setup = (scrollHeight = 600, clientHeight = 200) => {
   const thumb = result.container.querySelector(".custom-scrollbar__thumb") as HTMLDivElement;
   setDimension(viewport, "scrollHeight", scrollHeight);
   setDimension(viewport, "clientHeight", clientHeight);
+  // jsdom does not clamp scrollTop; real browser scroll containers do.
+  let scrollTop = 0;
+  Object.defineProperty(viewport, "scrollTop", {
+    configurable: true,
+    get: () => scrollTop,
+    set: (value: number) => {
+      scrollTop = Math.max(0, Math.min(scrollHeight - clientHeight, value));
+    },
+  });
   setDimension(track, "clientHeight", 200);
   setDimension(thumb, "offsetHeight", 20);
   act(() => notifyResize?.());
