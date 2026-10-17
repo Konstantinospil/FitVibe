@@ -60,6 +60,9 @@
   --modal-width-sm: 28rem;
   --modal-width-md: 40rem;
   --modal-width-lg: 56rem;
+  --legal-document-max-width: var(--modal-width-lg);
+  --legal-document-max-height: calc(100dvh - var(--space-3xl));
+  --legal-document-mobile-max-height: calc(100dvh - var(--space-lg));
   --textarea-min-height: 10rem;
   --control-height-sm: 34px;
   --control-height-md: 40px;
