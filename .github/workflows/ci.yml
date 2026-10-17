@@ -1381,14 +1381,17 @@ jobs:
             exit 1
           '
 
+      - name: Validate ZAP policy integration
+        run: node tests/security/zap-policy-contract.cjs
+
       - name: Run ZAP baseline scan
         timeout-minutes: 12
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://127.0.0.1:4173
-          rules_file_name: .zap/rules.tsv
           docker_name: zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78
-          cmd_options: -j --client-spider
+          # v0.15.0 rules_file_name does not reach the scanner CLI.
+          cmd_options: -c .zap/rules.tsv -j --client-spider
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
