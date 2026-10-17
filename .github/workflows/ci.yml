@@ -2115,12 +2115,11 @@ jobs:
         with:
           name: visual-regression-${{ github.run_id }}
           path: |
-            # Playwright stores actual/expected/diff screenshots and traces here.
-            tests/frontend/visual/__screenshots__
-            playwright-report/visual
+            tests/frontend/visual/__screenshots__/
+            playwright-report/visual/
             test-results/visual-junit.xml
           retention-days: 30
-          if-no-files-found: ignore
+          if-no-files-found: error
 
       - name: Job summary
         if: always()
