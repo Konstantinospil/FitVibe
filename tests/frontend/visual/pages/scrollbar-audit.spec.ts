@@ -8,6 +8,8 @@ import { assertStandardScrollbars } from "../helpers/scrollbarAudit.js";
  * The shared audit also runs in capturePageScreenshot for all other visual tests.
  */
 test.describe("Legacy scrollbar detection", () => {
+  // Structural failures are deterministic; retries only multiply the same timeout.
+  test.describe.configure({ retries: 0 });
   for (const [name, path] of [
     ["login", "/login"],
     ["registration", "/register"],

@@ -216,7 +216,9 @@ export async function openAuthenticatedPage(
   await prepareVisualPage(page, testInfo, { authenticated: true });
   await gotoAuthenticated(page, url);
   await expect(page).not.toHaveURL(/\/login/);
-  await page.locator("header nav").first().waitFor({ state: "visible", timeout: 15_000 });
+  // Fail promptly when a protected route does not render its layout. A longer
+  // retry cannot repair an absent navigation shell or blocked route bootstrap.
+  await page.locator("header nav").first().waitFor({ state: "visible", timeout: 5_000 });
 }
 
 export async function openPublicPage(

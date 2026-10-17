@@ -520,26 +520,12 @@ async function checkFrontendTokens() {
     path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
     "utf8",
   );
-  // The application delegates document-level scrolling to the canonical custom viewport.
-  // A native root gutter is inappropriate when the root itself must not scroll.
-  const rootRule = foundationSource.match(/html\s*\{([^}]*)\}/)?.[1] ?? "";
-  const bodyRule = foundationSource.match(/body\s*\{([^}]*)\}/)?.[1] ?? "";
-  const appRootRule = foundationSource.match(/#root\s*\{([^}]*)\}/)?.[1] ?? "";
-  const appSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/App.tsx"), "utf8");
-  const scrollbarCss = await fs.readFile(path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.css"), "utf8");
-  if (
-    !/overflow:\s*hidden\s*;/.test(rootRule) ||
-    !/overflow:\s*hidden\s*;/.test(bodyRule) ||
-    !/height:\s*100dvh\s*;/.test(appRootRule) ||
-    !/<CustomScrollbar\b/.test(appSource) ||
-    !/className="app-page-scrollbar"/.test(appSource) ||
-    !/\.app-page-scrollbar\s*\{[^}]*height:\s*100dvh\s*;/.test(scrollbarCss)
-  ) {
+  if (!foundationSource.includes("scrollbar-gutter: stable;")) {
     report(
       path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
       foundationSource,
       Math.max(0, foundationSource.indexOf("html {")),
-      "The root must not scroll; page scrolling must use the viewport-sized shared CustomScrollbar.",
+      "The document must reserve a stable scrollbar gutter.",
     );
   }
 
