@@ -289,7 +289,7 @@
 [data-slot="modal-copy"]{display:grid;gap:var(--space-xs)}
 [data-slot="modal-title"]{margin:0;color:var(--color-text-primary);font-family:var(--font-family-heading);font-weight:var(--font-weight-semibold);font-size:var(--type-card-title-size);line-height:var(--type-card-title-line-height);letter-spacing:var(--type-card-title-letter-spacing)}
 [data-slot="modal-description"]{margin:0;color:var(--color-text-secondary);font-family:var(--font-family-body);font-weight:var(--font-weight-regular);font-size:var(--type-supporting-size);line-height:var(--type-supporting-line-height);letter-spacing:var(--type-supporting-letter-spacing)}
-[data-slot="modal-body"]{min-height:0;overflow:auto;padding:var(--space-md)}
+[data-slot="modal-body"]{min-height:0;overflow:hidden}\n[data-slot="modal-body"] > .custom-scrollbar__viewport{padding:var(--space-md)}
 [data-slot="modal-footer"]{display:flex;justify-content:flex-end;gap:var(--space-sm);padding:var(--space-md);border-top:var(--control-border-width) solid var(--color-border)}
 
 [data-component="form-stack"],[data-component="section"]{width:100%;display:grid;gap:var(--space-md)}
