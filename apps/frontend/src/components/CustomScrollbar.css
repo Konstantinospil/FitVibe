@@ -5,12 +5,6 @@
   min-height: 0;
   height: 100%;
 }
-.app-page-scrollbar {
-  height: 100dvh;
-}
-.app-page-scrollbar > .custom-scrollbar__viewport > .custom-scrollbar__inner {
-  min-height: 100%;
-}
 .custom-scrollbar__viewport {
   min-width: 0;
   min-height: 0;
