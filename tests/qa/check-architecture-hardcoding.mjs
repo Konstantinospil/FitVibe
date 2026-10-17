@@ -499,6 +499,17 @@ async function checkFrontendTokens() {
     }
   }
 
+  // Component geometry is defined in the shared token authority.  Unlike the
+  // legacy broad scanner, this contract does not permit undocumented literals.
+  const legalStyleFile = path.join(ROOT, "apps/frontend/src/components/LegalDocumentShell.css");
+  const legalStyles = await fs.readFile(legalStyleFile, "utf8");
+  for (const match of legalStyles.matchAll(/(?:^|[;{\\s])(?:width|height|min-width|max-width|min-height|max-height|margin|padding)(?:-[a-z-]+)?\\s*:\\s*([^;]+);/gm)) {
+    const value = match[1].trim();
+    if (/\\b\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|dvh|dvw)\\b/.test(value)) {
+      report(legalStyleFile, legalStyles, match.index, "Legal-document geometry must use shared design tokens, not literal dimensions.");
+    }
+  }
+
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
   const componentStylesSource = await fs.readFile(
     path.join(ROOT, "apps/frontend/src/styles/components.css"),
