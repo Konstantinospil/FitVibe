@@ -76,6 +76,11 @@ jobs:
         continue-on-error: true
         run: node tests/qa/check-architecture-hardcoding.mjs frontend-reuse
 
+      - name: Design authority regression tests
+        id: design_authority_tests
+        continue-on-error: true
+        run: node --test tests/qa/design-authority-core.test.mjs
+
       - name: Enforce zero-tolerance result
         if: always()
         env:
@@ -83,6 +88,7 @@ jobs:
           FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
           TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
+          DESIGN_AUTHORITY_OUTCOME: ${{ steps.design_authority_tests.outcome }}
         run: |
           failed=0
           if [ "$BACKEND_OUTCOME" != "success" ]; then
@@ -101,6 +107,10 @@ jobs:
             echo "::error::Typography contract diagnostic failed."
             failed=1
           fi
+          if [ "$DESIGN_AUTHORITY_OUTCOME" != "success" ]; then
+            echo "::error::Design authority regression tests failed."
+            failed=1
+          fi
           if [ "$failed" -ne 0 ]; then
             exit 1
           fi
@@ -113,12 +123,14 @@ jobs:
           FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
           TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
+          DESIGN_AUTHORITY_OUTCOME: ${{ steps.design_authority_tests.outcome }}
         run: |
           echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
           echo "- Backend policy authority: $BACKEND_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend design tokens: $FRONTEND_TOKENS_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend component reuse: $FRONTEND_REUSE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Typography contract: $TYPOGRAPHY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Design authority tests: $DESIGN_AUTHORITY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
 
   quality:
     name: Quality Gates (Lint & Type Check)
