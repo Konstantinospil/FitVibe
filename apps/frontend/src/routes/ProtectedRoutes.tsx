@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import("../pages/Dashboard"));
 const Settings = lazy(() => import("../pages/Settings"));
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
+const Cookie = lazy(() => import("../pages/Cookie"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
 
 const fallback = (
@@ -99,6 +100,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
             <Route path="settings" element={<Settings />} />
             <Route path="terms" element={<Terms />} />
             <Route path="privacy" element={<Privacy />} />
+            <Route path="cookie" element={<Cookie />} />
             <Route path="terms-reacceptance" element={<TermsReacceptance />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
