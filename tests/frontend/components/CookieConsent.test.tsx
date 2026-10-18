@@ -20,6 +20,9 @@ beforeEach(() => {
     consentStatus: { hasConsent: false }, isLoading: false, error: null,
     savePreferences: save, refreshStatus: vi.fn(),
   });
+});
+
+describe("Cookie consent preferences", () => {
   it("does not mount an initial consent popup outside a router", () => {
     render(<CookieConsent />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -107,9 +110,6 @@ beforeEach(() => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-});
-
-describe("Cookie consent preferences", () => {
   it("shows four global switches with essential enabled and locked", () => {
     mount(<CookieConsent />);
     const switches = screen.getAllByRole("switch");
