@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useInRouterContext, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
@@ -133,7 +133,12 @@ export function CookiePreferences({
   );
 }
 
-export default function CookieConsent() {
+function RoutedCookieConsent() {
   const { pathname } = useLocation();
   return LEGAL_ROUTES.has(pathname) ? null : <CookiePreferences initial />;
+}
+
+export default function CookieConsent() {
+  const isRouted = useInRouterContext();
+  return isRouted ? <RoutedCookieConsent /> : null;
 }
