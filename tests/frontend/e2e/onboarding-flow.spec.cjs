@@ -131,6 +131,10 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   const enableMutation = observeMutation(page, "POST", "/api/v1/auth/2fa/verify");
   await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
   await page.getByRole("button", { name: /verify and enable/i }).click();
+  await page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/verify" &&
+    response.request().method() === "POST",
+  );
   enableMutation.assertExactlyOnce(200);
   enableMutation.stop();
   await expect(page.getByText(/2fa is currently enabled/i)).toBeVisible();
@@ -214,6 +218,10 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
   const regeneration = observeMutation(page, "POST", "/api/v1/auth/2fa/backup-codes/regenerate");
   await page.getByRole("button", { name: /^backup codes$/i }).last().click();
+  await page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/backup-codes/regenerate" &&
+    response.request().method() === "POST",
+  );
   regeneration.assertExactlyOnce(200);
   regeneration.stop();
   await page.getByRole("button", { name: /^show$/i }).click();
@@ -226,6 +234,10 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
   const disableMutation = observeMutation(page, "POST", "/api/v1/auth/2fa/disable");
   await page.getByRole("button", { name: /yes, disable 2fa/i }).click();
+  await page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/disable" &&
+    response.request().method() === "POST",
+  );
   disableMutation.assertExactlyOnce(200);
   disableMutation.stop();
   await expect(page.getByText(/2fa is currently disabled/i)).toBeVisible();
