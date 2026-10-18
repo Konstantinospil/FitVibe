@@ -33,6 +33,7 @@ export async function saveCookiePreferencesHandler(req: Request, res: Response):
     browserId,
     choice,
     req.headers["user-agent"] ?? null,
+    choice.source ?? "banner",
   );
 
   res.cookie(CONSENT_COOKIE_NAME, browserId, {
