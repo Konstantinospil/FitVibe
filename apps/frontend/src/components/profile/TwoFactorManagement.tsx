@@ -187,7 +187,9 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
         <div>
           <p>{t("settings.security.backupCodesHelp")}</p>
           <Button type="button" onClick={() => setRevealCodes((current) => !current)}>
-            {revealCodes ? t("settings.security.hideBackupCodes") : t("settings.security.revealBackupCodes")}
+            {revealCodes
+              ? t("settings.security.hideBackupCodes")
+              : t("settings.security.revealBackupCodes")}
           </Button>
           {revealCodes && (
             <ul>
