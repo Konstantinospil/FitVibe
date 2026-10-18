@@ -27,7 +27,9 @@
     "acceptAll": "Tout Accepter",
     "rejectAll": "Tout Refuser",
     "savePreferences": "Enregistrer les Préférences",
-    "saveError": "Échec de l'enregistrement des préférences de cookies. Veuillez réessayer."
+    "saveError": "Échec de l'enregistrement des préférences de cookies. Veuillez réessayer.",
+    "closeReject": "Fermer et refuser les cookies facultatifs",
+    "managePreferences": "Gérer les préférences de cookies"
   },
   "policy": {
     "title": "Politique de Cookies",
