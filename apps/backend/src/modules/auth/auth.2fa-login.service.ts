@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { assertTermsRequirementSatisfied } from "./auth.legal-gate.js";
 import { HttpError } from "../../utils/http.js";
-import { attachAnonymousConsents } from "../consent/consent.repository.js";
 import { verify2FACode } from "./two-factor.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
 import {
@@ -160,9 +159,6 @@ export async function verify2FALogin(
       ip: context.ip ?? null,
       requestId: context.requestId ?? null,
     });
-    if (isValidUUID(user.id)) {
-      await attachAnonymousConsents(user.id, context.ip ?? ipAddress);
-    }
 
     await deletePending2FASession(pendingSessionId);
 
