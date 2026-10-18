@@ -103,6 +103,7 @@ test.describe("Accessibility and localized UI acceptance", () => {
         }).click();
         await expect(cookieDialog).toBeHidden();
       }
+      await expect(page.getByRole("heading", { name: messages.calendarSurface.title })).toBeVisible();
       const planButton = page.getByRole("button", {
         name: messages.calendarSurface.actions.plan,
         exact: true,
