@@ -69,6 +69,7 @@ describe("Consent Repository", () => {
         id: "consent-1",
         clientKey: clientKey,
         consentVersion: "2024-06-01",
+        legalVersionId: null,
         essentialCookies: true,
         preferencesCookies: false,
         analyticsCookies: true,
@@ -130,5 +131,4 @@ describe("Consent Repository", () => {
       expect(result.id).toBe("consent-2");
     });
   });
-
 });
