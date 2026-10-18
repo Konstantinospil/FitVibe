@@ -18,8 +18,8 @@ import { insertAudit } from "../common/audit.util.js";
 /**
  * Get consent status for an IP address
  */
-export async function getConsentStatus(ipAddress: string): Promise<CookieConsentResponse> {
-  const consent = await getConsentByIp(ipAddress);
+export async function getConsentStatus(clientIdentifier: string): Promise<CookieConsentResponse> {
+  const consent = await getConsentByIp(clientIdentifier);
 
   if (!consent) {
     return {
@@ -49,7 +49,7 @@ export async function getConsentStatus(ipAddress: string): Promise<CookieConsent
  * Validates that essential cookies are always true
  */
 export async function saveCookiePreferences(
-  ipAddress: string,
+  clientIdentifier: string,
   preferences: {
     essential: boolean;
     preferences: boolean;
@@ -65,7 +65,7 @@ export async function saveCookiePreferences(
 
   const currentCookiePolicy = await getCurrentLegalPublication("cookie");
   const input: CreateCookieConsentInput = {
-    ipAddress,
+    ipAddress: clientIdentifier,
     consentVersion: currentCookiePolicy.version,
     legalVersionId: currentCookiePolicy.id,
     essentialCookies: preferences.essential,
@@ -75,7 +75,7 @@ export async function saveCookiePreferences(
     userAgent: userAgent ?? null,
   };
 
-  const consent = await upsertConsent(ipAddress, input, null, currentCookiePolicy.id);
+  const consent = await upsertConsent(clientIdentifier, input, null, currentCookiePolicy.id);
 
   // Audit log consent change
   await insertAudit({
