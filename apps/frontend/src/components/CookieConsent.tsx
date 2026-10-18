@@ -31,7 +31,7 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
     finally { setSaving(false); }
   };
   return (
-    <section className="cookie-consent-dialog" role={initial ? "dialog" : "region"} aria-modal={initial ? true : undefined} aria-labelledby="cookie-consent-title">
+    <>{initial ? <div className="cookie-consent-backdrop" /> : null}<section className="cookie-consent-dialog" role={initial ? "dialog" : "region"} aria-modal={initial ? true : undefined} aria-labelledby="cookie-consent-title">
       <div className="cookie-consent-heading">
         <h2 id="cookie-consent-title">{t("cookie.title")}</h2>
         {initial ? <IconButton label={t("cookie.actions.closeReject")} icon={<X aria-hidden="true" />} disabled={saving} onClick={() => void persist(REJECT_COOKIES)} /> : null}
@@ -52,7 +52,7 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
         <Button variant="secondary" disabled={saving} onClick={() => void persist(selected)}>{t("cookie.actions.savePreferences")}</Button>
       </div>
       <Link to="/cookie">{t("cookie.policy.link")}</Link>
-    </section>
+    </section></>
   );
 }
-export default function CookieConsent() { return <div className="cookie-consent-backdrop"><CookiePreferences initial /></div>; }
+export default function CookieConsent() { return <CookiePreferences initial />; }
