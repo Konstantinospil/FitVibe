@@ -51,6 +51,19 @@ export function useCookieConsent(): UseCookieConsentReturn {
         "/api/v1/consent/cookie-status",
       );
       setConsentStatus(response.data.data);
+      // Restore optional integrations only after confirmed, current consent.
+      if (response.data.data.hasConsent && response.data.data.consent) {
+        if (response.data.data.consent.analytics) {
+          initializeAnalytics();
+        } else {
+          disableAnalytics();
+        }
+        if (response.data.data.consent.marketing) {
+          initializeMarketing();
+        } else {
+          disableMarketing();
+        }
+      }
     } catch (err) {
       // Check if it's a connection error (backend not running)
       const errMessage =
