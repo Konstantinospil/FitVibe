@@ -28,7 +28,7 @@ describe("Cookie consent preferences", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("shows inline preferences while the consent status is loading", () => {
+  it("hides inline preferences until consent status has loaded", () => {
     consent.mockReturnValue({
       consentStatus: null,
       isLoading: true,
@@ -37,8 +37,8 @@ describe("Cookie consent preferences", () => {
       refreshStatus: vi.fn(),
     });
     mount(<CookiePreferences />);
-    expect(screen.getByRole("region", { name: "cookie.title" })).toBeInTheDocument();
-    expect(screen.getAllByRole("switch")).toHaveLength(4);
+    expect(screen.queryByRole("region", { name: "cookie.title" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
   });
 
   it("locks all switches and actions during an in-flight save", async () => {
