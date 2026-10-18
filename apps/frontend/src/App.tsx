@@ -7,11 +7,11 @@ import { CustomScrollbar } from "./components/CustomScrollbar";
 const App: React.FC = () => {
   const { t } = useTranslation();
   return (
-  <ToastProvider>
-    <CustomScrollbar className="app-page-scrollbar" label={t("scrollbar.pageLabel")}>
-      <AppRouter />
-    </CustomScrollbar>
-  </ToastProvider>
+    <ToastProvider>
+      <CustomScrollbar className="app-page-scrollbar" label={t("scrollbar.pageLabel")}>
+        <AppRouter />
+      </CustomScrollbar>
+    </ToastProvider>
   );
 };
 
