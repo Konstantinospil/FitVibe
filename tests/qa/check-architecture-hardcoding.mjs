@@ -532,26 +532,29 @@ async function checkFrontendTokens() {
     "utf8",
   );
   const appSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/App.tsx"), "utf8");
+  const pageShellSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/layouts/PageShell.tsx"), "utf8");
+  const componentsCss = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/components.css"), "utf8");
   const scrollbarCss = await fs.readFile(path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.css"), "utf8");
   const scrollbarSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.tsx"), "utf8");
   const rootRule = foundationSource.match(/html\s*\{([^}]*)\}/)?.[1] ?? "";
   const bodyRule = foundationSource.match(/body\s*\{([^}]*)\}/)?.[1] ?? "";
-  const appRootRule = foundationSource.match(/#root\s*\{([^}]*)\}/)?.[1] ?? "";
   if (
     !/overflow:\s*hidden\s*;/.test(rootRule) ||
     !/overflow:\s*hidden\s*;/.test(bodyRule) ||
-    !/height:\s*100dvh\s*;/.test(appRootRule) ||
-    !/<CustomScrollbar\b/.test(appSource) ||
-    !/className="app-page-scrollbar"/.test(appSource) ||
-    !/\.app-page-scrollbar\s*\{[^}]*height:\s*100dvh\s*;/.test(scrollbarCss) ||
+    /<CustomScrollbar\b/.test(appSource) ||
+    !/<CustomScrollbar\b/.test(pageShellSource) ||
+    !/className="page-shell-content-scroll"/.test(pageShellSource) ||
+    !/\[data-component="page-shell"\]\{[^}]*height:100dvh/.test(componentsCss) ||
+    !/\[data-slot="page-shell-main"\]\{[^}]*min-height:0/.test(componentsCss) ||
+    !/\.page-shell-content-scroll\s*\{[^}]*min-height:\s*0/.test(scrollbarCss) ||
     !/\.custom-scrollbar\[data-scrollable="true"\]/.test(scrollbarCss) ||
     !/data-scrollable=\{overflow\}/.test(scrollbarSource)
   ) {
     report(
-      path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
-      foundationSource,
-      Math.max(0, foundationSource.indexOf("html {")),
-      "Pages must scroll through the canonical overflow-aware CustomScrollbar, without a native root gutter.",
+      path.join(ROOT, "apps/frontend/src/layouts/PageShell.tsx"),
+      pageShellSource,
+      Math.max(0, pageShellSource.indexOf("PageShell")),
+      "Header and footer must remain fixed while shared page-shell main content owns scrolling.",
     );
   }
 
