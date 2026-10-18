@@ -187,7 +187,7 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
         <div>
           <p>{t("settings.security.backupCodesHelp")}</p>
           <Button type="button" onClick={() => setRevealCodes((current) => !current)}>
-            {revealCodes ? t("common.hide") : t("common.show")}
+            {revealCodes ? t("settings.security.hideBackupCodes") : t("settings.security.revealBackupCodes")}
           </Button>
           {revealCodes && (
             <ul>
@@ -199,7 +199,7 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
             </ul>
           )}
           <Button type="button" onClick={clearSensitiveState}>
-            {t("common.done")}
+            {t("settings.security.finishBackupCodes")}
           </Button>
         </div>
       )}
