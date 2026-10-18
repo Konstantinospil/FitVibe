@@ -5,7 +5,7 @@ jest.mock("../../../../apps/backend/src/modules/consent/consent.service.js");
 const mockService = jest.mocked(service);
 const browserId = "a".repeat(64);
 const consent = {
-  id: "consent-3", ipAddress: browserId, consentVersion: "v1", legalVersionId: "legal-1",
+  id: "consent-3", clientKey: browserId, consentVersion: "v1", legalVersionId: "legal-1",
   essentialCookies: true, preferencesCookies: true, analyticsCookies: false, marketingCookies: true,
   consentGivenAt: "2026-10-18T00:00:00.000Z", lastUpdatedAt: "2026-10-18T00:00:00.000Z",
   userAgent: "TestAgent", createdAt: "2026-10-18T00:00:00.000Z", updatedAt: "2026-10-18T00:00:00.000Z",
