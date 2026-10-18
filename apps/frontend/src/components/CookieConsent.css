@@ -8,3 +8,7 @@
 .cookie-consent-row h3 {font-size:var(--type-body-size)}
 .cookie-consent-actions {display:flex;flex-wrap:wrap;gap:var(--space-sm)}
 .cookie-consent-dialog a {color:var(--color-primary)}
+
+.cookie-preferences-inline {width:100%;min-width:0}
+.cookie-preferences-inline .cookie-consent-dialog {width:100%;max-height:none;box-shadow:none}
+.cookie-consent-backdrop .cookie-consent-dialog {position:relative}
