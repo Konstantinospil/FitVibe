@@ -57,28 +57,27 @@ beforeEach(() => {
     );
   });
 
-  it("allows editing each optional category independently without changing essential consent", async () => {
-    mount(<CookiePreferences source="settings" />);
-    const optionalCategories = ["preferences", "analytics", "marketing"] as const;
-    for (const category of optionalCategories) {
+  it.each(["preferences", "analytics", "marketing"] as const)(
+    "allows editing %s without changing other consent categories",
+    async (category) => {
+      mount(<CookiePreferences source="settings" />);
       fireEvent.click(
         screen.getByRole("switch", { name: `cookie.categories.${category}.label` }),
       );
       fireEvent.click(screen.getByRole("button", { name: "cookie.actions.savePreferences" }));
-      await waitFor(() => expect(save).toHaveBeenLastCalledWith(
-        {
-          essential: true,
-          preferences: category === "preferences",
-          analytics: category === "analytics",
-          marketing: category === "marketing",
-        },
-        "settings",
-      ));
-      fireEvent.click(
-        screen.getByRole("switch", { name: `cookie.categories.${category}.label` }),
+      await waitFor(() =>
+        expect(save).toHaveBeenCalledWith(
+          {
+            essential: true,
+            preferences: category === "preferences",
+            analytics: category === "analytics",
+            marketing: category === "marketing",
+          },
+          "settings",
+        ),
       );
-    }
-  });
+    },
+  );
 
   it("does not display an initial dialog once saved consent arrives", () => {
     const view = mount(<CookieConsent />);
