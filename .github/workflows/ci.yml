@@ -2093,9 +2093,14 @@ jobs:
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend run build:visual
 
-      - name: Start preview server
-        timeout-minutes: 10
+      - name: Start preview server and run visual regression tests
+        id: visual_regression_tests
+        timeout-minutes: 25
         working-directory: apps/frontend
+        env:
+          APP_URL: "http://127.0.0.1:4173"
+          CI: "true"
+          DISABLE_WEBSERVER: "true"
         run: |
           if [ ! -f dist/client/index.html ]; then
             echo "Missing dist/client/index.html after build:visual" >&2
@@ -2105,7 +2110,8 @@ jobs:
           # `pnpm --filter … exec` keeps the workspace root as cwd, so Vite would
           # preview an empty repo-root dist/client (HTTP 404) while still printing Local.
           pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client &
-          echo $! > "${GITHUB_WORKSPACE}/preview-server.pid"
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
           python3 - <<'PY'
           import http.client
           import sys
@@ -2130,16 +2136,8 @@ jobs:
           print(f"Preview server did not start in time ({last})", file=sys.stderr)
           sys.exit(1)
           PY
-
-      - name: Run visual regression tests
-        id: visual_regression_tests
-        timeout-minutes: 20
-        env:
-          APP_URL: "http://127.0.0.1:4173"
-          CI: "true"
-          DISABLE_WEBSERVER: "true"
-        # CI is comparison-only: committed baselines are never rewritten.
-        run: pnpm test:visual:ci
+          cd "$GITHUB_WORKSPACE"
+          pnpm test:visual:ci
 
       - name: Verify visual baselines were not modified
         if: always()
@@ -2150,14 +2148,6 @@ jobs:
             echo "$baseline_changes"
             echo "Baseline updates must be performed explicitly with: pnpm test:visual:update"
             exit 1
-          fi
-
-      - name: Stop preview server
-        if: always()
-        run: |
-          if [ -f preview-server.pid ]; then
-            kill $(cat preview-server.pid) 2>/dev/null || true
-            rm -f preview-server.pid
           fi
 
       - name: Upload visual test artifacts
