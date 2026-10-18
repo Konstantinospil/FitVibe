@@ -290,4 +290,65 @@ describe("PublishedLegalDocument", () => {
     await Promise.resolve();
     expect(screen.queryByText("Legacy content")).not.toBeInTheDocument();
   });
+  it("renders document tables and structured lists only when part of legal sections", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        intro: {
+          title: "Overview",
+          notices: ["First notice", { title: "Second notice", content: "Details" }],
+        },
+        section1: {
+          title: "Retention",
+          table: {
+            headers: { purpose: "Purpose", duration: "Duration" },
+            rows: { first: { purpose: "Accounts", duration: "One year" } },
+          },
+          rules: [{ title: "Requirement", content: "Keep records" }, "Plain rule"],
+          excludedTable: { headers: {}, rows: {} },
+        },
+      }),
+    );
+
+    render(<PublishedLegalDocument documentType="terms" title="Fallback" />);
+
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Purpose" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "One year" })).toBeInTheDocument();
+    expect(screen.getByText("First notice")).toBeInTheDocument();
+    expect(screen.getByText(/Second notice/)).toBeInTheDocument();
+    expect(screen.getByText("Keep records")).toBeInTheDocument();
+    expect(screen.getByText("Plain rule")).toBeInTheDocument();
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+  });
+
+  it("renders heterogeneous legal rows and nested values without application controls", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        section1: {
+          title: "Details",
+          records: [{ unknown: { note: "Nested note" } }, { title: "Heading only" }],
+          table: {
+            headers: { first: "Heading" },
+            rows: { single: "Single value" },
+          },
+          valid: true,
+          amount: 4,
+          omitted: null,
+          unsupported: Symbol("unsupported"),
+        },
+        consent: { accept: "Accept all" },
+      }),
+    );
+
+    render(<PublishedLegalDocument documentType="privacy" title="Privacy" />);
+
+    expect(await screen.findByText("Nested note")).toBeInTheDocument();
+    expect(screen.getByText("Heading only")).toBeInTheDocument();
+    expect(screen.getByText("Single value")).toBeInTheDocument();
+    expect(screen.getByText("true")).toBeInTheDocument();
+    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.queryByText("Accept all")).not.toBeInTheDocument();
+    expect(screen.queryByText("Symbol(unsupported)")).not.toBeInTheDocument();
+  });
+
 });
