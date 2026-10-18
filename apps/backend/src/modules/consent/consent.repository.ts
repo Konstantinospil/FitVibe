@@ -14,7 +14,7 @@ import type {
 const COOKIE_CONSENTS_TABLE = "cookie_consents";
 
 function hashClientKey(clientIdentifier: string): string {
-  return crypto.createHash("sha256").update(ipAddress).digest("hex");
+  return crypto.createHash("sha256").update(clientIdentifier).digest("hex");
 }
 
 function toCookieConsent(row: CookieConsentRow): CookieConsent {
@@ -93,7 +93,7 @@ export async function upsertConsent(
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function attachAnonymousConsents(userId: string, clientIdentifier: string): Promise<number> {
-  if (!ipAddress || ipAddress === "unknown") {
+  if (!clientIdentifier || clientIdentifier === "unknown") {
     return 0;
   }
   // cookie_consents.user_id is uuid; skip placeholders like "user-123"
