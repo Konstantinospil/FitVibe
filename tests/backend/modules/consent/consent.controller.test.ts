@@ -43,7 +43,7 @@ describe("cookie consent browser isolation", () => {
     await controller.saveCookiePreferencesHandler(req as Request, res as Response);
     expect(mockService.saveCookiePreferences).toHaveBeenCalledWith(
       expect.stringMatching(/^[a-f0-9]{64}$/),
-      { essential: true, preferences: true, analytics: false, marketing: true }, null,
+      { essential: true, preferences: true, analytics: false, marketing: true }, null, "banner",
     );
     expect(res.cookie).toHaveBeenCalledWith("fitvibe_consent_client", expect.stringMatching(/^[a-f0-9]{64}$/), expect.objectContaining({
       httpOnly: true, sameSite: "lax", path: "/api/v1/consent",
@@ -56,7 +56,7 @@ describe("cookie consent browser isolation", () => {
   it("reuses the previously issued identifier to preserve consent history", async () => {
     req.headers = { cookie: `fitvibe_consent_client=${browserId}`, "user-agent": "TestAgent" };
     await controller.saveCookiePreferencesHandler(req as Request, res as Response);
-    expect(mockService.saveCookiePreferences).toHaveBeenCalledWith(browserId, req.body, "TestAgent");
+    expect(mockService.saveCookiePreferences).toHaveBeenCalledWith(browserId, req.body, "TestAgent", "banner");
   });
 
   it("rejects attempts to disable essential cookies", async () => {
