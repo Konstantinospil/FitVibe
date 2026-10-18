@@ -20,7 +20,7 @@ function hashClientKey(clientIdentifier: string): string {
 function toCookieConsent(row: CookieConsentRow): CookieConsent {
   return {
     id: row.id,
-    ipAddress: row.client_key,
+    clientKey: row.client_key,
     consentVersion: row.consent_version,
     legalVersionId: row.legal_version_id,
     essentialCookies: row.essential_cookies,
@@ -35,7 +35,9 @@ function toCookieConsent(row: CookieConsentRow): CookieConsent {
   };
 }
 
-export async function getConsentByIp(clientIdentifier: string): Promise<CookieConsent | undefined> {
+export async function getConsentByClient(
+  clientIdentifier: string,
+): Promise<CookieConsent | undefined> {
   const clientKey = hashClientKey(clientIdentifier);
   const row = await db(COOKIE_CONSENTS_TABLE)
     .select<CookieConsentRow[]>("*")
@@ -54,7 +56,7 @@ export async function upsertConsent(
 ): Promise<CookieConsent> {
   const now = new Date().toISOString();
   const isCreateInput = "consentVersion" in input && "essentialCookies" in input;
-  const previous = await getConsentByIp(clientIdentifier);
+  const previous = await getConsentByClient(clientIdentifier);
 
   const [row] = await db(COOKIE_CONSENTS_TABLE)
     .insert({
@@ -90,18 +92,3 @@ export async function upsertConsent(
   return toCookieConsent(row);
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export async function attachAnonymousConsents(userId: string, clientIdentifier: string): Promise<number> {
-  if (!clientIdentifier || clientIdentifier === "unknown") {
-    return 0;
-  }
-  // cookie_consents.user_id is uuid; skip placeholders like "user-123"
-  if (!UUID_RE.test(userId)) {
-    return 0;
-  }
-  return db(COOKIE_CONSENTS_TABLE)
-    .where({ client_key: hashClientKey(clientIdentifier) })
-    .whereNull("user_id")
-    .update({ user_id: userId });
-}
