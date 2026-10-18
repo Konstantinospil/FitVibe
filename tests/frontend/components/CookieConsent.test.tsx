@@ -20,6 +20,94 @@ beforeEach(() => {
     consentStatus: { hasConsent: false }, isLoading: false, error: null,
     savePreferences: save, refreshStatus: vi.fn(),
   });
+  it("does not mount an initial consent popup outside a router", () => {
+    render(<CookieConsent />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows inline preferences while the consent status is loading", () => {
+    consent.mockReturnValue({
+      consentStatus: null,
+      isLoading: true,
+      error: null,
+      savePreferences: save,
+      refreshStatus: vi.fn(),
+    });
+    mount(<CookiePreferences />);
+    expect(screen.getByRole("region", { name: "cookie.title" })).toBeInTheDocument();
+    expect(screen.getAllByRole("switch")).toHaveLength(4);
+  });
+
+  it("locks all switches and actions during an in-flight save", async () => {
+    let completeSave: () => void = () => undefined;
+    save.mockImplementation(
+      () => new Promise<void>((resolve) => { completeSave = resolve; }),
+    );
+    mount(<CookiePreferences />);
+    fireEvent.click(screen.getByRole("button", { name: "cookie.actions.acceptAll" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "cookie.actions.acceptAll" })).toBeDisabled(),
+    );
+    for (const toggle of screen.getAllByRole("switch")) {
+      expect(toggle).toBeDisabled();
+    }
+    completeSave();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "cookie.actions.acceptAll" })).toBeEnabled(),
+    );
+  });
+
+  it("allows editing each optional category independently without changing essential consent", async () => {
+    mount(<CookiePreferences source="settings" />);
+    const optionalCategories = ["preferences", "analytics", "marketing"] as const;
+    for (const category of optionalCategories) {
+      fireEvent.click(
+        screen.getByRole("switch", { name: `cookie.categories.${category}.label` }),
+      );
+      fireEvent.click(screen.getByRole("button", { name: "cookie.actions.savePreferences" }));
+      await waitFor(() => expect(save).toHaveBeenLastCalledWith(
+        {
+          essential: true,
+          preferences: category === "preferences",
+          analytics: category === "analytics",
+          marketing: category === "marketing",
+        },
+        "settings",
+      ));
+      fireEvent.click(
+        screen.getByRole("switch", { name: `cookie.categories.${category}.label` }),
+      );
+    }
+  });
+
+  it("does not display an initial dialog once saved consent arrives", () => {
+    const view = mount(<CookieConsent />);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    consent.mockReturnValue({
+      consentStatus: {
+        hasConsent: true,
+        consent: {
+          essential: true,
+          preferences: false,
+          analytics: false,
+          marketing: false,
+          version: "v1",
+          updatedAt: "now",
+        },
+      },
+      isLoading: false,
+      error: null,
+      savePreferences: save,
+      refreshStatus: vi.fn(),
+    });
+    view.rerender(
+      <MemoryRouter>
+        <CookieConsent />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
 });
 
 describe("Cookie consent preferences", () => {
