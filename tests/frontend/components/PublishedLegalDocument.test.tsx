@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PublishedLegalDocument from "../../src/components/PublishedLegalDocument";
 
@@ -95,6 +95,8 @@ describe("PublishedLegalDocument", () => {
         section10: { title: "Section 10", content: "Ten" },
         section2: { title: "Section 2", content: "Two" },
         intro: "Introduction",
+        consent: { revoke: "Revoke consent", accept: "Accept terms" },
+        loading: "Loading document",
         count: 7,
         enabled: true,
         nothing: null,
@@ -134,19 +136,18 @@ describe("PublishedLegalDocument", () => {
     expect(screen.getByTestId("effective-date").textContent).toBeTruthy();
     expect(screen.getByText("Introduction")).toBeInTheDocument();
     expect(screen.queryByText("Legal")).not.toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("true")).toBeInTheDocument();
+    expect(screen.queryByText("7")).not.toBeInTheDocument();
+    expect(screen.queryByText("true")).not.toBeInTheDocument();
+    expect(screen.queryByText("Revoke consent")).not.toBeInTheDocument();
+    expect(screen.queryByText("Loading document")).not.toBeInTheDocument();
     expect(screen.queryByText("Symbol(ignored)")).not.toBeInTheDocument();
-    expect(screen.getByText("Titled").tagName).toBe("STRONG");
-    expect(screen.getByText("Body")).toBeInTheDocument();
-    expect(screen.getByText("Title only")).toBeInTheDocument();
-    expect(screen.getByText("Content only")).toBeInTheDocument();
-    expect(screen.getByText("Nested object value")).toBeInTheDocument();
+    expect(screen.queryByText("Titled")).not.toBeInTheDocument();
+    expect(screen.queryByText("Body")).not.toBeInTheDocument();
+    expect(screen.queryByText("Title only")).not.toBeInTheDocument();
+    expect(screen.queryByText("Content only")).not.toBeInTheDocument();
+    expect(screen.queryByText("Nested object value")).not.toBeInTheDocument();
 
-    const table = screen.getByRole("table");
-    expect(within(table).getByText("Column A")).toBeInTheDocument();
-    expect(within(table).getByText("A1")).toBeInTheDocument();
-    expect(within(table).getByText("single cell")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent);
     expect(headings.indexOf("Section 2")).toBeLessThan(headings.indexOf("Section 10"));
