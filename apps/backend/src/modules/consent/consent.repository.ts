@@ -13,7 +13,7 @@ import type {
 
 const COOKIE_CONSENTS_TABLE = "cookie_consents";
 
-function hashClientKey(ipAddress: string): string {
+function hashClientKey(clientIdentifier: string): string {
   return crypto.createHash("sha256").update(ipAddress).digest("hex");
 }
 
@@ -35,8 +35,8 @@ function toCookieConsent(row: CookieConsentRow): CookieConsent {
   };
 }
 
-export async function getConsentByIp(ipAddress: string): Promise<CookieConsent | undefined> {
-  const clientKey = hashClientKey(ipAddress);
+export async function getConsentByIp(clientIdentifier: string): Promise<CookieConsent | undefined> {
+  const clientKey = hashClientKey(clientIdentifier);
   const row = await db(COOKIE_CONSENTS_TABLE)
     .select<CookieConsentRow[]>("*")
     .where("client_key", clientKey)
@@ -47,19 +47,19 @@ export async function getConsentByIp(ipAddress: string): Promise<CookieConsent |
 }
 
 export async function upsertConsent(
-  ipAddress: string,
+  clientIdentifier: string,
   input: CreateCookieConsentInput | UpdateCookieConsentInput,
   userId?: string | null,
   legalVersionId?: string | null,
 ): Promise<CookieConsent> {
   const now = new Date().toISOString();
   const isCreateInput = "consentVersion" in input && "essentialCookies" in input;
-  const previous = await getConsentByIp(ipAddress);
+  const previous = await getConsentByIp(clientIdentifier);
 
   const [row] = await db(COOKIE_CONSENTS_TABLE)
     .insert({
       user_id: userId ?? null,
-      client_key: hashClientKey(ipAddress),
+      client_key: hashClientKey(clientIdentifier),
       consent_version: isCreateInput
         ? input.consentVersion
         : (input.consentVersion ?? previous?.consentVersion ?? "2024-06-01"),
@@ -92,7 +92,7 @@ export async function upsertConsent(
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function attachAnonymousConsents(userId: string, ipAddress: string): Promise<number> {
+export async function attachAnonymousConsents(userId: string, clientIdentifier: string): Promise<number> {
   if (!ipAddress || ipAddress === "unknown") {
     return 0;
   }
@@ -101,7 +101,7 @@ export async function attachAnonymousConsents(userId: string, ipAddress: string)
     return 0;
   }
   return db(COOKIE_CONSENTS_TABLE)
-    .where({ client_key: hashClientKey(ipAddress) })
+    .where({ client_key: hashClientKey(clientIdentifier) })
     .whereNull("user_id")
     .update({ user_id: userId });
 }
