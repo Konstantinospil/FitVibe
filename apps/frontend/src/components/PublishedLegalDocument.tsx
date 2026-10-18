@@ -170,7 +170,7 @@ function documentBody(content: Record<string, unknown>): React.ReactNode {
   // Legal text is an explicit document schema. UI labels, consent actions,
   // status messages and translation metadata are not document paragraphs.
   return Object.entries(content)
-    .filter(([key]) => /^(?:intro\\d*|section\\d+)$/i.test(key))
+    .filter(([key]) => /^(?:intro\d*|section\d+)$/i.test(key))
     .sort(([a], [b]) => compareNatural(a, b))
     .map(([key, value]) => renderValue(value, `legal-${key}`, key));
 }
