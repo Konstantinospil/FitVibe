@@ -1,4 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { CustomScrollbar } from "../components/CustomScrollbar";
 
 export interface PageShellProps {
   header?: React.ReactNode;
@@ -14,7 +16,9 @@ export const PageShell: React.FC<PageShellProps> = ({
   children,
   mainId,
   skipLinkLabel,
-}) => (
+}) => {
+  const { t } = useTranslation();
+  return (
   <div data-component="page-shell">
     {mainId && skipLinkLabel ? (
       <a href={`#${mainId}`} className="skip-link">
@@ -23,8 +27,11 @@ export const PageShell: React.FC<PageShellProps> = ({
     ) : null}
     {header}
     <main id={mainId} data-slot="page-shell-main">
-      {children}
+      <CustomScrollbar className="page-shell-content-scroll" label={t("scrollbar.pageLabel")}>
+        {children}
+      </CustomScrollbar>
     </main>
     {footer}
   </div>
-);
+  );
+};
