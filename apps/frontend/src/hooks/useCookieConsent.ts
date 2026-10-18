@@ -111,12 +111,8 @@ export function useCookieConsent(): UseCookieConsentReturn {
             version: string;
             updatedAt: string;
           };
-        }>(
-        "/api/v1/consent/cookie-preferences",
-        source ? { ...preferences, source } : preferences,
-      );
-  
-        // Update local state
+        }>("/api/v1/consent/cookie-preferences", source ? { ...preferences, source } : preferences);
+
         setConsentStatus({
           hasConsent: true,
           consent: {
@@ -128,17 +124,15 @@ export function useCookieConsent(): UseCookieConsentReturn {
             updatedAt: response.data.data.updatedAt,
           },
         });
-  
-        // Mark banner as shown in localStorage
+
         localStorage.setItem(CONSENT_STORAGE_KEY, "true");
-  
-        // Initialize analytics/marketing based on consent
+
         if (response.data.data.analytics) {
           initializeAnalytics();
         } else {
           disableAnalytics();
         }
-  
+
         if (response.data.data.marketing) {
           initializeMarketing();
         } else {
