@@ -19,19 +19,19 @@ export const PageShell: React.FC<PageShellProps> = ({
 }) => {
   const { t } = useTranslation();
   return (
-  <div data-component="page-shell">
-    {mainId && skipLinkLabel ? (
-      <a href={`#${mainId}`} className="skip-link">
-        {skipLinkLabel}
-      </a>
-    ) : null}
-    {header}
-    <main id={mainId} data-slot="page-shell-main">
-      <CustomScrollbar className="page-shell-content-scroll" label={t("scrollbar.pageLabel")}>
-        {children}
-      </CustomScrollbar>
-    </main>
-    {footer}
-  </div>
+    <div data-component="page-shell">
+      {mainId && skipLinkLabel ? (
+        <a href={`#${mainId}`} className="skip-link">
+          {skipLinkLabel}
+        </a>
+      ) : null}
+      {header}
+      <main id={mainId} data-slot="page-shell-main">
+        <CustomScrollbar className="page-shell-content-scroll" label={t("scrollbar.pageLabel")}>
+          {children}
+        </CustomScrollbar>
+      </main>
+      {footer}
+    </div>
   );
 };
