@@ -28,10 +28,7 @@ interface UseCookieConsentReturn {
   consentStatus: CookieConsentStatus | null;
   isLoading: boolean;
   error: Error | null;
-  savePreferences: (
-    preferences: CookieConsentState,
-    source?: CookieConsentSource,
-  ) => Promise<void>;
+  savePreferences: (preferences: CookieConsentState, source?: CookieConsentSource) => Promise<void>;
   refreshStatus: () => Promise<void>;
 }
 
@@ -100,61 +97,61 @@ export function useCookieConsent(): UseCookieConsentReturn {
     void fetchConsentStatus();
   }, [fetchConsentStatus]);
 
-  const savePreferences = useCallback(async (
-    preferences: CookieConsentState,
-    source?: CookieConsentSource,
-  ) => {
-    try {
-      setError(null);
-      const response = await apiClient.post<{
-        success: boolean;
-        data: {
-          essential: boolean;
-          preferences: boolean;
-          analytics: boolean;
-          marketing: boolean;
-          version: string;
-          updatedAt: string;
-        };
-      }>(
+  const savePreferences = useCallback(
+    async (preferences: CookieConsentState, source?: CookieConsentSource) => {
+      try {
+        setError(null);
+        const response = await apiClient.post<{
+          success: boolean;
+          data: {
+            essential: boolean;
+            preferences: boolean;
+            analytics: boolean;
+            marketing: boolean;
+            version: string;
+            updatedAt: string;
+          };
+        }>(
         "/api/v1/consent/cookie-preferences",
         source ? { ...preferences, source } : preferences,
       );
-
-      // Update local state
-      setConsentStatus({
-        hasConsent: true,
-        consent: {
-          essential: response.data.data.essential,
-          preferences: response.data.data.preferences,
-          analytics: response.data.data.analytics,
-          marketing: response.data.data.marketing,
-          version: response.data.data.version,
-          updatedAt: response.data.data.updatedAt,
-        },
-      });
-
-      // Mark banner as shown in localStorage
-      localStorage.setItem(CONSENT_STORAGE_KEY, "true");
-
-      // Initialize analytics/marketing based on consent
-      if (response.data.data.analytics) {
-        initializeAnalytics();
-      } else {
-        disableAnalytics();
+  
+        // Update local state
+        setConsentStatus({
+          hasConsent: true,
+          consent: {
+            essential: response.data.data.essential,
+            preferences: response.data.data.preferences,
+            analytics: response.data.data.analytics,
+            marketing: response.data.data.marketing,
+            version: response.data.data.version,
+            updatedAt: response.data.data.updatedAt,
+          },
+        });
+  
+        // Mark banner as shown in localStorage
+        localStorage.setItem(CONSENT_STORAGE_KEY, "true");
+  
+        // Initialize analytics/marketing based on consent
+        if (response.data.data.analytics) {
+          initializeAnalytics();
+        } else {
+          disableAnalytics();
+        }
+  
+        if (response.data.data.marketing) {
+          initializeMarketing();
+        } else {
+          disableMarketing();
+        }
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error("Failed to save preferences");
+        setError(error);
+        throw error;
       }
-
-      if (response.data.data.marketing) {
-        initializeMarketing();
-      } else {
-        disableMarketing();
-      }
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Failed to save preferences");
-      setError(error);
-      throw error;
-    }
-  }, []);
+    },
+    [],
+  );
 
   const refreshStatus = useCallback(async () => {
     await fetchConsentStatus();
