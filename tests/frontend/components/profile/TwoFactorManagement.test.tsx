@@ -135,11 +135,11 @@ describe("TwoFactorManagement", () => {
       code: "123456",
     }));
     expect(screen.queryByText("NEW-CODE")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "common.show" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.revealBackupCodes" }));
     expect(screen.getByText("NEW-CODE")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "common.hide" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.hideBackupCodes" }));
     expect(screen.queryByText("NEW-CODE")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "common.done" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.finishBackupCodes" }));
     expect(screen.queryByText("NEW-CODE")).not.toBeInTheDocument();
   });
   it("shows verification API failures without changing security status", async () => {
