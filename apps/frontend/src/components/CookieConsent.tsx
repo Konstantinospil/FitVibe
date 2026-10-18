@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ const categories = ["essential", "preferences", "analytics", "marketing"] as con
 
 export function CookiePreferences({ initial = false }: { initial?: boolean }) {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { consentStatus, isLoading, savePreferences } = useCookieConsent();
   const [draft, setDraft] = useState<CookieConsentState | null>(null);
   const [saving, setSaving] = useState(false);
@@ -23,7 +24,7 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
     analytics: current?.analytics ?? false,
     marketing: current?.marketing ?? false,
   };
-  if (isLoading || (initial && consentStatus?.hasConsent)) return null;
+  if (isLoading || (initial && (consentStatus?.hasConsent || ["/terms", "/privacy", "/cookie"].includes(pathname)))) return null;
   const persist = async (choice: CookieConsentState) => {
     setSaving(true); setError(false);
     try { await savePreferences(choice); setDraft(null); }
