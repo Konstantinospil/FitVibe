@@ -53,7 +53,9 @@ export const loadMinimalLoginTranslations = async () => {
     },
   };
 
-  return mergeTranslations(mergeTranslations(minimalCommon, enAuth), { cookie: enCookieModule.default });
+  return mergeTranslations(mergeTranslations(minimalCommon, enAuth), {
+    cookie: enCookieModule.default,
+  });
 };
 
 // Load full English translations (for other pages)
