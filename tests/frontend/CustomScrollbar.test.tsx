@@ -99,6 +99,24 @@ describe("CustomScrollbar", () => {
     expect(track).toHaveAttribute("data-scrollable", "false");
   });
 
+  it("reflects delayed document growth and shrinkage in the canonical track", () => {
+    const { viewport, track, container } = setup(200, 200);
+    expect(track.dataset.scrollable).toBe("false");
+
+    // Model a legal document which receives additional sections after initial mount.
+    setDimension(viewport, "scrollHeight", 850);
+    act(() => notifyResize?.());
+    expect(viewport.scrollHeight - viewport.clientHeight).toBe(650);
+    expect(track.dataset.scrollable).toBe("true");
+    expect(container.firstElementChild?.getAttribute("data-scrollable")).toBe("true");
+
+    // Model responsive layout changes and document replacement after publication.
+    setDimension(viewport, "scrollHeight", 200);
+    act(() => notifyResize?.());
+    expect(track.dataset.scrollable).toBe("false");
+    expect(container.firstElementChild?.getAttribute("data-scrollable")).toBe("false");
+  });
+
   it("recalculates overflow when the viewport is resized", () => {
     const { viewport, container } = setup(600, 200);
     setDimension(viewport, "clientHeight", 700);
