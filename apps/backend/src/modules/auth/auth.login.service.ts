@@ -12,7 +12,6 @@ import {
   findUserByEmail,
   findUserByUsername,
 } from "./auth.repository.js";
-import { attachAnonymousConsents } from "../consent/consent.repository.js";
 import type { LoginDTO, LoginContext, TokenPair, UserSafe } from "./auth.types.js";
 import { assertTermsRequirementSatisfied } from "./auth.legal-gate.js";
 import {
@@ -201,9 +200,6 @@ export async function login(
       ip: context.ip ?? null,
       requestId: context.requestId ?? null,
     });
-    if (isValidUUID(user.id)) {
-      await attachAnonymousConsents(user.id, ipAddress);
-    }
 
     return {
       requires2FA: false,
