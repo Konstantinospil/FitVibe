@@ -1,43 +1,43 @@
 {
-  "title": "Preferencias de Cookies",
-  "description": "Utilizamos cookies para mejorar su experiencia y cumplir con las normativas de privacidad.",
-  "intro": "Elija qué cookies desea permitir. Las cookies esenciales son necesarias para que el sitio funcione y no se pueden desactivar.",
-  "required": "Requerido",
+  "title": "Preferencias de cookies",
+  "description": "Utilizamos cookies para que FitVibe funcione, recordar tus preferencias y, con tu consentimiento, analizar su uso.",
+  "intro": "Elige qué cookies quieres permitir. Las cookies esenciales son necesarias para que el sitio funcione y no se pueden desactivar.",
+  "required": "Obligatorio",
   "enabled": "habilitado",
   "disabled": "deshabilitado",
   "categories": {
     "essential": {
-      "label": "Cookies Esenciales",
+      "label": "Cookies esenciales",
       "description": "Necesarias para el funcionamiento del sitio. No se pueden desactivar."
     },
     "preferences": {
-      "label": "Cookies de Preferencias y Funcionalidad",
+      "label": "Cookies de preferencias y funcionalidad",
       "description": "Recuerdan sus configuraciones, idioma y vistas de entrenamiento guardadas."
     },
     "analytics": {
-      "label": "Cookies de Rendimiento y Análisis",
+      "label": "Cookies de rendimiento y análisis",
       "description": "Nos ayudan a entender el uso, mejorar las funciones y diagnosticar problemas."
     },
     "marketing": {
-      "label": "Cookies de Publicidad y Marketing",
-      "description": "Soportan remarketing e insights de audiencia. Solo se establecen con su consentimiento."
+      "label": "Cookies de publicidad y marketing",
+      "description": "Permiten el remarketing y el análisis de audiencia. Solo se establecen con tu consentimiento."
     }
   },
   "actions": {
-    "acceptAll": "Aceptar Todas",
-    "rejectAll": "Rechazar Todas",
-    "savePreferences": "Guardar Preferencias",
-    "saveError": "Error al guardar las preferencias de cookies. Por favor, inténtelo de nuevo.",
+    "acceptAll": "Aceptar todas",
+    "rejectAll": "Rechazar todas",
+    "savePreferences": "Guardar preferencias",
+    "saveError": "No se pudieron guardar las preferencias de cookies. Inténtalo de nuevo.",
     "closeReject": "Cerrar y rechazar las cookies opcionales",
     "managePreferences": "Gestionar preferencias de cookies"
   },
   "policy": {
-    "title": "Política de Cookies",
-    "description": "Obtenga más información sobre cómo FitVibe utiliza las cookies en nuestra Política de cookies.",
-    "link": "Política de Cookies"
+    "title": "Política de cookies",
+    "description": "Obtén más información sobre cómo utilizamos las cookies en nuestra",
+    "link": "Política de cookies"
   },
   "eyebrow": "Legal",
-  "effectiveDate": "Fecha de vigencia",
+  "effectiveDate": "Fecha de entrada en vigor",
   "effectiveDateValue": "2024-06-01",
   "section1": {
     "title": "¿Qué son las cookies?",
@@ -49,40 +49,40 @@
       "**Cookies esenciales:** habilitan funciones principales como autenticación, seguridad de cuenta, equilibrio de carga y gestión de sesiones.",
       "**Cookies de preferencias y funcionalidad:** recuerdan su configuración, idioma y vistas de entrenamiento guardadas para proporcionar una experiencia consistente.",
       "**Cookies de rendimiento y análisis:** nos ayudan a comprender el uso, mejorar funciones, diagnosticar problemas y medir la efectividad de las campañas.",
-      "**Cookies publicitarias y de marketing:** si se utilizan, admiten remarketing, medición de conversiones e información de audiencia. Cuando sea requerido, estas cookies solo se establecen con su consentimiento."
+      "**Cookies de publicidad y marketing:** si se utilizan, permiten el remarketing, la medición de conversiones y el análisis de audiencia. Cuando la ley lo exige, solo se establecen con tu consentimiento."
     ]
   },
   "section3": {
     "title": "Cookies y SDK de terceros",
-    "content": "Podemos utilizar proveedores de terceros para análisis, monitoreo de rendimiento y marketing. Estos proveedores pueden establecer cookies o recopilar identificadores de dispositivos cuando utiliza los Servicios. Su uso está sujeto a sus políticas de privacidad. Las categorías actuales incluyen rendimiento de hosting/CDN, análisis de productos y diagnósticos de fallos."
+    "content": "Podemos recurrir a proveedores externos para análisis, supervisión del rendimiento y marketing. Estos proveedores pueden establecer cookies o recopilar identificadores del dispositivo cuando utilizas los Servicios. Su uso está sujeto a sus propias políticas de privacidad. Las categorías actuales incluyen rendimiento de alojamiento/CDN, análisis de producto y diagnóstico de fallos."
   },
   "section4": {
     "title": "Gestión de cookies y preferencias",
     "items": [
-      "**Gestión del consentimiento:** Cuando sea requerido por la ley, solicitaremos consentimiento antes de establecer cookies no esenciales y proporcionaremos controles para actualizar preferencias.",
-      "**Controles del navegador:** La mayoría de los navegadores le permiten bloquear o eliminar cookies. Hacerlo puede afectar la funcionalidad del sitio, incluida la capacidad de permanecer conectado.",
-      "**No rastrear (DNT):** Los Servicios actualmente no responden a las señales DNT. Respetamos las señales de exclusión legalmente requeridas (por ejemplo, Global Privacy Control) cuando corresponda.",
-      "**Configuración móvil:** La configuración del dispositivo puede permitirle limitar el seguimiento de anuncios o restablecer identificadores publicitarios."
+      "**Gestión del consentimiento:** Cuando la ley lo exige, solicitamos tu consentimiento antes de establecer cookies no esenciales y ofrecemos controles para que puedas actualizar tus preferencias.",
+      "**Controles del navegador:** La mayoría de los navegadores permiten bloquear o eliminar cookies. Esto puede afectar al funcionamiento del sitio, incluida la posibilidad de mantener la sesión iniciada.",
+      "**No rastrear (DNT):** Los Servicios no responden actualmente a las señales DNT. Respetamos las señales de exclusión exigidas legalmente (por ejemplo, Global Privacy Control) cuando corresponda.",
+      "**Ajustes del dispositivo móvil:** La configuración del dispositivo puede permitirte limitar el seguimiento publicitario o restablecer los identificadores de publicidad."
     ]
   },
   "section5": {
     "title": "Retención de datos",
-    "content": "Las duraciones de las cookies varían. Las cookies de sesión expiran cuando cierra su navegador. Las cookies persistentes duran más tiempo y se conservan solo según sea necesario para sus propósitos declarados."
+    "content": "La duración de las cookies varía. Las cookies de sesión caducan al cerrar el navegador. Las cookies persistentes permanecen durante más tiempo y solo se conservan mientras sea necesario para sus fines declarados."
   },
   "section6": {
     "title": "Cambios en esta política",
-    "content": "Podemos actualizar esta Política de cookies para reflejar cambios en tecnología, ley o nuestras prácticas. Los cambios materiales se comunicarán a través de los Servicios u otros medios razonables. La \"Fecha de vigencia\" anterior se actualizará para cada revisión."
+    "content": "Podemos actualizar esta Política de cookies para reflejar cambios tecnológicos, legales o en nuestras prácticas. Los cambios importantes se comunicarán a través de los Servicios u otros medios adecuados. La «Fecha de entrada en vigor» anterior se actualizará con cada revisión."
   },
   "section7": {
     "title": "Contacto",
     "content": "Las preguntas sobre esta Política de cookies pueden enviarse a kpilpilidis@gmail.com."
   },
-  "revokeConsent": "Revocar Consentimiento",
-  "revokeError": "No se pudo revocar el consentimiento de cookies. Por favor, inténtalo de nuevo.",
+  "revokeConsent": "Revocar consentimiento",
+  "revokeError": "No se pudo revocar el consentimiento de cookies. Inténtalo de nuevo.",
   "revokeConfirm": {
-    "title": "Revocar Consentimiento",
-    "message": "Revocar su consentimiento significa que ya no podrá usar FitVibe. Será desconectado y deberá aceptar los términos y la política de privacidad nuevamente para continuar usando el servicio.",
-    "confirm": "Revocar Consentimiento y Cerrar Sesión",
+    "title": "Revocar consentimiento",
+    "message": "Si revocas tu consentimiento, ya no podrás usar FitVibe. Se cerrará tu sesión y tendrás que aceptar de nuevo los términos y la política de privacidad para continuar.",
+    "confirm": "Revocar consentimiento y cerrar sesión",
     "cancel": "Atrás"
   }
 }

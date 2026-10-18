@@ -1,300 +1,300 @@
 {
-  "eyebrow": "Legal",
-  "title": "Privacy Policy",
-  "description": "Learn how we collect, use, and protect your personal data.",
-  "effectiveDate": "Effective date",
-  "effectiveDateValue": "26 October 2025",
-  "intro1": "FitVibe helps athletes and active individuals plan training sessions, log workouts, and understand their progress. This Privacy Policy explains what personal data we collect when you use the Services, why we collect it, how we use and share it, and the rights available to you under the General Data Protection Regulation (\"GDPR\"), the UK GDPR, and other applicable data protection laws.",
-  "intro2": "By using the Services, you acknowledge that your personal data will be processed as described in this Privacy Policy.",
+  "eyebrow": "Νομικά",
+  "title": "Πολιτική Απορρήτου",
+  "description": "Μάθετε πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα προσωπικά σας δεδομένα.",
+  "effectiveDate": "Ημερομηνία ισχύος",
+  "effectiveDateValue": "26 Οκτωβρίου 2025",
+  "intro1": "Το FitVibe βοηθά αθλητές και δραστήρια άτομα να σχεδιάζουν προπονήσεις, να καταγράφουν την άσκησή τους και να παρακολουθούν την πρόοδό τους. Η παρούσα Πολιτική Απορρήτου εξηγεί ποια προσωπικά δεδομένα συλλέγουμε όταν χρησιμοποιείτε τις Υπηρεσίες, γιατί τα συλλέγουμε, πώς τα χρησιμοποιούμε και τα κοινοποιούμε, καθώς και ποια δικαιώματα έχετε βάσει του Γενικού Κανονισμού για την Προστασία Δεδομένων («ΓΚΠΔ»), του UK GDPR και άλλης εφαρμοστέας νομοθεσίας περί προστασίας δεδομένων.",
+  "intro2": "Χρησιμοποιώντας τις Υπηρεσίες, αναγνωρίζετε ότι τα προσωπικά σας δεδομένα υποβάλλονται σε επεξεργασία όπως περιγράφεται στην παρούσα Πολιτική Απορρήτου.",
   "section1": {
-    "title": "1. Scope",
-    "subtitle": "This Privacy Policy:",
+    "title": "1. Πεδίο εφαρμογής",
+    "subtitle": "Η παρούσα Πολιτική Απορρήτου:",
     "items": [
-      "Applies to anyone who visits our sites or apps, creates an account, uses the Services, participates in communities, or otherwise interacts with FitVibe.",
-      "Covers all personal data processed by FitVibe acting as controller. When we process data strictly on behalf of organizations (for example, a club or employer using FitVibe for their members), those organizations are controllers and we act as processor in accordance with our data processing agreements.",
-      "Does not apply to third‑party services, websites, or devices that you choose to connect to FitVibe; their privacy practices are governed by their own policies."
+      "Ισχύει για κάθε άτομο που επισκέπτεται τους ιστοτόπους ή τις εφαρμογές μας, δημιουργεί λογαριασμό, χρησιμοποιεί τις Υπηρεσίες, συμμετέχει σε κοινότητες ή αλληλεπιδρά με άλλον τρόπο με το FitVibe.",
+      "Καλύπτει όλα τα προσωπικά δεδομένα που επεξεργάζεται το FitVibe ως υπεύθυνος επεξεργασίας. Όταν επεξεργαζόμαστε δεδομένα αποκλειστικά για λογαριασμό οργανισμών (για παράδειγμα, ενός συλλόγου ή εργοδότη που χρησιμοποιεί το FitVibe για τα μέλη του), οι οργανισμοί αυτοί είναι οι υπεύθυνοι επεξεργασίας και εμείς ενεργούμε ως εκτελούντες την επεξεργασία σύμφωνα με τις σχετικές συμβάσεις επεξεργασίας δεδομένων.",
+      "Δεν ισχύει για υπηρεσίες, ιστοτόπους ή συσκευές τρίτων που επιλέγετε να συνδέσετε με το FitVibe· οι πρακτικές απορρήτου τους διέπονται από τις δικές τους πολιτικές."
     ]
   },
   "section2": {
-    "title": "2. Who we are and how to contact us",
-    "controller": "Controller:",
+    "title": "2. Ποιοι είμαστε και πώς μπορείτε να επικοινωνήσετε μαζί μας",
+    "controller": "Υπεύθυνος επεξεργασίας:",
     "controllerValue": "FitVibe",
-    "privacyInquiries": "Data protection and privacy inquiries:",
+    "privacyInquiries": "Ερωτήματα σχετικά με την προστασία δεδομένων και το απόρρητο:",
     "privacyInquiriesValue": "kpilpilidis@gmail.com",
-    "dpo": "Data Protection Officer (where required):",
+    "dpo": "Υπεύθυνος Προστασίας Δεδομένων (όπου απαιτείται):",
     "dpoValue": "kpilpilidis@gmail.com",
-    "euRepresentative": "EU/UK representative (if appointed):",
-    "euRepresentativeValue": "details will be published in localized supplements to this notice.",
-    "contactNote": "You may contact us at these addresses for any questions about this Policy or our handling of your personal data."
+    "euRepresentative": "Εκπρόσωπος στην ΕΕ/στο Ηνωμένο Βασίλειο (εφόσον οριστεί):",
+    "euRepresentativeValue": "Τα στοιχεία θα δημοσιεύονται σε τοπικά συμπληρώματα της παρούσας ενημέρωσης.",
+    "contactNote": "Μπορείτε να επικοινωνείτε μαζί μας στις παραπάνω διευθύνσεις για ερωτήσεις σχετικά με την παρούσα Πολιτική ή τον τρόπο με τον οποίο χειριζόμαστε τα προσωπικά σας δεδομένα."
   },
   "section3": {
-    "title": "3. Information we collect",
-    "subtitle": "We group the personal data we process into the following categories.",
+    "title": "3. Πληροφορίες που συλλέγουμε",
+    "subtitle": "Ομαδοποιούμε τα προσωπικά δεδομένα που επεξεργαζόμαστε στις ακόλουθες κατηγορίες.",
     "table": {
       "headers": {
-        "category": "Category",
-        "examples": "Examples",
-        "source": "Source"
+        "category": "Κατηγορία",
+        "examples": "Παραδείγματα",
+        "source": "Πηγή"
       },
       "rows": {
         "accountData": {
-          "category": "Account data",
-          "examples": "Email address, username, password hash, account identifiers",
-          "source": "Provided by you"
+          "category": "Δεδομένα λογαριασμού",
+          "examples": "Διεύθυνση e-mail, όνομα χρήστη, κατακερματισμένη μορφή κωδικού πρόσβασης, αναγνωριστικά λογαριασμού",
+          "source": "Παρέχονται από εσάς"
         },
         "profilePreferences": {
-          "category": "Profile & preferences",
-          "examples": "Display name, avatar, locale, time zone, units (kg/lb, km/mi), language, visibility settings, contact preferences",
-          "source": "Provided by you"
+          "category": "Προφίλ και προτιμήσεις",
+          "examples": "Όνομα εμφάνισης, avatar, τοπικές ρυθμίσεις, ζώνη ώρας, μονάδες (kg/lb, km/mi), γλώσσα, ρυθμίσεις ορατότητας, προτιμήσεις επικοινωνίας",
+          "source": "Παρέχονται από εσάς"
         },
         "trainingWellness": {
-          "category": "Training & wellness data",
-          "examples": "Workout logs, exercises performed, sets/reps, loads, pace, heart‑rate or power data (if connected), RPE, body measurements, wellness check‑ins",
-          "source": "Provided by you or via integrations you connect"
+          "category": "Δεδομένα προπόνησης και ευεξίας",
+          "examples": "Αρχεία προπόνησης, ασκήσεις που εκτελέστηκαν, σετ/επαναλήψεις, φορτία, ρυθμός, δεδομένα καρδιακού ρυθμού ή ισχύος (εφόσον έχουν συνδεθεί), RPE, σωματικές μετρήσεις, καταγραφές ευεξίας",
+          "source": "Παρέχονται από εσάς ή μέσω ενσωματώσεων που συνδέετε"
         },
         "socialCommunity": {
-          "category": "Social & community content",
-          "examples": "Comments, likes, messages, profile information visible to others, participation in teams or groups",
-          "source": "Provided by you"
+          "category": "Κοινωνικό περιεχόμενο και περιεχόμενο κοινότητας",
+          "examples": "Σχόλια, επισημάνσεις «μου αρέσει», μηνύματα, πληροφορίες προφίλ ορατές σε άλλους, συμμετοχή σε ομάδες ή κοινότητες",
+          "source": "Παρέχονται από εσάς"
         },
         "deviceTechnical": {
-          "category": "Device & technical data",
-          "examples": "IP address, device identifiers, operating system, app version, browser type, language, time zone",
-          "source": "Collected automatically"
+          "category": "Δεδομένα συσκευής και τεχνικά δεδομένα",
+          "examples": "Διεύθυνση IP, αναγνωριστικά συσκευής, λειτουργικό σύστημα, έκδοση εφαρμογής, τύπος προγράμματος περιήγησης, γλώσσα, ζώνη ώρας",
+          "source": "Συλλέγονται αυτόματα"
         },
         "usageDiagnostics": {
-          "category": "Usage and diagnostics data",
-          "examples": "Feature usage, clickstream and navigation data, performance metrics, crash reports, error logs",
-          "source": "Collected automatically"
+          "category": "Δεδομένα χρήσης και διαγνωστικά δεδομένα",
+          "examples": "Χρήση λειτουργιών, δεδομένα πλοήγησης και αλληλεπίδρασης, μετρήσεις απόδοσης, αναφορές σφαλμάτων, αρχεία καταγραφής σφαλμάτων",
+          "source": "Συλλέγονται αυτόματα"
         },
         "supportCommunication": {
-          "category": "Support & communication data",
-          "examples": "Messages you send to support, feedback, survey responses, and related metadata",
-          "source": "Provided by you"
+          "category": "Δεδομένα υποστήριξης και επικοινωνίας",
+          "examples": "Μηνύματα που στέλνετε στην υποστήριξη, σχόλια, απαντήσεις σε έρευνες και σχετικά μεταδεδομένα",
+          "source": "Παρέχονται από εσάς"
         },
         "paymentBilling": {
-          "category": "Payment and billing data",
-          "examples": "Limited billing details such as billing address, transaction IDs (full card data is handled by our payment processor)",
-          "source": "Provided by you / payment provider"
+          "category": "Δεδομένα πληρωμών και χρέωσης",
+          "examples": "Περιορισμένα στοιχεία χρέωσης, όπως διεύθυνση χρέωσης και αναγνωριστικά συναλλαγών (τα πλήρη στοιχεία κάρτας τα διαχειρίζεται ο πάροχος πληρωμών μας)",
+          "source": "Παρέχονται από εσάς / τον πάροχο πληρωμών"
         },
         "cookiesIds": {
-          "category": "Cookies and similar IDs",
-          "examples": "Cookie identifiers, mobile advertising IDs, and similar technology used for analytics and, where permitted, marketing",
-          "source": "Collected automatically"
+          "category": "Cookies και παρόμοια αναγνωριστικά",
+          "examples": "Αναγνωριστικά cookies, αναγνωριστικά διαφήμισης για κινητές συσκευές και παρόμοιες τεχνολογίες που χρησιμοποιούνται για αναλύσεις και, όπου επιτρέπεται, για μάρκετινγκ",
+          "source": "Συλλέγονται αυτόματα"
         }
       }
     },
-    "specialCategoriesNote": "We do not intend to collect special categories of data (such as medical diagnoses) unless clearly necessary for a feature and permitted by law. Where applicable, we will seek your explicit consent."
+    "specialCategoriesNote": "Δεν σκοπεύουμε να συλλέγουμε ειδικές κατηγορίες δεδομένων (όπως ιατρικές διαγνώσεις), εκτός εάν αυτό είναι σαφώς απαραίτητο για κάποια λειτουργία και επιτρέπεται από τον νόμο. Όπου απαιτείται, θα ζητούμε τη ρητή συγκατάθεσή σας."
   },
   "section4": {
-    "title": "4. Sources of information",
-    "subtitle": "We obtain personal data from:",
+    "title": "4. Πηγές πληροφοριών",
+    "subtitle": "Λαμβάνουμε προσωπικά δεδομένα από:",
     "items": [
-      "You, when you create an account, update your profile, log workouts, participate in social features, or contact support.",
-      "Your devices and browsers, through cookies, SDKs, and similar technologies.",
-      "Organizations (such as clubs or employers) that provision accounts or integrate FitVibe with their internal systems.",
-      "Third‑party services (for example, wearables or calendar providers) that you connect to FitVibe, strictly according to your permissions."
+      "Εσάς, όταν δημιουργείτε λογαριασμό, ενημερώνετε το προφίλ σας, καταγράφετε προπονήσεις, χρησιμοποιείτε κοινωνικές λειτουργίες ή επικοινωνείτε με την υποστήριξη.",
+      "Τις συσκευές και τα προγράμματα περιήγησής σας, μέσω cookies, SDK και παρόμοιων τεχνολογιών.",
+      "Οργανισμούς (όπως συλλόγους ή εργοδότες) που δημιουργούν λογαριασμούς ή ενσωματώνουν το FitVibe στα εσωτερικά τους συστήματα.",
+      "Υπηρεσίες τρίτων (για παράδειγμα, φορετές συσκευές ή παρόχους ημερολογίου) που συνδέετε με το FitVibe, αυστηρά σύμφωνα με τις άδειες που παρέχετε."
     ]
   },
   "section5": {
-    "title": "5. How we use your information",
-    "subtitle": "We use the personal data described above to:",
+    "title": "5. Πώς χρησιμοποιούμε τις πληροφορίες σας",
+    "subtitle": "Χρησιμοποιούμε τα προσωπικά δεδομένα που περιγράφονται παραπάνω για να:",
     "items": [
-      "Provide, operate, and maintain the Services, including planning tools, training logs, and analytics dashboards.",
-      "Personalize your experience, for example by adapting units, language, and suggested content to your profile.",
-      "Generate training summaries, trends, and insights across your historical data.",
-      "Authenticate you, secure accounts, detect and prevent fraud and abuse, and protect the integrity of the platform.",
-      "Operate social and community features such as following, comments, leaderboards, and shared plans, where you choose to use them.",
-      "Communicate with you about service updates, security notices, and administrative messages. Marketing communications are sent only where permitted by law and according to your preferences.",
-      "Conduct analytics to understand usage, improve performance, and plan new features, using aggregated or de‑identified data where possible.",
-      "Comply with legal obligations, enforce our Terms and Conditions/EULA, and protect FitVibe, our users, and the public from harm."
+      "Παρέχουμε, λειτουργούμε και συντηρούμε τις Υπηρεσίες, συμπεριλαμβανομένων εργαλείων σχεδιασμού, αρχείων προπόνησης και πινάκων αναλύσεων.",
+      "Προσαρμόζουμε την εμπειρία σας, για παράδειγμα προσαρμόζοντας τις μονάδες, τη γλώσσα και το προτεινόμενο περιεχόμενο στο προφίλ σας.",
+      "Δημιουργούμε συνόψεις προπόνησης, τάσεις και αναλύσεις βάσει των ιστορικών δεδομένων σας.",
+      "Επαληθεύουμε την ταυτότητά σας, προστατεύουμε λογαριασμούς, εντοπίζουμε και αποτρέπουμε απάτη και κατάχρηση και προστατεύουμε την ακεραιότητα της πλατφόρμας.",
+      "Παρέχουμε κοινωνικές λειτουργίες και λειτουργίες κοινότητας, όπως ακολούθηση χρηστών, σχόλια, πίνακες κατάταξης και κοινόχρηστα προγράμματα, όταν επιλέγετε να τις χρησιμοποιήσετε.",
+      "Επικοινωνούμε μαζί σας για ενημερώσεις υπηρεσιών, ειδοποιήσεις ασφαλείας και διοικητικά μηνύματα. Επικοινωνίες μάρκετινγκ αποστέλλονται μόνο όπου επιτρέπεται από τον νόμο και σύμφωνα με τις προτιμήσεις σας.",
+      "Διενεργούμε αναλύσεις για να κατανοούμε τη χρήση, να βελτιώνουμε την απόδοση και να σχεδιάζουμε νέες λειτουργίες, χρησιμοποιώντας όπου είναι δυνατόν συγκεντρωτικά ή αποπροσωποποιημένα δεδομένα.",
+      "Συμμορφωνόμαστε με νομικές υποχρεώσεις, εφαρμόζουμε τους Όρους και Προϋποθέσεις/EULA και προστατεύουμε το FitVibe, τους χρήστες μας και το κοινό από βλάβη."
     ]
   },
   "section6": {
-    "title": "6. Legal bases for processing (EEA, UK, and similar jurisdictions)",
-    "subtitle": "Where the GDPR, UK GDPR, or comparable laws apply, we rely on one or more of the following legal bases:",
+    "title": "6. Νομικές βάσεις επεξεργασίας (ΕΟΧ, Ηνωμένο Βασίλειο και παρόμοιες δικαιοδοσίες)",
+    "subtitle": "Όπου εφαρμόζεται ο ΓΚΠΔ, το UK GDPR ή συγκρίσιμη νομοθεσία, βασιζόμαστε σε μία ή περισσότερες από τις ακόλουθες νομικές βάσεις:",
     "items": [
       {
-        "title": "Performance of a contract:",
-        "content": "To create and manage your account, provide the Services you request, and support your use of FitVibe."
+        "title": "Εκτέλεση σύμβασης:",
+        "content": "Για τη δημιουργία και διαχείριση του λογαριασμού σας, την παροχή των Υπηρεσιών που ζητάτε και την υποστήριξη της χρήσης του FitVibe."
       },
       {
-        "title": "Consent:",
-        "content": "For example, when you opt‑in to marketing emails or push notifications, you make certain content publicly visible, or you connect third‑party integrations or enable optional analytics and cookies where required by law. You may withdraw consent at any time, without affecting the lawfulness of processing before withdrawal."
+        "title": "Συγκατάθεση:",
+        "content": "Για παράδειγμα, όταν επιλέγετε να λαμβάνετε e-mail μάρκετινγκ ή ειδοποιήσεις push, όταν καθιστάτε συγκεκριμένο περιεχόμενο δημόσια ορατό, συνδέετε ενσωματώσεις τρίτων ή ενεργοποιείτε προαιρετικές αναλύσεις και cookies όπου αυτό απαιτείται από τον νόμο. Μπορείτε να ανακαλέσετε τη συγκατάθεσή σας οποτεδήποτε, χωρίς να επηρεάζεται η νομιμότητα της επεξεργασίας που πραγματοποιήθηκε πριν από την ανάκληση."
       },
       {
-        "title": "Legitimate interests:",
-        "content": "To maintain and improve the security, performance, and usability of the Services; to prevent abuse; and to understand how the Services are used, provided that these interests are balanced against your rights and freedoms."
+        "title": "Έννομα συμφέροντα:",
+        "content": "Για τη διατήρηση και βελτίωση της ασφάλειας, της απόδοσης και της χρηστικότητας των Υπηρεσιών, την πρόληψη κατάχρησης και την κατανόηση του τρόπου χρήσης των Υπηρεσιών, εφόσον τα συμφέροντα αυτά σταθμίζονται έναντι των δικαιωμάτων και ελευθεριών σας."
       },
       {
-        "title": "Legal obligations:",
-        "content": "To comply with accounting, tax, and regulatory requirements and to respond to lawful requests from public authorities."
+        "title": "Νομικές υποχρεώσεις:",
+        "content": "Για τη συμμόρφωση με λογιστικές, φορολογικές και κανονιστικές απαιτήσεις και την ανταπόκριση σε νόμιμα αιτήματα δημόσιων αρχών."
       },
       {
-        "title": "Vital interests or public interest:",
-        "content": "In rare cases, to protect life or physical safety or to comply with public health directives, where permitted by law."
+        "title": "Ζωτικά συμφέροντα ή δημόσιο συμφέρον:",
+        "content": "Σε σπάνιες περιπτώσεις, για την προστασία της ζωής ή της σωματικής ασφάλειας ή τη συμμόρφωση με οδηγίες δημόσιας υγείας, όπου επιτρέπεται από τον νόμο."
       }
     ]
   },
   "section7": {
-    "title": "7. Cookies and similar technologies",
-    "subtitle": "We use cookies and similar technologies to:",
+    "title": "7. Cookies και παρόμοιες τεχνολογίες",
+    "subtitle": "Χρησιμοποιούμε cookies και παρόμοιες τεχνολογίες για να:",
     "items": [
-      "keep you signed in and maintain session security;",
-      "remember your preferences (such as language and units);",
-      "measure usage and performance of the Services; and",
-      "support, where permitted, marketing and product development."
+      "σας διατηρούμε συνδεδεμένους και να προστατεύουμε την ασφάλεια της συνεδρίας;",
+      "θυμόμαστε τις προτιμήσεις σας (όπως γλώσσα και μονάδες);",
+      "μετράμε τη χρήση και την απόδοση των Υπηρεσιών· και",
+      "υποστηρίζουμε, όπου επιτρέπεται, το μάρκετινγκ και την ανάπτυξη προϊόντων."
     ],
-    "cookieNote": "Where required by law, we will present you with a cookie banner or settings to obtain your consent for non‑essential cookies and allow you to manage your preferences. For more information, please refer to our Cookie Policy (if available in your region)."
+    "cookieNote": "Όπου απαιτείται από τον νόμο, θα εμφανίζουμε banner ή ρυθμίσεις cookies για να ζητούμε τη συγκατάθεσή σας για μη απαραίτητα cookies και να σας επιτρέπουμε να διαχειρίζεστε τις προτιμήσεις σας. Για περισσότερες πληροφορίες, ανατρέξτε στην Πολιτική Cookies (εφόσον είναι διαθέσιμη στην περιοχή σας)."
   },
   "section8": {
-    "title": "8. How we share information",
-    "notSold": "We do not sell your personal data.",
-    "subtitle": "We may share your personal data with:",
+    "title": "8. Πώς κοινοποιούμε πληροφορίες",
+    "notSold": "Δεν πωλούμε τα προσωπικά σας δεδομένα.",
+    "subtitle": "Ενδέχεται να κοινοποιούμε προσωπικά δεδομένα σε:",
     "items": [
       {
-        "title": "Service providers and sub‑processors",
-        "content": "— For example, providers of cloud infrastructure, email/SMS delivery, analytics, error reporting, and customer support tools. Each provider is bound by a data processing agreement requiring confidentiality, appropriate security measures, and, where applicable, Standard Contractual Clauses (\"SCCs\")."
+        "title": "Παρόχους υπηρεσιών και υπεργολάβους επεξεργασίας",
+        "content": "— Για παράδειγμα, παρόχους υποδομών cloud, αποστολής e-mail/SMS, αναλύσεων, αναφοράς σφαλμάτων και εργαλείων υποστήριξης πελατών. Κάθε πάροχος δεσμεύεται από σύμβαση επεξεργασίας δεδομένων που απαιτεί εμπιστευτικότητα, κατάλληλα μέτρα ασφαλείας και, όπου εφαρμόζεται, Τυποποιημένες Συμβατικές Ρήτρες («SCCs»)."
       },
       {
-        "title": "Integrations and partners you choose",
-        "content": "— For example, if you connect a wearable device or calendar provider, we share only the data needed to enable that integration and only according to your configuration and the partner's terms."
+        "title": "Ενσωματώσεις και συνεργάτες που επιλέγετε",
+        "content": "— Για παράδειγμα, εάν συνδέσετε φορετή συσκευή ή πάροχο ημερολογίου, κοινοποιούμε μόνο τα δεδομένα που απαιτούνται για τη λειτουργία της ενσωμάτωσης και μόνο σύμφωνα με τις ρυθμίσεις σας και τους όρους του συνεργάτη."
       },
       {
-        "title": "Organizations that provision your account",
-        "content": "— If your account is created or managed by a coach, club, or employer, certain profile and activity data may be visible to designated administrators in accordance with their policies and our contracts with them."
+        "title": "Οργανισμούς που διαχειρίζονται τον λογαριασμό σας",
+        "content": "— Εάν ο λογαριασμός σας δημιουργείται ή διαχειρίζεται από προπονητή, σύλλογο ή εργοδότη, ορισμένα δεδομένα προφίλ και δραστηριότητας μπορεί να είναι ορατά σε εξουσιοδοτημένους διαχειριστές σύμφωνα με τις πολιτικές τους και τις συμβάσεις μας μαζί τους."
       },
       {
-        "title": "Business transfers",
-        "content": "— In connection with a merger, acquisition, reorganization, or sale of assets, where your data may be transferred as part of the transaction, subject to confidentiality and, where required, notice to you."
+        "title": "Εταιρικές συναλλαγές",
+        "content": "— Σε σχέση με συγχώνευση, εξαγορά, αναδιοργάνωση ή πώληση περιουσιακών στοιχείων, όπου τα δεδομένα σας μπορεί να μεταβιβαστούν στο πλαίσιο της συναλλαγής, με την επιφύλαξη της εμπιστευτικότητας και, όπου απαιτείται, σχετικής ενημέρωσής σας."
       },
       {
-        "title": "Legal and safety",
-        "content": "— When necessary to comply with legal obligations, court orders, or lawful requests, or to enforce our terms and protect the rights, property, and safety of FitVibe, our users, or the public."
+        "title": "Νομικές υποχρεώσεις και ασφάλεια",
+        "content": "— Όταν είναι αναγκαίο για συμμόρφωση με νομικές υποχρεώσεις, δικαστικές αποφάσεις ή νόμιμα αιτήματα ή για την εφαρμογή των όρων μας και την προστασία των δικαιωμάτων, της περιουσίας και της ασφάλειας του FitVibe, των χρηστών μας ή του κοινού."
       },
       {
-        "title": "Aggregated or de‑identified data",
-        "content": "— We may use or share aggregated or de‑identified information for analytics, research, or product improvement, provided it does not identify any individual."
+        "title": "Συγκεντρωτικά ή αποπροσωποποιημένα δεδομένα",
+        "content": "— Ενδέχεται να χρησιμοποιούμε ή να κοινοποιούμε συγκεντρωτικές ή αποπροσωποποιημένες πληροφορίες για αναλύσεις, έρευνα ή βελτίωση προϊόντων, εφόσον δεν ταυτοποιείται κανένα άτομο."
       }
     ]
   },
   "section9": {
-    "title": "9. International data transfers",
-    "paragraph1": "FitVibe may process and store your personal data in countries other than the one in which you reside. These countries may have data protection laws that differ from those in your jurisdiction.",
-    "paragraph2": "Where we transfer personal data from the EEA, UK, or Switzerland to countries that are not recognized as providing an adequate level of protection, we implement appropriate safeguards, such as:",
+    "title": "9. Διεθνείς διαβιβάσεις δεδομένων",
+    "paragraph1": "Το FitVibe μπορεί να επεξεργάζεται και να αποθηκεύει τα προσωπικά σας δεδομένα σε χώρες διαφορετικές από τη χώρα κατοικίας σας. Οι χώρες αυτές ενδέχεται να έχουν διαφορετική νομοθεσία για την προστασία δεδομένων.",
+    "paragraph2": "Όταν διαβιβάζουμε προσωπικά δεδομένα από τον ΕΟΧ, το Ηνωμένο Βασίλειο ή την Ελβετία σε χώρες που δεν αναγνωρίζονται ως χώρες με επαρκές επίπεδο προστασίας, εφαρμόζουμε κατάλληλες εγγυήσεις, όπως:",
     "items": [
-      "Standard Contractual Clauses approved by the European Commission or UK authorities, and",
-      "additional technical and organizational measures based on transfer impact assessments, where required."
+      "Τυποποιημένες Συμβατικές Ρήτρες εγκεκριμένες από την Ευρωπαϊκή Επιτροπή ή τις αρχές του Ηνωμένου Βασιλείου, και",
+      "πρόσθετα τεχνικά και οργανωτικά μέτρα βάσει αξιολογήσεων αντικτύπου διαβίβασης, όπου απαιτείται."
     ],
-    "paragraph3": "You may request more information about these safeguards by contacting privacy@fitvibe.example.com."
+    "paragraph3": "Μπορείτε να ζητήσετε περισσότερες πληροφορίες για τις εγγυήσεις αυτές επικοινωνώντας στο privacy@fitvibe.example.com."
   },
   "section10": {
-    "title": "10. Data retention",
-    "paragraph1": "We retain personal data only for as long as reasonably necessary to provide the Services and features you have requested, fulfil the purposes described in this Policy, comply with our legal and contractual obligations, and resolve disputes and enforce our agreements.",
-    "paragraph2": "In particular, subject to change as our services evolve:",
+    "title": "10. Διατήρηση δεδομένων",
+    "paragraph1": "Διατηρούμε προσωπικά δεδομένα μόνο για όσο διάστημα είναι εύλογα αναγκαίο για την παροχή των Υπηρεσιών και των λειτουργιών που ζητήσατε, την εκπλήρωση των σκοπών που περιγράφονται στην παρούσα Πολιτική, τη συμμόρφωση με τις νομικές και συμβατικές μας υποχρεώσεις, την επίλυση διαφορών και την εφαρμογή των συμφωνιών μας.",
+    "paragraph2": "Ειδικότερα, με την επιφύλαξη αλλαγών καθώς εξελίσσονται οι υπηρεσίες μας:",
     "items": [
       {
-        "title": "Account, training, and social graph data",
-        "content": "are kept while your account remains active. When you request deletion of your account, we apply a short grace period (typically 7 days) and then delete or irreversibly anonymize associated data."
+        "title": "Δεδομένα λογαριασμού, προπόνησης και κοινωνικών σχέσεων",
+        "content": "διατηρούνται όσο ο λογαριασμός σας παραμένει ενεργός. Όταν ζητάτε τη διαγραφή του λογαριασμού σας, εφαρμόζουμε μια σύντομη περίοδο χάριτος (συνήθως 7 ημέρες) και στη συνέχεια διαγράφουμε ή ανωνυμοποιούμε αμετάκλητα τα σχετικά δεδομένα."
       },
       {
-        "title": "Backups",
-        "content": "containing personal data are rotated and purged within a limited window (typically 14 days after the effective deletion), using an automated process designed to support data subject rights."
+        "title": "Αντίγραφα ασφαλείας",
+        "content": "που περιέχουν προσωπικά δεδομένα ανανεώνονται και διαγράφονται μέσα σε περιορισμένο χρονικό διάστημα (συνήθως 14 ημέρες μετά την οριστική διαγραφή), μέσω αυτοματοποιημένης διαδικασίας σχεδιασμένης ώστε να υποστηρίζει τα δικαιώματα των υποκειμένων των δεδομένων."
       },
       {
-        "title": "Authentication tokens, idempotency records, and moderation queues",
-        "content": "are pruned on rolling schedules (for example, between 24 hours and 180 days), depending on operational needs and security requirements."
+        "title": "Διακριτικά ελέγχου ταυτότητας, εγγραφές ακεραιότητας αιτημάτων και ουρές εποπτείας",
+        "content": "διαγράφονται σε κυλιόμενα χρονικά διαστήματα (για παράδειγμα από 24 ώρες έως 180 ημέρες), ανάλογα με τις λειτουργικές ανάγκες και τις απαιτήσεις ασφαλείας."
       },
       {
-        "title": "Audit logs and security logs",
-        "content": "are retained for a bounded period (for example, 180 days) to support incident response and compliance."
+        "title": "Αρχεία ελέγχου και αρχεία ασφαλείας",
+        "content": "διατηρούνται για περιορισμένο χρονικό διάστημα (για παράδειγμα 180 ημέρες) για την υποστήριξη της αντιμετώπισης περιστατικών και της συμμόρφωσης."
       }
     ],
-    "paragraph3": "When data is no longer required for these purposes, we either securely delete it or de‑identify it so that it can no longer be linked to you."
+    "paragraph3": "Όταν τα δεδομένα δεν είναι πλέον απαραίτητα για τους παραπάνω σκοπούς, τα διαγράφουμε με ασφαλή τρόπο ή τα αποπροσωποποιούμε ώστε να μην μπορούν πλέον να συνδεθούν με εσάς."
   },
   "section11": {
-    "title": "11. Security",
-    "subtitle": "We implement appropriate technical and organizational measures to protect personal data, including:",
+    "title": "11. Ασφάλεια",
+    "subtitle": "Εφαρμόζουμε κατάλληλα τεχνικά και οργανωτικά μέτρα για την προστασία των προσωπικών δεδομένων, μεταξύ άλλων:",
     "items": [
-      "TLS (HTTPS) encryption in transit, with modern protocols and strict transport security;",
-      "access controls and role‑based permissions in production environments, with multi‑factor authentication and use of a secrets manager;",
-      "regular security updates, vulnerability management, and monitoring for anomalies;",
-      "malware scanning for uploads, and audit trails for key administrative and security‑relevant actions."
+      "κρυπτογράφηση TLS (HTTPS) κατά τη μεταφορά, με σύγχρονα πρωτόκολλα και αυστηρή ασφάλεια μεταφοράς;",
+      "ελέγχους πρόσβασης και δικαιώματα βάσει ρόλων σε περιβάλλοντα παραγωγής, με πολυπαραγοντικό έλεγχο ταυτότητας και ασφαλή διαχείριση μυστικών;",
+      "τακτικές ενημερώσεις ασφαλείας, διαχείριση ευπαθειών και παρακολούθηση ανωμαλιών;",
+      "έλεγχο αρχείων για κακόβουλο λογισμικό και αρχεία ελέγχου για βασικές διοικητικές ενέργειες και ενέργειες σχετικές με την ασφάλεια."
     ],
-    "note": "No system can be completely secure. You remain responsible for choosing strong passwords, keeping them confidential, enabling multi‑factor authentication where available, and promptly notifying us of any suspected unauthorized access to your account."
+    "note": "Κανένα σύστημα δεν μπορεί να είναι απολύτως ασφαλές. Παραμένετε υπεύθυνοι για την επιλογή ισχυρών κωδικών πρόσβασης, τη διατήρησή τους ως εμπιστευτικών, την ενεργοποίηση πολυπαραγοντικού ελέγχου ταυτότητας όπου είναι διαθέσιμος και την άμεση ενημέρωσή μας για οποιαδήποτε ύποπτη μη εξουσιοδοτημένη πρόσβαση στον λογαριασμό σας."
   },
   "section12": {
-    "title": "12. Your rights",
-    "subtitle": "Depending on your place of residence and applicable law, you may have some or all of the following rights:",
+    "title": "12. Τα δικαιώματά σας",
+    "subtitle": "Ανάλογα με τον τόπο κατοικίας σας και την εφαρμοστέα νομοθεσία, μπορεί να έχετε ορισμένα ή όλα τα ακόλουθα δικαιώματα:",
     "items": [
       {
-        "title": "Access",
-        "content": "– to obtain confirmation as to whether we process your personal data and receive a copy of that data."
+        "title": "Πρόσβαση",
+        "content": "– να λάβετε επιβεβαίωση σχετικά με το εάν επεξεργαζόμαστε τα προσωπικά σας δεδομένα και να λάβετε αντίγραφο αυτών."
       },
       {
-        "title": "Rectification",
-        "content": "– to have inaccurate or incomplete personal data corrected."
+        "title": "Διόρθωση",
+        "content": "– να ζητήσετε τη διόρθωση ανακριβών ή ελλιπών προσωπικών δεδομένων."
       },
       {
-        "title": "Erasure",
-        "content": "– to request deletion of your personal data, subject to certain exceptions (for example, where retention is required by law)."
+        "title": "Διαγραφή",
+        "content": "– να ζητήσετε τη διαγραφή των προσωπικών σας δεδομένων, με την επιφύλαξη ορισμένων εξαιρέσεων (για παράδειγμα, όταν η διατήρηση απαιτείται από τον νόμο)."
       },
       {
-        "title": "Restriction",
-        "content": "– to request that we restrict processing of your personal data in certain circumstances."
+        "title": "Περιορισμός",
+        "content": "– να ζητήσετε τον περιορισμό της επεξεργασίας των προσωπικών σας δεδομένων υπό ορισμένες προϋποθέσεις."
       },
       {
-        "title": "Objection",
-        "content": "– to object to processing based on legitimate interests and, where applicable, to object to direct marketing at any time."
+        "title": "Εναντίωση",
+        "content": "– να εναντιωθείτε σε επεξεργασία που βασίζεται σε έννομα συμφέροντα και, όπου εφαρμόζεται, σε άμεσο μάρκετινγκ οποτεδήποτε."
       },
       {
-        "title": "Data portability",
-        "content": "– to receive your personal data in a structured, commonly used, and machine‑readable format and to transmit it to another controller where technically feasible."
+        "title": "Φορητότητα δεδομένων",
+        "content": "– να λάβετε τα προσωπικά σας δεδομένα σε δομημένο, κοινώς χρησιμοποιούμενο και μηχανικώς αναγνώσιμο μορφότυπο και να τα διαβιβάσετε σε άλλον υπεύθυνο επεξεργασίας, όπου αυτό είναι τεχνικά εφικτό."
       },
       {
-        "title": "Withdrawal of consent",
-        "content": "– where processing is based on consent, you may withdraw it at any time without affecting the lawfulness of processing before withdrawal."
+        "title": "Ανάκληση συγκατάθεσης",
+        "content": "– όταν η επεξεργασία βασίζεται στη συγκατάθεση, να την ανακαλέσετε οποτεδήποτε χωρίς να επηρεάζεται η νομιμότητα της επεξεργασίας που πραγματοποιήθηκε πριν από την ανάκληση."
       },
       {
-        "title": "Complaint to a supervisory authority",
-        "content": "– you may lodge a complaint with your local data protection authority if you believe our processing infringes applicable law."
+        "title": "Καταγγελία σε εποπτική αρχή",
+        "content": "– να υποβάλετε καταγγελία στην αρμόδια αρχή προστασίας δεδομένων εάν θεωρείτε ότι η επεξεργασία παραβιάζει την εφαρμοστέα νομοθεσία."
       }
     ],
-    "additionalRights": "Residents of certain jurisdictions (for example, some U.S. states, Brazil, Canada) may have additional rights, such as rights to know, delete, or limit the use or disclosure of certain categories of information. These will be honored in accordance with the relevant statute.",
-    "exerciseRights": "You can exercise these rights by using any self‑service tools provided in the app or account settings (for example, download or delete account functions), and/or contacting us at privacy@fitvibe.example.com.",
-    "verification": "We may need to verify your identity before acting on your request and may decline requests that are manifestly unfounded, excessive, or otherwise not required or permitted by law."
+    "additionalRights": "Οι κάτοικοι ορισμένων δικαιοδοσιών (για παράδειγμα, ορισμένων πολιτειών των ΗΠΑ, της Βραζιλίας ή του Καναδά) ενδέχεται να έχουν πρόσθετα δικαιώματα, όπως δικαιώματα ενημέρωσης, διαγραφής ή περιορισμού της χρήσης ή κοινοποίησης ορισμένων κατηγοριών πληροφοριών. Τα δικαιώματα αυτά θα τηρούνται σύμφωνα με την εφαρμοστέα νομοθεσία.",
+    "exerciseRights": "Μπορείτε να ασκήσετε τα δικαιώματα αυτά μέσω των εργαλείων αυτοεξυπηρέτησης που παρέχονται στην εφαρμογή ή στις ρυθμίσεις λογαριασμού (για παράδειγμα, λήψη δεδομένων ή διαγραφή λογαριασμού) και/ή επικοινωνώντας μαζί μας στο privacy@fitvibe.example.com.",
+    "verification": "Ενδέχεται να χρειαστεί να επαληθεύσουμε την ταυτότητά σας πριν ανταποκριθούμε στο αίτημά σας και μπορούμε να απορρίψουμε αιτήματα που είναι προδήλως αβάσιμα, υπερβολικά ή δεν απαιτούνται ή επιτρέπονται από τον νόμο."
   },
   "section13": {
-    "title": "13. Children's data",
-    "subtitle": "The Services are not directed to children under 16, or any higher age set by applicable law in your jurisdiction for online consent.",
+    "title": "13. Δεδομένα ανηλίκων",
+    "subtitle": "Οι Υπηρεσίες δεν απευθύνονται σε παιδιά κάτω των 16 ετών ή κάτω από οποιοδήποτε υψηλότερο όριο ηλικίας ορίζει η εφαρμοστέα νομοθεσία στη δικαιοδοσία σας για διαδικτυακή συγκατάθεση.",
     "items": [
-      "We do not knowingly collect personal data from children under the applicable minimum age.",
-      "If we learn that we have collected personal data from such a child without appropriate consent, we will delete it as soon as reasonably possible."
+      "Δεν συλλέγουμε εν γνώσει μας προσωπικά δεδομένα από παιδιά κάτω από το εφαρμοστέο ελάχιστο όριο ηλικίας.",
+      "Εάν διαπιστώσουμε ότι συλλέξαμε προσωπικά δεδομένα τέτοιου παιδιού χωρίς την κατάλληλη συγκατάθεση, θα τα διαγράψουμε το συντομότερο δυνατόν."
     ],
-    "contact": "If you believe that a child has provided personal data to FitVibe in breach of this Policy, please contact us at privacy@fitvibe.example.com."
+    "contact": "Εάν πιστεύετε ότι ένα παιδί έχει παράσχει προσωπικά δεδομένα στο FitVibe κατά παράβαση της παρούσας Πολιτικής, επικοινωνήστε μαζί μας στο privacy@fitvibe.example.com."
   },
   "section14": {
-    "title": "14. Health and fitness considerations",
-    "paragraph1": "FitVibe provides training and wellness tooling. It is not a medical device and is not intended to diagnose, treat, cure, or prevent any disease.",
-    "paragraph2": "Nothing in the Services constitutes medical advice. You should consult qualified healthcare professionals before starting or modifying any training program, especially if you have existing health conditions."
+    "title": "14. Θέματα υγείας και φυσικής κατάστασης",
+    "paragraph1": "Το FitVibe παρέχει εργαλεία προπόνησης και ευεξίας. Δεν είναι ιατροτεχνολογικό προϊόν και δεν προορίζεται για διάγνωση, θεραπεία, ίαση ή πρόληψη οποιασδήποτε νόσου.",
+    "paragraph2": "Καμία πληροφορία στις Υπηρεσίες δεν αποτελεί ιατρική συμβουλή. Συμβουλευτείτε κατάλληλα καταρτισμένο επαγγελματία υγείας πριν ξεκινήσετε ή τροποποιήσετε πρόγραμμα προπόνησης, ιδίως εάν έχετε προϋπάρχοντα προβλήματα υγείας."
   },
   "section15": {
-    "title": "15. Changes to this Policy",
-    "paragraph1": "We may update this Privacy Policy from time to time, for example when we introduce new features, use new providers, or when laws or regulatory guidance change.",
+    "title": "15. Αλλαγές στην παρούσα Πολιτική",
+    "paragraph1": "Ενδέχεται να ενημερώνουμε κατά καιρούς την παρούσα Πολιτική Απορρήτου, για παράδειγμα όταν εισάγουμε νέες λειτουργίες, χρησιμοποιούμε νέους παρόχους ή αλλάζει η νομοθεσία ή η κανονιστική καθοδήγηση.",
     "items": [
-      "The \"Effective date\" at the top of this Policy indicates when it last changed.",
-      "For material changes, we will provide additional notice, such as an in‑app notification or email.",
-      "The Policy is maintained in version control with historical versions retained for reference."
+      "Η «Ημερομηνία ισχύος» στην αρχή της Πολιτικής δείχνει πότε έγινε η τελευταία αλλαγή.",
+      "Για ουσιώδεις αλλαγές θα παρέχουμε πρόσθετη ενημέρωση, όπως ειδοποίηση εντός της εφαρμογής ή e-mail.",
+      "Η Πολιτική τηρείται υπό έλεγχο εκδόσεων και οι προηγούμενες εκδόσεις διατηρούνται για αναφορά."
     ],
-    "paragraph2": "Your continued use of the Services after changes take effect constitutes your acknowledgment of the updated Policy."
+    "paragraph2": "Η συνέχιση της χρήσης των Υπηρεσιών μετά την έναρξη ισχύος των αλλαγών συνιστά αναγνώριση της ενημερωμένης Πολιτικής."
   },
   "section16": {
-    "title": "16. How to contact us or exercise your rights",
-    "subtitle": "If you have questions about this Privacy Policy, our use of your personal data, or if you wish to exercise your rights, please contact:",
-    "email": "Email:",
+    "title": "16. Πώς να επικοινωνήσετε μαζί μας ή να ασκήσετε τα δικαιώματά σας",
+    "subtitle": "Εάν έχετε ερωτήσεις σχετικά με την παρούσα Πολιτική Απορρήτου, τη χρήση των προσωπικών σας δεδομένων από εμάς ή θέλετε να ασκήσετε τα δικαιώματά σας, επικοινωνήστε μαζί μας:",
+    "email": "E-mail:",
     "emailValue": "kpilpilidis@gmail.com",
-    "dpo": "(Where applicable) Data Protection Officer:",
+    "dpo": "Υπεύθυνος Προστασίας Δεδομένων (όπου εφαρμόζεται):",
     "dpoValue": "kpilpilidis@gmail.com",
-    "responseTime": "We will respond without undue delay and within the time limits required by applicable data protection law (for example, one month under the GDPR, subject to permitted extensions for complex requests)."
+    "responseTime": "Θα απαντήσουμε χωρίς αδικαιολόγητη καθυστέρηση και εντός των προθεσμιών που προβλέπει η εφαρμοστέα νομοθεσία περί προστασίας δεδομένων (για παράδειγμα, εντός ενός μήνα βάσει του ΓΚΠΔ, με την επιφύλαξη επιτρεπόμενων παρατάσεων για σύνθετα αιτήματα)."
   }
 }
