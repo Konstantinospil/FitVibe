@@ -39,7 +39,7 @@ export async function saveCookiePreferencesHandler(req: Request, res: Response):
   res.cookie(CONSENT_COOKIE_NAME, browserId, {
     httpOnly: true,
     sameSite: "lax",
-    secure: env.COOKIE_SECURE === "true" || req.secure,
+    secure: env.COOKIE_SECURE || req.secure,
     path: "/api/v1/consent",
     maxAge: CONSENT_COOKIE_MAX_AGE_MS,
   });
