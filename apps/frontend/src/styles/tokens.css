@@ -39,7 +39,7 @@
 
   /* Scrollbar dimensions and states — Figma scrollbar design */
   --scrollbar-thumb-size: var(--control-icon-md);
-  --scrollbar-track-ratio: 1.1;
+  --scrollbar-track-ratio: 1.25;
   --scrollbar-track-size: calc(var(--scrollbar-thumb-size) * var(--scrollbar-track-ratio));
   --scrollbar-gap: var(--space-xs);
   --scrollbar-track: var(--color-surface-muted);
