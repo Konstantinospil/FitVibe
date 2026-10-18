@@ -22,40 +22,42 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
 }) => {
   const { t } = useTranslation();
   return (
-  <section className="legal-document-shell" data-component="legal-document-shell">
-    <header className="legal-document-shell__header">
-      <h1 className="legal-document-shell__title">{title}</h1>
-
-      <div className="legal-document-shell__metadata">
-        {effectiveDate ? (
-          <span>
-            <strong>Effective date:</strong> {effectiveDate}
-          </span>
+    <section className="legal-document-shell" data-component="legal-document-shell">
+      <header className="legal-document-shell__header">
+        <h1 className="legal-document-shell__title">{title}</h1>
+  
+        <div className="legal-document-shell__metadata">
+          {effectiveDate ? (
+            <span>
+              <strong>Effective date:</strong> {effectiveDate}
+            </span>
+          ) : null}
+          {version ? (
+            <span className="legal-document-shell__version">
+              <strong>Version:</strong> {version}
+            </span>
+          ) : null}
+        </div>
+  
+        {legacyNotice ? (
+          <div className="legal-document-shell__legacy-note">{legacyNotice}</div>
         ) : null}
-        {version ? (
-          <span className="legal-document-shell__version">
-            <strong>Version:</strong> {version}
-          </span>
-        ) : null}
+      </header>
+  
+      <div className="legal-document-shell__viewport">
+        <CustomScrollbar
+          className="legal-document-shell__scroll"
+          viewportClassName="legal-document-shell__content"
+          label={t("scrollbar.pageLabel")}
+        >
+          {children}
+        </CustomScrollbar>
       </div>
-
-      {legacyNotice ? (
-        <div className="legal-document-shell__legacy-note">{legacyNotice}</div>
+  
+      {footerAction ? (
+        <footer className="legal-document-shell__footer">{footerAction}</footer>
       ) : null}
-    </header>
-
-    <div className="legal-document-shell__viewport">
-      <CustomScrollbar
-        className="legal-document-shell__scroll"
-        viewportClassName="legal-document-shell__content"
-        label={t("scrollbar.pageLabel")}
-      >
-        {children}
-      </CustomScrollbar>
-    </div>
-
-    {footerAction ? <footer className="legal-document-shell__footer">{footerAction}</footer> : null}
-  </section>
+    </section>
   );
 };
 
