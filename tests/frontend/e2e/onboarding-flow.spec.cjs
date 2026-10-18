@@ -141,7 +141,7 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   await expect(page.getByText(/2fa is currently enabled/i)).toBeVisible();
   const statusResponse = await page.context().request.get(origin + "/api/v1/auth/2fa/status");
   expect(await statusResponse.json()).toMatchObject({ enabled: true });
-  await page.getByRole("button", { name: /^show$/i }).click();
+  await page.getByRole("button", { name: /^show backup codes$/i }).click();
   const originalBackupCodes = await page.locator("main li code").allTextContents();
   expect(originalBackupCodes.length).toBeGreaterThan(0);
   await page.getByRole("button", { name: /^done$/i }).click();
@@ -226,7 +226,7 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   expect((await regenerationResponse).status()).toBe(200);
   regeneration.assertExactlyOnce(200);
   regeneration.stop();
-  await page.getByRole("button", { name: /^show$/i }).click();
+  await page.getByRole("button", { name: /^show backup codes$/i }).click();
   const newCodes = await page.locator("main li code").allTextContents();
   expect(newCodes.length).toBeGreaterThan(0);
   expect(newCodes).not.toEqual(originalBackupCodes);
