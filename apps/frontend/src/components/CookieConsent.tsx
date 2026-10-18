@@ -3,7 +3,11 @@ import { useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
-import { useCookieConsent, type CookieConsentState } from "../hooks/useCookieConsent";
+import {
+  useCookieConsent,
+  type CookieConsentSource,
+  type CookieConsentState,
+} from "../hooks/useCookieConsent";
 import "./CookieConsent.css";
 
 export const REJECT_COOKIES: CookieConsentState = {
@@ -23,7 +27,13 @@ export const ACCEPT_COOKIES: CookieConsentState = {
 const categories = ["essential", "preferences", "analytics", "marketing"] as const;
 const LEGAL_ROUTES = new Set(["/terms", "/privacy", "/cookie"]);
 
-export function CookiePreferences({ initial = false }: { initial?: boolean }) {
+export function CookiePreferences({
+  initial = false,
+  source = "settings",
+}: {
+  initial?: boolean;
+  source?: CookieConsentSource;
+}) {
   const { t } = useTranslation();
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
@@ -52,7 +62,7 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
     setSaving(true);
     setError(false);
     try {
-      await savePreferences(choice);
+      await savePreferences(choice, initial ? "banner" : source);
       setDraft(null);
     } catch {
       setError(true);
