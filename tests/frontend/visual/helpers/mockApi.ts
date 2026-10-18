@@ -818,6 +818,25 @@ export async function mockAuthRefresh(page: Page) {
  * Installs a catch-all API stub, then overlays page-specific fixtures.
  * Register this before navigation so unmocked endpoints cannot hang networkidle.
  */
+const VISUAL_VIBEFORM_PROFILE = {
+  preferences: { templateCode: "flow", templateVersion: 1, bodyProfile: "balanced", motionEnabled: true },
+  metrics: {
+    intelligence: 0.4, regeneration: 0.5, agility: 0.6, explosivity: 0.7,
+    endurance: 0.8, strength: 0.9, upperBodyLoad: 0.5, lowerBodyLoad: 0.5,
+    bmi: null, heightCm: null,
+  },
+  calculationVersion: "2",
+  calculatedAt: NOW_ISO,
+};
+
+export async function mockVibeformProfile(page: Page) {
+  await page.route("**/api/v1/vibeforms/me", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, VISUAL_VIBEFORM_PROFILE);
+  });
+}
 export async function installDefaultMocks(page: Page): Promise<void> {
   // Keep avatar rendering deterministic and independent of external network access.
   await page.route("https://example.com/avatar.png", async (route) => {
@@ -849,6 +868,7 @@ export async function installDefaultMocks(page: Page): Promise<void> {
   await mockAuthSessions(page);
   await mockAuthRefresh(page);
   await mock2FAStatus(page, false);
+  await mockVibeformProfile(page);
   await mockLegalDocumentsStatus(page);
   await mockPrivacySettings(page);
   await mockCookieConsent(page);
