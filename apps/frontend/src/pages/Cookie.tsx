@@ -4,6 +4,6 @@ import PublishedLegalDocument from "../components/PublishedLegalDocument";
 import { CookiePreferences } from "../components/CookieConsent";
 const Cookie: React.FC = () => {
   const { t } = useTranslation();
-  return <PublishedLegalDocument documentType="cookie" title={t("cookie.policy.title")} footerAction={<CookiePreferences />} />;
+  return <><PublishedLegalDocument documentType="cookie" title={t("cookie.policy.title")} /><CookiePreferences /></>;
 };
 export default Cookie;
