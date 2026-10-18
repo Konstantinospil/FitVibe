@@ -9,12 +9,7 @@
   grid-template-columns: minmax(0, 1fr) var(--scrollbar-track-size);
   column-gap: var(--scrollbar-gap);
 }
-.app-page-scrollbar {
-  height: 100dvh;
-}
-.app-page-scrollbar > .custom-scrollbar__viewport > .custom-scrollbar__inner {
-  min-height: 100%;
-}
+.page-shell-content-scroll { flex: 1; min-height: 0; }
 .custom-scrollbar__viewport {
   min-width: 0;
   min-height: 0;
