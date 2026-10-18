@@ -1,9 +1,19 @@
 .custom-scrollbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--scrollbar-track-size);
-  gap: var(--scrollbar-gap);
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   min-height: 0;
   height: 100%;
+}
+.custom-scrollbar[data-scrollable="true"] {
+  grid-template-columns: minmax(0, 1fr) var(--scrollbar-track-size);
+  column-gap: var(--scrollbar-gap);
+}
+.app-page-scrollbar {
+  height: 100dvh;
+}
+.app-page-scrollbar > .custom-scrollbar__viewport > .custom-scrollbar__inner {
+  min-height: 100%;
 }
 .custom-scrollbar__viewport {
   min-width: 0;
@@ -11,6 +21,7 @@
   overflow: auto;
   scrollbar-width: none;
   overscroll-behavior: contain;
+  overflow-anchor: auto;
 }
 .custom-scrollbar__viewport::-webkit-scrollbar { display: none; }
 .custom-scrollbar__track {
@@ -41,7 +52,8 @@
 
 /* Touch devices scroll the same modal content by swiping, without a track taking width. */
 @media (pointer: coarse) {
-  .custom-scrollbar {
+  .custom-scrollbar,
+  .custom-scrollbar[data-scrollable="true"] {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
