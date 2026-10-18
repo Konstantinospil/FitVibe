@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
@@ -25,7 +25,6 @@ const LEGAL_ROUTES = new Set(["/terms", "/privacy", "/cookie"]);
 
 export function CookiePreferences({ initial = false }: { initial?: boolean }) {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
   const { consentStatus, isLoading, savePreferences } = useCookieConsent();
@@ -41,7 +40,7 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
     analytics: current?.analytics ?? false,
     marketing: current?.marketing ?? false,
   };
-  const hidden = isLoading || (initial && (hasConsent || LEGAL_ROUTES.has(pathname)));
+  const hidden = isLoading || (initial && hasConsent);
 
   useEffect(() => {
     if (initial && !hidden) {
@@ -116,12 +115,15 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
             {t("cookie.actions.savePreferences")}
           </Button>
         </div>
-        <Link to="/cookie">{t("cookie.policy.link")}</Link>
+        <a href="/cookie" target="_blank" rel="noopener noreferrer">
+          {t("cookie.policy.link")}
+        </a>
       </section>
     </div>
   );
 }
 
 export default function CookieConsent() {
-  return <CookiePreferences initial />;
+  const { pathname } = useLocation();
+  return LEGAL_ROUTES.has(pathname) ? null : <CookiePreferences initial />;
 }
