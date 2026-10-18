@@ -34,7 +34,10 @@ export interface CookieConsentRow {
   created_at: string;
 }
 
+export type CookieConsentSource = "banner" | "policy" | "settings";
+
 export interface CreateCookieConsentInput {
+  source?: CookieConsentSource;
   consentVersion: string;
   legalVersionId: string;
   essentialCookies: boolean;
@@ -45,6 +48,7 @@ export interface CreateCookieConsentInput {
 }
 
 export interface UpdateCookieConsentInput {
+  source?: CookieConsentSource;
   consentVersion?: string;
   legalVersionId?: string;
   essentialCookies?: boolean;
