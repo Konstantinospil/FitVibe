@@ -59,7 +59,7 @@ const loginShell = document.getElementById("login-shell");
 // Hydrating it as the finished route can leave fallback attributes on the live
 // PageShell element. Mount a fresh React tree instead.
 const isSsrLoadingFallback = Boolean(
-  rootElement.querySelector('[role="status"][aria-live="polite"].h-screen'),
+  rootElement.querySelector('[data-ssr-loading-fallback="true"]'),
 );
 const hasSsrMarkup = rootElement.hasChildNodes() && !loginShell && !isSsrLoadingFallback;
 
