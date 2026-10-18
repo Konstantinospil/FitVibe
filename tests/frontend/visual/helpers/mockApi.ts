@@ -837,6 +837,23 @@ export async function mockVibeformProfile(page: Page) {
     return fulfillJson(route, VISUAL_VIBEFORM_PROFILE);
   });
 }
+export async function mockCsrfToken(page: Page) {
+  await page.route("**/api/v1/csrf-token", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, { csrfToken: "visual-test-csrf-token" });
+  });
+}
+
+export async function mockEarnedBadges(page: Page) {
+  await page.route("**/api/v1/points/badges/earned", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, { badges: [], total: 0 });
+  });
+}
 export async function installDefaultMocks(page: Page): Promise<void> {
   // Keep avatar rendering deterministic and independent of external network access.
   await page.route("https://example.com/avatar.png", async (route) => {
@@ -867,8 +884,10 @@ export async function installDefaultMocks(page: Page): Promise<void> {
   await mockMeasurements(page);
   await mockAuthSessions(page);
   await mockAuthRefresh(page);
+  await mockCsrfToken(page);
   await mock2FAStatus(page, false);
   await mockVibeformProfile(page);
+  await mockEarnedBadges(page);
   await mockLegalDocumentsStatus(page);
   await mockPrivacySettings(page);
   await mockCookieConsent(page);
