@@ -47,11 +47,11 @@
   "home": {
     "eyebrow": "FitVibe Plattform",
     "title": "Trainiere smarter. Teile Fortschritt. Feiere Konstanz.",
-    "description": "FitVibe unterstützt Athletinnen und Coaches beim Planen, Protokollieren und Analysieren jeder Einheit. Moderne Werkzeuge für Streak-Tracking, Leaderboard-Heatmaps und aussagekräftige Recovery-Insights.",
+    "description": "Plane, protokolliere und analysiere dein Training mit allen Details, die auch für Coaches relevant sind. Verfolge Trainingsserien, vergleiche Trainingsblöcke und erkenne Erholungstrends ohne unnötige Ablenkung.",
     "subtitleOnline": "API-Verbindung ist stabil - Status: {{status}}.",
     "subtitleOnlineFallback": "API-Verbindung ist stabil - wir sind startklar.",
-    "subtitleOffline": "Wir halten alles lokal im Cache, bis das Backend wieder verfügbar ist.",
-    "subtitleChecking": "Prüfe den API-Status und wärme Caches vor...",
+    "subtitleOffline": "Du arbeitest offline. Deine Änderungen werden synchronisiert, sobald der Server wieder verfügbar ist.",
+    "subtitleChecking": "API-Status wird geprüft und der Cache vorbereitet…",
     "ctaPrimary": "Private Beta beitreten",
     "ctaSecondary": "Mit dem Team sprechen",
     "chartTitle": "Konstanz-Trend",
@@ -61,8 +61,8 @@
   },
   "profile": {
     "eyebrow": "Athletenprofil",
-    "title": "Stimme Einstellungen, Privatsphäre und Ziele ab.",
-    "description": "Definiere Sichtbarkeiten, bevorzugte Einheiten und persönliche Bestleistungen, damit jede geteilte Session deine Geschichte erzählt.",
+    "title": "Passe Einstellungen, Privatsphäre und Leistungsziele an.",
+    "description": "Lege die Standardsichtbarkeit, bevorzugte Einheiten und persönliche Bestleistungsziele fest, damit jede geteilte Einheit deine Geschichte erzählt.",
     "edit": "Profil bearbeiten",
     "sections": {
       "visibility": {
@@ -80,7 +80,7 @@
     },
     "measurements": {
       "title": "Messwerte",
-      "empty": "In Ihrem Profil werden noch keine Messwerte angezeigt.",
+      "empty": "In deinem Profil werden noch keine Messwerte angezeigt.",
       "noValue": "Noch kein Wert erfasst",
       "loadError": "Profil-Messwerte konnten nicht geladen werden."
     }
@@ -107,14 +107,14 @@
       "team": {
         "user": "Team Nordic Velocity",
         "note": "Wochenranking: Emma hat sich mit 98 Streak-Punkten Platz 1 zurückgeholt.",
-        "stats": "Gepinnt @ Team-Feed",
+        "stats": "Angeheftet • Team-Feed",
         "visibility": "private"
       }
     },
     "follow": {
       "follow": "Folgen",
       "unfollow": "Nicht mehr folgen",
-      "following": "Folge ich",
+      "following": "Du folgst",
       "unfollowed": "Nicht mehr gefolgt",
       "error": {
         "title": "Folgen konnte nicht aktualisiert werden",
@@ -132,7 +132,7 @@
     "termsAriaLabel": "Allgemeine Geschäftsbedingungen anzeigen",
     "privacyAriaLabel": "Datenschutzerklärung anzeigen",
     "impressumAriaLabel": "Impressum anzeigen",
-    "contactAriaLabel": "Kontaktieren Sie uns",
+    "contactAriaLabel": "Kontakt aufnehmen",
     "expand": "Fußzeile einblenden",
     "collapse": "Fußzeile einklappen"
   },
@@ -185,7 +185,7 @@
     "AUTH_INVALID_REFRESH": "Ungültiger Refresh-Token",
     "AUTH_SESSION_REVOKED": "Sitzung widerrufen",
     "AUTH_REFRESH_EXPIRED": "Refresh-Token abgelaufen",
-    "AUTH_INVALID_SCOPE": "Geben Sie eine sessionId oder einen Widerruf-Bereich an",
+    "AUTH_INVALID_SCOPE": "Gib eine sessionId oder einen Widerrufsbereich an",
     "AUTH_SESSION_NOT_FOUND": "Sitzung nicht gefunden",
     "UNAUTHENTICATED": "Fehlender Authentifizierungskontext",
     "USER_USERNAME_TAKEN": "Benutzername bereits vergeben",
@@ -264,17 +264,17 @@
     "passwordDigit": "Passwort muss eine Ziffer enthalten",
     "passwordSymbol": "Passwort muss ein Sonderzeichen enthalten",
     "usernameFormat": "Benutzername darf nur Buchstaben, Zahlen, Unterstriche, Punkte oder Bindestriche enthalten",
-    "sessionIdRequired": "Geben Sie sessionId oder Widerruf-Bereich an",
-    "revokeConflict": "Kann revokeAll und revokeOthers nicht kombinieren"
+    "sessionIdRequired": "Gib eine sessionId oder einen Widerrufsbereich an",
+    "revokeConflict": "revokeAll und revokeOthers können nicht kombiniert werden"
   },
   "dashboard": {
-    "eyebrow": "Bereitschafts-Puls",
-    "title": "Deine Trainingszentrale.",
-    "description": "Überwache Serien, Bereitschaft und Leaderboard-Deltas auf einen Blick. Jede Metrik aktualisiert sich in Echtzeit, sobald Einheiten von Wearables oder manuellen Protokollen synchronisiert werden.",
-    "errorRefresh": "Analytics konnten jetzt nicht aktualisiert werden. Zeige den letzten geladenen Snapshot.",
+    "eyebrow": "Trainingsbereitschaft",
+    "title": "Deine Trainingsübersicht",
+    "description": "Behalte Trainingsserien, Bereitschaft und Änderungen in der Rangliste auf einen Blick im Blick. Die Kennzahlen werden nach Synchronisierungen oder manuellen Einträgen in Echtzeit aktualisiert.",
+    "errorRefresh": "Die Analysedaten konnten nicht aktualisiert werden. Der zuletzt geladene Stand wird angezeigt.",
     "retry": "Erneut versuchen",
     "personalBests": "Persönliche Bestleistungen",
-    "volumeAggregates": "Volumen-Aggregate",
+    "volumeAggregates": "Zusammengefasstes Volumen",
     "selectRange": "Bereich auswählen",
     "last4Weeks": "Letzte 4 Wochen",
     "last8Weeks": "Letzte 8 Wochen",
@@ -284,7 +284,7 @@
     "period": "Zeitraum",
     "volume": "Volumen",
     "sessions": "Einheiten",
-    "helperText": "Zeige bis zu 5 Zeiträume, um die Payload auf geteilten Dashboards gering zu halten.",
+    "helperText": "Es werden bis zu 5 Zeiträume angezeigt, damit geteilte Dashboards schnell bleiben.",
     "vibeformTitle": "Vibeform",
     "vibeformDescription": "Deine gespeicherte Vibeform und dein aktuell berechneter Trainingszustand.",
     "vibeformAccessibleLabel": "Deine aktuelle Vibeform",
@@ -299,14 +299,14 @@
     "badgesError": "Badges konnten nicht geladen werden.",
     "noBadges": "Noch keine Badges verdient.",
     "fitnessTestTitle": "Fitnesstest",
-    "fitnessTestDescription": "Die Auswertung des Fitnesstests ist noch nicht definiert. Die Forschung bleibt vom Dashboard getrennt.",
+    "fitnessTestDescription": "Die Auswertung des Fitnesstests ist noch nicht definiert. Die dazugehörige Forschung bleibt vom Dashboard getrennt.",
     "fitnessTestAction": "Informationen zum Fitnesstest",
-    "fitnessTestPending": "Die Benchmark-Definition ist im separaten Forschungsthema ausstehend."
+    "fitnessTestPending": "Die Definition der Vergleichswerte wird im separaten Forschungsthema bearbeitet."
   },
   "progress": {
     "eyebrow": "Trends & Insights",
     "title": "Visualisiere Fortschritt mit Kontext",
-    "description": "Vergleiche Block-über-Block Volumen, Geschwindigkeit und Bereitschaft, um zu verstehen, wie Programmierungsanpassungen sich in Ergebnisse übersetzen.",
+    "description": "Vergleiche Volumen, Geschwindigkeit und Trainingsbereitschaft zwischen Trainingsblöcken, um zu erkennen, wie sich Anpassungen im Trainingsplan auf deine Ergebnisse auswirken.",
     "exportFailed": "Fortschrittsdaten-Export fehlgeschlagen",
     "chartRenderFailed": "Diagramm konnte nicht gerendert werden",
     "reloadPage": "Seite neu laden",
@@ -391,7 +391,7 @@
     "backToLogin": "Zurück zum Login",
     "successText": "Du kannst dich jetzt mit deinem neuen Passwort anmelden.",
     "passwordMismatch": "Passwörter stimmen nicht überein",
-    "invalidToken": "Ungültiger Reset-Token. Bitte fordere ein neues Passwort-Reset an.",
+    "invalidToken": "Ungültiger Link zum Zurücksetzen. Bitte fordere einen neuen Link zum Zurücksetzen des Passworts an.",
     "errorReset": "Fehler beim Zurücksetzen des Passworts",
     "passwordRequirements": {
       "title": "Passwort-Anforderungen:",
@@ -403,7 +403,7 @@
     }
   },
   "planner": {
-    "eyebrow": "Einheiten-Architektur",
+    "eyebrow": "Trainingsplanung",
     "title": "Gestalte Trainingsblöcke mit Absicht.",
     "description": "Ziehe, dupliziere und periodisiere Workouts. Der Planer hält Intensität, Volumen und Deload-Verhältnisse im Einklang mit deinem Makrozyklus.",
     "editBlock": "Block bearbeiten",
@@ -423,7 +423,7 @@
     "visibilityHelp": "Private Einheiten sind nur für dich sichtbar. Link-Einheiten können per Link geteilt werden. Öffentliche Einheiten erscheinen im Community-Feed."
   },
   "sessions": {
-    "eyebrow": "Training-Management",
+    "eyebrow": "Trainingsverwaltung",
     "title": "Plane und protokolliere deine Workouts",
     "description": "Gestalte Trainingsblöcke und erfasse jede Wiederholung ohne Unterbrechung.",
     "plannerTab": "Planer",
@@ -431,7 +431,7 @@
   },
   "insights": {
     "eyebrow": "Analytics & Trends",
-    "title": "Dein Performance-Dashboard",
+    "title": "Deine Leistungsübersicht",
     "description": "Überwache Bereitschaft, visualisiere Fortschritt und verfolge deine Reise mit datengestützten Einblicken.",
     "dashboardTab": "Dashboard",
     "progressTab": "Fortschritt"
@@ -440,7 +440,7 @@
     "eyebrow": "Navigation",
     "title": "Wir konnten diese Seite nicht finden.",
     "description": "Die angeforderte Route ist entweder privat oder noch im Aufbau. Gehe zurück zum Dashboard oder sprich mit dem Team, wenn du frühen Zugang benötigst.",
-    "takeMeHome": "Bring mich nach Hause",
+    "takeMeHome": "Zur Startseite",
     "goToLanding": "Zur Startseite"
   },
   "components": {
@@ -615,7 +615,7 @@
     },
     "measurements": {
       "title": "Messwerte",
-      "description": "Erfassen Sie Werte für Messgrößen, die bereits in Ihrem Profil aktiviert sind.",
+      "description": "Erfasse Werte für Messgrößen, die bereits in deinem Profil aktiviert sind.",
       "category": "Messwertkategorie",
       "biometric": "Biometrisch",
       "performance": "Leistung",
@@ -626,11 +626,11 @@
       "noneEnabled": "In dieser Kategorie sind keine Messgrößen aktiviert.",
       "loadError": "Messgrößen konnten nicht geladen werden.",
       "saveError": "Messwert konnte nicht gespeichert werden.",
-      "invalidValue": "Geben Sie einen Wert innerhalb des zulässigen Bereichs ein."
+      "invalidValue": "Gib einen Wert innerhalb des zulässigen Bereichs ein."
     },
     "measurementDiscovery": {
       "title": "Messgrößen auswählen",
-      "description": "Durchsuchen Sie den zentralen Messkatalog und wählen Sie aus, was in Ihrem Profil angezeigt wird.",
+      "description": "Durchsuche den zentralen Messkatalog und wähle aus, was in deinem Profil angezeigt wird.",
       "category": "Messwertkategorie",
       "search": "Messgrößen suchen",
       "searchPlaceholder": "Nach Name suchen",
@@ -707,15 +707,15 @@
     }
   },
   "vibesHome": {
-    "title": "Wähle deine Vibe",
-    "subtitle": "Wähle ein Element um eine neue Übung hinzuzufügen",
+    "title": "Wähle deinen Vibe",
+    "subtitle": "Wähle ein Element, um eine neue Übung hinzuzufügen",
     "addExercise": {
       "title": "Übung hinzufügen",
       "selectExisting": "Vorhandene Übung auswählen",
       "createNew": "Neue Übung erstellen",
       "exerciseName": "Übungsname",
       "exerciseNamePlaceholder": "Übungsname eingeben",
-      "selectVibe": "Ausgewählte Vibe",
+      "selectVibe": "Ausgewählter Vibe",
       "exerciseDetails": "Übungsdetails",
       "sets": "Sätze",
       "setsPlaceholder": "z.B. 3",
@@ -756,7 +756,7 @@
   "logger": {
     "eyebrow": "Protokoll",
     "title": "Erfasse jede Wiederholung ohne Unterbrechung.",
-    "description": "Verfolge Sätze, Last, Tempo und RPE. Synchronisiere mit Wearables oder protokolliere manuell—deine Daten bleiben trainerbereit.",
+    "description": "Verfolge Sätze, Last, Tempo und RPE. Synchronisiere mit Wearables oder protokolliere manuell – deine Daten bleiben für Coaches übersichtlich aufbereitet.",
     "exercise": "Übung",
     "sets": "Sätze",
     "reps": "Wiederholungen",
@@ -826,7 +826,7 @@
     "cannotEdit": "Du kannst nur deine eigenen Übungen bearbeiten",
     "cannotArchive": "Du kannst nur deine eigenen Übungen archivieren",
     "archiveConfirm": "Übung archivieren",
-    "archiveMessage": "Bist du sicher, dass du diese Übung archivieren möchtest? Sie wird in Selektoren ausgeblendet, aber für historische Aufzeichnungen beibehalten.",
+    "archiveMessage": "Möchtest du diese Übung wirklich archivieren? Sie wird in Auswahllisten ausgeblendet, bleibt aber für historische Aufzeichnungen erhalten.",
     "allTypes": "Alle Typen",
     "showArchived": "Archivierte anzeigen",
     "filterType": "Nach Typ filtern"
@@ -834,8 +834,8 @@
   "coach": {
     "dashboard": {
       "eyebrow": "Trainer-Dashboard",
-      "title": "Verwalten Sie Ihre Athleten",
-      "description": "Erstellen Sie Trainingspläne, überwachen Sie den Fortschritt der Athleten und weisen Sie Trainingseinheiten zu",
+      "title": "Verwalte deine Athleten",
+      "description": "Erstelle Trainingspläne, überwache den Fortschritt deiner Athleten und weise Trainingseinheiten zu",
       "metrics": {
         "athletes": "Athleten",
         "activeAssignments": "Aktive Zuweisungen",
@@ -864,11 +864,11 @@
         "title": "Trainingseinheiten",
         "create": "Trainingseinheit erstellen",
         "empty": "Noch keine Trainingseinheiten erstellt",
-        "description": "Erstellen Sie wiederverwendbare Trainingseinheiten, die Sie mehreren Athleten zuweisen können. Trainingseinheiten können Übungen, Sätze, Wiederholungen und andere Parameter enthalten."
+        "description": "Erstelle wiederverwendbare Trainingseinheiten, die du mehreren Athleten zuweisen kannst. Trainingseinheiten können Übungen, Sätze, Wiederholungen und weitere Parameter enthalten."
       },
       "athletes": {
         "title": "Athleten",
-        "empty": "Noch keine Athleten zugewiesen. Athleten müssen Ihnen über ihre Einstellungen Zugriff gewähren.",
+        "empty": "Noch keine Athleten zugewiesen. Athleten müssen dir über ihre Einstellungen Zugriff gewähren.",
         "table": {
           "athlete": "Athlet",
           "assigned": "Zugewiesen",
@@ -880,9 +880,9 @@
       "assign": {
         "title": "Trainingseinheit zuweisen",
         "selectWorkout": "Trainingseinheit auswählen",
-        "selectWorkoutPlaceholder": "Wählen Sie eine Trainingseinheit...",
+        "selectWorkoutPlaceholder": "Wähle eine Trainingseinheit…",
         "selectAthletes": "Athleten auswählen",
-        "noAthletes": "Keine Athleten verfügbar. Athleten müssen Ihnen zuerst Zugriff gewähren.",
+        "noAthletes": "Keine Athleten verfügbar. Athleten müssen dir zuerst Zugriff gewähren.",
         "assignmentDate": "Zuweisungsdatum",
         "assignButton": "Trainingseinheit zuweisen"
       }
@@ -1099,7 +1099,7 @@
     },
     "archive": {
       "title": "Übung archivieren",
-      "description": "{{name}} archivieren? Die Übung verschwindet aus aktiven Selektoren, bleibt aber historisch erhalten."
+      "description": "{{name}} archivieren? Die Übung verschwindet aus aktiven Auswahllisten, bleibt aber im Verlauf erhalten."
     },
     "creator": {
       "titleCreate": "Übung erstellen",
