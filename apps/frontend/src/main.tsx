@@ -58,8 +58,9 @@ const loginShell = document.getElementById("login-shell");
 // A streamed Suspense loading boundary is not a complete SSR application tree.
 // Hydrating it as the finished route can leave fallback attributes on the live
 // PageShell element. Mount a fresh React tree instead.
-const isSsrLoadingFallback =
-  rootElement.firstElementChild?.matches('[role="status"][aria-live="polite"]') ?? false;
+const isSsrLoadingFallback = Boolean(
+  rootElement.querySelector('[role="status"][aria-live="polite"].h-screen'),
+);
 const hasSsrMarkup = rootElement.hasChildNodes() && !loginShell && !isSsrLoadingFallback;
 
 const mount = (): void => {
