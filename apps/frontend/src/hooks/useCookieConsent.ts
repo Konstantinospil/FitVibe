@@ -3,6 +3,8 @@ import { apiClient } from "../services/api";
 import { initializeAnalytics, disableAnalytics } from "../utils/analytics";
 import { initializeMarketing, disableMarketing } from "../utils/marketing";
 
+export type CookieConsentSource = "banner" | "policy" | "settings";
+
 export interface CookieConsentState {
   essential: boolean;
   preferences: boolean;
@@ -26,7 +28,7 @@ interface UseCookieConsentReturn {
   consentStatus: CookieConsentStatus | null;
   isLoading: boolean;
   error: Error | null;
-  savePreferences: (preferences: CookieConsentState) => Promise<void>;
+  savePreferences: (preferences: CookieConsentState, source?: CookieConsentSource) => Promise<void>;
   refreshStatus: () => Promise<void>;
 }
 
@@ -82,7 +84,7 @@ export function useCookieConsent(): UseCookieConsentReturn {
     void fetchConsentStatus();
   }, [fetchConsentStatus]);
 
-  const savePreferences = useCallback(async (preferences: CookieConsentState) => {
+  const savePreferences = useCallback(async (preferences: CookieConsentState, source?: CookieConsentSource) => {
     try {
       setError(null);
       const response = await apiClient.post<{
@@ -95,7 +97,7 @@ export function useCookieConsent(): UseCookieConsentReturn {
           version: string;
           updatedAt: string;
         };
-      }>("/api/v1/consent/cookie-preferences", preferences);
+      }>("/api/v1/consent/cookie-preferences", source ? { ...preferences, source } : preferences);
 
       // Update local state
       setConsentStatus({
