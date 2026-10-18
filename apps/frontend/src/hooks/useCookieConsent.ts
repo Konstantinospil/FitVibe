@@ -28,7 +28,10 @@ interface UseCookieConsentReturn {
   consentStatus: CookieConsentStatus | null;
   isLoading: boolean;
   error: Error | null;
-  savePreferences: (preferences: CookieConsentState, source?: CookieConsentSource) => Promise<void>;
+  savePreferences: (
+    preferences: CookieConsentState,
+    source?: CookieConsentSource,
+  ) => Promise<void>;
   refreshStatus: () => Promise<void>;
 }
 
@@ -97,7 +100,10 @@ export function useCookieConsent(): UseCookieConsentReturn {
     void fetchConsentStatus();
   }, [fetchConsentStatus]);
 
-  const savePreferences = useCallback(async (preferences: CookieConsentState, source?: CookieConsentSource) => {
+  const savePreferences = useCallback(async (
+    preferences: CookieConsentState,
+    source?: CookieConsentSource,
+  ) => {
     try {
       setError(null);
       const response = await apiClient.post<{
@@ -110,7 +116,10 @@ export function useCookieConsent(): UseCookieConsentReturn {
           version: string;
           updatedAt: string;
         };
-      }>("/api/v1/consent/cookie-preferences", source ? { ...preferences, source } : preferences);
+      }>(
+        "/api/v1/consent/cookie-preferences",
+        source ? { ...preferences, source } : preferences,
+      );
 
       // Update local state
       setConsentStatus({
