@@ -12,3 +12,5 @@
 .cookie-preferences-inline {width:100%;min-width:0}
 .cookie-preferences-inline .cookie-consent-dialog {width:100%;max-height:none;box-shadow:none}
 .cookie-consent-backdrop .cookie-consent-dialog {position:relative}
+.legal-document-shell + .cookie-preferences-inline {max-width:var(--modal-width-lg);margin:var(--space-lg) auto}
+
