@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import "./LegalDocumentShell.css";
 import { CustomScrollbar } from "./CustomScrollbar";
 
@@ -18,7 +19,9 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
   legacyNotice,
   children,
   footerAction,
-}) => (
+}) => {
+  const { t } = useTranslation();
+  return (
   <section className="legal-document-shell" data-component="legal-document-shell">
     <header className="legal-document-shell__header">
       <h1 className="legal-document-shell__title">{title}</h1>
@@ -45,7 +48,7 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
       <CustomScrollbar
         className="legal-document-shell__scroll"
         viewportClassName="legal-document-shell__content"
-        label="Legal document"
+        label={t("scrollbar.pageLabel")}
       >
         {children}
       </CustomScrollbar>
@@ -53,6 +56,7 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
 
     {footerAction ? <footer className="legal-document-shell__footer">{footerAction}</footer> : null}
   </section>
-);
+  );
+};
 
 export default LegalDocumentShell;
