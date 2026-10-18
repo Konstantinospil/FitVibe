@@ -1,5 +1,6 @@
 /** Cookie consent is scoped to a first-party, HTTP-only browser identifier. */
 import { randomBytes } from "node:crypto";
+import { env } from "../../config/env.js";
 import type { Request, Response } from "express";
 import { getConsentStatus, saveCookiePreferences } from "./consent.service.js";
 import { SaveCookiePreferencesSchema } from "./consent.schemas.js";
@@ -20,7 +21,7 @@ export async function saveCookiePreferencesHandler(req: Request, res: Response):
   const client = clientId(req) ?? randomBytes(32).toString("hex");
   const consent = await saveCookiePreferences(client, choice, req.headers["user-agent"] ?? null);
   res.cookie(NAME, client, {
-    httpOnly: true, sameSite: "lax", secure: req.secure,
+    httpOnly: true, sameSite: "lax", secure: env.COOKIE_SECURE === "true" || req.secure,
     path: "/api/v1/consent", maxAge: 365 * 24 * 60 * 60 * 1000,
   });
   res.json({
