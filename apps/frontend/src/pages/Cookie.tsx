@@ -9,7 +9,7 @@ const Cookie: React.FC = () => {
   return (
     <>
       <PublishedLegalDocument documentType="cookie" title={t("cookie.policy.title")} />
-      <CookiePreferences />
+      <CookiePreferences source="policy" />
     </>
   );
 };
