@@ -70,7 +70,7 @@ export async function upsertConsent(
         (isCreateInput
           ? input.legalVersionId
           : (input.legalVersionId ?? previous?.legalVersionId ?? null)),
-      source: userId ? "authenticated" : "banner",
+      source: input.source ?? (userId ? "authenticated" : "banner"),
       essential_cookies: isCreateInput
         ? input.essentialCookies
         : (input.essentialCookies ?? previous?.essentialCookies ?? true),
