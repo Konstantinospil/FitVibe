@@ -5,6 +5,7 @@ import { initReactI18next } from "react-i18next";
 export const loadMinimalLoginTranslations = async () => {
   // Only load auth.json for login page - other translations loaded on-demand
   const enAuthModule = await import("./locales/en/auth.json");
+  const enCookieModule = await import("./locales/en/cookie.json");
   const enAuth = enAuthModule.default as Record<string, unknown>;
 
   // Create minimal common translations object with only what's needed for login
@@ -52,7 +53,7 @@ export const loadMinimalLoginTranslations = async () => {
     },
   };
 
-  return mergeTranslations(minimalCommon, enAuth);
+  return mergeTranslations(mergeTranslations(minimalCommon, enAuth), { cookie: enCookieModule.default });
 };
 
 // Load full English translations (for other pages)
