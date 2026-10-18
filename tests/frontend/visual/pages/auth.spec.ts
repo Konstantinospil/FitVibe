@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { capturePageScreenshot, openPublicPage, waitForAppReady } from "../helpers/capture.js";
+import { skipUnlessMatrix } from "../helpers/project.js";
+import { capturePageScreenshot, openPublicPage, prepareVisualPage, waitForAppReady } from "../helpers/capture.js";
 
 test.describe("Auth Page Visual Tests", () => {
   test("login page", async ({ page }, testInfo) => {
@@ -36,6 +37,25 @@ test.describe("Auth Page Visual Tests", () => {
     await assertVerticalAuthShell(page);
     await capturePageScreenshot(page, testInfo, "two-factor-challenge", { waitFor: '[data-component="form-stack"]' });
     await expect(page.locator('input[name="code"]')).toBeVisible();
+  });
+
+  test("first-visit login with cookie consent popup", async ({ page }, testInfo) => {
+    skipUnlessMatrix(testInfo, { themes: ["light", "dark"], viewports: ["sm"] });
+    await prepareVisualPage(page, testInfo);
+    // Override only the consent status from the default deterministic visual API.
+    // A first-visit browser must receive no persisted consent.
+    await page.route("**/api/v1/consent/cookie-status", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ success: true, data: { hasConsent: false } }),
+      });
+    });
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+    await waitForAppReady(page);
+    await expect(page.getByRole("dialog", { name: /cookie/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /reject all/i })).toBeVisible();
+    await capturePageScreenshot(page, testInfo, "first-visit-login-cookie-popup", { waitFor: '[role="dialog"]' });
   });
 
   test("register page", async ({ page }, testInfo) => {
