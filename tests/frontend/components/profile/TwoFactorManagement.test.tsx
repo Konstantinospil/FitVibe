@@ -1,14 +1,14 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TwoFactorManagement } from "../../../src/components/profile/TwoFactorManagement";
-import * as api from "../../../src/services/api";
+import { TwoFactorManagement } from "../../../../apps/frontend/src/components/profile/TwoFactorManagement";
+import * as api from "../../../../apps/frontend/src/services/api";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock("../../../src/services/api", () => ({
+vi.mock("../../../../apps/frontend/src/services/api", () => ({
   setup2FA: vi.fn(),
   verify2FA: vi.fn(),
   disable2FA: vi.fn(),
@@ -142,4 +142,45 @@ describe("TwoFactorManagement", () => {
     fireEvent.click(screen.getByRole("button", { name: "common.done" }));
     expect(screen.queryByText("NEW-CODE")).not.toBeInTheDocument();
   });
+  it("shows verification API failures without changing security status", async () => {
+    vi.mocked(api.verify2FA).mockRejectedValueOnce(new Error("Unavailable"));
+    render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.enable" }));
+    fireEvent.change(await screen.findByLabelText("settings.security.enterCode"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.verifyEnable" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("settings.security.verifyError");
+    expect(onStatusChanged).not.toHaveBeenCalled();
+  });
+
+  it("cancels step-up before sending any disabling request", () => {
+    render(<TwoFactorManagement enabled onStatusChanged={onStatusChanged} />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.disable" }));
+    fireEvent.change(screen.getByLabelText("settings.security.disablePasswordLabel"), {
+      target: { value: "unsubmitted-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "common.cancel" }));
+    expect(api.disable2FA).not.toHaveBeenCalled();
+    expect(screen.queryByDisplayValue("unsubmitted-password")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "settings.security.disable" })).toBeEnabled();
+  });
+
+  it("preserves the step-up form if regeneration fails", async () => {
+    vi.mocked(api.regenerate2FABackupCodes).mockRejectedValueOnce(new Error("Invalid verification"));
+    render(<TwoFactorManagement enabled onStatusChanged={onStatusChanged} />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.backupCodes" }));
+    fireEvent.change(screen.getByLabelText("settings.security.disablePasswordLabel"), {
+      target: { value: "password" },
+    });
+    fireEvent.change(screen.getByLabelText("settings.security.enterCode"), {
+      target: { value: "123456" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.backupCodes" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("settings.security.disableError");
+    expect(screen.getByDisplayValue("password")).toBeInTheDocument();
+    expect(screen.queryByText("NEW-CODE")).not.toBeInTheDocument();
+    expect(onStatusChanged).not.toHaveBeenCalled();
+  });
+
 });
