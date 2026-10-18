@@ -6,6 +6,12 @@ name: Refresh Visual Linux Baselines
 
 on:
   workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Branch containing the UI changes to capture
+        required: true
+        default: feature
+        type: string
   push:
     branches: ["feature"]
     paths:
@@ -24,10 +30,10 @@ jobs:
       options: --ipc=host
 
     steps:
-      - name: Checkout feature
+      - name: Checkout selected source branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: feature
+          ref: ${{ inputs.source_ref || 'feature' }}
           fetch-depth: 0
 
       - name: Trust workspace
@@ -48,35 +54,41 @@ jobs:
       - name: Build visual frontend
         run: pnpm --filter @fitvibe/frontend run build:visual
 
-      - name: Start preview server
+      - name: Refresh changed Linux baselines against live preview
+        working-directory: apps/frontend
         shell: bash
-        run: |
-          cd apps/frontend
-          pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client >/tmp/fitvibe-preview.log 2>&1 &
-          echo $! >/tmp/fitvibe-preview.pid
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:4173 >/dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-          cat /tmp/fitvibe-preview.log
-          exit 1
-
-      - name: Refresh changed Linux baselines
         env:
           APP_URL: http://127.0.0.1:4173
           DISABLE_WEBSERVER: "true"
           CI: "true"
         run: |
-          pnpm exec playwright test \
-            --config tests/frontend/visual/config/playwright.config.ts \
-            --update-snapshots=changed
+          set -euo pipefail
+          pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client >/tmp/fitvibe-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$preview_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" != 1 ]; then
+            cat /tmp/fitvibe-preview.log
+            exit 1
+          fi
+          cd "$GITHUB_WORKSPACE"
+          pnpm exec playwright test --config tests/frontend/visual/config/playwright.config.ts --update-snapshots=changed
 
       - name: Commit refreshed Linux baselines via GitHub API
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REF: ${{ inputs.source_ref || 'feature' }}
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync } from "node:child_process";
@@ -84,7 +96,7 @@ jobs:
 
           const repo = process.env.GITHUB_REPOSITORY;
           const token = process.env.GH_TOKEN;
-          const branch = "feature";
+          const branch = process.env.SOURCE_REF;
           const api = "https://api.github.com";
           const headers = {
             Accept: "application/vnd.github+json",
@@ -128,9 +140,10 @@ jobs:
 
           const ref = await request(`/git/ref/heads/${branch}`);
           const headSha = ref.object.sha;
-          if (headSha !== process.env.GITHUB_SHA) {
+          const testedSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          if (headSha !== testedSha) {
             throw new Error(
-              `Feature moved from tested commit ${process.env.GITHUB_SHA} to ${headSha}; refusing to commit stale visual baselines.`,
+              `Source branch moved from tested commit ${testedSha} to ${headSha}; refusing to commit stale visual baselines.`,
             );
           }
           const headCommit = await request(`/git/commits/${headSha}`);
