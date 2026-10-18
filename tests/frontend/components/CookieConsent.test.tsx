@@ -42,6 +42,7 @@ describe("Cookie consent preferences", () => {
     mount(<CookieConsent />);
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.acceptAll" }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(ACCEPT_COOKIES, "banner"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "cookie.actions.rejectAll" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.rejectAll" }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES));
   });
