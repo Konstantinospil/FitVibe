@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { IconButton } from "@fitvibe/ui";
 import { CustomScrollbar } from "../CustomScrollbar";
@@ -26,6 +27,7 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnBackdrop = true,
   width = "md",
 }) => {
+  const { t } = useTranslation();
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -93,7 +95,7 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={onClose}
           />
         </header>
-        <CustomScrollbar data-slot="modal-body" label="Dialog content">
+        <CustomScrollbar data-slot="modal-body" label={t("scrollbar.dialogLabel")}>
           {children}
         </CustomScrollbar>
         {footer ? <footer data-slot="modal-footer">{footer}</footer> : null}
