@@ -11,6 +11,7 @@ import type {
   CookieConsent,
   CookieConsentResponse,
   CreateCookieConsentInput,
+  CookieConsentSource,
 } from "./consent.types.js";
 import { getConsentByClient, upsertConsent } from "./consent.repository.js";
 import { insertAudit } from "../common/audit.util.js";
@@ -39,6 +40,7 @@ export async function getConsentStatus(clientIdentifier: string): Promise<Cookie
       analytics: consent.analyticsCookies,
       marketing: consent.marketingCookies,
       version: consent.consentVersion,
+      source,
       updatedAt: consent.lastUpdatedAt,
     },
   };
@@ -57,6 +59,7 @@ export async function saveCookiePreferences(
     marketing: boolean;
   },
   userAgent?: string | null,
+  source: CookieConsentSource = "banner",
 ): Promise<CookieConsent> {
   // Validate that essential cookies are always true
   if (!preferences.essential) {
@@ -65,6 +68,7 @@ export async function saveCookiePreferences(
 
   const currentCookiePolicy = await getCurrentLegalPublication("cookie");
   const input: CreateCookieConsentInput = {
+    source,
     consentVersion: currentCookiePolicy.version,
     legalVersionId: currentCookiePolicy.id,
     essentialCookies: preferences.essential,
