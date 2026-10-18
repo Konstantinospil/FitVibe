@@ -2,6 +2,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { analyzeDesignSources } from "./design-authority-core.mjs";
 
 const ROOT = process.cwd();
 const mode = process.argv[2] || "all";
@@ -499,15 +500,30 @@ async function checkFrontendTokens() {
     }
   }
 
-  // Component geometry is defined in the shared token authority.  Unlike the
-  // legacy broad scanner, this contract does not permit undocumented literals.
+  // Reuse the PostCSS-based design authority parser rather than a second
+  // legal-document-specific dimension regex. This also catches nested values.
   const legalStyleFile = path.join(ROOT, "apps/frontend/src/components/LegalDocumentShell.css");
   const legalStyles = await fs.readFile(legalStyleFile, "utf8");
-  for (const match of legalStyles.matchAll(/(?:^|[;{\\s])(?:width|height|min-width|max-width|min-height|max-height|margin|padding)(?:-[a-z-]+)?\\s*:\\s*([^;]+);/gm)) {
-    const value = match[1].trim();
-    if (/\\b\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|dvh|dvw)\\b/.test(value)) {
-      report(legalStyleFile, legalStyles, match.index, "Legal-document geometry must use shared design tokens, not literal dimensions.");
-    }
+  const tokenSourceForAudit = await fs.readFile(
+    path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8",
+  );
+  const designAudit = analyzeDesignSources(
+    {
+      "apps/frontend/src/styles/tokens.css": tokenSourceForAudit,
+      "apps/frontend/src/components/LegalDocumentShell.css": legalStyles,
+    },
+    { authorities: new Set(["apps/frontend/src/styles/tokens.css"]) },
+  );
+  for (const finding of designAudit.findings) {
+    if (
+      finding.type !== "magic-number" &&
+      finding.type !== "unauthorized-definition" &&
+      finding.type !== "cyclic-token"
+    ) continue;
+    if (!finding.loc.startsWith("apps/frontend/src/components/LegalDocumentShell.css:")) continue;
+    const line = Number(finding.loc.split(":").at(-1)) || 1;
+    const offset = legalStyles.split("\n").slice(0, line - 1).join("\n").length + (line > 1 ? 1 : 0);
+    report(legalStyleFile, legalStyles, offset, "Legal document design authority: " + finding.type + " (" + finding.detail + ").");
   }
 
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
