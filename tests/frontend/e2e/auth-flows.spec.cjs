@@ -120,14 +120,23 @@ test.describe("Authentication flows on active surfaces", () => {
     );
     expect(response.status()).toBe(200);
     const publication = await response.json();
-    expect(publication.content).toBeTruthy();
+    expect(publication).toMatchObject({
+      documentType: "terms",
+      language: "en",
+      version: expect.any(String),
+      legacyWithoutSnapshot: expect.any(Boolean),
+    });
+    if (publication.content === null) {
+      expect(publication.legacyWithoutSnapshot).toBe(true);
+    } else {
+      expect(publication.content).toEqual(expect.any(Object));
+      expect(Object.keys(publication.content).some((key) => /^section\\d+$|^intro$/i.test(key))).toBe(true);
+    }
     const shell = page.locator('[data-component="legal-document-shell"]');
     await expect(shell).toBeVisible();
     await expect(shell.locator(".section").first()).toBeVisible();
     await expect(shell.getByText(/do not render control labels/i)).toHaveCount(0);
-    await expect(shell.locator(".legal-document-shell__content")).toHaveCSS(
-      "overflow-y", "auto",
-    );
+    await expect(shell.locator(".custom-scrollbar__viewport")).toHaveCSS("overflow-y", "auto");
   });
 
   test("loads production font families and keeps login chrome vertically ordered", async ({ page }) => {
