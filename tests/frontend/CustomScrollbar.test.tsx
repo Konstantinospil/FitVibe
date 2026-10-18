@@ -86,6 +86,29 @@ describe("CustomScrollbar", () => {
     expect(viewport.scrollTop).toBe(0);
   });
 
+  it("updates the layout when content starts and stops overflowing", () => {
+    const { viewport, track, container } = setup(200, 200);
+    expect(container.firstElementChild).toHaveAttribute("data-scrollable", "false");
+    setDimension(viewport, "scrollHeight", 600);
+    act(() => notifyResize?.());
+    expect(container.firstElementChild).toHaveAttribute("data-scrollable", "true");
+    expect(track).toHaveAttribute("data-scrollable", "true");
+    setDimension(viewport, "scrollHeight", 200);
+    act(() => notifyResize?.());
+    expect(container.firstElementChild).toHaveAttribute("data-scrollable", "false");
+    expect(track).toHaveAttribute("data-scrollable", "false");
+  });
+
+  it("recalculates overflow when the viewport is resized", () => {
+    const { viewport, container } = setup(600, 200);
+    setDimension(viewport, "clientHeight", 700);
+    act(() => notifyResize?.());
+    expect(container.firstElementChild).toHaveAttribute("data-scrollable", "false");
+    setDimension(viewport, "clientHeight", 300);
+    act(() => notifyResize?.());
+    expect(container.firstElementChild).toHaveAttribute("data-scrollable", "true");
+  });
+
   it("updates the accessible position when the viewport scrolls", () => {
     const { scrollbar, viewport, track } = setup();
     expect(track.dataset.scrollable).toBe("true");
