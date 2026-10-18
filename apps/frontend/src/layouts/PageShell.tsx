@@ -44,7 +44,11 @@ export const PageShell: React.FC<PageShellProps> = ({
             aria-label={footerCollapsed ? t("footer.expand") : t("footer.collapse")}
             onClick={() => setFooterCollapsed((collapsed) => !collapsed)}
           >
-            {footerCollapsed ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+            {footerCollapsed ? (
+              <ChevronUp aria-hidden="true" />
+            ) : (
+              <ChevronDown aria-hidden="true" />
+            )}
           </button>
           <div id={footerId} data-slot="footer-collapsible" hidden={footerCollapsed}>
             {footer}
