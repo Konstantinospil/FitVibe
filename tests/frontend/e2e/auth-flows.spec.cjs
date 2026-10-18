@@ -142,7 +142,20 @@ test.describe("Authentication flows on active surfaces", () => {
   test("loads production font families and keeps login chrome vertically ordered", async ({ page }) => {
     await page.goto("/login");
     await waitForApp(page);
-    const geometry = await page.locator('[data-component="page-shell"]').evaluate((shell) => {
+    const shell = page.locator('[data-component="page-shell"]');
+    try {
+      await expect(shell).toBeVisible();
+    } catch (error) {
+      const state = await page.evaluate(() => ({
+        pathname: window.location.pathname,
+        loading: Boolean(document.querySelector("#login-shell")),
+        pageShell: Boolean(document.querySelector('[data-component="page-shell"]')),
+        errorBoundary: Boolean(document.querySelector('[role="alert"]')),
+      }));
+      console.error("Login layout rendering state:", JSON.stringify(state));
+      throw error;
+    }
+    const geometry = await shell.evaluate((shell) => {
       const header = shell.querySelector("header");
       const main = shell.querySelector('[data-slot="page-shell-main"]');
       const footer = shell.querySelector("footer");
