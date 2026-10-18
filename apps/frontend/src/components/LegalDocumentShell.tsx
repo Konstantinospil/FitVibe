@@ -25,7 +25,7 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
     <section className="legal-document-shell" data-component="legal-document-shell">
       <header className="legal-document-shell__header">
         <h1 className="legal-document-shell__title">{title}</h1>
-  
+
         <div className="legal-document-shell__metadata">
           {effectiveDate ? (
             <span>
@@ -38,12 +38,12 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
             </span>
           ) : null}
         </div>
-  
+
         {legacyNotice ? (
           <div className="legal-document-shell__legacy-note">{legacyNotice}</div>
         ) : null}
       </header>
-  
+
       <div className="legal-document-shell__viewport">
         <CustomScrollbar
           className="legal-document-shell__scroll"
@@ -53,7 +53,7 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
           {children}
         </CustomScrollbar>
       </div>
-  
+
       {footerAction ? (
         <footer className="legal-document-shell__footer">{footerAction}</footer>
       ) : null}
