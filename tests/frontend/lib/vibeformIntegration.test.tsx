@@ -43,6 +43,15 @@ describe("Vibeform API", () => {
     expect(apiClient.get).toHaveBeenCalledWith("/api/v1/vibeforms/me");
   });
 
+  it.each([
+    ["absent response", undefined],
+    ["missing preferences", { metrics: profile.metrics }],
+    ["missing metrics", { preferences: profile.preferences }],
+    ["missing metric value", { ...profile, metrics: { ...profile.metrics, strength: undefined } }],
+  ])("rejects %s rather than rendering an invalid profile", async (_name, body) => {
+    vi.spyOn(apiClient, "get").mockResolvedValue({ data: body });
+    await expect(getMyVibeformProfile()).rejects.toThrow("Invalid Vibeform profile response");
+  });
   it("updates preferences without sending calculated metrics", async () => {
     vi.spyOn(apiClient, "put").mockResolvedValue({ data: profile.preferences });
 
