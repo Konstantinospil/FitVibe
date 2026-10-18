@@ -1171,5 +1171,9 @@
       "conflict": "Dieser Plan wurde zwischenzeitlich geändert. Bitte die aktuelle Version laden, bevor du ihn erneut bearbeitest.",
       "activate": "Der Trainingsplan konnte nicht aktiviert werden."
     }
+  },
+  "scrollbar": {
+    "pageLabel": "Seiteninhalt",
+    "dialogLabel": "Dialoginhalt"
   }
 }
