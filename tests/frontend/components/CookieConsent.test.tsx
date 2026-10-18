@@ -87,4 +87,92 @@ describe("Cookie consent preferences", () => {
     const values = screen.getAllByRole("switch");
     expect(values.map(v => (v as HTMLInputElement).checked)).toEqual([true,true,false,true]);
   });
+
+  it("does not render controls while consent status is loading", () => {
+    consent.mockReturnValue({
+      consentStatus: null,
+      isLoading: true,
+      error: null,
+      savePreferences: save,
+      refreshStatus: vi.fn(),
+    });
+    mount(<CookieConsent />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+  });
+
+  it.each(["/terms", "/privacy", "/cookie"])(
+    "does not obstruct the legal document at %s",
+    (route) => {
+      render(
+        <MemoryRouter initialEntries={[route]}>
+          <CookieConsent />
+        </MemoryRouter>,
+      );
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    },
+  );
+
+  it("preserves saved decisions when reopening preferences", () => {
+    consent.mockReturnValue({
+      consentStatus: {
+        hasConsent: true,
+        consent: {
+          essential: true,
+          preferences: false,
+          analytics: true,
+          marketing: false,
+          version: "v1",
+          updatedAt: "2026-10-18",
+        },
+      },
+      isLoading: false,
+      error: null,
+      savePreferences: save,
+      refreshStatus: vi.fn(),
+    });
+    mount(<CookiePreferences />);
+    const toggles = screen.getAllByRole("switch");
+    expect(toggles.map((toggle) => (toggle as HTMLInputElement).checked)).toEqual([
+      true,
+      false,
+      true,
+      false,
+    ]);
+    expect(screen.queryByRole("button", { name: "cookie.actions.closeReject" })).not.toBeInTheDocument();
+  });
+
+  it("records settings as the source of an updated category selection", async () => {
+    mount(<CookiePreferences />);
+    fireEvent.click(screen.getByRole("switch", { name: "cookie.categories.marketing.label" }));
+    fireEvent.click(screen.getByRole("button", { name: "cookie.actions.savePreferences" }));
+    await waitFor(() =>
+      expect(save).toHaveBeenCalledWith(
+        { essential: true, preferences: false, analytics: false, marketing: true },
+        "settings",
+      ),
+    );
+  });
+
+  it("records policy-page rejection separately from first-visit rejection", async () => {
+    mount(<CookiePreferences source="policy" />);
+    fireEvent.click(screen.getByRole("button", { name: "cookie.actions.rejectAll" }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES, "policy"));
+  });
+
+  it("shows an error after a failed save and allows the user to retry", async () => {
+    save.mockRejectedValueOnce(new Error("offline")).mockResolvedValueOnce(undefined);
+    mount(<CookiePreferences />);
+    fireEvent.click(screen.getByRole("button", { name: "cookie.actions.savePreferences" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("cookie.actions.saveError");
+    fireEvent.click(screen.getByRole("button", { name: "cookie.actions.savePreferences" }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+  });
+
+  it("uses the same shared switch for each category", () => {
+    mount(<CookiePreferences />);
+    expect(document.querySelectorAll('[data-component="switch"]')).toHaveLength(4);
+    expect(screen.getByRole("switch", { name: "cookie.categories.essential.label" })).toBeDisabled();
+  });
 });
