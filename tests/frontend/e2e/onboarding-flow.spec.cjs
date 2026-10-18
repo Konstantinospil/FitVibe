@@ -130,11 +130,12 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   await expect(page.getByAltText("2FA QR Code")).toBeVisible();
   const enableMutation = observeMutation(page, "POST", "/api/v1/auth/2fa/verify");
   await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
-  await page.getByRole("button", { name: /verify and enable/i }).click();
-  await page.waitForResponse((response) =>
+  const enableResponse = page.waitForResponse((response) =>
     new URL(response.url()).pathname === "/api/v1/auth/2fa/verify" &&
     response.request().method() === "POST",
   );
+  await page.getByRole("button", { name: /verify and enable/i }).click();
+  expect((await enableResponse).status()).toBe(200);
   enableMutation.assertExactlyOnce(200);
   enableMutation.stop();
   await expect(page.getByText(/2fa is currently enabled/i)).toBeVisible();
