@@ -132,7 +132,9 @@
     "termsAriaLabel": "View Terms and Conditions",
     "privacyAriaLabel": "View Privacy Policy",
     "impressumAriaLabel": "View Impressum",
-    "contactAriaLabel": "Contact us"
+    "contactAriaLabel": "Contact us",
+    "expand": "Expand footer",
+    "collapse": "Collapse footer"
   },
   "terms": {
     "eyebrow": "Legal",
