@@ -10,6 +10,13 @@
   column-gap: var(--scrollbar-gap);
 }
 .page-shell-content-scroll { flex: 1; min-height: 0; }
+/* The page content fills its own scroll viewport; overflow scrolls inside the
+   shell's main region rather than beneath the persistent header and footer. */
+.page-shell-content-scroll > .custom-scrollbar__viewport > .custom-scrollbar__inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 .custom-scrollbar__viewport {
   min-width: 0;
   min-height: 0;
