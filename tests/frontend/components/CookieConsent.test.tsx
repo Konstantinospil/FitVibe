@@ -44,7 +44,7 @@ describe("Cookie consent preferences", () => {
     await waitFor(() => expect(save).toHaveBeenCalledWith(ACCEPT_COOKIES, "banner"));
     await waitFor(() => expect(screen.getByRole("button", { name: "cookie.actions.rejectAll" })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.rejectAll" }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES, "banner"));
   });
 
   it("persists independently selected optional categories", async () => {
