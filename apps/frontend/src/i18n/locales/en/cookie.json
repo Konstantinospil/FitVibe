@@ -27,7 +27,9 @@
     "acceptAll": "Accept All",
     "rejectAll": "Reject All",
     "savePreferences": "Save Preferences",
-    "saveError": "Failed to save cookie preferences. Please try again."
+    "saveError": "Failed to save cookie preferences. Please try again.",
+    "closeReject": "Close and reject optional cookies",
+    "managePreferences": "Manage cookie preferences"
   },
   "policy": {
     "title": "Cookie Policy",
