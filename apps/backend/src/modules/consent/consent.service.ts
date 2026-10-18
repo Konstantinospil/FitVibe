@@ -40,7 +40,6 @@ export async function getConsentStatus(clientIdentifier: string): Promise<Cookie
       analytics: consent.analyticsCookies,
       marketing: consent.marketingCookies,
       version: consent.consentVersion,
-      source,
       updatedAt: consent.lastUpdatedAt,
     },
   };
@@ -94,6 +93,7 @@ export async function saveCookiePreferences(
         marketing: consent.marketingCookies,
       },
       version: consent.consentVersion,
+      source,
     },
   });
 
