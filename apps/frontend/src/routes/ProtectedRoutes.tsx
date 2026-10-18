@@ -26,6 +26,7 @@ const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
 const fallback = (
   <div
     className="flex h-screen w-full items-center justify-center text-primary-500"
+    data-ssr-loading-fallback="true"
     role="status"
     aria-live="polite"
   >
