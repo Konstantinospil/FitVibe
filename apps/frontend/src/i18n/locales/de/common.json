@@ -132,7 +132,9 @@
     "termsAriaLabel": "Allgemeine Geschäftsbedingungen anzeigen",
     "privacyAriaLabel": "Datenschutzerklärung anzeigen",
     "impressumAriaLabel": "Impressum anzeigen",
-    "contactAriaLabel": "Kontaktieren Sie uns"
+    "contactAriaLabel": "Kontaktieren Sie uns",
+    "expand": "Fußzeile einblenden",
+    "collapse": "Fußzeile einklappen"
   },
   "terms": {
     "eyebrow": "Rechtliches",
