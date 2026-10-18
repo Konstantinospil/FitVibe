@@ -63,6 +63,7 @@
   --legal-document-max-width: var(--modal-width-lg);
   --legal-document-max-height: calc(100dvh - var(--space-3xl));
   --legal-document-mobile-max-height: calc(100dvh - var(--space-lg));
+  --layer-consent: 1000;
   --textarea-min-height: 10rem;
   --control-height-sm: 34px;
   --control-height-md: 40px;
