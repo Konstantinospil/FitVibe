@@ -35,12 +35,6 @@ const DUMMY_PASSWORD_HASH = bcrypt.hashSync("fitvibe-placeholder-password", 12);
 const PENDING_2FA_TTL_MS = 30 * 60 * 1000;
 const SECOND_FACTOR_COOLDOWN_MS = 5 * 60 * 1000;
 
-function isValidUUID(value: string | null): boolean {
-  return Boolean(
-    value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value),
-  );
-}
-
 function buildOpaqueChallenge(): { requires2FA: true; pendingSessionId: string } {
   return {
     requires2FA: true,
