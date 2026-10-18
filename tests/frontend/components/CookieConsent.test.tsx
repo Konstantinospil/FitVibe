@@ -35,13 +35,13 @@ describe("Cookie consent preferences", () => {
   it("X persists the exact reject-all selection", async () => {
     mount(<CookieConsent />);
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.closeReject" }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES, "banner"));
   });
 
   it("accept-all and reject-all persist immediately", async () => {
     mount(<CookieConsent />);
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.acceptAll" }));
-    await waitFor(() => expect(save).toHaveBeenCalledWith(ACCEPT_COOKIES));
+    await waitFor(() => expect(save).toHaveBeenCalledWith(ACCEPT_COOKIES, "banner"));
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.rejectAll" }));
     await waitFor(() => expect(save).toHaveBeenCalledWith(REJECT_COOKIES));
   });
@@ -53,7 +53,7 @@ describe("Cookie consent preferences", () => {
     fireEvent.click(screen.getByRole("button", { name: "cookie.actions.savePreferences" }));
     await waitFor(() => expect(save).toHaveBeenCalledWith({
       essential: true, preferences: true, analytics: true, marketing: false,
-    }));
+    }, "banner"));
   });
 
   it("keeps consent interface accessible when persistence fails", async () => {
