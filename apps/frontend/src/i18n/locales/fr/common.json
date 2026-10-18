@@ -707,7 +707,10 @@
       "confirmDisableMessage": "Voulez-vous vraiment désactiver la 2FA ? Votre compte sera moins sécurisé.",
       "confirmDisable": "Oui, désactiver la 2FA",
       "backupCodes": "Codes de secours",
-      "backupCodesHelp": "Conservez ces codes en lieu sûr. Vous pourrez les utiliser si vous perdez votre appareil d'authentification."
+      "backupCodesHelp": "Conservez ces codes en lieu sûr. Vous pourrez les utiliser si vous perdez votre appareil d'authentification.",
+      "revealBackupCodes": "Afficher les codes de secours",
+      "hideBackupCodes": "Masquer les codes de secours",
+      "finishBackupCodes": "Terminé"
     },
     "account": {
       "title": "Zone de danger",
