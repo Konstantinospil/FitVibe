@@ -4,7 +4,7 @@
 
 export interface CookieConsent {
   id: string;
-  ipAddress: string;
+  clientKey: string;
   consentVersion: string;
   legalVersionId: string | null;
   essentialCookies: boolean;
@@ -35,7 +35,6 @@ export interface CookieConsentRow {
 }
 
 export interface CreateCookieConsentInput {
-  ipAddress: string;
   consentVersion: string;
   legalVersionId: string;
   essentialCookies: boolean;
