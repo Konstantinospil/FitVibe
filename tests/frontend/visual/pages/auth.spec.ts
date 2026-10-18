@@ -28,12 +28,7 @@ test.describe("Auth Page Visual Tests", () => {
     await waitForAppReady(page);
     await expect(page.getByRole("dialog", { name: /cookie/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /reject all/i })).toBeVisible();
-    const screenshotPath = testInfo.outputPath("first-visit-login-cookie-popup.png");
-    await page.screenshot({ path: screenshotPath, fullPage: true, animations: "disabled" });
-    await testInfo.attach("first-visit-login-cookie-popup", {
-      path: screenshotPath,
-      contentType: "image/png",
-    });
+    await capturePageScreenshot(page, testInfo, "first-visit-login-cookie-popup", { waitFor: '[role="dialog"]' });
   });
 
 });
