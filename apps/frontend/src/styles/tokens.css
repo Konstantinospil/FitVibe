@@ -55,6 +55,8 @@
   --space-2xl: 2.5rem;
   --space-3xl: 3.5rem;
 
+  --cookie-dialog-layer: 1000;
+
   /* Component dimension authority */
   --layer-consent: 1000;
   --modal-width-sm: 28rem;
