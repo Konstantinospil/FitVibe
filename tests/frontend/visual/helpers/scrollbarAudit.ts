@@ -41,7 +41,15 @@ export async function assertStandardScrollbars(page: Page): Promise<void> {
       } else if (verticallyScrollable) {
         const track = shell!.querySelector<HTMLElement>(":scope > .custom-scrollbar__track");
         if (track?.dataset.scrollable !== "true") {
-          findings.push(`${describe(element)}: canonical track does not reflect overflow`);
+          const details = [
+            `scrollHeight=${element.scrollHeight}`,
+            `clientHeight=${element.clientHeight}`,
+            `scrollTop=${element.scrollTop}`,
+            `trackScrollable=${track?.dataset.scrollable ?? "missing"}`,
+            `shellScrollable=${shell?.getAttribute("data-scrollable") ?? "missing"}`,
+            `trackVisible=${track ? getComputedStyle(track).visibility : "missing"}`,
+          ].join(", ");
+          findings.push(`${describe(element)}: canonical track does not reflect overflow (${details})`);
         }
       }
     }
