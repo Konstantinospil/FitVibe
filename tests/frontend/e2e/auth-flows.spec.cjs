@@ -151,6 +151,16 @@ test.describe("Authentication flows on active surfaces", () => {
         loading: Boolean(document.querySelector("#login-shell")),
         pageShell: Boolean(document.querySelector('[data-component="page-shell"]')),
         errorBoundary: Boolean(document.querySelector('[data-component="error-boundary"]')),
+        rootMarkup: document.getElementById("root")?.outerHTML.slice(0, 2500) ?? null,
+        formAncestors: (() => {
+          const form = document.querySelector('form input[name="email"]')?.closest("form");
+          const names = [];
+          for (let node = form; node && names.length < 12; node = node.parentElement) {
+            names.push({ tag: node.tagName, id: node.id, component: node.getAttribute("data-component"), className: typeof node.className === "string" ? node.className : null });
+          }
+          return names;
+        })(),
+        scripts: Array.from(document.scripts, (script) => script.src).filter(Boolean),
       }));
       console.error("Login layout rendering state:", JSON.stringify(state));
       throw error;
