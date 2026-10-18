@@ -91,4 +91,3 @@ export async function upsertConsent(
 
   return toCookieConsent(row);
 }
-
