@@ -1,63 +1,58 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { X } from "lucide-react";
+import { Button, IconButton, Switch } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
-import { Button, Switch } from "@fitvibe/ui";
 import { useCookieConsent, type CookieConsentState } from "../hooks/useCookieConsent";
+import "./CookieConsent.css";
 
-const initial: CookieConsentState = {
-  essential: true,
-  preferences: false,
-  analytics: false,
-  marketing: false,
-};
+export const REJECT_COOKIES: CookieConsentState = { essential: true, preferences: false, analytics: false, marketing: false };
+export const ACCEPT_COOKIES: CookieConsentState = { essential: true, preferences: true, analytics: true, marketing: true };
+const categories = ["essential", "preferences", "analytics", "marketing"] as const;
 
-export default function CookieConsent() {
+export function CookiePreferences({ initial = false }: { initial?: boolean }) {
   const { t } = useTranslation();
   const { consentStatus, isLoading, savePreferences } = useCookieConsent();
-  const [preferences, setPreferences] = useState<CookieConsentState>(initial);
+  const [draft, setDraft] = useState<CookieConsentState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
-  if (isLoading || consentStatus?.hasConsent) return null;
-
-  const persist = async (choice: CookieConsentState) => {
-    setSaving(true);
-    setError(false);
-    try {
-      await savePreferences({ ...choice, essential: true });
-    } catch {
-      setError(true);
-    } finally {
-      setSaving(false);
-    }
+  const current = consentStatus?.consent;
+  const selected = draft ?? {
+    essential: true,
+    preferences: current?.preferences ?? false,
+    analytics: current?.analytics ?? false,
+    marketing: current?.marketing ?? false,
   };
-  const categories = (["essential", "preferences", "analytics", "marketing"] as const);
+  if (isLoading || (initial && consentStatus?.hasConsent)) return null;
+  const persist = async (choice: CookieConsentState) => {
+    setSaving(true); setError(false);
+    try { await savePreferences(choice); setDraft(null); }
+    catch { setError(true); }
+    finally { setSaving(false); }
+  };
   return (
-    <div className="cookie-consent-backdrop">
-      <section className="cookie-consent-dialog" role="dialog" aria-modal="true" aria-labelledby="cookie-consent-title" aria-describedby="cookie-consent-intro">
-        <h2 id="cookie-consent-title">{t("cookie.title", { defaultValue: "Cookie preferences" })}</h2>
-        <p id="cookie-consent-intro">{t("cookie.intro", { defaultValue: "Choose which optional cookies FitVibe may use. Essential cookies are always enabled." })}</p>
-        <div className="cookie-consent-categories">
-          {categories.map(category => (
-            <div className="cookie-consent-row" key={category}>
-              <div>
-                <h3>{t(`cookie.categories.${category}.label`, { defaultValue: category })}</h3>
-                <p>{t(`cookie.categories.${category}.description`, { defaultValue: "" })}</p>
-              </div>
-              <Switch
-                aria-label={t(`cookie.categories.${category}.label`, { defaultValue: category })}
-                checked={preferences[category]}
-                disabled={saving || category === "essential"}
-                onChange={event => setPreferences(previous => ({ ...previous, [category]: event.target.checked }))}
-              />
-            </div>
-          ))}
-        </div>
-        {error && <p role="alert">{t("cookie.actions.saveError", { defaultValue: "Could not save cookie preferences. Please try again." })}</p>}
-        <div className="cookie-consent-actions">
-          <Button disabled={saving} variant="secondary" onClick={() => void persist(initial)}>{t("cookie.actions.rejectAll", { defaultValue: "Reject optional" })}</Button>
-          <Button disabled={saving} variant="secondary" onClick={() => void persist(preferences)}>{t("cookie.actions.save", { defaultValue: "Save selection" })}</Button>
-          <Button disabled={saving} onClick={() => void persist({ essential: true, preferences: true, analytics: true, marketing: true })}>{t("cookie.actions.acceptAll", { defaultValue: "Accept all" })}</Button>
-        </div>
-      </section>
-    </div>
+    <section className="cookie-consent-dialog" role={initial ? "dialog" : "region"} aria-modal={initial ? true : undefined} aria-labelledby="cookie-consent-title">
+      <div className="cookie-consent-heading">
+        <h2 id="cookie-consent-title">{t("cookie.title")}</h2>
+        {initial ? <IconButton label={t("cookie.actions.closeReject")} icon={<X aria-hidden="true" />} disabled={saving} onClick={() => void persist(REJECT_COOKIES)} /> : null}
+      </div>
+      <p>{t("cookie.intro")}</p>
+      <div className="cookie-consent-categories">
+        {categories.map(key => (
+          <div key={key} className="cookie-consent-row">
+            <div><h3>{t(`cookie.categories.${key}.label`)}</h3><p>{t(`cookie.categories.${key}.description`)}</p></div>
+            <Switch aria-label={t(`cookie.categories.${key}.label`)} checked={selected[key]} disabled={saving || key === "essential"} onChange={e => setDraft({ ...selected, [key]: e.target.checked })} />
+          </div>
+        ))}
+      </div>
+      {error ? <p role="alert">{t("cookie.actions.saveError")}</p> : null}
+      <div className="cookie-consent-actions">
+        <Button variant="secondary" disabled={saving} onClick={() => void persist(REJECT_COOKIES)}>{t("cookie.actions.rejectAll")}</Button>
+        <Button disabled={saving} onClick={() => void persist(ACCEPT_COOKIES)}>{t("cookie.actions.acceptAll")}</Button>
+        <Button variant="secondary" disabled={saving} onClick={() => void persist(selected)}>{t("cookie.actions.savePreferences")}</Button>
+      </div>
+      <Link to="/cookie">{t("cookie.policy.link")}</Link>
+    </section>
   );
 }
+export default function CookieConsent() { return <div className="cookie-consent-backdrop"><CookiePreferences initial /></div>; }
