@@ -1171,5 +1171,9 @@
       "conflict": "Ce plan a été modifié ailleurs. Chargez la dernière version avant de le modifier à nouveau.",
       "activate": "Impossible d’activer le programme d’entraînement."
     }
+  },
+  "scrollbar": {
+    "pageLabel": "Contenu de la page",
+    "dialogLabel": "Contenu de la boîte de dialogue"
   }
 }
