@@ -12,6 +12,7 @@ const TEST_USER = {
 };
 
 let seededSessionCookies = null;
+let seededConsentCookies = null;
 
 async function installBrowserState(page, { authenticated = false } = {}) {
   await page.addInitScript(
@@ -72,6 +73,10 @@ async function ensureSeededSession(page) {
 }
 
 async function ensureEssentialCookieConsent(page) {
+  if (seededConsentCookies) {
+    await page.context().addCookies(seededConsentCookies);
+    return;
+  }
   const request = page.context().request;
   const statusUrl = `${APPLICATION_ORIGIN}/api/v1/consent/cookie-status`;
   const previous = await request.get(statusUrl);
@@ -80,7 +85,11 @@ async function ensureEssentialCookieConsent(page) {
   }
   const previousBody = await previous.json();
   if (previousBody.data?.hasConsent) {
-    return;
+    seededConsentCookies = (await page.context().cookies(APPLICATION_ORIGIN)).filter(
+      (cookie) => cookie.name === "fitvibe_consent_client",
+    );
+    if (seededConsentCookies.length > 0) return;
+    throw new Error("E2E consent status was present without a browser consent cookie");
   }
 
   const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
@@ -114,6 +123,12 @@ async function ensureEssentialCookieConsent(page) {
     result.consent?.marketing !== false
   ) {
     throw new Error("E2E browser consent was not persisted as essential-only");
+  }
+  seededConsentCookies = (await page.context().cookies(APPLICATION_ORIGIN)).filter(
+    (cookie) => cookie.name === "fitvibe_consent_client",
+  );
+  if (seededConsentCookies.length !== 1) {
+    throw new Error("E2E consent API did not issue exactly one browser identity cookie");
   }
 }
 
