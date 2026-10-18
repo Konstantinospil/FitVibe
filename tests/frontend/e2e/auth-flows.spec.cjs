@@ -150,7 +150,7 @@ test.describe("Authentication flows on active surfaces", () => {
         pathname: window.location.pathname,
         loading: Boolean(document.querySelector("#login-shell")),
         pageShell: Boolean(document.querySelector('[data-component="page-shell"]')),
-        errorBoundary: Boolean(document.querySelector('[role="alert"]')),
+        errorBoundary: Boolean(document.querySelector('[data-component="error-boundary"]')),
       }));
       console.error("Login layout rendering state:", JSON.stringify(state));
       throw error;
