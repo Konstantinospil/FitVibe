@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PublishedLegalDocument from "../../src/components/PublishedLegalDocument";
 
@@ -134,24 +134,46 @@ describe("PublishedLegalDocument", () => {
     expect(screen.getByTestId("effective-date").textContent).toBeTruthy();
     expect(screen.getByText("Introduction")).toBeInTheDocument();
     expect(screen.queryByText("Legal")).not.toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("true")).toBeInTheDocument();
+    expect(screen.queryByText("7")).not.toBeInTheDocument();
+    expect(screen.queryByText("true")).not.toBeInTheDocument();
     expect(screen.queryByText("Symbol(ignored)")).not.toBeInTheDocument();
-    expect(screen.getByText("Titled").tagName).toBe("STRONG");
-    expect(screen.getByText("Body")).toBeInTheDocument();
-    expect(screen.getByText("Title only")).toBeInTheDocument();
-    expect(screen.getByText("Content only")).toBeInTheDocument();
-    expect(screen.getByText("Nested object value")).toBeInTheDocument();
-
-    const table = screen.getByRole("table");
-    expect(within(table).getByText("Column A")).toBeInTheDocument();
-    expect(within(table).getByText("A1")).toBeInTheDocument();
-    expect(within(table).getByText("single cell")).toBeInTheDocument();
+    expect(screen.queryByText("Titled")).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent);
     expect(headings.indexOf("Section 2")).toBeLessThan(headings.indexOf("Section 10"));
     expect(screen.getByRole("button", { name: "Footer action" })).toBeInTheDocument();
   });
+
+
+  it.each(["terms", "privacy", "cookie"] as const)(
+    "never renders UI translation keys as %s legal content",
+    async (documentType) => {
+      getPublishedLegalDocument.mockResolvedValue(
+        published({
+          title: "Document",
+          intro: "Authoritative introduction",
+          section1: { title: "Legal section", content: "Authoritative body" },
+          actions: { acceptAll: "Accept all", saveError: "Save failed" },
+          consent: { revoke: "Revoke consent" },
+          categories: { marketing: { label: "Marketing" } },
+          policy: { link: "Cookie Policy link" },
+          revokeConfirm: { message: "Sign out message" },
+          enabled: "Enabled status",
+          loading: "Loading status",
+        }),
+      );
+      render(<PublishedLegalDocument documentType={documentType} title="Fallback" />);
+      expect(await screen.findByText("Authoritative body")).toBeInTheDocument();
+      expect(screen.getByText("Authoritative introduction")).toBeInTheDocument();
+      for (const leaked of [
+        "Accept all", "Save failed", "Revoke consent", "Marketing",
+        "Cookie Policy link", "Sign out message", "Enabled status", "Loading status",
+      ]) {
+        expect(screen.queryByText(leaked)).not.toBeInTheDocument();
+      }
+    },
+  );
 
   it("falls back to retained localized legacy content and metadata", async () => {
     i18nState.language = "de-DE";
