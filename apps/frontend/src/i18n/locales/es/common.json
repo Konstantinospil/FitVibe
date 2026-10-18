@@ -46,12 +46,12 @@
   },
   "home": {
     "eyebrow": "FitVibe",
-    "title": "Entrena más inteligente. Comparte progreso. Celebra la consistencia.",
+    "title": "Entrena de forma más inteligente. Comparte tu progreso. Celebra la constancia.",
     "description": "Planifica, registra y analiza tu entrenamiento con detalles listos para entrenadores. Rastrea rachas, compara bloques y detecta tendencias de recuperación sin complicaciones.",
-    "subtitleOnline": "Conexión API saludable — estado: {{status}}.",
-    "subtitleOnlineFallback": "Conexión API saludable — listo cuando lo estés.",
-    "subtitleOffline": "Trabajando sin conexión. Tus cambios se sincronizarán cuando el servidor regrese.",
-    "subtitleChecking": "Verificando salud de la API y calentando cachés…",
+    "subtitleOnline": "La conexión con la API funciona correctamente — estado: {{status}}.",
+    "subtitleOnlineFallback": "La conexión con la API funciona correctamente — todo listo.",
+    "subtitleOffline": "Estás trabajando sin conexión. Tus cambios se sincronizarán cuando el servidor vuelva a estar disponible.",
+    "subtitleChecking": "Comprobando el estado de la API y preparando las cachés…",
     "ctaPrimary": "Únete a la beta privada",
     "ctaSecondary": "Habla con el equipo",
     "chartTitle": "Tendencia de consistencia",
@@ -62,7 +62,7 @@
   "profile": {
     "eyebrow": "Perfil de atleta",
     "title": "Preferencias, privacidad y objetivos de rendimiento.",
-    "description": "Establece visibilidad predeterminada, unidades preferidas y objetivos de mejores personales para que cada sesión compartida cuente tu historia.",
+    "description": "Define la visibilidad predeterminada, las unidades preferidas y tus objetivos de marcas personales para que cada sesión compartida refleje tu progreso.",
     "edit": "Editar perfil",
     "sections": {
       "visibility": {
@@ -75,7 +75,7 @@
       },
       "achievements": {
         "title": "Logros destacados",
-        "description": "Sentadilla trasera 180 kg • Press banca 115 kg • Peso muerto 210 kg • Clasificado para el Maratón de Boston."
+        "description": "Sentadilla trasera 180 kg • Press de banca 115 kg • Peso muerto 210 kg • Clasificación para el Maratón de Boston."
       }
     },
     "measurements": {
@@ -152,7 +152,7 @@
     "eyebrow": "Contacto",
     "title": "Contáctanos",
     "description": "Ponte en contacto con el equipo de FitVibe.",
-    "content": "Para consultas, contáctenos en contact@fitvibe.example.com.",
+    "content": "Para cualquier consulta, ponte en contacto con nosotros en contact@fitvibe.example.com.",
     "form": {
       "emailLabel": "Correo electrónico",
       "topicLabel": "Asunto",
@@ -160,13 +160,13 @@
       "emailRequired": "El correo electrónico es obligatorio",
       "topicRequired": "El asunto es obligatorio",
       "messageRequired": "El mensaje es obligatorio",
-      "invalidEmail": "Por favor, ingrese una dirección de correo electrónico válida",
+      "invalidEmail": "Introduce una dirección de correo electrónico válida",
       "submit": "Enviar mensaje",
       "submitting": "Enviando...",
-      "success": "¡Su mensaje ha sido enviado con éxito!",
-      "error": "No se pudo enviar el mensaje. Por favor, inténtelo de nuevo.",
-      "networkError": "No se puede conectar al servidor. Por favor, verifique su conexión e inténtelo de nuevo.",
-      "csrfError": "Error de token de seguridad. Por favor, actualice la página e inténtelo de nuevo. Si el problema persiste, verifique la configuración de cookies de su navegador.",
+      "success": "Tu mensaje se ha enviado correctamente.",
+      "error": "No se pudo enviar el mensaje. Inténtalo de nuevo.",
+      "networkError": "No se puede conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "csrfError": "Error del token de seguridad. Actualiza la página e inténtalo de nuevo. Si el problema continúa, comprueba la configuración de cookies de tu navegador.",
       "characters": "caracteres"
     }
   },
@@ -269,12 +269,12 @@
   },
   "dashboard": {
     "eyebrow": "Pulso de preparación",
-    "title": "Tu centro de comando de entrenamiento",
-    "description": "Monitorea rachas, preparación y cambios en el ranking de un vistazo. Las métricas se actualizan en tiempo real después de la sincronización o registros manuales.",
-    "errorRefresh": "No se pudieron actualizar las analíticas. Mostrando la última instantánea.",
+    "title": "Tu panel de entrenamiento",
+    "description": "Consulta de un vistazo tus rachas, tu nivel de preparación y los cambios en la clasificación. Las métricas se actualizan en tiempo real después de una sincronización o un registro manual.",
+    "errorRefresh": "No se pudieron actualizar los datos de análisis. Se muestra el último estado disponible.",
     "retry": "Reintentar",
-    "personalBests": "Mejores personales",
-    "volumeAggregates": "Agregados de volumen",
+    "personalBests": "Marcas personales",
+    "volumeAggregates": "Volumen acumulado",
     "selectRange": "Seleccionar rango",
     "last4Weeks": "Últimas 4 semanas",
     "last8Weeks": "Últimas 8 semanas",
@@ -284,7 +284,7 @@
     "period": "Período",
     "volume": "Volumen",
     "sessions": "Sesiones",
-    "helperText": "Mostrando hasta 5 períodos para mantener los dashboards compartidos rápidos.",
+    "helperText": "Se muestran hasta 5 períodos para mantener ágiles los paneles compartidos.",
     "vibeformTitle": "Vibeform",
     "vibeformDescription": "Tu Vibeform guardado y tu estado de entrenamiento calculado actualmente.",
     "vibeformAccessibleLabel": "Tu Vibeform actual",
@@ -299,9 +299,9 @@
     "badgesError": "No se pudieron cargar las insignias.",
     "noBadges": "Aún no has obtenido insignias.",
     "fitnessTestTitle": "Prueba de condición física",
-    "fitnessTestDescription": "La puntuación de la prueba todavía no está definida. La investigación permanece separada del Dashboard.",
+    "fitnessTestDescription": "El método de puntuación de la prueba aún no está definido. La investigación correspondiente se mantiene separada del panel.",
     "fitnessTestAction": "Información de la prueba",
-    "fitnessTestPending": "La definición del benchmark está pendiente en el tema de investigación dedicado."
+    "fitnessTestPending": "La definición de los valores de referencia está pendiente en el tema de investigación específico."
   },
   "progress": {
     "eyebrow": "Tendencias e insights",
@@ -581,9 +581,9 @@
     "title": "Configuración",
     "description": "Tus preferencias y configuración de cuenta",
     "profile": {
-      "title": "Configuración de Perfil",
+      "title": "Configuración del perfil",
       "description": "Actualiza la información de tu perfil",
-      "displayName": "Nombre para Mostrar",
+      "displayName": "Nombre para mostrar",
       "displayNamePlaceholder": "Tu nombre para mostrar",
       "alias": "Alias",
       "aliasPlaceholder": "Tu alias público",
@@ -591,16 +591,16 @@
       "email": "Correo Electrónico",
       "emailCannotChange": "El correo electrónico no se puede cambiar",
       "weight": "Peso",
-      "weightUnit": "Unidad de Peso",
+      "weightUnit": "Unidad de peso",
       "weightKg": "Kilogramos (kg)",
       "weightLb": "Libras (lb)",
-      "fitnessLevel": "Nivel de Fitness",
+      "fitnessLevel": "Nivel de condición física",
       "fitnessLevelBeginner": "Principiante",
       "fitnessLevelIntermediate": "Intermedio",
       "fitnessLevelAdvanced": "Avanzado",
       "fitnessLevelElite": "Élite",
-      "trainingFrequency": "Frecuencia de Entrenamiento",
-      "trainingFrequencyRarely": "Raramente",
+      "trainingFrequency": "Frecuencia de entrenamiento",
+      "trainingFrequencyRarely": "Rara vez",
       "trainingFrequency1_2": "1-2 veces por semana",
       "trainingFrequency3_4": "3-4 veces por semana",
       "trainingFrequency5Plus": "5+ veces por semana",
@@ -628,7 +628,7 @@
       "savedMessage": "Tu perfil se ha actualizado correctamente",
       "saveError": "No se pudo guardar el perfil",
       "loadError": "No se pudo cargar el perfil",
-      "fitnessLevelPlaceholder": "Selecciona el nivel de fitness",
+      "fitnessLevelPlaceholder": "Selecciona el nivel de condición física",
       "trainingFrequencyPlaceholder": "Selecciona la frecuencia de entrenamiento"
     },
     "preferences": {
@@ -636,9 +636,9 @@
       "description": "Elige tu idioma y sistema de medida preferidos",
       "units": "Unidades",
       "language": "Idioma",
-      "saveSuccess": "¡Preferencias guardadas exitosamente!",
+      "saveSuccess": "Preferencias guardadas correctamente.",
       "saveError": "Error al guardar preferencias. Por favor, inténtalo de nuevo.",
-      "saveButton": "Guardar Preferencias",
+      "saveButton": "Guardar preferencias",
       "saving": "Guardando...",
       "unitsMetric": "Métrico (kg, km)",
       "unitsImperial": "Imperial (lb, mi)",
@@ -746,7 +746,7 @@
     },
     "measurementDiscovery": {
       "title": "Elegir mediciones",
-      "description": "Busca en el catálogo canónico y elige qué mediciones aparecen en tu perfil.",
+      "description": "Busca en el catálogo central de mediciones y elige cuáles quieres mostrar en tu perfil.",
       "category": "Categoría de medición",
       "search": "Buscar mediciones",
       "searchPlaceholder": "Buscar por nombre",
@@ -1092,7 +1092,7 @@
     "source": {
       "global": "Global",
       "mine": "Mi ejercicio",
-      "public": "Público de la comunidad"
+      "public": "Público"
     },
     "details": {
       "noDescription": "No se ha proporcionado ninguna descripción."
@@ -1104,7 +1104,7 @@
     "creator": {
       "titleCreate": "Crear ejercicio",
       "titleEdit": "Editar ejercicio",
-      "description": "Crea o actualiza un ejercicio propio del atleta.",
+      "description": "Crea o actualiza uno de tus ejercicios.",
       "fields": {
         "name": "Nombre",
         "type": "Tipo",
