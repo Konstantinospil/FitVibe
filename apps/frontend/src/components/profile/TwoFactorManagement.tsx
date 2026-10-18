@@ -52,12 +52,16 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
   };
 
   const confirmSetup = async () => {
-    if (!/^\d{6}$/.test(code)) return;
+    if (!/^\d{6}$/.test(code)) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const result = await verify2FA(code);
-      if (!result.success) throw new Error("Verification failed");
+      if (!result.success) {
+        throw new Error("Verification failed");
+      }
       setSetup(null);
       setCode("");
       await onStatusChanged();
@@ -69,7 +73,9 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
   };
 
   const confirmAction = async () => {
-    if (!action || !password || !code) return;
+    if (!action || !password || !code) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -117,8 +123,12 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
               autoComplete="one-time-code"
             />
           </label>
-          <Button type="button" disabled={busy || !/^\d{6}$/.test(code)}
-            isLoading={busy} onClick={() => void confirmSetup()}>
+          <Button
+            type="button"
+            disabled={busy || !/^\d{6}$/.test(code)}
+            isLoading={busy}
+            onClick={() => void confirmSetup()}
+          >
             {t("settings.security.verifyEnable")}
           </Button>
           <Button type="button" disabled={busy} onClick={clearSensitiveState}>
@@ -142,17 +152,30 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
         <>
           <label className="form-label">
             <span className="form-label-text">{t("settings.security.disablePasswordLabel")}</span>
-            <InputControl type="password" autoComplete="current-password" value={password}
-              onChange={(event) => setPassword(event.target.value)} />
+            <InputControl
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
           </label>
           <label className="form-label">
             <span className="form-label-text">{t("settings.security.enterCode")}</span>
-            <InputControl value={code} autoComplete="one-time-code"
-              onChange={(event) => setCode(event.target.value.trim().toUpperCase())} />
+            <InputControl
+              value={code}
+              autoComplete="one-time-code"
+              onChange={(event) => setCode(event.target.value.trim().toUpperCase())}
+            />
           </label>
-          <Button type="button" disabled={busy || !password || !code} isLoading={busy}
-            onClick={() => void confirmAction()}>
-            {action === "disable" ? t("settings.security.confirmDisable") : t("settings.security.backupCodes")}
+          <Button
+            type="button"
+            disabled={busy || !password || !code}
+            isLoading={busy}
+            onClick={() => void confirmAction()}
+          >
+            {action === "disable"
+              ? t("settings.security.confirmDisable")
+              : t("settings.security.backupCodes")}
           </Button>
           <Button type="button" disabled={busy} onClick={clearSensitiveState}>
             {t("common.cancel")}
@@ -166,8 +189,18 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
           <Button type="button" onClick={() => setRevealCodes((current) => !current)}>
             {revealCodes ? t("common.hide") : t("common.show")}
           </Button>
-          {revealCodes && <ul>{backupCodes.map((item) => <li key={item}><code>{item}</code></li>)}</ul>}
-          <Button type="button" onClick={clearSensitiveState}>{t("common.done")}</Button>
+          {revealCodes && (
+            <ul>
+              {backupCodes.map((item) => (
+                <li key={item}>
+                  <code>{item}</code>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button type="button" onClick={clearSensitiveState}>
+            {t("common.done")}
+          </Button>
         </div>
       )}
     </div>
