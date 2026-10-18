@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";
@@ -12,6 +12,7 @@ const categories = ["essential", "preferences", "analytics", "marketing"] as con
 
 export function CookiePreferences({ initial = false }: { initial?: boolean }) {
   const { t } = useTranslation();
+  const titleId = useId();
   const { pathname } = useLocation();
   const { consentStatus, isLoading, savePreferences } = useCookieConsent();
   const [draft, setDraft] = useState<CookieConsentState | null>(null);
@@ -32,9 +33,9 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
     finally { setSaving(false); }
   };
   return (
-    <div className={initial ? "cookie-consent-backdrop" : "cookie-preferences-inline"}><section className="cookie-consent-dialog" role={initial ? "dialog" : "region"} aria-modal={initial ? true : undefined} aria-labelledby="cookie-consent-title">
+    <div className={initial ? "cookie-consent-backdrop" : "cookie-preferences-inline"}><section className="cookie-consent-dialog" role={initial ? "dialog" : "region"} aria-modal={initial ? true : undefined} aria-labelledby={titleId}>
       <div className="cookie-consent-heading">
-        <h2 id="cookie-consent-title">{t("cookie.title")}</h2>
+        <h2 id={titleId}>{t("cookie.title")}</h2>
         {initial ? <IconButton label={t("cookie.actions.closeReject")} icon={<X aria-hidden="true" />} disabled={saving} onClick={() => void persist(REJECT_COOKIES)} /> : null}
       </div>
       <p>{t("cookie.intro")}</p>
@@ -48,7 +49,7 @@ export function CookiePreferences({ initial = false }: { initial?: boolean }) {
       </div>
       {error ? <p role="alert">{t("cookie.actions.saveError")}</p> : null}
       <div className="cookie-consent-actions">
-        <Button variant="secondary" disabled={saving} onClick={() => void persist(REJECT_COOKIES)}>{t("cookie.actions.rejectAll")}</Button>
+        <Button disabled={saving} onClick={() => void persist(REJECT_COOKIES)}>{t("cookie.actions.rejectAll")}</Button>
         <Button disabled={saving} onClick={() => void persist(ACCEPT_COOKIES)}>{t("cookie.actions.acceptAll")}</Button>
         <Button variant="secondary" disabled={saving} onClick={() => void persist(selected)}>{t("cookie.actions.savePreferences")}</Button>
       </div>
