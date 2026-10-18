@@ -30,6 +30,12 @@ export const Footer: React.FC = () => {
             >
               {t("footer.terms")}
             </TextLink>
+            <TextLink as={NavLink} to="/cookie" aria-label={t("cookie.policy.link")}>
+              {t("cookie.policy.link")}
+            </TextLink>
+            <TextLink as={NavLink} to="/cookie" aria-label={t("cookie.actions.managePreferences")}>
+              {t("cookie.actions.managePreferences")}
+            </TextLink>
             <TextLink
               as={NavLink}
               to="/privacy"

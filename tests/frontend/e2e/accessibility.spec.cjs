@@ -33,6 +33,13 @@ const accessibilityPages = [
 ];
 
 const supportedLocales = ["en", "de", "es", "fr", "el"];
+const cookieMessages = Object.fromEntries(
+  supportedLocales.map((locale) => [
+    locale,
+    require(`../../../apps/frontend/src/i18n/locales/${locale}/cookie.json`),
+  ]),
+);
+
 const localeMessages = Object.fromEntries(
   supportedLocales.map((locale) => [
     locale,
@@ -83,6 +90,19 @@ test.describe("Accessibility and localized UI acceptance", () => {
       await waitForApp(page);
 
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      // This scenario requires an unobstructed workout editor. Resolve actual
+      // first-visit consent through the API-backed Reject All control rather
+      // than hiding the dialog or bypassing its backend persistence.
+      const cookieDialog = page.getByRole("dialog", {
+        name: cookieMessages[locale].title,
+      });
+      if (await cookieDialog.isVisible()) {
+        await cookieDialog.getByRole("button", {
+          name: cookieMessages[locale].actions.rejectAll,
+          exact: true,
+        }).click();
+        await expect(cookieDialog).toBeHidden();
+      }
       const planButton = page.getByRole("button", {
         name: messages.calendarSurface.actions.plan,
         exact: true,
