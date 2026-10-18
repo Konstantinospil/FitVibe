@@ -4,14 +4,14 @@ import "./CustomScrollbar.css";
 export interface CustomScrollbarProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   viewportClassName?: string;
-  label?: string;
+  label: string;
 }
 
 export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   children,
   className = "",
   viewportClassName = "",
-  label = "Scroll content",
+  label,
   ...rest
 }) => {
   const viewport = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     }
     synchronize();
     return () => observer.disconnect();
-  }, [synchronize, children]);
+  }, [synchronize]);
 
   const scrollTo = (next: number) => {
     const el = viewport.current;
