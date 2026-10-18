@@ -12,14 +12,14 @@ import type {
   CookieConsentResponse,
   CreateCookieConsentInput,
 } from "./consent.types.js";
-import { getConsentByIp, upsertConsent } from "./consent.repository.js";
+import { getConsentByClient, upsertConsent } from "./consent.repository.js";
 import { insertAudit } from "../common/audit.util.js";
 
 /**
- * Get consent status for an IP address
+ * Get consent status for an individual browser
  */
 export async function getConsentStatus(clientIdentifier: string): Promise<CookieConsentResponse> {
-  const consent = await getConsentByIp(clientIdentifier);
+  const consent = await getConsentByClient(clientIdentifier);
 
   if (!consent) {
     return {
@@ -45,7 +45,7 @@ export async function getConsentStatus(clientIdentifier: string): Promise<Cookie
 }
 
 /**
- * Save cookie preferences for an IP address
+ * Save cookie preferences for an individual browser
  * Validates that essential cookies are always true
  */
 export async function saveCookiePreferences(
@@ -65,7 +65,6 @@ export async function saveCookiePreferences(
 
   const currentCookiePolicy = await getCurrentLegalPublication("cookie");
   const input: CreateCookieConsentInput = {
-    ipAddress: clientIdentifier,
     consentVersion: currentCookiePolicy.version,
     legalVersionId: currentCookiePolicy.id,
     essentialCookies: preferences.essential,
