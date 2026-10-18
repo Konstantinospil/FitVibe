@@ -40,7 +40,7 @@ describe("Consent Repository", () => {
     Object.keys(queryBuilders).forEach((key) => delete queryBuilders[key]);
   });
 
-  describe("getConsentByIp", () => {
+  describe("getConsentByClient", () => {
     it("returns mapped consent when row exists", async () => {
       const clientKey = hashClientKey("203.0.113.1");
       const row = {
@@ -63,11 +63,11 @@ describe("Consent Repository", () => {
       dbFn("cookie_consents");
       queryBuilders.cookie_consents.first.mockResolvedValue(row);
 
-      const result = await consentRepository.getConsentByIp("203.0.113.1");
+      const result = await consentRepository.getConsentByClient("203.0.113.1");
 
       expect(result).toEqual({
         id: "consent-1",
-        ipAddress: clientKey,
+        clientKey: clientKey,
         consentVersion: "2024-06-01",
         essentialCookies: true,
         preferencesCookies: false,
@@ -131,15 +131,4 @@ describe("Consent Repository", () => {
     });
   });
 
-  describe("attachAnonymousConsents", () => {
-    it("skips the update when userId is not a UUID", async () => {
-      const dbModule = await import("../../../../apps/backend/src/db/connection.js");
-      const dbFn = dbModule.db as jest.Mock;
-
-      const result = await consentRepository.attachAnonymousConsents("user-123", "203.0.113.1");
-
-      expect(result).toBe(0);
-      expect(dbFn).not.toHaveBeenCalled();
-    });
-  });
 });
