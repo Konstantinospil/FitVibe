@@ -77,6 +77,9 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   const onPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
     if (drag.current?.id === event.pointerId) {
       drag.current = null;
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
     }
   };
 
@@ -102,7 +105,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   };
 
   return (
-    <div {...rest} className={`custom-scrollbar ${className}`}>
+    <div {...rest} className={`custom-scrollbar ${className}`} data-scrollable={overflow}>
       <div
         id={id}
         ref={viewport}
