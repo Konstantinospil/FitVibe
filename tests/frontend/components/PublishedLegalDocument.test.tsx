@@ -95,8 +95,6 @@ describe("PublishedLegalDocument", () => {
         section10: { title: "Section 10", content: "Ten" },
         section2: { title: "Section 2", content: "Two" },
         intro: "Introduction",
-        consent: { revoke: "Revoke consent", accept: "Accept terms" },
-        loading: "Loading document",
         count: 7,
         enabled: true,
         nothing: null,
@@ -138,21 +136,44 @@ describe("PublishedLegalDocument", () => {
     expect(screen.queryByText("Legal")).not.toBeInTheDocument();
     expect(screen.queryByText("7")).not.toBeInTheDocument();
     expect(screen.queryByText("true")).not.toBeInTheDocument();
-    expect(screen.queryByText("Revoke consent")).not.toBeInTheDocument();
-    expect(screen.queryByText("Loading document")).not.toBeInTheDocument();
     expect(screen.queryByText("Symbol(ignored)")).not.toBeInTheDocument();
     expect(screen.queryByText("Titled")).not.toBeInTheDocument();
-    expect(screen.queryByText("Body")).not.toBeInTheDocument();
-    expect(screen.queryByText("Title only")).not.toBeInTheDocument();
-    expect(screen.queryByText("Content only")).not.toBeInTheDocument();
-    expect(screen.queryByText("Nested object value")).not.toBeInTheDocument();
-
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent);
     expect(headings.indexOf("Section 2")).toBeLessThan(headings.indexOf("Section 10"));
     expect(screen.getByRole("button", { name: "Footer action" })).toBeInTheDocument();
   });
+
+
+  it.each(["terms", "privacy", "cookie"] as const)(
+    "never renders UI translation keys as %s legal content",
+    async (documentType) => {
+      getPublishedLegalDocument.mockResolvedValue(
+        published({
+          title: "Document",
+          intro: "Authoritative introduction",
+          section1: { title: "Legal section", content: "Authoritative body" },
+          actions: { acceptAll: "Accept all", saveError: "Save failed" },
+          consent: { revoke: "Revoke consent" },
+          categories: { marketing: { label: "Marketing" } },
+          policy: { link: "Cookie Policy link" },
+          revokeConfirm: { message: "Sign out message" },
+          enabled: "Enabled status",
+          loading: "Loading status",
+        }),
+      );
+      render(<PublishedLegalDocument documentType={documentType} title="Fallback" />);
+      expect(await screen.findByText("Authoritative body")).toBeInTheDocument();
+      expect(screen.getByText("Authoritative introduction")).toBeInTheDocument();
+      for (const leaked of [
+        "Accept all", "Save failed", "Revoke consent", "Marketing",
+        "Cookie Policy link", "Sign out message", "Enabled status", "Loading status",
+      ]) {
+        expect(screen.queryByText(leaked)).not.toBeInTheDocument();
+      }
+    },
+  );
 
   it("falls back to retained localized legacy content and metadata", async () => {
     i18nState.language = "de-DE";
@@ -253,6 +274,81 @@ describe("PublishedLegalDocument", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Document unavailable.");
   });
 
+
+  it("renders authored lists and tables inside legal sections without rendering interface metadata", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        section1: {
+          title: "Data processing",
+          items: [
+            "First purpose",
+            { title: "Second purpose", content: "Additional explanation" },
+            { title: "Title only" },
+            { content: "Content only" },
+            { nested: "Additional condition" },
+          ],
+          table: {
+            headers: { first: "Category", second: "Period" },
+            rows: {
+              first: { category: "Essential", period: "Session" },
+              second: { category: "Preferences", period: "One year" },
+            },
+          },
+          emptyTable: { headers: {}, rows: {} },
+          note: null,
+        },
+        actions: { accept: "Accept all" },
+      }),
+    );
+
+    render(<PublishedLegalDocument documentType="cookie" title="Cookie policy" />);
+    expect(await screen.findByRole("heading", { name: "Data processing" })).toBeInTheDocument();
+    expect(screen.getByText("First purpose")).toBeInTheDocument();
+    expect(screen.getByText("Second purpose")).toBeInTheDocument();
+    expect(screen.getByText("Additional explanation")).toBeInTheDocument();
+    expect(screen.getByText("Title only")).toBeInTheDocument();
+    expect(screen.getByText("Content only")).toBeInTheDocument();
+    expect(screen.getByText("Additional condition")).toBeInTheDocument();
+    const table = screen.getByRole("table");
+    expect(table).toHaveTextContent("Category");
+    expect(table).toHaveTextContent("Essential");
+    expect(table).toHaveTextContent("Preferences");
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+    expect(screen.queryByText("Accept all")).not.toBeInTheDocument();
+  });
+
+  it("uses published effective dates instead of stale translated dates", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        title: "Updated policy",
+        effectiveDateValue: "2001-01-01",
+        section1: { content: "Current legal language" },
+      }, { effectiveAt: "2026-10-12T12:00:00.000Z" }),
+    );
+    render(<PublishedLegalDocument documentType="privacy" title="Fallback" />);
+    expect(await screen.findByText("Current legal language")).toBeInTheDocument();
+    expect(screen.getByTestId("effective-date")).not.toHaveTextContent("2001");
+    expect(screen.getByTestId("version")).toHaveTextContent("v2");
+  });
+
+  it("excludes non-document keys from legacy cookie translations while preserving sections", async () => {
+    i18nState.bundle = {
+      cookie: {
+        title: "Cookie Policy",
+        actions: { saveError: "Save failed" },
+        categories: { analytics: { label: "Analytics" } },
+        section1: { title: "Usage", content: "Cookie details" },
+      },
+    };
+    getPublishedLegalDocument.mockResolvedValue(
+      published(null as never, { legacyWithoutSnapshot: true, content: null, effectiveAt: null }),
+    );
+    render(<PublishedLegalDocument documentType="cookie" title="Fallback" />);
+    expect(await screen.findByText("Cookie details")).toBeInTheDocument();
+    expect(screen.queryByText("Save failed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Analytics")).not.toBeInTheDocument();
+  });
+
   it("does not update state after unmounting while publication is pending", async () => {
     let resolvePublication: (value: unknown) => void = () => undefined;
     getPublishedLegalDocument.mockImplementation(
@@ -290,65 +386,4 @@ describe("PublishedLegalDocument", () => {
     await Promise.resolve();
     expect(screen.queryByText("Legacy content")).not.toBeInTheDocument();
   });
-  it("renders document tables and structured lists only when part of legal sections", async () => {
-    getPublishedLegalDocument.mockResolvedValue(
-      published({
-        intro: {
-          title: "Overview",
-          notices: ["First notice", { title: "Second notice", content: "Details" }],
-        },
-        section1: {
-          title: "Retention",
-          table: {
-            headers: { purpose: "Purpose", duration: "Duration" },
-            rows: { first: { purpose: "Accounts", duration: "One year" } },
-          },
-          rules: [{ title: "Requirement", content: "Keep records" }, "Plain rule"],
-          excludedTable: { headers: {}, rows: {} },
-        },
-      }),
-    );
-
-    render(<PublishedLegalDocument documentType="terms" title="Fallback" />);
-
-    expect(await screen.findByRole("table")).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Purpose" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "One year" })).toBeInTheDocument();
-    expect(screen.getByText("First notice")).toBeInTheDocument();
-    expect(screen.getByText(/Second notice/)).toBeInTheDocument();
-    expect(screen.getByText("Keep records")).toBeInTheDocument();
-    expect(screen.getByText("Plain rule")).toBeInTheDocument();
-    expect(screen.getAllByRole("table")).toHaveLength(1);
-  });
-
-  it("renders heterogeneous legal rows and nested values without application controls", async () => {
-    getPublishedLegalDocument.mockResolvedValue(
-      published({
-        section1: {
-          title: "Details",
-          records: [{ unknown: { note: "Nested note" } }, { title: "Heading only" }],
-          table: {
-            headers: { first: "Heading" },
-            rows: { single: "Single value" },
-          },
-          valid: true,
-          amount: 4,
-          omitted: null,
-          unsupported: Symbol("unsupported"),
-        },
-        consent: { accept: "Accept all" },
-      }),
-    );
-
-    render(<PublishedLegalDocument documentType="privacy" title="Privacy" />);
-
-    expect(await screen.findByText("Nested note")).toBeInTheDocument();
-    expect(screen.getByText("Heading only")).toBeInTheDocument();
-    expect(screen.getByText("Single value")).toBeInTheDocument();
-    expect(screen.getByText("true")).toBeInTheDocument();
-    expect(screen.getByText("4")).toBeInTheDocument();
-    expect(screen.queryByText("Accept all")).not.toBeInTheDocument();
-    expect(screen.queryByText("Symbol(unsupported)")).not.toBeInTheDocument();
-  });
-
 });
