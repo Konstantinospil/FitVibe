@@ -13,16 +13,16 @@ import type {
 
 const COOKIE_CONSENTS_TABLE = "cookie_consents";
 
-function hashClientKey(ipAddress: string): string {
-  return crypto.createHash("sha256").update(ipAddress).digest("hex");
+function hashClientKey(clientIdentifier: string): string {
+  return crypto.createHash("sha256").update(clientIdentifier).digest("hex");
 }
 
 function toCookieConsent(row: CookieConsentRow): CookieConsent {
   return {
     id: row.id,
-    ipAddress: row.client_key,
+    clientKey: row.client_key,
     consentVersion: row.consent_version,
-    legalVersionId: row.legal_version_id,
+    legalVersionId: row.legal_version_id ?? null,
     essentialCookies: row.essential_cookies,
     preferencesCookies: row.preferences_cookies,
     analyticsCookies: row.analytics_cookies,
@@ -35,8 +35,10 @@ function toCookieConsent(row: CookieConsentRow): CookieConsent {
   };
 }
 
-export async function getConsentByIp(ipAddress: string): Promise<CookieConsent | undefined> {
-  const clientKey = hashClientKey(ipAddress);
+export async function getConsentByClient(
+  clientIdentifier: string,
+): Promise<CookieConsent | undefined> {
+  const clientKey = hashClientKey(clientIdentifier);
   const row = await db(COOKIE_CONSENTS_TABLE)
     .select<CookieConsentRow[]>("*")
     .where("client_key", clientKey)
@@ -47,19 +49,19 @@ export async function getConsentByIp(ipAddress: string): Promise<CookieConsent |
 }
 
 export async function upsertConsent(
-  ipAddress: string,
+  clientIdentifier: string,
   input: CreateCookieConsentInput | UpdateCookieConsentInput,
   userId?: string | null,
   legalVersionId?: string | null,
 ): Promise<CookieConsent> {
   const now = new Date().toISOString();
   const isCreateInput = "consentVersion" in input && "essentialCookies" in input;
-  const previous = await getConsentByIp(ipAddress);
+  const previous = await getConsentByClient(clientIdentifier);
 
   const [row] = await db(COOKIE_CONSENTS_TABLE)
     .insert({
       user_id: userId ?? null,
-      client_key: hashClientKey(ipAddress),
+      client_key: hashClientKey(clientIdentifier),
       consent_version: isCreateInput
         ? input.consentVersion
         : (input.consentVersion ?? previous?.consentVersion ?? "2024-06-01"),
@@ -68,7 +70,7 @@ export async function upsertConsent(
         (isCreateInput
           ? input.legalVersionId
           : (input.legalVersionId ?? previous?.legalVersionId ?? null)),
-      source: userId ? "authenticated" : "banner",
+      source: input.source ?? (userId ? "authenticated" : "banner"),
       essential_cookies: isCreateInput
         ? input.essentialCookies
         : (input.essentialCookies ?? previous?.essentialCookies ?? true),
@@ -88,20 +90,4 @@ export async function upsertConsent(
     .returning<CookieConsentRow[]>("*");
 
   return toCookieConsent(row);
-}
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-export async function attachAnonymousConsents(userId: string, ipAddress: string): Promise<number> {
-  if (!ipAddress || ipAddress === "unknown") {
-    return 0;
-  }
-  // cookie_consents.user_id is uuid; skip placeholders like "user-123"
-  if (!UUID_RE.test(userId)) {
-    return 0;
-  }
-  return db(COOKIE_CONSENTS_TABLE)
-    .where({ client_key: hashClientKey(ipAddress) })
-    .whereNull("user_id")
-    .update({ user_id: userId });
 }

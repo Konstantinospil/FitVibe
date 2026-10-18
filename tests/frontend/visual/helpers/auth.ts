@@ -3,7 +3,6 @@ import type { VisualTheme } from "./project.js";
 
 const AUTH_STORAGE_KEY = "fitvibe:auth";
 const THEME_STORAGE_KEY = "fitvibe:theme";
-const CONSENT_STORAGE_KEY = "cookie-consent-banner-shown";
 
 /**
  * Seeds sessionStorage so bootstrap.ts and the auth store treat the tab as signed in.
@@ -50,12 +49,6 @@ export async function seedTheme(page: Page, theme: VisualTheme): Promise<void> {
     },
     { storageKey: THEME_STORAGE_KEY, themeName: theme },
   );
-}
-
-export async function dismissCookieBanner(page: Page): Promise<void> {
-  await page.addInitScript((key: string) => {
-    window.localStorage.setItem(key, "true");
-  }, CONSENT_STORAGE_KEY);
 }
 
 /**

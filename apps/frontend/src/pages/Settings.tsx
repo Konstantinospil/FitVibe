@@ -16,6 +16,7 @@ import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { getMyVibeformProfile, updateMyVibeformPreferences } from "../lib/vibeform/api";
 import { TrainingPanel } from "../components/composites/TrainingSurface";
 import { AvatarEditor } from "../components/profile/AvatarEditor";
+import { CookiePreferences } from "../components/CookieConsent";
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -474,6 +475,10 @@ const Settings: React.FC = () => {
               </Button>
             </div>
           )}
+        </TrainingPanel>
+
+        <TrainingPanel title={t("cookie.title")}>
+          <CookiePreferences />
         </TrainingPanel>
 
         <TrainingPanel title={t("settings.security.title")}>

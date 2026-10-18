@@ -27,11 +27,13 @@
     "acceptAll": "Accept All",
     "rejectAll": "Reject All",
     "savePreferences": "Save Preferences",
-    "saveError": "Failed to save cookie preferences. Please try again."
+    "saveError": "Failed to save cookie preferences. Please try again.",
+    "closeReject": "Close and reject optional cookies",
+    "managePreferences": "Manage cookie preferences"
   },
   "policy": {
     "title": "Cookie Policy",
-    "description": "Learn more about how we use cookies in our",
+    "description": "Learn more about how FitVibe uses cookies in our Cookie Policy.",
     "link": "Cookie Policy"
   },
   "eyebrow": "Legal",

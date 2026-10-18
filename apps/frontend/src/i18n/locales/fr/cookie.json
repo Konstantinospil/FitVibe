@@ -1,38 +1,40 @@
 {
-  "title": "Préférences de Cookies",
-  "description": "Nous utilisons des cookies pour améliorer votre expérience et nous conformer aux réglementations sur la confidentialité.",
+  "title": "Préférences de cookies",
+  "description": "Nous utilisons des cookies pour assurer le fonctionnement de FitVibe, mémoriser vos préférences et, avec votre consentement, analyser son utilisation.",
   "intro": "Choisissez les cookies que vous souhaitez autoriser. Les cookies essentiels sont nécessaires au fonctionnement du site et ne peuvent pas être désactivés.",
   "required": "Requis",
   "enabled": "activé",
   "disabled": "désactivé",
   "categories": {
     "essential": {
-      "label": "Cookies Essentiels",
+      "label": "Cookies essentiels",
       "description": "Nécessaires au fonctionnement du site. Ne peuvent pas être désactivés."
     },
     "preferences": {
-      "label": "Cookies de Préférences et de Fonctionnalité",
+      "label": "Cookies de préférences et de fonctionnalité",
       "description": "Mémorisent vos paramètres, votre langue et vos vues d'entraînement enregistrées."
     },
     "analytics": {
-      "label": "Cookies de Performance et d'Analyse",
+      "label": "Cookies de performance et d’analyse",
       "description": "Nous aident à comprendre l'utilisation, améliorer les fonctionnalités et diagnostiquer les problèmes."
     },
     "marketing": {
-      "label": "Cookies Publicitaires et Marketing",
-      "description": "Soutiennent le remarketing et les insights d'audience. Ne sont définis qu'avec votre consentement."
+      "label": "Cookies publicitaires et marketing",
+      "description": "Permettent le remarketing et l’analyse d’audience. Ils ne sont déposés qu’avec votre consentement."
     }
   },
   "actions": {
-    "acceptAll": "Tout Accepter",
-    "rejectAll": "Tout Refuser",
-    "savePreferences": "Enregistrer les Préférences",
-    "saveError": "Échec de l'enregistrement des préférences de cookies. Veuillez réessayer."
+    "acceptAll": "Tout accepter",
+    "rejectAll": "Tout refuser",
+    "savePreferences": "Enregistrer les préférences",
+    "saveError": "Échec de l'enregistrement des préférences de cookies. Veuillez réessayer.",
+    "closeReject": "Fermer et refuser les cookies facultatifs",
+    "managePreferences": "Gérer les préférences de cookies"
   },
   "policy": {
-    "title": "Politique de Cookies",
-    "description": "En savoir plus sur la façon dont nous utilisons les cookies dans notre",
-    "link": "Politique de Cookies"
+    "title": "Politique relative aux cookies",
+    "description": "Pour en savoir plus sur notre utilisation des cookies, consultez notre",
+    "link": "Politique relative aux cookies"
   },
   "eyebrow": "Juridique",
   "effectiveDate": "Date d'entrée en vigueur",
@@ -47,29 +49,29 @@
       "**Cookies essentiels :** activent les fonctionnalités principales telles que l'authentification, la sécurité du compte, l'équilibrage de charge et la gestion des sessions.",
       "**Cookies de préférences et de fonctionnalité :** mémorisent vos paramètres, votre langue et vos vues d'entraînement enregistrées pour offrir une expérience cohérente.",
       "**Cookies de performance et d'analyse :** nous aident à comprendre l'utilisation, à améliorer les fonctionnalités, à diagnostiquer les problèmes et à mesurer l'efficacité des campagnes.",
-      "**Cookies publicitaires et marketing :** s'ils sont utilisés, prennent en charge le remarketing, la mesure des conversions et les insights d'audience. Lorsque requis, ces cookies ne sont définis qu'avec votre consentement."
+      "**Cookies publicitaires et marketing :** s’ils sont utilisés, ils permettent le remarketing, la mesure des conversions et l’analyse d’audience. Lorsque la loi l’exige, ils ne sont déposés qu’avec votre consentement."
     ]
   },
   "section3": {
     "title": "Cookies et SDK tiers",
-    "content": "Nous pouvons utiliser des fournisseurs tiers pour l'analyse, la surveillance des performances et le marketing. Ces fournisseurs peuvent définir des cookies ou collecter des identifiants d'appareil lorsque vous utilisez les Services. Leur utilisation est soumise à leurs politiques de confidentialité. Les catégories actuelles incluent les performances d'hébergement/CDN, l'analyse de produits et les diagnostics de crash."
+    "content": "Nous pouvons faire appel à des prestataires tiers pour l’analyse, la surveillance des performances et le marketing. Ces prestataires peuvent déposer des cookies ou collecter des identifiants d’appareil lorsque vous utilisez les Services. Leur utilisation est soumise à leurs politiques de confidentialité. Les catégories actuelles comprennent les performances d’hébergement/CDN, l’analyse produit et le diagnostic des incidents."
   },
   "section4": {
     "title": "Gestion des cookies et préférences",
     "items": [
       "**Gestion du consentement :** Lorsque requis par la loi, nous demanderons le consentement avant de définir des cookies non essentiels et fournirons des contrôles pour mettre à jour les préférences.",
-      "**Contrôles du navigateur :** La plupart des navigateurs vous permettent de bloquer ou supprimer les cookies. Cela peut affecter la funcionalité du site, y compris la possibilité de rester connecté.",
+      "**Paramètres du navigateur :** La plupart des navigateurs vous permettent de bloquer ou de supprimer les cookies. Cela peut affecter le fonctionnement du site, notamment votre capacité à rester connecté.",
       "**Ne pas suivre (DNT) :** Les Services ne répondent actuellement pas aux signaux DNT. Nous respectons les signaux d'exclusion légalement requis (par exemple, Global Privacy Control) le cas échéant.",
       "**Paramètres mobiles :** Les paramètres de l'appareil peuvent vous permettre de limiter le suivi publicitaire ou de réinitialiser les identifiants publicitaires."
     ]
   },
   "section5": {
     "title": "Conservation des données",
-    "content": "Les durées de vie des cookies varient. Les cookies de session expirent lorsque vous fermez votre navigateur. Les cookies persistants durent plus longtemps et ne sont conservés que dans la mesure nécessaire à leurs objectifs déclarés."
+    "content": "La durée de vie des cookies varie. Les cookies de session expirent lorsque vous fermez votre navigateur. Les cookies persistants restent plus longtemps et ne sont conservés que pendant la durée nécessaire à leur finalité."
   },
   "section6": {
     "title": "Modifications de cette politique",
-    "content": "Nous pouvons mettre à jour cette Politique relative aux cookies pour refléter les changements dans la technologie, la loi ou nos pratiques. Les modifications importantes seront communiquées via les Services ou d'autres moyens raisonnables. La \"Date d'entrée en vigueur\" ci-dessus sera mise à jour pour chaque révision."
+    "content": "Nous pouvons mettre à jour cette Politique relative aux cookies pour tenir compte des évolutions technologiques, juridiques ou de nos pratiques. Les modifications importantes seront communiquées via les Services ou par d’autres moyens appropriés. La « Date d’entrée en vigueur » ci-dessus sera mise à jour à chaque révision."
   },
   "section7": {
     "title": "Contact",

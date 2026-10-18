@@ -13,6 +13,8 @@ vi.mock("react-i18next", () => ({
         "footer.contact": "Contact",
         "footer.terms": "Terms and Conditions",
         "footer.privacy": "Privacy Policy",
+        "cookie.policy.link": "Cookie Policy",
+        "cookie.actions.managePreferences": "Cookie Preferences",
         "footer.contactAriaLabel": "Contact us",
         "footer.termsAriaLabel": "View Terms and Conditions",
         "footer.privacyAriaLabel": "View Privacy Policy",
@@ -35,13 +37,13 @@ describe("Footer", () => {
     vi.clearAllMocks();
   });
 
-  it("renders the FitVibe logo, three page links, and four social icons", () => {
+  it("renders the FitVibe logo, five page links, and four social icons", () => {
     renderFooter();
 
     expect(screen.getByRole("img", { name: "FitVibe" })).toBeInTheDocument();
 
     const navigation = screen.getByRole("navigation", { name: "Footer navigation" });
-    expect(navigation.querySelectorAll("a")).toHaveLength(3);
+    expect(navigation.querySelectorAll("a")).toHaveLength(5);
 
     const social = screen.getByRole("navigation", { name: "Social media" });
     expect(social.querySelectorAll("[data-social-platform]")).toHaveLength(4);
@@ -54,6 +56,8 @@ describe("Footer", () => {
     ["Contact us", "/contact"],
     ["View Terms and Conditions", "/terms"],
     ["View Privacy Policy", "/privacy"],
+    ["Cookie Policy", "/cookie"],
+    ["Cookie Preferences", "/cookie"],
   ] as const)("renders %s with the correct route", (name, href) => {
     renderFooter();
     expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);

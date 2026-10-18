@@ -1,154 +1,67 @@
 import type { Request, Response } from "express";
-import * as consentController from "../../../../apps/backend/src/modules/consent/consent.controller.js";
-import * as consentService from "../../../../apps/backend/src/modules/consent/consent.service.js";
-import { extractClientIp } from "../../../../apps/backend/src/utils/ip-extractor.js";
-
+import * as controller from "../../../../apps/backend/src/modules/consent/consent.controller.js";
+import * as service from "../../../../apps/backend/src/modules/consent/consent.service.js";
 jest.mock("../../../../apps/backend/src/modules/consent/consent.service.js");
-jest.mock("../../../../apps/backend/src/utils/ip-extractor.js", () => ({
-  extractClientIp: jest.fn(),
-}));
+const mockService = jest.mocked(service);
+const browserId = "a".repeat(64);
+const consent = {
+  id: "consent-3", clientKey: browserId, consentVersion: "v1", legalVersionId: "legal-1",
+  essentialCookies: true, preferencesCookies: true, analyticsCookies: false, marketingCookies: true,
+  consentGivenAt: "2026-10-18T00:00:00.000Z", lastUpdatedAt: "2026-10-18T00:00:00.000Z",
+  userAgent: "TestAgent", createdAt: "2026-10-18T00:00:00.000Z", updatedAt: "2026-10-18T00:00:00.000Z",
+};
+let req: Partial<Request>;
+let res: Partial<Response>;
+beforeEach(() => {
+  jest.clearAllMocks();
+  req = { headers: {}, body: { essential: true, preferences: true, analytics: false, marketing: true } };
+  res = { json: jest.fn().mockReturnThis(), cookie: jest.fn().mockReturnThis() };
+  mockService.saveCookiePreferences.mockResolvedValue(consent);
+});
 
-const mockService = jest.mocked(consentService);
-const mockExtractClientIp = jest.mocked(extractClientIp);
-
-describe("Consent Controller", () => {
-  let mockRequest: Partial<Request>;
-  let mockResponse: Partial<Response>;
-
-  beforeEach(() => {
-    mockRequest = {
-      body: {},
-      headers: {},
-    };
-    mockResponse = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    };
-    jest.clearAllMocks();
+describe("cookie consent browser isolation", () => {
+  it("returns no consent without a previously issued browser identifier", async () => {
+    await controller.getCookieStatusHandler(req as Request, res as Response);
+    expect(mockService.getConsentStatus).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { hasConsent: false } });
   });
 
-  describe("getCookieStatusHandler", () => {
-    it("returns no consent when IP is unknown", async () => {
-      mockExtractClientIp.mockReturnValue("unknown");
-
-      await consentController.getCookieStatusHandler(
-        mockRequest as Request,
-        mockResponse as Response,
-      );
-
-      expect(mockService.getConsentStatus).not.toHaveBeenCalled();
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        data: { hasConsent: false },
-      });
-    });
-
-    it("returns consent status for known IP", async () => {
-      mockExtractClientIp.mockReturnValue("203.0.113.12");
-      mockService.getConsentStatus.mockResolvedValue({
-        hasConsent: true,
-        consent: {
-          essential: true,
-          preferences: false,
-          analytics: false,
-          marketing: false,
-          version: "2024-06-01",
-          updatedAt: "2024-06-10T10:00:00.000Z",
-        },
-      });
-
-      await consentController.getCookieStatusHandler(
-        mockRequest as Request,
-        mockResponse as Response,
-      );
-
-      expect(mockService.getConsentStatus).toHaveBeenCalledWith("203.0.113.12");
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          hasConsent: true,
-          consent: {
-            essential: true,
-            preferences: false,
-            analytics: false,
-            marketing: false,
-            version: "2024-06-01",
-            updatedAt: "2024-06-10T10:00:00.000Z",
-          },
-        },
-      });
-    });
+  it("reads consent by valid first-party browser identifier, not by shared IP", async () => {
+    req.headers = { cookie: `fitvibe_consent_client=${browserId}` };
+    mockService.getConsentStatus.mockResolvedValue({ hasConsent: true });
+    await controller.getCookieStatusHandler(req as Request, res as Response);
+    expect(mockService.getConsentStatus).toHaveBeenCalledWith(browserId);
   });
 
-  describe("saveCookiePreferencesHandler", () => {
-    it("returns 400 when IP is unknown", async () => {
-      mockExtractClientIp.mockReturnValue("unknown");
+  it("ignores forged or malformed browser identifiers", async () => {
+    req.headers = { cookie: "fitvibe_consent_client=invalid" };
+    await controller.getCookieStatusHandler(req as Request, res as Response);
+    expect(mockService.getConsentStatus).not.toHaveBeenCalled();
+  });
 
-      await consentController.saveCookiePreferencesHandler(
-        mockRequest as Request,
-        mockResponse as Response,
-      );
+  it("saves independent categories with a new HttpOnly browser cookie", async () => {
+    await controller.saveCookiePreferencesHandler(req as Request, res as Response);
+    expect(mockService.saveCookiePreferences).toHaveBeenCalledWith(
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+      { essential: true, preferences: true, analytics: false, marketing: true }, null, "banner",
+    );
+    expect(res.cookie).toHaveBeenCalledWith("fitvibe_consent_client", expect.stringMatching(/^[a-f0-9]{64}$/), expect.objectContaining({
+      httpOnly: true, sameSite: "lax", path: "/api/v1/consent",
+    }));
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: expect.objectContaining({
+      essential: true, preferences: true, analytics: false, marketing: true,
+    }) });
+  });
 
-      expect(mockService.saveCookiePreferences).not.toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: false,
-        error: {
-          code: "CONSENT_IP_UNKNOWN",
-          message: "Unable to determine IP address",
-        },
-      });
-    });
+  it("reuses the previously issued identifier to preserve consent history", async () => {
+    req.headers = { cookie: `fitvibe_consent_client=${browserId}`, "user-agent": "TestAgent" };
+    await controller.saveCookiePreferencesHandler(req as Request, res as Response);
+    expect(mockService.saveCookiePreferences).toHaveBeenCalledWith(browserId, req.body, "TestAgent", "banner");
+  });
 
-    it("saves preferences and maps response", async () => {
-      mockExtractClientIp.mockReturnValue("203.0.113.13");
-      mockRequest = {
-        body: {
-          essential: true,
-          preferences: true,
-          analytics: false,
-          marketing: true,
-        },
-        headers: {
-          "user-agent": "TestAgent",
-        },
-      };
-      mockService.saveCookiePreferences.mockResolvedValue({
-        id: "consent-3",
-        ipAddress: "203.0.113.13",
-        consentVersion: "2024-06-01",
-        essentialCookies: true,
-        preferencesCookies: true,
-        analyticsCookies: false,
-        marketingCookies: true,
-        consentGivenAt: "2024-06-10T10:00:00.000Z",
-        lastUpdatedAt: "2024-06-10T10:00:00.000Z",
-        userAgent: "TestAgent",
-        createdAt: "2024-06-10T10:00:00.000Z",
-        updatedAt: "2024-06-10T10:00:00.000Z",
-      });
-
-      await consentController.saveCookiePreferencesHandler(
-        mockRequest as Request,
-        mockResponse as Response,
-      );
-
-      expect(mockService.saveCookiePreferences).toHaveBeenCalledWith(
-        "203.0.113.13",
-        mockRequest.body,
-        "TestAgent",
-      );
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        success: true,
-        data: {
-          essential: true,
-          preferences: true,
-          analytics: false,
-          marketing: true,
-          version: "2024-06-01",
-          updatedAt: "2024-06-10T10:00:00.000Z",
-        },
-      });
-    });
+  it("rejects attempts to disable essential cookies", async () => {
+    req.body = { essential: false, preferences: false, analytics: false, marketing: false };
+    await expect(controller.saveCookiePreferencesHandler(req as Request, res as Response)).rejects.toThrow();
+    expect(mockService.saveCookiePreferences).not.toHaveBeenCalled();
   });
 });

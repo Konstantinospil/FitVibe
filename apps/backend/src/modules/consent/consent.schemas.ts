@@ -10,6 +10,7 @@ export const SaveCookiePreferencesSchema = z
     preferences: z.boolean(),
     analytics: z.boolean(),
     marketing: z.boolean(),
+    source: z.enum(["banner", "policy", "settings"]).optional(),
   })
   .refine((data) => data.essential === true, {
     message: "Essential cookies must be enabled",

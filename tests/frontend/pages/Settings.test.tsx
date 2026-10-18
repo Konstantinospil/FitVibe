@@ -5,6 +5,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Settings from "../../src/pages/Settings";
 import * as api from "../../src/services/api";
 import * as vibeApi from "../../src/lib/vibeform/api";
+
+vi.mock("../../src/hooks/useCookieConsent", () => ({
+  useCookieConsent: () => ({
+    consentStatus: { hasConsent: true, consent: {
+      essential: true, preferences: false, analytics: false, marketing: false,
+      version: "v1", updatedAt: "now",
+    } },
+    isLoading: false,
+    error: null,
+    savePreferences: vi.fn(),
+    refreshStatus: vi.fn(),
+  }),
+}));
 import { cleanupQueryClient, createTestQueryClient } from "../helpers/testQueryClient";
 
 const { changeLanguage, loadLanguageTranslations } = vi.hoisted(() => ({

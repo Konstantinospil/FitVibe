@@ -30,6 +30,8 @@ vi.mock("../../src/routes/ProtectedRoutes", () => ({
   default: MockProtectedRoutes,
 }));
 
+vi.mock("../../src/components/CookieConsent", () => ({ default: () => null }));
+
 import { Router } from "../../src/routes/Router.js";
 
 // Mock dependencies
