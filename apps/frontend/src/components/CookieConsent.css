@@ -1,4 +1,4 @@
-.cookie-consent-backdrop {position:fixed;inset:0;z-index:var(--z-modal);display:grid;place-items:center;background:var(--color-surface-glass);padding:var(--space-md)}
+.cookie-consent-backdrop {position:fixed;inset:0;z-index:var(--cookie-dialog-layer);display:grid;place-items:center;background:var(--color-surface-glass);padding:var(--space-md)}
 .cookie-consent-dialog {width:min(100%,var(--modal-width-md));max-height:calc(100dvh - var(--space-xl));overflow:auto;display:grid;gap:var(--space-md);padding:var(--space-lg);background:var(--color-surface);color:var(--color-text-primary);border:var(--control-border-width) solid var(--color-border);border-radius:var(--radius-lg);box-shadow:var(--shadow-e2)}
 .cookie-consent-heading {display:flex;justify-content:space-between;align-items:center;gap:var(--space-sm)}
 .cookie-consent-dialog h2,.cookie-consent-dialog h3 {margin:0;font-family:var(--font-family-heading);font-size:var(--type-card-title-size)}
