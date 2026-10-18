@@ -17,6 +17,7 @@ import { getMyVibeformProfile, updateMyVibeformPreferences } from "../lib/vibefo
 import { TrainingPanel } from "../components/composites/TrainingSurface";
 import { AvatarEditor } from "../components/profile/AvatarEditor";
 import { CookiePreferences } from "../components/CookieConsent";
+import { TwoFactorManagement } from "../components/profile/TwoFactorManagement";
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -485,18 +486,10 @@ const Settings: React.FC = () => {
           {twoFactorQuery.isLoading ? (
             <div className="training-empty">{t("common.loading")}</div>
           ) : (
-            <div className="form">
-              <strong>
-                {twoFactorQuery.data?.enabled
-                  ? t("settings.security.enabled")
-                  : t("settings.security.disabled")}
-              </strong>
-              <p>
-                {twoFactorQuery.data?.enabled
-                  ? t("settings.security.enabledHelp")
-                  : t("settings.security.disabledHelp")}
-              </p>
-            </div>
+            <TwoFactorManagement
+              enabled={twoFactorQuery.data?.enabled ?? false}
+              onStatusChanged={() => twoFactorQuery.refetch()}
+            />
           )}
         </TrainingPanel>
       </div>
