@@ -79,6 +79,7 @@ describe("CustomScrollbar", () => {
   it("remains inaccessible for dragging when content does not overflow", () => {
     const { scrollbar, viewport, track, thumb } = setup(200, 200);
     expect(track.dataset.scrollable).toBe("false");
+    expect(track.parentElement?.dataset.scrollable).toBe("false");
     expect(scrollbar.getAttribute("tabindex")).toBe("-1");
     fireEvent.pointerDown(thumb, { pointerId: 4, clientY: 60 });
     fireEvent.pointerDown(track, { pointerId: 4, clientY: 80 });
@@ -88,6 +89,7 @@ describe("CustomScrollbar", () => {
   it("updates the accessible position when the viewport scrolls", () => {
     const { scrollbar, viewport, track } = setup();
     expect(track.dataset.scrollable).toBe("true");
+    expect(track.parentElement?.dataset.scrollable).toBe("true");
     viewport.scrollTop = 200;
     fireEvent.scroll(viewport);
     expect(scrollbar.getAttribute("aria-valuenow")).toBe("50");
