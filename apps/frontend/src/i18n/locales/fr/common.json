@@ -132,7 +132,9 @@
     "termsAriaLabel": "Voir les Conditions générales",
     "privacyAriaLabel": "Voir la Politique de confidentialité",
     "impressumAriaLabel": "Voir les Mentions légales",
-    "contactAriaLabel": "Nous contacter"
+    "contactAriaLabel": "Nous contacter",
+    "expand": "Développer le pied de page",
+    "collapse": "Réduire le pied de page"
   },
   "terms": {
     "eyebrow": "Légal",
