@@ -55,7 +55,12 @@ const app = (
 // The static #login-shell in index.html is a no-JS fallback, not SSR output.
 // Hydrating the SPA over that markup never matches and leaves the fallback on screen.
 const loginShell = document.getElementById("login-shell");
-const hasSsrMarkup = rootElement.hasChildNodes() && !loginShell;
+// A streamed Suspense loading boundary is not a complete SSR application tree.
+// Hydrating it as the finished route can leave fallback attributes on the live
+// PageShell element. Mount a fresh React tree instead.
+const isSsrLoadingFallback =
+  rootElement.firstElementChild?.matches('[role="status"][aria-live="polite"]') ?? false;
+const hasSsrMarkup = rootElement.hasChildNodes() && !loginShell && !isSsrLoadingFallback;
 
 const mount = (): void => {
   if (hasSsrMarkup) {
