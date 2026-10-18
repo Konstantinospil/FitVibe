@@ -92,6 +92,25 @@ function trackRequests(page, predicate) {
 
 async function waitForApp(page) {
   await page.locator("#login-shell").waitFor({ state: "detached", timeout: 15_000 });
+  // Detaching the static fallback alone does not prove that React rendered.
+  // Wait for an observable application state instead of assuming initialization.
+  try {
+    await page.locator('[data-component="page-shell"], [data-component="error-boundary"], [data-app-surface]').first().waitFor({
+      state: "visible",
+      timeout: 15_000,
+    });
+  } catch (error) {
+    const state = await page.evaluate(() => ({
+      pathname: location.pathname,
+      rootText: document.getElementById("root")?.textContent?.trim().slice(0, 250) ?? null,
+      fallbackPresent: Boolean(document.getElementById("login-shell")),
+      pageShellPresent: Boolean(document.querySelector('[data-component="page-shell"]')),
+      errorBoundaryPresent: Boolean(document.querySelector('[data-component="error-boundary"]')),
+      loadingStatus: document.querySelector('[role="status"]')?.textContent?.trim() ?? null,
+    }));
+    console.error("Application readiness diagnostic:", JSON.stringify(state));
+    throw error;
+  }
 }
 
 const emailInput = (page) => page.locator("form input[name='email']");
