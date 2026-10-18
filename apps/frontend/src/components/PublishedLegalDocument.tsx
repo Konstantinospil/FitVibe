@@ -166,7 +166,10 @@ function renderValue(value: unknown, key: string, sourceKey: string): React.Reac
   return null;
 }
 
-function documentBody(content: Record<string, unknown>, documentType: LegalDocumentType): React.ReactNode {
+function documentBody(
+  content: Record<string, unknown>,
+  documentType: LegalDocumentType,
+): React.ReactNode {
   const excluded = new Set([
     "eyebrow",
     "title",
@@ -175,7 +178,9 @@ function documentBody(content: Record<string, unknown>, documentType: LegalDocum
     "effectiveDateValue",
   ]);
   return Object.entries(content)
-    .filter(([key]) => documentType === "cookie" ? /^section\\d+$/i.test(key) : !excluded.has(key))
+    .filter(([key]) =>
+      documentType === "cookie" ? /^section\\d+$/i.test(key) : !excluded.has(key),
+    )
     .sort(([a], [b]) => compareNatural(a, b))
     .map(([key, value]) => renderValue(value, `legal-${key}`, key));
 }
