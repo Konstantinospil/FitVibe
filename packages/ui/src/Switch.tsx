@@ -64,7 +64,9 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             defaultChecked={defaultChecked}
             disabled={disabled}
             aria-checked={isChecked}
-            aria-describedby={[props["aria-describedby"], helperId].filter(Boolean).join(" ") || undefined}
+            aria-describedby={
+              [props["aria-describedby"], helperId].filter(Boolean).join(" ") || undefined
+            }
             onChange={(e) => {
               if (!controlled) {
                 setUncontrolledChecked(e.target.checked);
