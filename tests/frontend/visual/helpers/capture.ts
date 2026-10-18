@@ -4,7 +4,6 @@ import { getDynamicMasks } from "./mask.js";
 import { assertNoHorizontalOverflow } from "./responsive.js";
 import { assertStandardScrollbars } from "./scrollbarAudit.js";
 import {
-  dismissCookieBanner,
   gotoAuthenticated,
   seedTheme,
   setupAuthenticatedState,
@@ -66,7 +65,6 @@ export async function prepareVisualPage(
     }
   });
   await seedTheme(page, theme);
-  await dismissCookieBanner(page);
   await installDefaultMocks(page);
   if (options?.authenticated) {
     await setupAuthenticatedState(page);
