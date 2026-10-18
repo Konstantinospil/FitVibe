@@ -85,7 +85,7 @@ async function ensureEssentialCookieConsent(page) {
   }
   const previousBody = await previous.json();
   if (previousBody.data?.hasConsent) {
-    seededConsentCookies = (await page.context().cookies(APPLICATION_ORIGIN)).filter(
+    seededConsentCookies = (await page.context().cookies(statusUrl)).filter(
       (cookie) => cookie.name === "fitvibe_consent_client",
     );
     if (seededConsentCookies.length > 0) return;
@@ -124,7 +124,7 @@ async function ensureEssentialCookieConsent(page) {
   ) {
     throw new Error("E2E browser consent was not persisted as essential-only");
   }
-  seededConsentCookies = (await page.context().cookies(APPLICATION_ORIGIN)).filter(
+  seededConsentCookies = (await page.context().cookies(statusUrl)).filter(
     (cookie) => cookie.name === "fitvibe_consent_client",
   );
   if (seededConsentCookies.length !== 1) {
