@@ -27,7 +27,9 @@
     "acceptAll": "Αποδοχή Όλων",
     "rejectAll": "Απόρριψη Όλων",
     "savePreferences": "Αποθήκευση Προτιμήσεων",
-    "saveError": "Αποτυχία αποθήκευσης των προτιμήσεων cookies. Παρακαλώ δοκιμάστε ξανά."
+    "saveError": "Αποτυχία αποθήκευσης των προτιμήσεων cookies. Παρακαλώ δοκιμάστε ξανά.",
+    "closeReject": "Κλείσιμο και απόρριψη προαιρετικών cookies",
+    "managePreferences": "Διαχείριση προτιμήσεων cookies"
   },
   "policy": {
     "title": "Πολιτική Cookies",
