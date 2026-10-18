@@ -22,7 +22,7 @@ function toCookieConsent(row: CookieConsentRow): CookieConsent {
     id: row.id,
     clientKey: row.client_key,
     consentVersion: row.consent_version,
-    legalVersionId: row.legal_version_id,
+    legalVersionId: row.legal_version_id ?? null,
     essentialCookies: row.essential_cookies,
     preferencesCookies: row.preferences_cookies,
     analyticsCookies: row.analytics_cookies,
