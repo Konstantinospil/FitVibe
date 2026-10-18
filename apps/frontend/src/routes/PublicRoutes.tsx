@@ -50,7 +50,14 @@ const PublicRoutes: React.FC = () => (
           </PublicPageLayout>
         }
       />
-      <Route path="/cookie" element={<PublicPageLayout><Cookie /></PublicPageLayout>} />
+      <Route
+        path="/cookie"
+        element={
+          <PublicPageLayout>
+            <Cookie />
+          </PublicPageLayout>
+        }
+      />
       <Route
         path="/contact"
         element={
