@@ -1,5 +1,4 @@
 const AUTH_FLAG_KEY = "fitvibe:auth";
-const CONSENT_KEY = "cookie-consent-banner-shown";
 const APPLICATION_BASE_URL =
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
@@ -16,15 +15,13 @@ let seededSessionCookies = null;
 
 async function installBrowserState(page, { authenticated = false } = {}) {
   await page.addInitScript(
-    ({ authKey, consentKey, authenticated: isAuthenticated }) => {
-      window.localStorage.setItem(consentKey, "true");
+    ({ authKey, authenticated: isAuthenticated }) => {
       if (isAuthenticated) {
         window.sessionStorage.setItem(authKey, "1");
       }
     },
     {
       authKey: AUTH_FLAG_KEY,
-      consentKey: CONSENT_KEY,
       authenticated,
     },
   );
@@ -74,8 +71,57 @@ async function ensureSeededSession(page) {
   await createSeededSession(page);
 }
 
-async function preparePage(page, { authenticated = false } = {}) {
+async function ensureEssentialCookieConsent(page) {
+  const request = page.context().request;
+  const statusUrl = `${APPLICATION_ORIGIN}/api/v1/consent/cookie-status`;
+  const previous = await request.get(statusUrl);
+  if (!previous.ok()) {
+    throw new Error(`Unable to retrieve E2E consent status: HTTP ${previous.status()}`);
+  }
+  const previousBody = await previous.json();
+  if (previousBody.data?.hasConsent) {
+    return;
+  }
+
+  const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
+  if (!csrfResponse.ok()) {
+    throw new Error(`Unable to acquire E2E consent CSRF token: HTTP ${csrfResponse.status()}`);
+  }
+  const { csrfToken } = await csrfResponse.json();
+  const response = await request.post(`${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`, {
+    data: {
+      essential: true,
+      preferences: false,
+      analytics: false,
+      marketing: false,
+      source: "banner",
+    },
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+  });
+  if (!response.ok()) {
+    throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
+  }
+  const saved = await request.get(statusUrl);
+  if (!saved.ok()) {
+    throw new Error(`Unable to verify E2E consent: HTTP ${saved.status()}`);
+  }
+  const result = (await saved.json()).data;
+  if (
+    !result?.hasConsent ||
+    result.consent?.essential !== true ||
+    result.consent?.preferences !== false ||
+    result.consent?.analytics !== false ||
+    result.consent?.marketing !== false
+  ) {
+    throw new Error("E2E browser consent was not persisted as essential-only");
+  }
+}
+
+async function preparePage(page, { authenticated = false, consent = true } = {}) {
   await installBrowserState(page, { authenticated });
+  if (consent) {
+    await ensureEssentialCookieConsent(page);
+  }
   if (authenticated) {
     await ensureSeededSession(page);
   }
@@ -127,6 +173,7 @@ module.exports = {
   AUTH_FLAG_KEY,
   TEST_USER,
   preparePage,
+  ensureEssentialCookieConsent,
   trackRequests,
   waitForApp,
   emailInput,
