@@ -38,12 +38,13 @@
   --transparency-disabled: 45%;
 
   /* Scrollbar dimensions and states — Figma scrollbar design */
-  --scrollbar-track-width: 8px;
-  --scrollbar-thumb-inset: 1px;
-  --scrollbar-thumb-min-height: 72px;
+  --scrollbar-thumb-size: var(--control-icon-md);
+  --scrollbar-track-ratio: 1.25;
+  --scrollbar-track-size: calc(var(--scrollbar-thumb-size) * var(--scrollbar-track-ratio));
+  --scrollbar-gap: var(--space-xs);
   --scrollbar-track: var(--color-surface-muted);
-  --scrollbar-thumb: var(--color-border-strong);
-  --scrollbar-thumb-hover: var(--color-text-secondary);
+  --scrollbar-thumb: var(--color-primary);
+  --scrollbar-thumb-hover: var(--color-primary-hover);
   --scrollbar-thumb-active: var(--color-primary);
 
   /* Spacing */
@@ -55,12 +56,14 @@
   --space-2xl: 2.5rem;
   --space-3xl: 3.5rem;
 
-
   /* Component dimension authority */
-  --layer-consent: 1000;
   --modal-width-sm: 28rem;
   --modal-width-md: 40rem;
   --modal-width-lg: 56rem;
+  --legal-document-max-width: var(--modal-width-lg);
+  --legal-document-max-height: calc(100dvh - var(--space-3xl));
+  --legal-document-mobile-max-height: calc(100dvh - var(--space-lg));
+  --layer-consent: 1000;
   --textarea-min-height: 10rem;
   --control-height-sm: 34px;
   --control-height-md: 40px;

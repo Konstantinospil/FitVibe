@@ -750,6 +750,17 @@ export async function mockProgress(page: Page) {
   });
 }
 
+export async function mockExerciseTypes(page: Page) {
+  await page.route("**/api/v1/exercise-types**", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, [
+      { code: "strength", name: "Strength", description: "Strength exercises" },
+    ]);
+  });
+}
+
 export async function mockExercises(page: Page) {
   await page.route("**/api/v1/exercises**", async (route) => {
     if (route.request().method() !== "GET") {
@@ -844,6 +855,7 @@ export async function installDefaultMocks(page: Page): Promise<void> {
   await mockFeed(page);
   await mockSession(page);
   await mockProgress(page);
+  await mockExerciseTypes(page);
   await mockExercises(page);
   await mockSessionsList(page);
   await mockLogout(page);

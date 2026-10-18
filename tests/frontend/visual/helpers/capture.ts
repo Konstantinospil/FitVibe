@@ -2,6 +2,7 @@ import { expect, type Locator, type Page, type TestInfo } from "@playwright/test
 import { freezeTime } from "./fakeClock.js";
 import { getDynamicMasks } from "./mask.js";
 import { assertNoHorizontalOverflow } from "./responsive.js";
+import { assertStandardScrollbars } from "./scrollbarAudit.js";
 import {
   gotoAuthenticated,
   seedTheme,
@@ -192,6 +193,7 @@ export async function capturePageScreenshot(
   if (!options?.locator) {
     await assertNoHorizontalOverflow(page);
   }
+  await assertStandardScrollbars(page);
   const masks = await getDynamicMasks(page);
   const target = options?.locator ?? page;
   await expect(target).toHaveScreenshot(`${name}.png`, {
@@ -212,7 +214,9 @@ export async function openAuthenticatedPage(
   await prepareVisualPage(page, testInfo, { authenticated: true });
   await gotoAuthenticated(page, url);
   await expect(page).not.toHaveURL(/\/login/);
-  await page.locator("header nav").first().waitFor({ state: "visible", timeout: 15_000 });
+  // Wait for the actual protected layout, not a desktop-only navigation element.
+  // Mobile and reduced layouts may render without a visible header nav.
+  await page.locator('[data-component="page-shell"] [data-slot="page-shell-main"]').first().waitFor({ state: "visible", timeout: 10_000 });
 }
 
 export async function openPublicPage(

@@ -17,6 +17,11 @@ const owners = [
     matches: (path) => path === "tests/qa/check-typography-contract.test.mjs",
   },
   {
+    // Executed by architecture:check through node --test in the architecture job.
+    name: "design-authority-regressions",
+    matches: (path) => path === "tests/qa/design-authority-core.test.mjs",
+  },
+  {
     // Explicitly exercised by the Coverage Gate job with node --test.
     name: "coverage-gate-negative-tests",
     matches: (path) => path === "tests/qa/check-coverage.test.cjs",

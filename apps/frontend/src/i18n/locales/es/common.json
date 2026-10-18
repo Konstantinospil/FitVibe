@@ -132,7 +132,9 @@
     "termsAriaLabel": "Ver Términos y Condiciones",
     "privacyAriaLabel": "Ver Política de Privacidad",
     "impressumAriaLabel": "Ver Aviso Legal",
-    "contactAriaLabel": "Contáctanos"
+    "contactAriaLabel": "Contáctanos",
+    "expand": "Expandir pie de página",
+    "collapse": "Contraer pie de página"
   },
   "terms": {
     "eyebrow": "Legal",
@@ -1171,5 +1173,9 @@
       "conflict": "Este plan se ha modificado en otro lugar. Carga la versión actual antes de volver a editarlo.",
       "activate": "No se pudo activar el plan de entrenamiento."
     }
+  },
+  "scrollbar": {
+    "pageLabel": "Contenido de la página",
+    "dialogLabel": "Contenido del diálogo"
   }
 }

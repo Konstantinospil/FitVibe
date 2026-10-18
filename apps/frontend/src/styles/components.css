@@ -289,7 +289,7 @@
 [data-slot="modal-copy"]{display:grid;gap:var(--space-xs)}
 [data-slot="modal-title"]{margin:0;color:var(--color-text-primary);font-family:var(--font-family-heading);font-weight:var(--font-weight-semibold);font-size:var(--type-card-title-size);line-height:var(--type-card-title-line-height);letter-spacing:var(--type-card-title-letter-spacing)}
 [data-slot="modal-description"]{margin:0;color:var(--color-text-secondary);font-family:var(--font-family-body);font-weight:var(--font-weight-regular);font-size:var(--type-supporting-size);line-height:var(--type-supporting-line-height);letter-spacing:var(--type-supporting-letter-spacing)}
-[data-slot="modal-body"]{min-height:0;overflow:auto;padding:var(--space-md)}
+[data-slot="modal-body"]{min-height:0;overflow:hidden}\n[data-slot="modal-body"] > .custom-scrollbar__viewport{padding:var(--space-md)}
 [data-slot="modal-footer"]{display:flex;justify-content:flex-end;gap:var(--space-sm);padding:var(--space-md);border-top:var(--control-border-width) solid var(--color-border)}
 
 [data-component="form-stack"],[data-component="section"]{width:100%;display:grid;gap:var(--space-md)}
@@ -549,8 +549,14 @@
 
 
 /* Shared page-shell authority */
-[data-component="page-shell"]{position:relative;min-height:100vh;width:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
-[data-slot="page-shell-main"]{min-width:0;width:100%;display:flex;flex-direction:column}
+[data-component="page-shell"]{position:relative;height:100dvh;min-height:0;width:100%;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto}
+[data-slot="page-shell-main"]{min-height:0;min-width:0;width:100%;overflow:hidden}
+
+[data-component="page-shell-footer"]{flex:none;display:flex;flex-direction:column;align-items:center}
+[data-slot="footer-toggle"]{display:flex;align-items:center;justify-content:center;align-self:center;width:var(--control-height-sm);height:var(--control-height-sm);background:var(--color-surface-muted);color:var(--color-text-primary);border-radius:var(--radius-full);cursor:pointer}
+[data-slot="footer-toggle"]>svg{width:var(--control-icon-md);height:var(--control-icon-md)}
+[data-slot="footer-collapsible"]{width:100%}
+[data-slot="footer-collapsible"][hidden]{display:none}
 
 /* Shared toast authority */
 [data-component="toast-container"]{position:fixed;top:var(--space-md);right:var(--space-md);z-index:var(--toast-layer);display:flex;flex-direction:column;gap:var(--space-sm);width:min(calc(100% - var(--space-xl)),var(--toast-max-width))}

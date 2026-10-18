@@ -2,6 +2,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
+import { analyzeDesignSources } from "./design-authority-core.mjs";
 
 const ROOT = process.cwd();
 const mode = process.argv[2] || "all";
@@ -499,6 +500,32 @@ async function checkFrontendTokens() {
     }
   }
 
+  // Reuse the PostCSS-based design authority parser rather than a second
+  // legal-document-specific dimension regex. This also catches nested values.
+  const legalStyleFile = path.join(ROOT, "apps/frontend/src/components/LegalDocumentShell.css");
+  const legalStyles = await fs.readFile(legalStyleFile, "utf8");
+  const tokenSourceForAudit = await fs.readFile(
+    path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8",
+  );
+  const designAudit = analyzeDesignSources(
+    {
+      "apps/frontend/src/styles/tokens.css": tokenSourceForAudit,
+      "apps/frontend/src/components/LegalDocumentShell.css": legalStyles,
+    },
+    { authorities: new Set(["apps/frontend/src/styles/tokens.css"]) },
+  );
+  for (const finding of designAudit.findings) {
+    if (
+      finding.type !== "magic-number" &&
+      finding.type !== "unauthorized-definition" &&
+      finding.type !== "cyclic-token"
+    ) continue;
+    if (!finding.loc.startsWith("apps/frontend/src/components/LegalDocumentShell.css:")) continue;
+    const line = Number(finding.loc.split(":").at(-1)) || 1;
+    const offset = legalStyles.split("\n").slice(0, line - 1).join("\n").length + (line > 1 ? 1 : 0);
+    report(legalStyleFile, legalStyles, offset, "Legal document design authority: " + finding.type + " (" + finding.detail + ").");
+  }
+
   const tokenSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/tokens.css"), "utf8");
   const componentStylesSource = await fs.readFile(
     path.join(ROOT, "apps/frontend/src/styles/components.css"),
@@ -520,12 +547,30 @@ async function checkFrontendTokens() {
     path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
     "utf8",
   );
-  if (!foundationSource.includes("scrollbar-gutter: stable;")) {
+  const appSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/App.tsx"), "utf8");
+  const pageShellSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/layouts/PageShell.tsx"), "utf8");
+  const componentsCss = await fs.readFile(path.join(ROOT, "apps/frontend/src/styles/components.css"), "utf8");
+  const scrollbarCss = await fs.readFile(path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.css"), "utf8");
+  const scrollbarSource = await fs.readFile(path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.tsx"), "utf8");
+  const rootRule = foundationSource.match(/html\s*\{([^}]*)\}/)?.[1] ?? "";
+  const bodyRule = foundationSource.match(/body\s*\{([^}]*)\}/)?.[1] ?? "";
+  if (
+    !/overflow:\s*hidden\s*;/.test(rootRule) ||
+    !/overflow:\s*hidden\s*;/.test(bodyRule) ||
+    /<CustomScrollbar\b/.test(appSource) ||
+    !/<CustomScrollbar\b/.test(pageShellSource) ||
+    !/className="page-shell-content-scroll"/.test(pageShellSource) ||
+    !/\[data-component="page-shell"\]\{[^}]*height:100dvh/.test(componentsCss) ||
+    !/\[data-slot="page-shell-main"\]\{[^}]*min-height:0/.test(componentsCss) ||
+    !/\.page-shell-content-scroll\s*\{[^}]*min-height:\s*0/.test(scrollbarCss) ||
+    !/\.custom-scrollbar\[data-scrollable="true"\]/.test(scrollbarCss) ||
+    !/data-scrollable=\{overflow\}/.test(scrollbarSource)
+  ) {
     report(
-      path.join(ROOT, "apps/frontend/src/styles/foundations.css"),
-      foundationSource,
-      Math.max(0, foundationSource.indexOf("html {")),
-      "The root scrolling element must reserve a stable scrollbar gutter so the scrollbar track never overlays page content.",
+      path.join(ROOT, "apps/frontend/src/layouts/PageShell.tsx"),
+      pageShellSource,
+      Math.max(0, pageShellSource.indexOf("PageShell")),
+      "Header and footer must remain fixed while shared page-shell main content owns scrolling.",
     );
   }
 
@@ -739,6 +784,46 @@ async function checkFrontendReuse() {
   }
 }
 
+
+async function checkScrollbarArchitecture() {
+  const tokensFile = path.join(ROOT, "apps/frontend/src/styles/tokens.css");
+  const tokens = await fs.readFile(tokensFile, "utf8");
+  const expected = new Map([
+    ["--scrollbar-thumb-size", "var(--control-icon-md)"],
+    ["--scrollbar-track-size", "calc(var(--scrollbar-thumb-size) * var(--scrollbar-track-ratio))"],
+    ["--scrollbar-track", "var(--color-surface-muted)"],
+    ["--scrollbar-thumb", "var(--color-primary)"],
+    ["--scrollbar-thumb-hover", "var(--color-primary-hover)"],
+  ]);
+  for (const [token, value] of expected) {
+    const entry = tokens.split("\n").find((line) => line.trim().startsWith(token + ":"));
+    const actual = entry?.split(":").slice(1).join(":").trim().replace(/;$/, "");
+    if (actual !== value) {
+      report(tokensFile, tokens, Math.max(0, tokens.indexOf(token)), "Scrollbar " + token + " must equal " + value);
+    }
+  }
+  const componentPath = path.join(ROOT, "apps/frontend/src/components/CustomScrollbar.tsx");
+  const component = await fs.readFile(componentPath, "utf8");
+  if (!component.includes('className="custom-scrollbar__track"') || !component.includes('role="scrollbar"')) {
+    report(componentPath, component, 0, "The canonical custom scrollbar must provide an accessible track.");
+  }
+  const allowedCss = new Set(["apps/frontend/src/components/CustomScrollbar.css", "apps/frontend/src/styles/tokens.css"]);
+  for (const file of await frontendSourceFiles([".css", ".scss", ".tsx", ".ts", ".jsx", ".js"])) {
+    const rel = normalize(path.relative(ROOT, file));
+    const source = await fs.readFile(file, "utf8");
+    if (/\.(css|scss)$/.test(rel) && !allowedCss.has(rel)) {
+      for (const match of source.matchAll(/::-(?:webkit|moz)-scrollbar(?:-[a-z-]+)?|scrollbar-(?:width|color)|--scrollbar-[a-z-]+\s*:/g)) {
+        report(file, source, match.index, "Scrollbar styling must be centralized in CustomScrollbar.css and global design tokens.");
+      }
+    }
+    if (/\.(tsx?|jsx?)$/.test(rel) && rel !== "apps/frontend/src/components/CustomScrollbar.tsx") {
+      for (const match of source.matchAll(/\brole\s*=\s*["']scrollbar["']/g)) {
+        report(file, source, match.index, "Scrollbar widgets must use the shared CustomScrollbar component.");
+      }
+    }
+  }
+}
+
 const startCount = violations.length;
 
 if (mode === "all" || mode === "backend") {
@@ -751,6 +836,7 @@ if (mode === "all" || mode === "frontend-reuse") {
   await checkFrontendArchiveBoundary();
   await checkFrontendPyramid();
   await checkFrontendReuse();
+  await checkScrollbarArchitecture();
 }
 
 const count = violations.length - startCount;

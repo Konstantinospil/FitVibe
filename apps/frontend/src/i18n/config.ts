@@ -19,6 +19,7 @@ export const loadMinimalLoginTranslations = async () => {
       greek: "Greek",
     },
     loading: { app: "Loading app…" },
+    scrollbar: { pageLabel: "Page content", dialogLabel: "Dialog content" },
     brand: {
       logoAlt: "FitVibe",
     },
