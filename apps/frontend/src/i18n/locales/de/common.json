@@ -591,7 +591,10 @@
       "confirmDisableMessage": "Möchtest du 2FA wirklich deaktivieren? Dein Konto ist dann weniger geschützt.",
       "confirmDisable": "Ja, 2FA deaktivieren",
       "backupCodes": "Backup-Codes",
-      "backupCodesHelp": "Bewahre diese Backup-Codes sicher auf. Du kannst sie nutzen, wenn du dein Authenticator-Gerät verlierst."
+      "backupCodesHelp": "Bewahre diese Backup-Codes sicher auf. Du kannst sie nutzen, wenn du dein Authenticator-Gerät verlierst.",
+      "revealBackupCodes": "Backup-Codes anzeigen",
+      "hideBackupCodes": "Backup-Codes ausblenden",
+      "finishBackupCodes": "Fertig"
     },
     "account": {
       "title": "Gefahrenzone",

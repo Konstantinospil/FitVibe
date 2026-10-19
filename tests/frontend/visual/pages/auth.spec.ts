@@ -32,8 +32,19 @@ test.describe("Auth Page Visual Tests", () => {
     });
     await page.locator('input[name="email"]').fill("visual@example.com");
     await page.locator('input[name="password"]').fill("Visual-only-password");
+    const loginResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/v1/auth/login" &&
+        response.request().method() === "POST",
+    );
     await page.locator('button[type="submit"]').click();
-    await expect(page).toHaveURL(/verify-2fa/);
+    const response = await loginResponse;
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toMatchObject({
+      requires2FA: true,
+      pendingSessionId: "visual-pending-session",
+    });
+    await expect(page).toHaveURL(/\/login\/verify-2fa$/);
     await assertVerticalAuthShell(page);
     await capturePageScreenshot(page, testInfo, "two-factor-challenge", { waitFor: '[data-component="form-stack"]' });
     await expect(page.locator('input[name="code"]')).toBeVisible();

@@ -18,6 +18,25 @@ import {
 
 const pageErrors = new WeakMap<Page, string[]>();
 const pageAuth = new WeakMap<Page, boolean>();
+const pageNetworkFailures = new WeakMap<Page, string[]>();
+
+async function describeReadinessFailure(page: Page): Promise<string> {
+  const state = await page.evaluate(() => ({
+    path: window.location.pathname,
+    authSessionFlag: window.sessionStorage.getItem("fitvibe:auth") === "1",
+    bootShell: Boolean(document.querySelector("#login-shell")),
+    loadingFallback: Boolean(document.querySelector("[data-ssr-loading-fallback]")),
+    pageShellPresent: Boolean(document.querySelector('[data-component="page-shell"]')),
+    mainPresent: Boolean(document.querySelector('[data-slot="page-shell-main"]')),
+    displayedHeading: document.querySelector("h1")?.textContent?.trim() ?? null,
+    bodyText: document.body?.innerText.slice(0, 240) ?? null,
+  })).catch((error: unknown) => ({ inspectionError: String(error) }));
+  return JSON.stringify({
+    ...state,
+    pageErrors: pageErrors.get(page) ?? [],
+    apiFailures: pageNetworkFailures.get(page) ?? [],
+  });
+}
 
 export async function prepareVisualPage(
   page: Page,
@@ -29,6 +48,20 @@ export async function prepareVisualPage(
   page.setDefaultNavigationTimeout(30_000);
   const errors: string[] = [];
   pageErrors.set(page, errors);
+  const apiFailures: string[] = [];
+  pageNetworkFailures.set(page, apiFailures);
+  page.on("requestfailed", (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.startsWith("/api/")) {
+      apiFailures.push(`${request.method()} ${pathname}: ${request.failure()?.errorText ?? "request failed"}`);
+    }
+  });
+  page.on("response", (response) => {
+    const pathname = new URL(response.url()).pathname;
+    if (pathname.startsWith("/api/") && response.status() >= 400) {
+      apiFailures.push(`${response.request().method()} ${pathname}: HTTP ${response.status()}`);
+    }
+  });
   pageAuth.set(page, Boolean(options?.authenticated));
   page.on("pageerror", (error) => {
     errors.push(error.message);
@@ -216,7 +249,17 @@ export async function openAuthenticatedPage(
   await expect(page).not.toHaveURL(/\/login/);
   // Wait for the actual protected layout, not a desktop-only navigation element.
   // Mobile and reduced layouts may render without a visible header nav.
-  await page.locator('[data-component="page-shell"] [data-slot="page-shell-main"]').first().waitFor({ state: "visible", timeout: 10_000 });
+  try {
+    await page
+      .locator('[data-component="page-shell"] [data-slot="page-shell-main"]')
+      .first()
+      .waitFor({ state: "visible", timeout: 10_000 });
+  } catch (error) {
+    throw new Error(
+      `Authenticated visual page did not become ready: ${await describeReadinessFailure(page)}`,
+      { cause: error },
+    );
+  }
 }
 
 export async function openPublicPage(

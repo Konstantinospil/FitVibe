@@ -119,25 +119,34 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
     terms: { accepted: true, needsAcceptance: false },
   });
 
-  // Configure real TOTP on this newly registered disposable athlete.
-  // The production UI currently exposes status, not a 2FA enrollment form.
-  const setupResponse = await page.context().request.get(`${origin}/api/v1/auth/2fa/setup`);
+  // Enroll through Settings, exercising the real frontend and server.
+  await page.goto("/settings");
+  await waitForApp(page);
+  const setupRequest = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/v1/auth/2fa/setup");
+  await page.getByRole("button", { name: /^enable 2fa$/i }).click();
+  const setupResponse = await setupRequest;
   expect(setupResponse.status()).toBe(200);
   const { secret } = await setupResponse.json();
-  expect(secret).toEqual(expect.any(String));
-
-  const csrfResponse = await page.context().request.get(`${origin}/api/v1/csrf-token`);
-  expect(csrfResponse.status()).toBe(200);
-  const { csrfToken } = await csrfResponse.json();
-  const enableResponse = await page.context().request.post(`${origin}/api/v1/auth/2fa/enable`, {
-    data: { code: authenticator.generate(secret) },
-    headers: { Origin: origin, "X-CSRF-Token": csrfToken },
-  });
-  expect(enableResponse.status()).toBe(200);
-  const statusResponse = await page.context().request.get(`${origin}/api/v1/auth/2fa/status`);
-  expect(statusResponse.status()).toBe(200);
+  await expect(page.getByAltText("2FA QR Code")).toBeVisible();
+  const enableMutation = observeMutation(page, "POST", "/api/v1/auth/2fa/verify");
+  await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
+  const enableResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/verify" &&
+    response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: /verify and enable/i }).click();
+  expect((await enableResponse).status()).toBe(200);
+  enableMutation.assertExactlyOnce(200);
+  enableMutation.stop();
+  await expect(page.getByText(/2fa is currently enabled/i)).toBeVisible();
+  const statusResponse = await page.context().request.get(origin + "/api/v1/auth/2fa/status");
   expect(await statusResponse.json()).toMatchObject({ enabled: true });
-
+  await page.getByRole("button", { name: /^show backup codes$/i }).click();
+  const originalBackupCodes = await page.locator("main li code").allTextContents();
+  expect(originalBackupCodes.length).toBeGreaterThan(0);
+  await page.getByRole("button", { name: /^done$/i }).click();
+  await page.goto("/");
+  await waitForApp(page);
   // End the first session and check server-side invalidation.
   const firstLogout = observeMutation(page, "POST", "/api/v1/auth/logout");
   await page.getByRole("button", { name: /sign out/i }).click();
@@ -202,6 +211,43 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   expect(authenticated.status()).toBe(200);
   expect(await authenticated.json()).toMatchObject({ primaryEmail: email });
 
+  // Manage recovery codes and disable 2FA using real Settings controls.
+  await page.goto("/settings");
+  await waitForApp(page);
+  await page.getByRole("button", { name: /^backup codes$/i }).click();
+  await page.getByLabel(/enter your password to disable 2fa/i).fill(registerPayload.password);
+  await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
+  const regeneration = observeMutation(page, "POST", "/api/v1/auth/2fa/backup-codes/regenerate");
+  const regenerationResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/backup-codes/regenerate" &&
+    response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: /^backup codes$/i }).last().click();
+  expect((await regenerationResponse).status()).toBe(200);
+  regeneration.assertExactlyOnce(200);
+  regeneration.stop();
+  await page.getByRole("button", { name: /^show backup codes$/i }).click();
+  const newCodes = await page.locator("main li code").allTextContents();
+  expect(newCodes.length).toBeGreaterThan(0);
+  expect(newCodes).not.toEqual(originalBackupCodes);
+  await page.getByRole("button", { name: /^done$/i }).click();
+  await page.getByRole("button", { name: /^disable 2fa$/i }).click();
+  await page.getByLabel(/enter your password to disable 2fa/i).fill(registerPayload.password);
+  await page.getByLabel(/enter the 6-digit code from your app/i).fill(authenticator.generate(secret));
+  const disableMutation = observeMutation(page, "POST", "/api/v1/auth/2fa/disable");
+  const disableMutationResponse = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/disable" &&
+    response.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: /yes, disable 2fa/i }).click();
+  expect((await disableMutationResponse).status()).toBe(200);
+  disableMutation.assertExactlyOnce(200);
+  disableMutation.stop();
+  await expect(page.getByText(/2fa is currently disabled/i)).toBeVisible();
+  const disabledStatus = await page.context().request.get(origin + "/api/v1/auth/2fa/status");
+  expect(await disabledStatus.json()).toMatchObject({ enabled: false });
+  await page.goto("/");
+  await waitForApp(page);
   const finalLogout = observeMutation(page, "POST", "/api/v1/auth/logout");
   await page.getByRole("button", { name: /sign out/i }).click();
   await page.waitForURL((url) => url.pathname === "/login");
