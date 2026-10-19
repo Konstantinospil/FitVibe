@@ -13,6 +13,6 @@
   },
   "dependencies": {
     "preact": "11.0.0",
-    "react": "^19.3.0"
+    "react": "^19.3.1"
   }
 }
