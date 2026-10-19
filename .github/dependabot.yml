@@ -1,5 +1,5 @@
 # Dependabot version updates for the FitVibe pnpm monorepo.
-# Security updates still target `main` (GitHub default). Version PRs target `dev`.
+# Security updates still target `main` (GitHub default). Version PRs target `feature`.
 # This file must live on the default branch (`main`) before GitHub will honor it.
 version: 2
 
@@ -8,7 +8,7 @@ updates:
   # a second npm directory breaks pnpm workspaces (shared pnpm-lock.yaml).
   - package-ecosystem: "npm"
     directory: "/"
-    target-branch: "dev"
+    target-branch: "feature"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -45,7 +45,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "dev"
+    target-branch: "feature"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -70,7 +70,7 @@ updates:
       - "/infra/docker/prod"
       - "/infra/nginx"
       - "/infra/kubernetes"
-    target-branch: "dev"
+    target-branch: "feature"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -101,7 +101,7 @@ updates:
       - "/infra/docker/prod"
       - "/infra/docker/staging"
       - "/infra/docker/test"
-    target-branch: "dev"
+    target-branch: "feature"
     schedule:
       interval: "weekly"
       day: "monday"
