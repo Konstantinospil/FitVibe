@@ -277,12 +277,12 @@ const CalendarPage: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        aria-label={t("calendarSurface.dayLabel", {
+                        aria-label={`${String(date.getDate()).padStart(2, "0")} — ${t("calendarSurface.dayLabel", {
                           date: new Intl.DateTimeFormat(i18n.language, {
                             dateStyle: "full",
                           }).format(date),
                           count: daySessions.length,
-                        })}
+                        })}`}
                         onClick={() => setSelectedDate(date)}
                       >
                         {String(date.getDate()).padStart(2, "0")}
