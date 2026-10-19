@@ -69,6 +69,8 @@ async function assertAccessible(page) {
 }
 
 test.describe("Accessibility and localized UI acceptance", () => {
+  // The real consent API can require a full rate-limit recovery window.
+  test.describe.configure({ timeout: 120_000 });
   for (const scenario of accessibilityPages) {
     test(`has no WCAG A/AA violations on ${scenario.name}`, async ({ page }) => {
       await preparePage(page, { authenticated: Boolean(scenario.requiresAuth) });
