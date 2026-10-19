@@ -1,0 +1,84 @@
+name: Regenerate pnpm lockfile
+run-name: Regenerate pnpm lockfile on ${{ inputs.target_branch }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Existing fix/ or chore/ branch (not main, dev, or feature)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pnpm-lockfile-${{ inputs.target_branch }}
+  cancel-in-progress: false
+
+jobs:
+  regenerate:
+    name: Regenerate and verify lockfile
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Validate target branch
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+        run: |
+          if [[ ! "$TARGET_BRANCH" =~ ^(fix|chore)/[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+            echo 'Only existing fix/* or chore/* branches may be updated.' >&2
+            exit 1
+          fi
+          git check-ref-format --branch "$TARGET_BRANCH"
+
+      - name: Check out target branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.target_branch }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+
+      - name: Generate lockfile from manifests and workspace overrides
+        run: pnpm install --lockfile-only --ignore-scripts --no-frozen-lockfile
+
+      - name: Verify frozen lockfile and diff
+        shell: bash
+        run: |
+          pnpm install --lockfile-only --ignore-scripts --frozen-lockfile
+          git diff --check
+          changed="$(git diff --name-only)"
+          if [[ -n "$changed" && "$changed" != 'pnpm-lock.yaml' ]]; then
+            echo "Unexpected changes outside pnpm-lock.yaml: $changed" >&2
+            exit 1
+          fi
+
+      - name: Validate installation, build, and types
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build
+          pnpm run typecheck
+
+      - name: Commit generated lockfile to target branch
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ inputs.target_branch }}
+        run: |
+          git add -- pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            echo 'Lockfile is already consistent; no commit required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore(deps): regenerate pnpm lockfile'
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
