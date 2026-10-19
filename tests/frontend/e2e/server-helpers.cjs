@@ -72,6 +72,28 @@ async function ensureSeededSession(page) {
   await createSeededSession(page);
 }
 
+
+// Only consent status is retried: it is an idempotent read shared by many real
+// browser journeys on the CI runner's loopback IP. Respect the server's
+// Retry-After rather than bypassing its abuse control or mocking consent.
+async function getConsentStatusWithRateLimitBackoff(request, url) {
+  const deadline = Date.now() + 75_000;
+  for (;;) {
+    const response = await request.get(url);
+    if (response.status() !== 429) return response;
+
+    const retryAfter = Number(response.headers()["retry-after"]);
+    if (!Number.isFinite(retryAfter) || retryAfter < 0) {
+      throw new Error("Consent status was rate-limited without a valid Retry-After");
+    }
+    const delay = Math.max(1000, Math.ceil(retryAfter * 1000));
+    if (Date.now() + delay > deadline) {
+      throw new Error("Consent status remained rate-limited beyond the E2E recovery deadline");
+    }
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
 async function ensureEssentialCookieConsent(page) {
   if (seededConsentCookies) {
     await page.context().addCookies(seededConsentCookies);
@@ -79,7 +101,7 @@ async function ensureEssentialCookieConsent(page) {
   }
   const request = page.context().request;
   const statusUrl = `${APPLICATION_ORIGIN}/api/v1/consent/cookie-status`;
-  const previous = await request.get(statusUrl);
+  const previous = await getConsentStatusWithRateLimitBackoff(request, statusUrl);
   if (!previous.ok()) {
     throw new Error(`Unable to retrieve E2E consent status: HTTP ${previous.status()}`);
   }
@@ -110,7 +132,7 @@ async function ensureEssentialCookieConsent(page) {
   if (!response.ok()) {
     throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
   }
-  const saved = await request.get(statusUrl);
+  const saved = await getConsentStatusWithRateLimitBackoff(request, statusUrl);
   if (!saved.ok()) {
     throw new Error(`Unable to verify E2E consent: HTTP ${saved.status()}`);
   }
@@ -189,6 +211,7 @@ module.exports = {
   TEST_USER,
   preparePage,
   ensureEssentialCookieConsent,
+  getConsentStatusWithRateLimitBackoff,
   trackRequests,
   waitForApp,
   emailInput,
