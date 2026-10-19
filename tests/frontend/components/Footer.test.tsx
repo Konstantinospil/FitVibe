@@ -53,14 +53,17 @@ describe("Footer", () => {
   });
 
   it.each([
-    ["Contact us", "/contact"],
-    ["View Terms and Conditions", "/terms"],
-    ["View Privacy Policy", "/privacy"],
+    ["Contact", "/contact"],
+    ["Terms and Conditions", "/terms"],
+    ["Privacy Policy", "/privacy"],
     ["Cookie Policy", "/cookie"],
     ["Cookie Preferences", "/cookie"],
   ] as const)("renders %s with the correct route", (name, href) => {
     renderFooter();
-    expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+    const link = screen.getByRole("link", { name });
+    expect(link).toHaveAttribute("href", href);
+    expect(link).toHaveAccessibleName(name);
+    expect(link).toHaveTextContent(name);
   });
 
   it("keeps social icons disabled until a URL is configured", () => {

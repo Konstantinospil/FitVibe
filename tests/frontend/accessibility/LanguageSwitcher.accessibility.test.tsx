@@ -58,7 +58,7 @@ describe("LanguageSwitcher Accessibility", () => {
 
       const button = screen.getByRole("button", { name: /change language/i });
       expect(button).toBeInTheDocument();
-      expect(button).toHaveAttribute("aria-label", "Change language");
+      expect(button).toHaveAttribute("aria-label", "EN — Change language");
     });
 
     it("should have aria-expanded=false when closed", () => {
@@ -230,7 +230,7 @@ describe("LanguageSwitcher Accessibility", () => {
       renderWithI18n(<LanguageSwitcher />);
 
       const button = screen.getByRole("button", { name: /change language/i });
-      expect(button).toHaveAccessibleName("Change language");
+      expect(button).toHaveAccessibleName("EN — Change language");
     });
 
     it("should announce menu label to screen readers", () => {
@@ -287,7 +287,7 @@ describe("LanguageSwitcher Accessibility", () => {
       fireEvent.click(germanOption);
 
       await waitFor(() => {
-        expect(button).toHaveAttribute("aria-label", "Sprache ändern");
+        expect(button).toHaveAttribute("aria-label", "DE — Sprache ändern");
       });
     });
   });
@@ -471,7 +471,7 @@ describe("LanguageSwitcher Accessibility", () => {
       fireEvent.click(germanOption);
 
       await waitFor(() => {
-        expect(button).toHaveAttribute("aria-label", "Sprache ändern");
+        expect(button).toHaveAttribute("aria-label", "DE — Sprache ändern");
       });
 
       fireEvent.click(button);
