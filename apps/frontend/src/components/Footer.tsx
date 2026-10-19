@@ -17,16 +17,12 @@ export const Footer: React.FC = () => {
             <TextLink
               as={NavLink}
               to="/contact"
-              aria-label={t("footer.contactAriaLabel", { defaultValue: "Contact us" })}
             >
               {t("footer.contact", { defaultValue: "Contact" })}
             </TextLink>
             <TextLink
               as={NavLink}
               to="/terms"
-              aria-label={t("footer.termsAriaLabel", {
-                defaultValue: "View Terms and Conditions",
-              })}
             >
               {t("footer.terms")}
             </TextLink>
@@ -39,7 +35,6 @@ export const Footer: React.FC = () => {
             <TextLink
               as={NavLink}
               to="/privacy"
-              aria-label={t("footer.privacyAriaLabel", { defaultValue: "View Privacy Policy" })}
             >
               {t("footer.privacy")}
             </TextLink>
