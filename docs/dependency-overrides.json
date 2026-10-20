@@ -3,6 +3,21 @@
   "policy": "All overrides must have inventory entries; existing entries remain pending evidence-based review. This inventory is not a claim that each pin is necessary.",
   "overrides": [
     {
+      "name": "uuid",
+      "constraint": "14.0.3",
+      "category": "direct-and-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [
+        {
+          "name": "uuid",
+          "range": "^14.0.3",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Temporary compatibility experiment: force UUID 14.0.3 globally to eliminate vulnerable UUID 8.3.2 in @lhci/cli. Lighthouse CI declares an older range; passing real Lighthouse job required before acceptance.",
+      "removalCriteria": "If Lighthouse fails, revert this experiment. If it passes, review upstream compatibility and future targeted replacement; do not interpret passing once as long-term support."
+    },
+    {
       "name": "follow-redirects",
       "constraint": "1.16.1",
       "category": "transitive",
