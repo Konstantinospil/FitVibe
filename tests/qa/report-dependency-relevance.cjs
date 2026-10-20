@@ -12,7 +12,17 @@ for(const p of workspaces) {
   for(const key of Object.keys({...j.dependencies,...j.devDependencies,...j.optionalDependencies})) direct.set(key,[...(direct.get(key)||[]),p]);
 }
 const packageSection = lock.split(/^packages:\s*$/m)[1]?.split(/^snapshots:\s*$/m)[0]||"";
-const installed = new Set([...packageSection.matchAll(/^  ('?)(@[^'\n]+|[^@'\n]+)@\d[^\n]*:\s*$/gm)].map(m=>m[2]));
+// pnpm uses quoted package keys, including unscoped entries such as 'lodash@4.18.1'.
+function lockPackageName(key) {
+  const separator = key.lastIndexOf("@");
+  if (separator <= 0 || !/^\\d/.test(key.slice(separator + 1))) return null;
+  return key.slice(0, separator);
+}
+const installed = new Set(
+  [...packageSection.matchAll(/^  (?:'([^']+)'|([^:\\s]+)):\\s*$/gm)]
+    .map(m => lockPackageName(m[1] || m[2]))
+    .filter(Boolean),
+);
 const findings = [];
 for(const o of inventory.overrides) {
   const majorScoped=/@\d+(?:\.\d+)?$/.test(o.name);
