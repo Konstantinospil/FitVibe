@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
 const { builtinModules } = require("node:module");
-const root = path.resolve(__dirname, "../..");
+const root = process.env.DEPENDENCY_AUDIT_ROOT ? path.resolve(process.env.DEPENDENCY_AUDIT_ROOT) : path.resolve(__dirname, "../..");
 const builtins = new Set(builtinModules.map(n => n.replace(/^node:/, "")));
 const sourceExtensions = /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/;
 const dirs = ["apps", "packages"];
