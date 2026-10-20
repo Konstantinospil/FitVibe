@@ -23,6 +23,8 @@ test.describe("Auth Page Visual Tests", () => {
 
   test("2FA challenge", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/login", { viewports: ["xs", "sm", "md", "lg"] });
+    await waitForAppReady(page);
+    await page.locator('input[name="email"]').waitFor({ state: "visible" });
     await page.route("**/api/v1/auth/login", async route => {
       await route.fulfill({
         status: 200,
@@ -32,6 +34,8 @@ test.describe("Auth Page Visual Tests", () => {
     });
     await page.locator('input[name="email"]').fill("visual@example.com");
     await page.locator('input[name="password"]').fill("Visual-only-password");
+    await expect(page.locator('input[name="email"]')).toHaveValue("visual@example.com");
+    await expect(page.locator('input[name="password"]')).toHaveValue("Visual-only-password");
     const loginResponse = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname === "/api/v1/auth/login" &&
