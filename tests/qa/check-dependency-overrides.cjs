@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const fs = require("node:fs");
 const path = require("node:path");
-const root = path.resolve(__dirname, "../..");
+const root = process.env.DEPENDENCY_AUDIT_ROOT ? path.resolve(process.env.DEPENDENCY_AUDIT_ROOT) : path.resolve(__dirname, "../..");
 const workspace = fs.readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8");
 const section = workspace.split(/^overrides:\s*$/m)[1];
 if (!section) throw new Error("Missing pnpm workspace overrides");
