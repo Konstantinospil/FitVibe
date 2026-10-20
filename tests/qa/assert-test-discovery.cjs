@@ -27,6 +27,11 @@ const owners = [
     matches: (path) => path === "tests/qa/check-coverage.test.cjs",
   },
   {
+    // Explicitly run by the Quality job: dependency governance regression suite.
+    name: "dependency-governance-regressions",
+    matches: (path) => path === "tests/qa/dependency-governance.test.cjs",
+  },
+  {
     // Executed by Deployment Contract before a release can be promoted.
     name: "ci-cd-contract-tests",
     matches: (path) => path === "tests/qa/ci-cd-contract.test.cjs",
