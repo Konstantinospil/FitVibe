@@ -104,8 +104,8 @@
           "manifest": "package.json"
         }
       ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Historical commit a02a65c9 changed the override from >=8.5.26 to exact 8.5.28 to match a resolved version; root package.json now requests 8.5.30. The historical commit explains the pin but does not justify keeping an older version.",
+      "removalCriteria": "Align the workspace constraint with root manifest, regenerate lockfile with pnpm 12, verify CSS builds, architecture/hardcoding checks, VRT and full CI."
     },
     {
       "name": "vite",
@@ -182,8 +182,8 @@
           "manifest": "packages/ui/package.json"
         }
       ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Known incompatibility: frontend/backoffice declare ^11.0.0 and UI declares 11.0.0, while workspace forces 10.28.2. Why this pin was introduced is not verified; do not upgrade without frontend, backoffice, VRT and peer dependency validation.",
+      "removalCriteria": "Upgrade to Preact 11 on separate branch using pnpm lockfile regeneration; pass build, typecheck, unit, E2E and VRT; verify shared UI package and react compatibility."
     },
     {
       "name": "tmp",
@@ -276,7 +276,7 @@
       "name": "uuid",
       "constraint": "14.0.2",
       "category": "direct-and-transitive",
-      "status": "unverified-necessity",
+      "status": "requires-compatibility-review",
       "directDeclarations": [
         {
           "name": "uuid",
@@ -284,8 +284,8 @@
           "manifest": "apps/backend/package.json"
         }
       ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Backend requests ^14.0.3 while workspace pins 14.0.2, outside the backend request range. The reason for the lower pin is not documented.",
+      "removalCriteria": "Update to a compatible 14.x release; regenerate lockfile; pass backend build, typecheck, unit, integration, security and deployment tests."
     },
     {
       "name": "morgan",
