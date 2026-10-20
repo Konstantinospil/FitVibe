@@ -48,7 +48,7 @@
     "architecture:design-audit": "node tests/qa/audit-design-authority.mjs",
     "architecture:design-tests": "node --test tests/qa/design-authority-core.test.mjs",
     "architecture:design-strict": "node tests/qa/audit-design-authority.mjs --strict",
-    "quality:package-json": "node tests/qa/check-package-json.cjs",
+    "quality:package-json": "node tests/qa/check-package-json.cjs && node tests/qa/check-dependency-overrides.cjs",
     "test:backoffice": "pnpm --filter @fitvibe/backoffice run build && playwright test --config tests/backoffice/e2e/playwright.config.cjs",
     "typography:check": "node tests/qa/check-typography-contract.mjs"
   },
