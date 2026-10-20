@@ -67,3 +67,14 @@ test("controlled fixture rejects undocumented version contradictions", () => fix
   fs.writeFileSync(path.join(dir,"docs","dependency-overrides.json"),JSON.stringify({overrides:[{name:"used-package",constraint:"2.0.0",status:"unverified-necessity",reason:"Fixture",removalCriteria:"Fixture"}]}));
   assert.throws(() => fixtureReport("check-dependency-overrides.cjs",dir), /Command failed/);
 }));
+
+test("resolved dependency contract rejects a direct version below the manifest requirement", () => fixture(dir => {
+  fs.writeFileSync(path.join(dir,"pnpm-lock.yaml"), "lockfileVersion: '9.0'\nimporters:\n  apps/example:\n    dependencies:\n      used-package:\n        specifier: ^1.2.0\n        version: 1.0.0\n");
+  fs.writeFileSync(path.join(dir,"apps/example/package.json"),JSON.stringify({dependencies:{"used-package":"^1.2.0"}}));
+  assert.throws(() => fixtureReport("check-resolved-dependencies.cjs",dir), /Command failed/);
+}));
+test("resolved dependency contract accepts a compatible direct dependency", () => fixture(dir => {
+  fs.writeFileSync(path.join(dir,"pnpm-lock.yaml"), "lockfileVersion: '9.0'\nimporters:\n  apps/example:\n    dependencies:\n      used-package:\n        specifier: ^1.0.0\n        version: 1.2.0\n");
+  const out=fixtureReport("check-resolved-dependencies.cjs",dir);
+  assert.match(out,/satisfy supported manifest ranges/);
+}));
