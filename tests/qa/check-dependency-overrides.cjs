@@ -24,7 +24,17 @@ for (const [name, value] of actual) {
 for (const name of documented.keys()) if (!actual.has(name)) errors.push("Stale inventory entry: " + name);
 // Fail closed on undocumented direct-dependency version contradictions.
 // Known historical exceptions must be explicitly marked for compatibility review.
-const manifests = ["package.json", "apps/frontend/package.json", "apps/backoffice/package.json", "apps/backend/package.json", "packages/ui/package.json"];
+const manifests = ["package.json"];
+for (const area of ["apps", "packages"]) {
+  const dir = path.join(root, area);
+  if (!fs.existsSync(dir)) continue;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      const file = path.posix.join(area, entry.name, "package.json");
+      if (fs.existsSync(path.join(root, file))) manifests.push(file);
+    }
+  }
+}
 function parseVersion(range) {
   const match = /^(\^|~|>=|>|=)?(\d+)\.(\d+)\.(\d+)$/.exec(range);
   return match && { op: match[1] || "=", major: Number(match[2]), minor: Number(match[3]), patch: Number(match[4]) };
