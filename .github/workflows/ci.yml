@@ -2160,7 +2160,7 @@ jobs:
             playwright-report/visual/
             test-results/visual-junit.xml
           retention-days: 30
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Job summary
         if: always()
