@@ -3,6 +3,15 @@
   "policy": "All overrides must have inventory entries; existing entries remain pending evidence-based review. This inventory is not a claim that each pin is necessary.",
   "overrides": [
     {
+      "name": "follow-redirects",
+      "constraint": "1.16.1",
+      "category": "transitive",
+      "status": "security-patch-required",
+      "directDeclarations": [],
+      "reason": "Security advisories GHSA-q3jh-wrc6-jgq8 and GHSA-8r9p-f939-6h3c affect 1.16.0; axios introduces follow-redirects into frontend and backoffice.",
+      "removalCriteria": "Remove only after axios and dependency resolution guarantee follow-redirects >=1.16.1 without override and full security CI passes."
+    },
+    {
       "name": "fast-xml-parser",
       "constraint": ">=5.5.6",
       "category": "transitive",
