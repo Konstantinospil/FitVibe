@@ -29,9 +29,9 @@ export default defineConfig({
   snapshotPathTemplate:
     "{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{-projectName}{-snapshotSuffix}{ext}",
   reporter: [
-    ["html", { outputFolder: "../../playwright-report/visual", open: "never" }],
+    ["html", { outputFolder: path.join(repoRoot, "playwright-report/visual"), open: "never" }],
     ["list"],
-    ["junit", { outputFile: "../../test-results/visual-junit.xml" }],
+    ["junit", { outputFile: path.join(repoRoot, "test-results/visual-junit.xml") }],
   ],
   use: {
     baseURL: process.env.APP_URL || "http://127.0.0.1:4173",
