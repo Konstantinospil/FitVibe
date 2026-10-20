@@ -166,6 +166,9 @@ jobs:
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
 
+      - name: Analyze workspace source dependencies (advisory)
+        run: node tests/qa/analyze-source-dependencies.cjs
+
       - name: Verify dependency integrity
         run: |
           pnpm audit --prod --audit-level=moderate
