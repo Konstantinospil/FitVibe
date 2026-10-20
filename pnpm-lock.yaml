@@ -176,7 +176,6 @@ overrides:
   postcss: 8.5.28
   vite: ^8.2.2
   vitest: ^5.0.1
-  '@remix-run/router': 1.23.2
   chrome-launcher: ^1.2.1
   preact: 10.28.2
   tmp: ^0.2.7
