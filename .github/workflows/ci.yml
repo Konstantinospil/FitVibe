@@ -157,8 +157,14 @@ jobs:
       - name: Validate package manifests
         run: node tests/qa/check-package-json.cjs
 
+      - name: Validate dependency override declarations
+        run: node tests/qa/check-dependency-overrides.cjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
+
+      - name: Review dependency and override relevance (advisory)
+        run: node tests/qa/report-dependency-relevance.cjs
 
       - name: Verify dependency integrity
         run: |
