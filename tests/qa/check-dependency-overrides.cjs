@@ -47,7 +47,8 @@ for (const file of manifests) {
   for (const [name, requested] of Object.entries({ ...manifest.dependencies, ...manifest.devDependencies })) {
     if (!actual.has(name) || !contradicts(actual.get(name), requested)) continue;
     const item = documented.get(name);
-    if (!item || item.status !== "requires-compatibility-review" || !item.reason || !item.removalCriteria) {
+    const recorded = item?.directDeclarations?.some(d => d.manifest === file && d.range === requested);
+    if (!item || item.status !== "requires-compatibility-review" || !item.reason || !item.removalCriteria || !recorded) {
       errors.push(file + ": " + name + " override " + actual.get(name) + " conflicts with " + requested + " without documented review");
     } else {
       console.warn("Known override discrepancy: " + file + " " + name + " requested " + requested + " forced " + actual.get(name));
