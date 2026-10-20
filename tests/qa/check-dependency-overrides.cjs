@@ -26,7 +26,7 @@ for (const name of documented.keys()) if (!actual.has(name)) errors.push("Stale 
 // Known historical exceptions must be explicitly marked for compatibility review.
 const manifests = ["package.json", "apps/frontend/package.json", "apps/backoffice/package.json", "apps/backend/package.json", "packages/ui/package.json"];
 function parseVersion(range) {
-  const match = /^(\\^|~|>=|>|=)?(\\d+)\\.(\\d+)\\.(\\d+)$/.exec(range);
+  const match = /^(\^|~|>=|>|=)?(\d+)\.(\d+)\.(\d+)$/.exec(range);
   return match && { op: match[1] || "=", major: Number(match[2]), minor: Number(match[3]), patch: Number(match[4]) };
 }
 function contradicts(exactValue, requested) {
