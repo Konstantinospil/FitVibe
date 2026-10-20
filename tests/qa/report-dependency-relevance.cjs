@@ -15,11 +15,11 @@ const packageSection = lock.split(/^packages:\s*$/m)[1]?.split(/^snapshots:\s*$/
 // pnpm uses quoted package keys, including unscoped entries such as 'lodash@4.18.1'.
 function lockPackageName(key) {
   const separator = key.lastIndexOf("@");
-  if (separator <= 0 || !/^\\d/.test(key.slice(separator + 1))) return null;
+  if (separator <= 0 || !/^\d/.test(key.slice(separator + 1))) return null;
   return key.slice(0, separator);
 }
 const installed = new Set(
-  [...packageSection.matchAll(/^  (?:'([^']+)'|([^:\\s]+)):\\s*$/gm)]
+  [...packageSection.matchAll(/^  (?:'([^']+)'|([^:\s]+)):\s*$/gm)]
     .map(m => lockPackageName(m[1] || m[2]))
     .filter(Boolean),
 );
