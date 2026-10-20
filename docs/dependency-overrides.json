@@ -209,8 +209,8 @@
       "category": "local-patch",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Workspace-local patched package at packages/patched-extract-zip; .npmrc explicitly requires legacy deploy because of linked overrides.",
+      "removalCriteria": "Verify upstream extract-zip has replaced the local patch functionality; remove linked override only with deployment/build tests across both architectures."
     },
     {
       "name": "esbuild",
@@ -332,20 +332,20 @@
     {
       "name": "body-parser@1",
       "constraint": "1.20.6",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'body-parser@1'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "path-to-regexp@0.1",
       "constraint": "0.1.13",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'path-to-regexp@0.1'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "yaml",
@@ -359,65 +359,65 @@
     {
       "name": "express@4",
       "constraint": "4.22.0",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'express@4'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "minimatch@3",
       "constraint": ">=3.1.4",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'minimatch@3'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "minimatch@5",
       "constraint": ">=5.1.8",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'minimatch@5'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "minimatch@9",
       "constraint": ">=9.0.7",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'minimatch@9'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "brace-expansion@1",
       "constraint": "^1.1.12",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'brace-expansion@1'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "brace-expansion@2",
       "constraint": "^2.0.2",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'brace-expansion@2'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "brace-expansion@5",
       "constraint": ">=5.0.9",
-      "category": "transitive",
+      "category": "major-scoped-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'brace-expansion@5'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
       "name": "protobufjs",
