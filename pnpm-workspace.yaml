@@ -34,7 +34,6 @@ overrides:
   'vite': '^8.2.2'
   'vitest': '^5.0.1'
   'chrome-launcher': '^1.2.1'
-  'preact': '10.28.2'
   'tmp': '^0.2.7'
   'glob': '10.5.0'
   'extract-zip': 'link:packages/patched-extract-zip'
