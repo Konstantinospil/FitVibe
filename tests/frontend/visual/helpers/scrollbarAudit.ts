@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 /**
  * Fail closed on visible legacy scroll containers. A scrollbar is compliant only
@@ -6,7 +6,8 @@ import type { Page } from "@playwright/test";
  * Run after route and modal content is fully rendered, and at every screenshot.
  */
 export async function assertStandardScrollbars(page: Page): Promise<void> {
-  const violations = await page.evaluate(() => {
+  await expect
+    .poll(async () => page.evaluate(() => {
     const findings: string[] = [];
     const describe = (element: Element): string => {
       const segments: string[] = [];
@@ -57,11 +58,10 @@ export async function assertStandardScrollbars(page: Page): Promise<void> {
     // The document uses ordinary browser scrolling. Only dedicated content
     // panels with the shared component are required to have a custom track.
     return findings;
-  });
-  if (violations.length) {
-    throw new Error(
-      `Legacy scrollbar audit found ${violations.length} violation(s) on ${page.url()}:\n` +
-        violations.map((finding) => `- ${finding}`).join("\n"),
-    );
-  }
+    }), {
+      message: `Scrollbar state must agree with DOM overflow on ${page.url()}`,
+      timeout: 3000,
+      intervals: [100, 200, 500],
+    })
+    .toEqual([]);
 }
