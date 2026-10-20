@@ -1,0 +1,686 @@
+{
+  "schemaVersion": 1,
+  "policy": "All overrides must have inventory entries; existing entries remain pending evidence-based review. This inventory is not a claim that each pin is necessary.",
+  "overrides": [
+    {
+      "name": "fast-xml-parser",
+      "constraint": ">=5.5.6",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "ip-address",
+      "constraint": ">=10.7.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "fast-xml-builder",
+      "constraint": ">=1.1.7",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "diff",
+      "constraint": "^4.0.4",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "lodash-es",
+      "constraint": "^4.18.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "lodash",
+      "constraint": ">=4.18.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "handlebars",
+      "constraint": ">=4.7.10",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "immutable",
+      "constraint": "4.3.9",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "basic-ftp",
+      "constraint": "^6.2.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "nanoid",
+      "constraint": "3.3.18",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "postcss",
+      "constraint": "8.5.28",
+      "category": "direct-and-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [
+        {
+          "name": "postcss",
+          "range": "8.5.30",
+          "manifest": "package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "vite",
+      "constraint": "^8.2.2",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "vite",
+          "range": "^8.3.4",
+          "manifest": "apps/frontend/package.json"
+        },
+        {
+          "name": "vite",
+          "range": "^8.3.4",
+          "manifest": "apps/backoffice/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "vitest",
+      "constraint": "^5.0.1",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "vitest",
+          "range": "^5.0.5",
+          "manifest": "apps/frontend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@remix-run/router",
+      "constraint": "1.23.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "chrome-launcher",
+      "constraint": "^1.2.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "preact",
+      "constraint": "10.28.2",
+      "category": "direct-and-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [
+        {
+          "name": "preact",
+          "range": "^11.0.0",
+          "manifest": "apps/frontend/package.json"
+        },
+        {
+          "name": "preact",
+          "range": "^11.0.0",
+          "manifest": "apps/backoffice/package.json"
+        },
+        {
+          "name": "preact",
+          "range": "11.0.0",
+          "manifest": "packages/ui/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "tmp",
+      "constraint": "^0.2.7",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "glob",
+      "constraint": "10.5.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "extract-zip",
+      "constraint": "link:packages/patched-extract-zip",
+      "category": "local-patch",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "esbuild",
+      "constraint": "^0.25.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "js-yaml",
+      "constraint": ">=4.3.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "jws",
+      "constraint": "4.0.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "nodemailer",
+      "constraint": "^10.0.12",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "nodemailer",
+          "range": "^10.1.1",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@smithy/core",
+      "constraint": "^3.33.3",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "qs",
+      "constraint": ">=6.15.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "uuid",
+      "constraint": "14.0.2",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "uuid",
+          "range": "^14.0.3",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "morgan",
+      "constraint": ">=1.12.0",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "morgan",
+          "range": "^1.12.1",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "moment",
+      "constraint": ">=2.31.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "turbo",
+      "constraint": ">=2.9.14",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "turbo",
+          "range": "^2.11.9",
+          "manifest": "package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@babel/core",
+      "constraint": "7.29.7",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@opentelemetry/core",
+      "constraint": ">=2.8.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "body-parser@1",
+      "constraint": "1.20.6",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "path-to-regexp@0.1",
+      "constraint": "0.1.13",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "yaml",
+      "constraint": ">=2.8.3",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "express@4",
+      "constraint": "4.22.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "minimatch@3",
+      "constraint": ">=3.1.4",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "minimatch@5",
+      "constraint": ">=5.1.8",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "minimatch@9",
+      "constraint": ">=9.0.7",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "brace-expansion@1",
+      "constraint": "^1.1.12",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "brace-expansion@2",
+      "constraint": "^2.0.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "brace-expansion@5",
+      "constraint": ">=5.0.9",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "protobufjs",
+      "constraint": ">=7.6.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "flatted",
+      "constraint": ">=3.4.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "form-data",
+      "constraint": ">=4.0.6",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "axios",
+      "constraint": ">=1.16.0",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "axios",
+          "range": "^1.15.0",
+          "manifest": "apps/frontend/package.json"
+        },
+        {
+          "name": "axios",
+          "range": "^1.13.5",
+          "manifest": "apps/backoffice/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "multer",
+      "constraint": ">=2.4.0",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "multer",
+          "range": "^2.4.0",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "ws",
+      "constraint": ">=8.21.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "sharp",
+      "constraint": ">=0.35.5",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "sharp",
+          "range": "^0.35.5",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "proxy-addr",
+      "constraint": ">=2.0.8",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "source-map-js",
+      "constraint": ">=1.2.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@grpc/grpc-js",
+      "constraint": ">=1.14.5",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@opentelemetry/auto-instrumentations-node",
+      "constraint": ">=0.75.0",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "@opentelemetry/auto-instrumentations-node",
+          "range": "^0.81.1",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@opentelemetry/exporter-prometheus",
+      "constraint": ">=0.217.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@opentelemetry/propagator-jaeger",
+      "constraint": ">=2.9.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@opentelemetry/sdk-node",
+      "constraint": ">=0.217.0",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "@opentelemetry/sdk-node",
+          "range": "^0.223.0",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "ajv",
+      "constraint": "^6.14.0",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "browserslist",
+      "constraint": ">=4.28.7",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@humanfs/node",
+      "constraint": ">=0.16.8",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "jest",
+      "constraint": "^30.5.2",
+      "category": "direct-and-transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [
+        {
+          "name": "jest",
+          "range": "^30.5.2",
+          "manifest": "apps/backend/package.json"
+        }
+      ],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@jest/transform",
+      "constraint": "^30.5.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "expect",
+      "constraint": "^30.5.2",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "jest-message-util",
+      "constraint": "^30.5.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "@jest/types",
+      "constraint": "^30.5.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "jest-util",
+      "constraint": "^30.5.1",
+      "category": "transitive",
+      "status": "unverified-necessity",
+      "directDeclarations": [],
+      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    }
+  ]
+}
