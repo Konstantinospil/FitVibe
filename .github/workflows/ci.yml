@@ -172,6 +172,9 @@ jobs:
       - name: Analyze workspace source dependencies (advisory)
         run: node tests/qa/analyze-source-dependencies.cjs
 
+      - name: Validate installed direct dependency versions
+        run: node tests/qa/check-resolved-dependencies.cjs
+
       - name: Verify dependency integrity
         run: |
           pnpm audit --prod --audit-level=moderate
