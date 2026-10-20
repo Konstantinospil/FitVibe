@@ -11,15 +11,15 @@ for(const p of workspaces) {
   const j=JSON.parse(fs.readFileSync(path.join(root,p),"utf8"));
   for(const key of Object.keys({...j.dependencies,...j.devDependencies,...j.optionalDependencies})) direct.set(key,[...(direct.get(key)||[]),p]);
 }
-const packageSection = lock.split(/^packages:\s*$/m)[1]?.split(/^snapshots:\s*$/m)[0]||"";
-// pnpm uses quoted package keys, including unscoped entries such as 'lodash@4.18.1'.
+// Scan all pnpm package/snapshot keys, including subsequent sections in merged lockfiles.
+// A package key is a two-space-indented name@version mapping, quoted or plain.
 function lockPackageName(key) {
   const separator = key.lastIndexOf("@");
   if (separator <= 0 || !/^\d/.test(key.slice(separator + 1))) return null;
   return key.slice(0, separator);
 }
 const installed = new Set(
-  [...packageSection.matchAll(/^  (?:'([^']+)'|([^:\s]+)):\s*$/gm)]
+  [...lock.matchAll(/^  (?:'([^']+)'|([^:\s]+)):\s*$/gm)]
     .map(m => lockPackageName(m[1] || m[2]))
     .filter(Boolean),
 );
