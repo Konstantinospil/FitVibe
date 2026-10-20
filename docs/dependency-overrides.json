@@ -508,21 +508,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "@opentelemetry/auto-instrumentations-node",
-      "constraint": ">=0.75.0",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "@opentelemetry/auto-instrumentations-node",
-          "range": "^0.81.1",
-          "manifest": "apps/backend/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "@opentelemetry/exporter-prometheus",
       "constraint": ">=0.217.0",
       "category": "transitive",
@@ -537,21 +522,6 @@
       "category": "transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "@opentelemetry/sdk-node",
-      "constraint": ">=0.217.0",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "@opentelemetry/sdk-node",
-          "range": "^0.223.0",
-          "manifest": "apps/backend/package.json"
-        }
-      ],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
