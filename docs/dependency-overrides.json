@@ -102,21 +102,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "postcss",
-      "constraint": "8.5.28",
-      "category": "direct-and-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [
-        {
-          "name": "postcss",
-          "range": "8.5.30",
-          "manifest": "package.json"
-        }
-      ],
-      "reason": "Historical commit a02a65c9 changed the override from >=8.5.26 to exact 8.5.28 to match a resolved version; root package.json now requests 8.5.30. The historical commit explains the pin but does not justify keeping an older version.",
-      "removalCriteria": "Align the workspace constraint with root manifest, regenerate lockfile with pnpm 12, verify CSS builds, architecture/hardcoding checks, VRT and full CI."
-    },
-    {
       "name": "vite",
       "constraint": "^8.2.2",
       "category": "direct-and-transitive",
@@ -271,21 +256,6 @@
       "directDeclarations": [],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "uuid",
-      "constraint": "14.0.2",
-      "category": "direct-and-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [
-        {
-          "name": "uuid",
-          "range": "^14.0.3",
-          "manifest": "apps/backend/package.json"
-        }
-      ],
-      "reason": "Backend requests ^14.0.3 while workspace pins 14.0.2, outside the backend request range. The reason for the lower pin is not documented.",
-      "removalCriteria": "Update to a compatible 14.x release; regenerate lockfile; pass backend build, typecheck, unit, integration, security and deployment tests."
     },
     {
       "name": "morgan",
