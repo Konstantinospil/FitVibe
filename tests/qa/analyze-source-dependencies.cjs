@@ -48,12 +48,21 @@ for (const area of dirs) {
     if (!fs.existsSync(manifestFile)) continue;
     const manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
     const declared = new Set(Object.keys({...manifest.dependencies, ...manifest.devDependencies, ...manifest.optionalDependencies, ...manifest.peerDependencies}));
+    // TS path mappings can describe internal declaration-only modules without a package.
+    // Consult the workspace's own tsconfig rather than suppressing all @fitvibe imports.
+    const tsconfigPath = path.join(dir, "tsconfig.json");
+    const tsconfig = fs.existsSync(tsconfigPath)
+      ? ts.readConfigFile(tsconfigPath, ts.sys.readFile)
+      : {config:{}};
+    if (tsconfig.error) throw new Error(ts.flattenDiagnosticMessageText(tsconfig.error.messageText, "\\n"));
+    const aliases = Object.keys(tsconfig.config?.compilerOptions?.paths || {});
+    function isAlias(spec) { return aliases.some(alias => alias.endsWith("*") ? spec.startsWith(alias.slice(0,-1)) : spec === alias); }
     const found = new Map();
     const files = list(path.join(dir, "src"));
     for (const file of files) {
       for (const spec of importsOf(fs.readFileSync(file, "utf8"), file)) {
         const name = pkgName(spec);
-        if (name) found.set(name, [...(found.get(name) || []), path.relative(root, file)]);
+        if (name && !isAlias(spec)) found.set(name, [...(found.get(name) || []), path.relative(root, file)]);
       }
     }
     const undeclared = [...found.keys()].filter(name => !declared.has(name)).map(name => ({name, files:found.get(name).slice(0,3)}));
