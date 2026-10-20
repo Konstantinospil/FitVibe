@@ -143,15 +143,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "@remix-run/router",
-      "constraint": "1.23.2",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "chrome-launcher",
       "constraint": "^1.2.1",
       "category": "transitive",
