@@ -2,7 +2,7 @@
 // Advisory-only dependency relevance inventory. Never automatically remove a package.
 const fs = require("node:fs");
 const path = require("node:path");
-const root = path.resolve(__dirname, "../..");
+const root = process.env.DEPENDENCY_AUDIT_ROOT ? path.resolve(process.env.DEPENDENCY_AUDIT_ROOT) : path.resolve(__dirname, "../..");
 const inventory = JSON.parse(fs.readFileSync(path.join(root,"docs/dependency-overrides.json"),"utf8"));
 const lock = fs.readFileSync(path.join(root,"pnpm-lock.yaml"),"utf8");
 const workspaces = ["package.json",...["apps","packages"].flatMap(dir=>fs.readdirSync(path.join(root,dir),{withFileTypes:true}).filter(e=>e.isDirectory()).map(e=>path.join(dir,e.name,"package.json")))].filter(p=>fs.existsSync(path.join(root,p)));
