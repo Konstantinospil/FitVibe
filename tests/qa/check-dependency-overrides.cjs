@@ -22,5 +22,37 @@ for (const [name, value] of actual) {
   else if (documented.get(name).constraint !== value) errors.push("Constraint changed without inventory update: " + name);
 }
 for (const name of documented.keys()) if (!actual.has(name)) errors.push("Stale inventory entry: " + name);
+// Fail closed on undocumented direct-dependency version contradictions.
+// Known historical exceptions must be explicitly marked for compatibility review.
+const manifests = ["package.json", "apps/frontend/package.json", "apps/backoffice/package.json", "apps/backend/package.json", "packages/ui/package.json"];
+function parseVersion(range) {
+  const match = /^(\\^|~|>=|>|=)?(\\d+)\\.(\\d+)\\.(\\d+)$/.exec(range);
+  return match && { op: match[1] || "=", major: Number(match[2]), minor: Number(match[3]), patch: Number(match[4]) };
+}
+function contradicts(exactValue, requested) {
+  const resolved = parseVersion(exactValue), wanted = parseVersion(requested);
+  if (!resolved || !wanted || resolved.op !== "=") return false;
+  const cmp = (resolved.major-wanted.major) || (resolved.minor-wanted.minor) || (resolved.patch-wanted.patch);
+  if (wanted.op === "=") return cmp !== 0;
+  if (wanted.op === "^") return cmp < 0 || resolved.major !== wanted.major;
+  if (wanted.op === "~") return cmp < 0 || resolved.major !== wanted.major || resolved.minor !== wanted.minor;
+  if (wanted.op === ">=") return cmp < 0;
+  if (wanted.op === ">") return cmp <= 0;
+  return false;
+}
+for (const file of manifests) {
+  const absolute = path.join(root, file);
+  if (!fs.existsSync(absolute)) continue;
+  const manifest = JSON.parse(fs.readFileSync(absolute, "utf8"));
+  for (const [name, requested] of Object.entries({ ...manifest.dependencies, ...manifest.devDependencies })) {
+    if (!actual.has(name) || !contradicts(actual.get(name), requested)) continue;
+    const item = documented.get(name);
+    if (!item || item.status !== "requires-compatibility-review" || !item.reason || !item.removalCriteria) {
+      errors.push(file + ": " + name + " override " + actual.get(name) + " conflicts with " + requested + " without documented review");
+    } else {
+      console.warn("Known override discrepancy: " + file + " " + name + " requested " + requested + " forced " + actual.get(name));
+    }
+  }
+}
 if (errors.length) { console.error(errors.join("\n")); process.exit(1); }
 console.log("Verified " + actual.size + " documented overrides against pnpm-workspace.yaml");
