@@ -9,7 +9,18 @@ const VIBEFORM_PROFILE_PATH = "/api/v1/vibeforms/me";
 
 export async function getMyVibeformProfile(): Promise<VibeformProfile> {
   const response = await apiClient.get<VibeformProfile>(VIBEFORM_PROFILE_PATH);
-  return response.data;
+  const profile = response.data;
+  if (
+    !profile ||
+    typeof profile !== "object" ||
+    !profile.preferences ||
+    !profile.metrics ||
+    typeof profile.preferences.templateCode !== "string" ||
+    typeof profile.metrics.strength !== "number"
+  ) {
+    throw new Error("Invalid Vibeform profile response");
+  }
+  return profile;
 }
 
 export async function updateMyVibeformPreferences(

@@ -273,4 +273,113 @@ describe("useCookieConsent", () => {
     localStorage.setItem("cookie-consent-banner-shown", "true");
     expect(shouldShowCookieBanner()).toBe(false);
   });
+
+  it.each([
+    { analytics: true, marketing: true },
+    { analytics: true, marketing: false },
+    { analytics: false, marketing: true },
+    { analytics: false, marketing: false },
+  ])("restores the correct optional integrations on refresh for %j", async (choices) => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: {
+        hasConsent: true,
+        consent: {
+          essential: true,
+          preferences: false,
+          ...choices,
+          version: "v1",
+          updatedAt: "now",
+        },
+      } },
+    });
+    render(<TestComponent />);
+    expect(await screen.findByText("HasConsent")).toBeInTheDocument();
+    if (choices.analytics) {
+      expect(initializeAnalytics).toHaveBeenCalledOnce();
+      expect(disableAnalytics).not.toHaveBeenCalled();
+    } else {
+      expect(disableAnalytics).toHaveBeenCalledOnce();
+      expect(initializeAnalytics).not.toHaveBeenCalled();
+    }
+    if (choices.marketing) {
+      expect(initializeMarketing).toHaveBeenCalledOnce();
+      expect(disableMarketing).not.toHaveBeenCalled();
+    } else {
+      expect(disableMarketing).toHaveBeenCalledOnce();
+      expect(initializeMarketing).not.toHaveBeenCalled();
+    }
+  });
+
+  it("does not initialize optional integrations when consent is not recorded", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: { hasConsent: false } },
+    });
+    render(<TestComponent />);
+    expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+    expect(initializeAnalytics).not.toHaveBeenCalled();
+    expect(initializeMarketing).not.toHaveBeenCalled();
+  });
+
+  it("does not initialize optional integrations when consent details are absent", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: { hasConsent: true } },
+    });
+    render(<TestComponent />);
+    expect(await screen.findByText("HasConsent")).toBeInTheDocument();
+    expect(initializeAnalytics).not.toHaveBeenCalled();
+    expect(initializeMarketing).not.toHaveBeenCalled();
+  });
+
+  it("sends the consent source to the API and persists the backend response", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: { hasConsent: false } },
+    });
+    (apiClient.post as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { data: {
+        essential: true,
+        preferences: true,
+        analytics: false,
+        marketing: false,
+        version: "policy-v2",
+        updatedAt: "2026-10-18T12:00:00Z",
+      } },
+    });
+    const SourceComponent = () => {
+      const { savePreferences, consentStatus, isLoading } = useCookieConsent();
+      if (isLoading) return <span>Loading</span>;
+      return (
+        <>
+          <button type="button" onClick={() => void savePreferences({
+            essential: true,
+            preferences: true,
+            analytics: false,
+            marketing: false,
+          }, "policy")}>Save policy</button>
+          <span>{consentStatus?.consent?.version ?? "No version"}</span>
+        </>
+      );
+    };
+    render(<SourceComponent />);
+    await screen.findByRole("button", { name: "Save policy" });
+    fireEvent.click(screen.getByRole("button", { name: "Save policy" }));
+    await waitFor(() => expect(apiClient.post).toHaveBeenCalledWith(
+      "/api/v1/consent/cookie-preferences",
+      {
+        essential: true,
+        preferences: true,
+        analytics: false,
+        marketing: false,
+        source: "policy",
+      },
+    ));
+    expect(await screen.findByText("policy-v2")).toBeInTheDocument();
+  });
+
+  it("does not enable optional integrations if the status refresh fails", async () => {
+    (apiClient.get as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network Error"));
+    render(<TestComponent />);
+    expect(await screen.findByText("NoConsent")).toBeInTheDocument();
+    expect(initializeAnalytics).not.toHaveBeenCalled();
+    expect(initializeMarketing).not.toHaveBeenCalled();
+  });
 });

@@ -1,0 +1,68 @@
+.custom-scrollbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  height: 100%;
+}
+.custom-scrollbar[data-scrollable="true"] {
+  grid-template-columns: minmax(0, 1fr) var(--scrollbar-track-size);
+  column-gap: var(--scrollbar-gap);
+}
+/* Shell geometry belongs to PageShell; scrolling belongs to this component. */
+.page-shell-content-scroll { min-height: 0; }
+.page-shell-content-scroll > .custom-scrollbar__viewport > .custom-scrollbar__inner {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.custom-scrollbar__viewport {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  overflow-anchor: auto;
+}
+.custom-scrollbar__viewport::-webkit-scrollbar { display: none; }
+.custom-scrollbar__track {
+  position: relative;
+  min-height: 0;
+  border-radius: var(--radius-full);
+  background: var(--scrollbar-track);
+  touch-action: none;
+}
+.custom-scrollbar__track:focus-visible {
+  outline: var(--control-strong-border-width) solid var(--color-focus);
+  outline-offset: var(--control-border-width);
+}
+.custom-scrollbar__thumb {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--scrollbar-thumb-size);
+  height: var(--scrollbar-thumb-size);
+  border-radius: var(--radius-full);
+  background: var(--scrollbar-thumb);
+  cursor: grab;
+  touch-action: none;
+}
+.custom-scrollbar__thumb:hover { background: var(--scrollbar-thumb-hover); }
+.custom-scrollbar__thumb:active { background: var(--scrollbar-thumb-active); cursor: grabbing; }
+.custom-scrollbar__track[data-scrollable="false"] { visibility: hidden; }
+
+/* Touch devices scroll the same modal content by swiping, without a track taking width. */
+@media (pointer: coarse) {
+  .custom-scrollbar,
+  .custom-scrollbar[data-scrollable="true"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .custom-scrollbar__track {
+    display: none;
+  }
+  .custom-scrollbar__viewport {
+    -webkit-overflow-scrolling: touch;
+  }
+}

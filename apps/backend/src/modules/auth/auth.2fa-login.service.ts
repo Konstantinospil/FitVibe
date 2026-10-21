@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 import { assertTermsRequirementSatisfied } from "./auth.legal-gate.js";
 import { HttpError } from "../../utils/http.js";
-import { attachAnonymousConsents } from "../consent/consent.repository.js";
 import { verify2FACode } from "./two-factor.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
 import {
@@ -39,12 +38,6 @@ async function performDecoySecondFactorWork(code: string): Promise<void> {
   for (let i = 0; i < comparisons; i += 1) {
     await bcrypt.compare(code, DUMMY_SECOND_FACTOR_HASH);
   }
-}
-
-function isValidUUID(value: string | null): boolean {
-  return Boolean(
-    value && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value),
-  );
 }
 
 export async function verify2FALogin(
@@ -160,9 +153,6 @@ export async function verify2FALogin(
       ip: context.ip ?? null,
       requestId: context.requestId ?? null,
     });
-    if (isValidUUID(user.id)) {
-      await attachAnonymousConsents(user.id, context.ip ?? ipAddress);
-    }
 
     await deletePending2FASession(pendingSessionId);
 

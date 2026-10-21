@@ -132,7 +132,9 @@
     "termsAriaLabel": "View Terms and Conditions",
     "privacyAriaLabel": "View Privacy Policy",
     "impressumAriaLabel": "View Impressum",
-    "contactAriaLabel": "Contact us"
+    "contactAriaLabel": "Contact us",
+    "expand": "Expand footer",
+    "collapse": "Collapse footer"
   },
   "terms": {
     "eyebrow": "Legal",
@@ -610,7 +612,10 @@
       "confirmDisableMessage": "Are you sure you want to disable 2FA? This will make your account less secure.",
       "confirmDisable": "Yes, Disable 2FA",
       "backupCodes": "Backup Codes",
-      "backupCodesHelp": "Save these backup codes in a secure location. You can use them to access your account if you lose your authenticator device."
+      "backupCodesHelp": "Save these backup codes in a secure location. You can use them to access your account if you lose your authenticator device.",
+      "revealBackupCodes": "Show backup codes",
+      "hideBackupCodes": "Hide backup codes",
+      "finishBackupCodes": "Done"
     },
     "account": {
       "title": "Danger Zone",
@@ -1171,5 +1176,9 @@
       "conflict": "This plan was changed elsewhere. Reload the latest version before editing again.",
       "activate": "Could not activate the training plan."
     }
+  },
+  "scrollbar": {
+    "pageLabel": "Page content",
+    "dialogLabel": "Dialog content"
   }
 }

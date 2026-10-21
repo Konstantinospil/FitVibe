@@ -14,27 +14,19 @@ export const Footer: React.FC = () => {
         <BrandLogo size="sm" />
         <nav aria-label={t("footer.navigationLabel", { defaultValue: "Footer navigation" })}>
           <div data-slot="footer-links">
-            <TextLink
-              as={NavLink}
-              to="/contact"
-              aria-label={t("footer.contactAriaLabel", { defaultValue: "Contact us" })}
-            >
+            <TextLink as={NavLink} to="/contact">
               {t("footer.contact", { defaultValue: "Contact" })}
             </TextLink>
-            <TextLink
-              as={NavLink}
-              to="/terms"
-              aria-label={t("footer.termsAriaLabel", {
-                defaultValue: "View Terms and Conditions",
-              })}
-            >
+            <TextLink as={NavLink} to="/terms">
               {t("footer.terms")}
             </TextLink>
-            <TextLink
-              as={NavLink}
-              to="/privacy"
-              aria-label={t("footer.privacyAriaLabel", { defaultValue: "View Privacy Policy" })}
-            >
+            <TextLink as={NavLink} to="/cookie" aria-label={t("cookie.policy.link")}>
+              {t("cookie.policy.link")}
+            </TextLink>
+            <TextLink as={NavLink} to="/cookie" aria-label={t("cookie.actions.managePreferences")}>
+              {t("cookie.actions.managePreferences")}
+            </TextLink>
+            <TextLink as={NavLink} to="/privacy">
               {t("footer.privacy")}
             </TextLink>
           </div>

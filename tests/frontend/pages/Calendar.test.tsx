@@ -172,9 +172,10 @@ describe("Calendar", () => {
       dateStyle: "full",
     }).format(tomorrow);
     const dayButton = screen.getByRole("button", {
-      name: `calendarSurface.dayLabel:${fullDate}`,
+      name: `${String(tomorrow.getDate()).padStart(2, "0")} — calendarSurface.dayLabel:${fullDate}`,
     });
 
+    expect(dayButton).toHaveAccessibleName(`${String(tomorrow.getDate()).padStart(2, "0")} — calendarSurface.dayLabel:${fullDate}`);
     fireEvent.click(dayButton);
 
     await waitFor(() => {

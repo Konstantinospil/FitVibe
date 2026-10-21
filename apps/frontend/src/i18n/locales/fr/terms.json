@@ -23,9 +23,9 @@
     "title": "3. Utilisation acceptable",
     "subtitle": "Vous acceptez de ne pas :",
     "items": [
-      "Effectuer de rétro-ingénierie, modifier ou créer des œuvres dérivées des Services sauf dans la mesure permise par la loi.",
+      "Effectuer de l’ingénierie inverse, modifier ou créer des œuvres dérivées des Services, sauf dans la mesure permise par la loi.",
       "Contourner les mesures de sécurité, accéder à des zones non publiques ou perturber l'intégrité du système.",
-      "Télécharger du contenu illégal, diffamatoire ou portant atteinte, ou du contenu incluant des données personnelles d'autrui sans autorisation.",
+      "Téléverser du contenu illégal, diffamatoire ou contrefaisant, ou du contenu comprenant des données personnelles de tiers sans autorisation.",
       "Utiliser les Services pour fournir un diagnostic médical ou une réponse d'urgence ou pour s'engager dans du harcèlement, de la discrimination ou des comportements abusifs.",
       "Utiliser des moyens automatisés pour accéder ou extraire des données sauf via les API approuvées et les limites de débit."
     ]
@@ -43,7 +43,7 @@
   },
   "section6": {
     "title": "6. Services et intégrations tiers",
-    "content": "Certaines fonctionnalités reposent sur des services tiers (par exemple, analytiques, processeurs de paiement, intégrations d'appareils). Votre utilisation de ces services peut être soumise à leurs conditions. FitVibe n'est pas responsable des services tiers."
+    "content": "Certaines fonctionnalités reposent sur des services tiers (par exemple, outils d’analyse, prestataires de paiement ou intégrations d’appareils). Votre utilisation de ces services peut être soumise à leurs propres conditions. FitVibe n’est pas responsable des services tiers."
   },
   "section7": {
     "title": "7. Frais et abonnements",
@@ -60,12 +60,12 @@
     ]
   },
   "section9": {
-    "title": "9. Avertissements",
+    "title": "9. Exclusions de garantie",
     "content": "Les Services sont fournis \"en l'état\" et \"selon disponibilité\" sans garanties d'aucune sorte, expresses ou implicites, y compris la qualité marchande, l'adéquation à un usage particulier, la non-contrefaçon et l'exactitude. Certaines juridictions n'autorisent pas l'exclusion de certaines garanties, donc ces exclusions peuvent ne pas s'appliquer."
   },
   "section10": {
     "title": "10. Limitation de responsabilité",
-    "content": "Dans toute la mesure permise par la loi, FitVibe ne sera pas responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs, ou de la perte de profits, de données, de goodwill ou d'interruption d'activité, même si informé de la possibilité de tels dommages. La responsabilité totale de FitVibe pour les réclamations découlant ou liées aux Services ne dépassera pas le plus élevé de (a) les montants que vous avez payés à FitVibe pour les Services au cours des douze mois précédant la réclamation ou (b) 100 USD, sauf si interdit par la loi."
+    "content": "Dans toute la mesure permise par la loi, FitVibe ne pourra être tenu responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs, ni des pertes de bénéfices, de données, de clientèle ou d’exploitation, même si FitVibe a été informé de la possibilité de tels dommages. La responsabilité totale de FitVibe pour toute réclamation découlant des Services ou liée à ceux-ci ne dépassera pas le montant le plus élevé entre (a) les sommes que vous avez versées à FitVibe pour les Services au cours des douze mois précédant la réclamation et (b) 100 USD, sauf si la loi l’interdit."
   },
   "section11": {
     "title": "11. Indemnisation",
@@ -83,7 +83,7 @@
     "title": "14. Modifications des Services et Conditions",
     "items": [
       "Nous pouvons modifier ou interrompre des fonctionnalités pour améliorer les performances, la sécurité ou la conformité. Nous fournirons un avis des modifications importantes lorsque requis.",
-      "L'utilisation continue après que les modifications entrent en vigueur constitue une acceptation. Si vous n'acceptez pas, arrêtez d'utiliser les Services."
+      "La poursuite de l’utilisation après l’entrée en vigueur des modifications vaut acceptation. Si vous n’acceptez pas les modifications, cessez d’utiliser les Services."
     ]
   },
   "section15": {

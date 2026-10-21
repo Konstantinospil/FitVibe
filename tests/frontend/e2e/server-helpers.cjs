@@ -1,5 +1,4 @@
 const AUTH_FLAG_KEY = "fitvibe:auth";
-const CONSENT_KEY = "cookie-consent-banner-shown";
 const APPLICATION_BASE_URL =
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
@@ -13,18 +12,17 @@ const TEST_USER = {
 };
 
 let seededSessionCookies = null;
+let seededConsentCookies = null;
 
 async function installBrowserState(page, { authenticated = false } = {}) {
   await page.addInitScript(
-    ({ authKey, consentKey, authenticated: isAuthenticated }) => {
-      window.localStorage.setItem(consentKey, "true");
+    ({ authKey, authenticated: isAuthenticated }) => {
       if (isAuthenticated) {
         window.sessionStorage.setItem(authKey, "1");
       }
     },
     {
       authKey: AUTH_FLAG_KEY,
-      consentKey: CONSENT_KEY,
       authenticated,
     },
   );
@@ -74,8 +72,93 @@ async function ensureSeededSession(page) {
   await createSeededSession(page);
 }
 
-async function preparePage(page, { authenticated = false } = {}) {
+
+// Only consent status is retried: it is an idempotent read shared by many real
+// browser journeys on the CI runner's loopback IP. Respect the server's
+// Retry-After rather than bypassing its abuse control or mocking consent.
+async function getConsentStatusWithRateLimitBackoff(request, url) {
+  const deadline = Date.now() + 75_000;
+  for (;;) {
+    const response = await request.get(url);
+    if (response.status() !== 429) return response;
+
+    const retryAfter = Number(response.headers()["retry-after"]);
+    if (!Number.isFinite(retryAfter) || retryAfter < 0) {
+      throw new Error("Consent status was rate-limited without a valid Retry-After");
+    }
+    const delay = Math.max(1000, Math.ceil(retryAfter * 1000));
+    if (Date.now() + delay > deadline) {
+      throw new Error("Consent status remained rate-limited beyond the E2E recovery deadline");
+    }
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
+async function ensureEssentialCookieConsent(page) {
+  if (seededConsentCookies) {
+    await page.context().addCookies(seededConsentCookies);
+    return;
+  }
+  const request = page.context().request;
+  const statusUrl = `${APPLICATION_ORIGIN}/api/v1/consent/cookie-status`;
+  const previous = await getConsentStatusWithRateLimitBackoff(request, statusUrl);
+  if (!previous.ok()) {
+    throw new Error(`Unable to retrieve E2E consent status: HTTP ${previous.status()}`);
+  }
+  const previousBody = await previous.json();
+  if (previousBody.data?.hasConsent) {
+    seededConsentCookies = (await page.context().cookies(statusUrl)).filter(
+      (cookie) => cookie.name === "fitvibe_consent_client",
+    );
+    if (seededConsentCookies.length > 0) return;
+    throw new Error("E2E consent status was present without a browser consent cookie");
+  }
+
+  const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
+  if (!csrfResponse.ok()) {
+    throw new Error(`Unable to acquire E2E consent CSRF token: HTTP ${csrfResponse.status()}`);
+  }
+  const { csrfToken } = await csrfResponse.json();
+  const response = await request.post(`${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`, {
+    data: {
+      essential: true,
+      preferences: false,
+      analytics: false,
+      marketing: false,
+      source: "banner",
+    },
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+  });
+  if (!response.ok()) {
+    throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
+  }
+  const saved = await getConsentStatusWithRateLimitBackoff(request, statusUrl);
+  if (!saved.ok()) {
+    throw new Error(`Unable to verify E2E consent: HTTP ${saved.status()}`);
+  }
+  const result = (await saved.json()).data;
+  if (
+    !result?.hasConsent ||
+    result.consent?.essential !== true ||
+    result.consent?.preferences !== false ||
+    result.consent?.analytics !== false ||
+    result.consent?.marketing !== false
+  ) {
+    throw new Error("E2E browser consent was not persisted as essential-only");
+  }
+  seededConsentCookies = (await page.context().cookies(statusUrl)).filter(
+    (cookie) => cookie.name === "fitvibe_consent_client",
+  );
+  if (seededConsentCookies.length !== 1) {
+    throw new Error("E2E consent API did not issue exactly one browser identity cookie");
+  }
+}
+
+async function preparePage(page, { authenticated = false, consent = true } = {}) {
   await installBrowserState(page, { authenticated });
+  if (consent) {
+    await ensureEssentialCookieConsent(page);
+  }
   if (authenticated) {
     await ensureSeededSession(page);
   }
@@ -127,6 +210,8 @@ module.exports = {
   AUTH_FLAG_KEY,
   TEST_USER,
   preparePage,
+  ensureEssentialCookieConsent,
+  getConsentStatusWithRateLimitBackoff,
   trackRequests,
   waitForApp,
   emailInput,

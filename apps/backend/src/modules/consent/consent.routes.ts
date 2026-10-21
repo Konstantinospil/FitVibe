@@ -8,7 +8,7 @@ import { SaveCookiePreferencesSchema } from "./consent.schemas.js";
 export const consentRouter = Router();
 
 // Public endpoints - no authentication required
-// GET /api/v1/consent/cookie-status - Get consent status for IP
+// GET /api/v1/consent/cookie-status - Get consent status for browser
 consentRouter.get(
   "/cookie-status",
   rateLimit("consent_status"), // 60 requests per minute

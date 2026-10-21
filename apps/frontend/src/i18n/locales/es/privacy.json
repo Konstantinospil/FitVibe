@@ -1,30 +1,30 @@
 {
   "eyebrow": "Legal",
-  "title": "Política de Privacidad",
+  "title": "Política de privacidad",
   "description": "Aprenda cómo recopilamos, usamos y protegemos sus datos personales.",
   "effectiveDate": "Fecha de vigencia",
   "effectiveDateValue": "26 de octubre de 2025",
-  "intro1": "FitVibe ayuda a atletas y personas activas a planificar sesiones de entrenamiento, registrar entrenamientos y entender su progreso. Esta Política de Privacidad explica qué datos personales recopilamos cuando utiliza los Servicios, por qué los recopilamos, cómo los usamos y compartimos, y los derechos disponibles para usted bajo el Reglamento General de Protección de Datos (\"RGPD\"), el UK RGPD y otras leyes aplicables de protección de datos.",
+  "intro1": "FitVibe ayuda a atletas y personas activas a planificar sesiones de entrenamiento, registrar entrenamientos y comprender su progreso. Esta Política de privacidad explica qué datos personales recopilamos cuando utilizas los Servicios, por qué los recopilamos, cómo los usamos y compartimos y qué derechos te corresponden en virtud del Reglamento General de Protección de Datos (\"RGPD\"), el UK GDPR y otras leyes aplicables de protección de datos.",
   "intro2": "Al usar los Servicios, reconoce que sus datos personales serán procesados como se describe en esta Política de Privacidad.",
   "section1": {
     "title": "1. Alcance",
     "subtitle": "Esta Política de Privacidad:",
     "items": [
       "Se aplica a cualquiera que visite nuestros sitios o aplicaciones, cree una cuenta, use los Servicios, participe en comunidades o interactúe de otra manera con FitVibe.",
-      "Cubre todos los datos personales procesados por FitVibe actuando como responsable. Cuando procesamos datos estrictamente en nombre de organizaciones (por ejemplo, un club o empleador que usa FitVibe para sus miembros), esas organizaciones son responsables y actuamos como procesador de acuerdo con nuestros acuerdos de procesamiento de datos.",
+      "Abarca todos los datos personales tratados por FitVibe como responsable del tratamiento. Cuando tratamos datos exclusivamente por cuenta de organizaciones (por ejemplo, un club o empleador que utiliza FitVibe para sus miembros), dichas organizaciones son responsables del tratamiento y nosotros actuamos como encargados del tratamiento de conformidad con nuestros acuerdos de tratamiento de datos.",
       "No se aplica a servicios, sitios web o dispositivos de terceros que elija conectar a FitVibe; sus prácticas de privacidad se rigen por sus propias políticas."
     ]
   },
   "section2": {
     "title": "2. Quiénes somos y cómo contactarnos",
-    "controller": "Responsable:",
+    "controller": "Responsable del tratamiento:",
     "controllerValue": "FitVibe",
     "privacyInquiries": "Consultas sobre protección de datos y privacidad:",
     "privacyInquiriesValue": "kpilpilidis@gmail.com",
-    "dpo": "Oficial de Protección de Datos (donde se requiera):",
+    "dpo": "Delegado de Protección de Datos (cuando sea necesario):",
     "dpoValue": "kpilpilidis@gmail.com",
-    "euRepresentative": "Representante EU/UK (si se nombra):",
-    "euRepresentativeValue": "los detalles se publicarán en suplementos localizados de este aviso.",
+    "euRepresentative": "Representante en la UE/Reino Unido (si se designa):",
+    "euRepresentativeValue": "Los datos se publicarán en los suplementos locales de este aviso.",
     "contactNote": "Puede contactarnos en estas direcciones para cualquier pregunta sobre esta Política o nuestro manejo de sus datos personales."
   },
   "section3": {
@@ -102,17 +102,17 @@
     "items": [
       "Proporcionar, operar y mantener los Servicios, incluyendo herramientas de planificación, registros de entrenamiento y paneles de análisis.",
       "Personalizar su experiencia, por ejemplo adaptando unidades, idioma y contenido sugerido a su perfil.",
-      "Generar resúmenes de entrenamiento, tendencias e insights en sus datos históricos.",
+      "Generar resúmenes de entrenamiento, tendencias y análisis a partir de tus datos históricos.",
       "Autenticarlo, asegurar cuentas, detectar y prevenir fraude y abuso, y proteger la integridad de la plataforma.",
-      "Operar funciones sociales y comunitarias como seguimiento, comentarios, tablas de clasificación y planes compartidos, donde elija usarlos.",
+      "Gestionar funciones sociales y comunitarias, como seguir a otros usuarios, comentarios, clasificaciones y planes compartidos, cuando decidas utilizarlas.",
       "Comunicarnos con usted sobre actualizaciones del servicio, avisos de seguridad y mensajes administrativos. Las comunicaciones de marketing se envían solo donde se permite por ley y según sus preferencias.",
-      "Realizar análisis para entender el uso, mejorar el rendimiento y planificar nuevas funciones, usando datos agregados o desidentificados donde sea posible.",
+      "Realizar análisis para comprender el uso, mejorar el rendimiento y planificar nuevas funciones, utilizando datos agregados o disociados siempre que sea posible.",
       "Cumplir con obligaciones legales, hacer cumplir nuestros Términos y Condiciones/EULA y proteger FitVibe, nuestros usuarios y el público del daño."
     ]
   },
   "section6": {
-    "title": "6. Bases legales para el procesamiento (EEE, UK y jurisdicciones similares)",
-    "subtitle": "Donde se aplican el RGPD, el UK RGPD o leyes comparables, nos basamos en una o más de las siguientes bases legales:",
+    "title": "6. Bases jurídicas del tratamiento (EEE, Reino Unido y jurisdicciones similares)",
+    "subtitle": "Cuando sean aplicables el RGPD, el UK GDPR o normas comparables, nos basamos en una o varias de las siguientes bases jurídicas:",
     "items": [
       {
         "title": "Ejecución de un contrato:",
@@ -153,23 +153,23 @@
     "subtitle": "Podemos compartir sus datos personales con:",
     "items": [
       {
-        "title": "Proveedores de servicios y subprocesadores",
-        "content": "— Por ejemplo, proveedores de infraestructura en la nube, entrega de correo electrónico/SMS, análisis, informes de errores y herramientas de soporte al cliente. Cada proveedor está vinculado por un acuerdo de procesamiento de datos que requiere confidencialidad, medidas de seguridad apropiadas y, cuando corresponda, Cláusulas Contractuales Estándar (\"CCE\")."
+        "title": "Proveedores de servicios y subencargados del tratamiento",
+        "content": "— Por ejemplo, proveedores de infraestructura en la nube, envío de correo electrónico/SMS, análisis, informes de errores y herramientas de atención al cliente. Cada proveedor está sujeto a un acuerdo de tratamiento de datos que exige confidencialidad, medidas de seguridad adecuadas y, cuando proceda, Cláusulas Contractuales Tipo (\"CCT\")."
       },
       {
         "title": "Integraciones y socios que usted elija",
         "content": "— Por ejemplo, si conecta un dispositivo portátil o un proveedor de calendario, compartimos solo los datos necesarios para habilitar esa integración y solo de acuerdo con su configuración y los términos del socio."
       },
       {
-        "title": "Organizaciones que provisionan su cuenta",
+        "title": "Organizaciones que gestionan tu cuenta",
         "content": "— Si su cuenta es creada o gestionada por un entrenador, club o empleador, ciertos datos de perfil y actividad pueden ser visibles para administradores designados de acuerdo con sus políticas y nuestros contratos con ellos."
       },
       {
-        "title": "Transferencias comerciales",
+        "title": "Operaciones societarias",
         "content": "— En relación con una fusión, adquisición, reorganización o venta de activos, donde sus datos pueden transferirse como parte de la transacción, sujeto a confidencialidad y, cuando se requiera, aviso a usted."
       },
       {
-        "title": "Legal y seguridad",
+        "title": "Obligaciones legales y seguridad",
         "content": "— Cuando sea necesario para cumplir con obligaciones legales, órdenes judiciales o solicitudes legales, o para hacer cumplir nuestros términos y proteger los derechos, propiedad y seguridad de FitVibe, nuestros usuarios o el público."
       },
       {
@@ -194,16 +194,16 @@
     "paragraph2": "En particular, sujeto a cambios a medida que nuestros servicios evolucionan:",
     "items": [
       {
-        "title": "Datos de cuenta, entrenamiento y gráfico social",
+        "title": "Datos de cuenta, entrenamiento y relaciones sociales",
         "content": "se mantienen mientras su cuenta permanezca activa. Cuando solicita la eliminación de su cuenta, aplicamos un corto período de gracia (típicamente 7 días) y luego eliminamos o anonimizamos irreversiblemente los datos asociados."
       },
       {
         "title": "Copias de seguridad",
-        "content": "que contienen datos personales se rotan y purgan dentro de una ventana limitada (típicamente 14 días después de la eliminación efectiva), usando un proceso automatizado diseñado para apoyar los derechos del interesado."
+        "content": "que contienen datos personales se rotan y eliminan dentro de un plazo limitado (normalmente 14 días después de la eliminación efectiva), mediante un proceso automatizado diseñado para facilitar el ejercicio de los derechos de los interesados."
       },
       {
         "title": "Tokens de autenticación, registros de idempotencia y colas de moderación",
-        "content": "se podan en horarios rotativos (por ejemplo, entre 24 horas y 180 días), dependiendo de las necesidades operativas y los requisitos de seguridad."
+        "content": "se eliminan conforme a plazos periódicos (por ejemplo, entre 24 horas y 180 días), en función de las necesidades operativas y los requisitos de seguridad."
       },
       {
         "title": "Registros de auditoría y registros de seguridad",
@@ -219,7 +219,7 @@
       "Cifrado TLS (HTTPS) en tránsito, con protocolos modernos y seguridad de transporte estricta;",
       "controles de acceso y permisos basados en roles en entornos de producción, con autenticación multifactor y uso de un administrador de secretos;",
       "actualizaciones de seguridad regulares, gestión de vulnerabilidades y monitoreo de anomalías;",
-      "escaneo de malware para cargas y rastros de auditoría para acciones administrativas y de seguridad clave."
+      "análisis antimalware de los archivos subidos y registros de auditoría para las principales acciones administrativas y relacionadas con la seguridad."
     ],
     "note": "Ningún sistema puede ser completamente seguro. Usted sigue siendo responsable de elegir contraseñas fuertes, mantenerlas confidenciales, habilitar la autenticación multifactor donde esté disponible y notificarnos oportunamente de cualquier acceso no autorizado sospechado a su cuenta."
   },
@@ -229,7 +229,7 @@
     "items": [
       {
         "title": "Acceso",
-        "content": "– para obtener confirmación sobre si procesamos sus datos personales y recibir una copia de esos datos."
+        "content": "– obtener confirmación de si tratamos tus datos personales y recibir una copia de dichos datos."
       },
       {
         "title": "Rectificación",
@@ -241,7 +241,7 @@
       },
       {
         "title": "Restricción",
-        "content": "– para solicitar que restrinjamos el procesamiento de sus datos personales en ciertas circunstancias."
+        "content": "– solicitar que limitemos el tratamiento de tus datos personales en determinadas circunstancias."
       },
       {
         "title": "Oposición",
@@ -260,8 +260,8 @@
         "content": "– puede presentar una queja ante su autoridad local de protección de datos si cree que nuestro procesamiento infringe la ley aplicable."
       }
     ],
-    "additionalRights": "Los residentes de ciertas jurisdicciones (por ejemplo, algunos estados de EE.UU., Brasil, Canadá) pueden tener derechos adicionales, como derechos a saber, eliminar o limitar el uso o divulgación de ciertas categorías de información. Estos serán honrados de acuerdo con el estatuto relevante.",
-    "exerciseRights": "Puede ejercer estos derechos usando cualquier herramienta de autoservicio proporcionada en la aplicación o configuración de cuenta (por ejemplo, funciones de descarga o eliminación de cuenta), y/o contactándonos en privacy@fitvibe.example.com.",
+    "additionalRights": "Las personas residentes en determinadas jurisdicciones (por ejemplo, algunos estados de EE. UU., Brasil o Canadá) pueden disponer de derechos adicionales, como conocer, solicitar la eliminación o limitar el uso o la divulgación de determinadas categorías de información. Estos derechos se respetarán de conformidad con la legislación aplicable.",
+    "exerciseRights": "Puedes ejercer estos derechos mediante las herramientas de autoservicio disponibles en la aplicación o en los ajustes de la cuenta (por ejemplo, las funciones para descargar datos o eliminar la cuenta) y/o poniéndote en contacto con nosotros en privacy@fitvibe.example.com.",
     "verification": "Podemos necesitar verificar su identidad antes de actuar en su solicitud y podemos rechazar solicitudes que sean manifiestamente infundadas, excesivas o que no sean requeridas o permitidas por la ley."
   },
   "section13": {
@@ -284,7 +284,7 @@
     "items": [
       "La \"Fecha de vigencia\" en la parte superior de esta Política indica cuándo cambió por última vez.",
       "Para cambios materiales, proporcionaremos aviso adicional, como una notificación en la aplicación o correo electrónico.",
-      "La Política se mantiene en control de versiones con versiones históricas retenidas para referencia."
+      "La Política se mantiene bajo control de versiones y las versiones anteriores se conservan como referencia."
     ],
     "paragraph2": "Su uso continuado de los Servicios después de que los cambios entren en vigor constituye su reconocimiento de la Política actualizada."
   },

@@ -1,10 +1,10 @@
 {
   "eyebrow": "Legal",
-  "title": "Términos y Condiciones",
-  "description": "Por favor, lea cuidadosamente nuestros Términos y Condiciones antes de usar FitVibe.",
+  "title": "Términos y condiciones",
+  "description": "Lee atentamente nuestros Términos y condiciones antes de usar FitVibe.",
   "effectiveDate": "Fecha de vigencia",
   "effectiveDateValue": "2024-06-01",
-  "intro": "Estos Términos y Condiciones / Acuerdo de Licencia de Usuario Final (\"Términos\") rigen su acceso y uso de los sitios web de FitVibe, aplicaciones móviles, API y servicios relacionados (colectivamente, los \"Servicios\"). Al usar los Servicios, usted acepta estos Términos y la Política de Privacidad y la Política de Cookies.",
+  "intro": "Estos Términos y condiciones / Acuerdo de licencia de usuario final (\"Términos\") regulan tu acceso y uso de los sitios web, aplicaciones móviles, API y servicios relacionados de FitVibe (conjuntamente, los \"Servicios\"). Al utilizar los Servicios, aceptas estos Términos, la Política de privacidad y la Política de cookies.",
   "section1": {
     "title": "1. Elegibilidad y registro de cuenta",
     "items": [
@@ -60,16 +60,16 @@
     ]
   },
   "section9": {
-    "title": "9. Renuncias",
-    "content": "Los Servicios se proporcionan \"tal cual\" y \"según disponibilidad\" sin garantías de ningún tipo, expresas o implícitas, incluyendo comerciabilidad, idoneidad para un propósito particular, no infracción y precisión. Algunas jurisdicciones no permiten la exclusión de ciertas garantías, por lo que estas exclusiones pueden no aplicarse."
+    "title": "9. Exclusiones de garantía",
+    "content": "Los Servicios se proporcionan «tal cual» y «según disponibilidad», sin garantías de ningún tipo, expresas o implícitas, incluidas las garantías de comerciabilidad, idoneidad para un fin determinado, no infracción y exactitud. Algunas jurisdicciones no permiten excluir determinadas garantías, por lo que estas exclusiones pueden no aplicarse."
   },
   "section10": {
     "title": "10. Limitación de responsabilidad",
-    "content": "En la máxima medida permitida por la ley, FitVibe no será responsable de daños indirectos, incidentales, especiales, consecuentes o punitivos, o por pérdida de ganancias, datos, buena voluntad o interrupción comercial, incluso si se le informa de la posibilidad de tales daños. La responsabilidad total de FitVibe por reclamos que surjan o estén relacionados con los Servicios no excederá el mayor de (a) los montos que pagó a FitVibe por los Servicios en los doce meses anteriores al reclamo o (b) $100 USD, excepto donde esté prohibido por la ley."
+    "content": "En la máxima medida permitida por la ley, FitVibe no será responsable de daños indirectos, incidentales, especiales, consecuentes o punitivos, ni de pérdidas de beneficios, datos, reputación comercial o interrupciones de la actividad, incluso si se le ha informado de la posibilidad de dichos daños. La responsabilidad total de FitVibe por reclamaciones derivadas de los Servicios o relacionadas con ellos no superará el mayor de los siguientes importes: (a) las cantidades pagadas a FitVibe por los Servicios durante los doce meses anteriores a la reclamación o (b) 100 USD, salvo que la ley lo prohíba."
   },
   "section11": {
     "title": "11. Indemnización",
-    "content": "Usted acepta indemnizar y eximir de responsabilidad a FitVibe, sus afiliados y sus funcionarios, empleados y agentes de cualquier reclamo, daño, pérdida o gasto que surja de su uso de los Servicios o incumplimiento de estos Términos."
+    "content": "Aceptas indemnizar y mantener indemne a FitVibe, sus afiliadas y sus directivos, empleados y agentes frente a reclamaciones, daños, pérdidas o gastos derivados de tu uso de los Servicios o del incumplimiento de estos Términos."
   },
   "section12": {
     "title": "12. Ley aplicable y resolución de disputas",
@@ -82,7 +82,7 @@
   "section14": {
     "title": "14. Cambios en los Servicios y Términos",
     "items": [
-      "Podemos modificar o discontinuar características para mejorar el rendimiento, seguridad o cumplimiento. Proporcionaremos aviso de cambios materiales cuando se requiera.",
+      "Podemos modificar o retirar funciones para mejorar el rendimiento, la seguridad o el cumplimiento normativo. Informaremos de los cambios importantes cuando sea necesario.",
       "El uso continuado después de que los cambios entren en vigor constituye aceptación. Si no está de acuerdo, deje de usar los Servicios."
     ]
   },
@@ -90,7 +90,7 @@
     "title": "15. Avisos",
     "items": [
       "Avisos a FitVibe: legal@fitvibe.example.com.",
-      "Avisos a usted: por correo electrónico, mensajes en el producto u otros medios razonables. Usted es responsable de mantener actualizados los detalles de contacto."
+      "Avisos dirigidos a ti: por correo electrónico, mensajes dentro del producto u otros medios razonables. Eres responsable de mantener actualizados tus datos de contacto."
     ]
   },
   "section16": {

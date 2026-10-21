@@ -4,7 +4,7 @@
 
 export interface CookieConsent {
   id: string;
-  ipAddress: string;
+  clientKey: string;
   consentVersion: string;
   legalVersionId: string | null;
   essentialCookies: boolean;
@@ -34,8 +34,10 @@ export interface CookieConsentRow {
   created_at: string;
 }
 
+export type CookieConsentSource = "banner" | "policy" | "settings";
+
 export interface CreateCookieConsentInput {
-  ipAddress: string;
+  source?: CookieConsentSource;
   consentVersion: string;
   legalVersionId: string;
   essentialCookies: boolean;
@@ -46,6 +48,7 @@ export interface CreateCookieConsentInput {
 }
 
 export interface UpdateCookieConsentInput {
+  source?: CookieConsentSource;
   consentVersion?: string;
   legalVersionId?: string;
   essentialCookies?: boolean;

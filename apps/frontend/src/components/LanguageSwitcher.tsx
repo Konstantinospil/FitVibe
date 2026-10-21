@@ -353,7 +353,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         onKeyDown={handleKeyDown}
         className={variant === "header" ? "app-header__language-control" : undefined}
         data-slot="language-trigger"
-        aria-label={t("language.label")}
+        aria-label={`${currentLanguage.displayCode} — ${t("language.label")}`}
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-busy={isChanging}

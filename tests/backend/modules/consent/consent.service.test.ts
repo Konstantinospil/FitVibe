@@ -31,7 +31,7 @@ describe("Consent Service", () => {
 
   describe("getConsentStatus", () => {
     it("returns hasConsent false when no consent record exists", async () => {
-      mockRepository.getConsentByIp.mockResolvedValue(undefined);
+      mockRepository.getConsentByClient.mockResolvedValue(undefined);
 
       const result = await consentService.getConsentStatus("203.0.113.1");
 
@@ -39,9 +39,9 @@ describe("Consent Service", () => {
     });
 
     it("maps consent fields when record exists", async () => {
-      mockRepository.getConsentByIp.mockResolvedValue({
+      mockRepository.getConsentByClient.mockResolvedValue({
         id: "consent-1",
-        ipAddress: "203.0.113.2",
+        clientKey: "203.0.113.2",
         consentVersion: "2024-06-01",
         legalVersionId: "legal-cookie-1",
         essentialCookies: true,
@@ -105,7 +105,7 @@ describe("Consent Service", () => {
       });
       mockRepository.upsertConsent.mockResolvedValue({
         id: "consent-2",
-        ipAddress: "203.0.113.11",
+        clientKey: "203.0.113.11",
         consentVersion: "2024-06-01",
         legalVersionId: "legal-cookie-1",
         essentialCookies: true,
