@@ -224,7 +224,7 @@ jobs:
         run: bash scripts/validate-production-compose.sh
 
       - name: Verify CI/CD workflow safety contracts
-        run: node --test tests/qa/ci-cd-contract.test.cjs
+        run: node --test tests/qa/ci-cd-contract.test.cjs tests/qa/clamav-readiness.test.cjs
 
   release_governance:
     name: Release Governance
@@ -287,7 +287,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
+          --health-cmd="printf PING | nc -w 3 127.0.0.1 3310 | grep -qx PONG"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -935,7 +935,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
+          --health-cmd="printf PING | nc -w 3 127.0.0.1 3310 | grep -qx PONG"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -1637,7 +1637,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
+          --health-cmd="printf PING | nc -w 3 127.0.0.1 3310 | grep -qx PONG"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -2956,7 +2956,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
+          --health-cmd="printf PING | nc -w 3 127.0.0.1 3310 | grep -qx PONG"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
