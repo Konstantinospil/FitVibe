@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "Node16",
+    "module": "commonjs",
     "paths": {
       "@fitvibe/types": ["../../packages/types/src/vibeform.d.ts"],
       "@fitvibe/contracts": ["../../packages/types/src/contracts.d.ts"]
