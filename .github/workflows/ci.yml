@@ -287,7 +287,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd="clamdscan --version"
+          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -935,7 +935,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd="clamdscan --version"
+          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -1637,7 +1637,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd="clamdscan --version"
+          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -2956,7 +2956,7 @@ jobs:
         env:
           FRESHCLAM_CHECKS: 0
         options: >-
-          --health-cmd="clamdscan --version"
+          --health-cmd='reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"'
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
