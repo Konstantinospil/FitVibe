@@ -121,7 +121,7 @@ services:
     volumes:
       - clamav_signatures:/var/lib/clamav
     healthcheck:
-      test: ["CMD-SHELL", "test \"$(printf 'PING\\n' | nc -w 3 127.0.0.1 3310)\" = \"PONG\""]
+      test: ["CMD-SHELL", "reply=\"$(printf 'PING\\n' | nc -w 3 127.0.0.1 3310)\" && test \"$reply\" = \"PONG\""]
       interval: 15s
       timeout: 5s
       retries: 20
