@@ -15,13 +15,13 @@ const paths = [
   "scripts/run-ci-local.sh",
 ];
 
-const command = 'test "$(printf \'PING\\n\' | nc -w 3 127.0.0.1 3310)" = "PONG"';
+const command = 'reply="$(printf \'PING\\n\' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"';
 
 function daemonResponds(reply, exitCode = 0) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "clamav-ready-"));
   try {
     const fakeNc = path.join(dir, "nc");
-    fs.writeFileSync(fakeNc, '#!/bin/sh\\ncat >/dev/null\\nprintf "%s" "$MOCK_REPLY"\\nexit "$MOCK_EXIT"\\n', { mode: 0o755 });
+    fs.writeFileSync(fakeNc, '#!/bin/sh\ncat >/dev/null\nprintf "%s" "$MOCK_REPLY"\nexit "$MOCK_EXIT"\n', { mode: 0o755 });
     const result = spawnSync("sh", ["-c", command], {
       env: { ...process.env, PATH: dir + path.delimiter + process.env.PATH, MOCK_REPLY: reply, MOCK_EXIT: String(exitCode) },
       encoding: "utf8",
