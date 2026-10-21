@@ -512,8 +512,8 @@ importers:
         specifier: ^1.58.0
         version: 1.58.0(@types/react@19.3.0)(react@19.3.1)
       preact:
-        specifier: ^11.0.0
-        version: 11.0.0
+        specifier: ^11.0.1
+        version: 11.0.1
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -529,7 +529,7 @@ importers:
     devDependencies:
       '@preact/preset-vite':
         specifier: ^2.10.6
-        version: 2.10.6(@babel/core@7.29.7(supports-color@8.1.1))(preact@11.0.0)(rollup@4.63.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))
+        version: 2.10.6(@babel/core@7.29.7(supports-color@8.1.1))(preact@11.0.1)(rollup@4.63.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))
       '@types/node':
         specifier: ^26.6.4
         version: 26.6.5
@@ -594,8 +594,8 @@ importers:
         specifier: ^1.58.0
         version: 1.58.0(@types/react@19.3.0)(react@19.3.1)
       preact:
-        specifier: ^11.0.0
-        version: 11.0.0
+        specifier: ^11.0.1
+        version: 11.0.1
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -623,7 +623,7 @@ importers:
     devDependencies:
       '@preact/preset-vite':
         specifier: ^2.10.6
-        version: 2.10.6(@babel/core@7.29.7(supports-color@8.1.1))(preact@11.0.0)(rollup@4.63.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))
+        version: 2.10.6(@babel/core@7.29.7(supports-color@8.1.1))(preact@11.0.1)(rollup@4.63.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))
       '@testing-library/dom':
         specifier: ^10.4.2
         version: 10.4.2
@@ -764,8 +764,8 @@ importers:
   packages/ui:
     dependencies:
       preact:
-        specifier: 11.0.0
-        version: 11.0.0
+        specifier: 11.0.1
+        version: 11.0.1
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -6591,8 +6591,8 @@ packages:
     resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
     engines: {node: '>=0.10.0'}
 
-  preact@11.0.0:
-    resolution: {integrity: sha512-LRTLKuSe6VYPhvBDjwFaX+nuZnpsw6IN2GSboisAvhGsncylBmrbDCERhgKDn6yP2mAwbGvsB5OVyTe33M8gBg==}
+  preact@11.0.1:
+    resolution: {integrity: sha512-TNNwEq++jYNHy747LziCjPRVgEwnLSOIOAw/oYcjI3Tdnubx2EXtt76I0an8PATvUWtx/DX1kFIg1eFN+O/fkw==}
     peerDependencies:
       preact-render-to-string: '>=6.7.0'
     peerDependenciesMeta:
@@ -10179,12 +10179,12 @@ snapshots:
   '@pnpm/exe.win32-x64@12.14.0':
     optional: true
 
-  '@preact/preset-vite@2.10.6(@babel/core@7.29.7(supports-color@8.1.1))(preact@11.0.0)(rollup@4.63.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))':
+  '@preact/preset-vite@2.10.6(@babel/core@7.29.7(supports-color@8.1.1))(preact@11.0.1)(rollup@4.63.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.29.7(supports-color@8.1.1)
       '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
       '@babel/plugin-transform-react-jsx-development': 7.27.1(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
-      '@prefresh/vite': 2.4.11(preact@11.0.0)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))
+      '@prefresh/vite': 2.4.11(preact@11.0.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))
       '@rollup/pluginutils': 5.4.0(rollup@4.63.1)
       babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.29.7(supports-color@8.1.1))
       debug: 4.4.3(supports-color@8.1.1)
@@ -10200,20 +10200,20 @@ snapshots:
 
   '@prefresh/babel-plugin@0.5.2': {}
 
-  '@prefresh/core@1.5.9(preact@11.0.0)':
+  '@prefresh/core@1.5.9(preact@11.0.1)':
     dependencies:
-      preact: 11.0.0
+      preact: 11.0.1
 
   '@prefresh/utils@1.2.1': {}
 
-  '@prefresh/vite@2.4.11(preact@11.0.0)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))':
+  '@prefresh/vite@2.4.11(preact@11.0.1)(supports-color@8.1.1)(vite@8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.29.7(supports-color@8.1.1)
       '@prefresh/babel-plugin': 0.5.2
-      '@prefresh/core': 1.5.9(preact@11.0.0)
+      '@prefresh/core': 1.5.9(preact@11.0.1)
       '@prefresh/utils': 1.2.1
       '@rollup/pluginutils': 4.2.1
-      preact: 11.0.0
+      preact: 11.0.1
       vite: 8.3.4(@types/node@26.6.5)(esbuild@0.25.12)(tsx@4.23.15)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
@@ -14692,7 +14692,7 @@ snapshots:
     dependencies:
       xtend: 4.0.2
 
-  preact@11.0.0: {}
+  preact@11.0.1: {}
 
   prelude-ls@1.2.1: {}
 
