@@ -5,13 +5,12 @@
     "module": "ESNext",
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
-    "baseUrl": "src",
     "paths": {
       "@fitvibe/types": [
-        "../../../packages/types/src/vibeform.d.ts"
+        "../../packages/types/src/vibeform.d.ts"
       ],
       "@fitvibe/contracts": [
-        "../../../packages/types/src/contracts.d.ts"
+        "../../packages/types/src/contracts.d.ts"
       ]
     },
     "esModuleInterop": true,

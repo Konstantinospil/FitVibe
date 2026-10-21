@@ -96,7 +96,7 @@ start_services() {
     log "Waiting for ClamAV..."
     CLAMAV_READY=false
     for i in {1..30}; do
-        if docker compose -f "$COMPOSE_FILE" --profile clamav exec -T clamav clamdscan --version >/dev/null 2>&1; then
+        if docker compose -f "$COMPOSE_FILE" --profile clamav exec -T clamav sh -c 'reply="$(printf '"'"'PING\n'"'"' | nc -w 3 127.0.0.1 3310)" && test "$reply" = "PONG"' >/dev/null 2>&1; then
             log "ClamAV is ready"
             CLAMAV_READY=true
             break

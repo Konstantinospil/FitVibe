@@ -3,10 +3,10 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "baseUrl": "src",
     "jsx": "react-jsx", // ✅ Enables React JSX
     "target": "ESNext",
     "module": "ESNext",
+    "moduleResolution": "bundler",
     "declaration": true,
     "composite": true,
     "esModuleInterop": true,

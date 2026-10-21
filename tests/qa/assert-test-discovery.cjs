@@ -37,6 +37,11 @@ const owners = [
     matches: (path) => path === "tests/qa/ci-cd-contract.test.cjs",
   },
   {
+    // Executed explicitly by the Deployment Contract job.
+    name: "clamav-readiness-regressions",
+    matches: (path) => path === "tests/qa/clamav-readiness.test.cjs",
+  },
+  {
     name: "backend-jest",
     matches: (path) => /^tests\/backend\/.*\.(?:test|spec)\.ts$/.test(path),
   },

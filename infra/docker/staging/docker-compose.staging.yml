@@ -22,7 +22,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD-SHELL", "clamdscan --version >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "reply=\"$(printf 'PING\\n' | nc -w 3 127.0.0.1 3310)\" && test \"$reply\" = \"PONG\""]
       interval: 10s
       timeout: 3s
       retries: 12
