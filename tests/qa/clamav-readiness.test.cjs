@@ -34,10 +34,10 @@ function daemonResponds(reply, exitCode = 0) {
 }
 
 test("ClamAV readiness requires a successful PONG", () => {
-  assert.equal(daemonRespond("PONG"), true);
-  assert.equal(daemonRespond(""), false);
-  assert.equal(daemonRespond("ERROR"), false);
-  assert.equal(daemonRespond("PONG", 1), false);
+  assert.equal(daemonResponds("PONG"), true);
+  assert.equal(daemonResponds(""), false);
+  assert.equal(daemonResponds("ERROR"), false);
+  assert.equal(daemonResponds("PONG", 1), false);
 });
 
 test("all ClamAV deployment contexts use protocol readiness, not binary version", () => {
