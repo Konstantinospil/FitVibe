@@ -43,9 +43,9 @@ test("ClamAV readiness requires a successful PONG", () => {
 test("all ClamAV deployment contexts use protocol readiness, not binary version", () => {
   for (const filename of paths) {
     const source = fs.readFileSync(path.join(root, filename), "utf8");
-    assert.doesNotMatch(source, /clamdscan\\s+--version/, filename);
+    assert.doesNotMatch(source, /clamdscan\s+--version/, filename);
     assert.match(source, /PING/, filename);
     assert.match(source, /PONG/, filename);
-    assert.match(source, /nc -w 3 127\\.0\\.0\\.1 3310/, filename);
+    assert.match(source, /nc -w 3 127\.0\.0\.1 3310/, filename);
   }
 });
