@@ -179,7 +179,7 @@ export default defineConfig(() => {
     },
     preview: {
       // Allow Docker/CI hosts to hit `vite preview` (Vite 6 blocks unknown Host headers).
-      allowedHosts: true,
+      allowedHosts: true as const,
     },
     build: {
       // Optimize build for performance
