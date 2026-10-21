@@ -68,6 +68,14 @@ test("controlled fixture rejects undocumented version contradictions", () => fix
   assert.throws(() => fixtureReport("check-dependency-overrides.cjs",dir), /Command failed/);
 }));
 
+test("controlled fixture rejects extra root package.json overrides", () => fixture(dir => {
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({name:"fixture",private:true,overrides:{"hidden-package":"1.0.0"}}));
+  assert.throws(() => fixtureReport("check-dependency-overrides.cjs",dir), /Command failed/);
+}));
+test("controlled fixture rejects root pnpm.overrides", () => fixture(dir => {
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({name:"fixture",private:true,pnpm:{overrides:{"hidden-package":"1.0.0"}}}));
+  assert.throws(() => fixtureReport("check-dependency-overrides.cjs",dir), /Command failed/);
+}));
 test("resolved dependency contract rejects a direct version below the manifest requirement", () => fixture(dir => {
   fs.writeFileSync(path.join(dir,"pnpm-lock.yaml"), "lockfileVersion: '9.0'\nimporters:\n  apps/example:\n    dependencies:\n      used-package:\n        specifier: ^1.2.0\n        version: 1.0.0\n");
   fs.writeFileSync(path.join(dir,"apps/example/package.json"),JSON.stringify({dependencies:{"used-package":"^1.2.0"}}));
