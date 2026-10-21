@@ -169,6 +169,21 @@ jobs:
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
 
+      - name: Generate dependency override impact report (advisory)
+        if: always()
+        run: |
+          mkdir -p tests/qa/reports
+          node tests/qa/report-override-impact.cjs > tests/qa/reports/override-impact.json
+
+      - name: Upload dependency override impact report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: dependency-override-impact-${{ github.run_id }}
+          path: tests/qa/reports/override-impact.json
+          retention-days: 90
+          if-no-files-found: warn
+
       - name: Analyze workspace source dependencies (advisory)
         run: node tests/qa/analyze-source-dependencies.cjs
 
