@@ -9,11 +9,13 @@ import type { QueryClient, DehydratedState } from "@tanstack/react-query";
 import * as AuthContext from "../contexts/AuthContext.js";
 import { ErrorBoundary } from "../components/ErrorBoundary.js";
 import PublicRoutes from "./PublicRoutes.js";
+import CookieConsent from "../components/CookieConsent";
 const ProtectedRoutes = lazy(() => import("./ProtectedRoutes.js"));
 
 const loadingFallback = (
   <div
     className="flex h-screen w-full items-center justify-center text-primary-500"
+    data-ssr-loading-fallback="true"
     role="status"
     aria-live="polite"
   >
@@ -66,6 +68,7 @@ export const Router: React.FC<RouterProps> = ({
         <Suspense fallback={loadingFallback}>
           <RouterContent queryClient={queryClient} dehydratedState={dehydratedState} />
         </Suspense>
+        <CookieConsent />
       </AuthContext.AuthProvider>
     </ErrorBoundary>
   );

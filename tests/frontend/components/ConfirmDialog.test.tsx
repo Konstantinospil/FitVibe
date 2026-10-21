@@ -8,6 +8,30 @@ describe("ConfirmDialog", () => {
   afterEach(() => {
     cleanup();
   });
+
+  it("exposes independently named dialog actions to assistive technology", () => {
+    render(
+      <ConfirmDialog
+        isOpen={true}
+        title="Delete workout"
+        message="This action cannot be undone"
+        confirmLabel="Delete workout"
+        cancelLabel="Keep workout"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "Delete workout" });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Delete workout" })).toHaveAccessibleName(
+      "Delete workout",
+    );
+    expect(screen.getByRole("button", { name: "Keep workout" })).toHaveAccessibleName(
+      "Keep workout",
+    );
+  });
+
   it("should not render when isOpen is false", () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();

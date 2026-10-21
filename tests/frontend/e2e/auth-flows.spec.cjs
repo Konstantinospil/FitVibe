@@ -112,4 +112,80 @@ test.describe("Authentication flows on active surfaces", () => {
     );
     expect(meResponse.status()).toBe(401);
   });
+  test("renders legal publications from real backend without application labels", async ({ page }) => {
+    await page.goto("/terms");
+    await waitForApp(page);
+    const response = await page.context().request.get(
+      `${new URL(page.url()).origin}/api/v1/legal/documents/terms?language=en`,
+    );
+    expect(response.status()).toBe(200);
+    const publication = await response.json();
+    expect(publication).toMatchObject({
+      documentType: "terms",
+      language: "en",
+      version: expect.any(String),
+      legacyWithoutSnapshot: expect.any(Boolean),
+    });
+    if (publication.content === null) {
+      expect(publication.legacyWithoutSnapshot).toBe(true);
+    } else {
+      expect(publication.content).toEqual(expect.any(Object));
+      expect(Object.keys(publication.content).some((key) => /^section\\d+$|^intro$/i.test(key))).toBe(true);
+    }
+    const shell = page.locator('[data-component="legal-document-shell"]');
+    await expect(shell).toBeVisible();
+    await expect(shell.locator(".section").first()).toBeVisible();
+    await expect(shell.getByText(/do not render control labels/i)).toHaveCount(0);
+    await expect(shell.locator(".custom-scrollbar__viewport")).toHaveCSS("overflow-y", "auto");
+  });
+
+  test("loads production font families and keeps login chrome vertically ordered", async ({ page }) => {
+    await page.goto("/login");
+    await waitForApp(page);
+    const shell = page.locator('[data-component="page-shell"]');
+    try {
+      await expect(shell).toBeVisible();
+    } catch (error) {
+      const state = await page.evaluate(() => ({
+        pathname: window.location.pathname,
+        loading: Boolean(document.querySelector("#login-shell")),
+        pageShell: Boolean(document.querySelector('[data-component="page-shell"]')),
+        errorBoundary: Boolean(document.querySelector('[data-component="error-boundary"]')),
+        rootMarkup: document.getElementById("root")?.outerHTML.slice(0, 2500) ?? null,
+        formAncestors: (() => {
+          const form = document.querySelector('form input[name="email"]')?.closest("form");
+          const names = [];
+          for (let node = form; node && names.length < 12; node = node.parentElement) {
+            names.push({ tag: node.tagName, id: node.id, component: node.getAttribute("data-component"), className: typeof node.className === "string" ? node.className : null });
+          }
+          return names;
+        })(),
+        scripts: Array.from(document.scripts, (script) => script.src).filter(Boolean),
+      }));
+      console.error("Login layout rendering state:", JSON.stringify(state));
+      throw error;
+    }
+    const geometry = await shell.evaluate((shell) => {
+      const header = shell.querySelector("header");
+      const main = shell.querySelector('[data-slot="page-shell-main"]');
+      const footer = shell.querySelector("footer");
+      if (!header || !main || !footer) return null;
+      return {
+        top: header.getBoundingClientRect().bottom,
+        middleStart: main.getBoundingClientRect().top,
+        middleEnd: main.getBoundingClientRect().bottom,
+        bottom: footer.getBoundingClientRect().top,
+        font: getComputedStyle(main).fontFamily,
+        token: getComputedStyle(document.documentElement).getPropertyValue("--font-family-body").trim(),
+        fontStatus: document.fonts.status,
+      };
+    });
+    expect(geometry).not.toBeNull();
+    expect(geometry.top).toBeLessThanOrEqual(geometry.middleStart + 2);
+    expect(geometry.middleEnd).toBeLessThanOrEqual(geometry.bottom + 2);
+    expect(geometry.token).toBeTruthy();
+    await page.evaluate(() => document.fonts.ready);
+    expect(await page.evaluate(() => document.fonts.status)).toBe("loaded");
+  });
+
 });

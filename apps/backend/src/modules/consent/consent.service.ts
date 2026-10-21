@@ -11,15 +11,16 @@ import type {
   CookieConsent,
   CookieConsentResponse,
   CreateCookieConsentInput,
+  CookieConsentSource,
 } from "./consent.types.js";
-import { getConsentByIp, upsertConsent } from "./consent.repository.js";
+import { getConsentByClient, upsertConsent } from "./consent.repository.js";
 import { insertAudit } from "../common/audit.util.js";
 
 /**
- * Get consent status for an IP address
+ * Get consent status for an individual browser
  */
-export async function getConsentStatus(ipAddress: string): Promise<CookieConsentResponse> {
-  const consent = await getConsentByIp(ipAddress);
+export async function getConsentStatus(clientIdentifier: string): Promise<CookieConsentResponse> {
+  const consent = await getConsentByClient(clientIdentifier);
 
   if (!consent) {
     return {
@@ -45,11 +46,11 @@ export async function getConsentStatus(ipAddress: string): Promise<CookieConsent
 }
 
 /**
- * Save cookie preferences for an IP address
+ * Save cookie preferences for an individual browser
  * Validates that essential cookies are always true
  */
 export async function saveCookiePreferences(
-  ipAddress: string,
+  clientIdentifier: string,
   preferences: {
     essential: boolean;
     preferences: boolean;
@@ -57,6 +58,7 @@ export async function saveCookiePreferences(
     marketing: boolean;
   },
   userAgent?: string | null,
+  source: CookieConsentSource = "banner",
 ): Promise<CookieConsent> {
   // Validate that essential cookies are always true
   if (!preferences.essential) {
@@ -65,7 +67,7 @@ export async function saveCookiePreferences(
 
   const currentCookiePolicy = await getCurrentLegalPublication("cookie");
   const input: CreateCookieConsentInput = {
-    ipAddress,
+    source,
     consentVersion: currentCookiePolicy.version,
     legalVersionId: currentCookiePolicy.id,
     essentialCookies: preferences.essential,
@@ -75,7 +77,7 @@ export async function saveCookiePreferences(
     userAgent: userAgent ?? null,
   };
 
-  const consent = await upsertConsent(ipAddress, input, null, currentCookiePolicy.id);
+  const consent = await upsertConsent(clientIdentifier, input, null, currentCookiePolicy.id);
 
   // Audit log consent change
   await insertAudit({
@@ -91,6 +93,7 @@ export async function saveCookiePreferences(
         marketing: consent.marketingCookies,
       },
       version: consent.consentVersion,
+      source,
     },
   });
 

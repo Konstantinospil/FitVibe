@@ -1,5 +1,5 @@
 import React from "react";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PublishedLegalDocument from "../../src/components/PublishedLegalDocument";
 
@@ -134,24 +134,46 @@ describe("PublishedLegalDocument", () => {
     expect(screen.getByTestId("effective-date").textContent).toBeTruthy();
     expect(screen.getByText("Introduction")).toBeInTheDocument();
     expect(screen.queryByText("Legal")).not.toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("true")).toBeInTheDocument();
+    expect(screen.queryByText("7")).not.toBeInTheDocument();
+    expect(screen.queryByText("true")).not.toBeInTheDocument();
     expect(screen.queryByText("Symbol(ignored)")).not.toBeInTheDocument();
-    expect(screen.getByText("Titled").tagName).toBe("STRONG");
-    expect(screen.getByText("Body")).toBeInTheDocument();
-    expect(screen.getByText("Title only")).toBeInTheDocument();
-    expect(screen.getByText("Content only")).toBeInTheDocument();
-    expect(screen.getByText("Nested object value")).toBeInTheDocument();
-
-    const table = screen.getByRole("table");
-    expect(within(table).getByText("Column A")).toBeInTheDocument();
-    expect(within(table).getByText("A1")).toBeInTheDocument();
-    expect(within(table).getByText("single cell")).toBeInTheDocument();
+    expect(screen.queryByText("Titled")).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((node) => node.textContent);
     expect(headings.indexOf("Section 2")).toBeLessThan(headings.indexOf("Section 10"));
     expect(screen.getByRole("button", { name: "Footer action" })).toBeInTheDocument();
   });
+
+
+  it.each(["terms", "privacy", "cookie"] as const)(
+    "never renders UI translation keys as %s legal content",
+    async (documentType) => {
+      getPublishedLegalDocument.mockResolvedValue(
+        published({
+          title: "Document",
+          intro: "Authoritative introduction",
+          section1: { title: "Legal section", content: "Authoritative body" },
+          actions: { acceptAll: "Accept all", saveError: "Save failed" },
+          consent: { revoke: "Revoke consent" },
+          categories: { marketing: { label: "Marketing" } },
+          policy: { link: "Cookie Policy link" },
+          revokeConfirm: { message: "Sign out message" },
+          enabled: "Enabled status",
+          loading: "Loading status",
+        }),
+      );
+      render(<PublishedLegalDocument documentType={documentType} title="Fallback" />);
+      expect(await screen.findByText("Authoritative body")).toBeInTheDocument();
+      expect(screen.getByText("Authoritative introduction")).toBeInTheDocument();
+      for (const leaked of [
+        "Accept all", "Save failed", "Revoke consent", "Marketing",
+        "Cookie Policy link", "Sign out message", "Enabled status", "Loading status",
+      ]) {
+        expect(screen.queryByText(leaked)).not.toBeInTheDocument();
+      }
+    },
+  );
 
   it("falls back to retained localized legacy content and metadata", async () => {
     i18nState.language = "de-DE";
@@ -250,6 +272,81 @@ describe("PublishedLegalDocument", () => {
     render(<PublishedLegalDocument documentType="terms" title="Terms" />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Document unavailable.");
+  });
+
+
+  it("renders authored lists and tables inside legal sections without rendering interface metadata", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        section1: {
+          title: "Data processing",
+          items: [
+            "First purpose",
+            { title: "Second purpose", content: "Additional explanation" },
+            { title: "Title only" },
+            { content: "Content only" },
+            { nested: "Additional condition" },
+          ],
+          table: {
+            headers: { first: "Category", second: "Period" },
+            rows: {
+              first: { category: "Essential", period: "Session" },
+              second: { category: "Preferences", period: "One year" },
+            },
+          },
+          emptyTable: { headers: {}, rows: {} },
+          note: null,
+        },
+        actions: { accept: "Accept all" },
+      }),
+    );
+
+    render(<PublishedLegalDocument documentType="cookie" title="Cookie policy" />);
+    expect(await screen.findByRole("heading", { name: "Data processing" })).toBeInTheDocument();
+    expect(screen.getByText("First purpose")).toBeInTheDocument();
+    expect(screen.getByText("Second purpose")).toBeInTheDocument();
+    expect(screen.getByText("Additional explanation")).toBeInTheDocument();
+    expect(screen.getByText("Title only")).toBeInTheDocument();
+    expect(screen.getByText("Content only")).toBeInTheDocument();
+    expect(screen.getByText("Additional condition")).toBeInTheDocument();
+    const table = screen.getByRole("table");
+    expect(table).toHaveTextContent("Category");
+    expect(table).toHaveTextContent("Essential");
+    expect(table).toHaveTextContent("Preferences");
+    expect(screen.getAllByRole("table")).toHaveLength(1);
+    expect(screen.queryByText("Accept all")).not.toBeInTheDocument();
+  });
+
+  it("uses published effective dates instead of stale translated dates", async () => {
+    getPublishedLegalDocument.mockResolvedValue(
+      published({
+        title: "Updated policy",
+        effectiveDateValue: "2001-01-01",
+        section1: { content: "Current legal language" },
+      }, { effectiveAt: "2026-10-12T12:00:00.000Z" }),
+    );
+    render(<PublishedLegalDocument documentType="privacy" title="Fallback" />);
+    expect(await screen.findByText("Current legal language")).toBeInTheDocument();
+    expect(screen.getByTestId("effective-date")).not.toHaveTextContent("2001");
+    expect(screen.getByTestId("version")).toHaveTextContent("v2");
+  });
+
+  it("excludes non-document keys from legacy cookie translations while preserving sections", async () => {
+    i18nState.bundle = {
+      cookie: {
+        title: "Cookie Policy",
+        actions: { saveError: "Save failed" },
+        categories: { analytics: { label: "Analytics" } },
+        section1: { title: "Usage", content: "Cookie details" },
+      },
+    };
+    getPublishedLegalDocument.mockResolvedValue(
+      published(null as never, { legacyWithoutSnapshot: true, content: null, effectiveAt: null }),
+    );
+    render(<PublishedLegalDocument documentType="cookie" title="Fallback" />);
+    expect(await screen.findByText("Cookie details")).toBeInTheDocument();
+    expect(screen.queryByText("Save failed")).not.toBeInTheDocument();
+    expect(screen.queryByText("Analytics")).not.toBeInTheDocument();
   });
 
   it("does not update state after unmounting while publication is pending", async () => {

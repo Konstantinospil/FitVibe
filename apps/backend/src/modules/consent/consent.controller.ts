@@ -1,63 +1,48 @@
-/**
- * Consent controller - Request/response handling
- */
-
+/** Cookie consent is scoped to a first-party, HTTP-only browser identifier. */
+import { randomBytes } from "node:crypto";
 import type { Request, Response } from "express";
+import { env } from "../../config/env.js";
 import { getConsentStatus, saveCookiePreferences } from "./consent.service.js";
 import { SaveCookiePreferencesSchema } from "./consent.schemas.js";
-import { extractClientIp } from "../../utils/ip-extractor.js";
 
-/**
- * Get cookie consent status for the current IP address
- * Public endpoint - no authentication required
- */
+const CONSENT_COOKIE_NAME = "fitvibe_consent_client";
+const CLIENT_ID_PATTERN = /^[a-f0-9]{64}$/;
+const CONSENT_COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+
+function getBrowserIdentifier(req: Request): string | null {
+  const entry = req.headers.cookie
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${CONSENT_COOKIE_NAME}=`));
+  const value = entry?.slice(CONSENT_COOKIE_NAME.length + 1);
+  return value && CLIENT_ID_PATTERN.test(value) ? value : null;
+}
+
 export async function getCookieStatusHandler(req: Request, res: Response): Promise<void> {
-  const ipAddress = extractClientIp(req);
-
-  if (ipAddress === "unknown") {
-    // If IP cannot be determined, return no consent (show banner)
-    res.json({
-      success: true,
-      data: {
-        hasConsent: false,
-      },
-    });
-    return;
-  }
-
-  const status = await getConsentStatus(ipAddress);
-
+  const browserId = getBrowserIdentifier(req);
   res.json({
     success: true,
-    data: status,
+    data: browserId ? await getConsentStatus(browserId) : { hasConsent: false },
   });
 }
 
-/**
- * Save cookie preferences for the current IP address
- * Public endpoint - no authentication required
- */
 export async function saveCookiePreferencesHandler(req: Request, res: Response): Promise<void> {
-  const ipAddress = extractClientIp(req);
-  const userAgent = req.headers["user-agent"] || null;
+  const choice = SaveCookiePreferencesSchema.parse(req.body);
+  const browserId = getBrowserIdentifier(req) ?? randomBytes(32).toString("hex");
+  const consent = await saveCookiePreferences(
+    browserId,
+    choice,
+    req.headers["user-agent"] ?? null,
+    choice.source ?? "banner",
+  );
 
-  if (ipAddress === "unknown") {
-    // If IP cannot be determined, return error
-    res.status(400).json({
-      success: false,
-      error: {
-        code: "CONSENT_IP_UNKNOWN",
-        message: "Unable to determine IP address",
-      },
-    });
-    return;
-  }
-
-  // Validate request body
-  const body = SaveCookiePreferencesSchema.parse(req.body);
-
-  const consent = await saveCookiePreferences(ipAddress, body, userAgent);
-
+  res.cookie(CONSENT_COOKIE_NAME, browserId, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: env.COOKIE_SECURE || req.secure,
+    path: "/api/v1/consent",
+    maxAge: CONSENT_COOKIE_MAX_AGE_MS,
+  });
   res.json({
     success: true,
     data: {

@@ -126,7 +126,7 @@ describe("MainLayout", () => {
     expect(screen.getAllByAltText("FitVibe").length).toBeGreaterThan(0);
     expect(screen.getByText("Balance is not a state")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /switch to/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Language" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "EN — Language" })).toBeInTheDocument();
   });
 
   it("marks Home as the current page", () => {

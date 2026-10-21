@@ -76,6 +76,11 @@ jobs:
         continue-on-error: true
         run: node tests/qa/check-architecture-hardcoding.mjs frontend-reuse
 
+      - name: Design authority regression tests
+        id: design_authority_tests
+        continue-on-error: true
+        run: node --test tests/qa/design-authority-core.test.mjs
+
       - name: Enforce zero-tolerance result
         if: always()
         env:
@@ -83,6 +88,7 @@ jobs:
           FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
           TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
+          DESIGN_AUTHORITY_OUTCOME: ${{ steps.design_authority_tests.outcome }}
         run: |
           failed=0
           if [ "$BACKEND_OUTCOME" != "success" ]; then
@@ -101,6 +107,10 @@ jobs:
             echo "::error::Typography contract diagnostic failed."
             failed=1
           fi
+          if [ "$DESIGN_AUTHORITY_OUTCOME" != "success" ]; then
+            echo "::error::Design authority regression tests failed."
+            failed=1
+          fi
           if [ "$failed" -ne 0 ]; then
             exit 1
           fi
@@ -113,12 +123,14 @@ jobs:
           FRONTEND_TOKENS_OUTCOME: ${{ steps.architecture_frontend_tokens.outcome }}
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
           TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
+          DESIGN_AUTHORITY_OUTCOME: ${{ steps.design_authority_tests.outcome }}
         run: |
           echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
           echo "- Backend policy authority: $BACKEND_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend design tokens: $FRONTEND_TOKENS_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Frontend component reuse: $FRONTEND_REUSE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Typography contract: $TYPOGRAPHY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Design authority tests: $DESIGN_AUTHORITY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
 
   quality:
     name: Quality Gates (Lint & Type Check)
@@ -145,8 +157,23 @@ jobs:
       - name: Validate package manifests
         run: node tests/qa/check-package-json.cjs
 
+      - name: Validate dependency override declarations
+        run: node tests/qa/check-dependency-overrides.cjs
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
+
+      - name: Test dependency governance diagnostics
+        run: node --test tests/qa/dependency-governance.test.cjs
+
+      - name: Review dependency and override relevance (advisory)
+        run: node tests/qa/report-dependency-relevance.cjs
+
+      - name: Analyze workspace source dependencies (advisory)
+        run: node tests/qa/analyze-source-dependencies.cjs
+
+      - name: Validate installed direct dependency versions
+        run: node tests/qa/check-resolved-dependencies.cjs
 
       - name: Verify dependency integrity
         run: |
@@ -1172,7 +1199,7 @@ jobs:
         id: osv
         continue-on-error: true
         timeout-minutes: 10
-        uses: google/osv-scanner-action/osv-scanner-action@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
         with:
           scan-args: |-
             --lockfile=pnpm-lock.yaml
@@ -1287,16 +1314,16 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
         with:
           languages: javascript
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        uses: github/codeql-action/autobuild@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4
         with:
           category: "/language:javascript"
 
@@ -1372,7 +1399,7 @@ jobs:
 
       - name: Verify ZAP container can reach SSR
         run: |
-          docker run --rm --network=host --entrypoint /bin/sh ghcr.io/zaproxy/zaproxy:stable -c '
+          docker run --rm --network=host --entrypoint /bin/sh zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78 -c '
             for i in 1 2 3 4 5; do
               if curl -fsS http://127.0.0.1:4173/health >/dev/null; then exit 0; fi
               sleep 2
@@ -1381,16 +1408,55 @@ jobs:
             exit 1
           '
 
+      - name: Validate ZAP policy integration
+        run: node tests/security/zap-policy-contract.cjs
+
       - name: Run ZAP baseline scan
         timeout-minutes: 12
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
           target: http://127.0.0.1:4173
-          rules_file_name: .zap/rules.tsv
+          docker_name: zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78
+          # v0.15.0 rules_file_name does not reach the scanner CLI.
           cmd_options: -c .zap/rules.tsv -j --client-spider
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
+
+      - name: Capture ZAP diagnostic context
+        if: failure()
+        run: |
+          echo "::group::ZAP image"
+          docker image inspect 'zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78' --format '{{json .RepoDigests}}' || true
+          echo "::endgroup::"
+          echo "::group::SSR response and process"
+          curl -fsSI http://127.0.0.1:4173/ || true
+          if [ -f /tmp/fitvibe-zap-ssr.log ]; then
+            tail -n 100 /tmp/fitvibe-zap-ssr.log
+          fi
+          echo "::endgroup::"
+          echo "::group::ZAP generated reports"
+          for report in report_md.md report_json.json report_html.html; do
+            if [ -f "$report" ]; then
+              echo "$report exists ($(wc -c < "$report") bytes)"
+              if [ "$report" = report_md.md ]; then head -n 120 "$report"; fi
+            else
+              echo "$report absent"
+            fi
+          done
+          echo "::endgroup::"
+
+      - name: Upload ZAP diagnostic reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v4
+        with:
+          name: zap-diagnostics-${{ github.run_id }}
+          path: |
+            report_md.md
+            report_json.json
+            report_html.html
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Stop frontend
         if: always()
@@ -2042,9 +2108,14 @@ jobs:
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend run build:visual
 
-      - name: Start preview server
-        timeout-minutes: 10
+      - name: Start preview server and run visual regression tests
+        id: visual_regression_tests
+        timeout-minutes: 25
         working-directory: apps/frontend
+        env:
+          APP_URL: "http://127.0.0.1:4173"
+          CI: "true"
+          DISABLE_WEBSERVER: "true"
         run: |
           if [ ! -f dist/client/index.html ]; then
             echo "Missing dist/client/index.html after build:visual" >&2
@@ -2054,7 +2125,8 @@ jobs:
           # `pnpm --filter … exec` keeps the workspace root as cwd, so Vite would
           # preview an empty repo-root dist/client (HTTP 404) while still printing Local.
           pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client &
-          echo $! > "${GITHUB_WORKSPACE}/preview-server.pid"
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
           python3 - <<'PY'
           import http.client
           import sys
@@ -2079,16 +2151,8 @@ jobs:
           print(f"Preview server did not start in time ({last})", file=sys.stderr)
           sys.exit(1)
           PY
-
-      - name: Run visual regression tests
-        id: visual_regression_tests
-        timeout-minutes: 20
-        env:
-          APP_URL: "http://127.0.0.1:4173"
-          CI: "true"
-          DISABLE_WEBSERVER: "true"
-        # CI is comparison-only: committed baselines are never rewritten.
-        run: pnpm test:visual:ci
+          cd "$GITHUB_WORKSPACE"
+          pnpm test:visual:ci
 
       - name: Verify visual baselines were not modified
         if: always()
@@ -2101,26 +2165,17 @@ jobs:
             exit 1
           fi
 
-      - name: Stop preview server
-        if: always()
-        run: |
-          if [ -f preview-server.pid ]; then
-            kill $(cat preview-server.pid) 2>/dev/null || true
-            rm -f preview-server.pid
-          fi
-
       - name: Upload visual test artifacts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: visual-regression-${{ github.run_id }}
           path: |
-            # Playwright stores actual/expected/diff screenshots and traces here.
-            tests/frontend/visual/__screenshots__
-            playwright-report/visual
+            tests/frontend/visual/__screenshots__/
+            playwright-report/visual/
             test-results/visual-junit.xml
           retention-days: 30
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
       - name: Job summary
         if: always()

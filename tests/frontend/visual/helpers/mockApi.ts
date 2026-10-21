@@ -750,6 +750,17 @@ export async function mockProgress(page: Page) {
   });
 }
 
+export async function mockExerciseTypes(page: Page) {
+  await page.route("**/api/v1/exercise-types**", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, [
+      { code: "strength", name: "Strength", description: "Strength exercises" },
+    ]);
+  });
+}
+
 export async function mockExercises(page: Page) {
   await page.route("**/api/v1/exercises**", async (route) => {
     if (route.request().method() !== "GET") {
@@ -807,6 +818,42 @@ export async function mockAuthRefresh(page: Page) {
  * Installs a catch-all API stub, then overlays page-specific fixtures.
  * Register this before navigation so unmocked endpoints cannot hang networkidle.
  */
+const VISUAL_VIBEFORM_PROFILE = {
+  preferences: { templateCode: "flow", templateVersion: 1, bodyProfile: "balanced", motionEnabled: true },
+  metrics: {
+    intelligence: 0.4, regeneration: 0.5, agility: 0.6, explosivity: 0.7,
+    endurance: 0.8, strength: 0.9, upperBodyLoad: 0.5, lowerBodyLoad: 0.5,
+    bmi: null, heightCm: null,
+  },
+  calculationVersion: "2",
+  calculatedAt: NOW_ISO,
+};
+
+export async function mockVibeformProfile(page: Page) {
+  await page.route("**/api/v1/vibeforms/me", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, VISUAL_VIBEFORM_PROFILE);
+  });
+}
+export async function mockCsrfToken(page: Page) {
+  await page.route("**/api/v1/csrf-token", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, { csrfToken: "visual-test-csrf-token" });
+  });
+}
+
+export async function mockEarnedBadges(page: Page) {
+  await page.route("**/api/v1/points/badges/earned", async (route) => {
+    if (route.request().method() !== "GET") {
+      return route.fallback();
+    }
+    return fulfillJson(route, { badges: [], total: 0 });
+  });
+}
 export async function installDefaultMocks(page: Page): Promise<void> {
   // Keep avatar rendering deterministic and independent of external network access.
   await page.route("https://example.com/avatar.png", async (route) => {
@@ -837,13 +884,17 @@ export async function installDefaultMocks(page: Page): Promise<void> {
   await mockMeasurements(page);
   await mockAuthSessions(page);
   await mockAuthRefresh(page);
+  await mockCsrfToken(page);
   await mock2FAStatus(page, false);
+  await mockVibeformProfile(page);
+  await mockEarnedBadges(page);
   await mockLegalDocumentsStatus(page);
   await mockPrivacySettings(page);
   await mockCookieConsent(page);
   await mockFeed(page);
   await mockSession(page);
   await mockProgress(page);
+  await mockExerciseTypes(page);
   await mockExercises(page);
   await mockSessionsList(page);
   await mockLogout(page);

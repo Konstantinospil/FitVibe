@@ -1,37 +1,39 @@
 {
   "title": "Cookie-Einstellungen",
-  "description": "Wir verwenden Cookies, um Ihr Erlebnis zu verbessern und Datenschutzbestimmungen einzuhalten.",
-  "intro": "Wählen Sie aus, welche Cookies Sie zulassen möchten. Wesentliche Cookies sind für die Funktionalität der Website erforderlich und können nicht deaktiviert werden.",
+  "description": "Wir verwenden Cookies, um die Nutzung von FitVibe zu ermöglichen, Ihre Einstellungen zu speichern und – mit Ihrer Einwilligung – die Nutzung zu analysieren.",
+  "intro": "Wählen Sie aus, welche Cookies Sie zulassen möchten. Erforderliche Cookies sind für die Funktion der Website notwendig und können nicht deaktiviert werden.",
   "required": "Erforderlich",
   "enabled": "aktiviert",
   "disabled": "deaktiviert",
   "categories": {
     "essential": {
-      "label": "Wesentliche Cookies",
-      "description": "Erforderlich für die Funktionalität der Website. Kann nicht deaktiviert werden."
+      "label": "Erforderliche Cookies",
+      "description": "Für die grundlegende Funktion der Website erforderlich. Diese Cookies können nicht deaktiviert werden."
     },
     "preferences": {
       "label": "Präferenz- und Funktions-Cookies",
-      "description": "Merken Sie sich Ihre Einstellungen, Sprache und gespeicherte Trainingsansichten."
+      "description": "Speichern Ihre Einstellungen, Ihre Sprache und gespeicherte Trainingsansichten."
     },
     "analytics": {
       "label": "Leistungs- und Analyse-Cookies",
-      "description": "Helfen Sie uns, die Nutzung zu verstehen, Funktionen zu verbessern und Probleme zu diagnostizieren."
+      "description": "Helfen uns zu verstehen, wie FitVibe genutzt wird, Funktionen zu verbessern und Probleme zu diagnostizieren."
     },
     "marketing": {
       "label": "Werbe- und Marketing-Cookies",
-      "description": "Unterstützen Remarketing und Zielgruppeneinblicke. Nur mit Ihrer Zustimmung gesetzt."
+      "description": "Unterstützen Remarketing und Zielgruppenanalysen. Werden nur mit Ihrer Einwilligung gesetzt."
     }
   },
   "actions": {
     "acceptAll": "Alle akzeptieren",
     "rejectAll": "Alle ablehnen",
     "savePreferences": "Einstellungen speichern",
-    "saveError": "Fehler beim Speichern der Cookie-Einstellungen. Bitte versuchen Sie es erneut."
+    "saveError": "Fehler beim Speichern der Cookie-Einstellungen. Bitte versuchen Sie es erneut.",
+    "closeReject": "Schließen und optionale Cookies ablehnen",
+    "managePreferences": "Cookie-Einstellungen verwalten"
   },
   "policy": {
     "title": "Cookie-Richtlinie",
-    "description": "Erfahren Sie mehr darüber, wie wir Cookies in unserer verwenden",
+    "description": "Weitere Informationen zur Verwendung von Cookies finden Sie in unserer",
     "link": "Cookie-Richtlinie"
   },
   "eyebrow": "Rechtliches",
@@ -39,37 +41,37 @@
   "effectiveDateValue": "2024-06-01",
   "section1": {
     "title": "Was sind Cookies?",
-    "content": "Cookies sind kleine Dateien, die auf Ihrem Gerät gespeichert werden, wenn Sie eine Website besuchen oder eine webbasierte Anwendung verwenden. Sie ermöglichen es uns, Ihren Browser oder Ihr Gerät zu erkennen, Präferenzen zu speichern und Interaktionen zu messen. Ähnliche Technologien umfassen lokalen Speicher, SDK-Ereignisprotokollierung, Pixel und Beacons."
+    "content": "Cookies sind kleine Dateien, die auf Ihrem Gerät gespeichert werden, wenn Sie eine Website besuchen oder eine webbasierte Anwendung verwenden. Sie ermöglichen es uns, Ihren Browser oder Ihr Gerät wiederzuerkennen, Einstellungen zu speichern und Interaktionen zu messen. Ähnliche Technologien sind beispielsweise lokaler Speicher, SDK-Ereignisprotokollierung, Pixel und Beacons."
   },
   "section2": {
     "title": "Wie wir Cookies verwenden",
     "items": [
-      "**Wesentliche Cookies:** aktivieren Kernfunktionen wie Authentifizierung, Kontosicherheit, Lastausgleich und Sitzungsverwaltung.",
-      "**Präferenz- und Funktions-Cookies:** merken sich Ihre Einstellungen, Sprache und gespeicherte Trainingsansichten, um eine konsistente Erfahrung zu bieten.",
+      "**Erforderliche Cookies:** ermöglichen Kernfunktionen wie Authentifizierung, Kontosicherheit, Lastverteilung und Sitzungsverwaltung.",
+      "**Präferenz- und Funktions-Cookies:** speichern Ihre Einstellungen, Ihre Sprache und gespeicherte Trainingsansichten, damit die Nutzung konsistent bleibt.",
       "**Leistungs- und Analyse-Cookies:** helfen uns, die Nutzung zu verstehen, Funktionen zu verbessern, Probleme zu diagnostizieren und die Wirksamkeit von Kampagnen zu messen.",
-      "**Werbe- und Marketing-Cookies:** unterstützen, falls verwendet, Remarketing, Conversion-Messung und Zielgruppeneinblicke. Wenn erforderlich, werden diese Cookies nur mit Ihrer Zustimmung gesetzt."
+      "**Werbe- und Marketing-Cookies:** unterstützen, sofern eingesetzt, Remarketing, Conversion-Messung und Zielgruppenanalysen. Soweit gesetzlich erforderlich, werden diese Cookies nur mit Ihrer Einwilligung gesetzt."
     ]
   },
   "section3": {
     "title": "Cookies und SDKs von Drittanbietern",
-    "content": "Wir können Drittanbieter für Analysen, Leistungsüberwachung und Marketing verwenden. Diese Anbieter können Cookies setzen oder Geräte-IDs sammeln, wenn Sie die Dienste verwenden. Ihre Verwendung unterliegt deren Datenschutzrichtlinien. Aktuelle Kategorien umfassen Hosting/CDN-Leistung, Produktanalysen und Absturzdiagnostik."
+    "content": "Wir können Drittanbieter für Analysen, Leistungsüberwachung und Marketing einsetzen. Diese Anbieter können Cookies setzen oder Gerätekennungen erfassen, wenn Sie die Dienste nutzen. Für deren Datenverarbeitung gelten die jeweiligen Datenschutzrichtlinien. Zu den derzeitigen Kategorien gehören Hosting-/CDN-Leistung, Produktanalysen und Fehlerdiagnosen."
   },
   "section4": {
     "title": "Verwaltung von Cookies und Präferenzen",
     "items": [
-      "**Einwilligungsverwaltung:** Wenn gesetzlich erforderlich, werden wir vor dem Setzen nicht wesentlicher Cookies um Einwilligung bitten und Steuerelemente zum Aktualisieren von Präferenzen bereitstellen.",
-      "**Browser-Steuerungen:** Die meisten Browser ermöglichen es Ihnen, Cookies zu blockieren oder zu löschen. Dies kann die Funktionalität der Website beeinträchtigen, einschließlich der Möglichkeit, angemeldet zu bleiben.",
-      "**Nicht verfolgen (DNT):** Die Dienste reagieren derzeit nicht auf DNT-Signale. Wir respektieren gesetzlich erforderliche Opt-Out-Signale (z. B. Global Privacy Control), soweit zutreffend.",
-      "**Mobile Einstellungen:** Geräteeinstellungen können es Ihnen ermöglichen, Anzeigenverfolgung zu begrenzen oder Werbe-IDs zurückzusetzen."
+      "**Einwilligungsverwaltung:** Soweit gesetzlich erforderlich, holen wir Ihre Einwilligung ein, bevor wir nicht erforderliche Cookies setzen, und stellen Funktionen bereit, mit denen Sie Ihre Einstellungen jederzeit ändern können.",
+      "**Browser-Einstellungen:** Die meisten Browser ermöglichen es Ihnen, Cookies zu blockieren oder zu löschen. Dadurch kann die Funktionalität der Website beeinträchtigt werden, etwa die Möglichkeit, angemeldet zu bleiben.",
+      "**Do Not Track (DNT):** Die Dienste reagieren derzeit nicht auf DNT-Signale. Gesetzlich vorgeschriebene Opt-out-Signale (z. B. Global Privacy Control) berücksichtigen wir, soweit sie anwendbar sind.",
+      "**Mobile Einstellungen:** Über die Geräteeinstellungen können Sie gegebenenfalls die Nachverfolgung zu Werbezwecken einschränken oder Werbekennungen zurücksetzen."
     ]
   },
   "section5": {
     "title": "Datenspeicherung",
-    "content": "Die Lebensdauer von Cookies variiert. Sitzungs-Cookies laufen ab, wenn Sie Ihren Browser schließen. Persistente Cookies halten länger und werden nur so lange aufbewahrt, wie es für ihre angegebenen Zwecke erforderlich ist."
+    "content": "Die Lebensdauer von Cookies ist unterschiedlich. Sitzungs-Cookies laufen ab, wenn Sie Ihren Browser schließen. Dauerhafte Cookies bleiben länger gespeichert und werden nur so lange aufbewahrt, wie es für den jeweiligen Zweck erforderlich ist."
   },
   "section6": {
     "title": "Änderungen an dieser Richtlinie",
-    "content": "Wir können diese Cookie-Richtlinie aktualisieren, um Änderungen in Technologie, Gesetz oder unseren Praktiken widerzuspiegeln. Wesentliche Änderungen werden über die Dienste oder andere angemessene Mittel kommuniziert. Das \"Gültigkeitsdatum\" oben wird für jede Überarbeitung aktualisiert."
+    "content": "Wir können diese Cookie-Richtlinie aktualisieren, um Änderungen bei Technologien, gesetzlichen Vorgaben oder unseren Verfahren abzubilden. Über wesentliche Änderungen informieren wir über die Dienste oder auf andere angemessene Weise. Das oben angegebene \"Gültigkeitsdatum\" wird bei jeder Überarbeitung aktualisiert."
   },
   "section7": {
     "title": "Kontakt",

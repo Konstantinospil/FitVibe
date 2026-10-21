@@ -1,18 +1,18 @@
 {
   "eyebrow": "Rechtliches",
-  "title": "Datenschutzrichtlinie",
-  "description": "Erfahren Sie, wie wir Ihre persönlichen Daten sammeln, verwenden und schützen.",
+  "title": "Datenschutzerklärung",
+  "description": "Erfahren Sie, wie wir Ihre personenbezogenen Daten erheben, verwenden und schützen.",
   "effectiveDate": "Gültigkeitsdatum",
   "effectiveDateValue": "26. Oktober 2025",
-  "intro1": "FitVibe hilft Athleten und aktiven Personen dabei, Trainingseinheiten zu planen, Workouts zu protokollieren und ihren Fortschritt zu verstehen. Diese Datenschutzrichtlinie erklärt, welche persönlichen Daten wir sammeln, wenn Sie die Dienste nutzen, warum wir sie sammeln, wie wir sie verwenden und teilen, und welche Rechte Ihnen unter der Datenschutz-Grundverordnung (\"DSGVO\"), der UK DSGVO und anderen anwendbaren Datenschutzgesetzen zustehen.",
-  "intro2": "Durch die Nutzung der Dienste erkennen Sie an, dass Ihre persönlichen Daten wie in dieser Datenschutzrichtlinie beschrieben verarbeitet werden.",
+  "intro1": "FitVibe unterstützt Athleten und aktive Personen dabei, Trainingseinheiten zu planen, Workouts zu protokollieren und ihren Fortschritt nachzuvollziehen. Diese Datenschutzerklärung erläutert, welche personenbezogenen Daten wir bei der Nutzung der Dienste erheben, warum wir sie erheben, wie wir sie verwenden und weitergeben und welche Rechte Ihnen nach der Datenschutz-Grundverordnung (\"DSGVO\"), der UK GDPR und anderen anwendbaren Datenschutzgesetzen zustehen.",
+  "intro2": "Durch die Nutzung der Dienste nehmen Sie zur Kenntnis, dass Ihre personenbezogenen Daten wie in dieser Datenschutzerklärung beschrieben verarbeitet werden.",
   "section1": {
     "title": "1. Geltungsbereich",
-    "subtitle": "Diese Datenschutzrichtlinie:",
+    "subtitle": "Diese Datenschutzerklärung:",
     "items": [
       "Gilt für alle, die unsere Websites oder Apps besuchen, ein Konto erstellen, die Dienste nutzen, an Gemeinschaften teilnehmen oder anderweitig mit FitVibe interagieren.",
-      "Erfasst alle persönlichen Daten, die von FitVibe als Verantwortlicher verarbeitet werden. Wenn wir Daten ausschließlich im Auftrag von Organisationen verarbeiten (z.B. ein Verein oder Arbeitgeber, der FitVibe für seine Mitglieder nutzt), sind diese Organisationen Verantwortliche und wir handeln als Auftragsverarbeiter gemäß unseren Datenverarbeitungsvereinbarungen.",
-      "Gilt nicht für Drittanbieter-Dienste, Websites oder Geräte, die Sie wählen, um mit FitVibe zu verbinden; deren Datenschutzpraktiken werden von ihren eigenen Richtlinien geregelt."
+      "Erfasst alle personenbezogenen Daten, die FitVibe als Verantwortlicher verarbeitet. Verarbeiten wir Daten ausschließlich im Auftrag von Organisationen (z. B. eines Vereins oder Arbeitgebers, der FitVibe für seine Mitglieder nutzt), sind diese Organisationen Verantwortliche und wir handeln gemäß unseren Vereinbarungen zur Auftragsverarbeitung als Auftragsverarbeiter.",
+      "Gilt nicht für Dienste, Websites oder Geräte von Drittanbietern, die Sie mit FitVibe verbinden; für deren Datenschutzpraktiken gelten die jeweiligen Richtlinien."
     ]
   },
   "section2": {
@@ -23,13 +23,13 @@
     "privacyInquiriesValue": "kpilpilidis@gmail.com",
     "dpo": "Datenschutzbeauftragter (falls erforderlich):",
     "dpoValue": "kpilpilidis@gmail.com",
-    "euRepresentative": "EU/UK-Vertreter (falls ernannt):",
-    "euRepresentativeValue": "Details werden in lokalisierten Ergänzungen zu dieser Mitteilung veröffentlicht.",
-    "contactNote": "Sie können uns unter diesen Adressen für Fragen zu dieser Richtlinie oder unserem Umgang mit Ihren persönlichen Daten kontaktieren."
+    "euRepresentative": "EU-/UK-Vertreter (falls bestellt):",
+    "euRepresentativeValue": "Einzelheiten werden gegebenenfalls in lokalisierten Ergänzungen zu diesem Hinweis veröffentlicht.",
+    "contactNote": "Sie können uns unter diesen Adressen für Fragen zu dieser Richtlinie oder unserem Umgang mit Ihren personenbezogenen Daten kontaktieren."
   },
   "section3": {
     "title": "3. Informationen, die wir sammeln",
-    "subtitle": "Wir gruppieren die von uns verarbeiteten persönlichen Daten in folgende Kategorien.",
+    "subtitle": "Wir gruppieren die von uns verarbeiteten personenbezogenen Daten in folgende Kategorien.",
     "table": {
       "headers": {
         "category": "Kategorie",
@@ -44,7 +44,7 @@
         },
         "profilePreferences": {
           "category": "Profil & Einstellungen",
-          "examples": "Anzeigename, Avatar, Gebietsschema, Zeitzone, Einheiten (kg/lb, km/meilen), Sprache, Sichtbarkeitseinstellungen, Kontaktpräferenzen",
+          "examples": "Anzeigename, Avatar, Regionseinstellung, Zeitzone, Einheiten (kg/lb, km/mi), Sprache, Sichtbarkeitseinstellungen, Kontaktpräferenzen",
           "source": "Von Ihnen bereitgestellt"
         },
         "trainingWellness": {
@@ -60,12 +60,12 @@
         "deviceTechnical": {
           "category": "Geräte- & technische Daten",
           "examples": "IP-Adresse, Gerätekennungen, Betriebssystem, App-Version, Browser-Typ, Sprache, Zeitzone",
-          "source": "Automatisch gesammelt"
+          "source": "Automatisch erhoben"
         },
         "usageDiagnostics": {
           "category": "Nutzungs- & Diagnosedaten",
           "examples": "Funktionsnutzung, Klickstrom- und Navigationsdaten, Leistungsmetriken, Absturzberichte, Fehlerprotokolle",
-          "source": "Automatisch gesammelt"
+          "source": "Automatisch erhoben"
         },
         "supportCommunication": {
           "category": "Support- & Kommunikationsdaten",
@@ -80,7 +80,7 @@
         "cookiesIds": {
           "category": "Cookies und ähnliche IDs",
           "examples": "Cookie-Kennungen, mobile Werbe-IDs und ähnliche Technologie für Analysen und, wo erlaubt, Marketing",
-          "source": "Automatisch gesammelt"
+          "source": "Automatisch erhoben"
         }
       }
     },
@@ -88,7 +88,7 @@
   },
   "section4": {
     "title": "4. Informationsquellen",
-    "subtitle": "Wir erhalten persönliche Daten von:",
+    "subtitle": "Wir erhalten personenbezogene Daten von:",
     "items": [
       "Ihnen, wenn Sie ein Konto erstellen, Ihr Profil aktualisieren, Workouts protokollieren, an sozialen Funktionen teilnehmen oder den Support kontaktieren.",
       "Ihren Geräten und Browsern, über Cookies, SDKs und ähnliche Technologien.",
@@ -98,11 +98,11 @@
   },
   "section5": {
     "title": "5. Wie wir Ihre Informationen verwenden",
-    "subtitle": "Wir verwenden die oben beschriebenen persönlichen Daten, um:",
+    "subtitle": "Wir verwenden die oben beschriebenen personenbezogenen Daten, um:",
     "items": [
       "Die Dienste bereitzustellen, zu betreiben und zu warten, einschließlich Planungstools, Trainingsprotokollen und Analyse-Dashboards.",
       "Ihre Erfahrung zu personalisieren, z.B. durch Anpassung von Einheiten, Sprache und vorgeschlagenem Inhalt an Ihr Profil.",
-      "Trainingszusammenfassungen, Trends und Einblicke über Ihre historischen Daten zu generieren.",
+      "Trainingszusammenfassungen, Trends und Erkenntnisse aus Ihren historischen Daten zu erstellen.",
       "Sie zu authentifizieren, Konten zu sichern, Betrug und Missbrauch zu erkennen und zu verhindern und die Integrität der Plattform zu schützen.",
       "Soziale und Community-Funktionen wie Folgen, Kommentare, Bestenlisten und geteilte Pläne zu betreiben, wo Sie sich entscheiden, sie zu nutzen.",
       "Mit Ihnen über Service-Updates, Sicherheitshinweise und administrative Nachrichten zu kommunizieren. Marketing-Kommunikation wird nur dort gesendet, wo gesetzlich erlaubt und gemäß Ihren Präferenzen.",
@@ -112,7 +112,7 @@
   },
   "section6": {
     "title": "6. Rechtsgrundlagen für die Verarbeitung (EWR, UK und ähnliche Rechtsordnungen)",
-    "subtitle": "Wo die DSGVO, UK DSGVO oder vergleichbare Gesetze gelten, stützen wir uns auf eine oder mehrere der folgenden Rechtsgrundlagen:",
+    "subtitle": "Soweit die DSGVO, die UK GDPR oder vergleichbare Gesetze gelten, stützen wir die Verarbeitung auf eine oder mehrere der folgenden Rechtsgrundlagen:",
     "items": [
       {
         "title": "Erfüllung eines Vertrags:",
@@ -149,12 +149,12 @@
   },
   "section8": {
     "title": "8. Wie wir Informationen teilen",
-    "notSold": "Wir verkaufen Ihre persönlichen Daten nicht.",
-    "subtitle": "Wir können Ihre persönlichen Daten teilen mit:",
+    "notSold": "Wir verkaufen Ihre personenbezogenen Daten nicht.",
+    "subtitle": "Wir können Ihre personenbezogenen Daten teilen mit:",
     "items": [
       {
         "title": "Dienstleistern und Unterauftragsverarbeitern",
-        "content": "— Zum Beispiel Anbietern von Cloud-Infrastruktur, E-Mail/SMS-Versand, Analysen, Fehlerberichterstattung und Kundensupport-Tools. Jeder Anbieter ist durch eine Datenverarbeitungsvereinbarung gebunden, die Vertraulichkeit, angemessene Sicherheitsmaßnahmen und, wo zutreffend, Standardvertragsklauseln (\"SCCs\") erfordert."
+        "content": "— Zum Beispiel Anbieter von Cloud-Infrastruktur, E-Mail-/SMS-Versand, Analysediensten, Fehlerberichterstattung und Kundensupport. Jeder Anbieter ist durch eine Vereinbarung zur Auftragsverarbeitung verpflichtet, die Vertraulichkeit, angemessene Sicherheitsmaßnahmen und gegebenenfalls Standardvertragsklauseln (\"SCCs\") vorsieht."
       },
       {
         "title": "Integrationen und Partnern, die Sie wählen",
@@ -165,11 +165,11 @@
         "content": "— Wenn Ihr Konto von einem Trainer, Verein oder Arbeitgeber erstellt oder verwaltet wird, können bestimmte Profil- und Aktivitätsdaten für benannte Administratoren gemäß deren Richtlinien und unseren Verträgen mit ihnen sichtbar sein."
       },
       {
-        "title": "Geschäftstransfers",
+        "title": "Unternehmenstransaktionen",
         "content": "— Im Zusammenhang mit einer Fusion, Übernahme, Umstrukturierung oder Veräußerung von Vermögenswerten, bei der Ihre Daten als Teil der Transaktion übertragen werden können, vorbehaltlich der Vertraulichkeit und, wo erforderlich, Benachrichtigung an Sie."
       },
       {
-        "title": "Rechtliches und Sicherheit",
+        "title": "Rechtliche Pflichten und Sicherheit",
         "content": "— Wenn dies zur Erfüllung rechtlicher Verpflichtungen, Gerichtsbeschlüsse oder rechtmäßiger Anfragen erforderlich ist, oder zur Durchsetzung unserer Bedingungen und zum Schutz der Rechte, des Eigentums und der Sicherheit von FitVibe, unseren Nutzern oder der Öffentlichkeit."
       },
       {
@@ -180,8 +180,8 @@
   },
   "section9": {
     "title": "9. Internationale Datenübertragungen",
-    "paragraph1": "FitVibe kann Ihre persönlichen Daten in Ländern außerhalb desjenigen verarbeiten und speichern, in dem Sie ansässig sind. Diese Länder können Datenschutzgesetze haben, die sich von denen Ihrer Rechtsordnung unterscheiden.",
-    "paragraph2": "Wo wir persönliche Daten aus dem EWR, UK oder der Schweiz in Länder übertragen, die nicht als angemessenes Schutzniveau anerkannt sind, implementieren wir angemessene Schutzmaßnahmen, wie:",
+    "paragraph1": "FitVibe kann Ihre personenbezogenen Daten in Ländern außerhalb desjenigen verarbeiten und speichern, in dem Sie ansässig sind. Diese Länder können Datenschutzgesetze haben, die sich von denen Ihrer Rechtsordnung unterscheiden.",
+    "paragraph2": "Wo wir personenbezogene Daten aus dem EWR, UK oder der Schweiz in Länder übertragen, die nicht als angemessenes Schutzniveau anerkannt sind, implementieren wir angemessene Schutzmaßnahmen, wie:",
     "items": [
       "Standardvertragsklauseln, die von der Europäischen Kommission oder UK-Behörden genehmigt wurden, und",
       "zusätzliche technische und organisatorische Maßnahmen basierend auf Transfer-Folgenabschätzungen, wo erforderlich."
@@ -190,36 +190,36 @@
   },
   "section10": {
     "title": "10. Datenspeicherung",
-    "paragraph1": "Wir speichern persönliche Daten nur so lange, wie dies angemessen notwendig ist, um die Dienste und Funktionen bereitzustellen, die Sie angefordert haben, die in dieser Richtlinie beschriebenen Zwecke zu erfüllen, unseren rechtlichen und vertraglichen Verpflichtungen nachzukommen und Streitigkeiten beizulegen und unsere Vereinbarungen durchzusetzen.",
+    "paragraph1": "Wir speichern personenbezogene Daten nur so lange, wie dies angemessen notwendig ist, um die Dienste und Funktionen bereitzustellen, die Sie angefordert haben, die in dieser Richtlinie beschriebenen Zwecke zu erfüllen, unseren rechtlichen und vertraglichen Verpflichtungen nachzukommen und Streitigkeiten beizulegen und unsere Vereinbarungen durchzusetzen.",
     "paragraph2": "Insbesondere, vorbehaltlich Änderungen, wenn sich unsere Dienste weiterentwickeln:",
     "items": [
       {
-        "title": "Konto-, Trainings- und Social-Graph-Daten",
+        "title": "Konto-, Trainings- und Netzwerkdaten",
         "content": "werden gespeichert, solange Ihr Konto aktiv bleibt. Wenn Sie die Löschung Ihres Kontos anfordern, wenden wir eine kurze Karenzzeit an (typischerweise 7 Tage) und löschen oder anonymisieren dann unwiderruflich zugehörige Daten."
       },
       {
         "title": "Backups",
-        "content": "die persönliche Daten enthalten, werden innerhalb eines begrenzten Zeitraums rotiert und gelöscht (typischerweise 14 Tage nach der effektiven Löschung), unter Verwendung eines automatisierten Prozesses, der darauf ausgelegt ist, Rechte der betroffenen Person zu unterstützen."
+        "content": "die personenbezogene Daten enthalten, werden innerhalb eines begrenzten Zeitraums rotiert und gelöscht (typischerweise 14 Tage nach der wirksamen Löschung). Dafür verwenden wir einen automatisierten Prozess, der die Wahrnehmung von Betroffenenrechten unterstützt."
       },
       {
-        "title": "Authentifizierungs-Token, Idempotenz-Aufzeichnungen und Moderation-Warteschlangen",
-        "content": "werden nach rollierenden Zeitplänen bereinigt (z.B. zwischen 24 Stunden und 180 Tagen), je nach Betriebsbedarf und Sicherheitsanforderungen."
+        "title": "Authentifizierungstoken, Idempotenzdatensätze und Moderationswarteschlangen",
+        "content": "werden nach festgelegten Zeitplänen bereinigt (zum Beispiel nach 24 Stunden bis 180 Tagen), abhängig von betrieblichen Erfordernissen und Sicherheitsanforderungen."
       },
       {
         "title": "Prüfprotokolle und Sicherheitsprotokolle",
-        "content": "werden für einen begrenzten Zeitraum aufbewahrt (z.B. 180 Tage), um Incident-Response und Compliance zu unterstützen."
+        "content": "werden für einen begrenzten Zeitraum aufbewahrt (zum Beispiel 180 Tage), um die Reaktion auf Sicherheitsvorfälle und die Einhaltung von Vorgaben zu unterstützen."
       }
     ],
     "paragraph3": "Wenn Daten für diese Zwecke nicht mehr erforderlich sind, löschen wir sie entweder sicher oder anonymisieren sie, sodass sie nicht mehr mit Ihnen verknüpft werden können."
   },
   "section11": {
     "title": "11. Sicherheit",
-    "subtitle": "Wir implementieren angemessene technische und organisatorische Maßnahmen zum Schutz persönlicher Daten, einschließlich:",
+    "subtitle": "Wir implementieren angemessene technische und organisatorische Maßnahmen zum Schutz personenbezogener Daten, einschließlich:",
     "items": [
       "TLS (HTTPS)-Verschlüsselung während der Übertragung mit modernen Protokollen und strikter Transport-Sicherheit;",
-      "Zugriffskontrollen und rollenbasierte Berechtigungen in Produktionsumgebungen, mit Multi-Faktor-Authentifizierung und Verwendung eines Secrets-Managers;",
+      "Zugriffskontrollen und rollenbasierte Berechtigungen in Produktionsumgebungen, einschließlich Multi-Faktor-Authentifizierung und eines Systems zur sicheren Verwaltung von Geheimnissen;",
       "Regelmäßige Sicherheits-Updates, Schwachstellen-Management und Überwachung auf Anomalien;",
-      "Malware-Scanning für Uploads und Prüfpfade für wichtige administrative und sicherheitsrelevante Aktionen."
+      "Schadsoftware-Prüfung für Uploads sowie Audit-Protokolle für wichtige administrative und sicherheitsrelevante Aktionen."
     ],
     "note": "Kein System kann vollständig sicher sein. Sie bleiben verantwortlich für die Wahl starker Passwörter, deren Vertraulichkeit, Aktivierung der Multi-Faktor-Authentifizierung wo verfügbar und sofortige Benachrichtigung bei vermuteter unbefugter Nutzung Ihres Kontos."
   },
@@ -228,20 +228,20 @@
     "subtitle": "Je nach Ihrem Wohnort und anwendbarem Recht können Sie einige oder alle der folgenden Rechte haben:",
     "items": [
       {
-        "title": "Zugang",
-        "content": "– um Bestätigung zu erhalten, ob wir Ihre persönlichen Daten verarbeiten und eine Kopie dieser Daten zu erhalten."
+        "title": "Auskunft",
+        "content": "– um Bestätigung zu erhalten, ob wir Ihre personenbezogenen Daten verarbeiten und eine Kopie dieser Daten zu erhalten."
       },
       {
         "title": "Berichtigung",
-        "content": "– um unrichtige oder unvollständige persönliche Daten korrigieren zu lassen."
+        "content": "– um unrichtige oder unvollständige personenbezogene Daten korrigieren zu lassen."
       },
       {
         "title": "Löschung",
-        "content": "– um die Löschung Ihrer persönlichen Daten zu beantragen, vorbehaltlich bestimmter Ausnahmen (z.B. wo die Aufbewahrung gesetzlich vorgeschrieben ist)."
+        "content": "– um die Löschung Ihrer personenbezogenen Daten zu beantragen, vorbehaltlich bestimmter Ausnahmen (z.B. wo die Aufbewahrung gesetzlich vorgeschrieben ist)."
       },
       {
         "title": "Einschränkung",
-        "content": "– um zu beantragen, dass wir die Verarbeitung Ihrer persönlichen Daten unter bestimmten Umständen einschränken."
+        "content": "– um zu beantragen, dass wir die Verarbeitung Ihrer personenbezogenen Daten unter bestimmten Umständen einschränken."
       },
       {
         "title": "Widerspruch",
@@ -249,7 +249,7 @@
       },
       {
         "title": "Datenübertragbarkeit",
-        "content": "– um Ihre persönlichen Daten in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten und sie an einen anderen Verantwortlichen zu übertragen, wo technisch machbar."
+        "content": "– um Ihre personenbezogenen Daten in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten und sie an einen anderen Verantwortlichen zu übertragen, wo technisch machbar."
       },
       {
         "title": "Widerruf der Einwilligung",
@@ -261,17 +261,17 @@
       }
     ],
     "additionalRights": "Bewohner bestimmter Rechtsordnungen (z.B. einige US-Bundesstaaten, Brasilien, Kanada) können zusätzliche Rechte haben, wie Rechte auf Kenntnis, Löschung oder Einschränkung der Verwendung oder Offenlegung bestimmter Informationskategorien. Diese werden gemäß dem relevanten Gesetz gewährt.",
-    "exerciseRights": "Sie können diese Rechte ausüben, indem Sie alle Self-Service-Tools in der App oder den Kontoeinstellungen verwenden (z.B. Download- oder Kontolöschungsfunktionen) und/oder uns unter privacy@fitvibe.example.com kontaktieren.",
+    "exerciseRights": "Sie können diese Rechte über die in der App oder den Kontoeinstellungen verfügbaren Selbstbedienungsfunktionen ausüben (zum Beispiel Daten herunterladen oder das Konto löschen) und/oder uns unter privacy@fitvibe.example.com kontaktieren.",
     "verification": "Wir müssen möglicherweise Ihre Identität überprüfen, bevor wir auf Ihre Anfrage reagieren, und können Anfragen ablehnen, die offensichtlich unbegründet, übermäßig oder anderweitig nicht erforderlich oder gesetzlich erlaubt sind."
   },
   "section13": {
     "title": "13. Daten von Kindern",
     "subtitle": "Die Dienste richten sich nicht an Kinder unter 16 Jahren oder jedes höhere Alter, das von anwendbarem Recht in Ihrer Rechtsordnung für Online-Einwilligung festgelegt wurde.",
     "items": [
-      "Wir sammeln wissentlich keine persönlichen Daten von Kindern unter dem anwendbaren Mindestalter.",
-      "Wenn wir erfahren, dass wir persönliche Daten von einem solchen Kind ohne angemessene Einwilligung gesammelt haben, werden wir sie so schnell wie möglich löschen."
+      "Wir sammeln wissentlich keine personenbezogenen Daten von Kindern unter dem anwendbaren Mindestalter.",
+      "Wenn wir erfahren, dass wir personenbezogene Daten von einem solchen Kind ohne angemessene Einwilligung gesammelt haben, werden wir sie so schnell wie möglich löschen."
     ],
-    "contact": "Wenn Sie glauben, dass ein Kind persönliche Daten an FitVibe in Verletzung dieser Richtlinie bereitgestellt hat, kontaktieren Sie uns bitte unter privacy@fitvibe.example.com."
+    "contact": "Wenn Sie glauben, dass ein Kind personenbezogene Daten an FitVibe in Verletzung dieser Richtlinie bereitgestellt hat, kontaktieren Sie uns bitte unter privacy@fitvibe.example.com."
   },
   "section14": {
     "title": "14. Gesundheits- und Fitness-Überlegungen",
@@ -284,13 +284,13 @@
     "items": [
       "Das \"Gültigkeitsdatum\" am Anfang dieser Richtlinie zeigt an, wann sie zuletzt geändert wurde.",
       "Bei wesentlichen Änderungen werden wir zusätzliche Benachrichtigung bereitstellen, wie z.B. eine In-App-Benachrichtigung oder E-Mail.",
-      "Die Richtlinie wird in Versionskontrolle gepflegt, wobei historische Versionen zur Referenz aufbewahrt werden."
+      "Die Richtlinie wird versionskontrolliert; frühere Versionen bleiben zu Referenzzwecken erhalten."
     ],
     "paragraph2": "Ihre fortgesetzte Nutzung der Dienste nach Inkrafttreten von Änderungen stellt Ihre Anerkennung der aktualisierten Richtlinie dar."
   },
   "section16": {
     "title": "16. Wie Sie uns kontaktieren oder Ihre Rechte ausüben können",
-    "subtitle": "Wenn Sie Fragen zu dieser Datenschutzrichtlinie, unserer Nutzung Ihrer persönlichen Daten haben oder Ihre Rechte ausüben möchten, kontaktieren Sie bitte:",
+    "subtitle": "Wenn Sie Fragen zu dieser Datenschutzrichtlinie, unserer Nutzung Ihrer personenbezogenen Daten haben oder Ihre Rechte ausüben möchten, kontaktieren Sie bitte:",
     "email": "E-Mail:",
     "emailValue": "kpilpilidis@gmail.com",
     "dpo": "(Wo zutreffend) Datenschutzbeauftragter:",

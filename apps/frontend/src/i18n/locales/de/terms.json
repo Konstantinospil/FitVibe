@@ -21,25 +21,25 @@
   },
   "section3": {
     "title": "3. Zulässige Nutzung",
-    "subtitle": "Sie stimmen zu, nicht:",
+    "subtitle": "Sie verpflichten sich, Folgendes zu unterlassen:",
     "items": [
-      "Die Dienste zu reverse-engineern, zu modifizieren oder abgeleitete Werke zu erstellen, außer wie gesetzlich erlaubt.",
+      "Reverse Engineering an den Diensten durchzuführen, die Dienste zu verändern oder daraus abgeleitete Werke zu erstellen, soweit dies nicht gesetzlich zulässig ist.",
       "Sicherheitsmaßnahmen zu umgehen, auf nicht öffentliche Bereiche zuzugreifen oder die Systemintegrität zu beeinträchtigen.",
       "Rechtswidrige, diffamierende oder rechtsverletzende Inhalte oder Inhalte hochzuladen, die ohne Erlaubnis personenbezogene Daten anderer enthalten.",
       "Die Dienste zur medizinischen Diagnose oder Notfallreaktion zu verwenden oder an Belästigung, Diskriminierung oder missbräuchlichem Verhalten teilzunehmen.",
-      "Automatisierte Mittel zur Datenzugriff oder -extraktion zu verwenden, außer über genehmigte APIs und Rate-Limits."
+      "Automatisierte Mittel für den Datenzugriff oder die Datenextraktion zu verwenden, außer über zugelassene APIs und innerhalb der vorgesehenen Zugriffsbeschränkungen."
     ]
   },
   "section4": {
     "title": "4. Benutzerinhalte",
     "items": [
-      "Sie behalten das Eigentum an Inhalten, die Sie einreichen (z.B. Trainingsprotokolle, Kommentare, Medien). Sie gewähren FitVibe eine weltweite, gebührenfreie Lizenz zur Hosting, Nutzung, Reproduktion, Modifikation, Veröffentlichung und Anzeige dieser Inhalte ausschließlich zum Betrieb und zur Verbesserung der Dienste.",
+      "Sie behalten die Rechte an den von Ihnen eingereichten Inhalten (z. B. Trainingsprotokolle, Kommentare und Medien). Sie gewähren FitVibe eine weltweite, gebührenfreie Lizenz, diese Inhalte ausschließlich zum Betrieb und zur Verbesserung der Dienste zu hosten, zu nutzen, zu vervielfältigen, zu ändern, zu veröffentlichen und anzuzeigen.",
       "Sie stellen sicher, dass Sie die Rechte zur Weitergabe der von Ihnen eingereichten Inhalte haben und dass diese nicht die Rechte anderer oder geltendes Recht verletzen."
     ]
   },
   "section5": {
     "title": "5. Gesundheits- und Sicherheitshinweis",
-    "content": "FitVibe bietet Trainings- und Wellness-Tools und bietet keine medizinische Beratung. Konsultieren Sie einen Arzt, bevor Sie neue Trainingsprogramme beginnen. Beenden Sie die Nutzung der Dienste und suchen Sie ärztliche Hilfe auf, wenn Sie nachteilige Symptome verspüren."
+    "content": "FitVibe stellt Trainings- und Wellness-Werkzeuge bereit und erteilt keine medizinische Beratung. Konsultieren Sie einen Arzt, bevor Sie ein neues Trainingsprogramm beginnen. Beenden Sie die Nutzung der Dienste und suchen Sie medizinische Hilfe, wenn gesundheitliche Beschwerden auftreten."
   },
   "section6": {
     "title": "6. Drittanbieter-Dienste und Integrationen",
@@ -48,7 +48,7 @@
   "section7": {
     "title": "7. Gebühren und Abonnements",
     "items": [
-      "Falls Abonnements oder kostenpflichtige Funktionen angeboten werden, werden Preis- und Abrechnungsbedingungen in den Diensten dargestellt. Steuern können anfallen. Zahlungen werden von Drittanbietern abgewickelt; Sie autorisieren FitVibe und Abwickler zur Erhebung anfallender Gebühren.",
+      "Falls Abonnements oder kostenpflichtige Funktionen angeboten werden, werden Preise und Abrechnungsbedingungen in den Diensten angezeigt. Es können Steuern anfallen. Zahlungen werden von Drittanbietern verarbeitet; Sie ermächtigen FitVibe und die Zahlungsdienstleister, die anfallenden Gebühren einzuziehen.",
       "FitVibe kann Preise bei angemessener Ankündigung ändern, vorbehaltlich geltenden Rechts. Wenn Sie Änderungen nicht zustimmen, können Sie vor Inkrafttreten der neuen Preise kündigen."
     ]
   },
@@ -61,7 +61,7 @@
   },
   "section9": {
     "title": "9. Haftungsausschlüsse",
-    "content": "Die Dienste werden \"wie besehen\" und \"wie verfügbar\" ohne Gewährleistungen jeglicher Art, ausdrücklich oder stillschweigend, einschließlich Marktgängigkeit, Eignung für einen bestimmten Zweck, Nichtverletzung und Genauigkeit bereitgestellt. Einige Rechtsordnungen erlauben keine Ausschlüsse bestimmter Gewährleistungen, daher gelten diese Ausschlüsse möglicherweise nicht."
+    "content": "Die Dienste werden im gesetzlich zulässigen Umfang \"wie besehen\" und \"wie verfügbar\" ohne ausdrückliche oder stillschweigende Gewährleistungen bereitgestellt, einschließlich Gewährleistungen der Handelsüblichkeit, Eignung für einen bestimmten Zweck, Nichtverletzung von Rechten Dritter und Richtigkeit. In manchen Rechtsordnungen ist der Ausschluss bestimmter Gewährleistungen nicht zulässig; in diesem Fall gelten die entsprechenden Ausschlüsse möglicherweise nicht."
   },
   "section10": {
     "title": "10. Haftungsbeschränkung",
@@ -69,7 +69,7 @@
   },
   "section11": {
     "title": "11. Freistellung",
-    "content": "Sie stimmen zu, FitVibe, seine verbundenen Unternehmen und deren leitende Angestellte, Mitarbeiter und Agenten von allen Ansprüchen, Schäden, Verlusten oder Ausgaben freizustellen, die aus Ihrer Nutzung der Dienste oder Verstoß gegen diese AGB entstehen."
+    "content": "Sie verpflichten sich, FitVibe, seine verbundenen Unternehmen sowie deren leitende Angestellte, Beschäftigte und Vertreter von Ansprüchen, Schäden, Verlusten oder Aufwendungen freizustellen, die aus Ihrer Nutzung der Dienste oder einem Verstoß gegen diese AGB entstehen."
   },
   "section12": {
     "title": "12. Geltendes Recht und Streitbeilegung",
@@ -77,7 +77,7 @@
   },
   "section13": {
     "title": "13. Export- und Sanktionskonformität",
-    "content": "Sie müssen geltende Exportkontroll- und Sanktionsgesetze einhalten. Sie dürfen die Dienste nicht verwenden, wenn Sie sich in oder gewöhnlich in von den USA mit einem Embargo belegten Ländern aufhalten oder wenn Sie auf geltenden Sanktionslisten stehen."
+    "content": "Sie müssen die geltenden Exportkontroll- und Sanktionsvorschriften einhalten. Sie dürfen die Dienste nicht nutzen, wenn Sie sich in einem von den USA mit einem Embargo belegten Land befinden, dort gewöhnlich ansässig sind oder auf einer einschlägigen Sanktionsliste stehen."
   },
   "section14": {
     "title": "14. Änderungen an Diensten und AGB",
@@ -90,7 +90,7 @@
     "title": "15. Benachrichtigungen",
     "items": [
       "Benachrichtigungen an FitVibe: legal@fitvibe.example.com.",
-      "Benachrichtigungen an Sie: per E-Mail, in Produktnachrichten oder auf andere angemessene Weise. Sie sind verantwortlich, Kontaktdaten aktuell zu halten."
+      "Mitteilungen an Sie: per E-Mail, über Nachrichten innerhalb des Produkts oder auf andere angemessene Weise. Sie sind dafür verantwortlich, Ihre Kontaktdaten aktuell zu halten."
     ]
   },
   "section16": {
