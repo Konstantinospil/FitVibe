@@ -25,7 +25,7 @@ services:
     ports:
       - "3310:3310"
     healthcheck:
-      test: ["CMD", "clamdscan", "--version"]
+      test: ["CMD-SHELL", "reply=\"$(printf 'PING\\n' | nc -w 3 127.0.0.1 3310)\" && test \"$reply\" = \"PONG\""]
       interval: 10s
       timeout: 5s
       retries: 5
