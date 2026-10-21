@@ -9,7 +9,16 @@ const overrides = [...section.matchAll(/^  ('[^']+'|[^:#\s]+):\s+(.+)$/gm)]
   .map(m => [m[1].replace(/^'|'$/g, ""), m[2].trim().replace(/^'|'$/g, "")]);
 const inventory = JSON.parse(fs.readFileSync(path.join(root, "docs/dependency-overrides.json"), "utf8"));
 const records = inventory.overrides;
+// pnpm 12 workspace settings are authoritative. Additional package.json override
+// sources would silently bypass this inventory and can mislead maintainers.
+const rootManifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const errors = [];
+if (rootManifest.overrides && Object.keys(rootManifest.overrides).length) {
+  errors.push("Root package.json overrides are forbidden: use pnpm-workspace.yaml and docs/dependency-overrides.json");
+}
+if (rootManifest.pnpm?.overrides && Object.keys(rootManifest.pnpm.overrides).length) {
+  errors.push("Root package.json pnpm.overrides are forbidden: use pnpm-workspace.yaml");
+}
 const actual = new Map(overrides);
 const documented = new Map();
 for (const item of records) {
@@ -22,6 +31,20 @@ for (const [name, value] of actual) {
   else if (documented.get(name).constraint !== value) errors.push("Constraint changed without inventory update: " + name);
 }
 for (const name of documented.keys()) if (!actual.has(name)) errors.push("Stale inventory entry: " + name);
+// A recorded but unverified reason is not evidence that a constraint is needed.
+// Keep existing technical debt visible while requiring substantive reasons when
+// marking an item reviewed.
+const pending = records.filter(item => item.status === "unverified-necessity");
+for (const item of records) {
+  if (item.status !== "unverified-necessity" &&
+      /historical constraint; originating issue\/advisory has not yet been verified/i.test(item.reason || "")) {
+    errors.push("Reviewed override lacks evidence-based justification: " + item.name);
+  }
+}
+if (pending.length) {
+  console.warn("Dependency override review outstanding: " + pending.length + " of " + records.length +
+    " overrides are inventoried but not justified; see docs/dependency-overrides.json");
+}
 // Fail closed on undocumented direct-dependency version contradictions.
 // Known historical exceptions must be explicitly marked for compatibility review.
 const manifests = ["package.json"];

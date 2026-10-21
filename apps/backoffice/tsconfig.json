@@ -15,7 +15,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "@fitvibe/contracts": ["../../packages/types/src/contracts.d.ts"]
