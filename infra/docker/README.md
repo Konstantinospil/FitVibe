@@ -178,7 +178,7 @@ All services include health checks:
 - **Frontend**: HTTP 200 on root
 - **PostgreSQL**: `pg_isready`
 - **Redis**: `redis-cli ping`
-- **ClamAV**: `clamdscan --version`
+- **ClamAV**: TCP `PING`/`PONG` against the ClamAV daemon on port 3310
 
 ## Security Considerations
 
