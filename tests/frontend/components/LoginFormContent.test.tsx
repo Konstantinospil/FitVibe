@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import LoginFormContent from "../../src/pages/LoginFormContent";
@@ -508,9 +508,13 @@ describe("LoginFormContent", () => {
     );
   });
 
-  it("should disable inputs during submission", async () => {
+  it("should disable inputs during submission and re-enable them when it completes", async () => {
+    let resolveLogin!: (value: Awaited<ReturnType<typeof api.login>>) => void;
     vi.mocked(api.login).mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 100)),
+      () =>
+        new Promise<Awaited<ReturnType<typeof api.login>>>((resolve) => {
+          resolveLogin = resolve;
+        }),
     );
 
     render(
@@ -527,14 +531,25 @@ describe("LoginFormContent", () => {
     fireEvent.change(passwordInput, { target: { value: "password123" } });
     fireEvent.click(submitButton);
 
-    await waitFor(
-      () => {
-        expect(emailInput).toBeDisabled();
-        expect(passwordInput).toBeDisabled();
-        expect(submitButton).toBeDisabled();
-      },
-      { timeout: 5000 },
-    );
+    expect(api.login).toHaveBeenCalledOnce();
+    expect(emailInput).toBeDisabled();
+    expect(passwordInput).toBeDisabled();
+    expect(submitButton).toBeDisabled();
+
+    await act(async () => {
+      resolveLogin({
+        user: { id: "user-1", username: "test", email: "test@example.com" },
+        requires2FA: false,
+        session: { id: "session-123" },
+      });
+    });
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledOnce();
+      expect(emailInput).toBeEnabled();
+      expect(passwordInput).toBeEnabled();
+      expect(submitButton).toBeEnabled();
+    });
   });
 
   it("should trim email input", async () => {
