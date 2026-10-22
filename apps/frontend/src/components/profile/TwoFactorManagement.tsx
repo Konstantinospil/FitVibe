@@ -133,7 +133,7 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
       <p>{enabled ? t("settings.security.enabledHelp") : t("settings.security.disabledHelp")}</p>
       {error && <p role="alert">{error}</p>}
 
-      {!enabled && !setup && !restartRequired && (
+      {!enabled && !setup && !restartRequired && backupCodes.length === 0 && (
         <Button type="button" disabled={busy} isLoading={busy} onClick={() => void beginSetup()}>
           {t("settings.security.enable")}
         </Button>
