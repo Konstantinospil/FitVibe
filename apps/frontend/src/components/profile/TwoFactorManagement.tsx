@@ -14,9 +14,11 @@ import {
 type Action = "disable" | "regenerate";
 
 export function requiresTwoFactorSetupRestart(error: unknown): boolean {
-  return axios.isAxiosError(error) &&
+  return (
+    axios.isAxiosError<{ error?: { code?: string } }>(error) &&
     error.response?.status === 409 &&
-    error.response.data?.error?.code === "2FA_SETUP_RESTART_REQUIRES_STEP_UP";
+    error.response.data?.error?.code === "2FA_SETUP_RESTART_REQUIRES_STEP_UP"
+  );
 }
 
 interface Props {
@@ -66,7 +68,9 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
   };
 
   const restartSetup = async () => {
-    if (!password || busy) return;
+    if (!password || busy) {
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -96,7 +100,9 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
       }
       setSetup(null);
       setCode("");
-      if (backupCodes.length === 0) await onStatusChanged();
+      if (backupCodes.length === 0) {
+        await onStatusChanged();
+      }
     } catch {
       setError(t("settings.security.verifyError"));
     } finally {
@@ -141,15 +147,29 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
 
       {!enabled && restartRequired && (
         <>
-          <p role="status">An earlier 2FA setup was not completed. Confirm your password to restart setup.</p>
+          <p role="status">
+            An earlier 2FA setup was not completed. Confirm your password to restart setup.
+          </p>
           <label className="form-label">
             <span className="form-label-text">{t("settings.security.disablePasswordLabel")}</span>
-            <InputControl type="password" autoComplete="current-password" value={password}
-              onChange={(event) => setPassword(event.target.value)} />
+            <InputControl
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
           </label>
-          <Button type="button" disabled={busy || !password} isLoading={busy}
-            onClick={() => void restartSetup()}>Restart 2FA setup</Button>
-          <Button type="button" disabled={busy} onClick={clearSensitiveState}>{t("common.cancel")}</Button>
+          <Button
+            type="button"
+            disabled={busy || !password}
+            isLoading={busy}
+            onClick={() => void restartSetup()}
+          >
+            Restart 2FA setup
+          </Button>
+          <Button type="button" disabled={busy} onClick={clearSensitiveState}>
+            {t("common.cancel")}
+          </Button>
         </>
       )}
 
@@ -246,7 +266,13 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
               ))}
             </ul>
           )}
-          <Button type="button" onClick={() => { clearSensitiveState(); void onStatusChanged(); }}>
+          <Button
+            type="button"
+            onClick={() => {
+              clearSensitiveState();
+              void onStatusChanged();
+            }}
+          >
             {t("settings.security.finishBackupCodes")}
           </Button>
         </div>
