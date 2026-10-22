@@ -45,6 +45,20 @@ const RouterContent: React.FC<RouterContentProps> = ({ queryClient, dehydratedSt
   );
 };
 
+const OnboardingSequence: React.FC = () => {
+  const [resolved, setResolved] = useState(false);
+  const finish = useCallback(() => setResolved(true), []);
+  return <>
+    <FirstLoginTwoFactorPrompt onResolved={finish} />
+    {resolved ? <CookieConsent /> : null}
+  </>;
+};
+
+const OnboardingOverlays: React.FC = () => {
+  const { isAuthenticated, user } = AuthContext.useAuth();
+  return <OnboardingSequence key={isAuthenticated ? user?.id ?? "authenticated" : "guest"} />;
+};
+
 type RouterProps = {
   location?: string;
   basename?: string;
@@ -63,16 +77,13 @@ export const Router: React.FC<RouterProps> = ({
   queryClient,
   dehydratedState,
 }) => {
-  const [twoFactorPromptResolved, setTwoFactorPromptResolved] = useState(false);
-  const resolveTwoFactorPrompt = useCallback(() => setTwoFactorPromptResolved(true), []);
   const routerContent = (
     <ErrorBoundary>
       <AuthContext.AuthProvider>
         <Suspense fallback={loadingFallback}>
           <RouterContent queryClient={queryClient} dehydratedState={dehydratedState} />
         </Suspense>
-        <FirstLoginTwoFactorPrompt onResolved={resolveTwoFactorPrompt} />
-        {twoFactorPromptResolved ? <CookieConsent /> : null}
+        <OnboardingOverlays />
       </AuthContext.AuthProvider>
     </ErrorBoundary>
   );
