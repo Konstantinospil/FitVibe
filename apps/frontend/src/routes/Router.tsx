@@ -10,6 +10,7 @@ import * as AuthContext from "../contexts/AuthContext.js";
 import { ErrorBoundary } from "../components/ErrorBoundary.js";
 import PublicRoutes from "./PublicRoutes.js";
 import CookieConsent from "../components/CookieConsent";
+import { FirstLoginTwoFactorPrompt } from "../components/FirstLoginTwoFactorPrompt";
 const ProtectedRoutes = lazy(() => import("./ProtectedRoutes.js"));
 
 const loadingFallback = (
@@ -62,13 +63,16 @@ export const Router: React.FC<RouterProps> = ({
   queryClient,
   dehydratedState,
 }) => {
+  const [twoFactorPromptResolved, setTwoFactorPromptResolved] = useState(false);
+  const resolveTwoFactorPrompt = useCallback(() => setTwoFactorPromptResolved(true), []);
   const routerContent = (
     <ErrorBoundary>
       <AuthContext.AuthProvider>
         <Suspense fallback={loadingFallback}>
           <RouterContent queryClient={queryClient} dehydratedState={dehydratedState} />
         </Suspense>
-        <CookieConsent />
+        <FirstLoginTwoFactorPrompt onResolved={resolveTwoFactorPrompt} />
+        {twoFactorPromptResolved ? <CookieConsent /> : null}
       </AuthContext.AuthProvider>
     </ErrorBoundary>
   );
