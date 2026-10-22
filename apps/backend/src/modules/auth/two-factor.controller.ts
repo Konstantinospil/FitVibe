@@ -3,6 +3,7 @@ import { z } from "zod";
 import { HttpError } from "../../utils/http.js";
 import {
   beginTwoFactorSetup,
+  dismissTwoFactorInvitation,
   disableTwoFactor,
   enableTwoFactor,
   getTwoFactorStatus,
@@ -170,4 +171,9 @@ export async function status(req: Request, res: Response, next: NextFunction): P
   } catch (error) {
     next(error);
   }
+}
+
+export async function dismissInvitation(req: Request, res: Response): Promise<void> {
+  await dismissTwoFactorInvitation(requireUserId(req));
+  res.json({ dismissed: true });
 }
