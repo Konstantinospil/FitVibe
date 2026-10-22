@@ -6,8 +6,13 @@ import { skipUnlessMatrix } from "../helpers/project";
 test("first authenticated visit offers 2FA before cookie preferences", async ({ page }, testInfo) => {
   skipUnlessMatrix(testInfo, { themes: ["light"], viewports: ["sm"] });
   await prepareVisualPage(page, testInfo, { authenticated: true });
+  let invitationDismissed = false;
+  await page.route("**/api/v1/auth/2fa/invitation/dismiss", async (route) => {
+    invitationDismissed = true;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ dismissed: true }) });
+  });
   await page.route("**/api/v1/auth/2fa/status", async (route) => {
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ enabled: false }) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ enabled: false, invitationDismissed }) });
   });
   await page.route("**/api/v1/consent/cookie-status", async (route) => {
     await route.fulfill({
