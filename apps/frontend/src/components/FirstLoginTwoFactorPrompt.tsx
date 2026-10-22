@@ -26,7 +26,9 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
     setStage("checking");
     void get2FAStatus().then(
       (status) => {
-        if (!active) return;
+        if (!active) {
+          return;
+        }
         if (status.enabled || status.invitationDismissed) {
           setStage("done");
           onResolved();
@@ -42,7 +44,9 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         }
       },
     );
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [isAuthenticated, userId, onResolved]);
 
   const complete = () => {
@@ -68,19 +72,27 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
       onClose={() => void dismiss()}
       closeLabel={t("firstLogin2fa.notNow")}
       closeOnBackdrop={false}
-      footer={stage === "choice" ? (
-        <>
-          <Button type="button" variant="secondary" onClick={() => void dismiss()}>{t("firstLogin2fa.notNow")}</Button>
-          <Button type="button" onClick={() => setStage("setup")}>{t("firstLogin2fa.activate")}</Button>
-        </>
-      ) : undefined}
+      footer={
+        stage === "choice" ? (
+          <>
+            <Button type="button" variant="secondary" onClick={() => void dismiss()}>
+              {t("firstLogin2fa.notNow")}
+            </Button>
+            <Button type="button" onClick={() => setStage("setup")}>
+              {t("firstLogin2fa.activate")}
+            </Button>
+          </>
+        ) : undefined
+      }
     >
       {stage === "setup" ? (
         <TwoFactorManagement
           enabled={false}
           onStatusChanged={async () => {
             const status = await get2FAStatus();
-            if (status.enabled) complete();
+            if (status.enabled) {
+              complete();
+            }
           }}
         />
       ) : null}
