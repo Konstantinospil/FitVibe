@@ -16,7 +16,7 @@ type Action = "disable" | "regenerate";
 export function requiresTwoFactorSetupRestart(error: unknown): boolean {
   return axios.isAxiosError(error) &&
     error.response?.status === 409 &&
-    error.response.data?.code === "2FA_SETUP_RESTART_REQUIRES_STEP_UP";
+    error.response.data?.error?.code === "2FA_SETUP_RESTART_REQUIRES_STEP_UP";
 }
 
 interface Props {
