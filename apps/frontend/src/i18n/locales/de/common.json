@@ -1180,5 +1180,11 @@
   "scrollbar": {
     "pageLabel": "Seiteninhalt",
     "dialogLabel": "Dialoginhalt"
+  },
+  "firstLogin2fa": {
+    "title": "Konto absichern",
+    "description": "Möchten Sie die Zwei-Faktor-Authentifizierung aktivieren? Sie können sie später auch in den Einstellungen aktivieren.",
+    "activate": "2FA aktivieren",
+    "notNow": "Jetzt nicht"
   }
 }
