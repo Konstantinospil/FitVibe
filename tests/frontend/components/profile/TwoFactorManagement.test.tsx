@@ -187,7 +187,7 @@ describe("TwoFactorManagement", () => {
   it("recovers interrupted enrollment only after password step-up", async () => {
     vi.mocked(api.setup2FA).mockRejectedValueOnce({
       isAxiosError: true,
-      response: { status: 409, data: { code: "2FA_SETUP_RESTART_REQUIRES_STEP_UP" } },
+      response: { status: 409, data: { error: { code: "2FA_SETUP_RESTART_REQUIRES_STEP_UP" } } },
     });
     vi.mocked(api.restart2FASetup).mockResolvedValueOnce(setupResponse);
     render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
@@ -210,7 +210,7 @@ describe("TwoFactorManagement", () => {
   it("keeps restart guarded when step-up authentication fails", async () => {
     vi.mocked(api.setup2FA).mockRejectedValueOnce({
       isAxiosError: true,
-      response: { status: 409, data: { code: "2FA_SETUP_RESTART_REQUIRES_STEP_UP" } },
+      response: { status: 409, data: { error: { code: "2FA_SETUP_RESTART_REQUIRES_STEP_UP" } } },
     });
     vi.mocked(api.restart2FASetup).mockRejectedValueOnce(new Error("Unauthorized"));
     render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
