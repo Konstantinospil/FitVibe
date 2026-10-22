@@ -1180,5 +1180,11 @@
   "scrollbar": {
     "pageLabel": "Contenu de la page",
     "dialogLabel": "Contenu de la boîte de dialogue"
+  },
+  "firstLogin2fa": {
+    "title": "Sécurisez votre compte",
+    "description": "Souhaitez-vous activer l’authentification à deux facteurs ? Vous pourrez aussi l’activer plus tard dans les paramètres.",
+    "activate": "Activer la 2FA",
+    "notNow": "Pas maintenant"
   }
 }
