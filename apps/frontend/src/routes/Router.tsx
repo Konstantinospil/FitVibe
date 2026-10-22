@@ -3,7 +3,7 @@
  * This component is used by both server and client entry points
  */
 
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useState, useCallback } from "react";
 import { BrowserRouter, StaticRouter } from "react-router-dom";
 import type { QueryClient, DehydratedState } from "@tanstack/react-query";
 import * as AuthContext from "../contexts/AuthContext.js";
@@ -48,15 +48,17 @@ const RouterContent: React.FC<RouterContentProps> = ({ queryClient, dehydratedSt
 const OnboardingSequence: React.FC = () => {
   const [resolved, setResolved] = useState(false);
   const finish = useCallback(() => setResolved(true), []);
-  return <>
-    <FirstLoginTwoFactorPrompt onResolved={finish} />
-    {resolved ? <CookieConsent /> : null}
-  </>;
+  return (
+    <>
+      <FirstLoginTwoFactorPrompt onResolved={finish} />
+      {resolved ? <CookieConsent /> : null}
+    </>
+  );
 };
 
 const OnboardingOverlays: React.FC = () => {
   const { isAuthenticated, user } = AuthContext.useAuth();
-  return <OnboardingSequence key={isAuthenticated ? user?.id ?? "authenticated" : "guest"} />;
+  return <OnboardingSequence key={isAuthenticated ? (user?.id ?? "authenticated") : "guest"} />;
 };
 
 type RouterProps = {
