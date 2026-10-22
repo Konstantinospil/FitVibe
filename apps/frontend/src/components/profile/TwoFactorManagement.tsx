@@ -96,7 +96,7 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
       }
       setSetup(null);
       setCode("");
-      await onStatusChanged();
+      if (backupCodes.length === 0) await onStatusChanged();
     } catch {
       setError(t("settings.security.verifyError"));
     } finally {
@@ -246,7 +246,7 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
               ))}
             </ul>
           )}
-          <Button type="button" onClick={clearSensitiveState}>
+          <Button type="button" onClick={() => { clearSensitiveState(); void onStatusChanged(); }}>
             {t("settings.security.finishBackupCodes")}
           </Button>
         </div>
