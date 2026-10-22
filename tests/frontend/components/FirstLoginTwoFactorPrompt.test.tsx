@@ -1,12 +1,12 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FirstLoginTwoFactorPrompt, firstLoginTwoFactorKey } from "../../../apps/frontend/src/components/FirstLoginTwoFactorPrompt";
-import { get2FAStatus } from "../../../apps/frontend/src/services/api";
+import { FirstLoginTwoFactorPrompt } from "../../../apps/frontend/src/components/FirstLoginTwoFactorPrompt";
+import { dismiss2FAInvitation, get2FAStatus } from "../../../apps/frontend/src/services/api";
 
 const auth = vi.hoisted(() => ({ current: { isAuthenticated: true, user: { id: "user-1" } } }));
 vi.mock("../../../apps/frontend/src/contexts/AuthContext", () => ({ useAuth: () => auth.current }));
-vi.mock("../../../apps/frontend/src/services/api", () => ({ get2FAStatus: vi.fn() }));
+vi.mock("../../../apps/frontend/src/services/api", () => ({ get2FAStatus: vi.fn(), dismiss2FAInvitation: vi.fn() }));
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("../../../apps/frontend/src/components/profile/TwoFactorManagement", () => ({
   TwoFactorManagement: ({ onStatusChanged }: { onStatusChanged: () => Promise<unknown> }) =>
@@ -23,7 +23,7 @@ vi.mock("../../../apps/frontend/src/components/composites/Modal", () => ({
 
 describe("first-login 2FA invitation", () => {
   beforeEach(() => {
-    localStorage.clear();
+    vi.mocked(dismiss2FAInvitation).mockResolvedValue(undefined);
     vi.clearAllMocks();
     auth.current = { isAuthenticated: true, user: { id: "user-1" } };
     vi.mocked(get2FAStatus).mockResolvedValue({ enabled: false });
@@ -35,17 +35,17 @@ describe("first-login 2FA invitation", () => {
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(resolved).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("firstLogin2fa.notNow"));
-    expect(resolved).toHaveBeenCalledOnce();
-    expect(localStorage.getItem(firstLoginTwoFactorKey("user-1"))).toBe("done");
+    await waitFor(() => expect(dismiss2FAInvitation).toHaveBeenCalledOnce());
+    await waitFor(() => expect(resolved).toHaveBeenCalledOnce());
   });
 
-  it("does not prompt again after dismissal", async () => {
-    localStorage.setItem(firstLoginTwoFactorKey("user-1"), "done");
+  it("does not prompt on another device after account-level dismissal", async () => {
+    vi.mocked(get2FAStatus).mockResolvedValueOnce({ enabled: false, invitationDismissed: true });
     const resolved = vi.fn();
     render(<FirstLoginTwoFactorPrompt onResolved={resolved} />);
     await waitFor(() => expect(resolved).toHaveBeenCalledOnce());
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(get2FAStatus).not.toHaveBeenCalled();
+    expect(get2FAStatus).toHaveBeenCalledOnce();
   });
 
   it("does not prompt accounts with 2FA enabled", async () => {
