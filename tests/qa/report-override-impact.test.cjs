@@ -52,5 +52,8 @@ test("report captures package and peer snapshot resolutions without declaring ov
 }));
 test("report fails when an override is not included in the inventory", () => withFixture(dir => {
   fs.appendFileSync(path.join(dir,"pnpm-workspace.yaml"),"  untracked-pkg: 1.0.0\n");
-  assert.throws(()=>generate(dir), /Overrides missing inventory/);
+  assert.throws(()=>generate(dir), error => {
+    assert.match(String(error.stderr), /Overrides missing inventory/);
+    return true;
+  });
 }));
