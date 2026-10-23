@@ -6,7 +6,7 @@ const path = require("node:path");
 const {spawnSync} = require("node:child_process");
 const root = path.resolve(__dirname, "../..");
 const compose = fs.readFileSync(path.join(root,"infra/docker/prod/compose.yml"),"utf8");
-const healthcheck = compose.match(/(?ms)^  clamav:\n(.*?)(?=^  \w+:|^volumes:)/)?.[1];
+const healthcheck = compose.match(/^  clamav:\n([\s\S]*?)(?=^  \w+:|^volumes:)/m)?.[1];
 test("ClamAV PING healthcheck escapes shell reply from Compose interpolation", () => {
   assert.ok(healthcheck,"missing ClamAV service");
   assert.match(healthcheck,/test:\s*\["CMD-SHELL",.*\$\$reply/);
