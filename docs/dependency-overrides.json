@@ -306,11 +306,11 @@
     },
     {
       "name": "body-parser@1",
-      "constraint": "1.20.6",
+      "constraint": "1.20.9",
       "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
+      "status": "requires-compatibility-review",
       "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'body-parser@1'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "reason": "GHSA-27r3-jxmh-p828 / CVE-2026-111181: body-parser 1.20.6 vulnerable to unauthenticated denial of service; major-scoped patch 1.20.9. Keep until all dependency parents accept patched version and regression tests pass.",
       "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
@@ -611,6 +611,15 @@
       ],
       "reason": "@lhci/cli 0.15.1 and @lhci/utils 0.15.1 pin Lighthouse 12.6.1, which pulls puppeteer-core 24.31.0 and chromium-bidi 11.0.0 with vulnerable Zod 3.25.76. Keep Lighthouse CI runner and select Lighthouse 13.5.0 with Puppeteer 25 to eliminate vulnerable Zod 3 without a Zod major-version override.",
       "removalCriteria": "Remove when a released Lighthouse CI dependency natively selects Lighthouse >=13.5.0 and security, Lighthouse thresholds, browsers and full CI remain green."
+    },
+    {
+      "name": "body-parser@2",
+      "constraint": "2.4.0",
+      "category": "major-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "GHSA-27r3-jxmh-p828 / CVE-2026-111181: body-parser 2.3.0 vulnerable to unauthenticated denial of service; major-scoped patch 2.4.0. Keep until Express 5 dependency parent resolves safe version and integration tests pass.",
+      "removalCriteria": "Remove only after upstream parents resolve body-parser >=2.4.0 naturally and full CI/security checks pass."
     }
   ]
 }
