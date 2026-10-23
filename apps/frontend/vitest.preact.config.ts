@@ -2,8 +2,10 @@ import { defineConfig } from "vitest/config";
 import preact from "@preact/preset-vite";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
+import { createRequire } from "node:module";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
+const requireFromFrontend = createRequire(resolve(root, "package.json"));
 
 /**
  * Isolated Preact-compat pilot for #523.
@@ -13,20 +15,20 @@ export default defineConfig({
   root,
   plugins: [preact()],
   resolve: {
-    // Pilot files live outside this workspace; resolve its runtime from the frontend package.
-    alias: {
-      "preact/test-utils": resolve(root, "node_modules/preact/test-utils"),
-      "preact/jsx-runtime": resolve(root, "node_modules/preact/jsx-runtime"),
-      "preact/jsx-dev-runtime": resolve(root, "node_modules/preact/jsx-dev-runtime"),
-      "preact/compat": resolve(root, "node_modules/preact/compat"),
-      preact: resolve(root, "node_modules/preact"),
-      "react-dom/test-utils": "preact/test-utils",
-      "react-dom": "preact/compat",
-      "react/jsx-dev-runtime": "preact/jsx-dev-runtime",
-      "react/jsx-runtime": "preact/jsx-runtime",
-      react: "preact/compat",
-      "../../src": resolve(root, "src"),
-    },
+    // Exact-match aliases avoid the "preact" prefix rewriting subpath imports.
+    // Resolve exports from the frontend package rather than tests/frontend/.
+    alias: [
+      ...["preact/jsx-dev-runtime", "preact/jsx-runtime", "preact/test-utils", "preact/compat", "preact"].map((id) => ({
+        find: new RegExp(`^${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+        replacement: requireFromFrontend.resolve(id),
+      })),
+      { find: "react-dom/test-utils", replacement: requireFromFrontend.resolve("preact/test-utils") },
+      { find: "react-dom", replacement: requireFromFrontend.resolve("preact/compat") },
+      { find: "react/jsx-dev-runtime", replacement: requireFromFrontend.resolve("preact/jsx-dev-runtime") },
+      { find: "react/jsx-runtime", replacement: requireFromFrontend.resolve("preact/jsx-runtime") },
+      { find: "react", replacement: requireFromFrontend.resolve("preact/compat") },
+      { find: "../../src", replacement: resolve(root, "src") },
+    ],
   },
   test: {
     environment: "jsdom",
