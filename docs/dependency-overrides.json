@@ -553,21 +553,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "jest",
-      "constraint": "^30.5.2",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "jest",
-          "range": "^30.5.2",
-          "manifest": "apps/backend/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "@jest/transform",
       "constraint": "^30.5.2",
       "category": "transitive",
