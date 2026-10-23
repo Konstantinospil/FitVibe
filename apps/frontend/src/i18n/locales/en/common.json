@@ -1180,5 +1180,11 @@
   "scrollbar": {
     "pageLabel": "Page content",
     "dialogLabel": "Dialog content"
+  },
+  "firstLogin2fa": {
+    "title": "Secure your account",
+    "description": "Would you like to activate two-factor authentication? You can also enable it later in Settings.",
+    "activate": "Activate 2FA",
+    "notNow": "Not now"
   }
 }
