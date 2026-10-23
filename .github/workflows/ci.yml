@@ -164,7 +164,7 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Test dependency governance diagnostics
-        run: node --test tests/qa/dependency-governance.test.cjs
+        run: node --test tests/qa/dependency-governance.test.cjs tests/qa/report-override-impact.test.cjs
 
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
@@ -239,7 +239,7 @@ jobs:
         run: bash scripts/validate-production-compose.sh
 
       - name: Verify CI/CD workflow safety contracts
-        run: node --test tests/qa/ci-cd-contract.test.cjs tests/qa/clamav-readiness.test.cjs
+        run: node --test tests/qa/ci-cd-contract.test.cjs tests/qa/clamav-readiness.test.cjs tests/qa/clamav-healthcheck.test.cjs
 
   release_governance:
     name: Release Governance
