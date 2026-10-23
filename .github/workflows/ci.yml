@@ -10,6 +10,7 @@ on:
     branches: ["main", "dev", "feature", "fix/**"]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
 
 # Default permissions (can be overridden per job for least privilege)
 permissions:
@@ -35,7 +36,7 @@ jobs:
   architecture_hardcoding:
     name: Architecture & Hardcoding
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     permissions:
       contents: read
@@ -135,7 +136,7 @@ jobs:
   quality:
     name: Quality Gates (Lint & Type Check)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -227,7 +228,7 @@ jobs:
   deployment_contract:
     name: Deployment Contract
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     permissions:
       contents: read
@@ -276,7 +277,7 @@ jobs:
   backend_tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -413,7 +414,7 @@ jobs:
   frontend_tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     permissions:
       contents: read
@@ -495,7 +496,7 @@ jobs:
   backoffice_tests:
     name: Backoffice E2E
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -549,7 +550,7 @@ jobs:
   database_tests:
     name: Database Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     permissions:
       contents: read
@@ -656,7 +657,7 @@ jobs:
   coverage:
     name: Coverage Gate
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - backend_tests
@@ -747,7 +748,7 @@ jobs:
   lighthouse:
     name: Lighthouse CI
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     needs:
       - quality
@@ -831,7 +832,7 @@ jobs:
   i18n:
     name: i18n Coverage Check
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 10
     needs:
       - quality
@@ -871,7 +872,7 @@ jobs:
   contract_tests:
     name: API Contract Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - quality
@@ -923,7 +924,7 @@ jobs:
   integration:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - backend_tests
@@ -1098,7 +1099,7 @@ jobs:
   openapi_spec:
     name: Build OpenAPI spec
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 15
     needs:
       - quality
@@ -1158,7 +1159,7 @@ jobs:
   metrics_contract:
     name: Metrics Contract
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 5
     needs:
       - quality
@@ -1180,7 +1181,7 @@ jobs:
   security:
     name: Security Scans
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 35
     needs:
       - quality
@@ -1317,7 +1318,7 @@ jobs:
   codeql_compatibility:
     name: CodeQL Compatibility (javascript)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - quality
@@ -1348,7 +1349,7 @@ jobs:
   zap_baseline:
     name: OWASP ZAP Baseline
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -1493,7 +1494,7 @@ jobs:
   performance:
     name: Performance Budgets (real backend)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 25
     needs:
       - quality
@@ -1638,7 +1639,7 @@ jobs:
     name: Pre-main amd64 Production Smoke
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     permissions:
       contents: read
     services:
@@ -1811,7 +1812,7 @@ jobs:
     name: Pre-main arm64 Production Build
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     permissions:
       contents: read
     steps:
@@ -1882,7 +1883,7 @@ jobs:
       - e2e
       - pre_main_amd64_smoke
       - pre_main_arm64_build
-    if: always() && ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main')))
+    if: always() && (((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main')))
     permissions:
       contents: read
     steps:
@@ -1971,7 +1972,7 @@ jobs:
   accessibility:
     name: Accessibility (axe)
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 20
     needs:
       - quality
@@ -2097,7 +2098,7 @@ jobs:
   visual_regression:
     name: Visual Regression Tests
     runs-on: ubuntu-latest
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
       - quality
@@ -2221,7 +2222,7 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
-    if: (github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
+    if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs: integration
     permissions:
