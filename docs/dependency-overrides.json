@@ -596,6 +596,15 @@
       "directDeclarations": [],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "chromium-bidi>zod",
+      "constraint": "4.6.7",
+      "category": "transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "GHSA-mrhx-c7xc-m3w5 requires Zod >=4.6.6; chromium-bidi@11.0.0 resolves vulnerable Zod 3.25.76. Narrow-scoped override pending upstream compatibility testing.",
+      "removalCriteria": "Remove after chromium-bidi upstream natively depends on patched Zod and complete security and browser tests pass."
     }
   ]
 }
