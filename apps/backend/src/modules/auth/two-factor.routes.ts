@@ -32,7 +32,11 @@ router.post(
   asyncHandler(twoFactorController.regenerateBackups),
 );
 
-router.post("/invitation/dismiss", requireAccessToken, asyncHandler(twoFactorController.dismissInvitation));
+router.post(
+  "/invitation/dismiss",
+  requireAccessToken,
+  asyncHandler(twoFactorController.dismissInvitation),
+);
 
 // Get 2FA status and statistics
 router.get("/status", requireAccessToken, asyncHandler(twoFactorController.status));
