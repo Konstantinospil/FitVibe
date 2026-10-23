@@ -387,9 +387,6 @@ jobs:
         timeout-minutes: 15
         run: pnpm --filter @fitvibe/backend exec jest --coverage --maxWorkers=2 --testPathIgnorePatterns="migrations/migrations\\.test\\.ts|seeds/seeds\\.test\\.ts|.*\\.integration\\.test\\.ts$" --json --outputFile=coverage/jest-unit.json
 
-      - name: Preact rendering pilot (#523)
-        run: pnpm --filter @fitvibe/frontend exec vitest run --config vitest.preact.config.ts
-
       - name: Fail on unexpected skipped tests
         if: always()
         run: node tests/qa/assert-no-unexpected-skips.cjs apps/backend/coverage/jest-unit.json
@@ -457,6 +454,9 @@ jobs:
         id: frontend_unit_tests
         timeout-minutes: 10
         run: pnpm --filter @fitvibe/frontend test -- --coverage --maxWorkers=2 --reporter=default --reporter=json --outputFile=coverage/vitest-unit.json
+
+      - name: Preact rendering pilot (#523)
+        run: pnpm --filter @fitvibe/frontend exec vitest run --config vitest.preact.config.ts
 
       - name: Fail on unexpected skipped tests
         if: always()
