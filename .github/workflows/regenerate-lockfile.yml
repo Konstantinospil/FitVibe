@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       target_branch:
-        description: 'Existing fix/ or chore/ branch (not main, dev, or feature)'
+        description: 'Existing fix/, chore/, or feature branch (never main or dev)'
         required: true
         type: string
 
@@ -27,8 +27,8 @@ jobs:
         env:
           TARGET_BRANCH: ${{ inputs.target_branch }}
         run: |
-          if [[ ! "$TARGET_BRANCH" =~ ^(fix|chore)/[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
-            echo 'Only existing fix/* or chore/* branches may be updated.' >&2
+          if [[ "$TARGET_BRANCH" != "feature" && ! "$TARGET_BRANCH" =~ ^(fix|chore)/[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+            echo 'Only feature or existing fix/* or chore/* branches may be updated.' >&2
             exit 1
           fi
           git check-ref-format --branch "$TARGET_BRANCH"
