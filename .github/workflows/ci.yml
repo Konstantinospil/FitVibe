@@ -387,6 +387,9 @@ jobs:
         timeout-minutes: 15
         run: pnpm --filter @fitvibe/backend exec jest --coverage --maxWorkers=2 --testPathIgnorePatterns="migrations/migrations\\.test\\.ts|seeds/seeds\\.test\\.ts|.*\\.integration\\.test\\.ts$" --json --outputFile=coverage/jest-unit.json
 
+      - name: Preact rendering pilot (#523)
+        run: pnpm --filter @fitvibe/frontend exec vitest run --config vitest.preact.config.ts
+
       - name: Fail on unexpected skipped tests
         if: always()
         run: node tests/qa/assert-no-unexpected-skips.cjs apps/backend/coverage/jest-unit.json
@@ -1433,7 +1436,7 @@ jobs:
           target: http://127.0.0.1:4173
           docker_name: zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78
           # v0.15.0 rules_file_name does not reach the scanner CLI.
-          cmd_options: -c .zap/rules.tsv -j --client-spider
+          cmd_options: -c .zap/rules.tsv -j --client-spider -d
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
@@ -1450,6 +1453,10 @@ jobs:
             tail -n 100 /tmp/fitvibe-zap-ssr.log
           fi
           echo "::endgroup::"
+          echo "::group::ZAP execution diagnostics"
+          docker ps -a --no-trunc --filter ancestor=zaproxy/zap-stable --format '{{.ID}} {{.Status}} {{.Names}}' || true
+          find . -maxdepth 3 -type f \( -iname '*zap*log*' -o -name 'zap_out.json' -o -name 'zap.yaml' \) -print || true
+          echo "::endgroup"
           echo "::group::ZAP generated reports"
           for report in report_md.md report_json.json report_html.html; do
             if [ -f "$report" ]; then
@@ -1470,6 +1477,9 @@ jobs:
             report_md.md
             report_json.json
             report_html.html
+            zap_out.json
+            zap.yaml
+            .zap/*.log
           if-no-files-found: warn
           retention-days: 14
 

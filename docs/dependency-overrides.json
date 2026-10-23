@@ -553,21 +553,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "jest",
-      "constraint": "^30.5.2",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "jest",
-          "range": "^30.5.2",
-          "manifest": "apps/backend/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "@jest/transform",
       "constraint": "^30.5.2",
       "category": "transitive",
@@ -611,6 +596,21 @@
       "directDeclarations": [],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "lighthouse",
+      "constraint": "13.5.0",
+      "category": "direct-and-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [
+        {
+          "name": "lighthouse",
+          "range": "13.5.0",
+          "manifest": "package.json"
+        }
+      ],
+      "reason": "@lhci/cli 0.15.1 and @lhci/utils 0.15.1 pin Lighthouse 12.6.1, which pulls puppeteer-core 24.31.0 and chromium-bidi 11.0.0 with vulnerable Zod 3.25.76. Keep Lighthouse CI runner and select Lighthouse 13.5.0 with Puppeteer 25 to eliminate vulnerable Zod 3 without a Zod major-version override.",
+      "removalCriteria": "Remove when a released Lighthouse CI dependency natively selects Lighthouse >=13.5.0 and security, Lighthouse thresholds, browsers and full CI remain green."
     }
   ]
 }
