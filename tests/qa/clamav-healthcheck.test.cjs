@@ -22,6 +22,7 @@ test("Compose resolves escaped variable for container shell and not host interpo
   const result=spawnSync("docker",["compose","-f","infra/docker/prod/compose.yml","config","--format","json"],{cwd:root,env,encoding:"utf8"});
   assert.equal(result.status,0,result.stderr);
   const command=JSON.parse(result.stdout).services.clamav.healthcheck.test.join(" ");
-  assert.match(command,/\$reply/);
-  assert.doesNotMatch(command,/\$\$reply/);
+  assert.match(command,/\$\$reply/);
+  assert.match(command,/nc -w 3 127\.0\.0\.1 3310/);
+  assert.doesNotMatch(command,/test\s+""\s*=\s*"PONG"/);
 });
