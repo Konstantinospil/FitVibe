@@ -13,7 +13,13 @@ export default defineConfig({
   root,
   plugins: [preact()],
   resolve: {
+    // Pilot files live outside this workspace; resolve its runtime from the frontend package.
     alias: {
+      "preact/test-utils": resolve(root, "node_modules/preact/test-utils"),
+      "preact/jsx-runtime": resolve(root, "node_modules/preact/jsx-runtime"),
+      "preact/jsx-dev-runtime": resolve(root, "node_modules/preact/jsx-dev-runtime"),
+      "preact/compat": resolve(root, "node_modules/preact/compat"),
+      preact: resolve(root, "node_modules/preact"),
       "react-dom/test-utils": "preact/test-utils",
       "react-dom": "preact/compat",
       "react/jsx-dev-runtime": "preact/jsx-dev-runtime",
