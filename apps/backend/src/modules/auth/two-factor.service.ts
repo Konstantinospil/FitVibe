@@ -516,12 +516,19 @@ export async function dismissTwoFactorInvitation(userId: string): Promise<void> 
 export async function getTwoFactorStatus(
   userId: string,
   trx?: Knex.Transaction,
-): Promise<{ enabled: boolean; enabledAt: string | null; backupCodesRemaining: number; invitationDismissed: boolean }> {
+): Promise<{
+  enabled: boolean;
+  enabledAt: string | null;
+  backupCodesRemaining: number;
+  invitationDismissed: boolean;
+}> {
   const exec = trx ?? db;
   const settings = await exec<User2FASettings>("user_2fa_settings")
     .where({ user_id: userId })
     .first();
-  const invitationDismissed = Boolean(await exec("user_2fa_invitations").where({ user_id: userId }).first("user_id"));
+  const invitationDismissed = Boolean(
+    await exec("user_2fa_invitations").where({ user_id: userId }).first("user_id"),
+  );
 
   if (!settings || !settings.is_enabled || !settings.is_verified) {
     return {
