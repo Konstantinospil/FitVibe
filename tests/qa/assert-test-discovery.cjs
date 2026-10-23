@@ -56,6 +56,11 @@ const owners = [
     matches: (path) => /^tests\/backend\/.*\.(?:test|spec)\.ts$/.test(path),
   },
   {
+    // Executed by the dedicated Preact pilot step in the Frontend Tests job.
+    name: "frontend-preact-pilot",
+    matches: (path) => /^tests\/frontend\/preact\/.*\.preact\.test\.tsx$/.test(path),
+  },
+  {
     name: "frontend-vitest",
     matches: (path) => /^tests\/frontend\/.*\.test\.(?:ts|tsx)$/.test(path),
   },

@@ -92,7 +92,7 @@ test("Lighthouse upgrade is tracked without reinstating Zod or Jest overrides", 
   const manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   const inventory = JSON.parse(fs.readFileSync(path.join(root, "docs/dependency-overrides.json"), "utf8"));
   assert.equal(manifest.devDependencies.lighthouse, "13.5.0");
-  assert.match(workspace, /^  'lighthouse': '13\\.5\\.0'$/m);
+  assert.match(workspace, /^  'lighthouse': '13\.5\.0'$/m);
   assert.doesNotMatch(workspace, /^  ['"]?(?:zod|chromium-bidi>zod|jest)['"]?:/m);
   assert.ok(inventory.overrides.some(item => item.name === "lighthouse" && item.constraint === "13.5.0"));
   assert.ok(!inventory.overrides.some(item => ["jest", "chromium-bidi>zod", "zod"].includes(item.name)));
