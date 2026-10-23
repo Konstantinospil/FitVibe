@@ -1,2 +1,2 @@
-import "@testing-library/jest-dom/vitest";
-// The pilot tests explicitly unmount their Preact render roots after each test.
+// The isolated Preact pilot uses built-in Vitest assertions; no React Testing Library setup is required.
+// Each test unmounts its Preact root explicitly in afterEach.
