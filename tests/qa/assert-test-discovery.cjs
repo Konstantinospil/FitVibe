@@ -32,6 +32,11 @@ const owners = [
     matches: (path) => path === "tests/qa/dependency-governance.test.cjs",
   },
   {
+    // Explicitly run by Quality Gates alongside dependency governance tests.
+    name: "override-impact-report-regressions",
+    matches: (path) => path === "tests/qa/report-override-impact.test.cjs",
+  },
+  {
     // Executed by Deployment Contract before a release can be promoted.
     name: "ci-cd-contract-tests",
     matches: (path) => path === "tests/qa/ci-cd-contract.test.cjs",
@@ -40,6 +45,11 @@ const owners = [
     // Executed explicitly by the Deployment Contract job.
     name: "clamav-readiness-regressions",
     matches: (path) => path === "tests/qa/clamav-readiness.test.cjs",
+  },
+  {
+    // Explicitly run by Deployment Contract with the ClamAV readiness tests.
+    name: "clamav-healthcheck-regressions",
+    matches: (path) => path === "tests/qa/clamav-healthcheck.test.cjs",
   },
   {
     name: "backend-jest",
