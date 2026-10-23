@@ -598,13 +598,19 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "chromium-bidi>zod",
-      "constraint": "4.6.7",
-      "category": "transitive",
+      "name": "lighthouse",
+      "constraint": "13.5.0",
+      "category": "direct-and-transitive",
       "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "GHSA-mrhx-c7xc-m3w5 requires Zod >=4.6.6; chromium-bidi@11.0.0 resolves vulnerable Zod 3.25.76. Narrow-scoped override pending upstream compatibility testing.",
-      "removalCriteria": "Remove after chromium-bidi upstream natively depends on patched Zod and complete security and browser tests pass."
+      "directDeclarations": [
+        {
+          "name": "lighthouse",
+          "range": "13.5.0",
+          "manifest": "package.json"
+        }
+      ],
+      "reason": "@lhci/cli 0.15.1 and @lhci/utils 0.15.1 pin Lighthouse 12.6.1, which pulls puppeteer-core 24.31.0 and chromium-bidi 11.0.0 with vulnerable Zod 3.25.76. Keep Lighthouse CI runner and select Lighthouse 13.5.0 with Puppeteer 25 to eliminate vulnerable Zod 3 without a Zod major-version override.",
+      "removalCriteria": "Remove when a released Lighthouse CI dependency natively selects Lighthouse >=13.5.0 and security, Lighthouse thresholds, browsers and full CI remain green."
     }
   ]
 }
