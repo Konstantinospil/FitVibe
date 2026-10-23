@@ -86,3 +86,15 @@ test("resolved dependency contract accepts a compatible direct dependency", () =
   const out=fixtureReport("check-resolved-dependencies.cjs",dir);
   assert.match(out,/satisfy supported manifest ranges/);
 }));
+
+test("chromium-bidi resolves patched Zod without introducing a global Zod override", () => {
+  const workspace = fs.readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8");
+  const lock = fs.readFileSync(path.join(root, "pnpm-lock.yaml"), "utf8");
+  const inventory = JSON.parse(fs.readFileSync(path.join(root, "docs/dependency-overrides.json"), "utf8"));
+  assert.match(workspace, /^  'chromium-bidi>zod': '4\\.6\\.7'$/m);
+  assert.doesNotMatch(workspace, /^  ['"]?zod['"]?:/m);
+  assert.match(lock, /^  chromium-bidi@11\\.0\\.0\\([^\\n]+\\):\\n    dependencies:\\n(?:      [^\\n]+\\n)*      zod: 4\\.6\\.7$/m);
+  assert.doesNotMatch(lock, /^  zod@3\\.25\\.76:/m);
+  assert.ok(inventory.overrides.some(item => item.name === "chromium-bidi>zod" && item.constraint === "4.6.7"));
+  assert.ok(!inventory.overrides.some(item => item.name === "jest"), "Removed Jest override must remain absent");
+});
