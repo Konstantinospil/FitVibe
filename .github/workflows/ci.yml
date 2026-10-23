@@ -164,10 +164,25 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Test dependency governance diagnostics
-        run: node --test tests/qa/dependency-governance.test.cjs
+        run: node --test tests/qa/dependency-governance.test.cjs tests/qa/report-override-impact.test.cjs
 
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
+
+      - name: Generate dependency override impact report (advisory)
+        if: always()
+        run: |
+          mkdir -p tests/qa/reports
+          node tests/qa/report-override-impact.cjs > tests/qa/reports/override-impact.json
+
+      - name: Upload dependency override impact report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: dependency-override-impact-${{ github.run_id }}
+          path: tests/qa/reports/override-impact.json
+          retention-days: 90
+          if-no-files-found: warn
 
       - name: Analyze workspace source dependencies (advisory)
         run: node tests/qa/analyze-source-dependencies.cjs
@@ -224,7 +239,7 @@ jobs:
         run: bash scripts/validate-production-compose.sh
 
       - name: Verify CI/CD workflow safety contracts
-        run: node --test tests/qa/ci-cd-contract.test.cjs tests/qa/clamav-readiness.test.cjs
+        run: node --test tests/qa/ci-cd-contract.test.cjs tests/qa/clamav-readiness.test.cjs tests/qa/clamav-healthcheck.test.cjs
 
   release_governance:
     name: Release Governance

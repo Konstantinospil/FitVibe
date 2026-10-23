@@ -37,11 +37,11 @@
     },
     {
       "name": "ip-address",
-      "constraint": ">=10.7.1",
+      "constraint": "10.7.4",
       "category": "transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "reason": "Security remediation: force patched ip-address 10.7.4 for transitive socks dependency following GHSA-rxp7-6hxx-x8q5; retain pending isolated necessity review.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
