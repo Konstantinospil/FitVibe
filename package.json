@@ -85,7 +85,6 @@
     "lighthouse": "13.5.0"
   },
   "dependencies": {
-    "openai": "^7.38.0",
     "snyk": "^1.1308.1"
   }
 }
