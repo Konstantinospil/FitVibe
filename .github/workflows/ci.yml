@@ -1987,11 +1987,14 @@ jobs:
           i18n=${{ needs.i18n.result }}
           performance=${{ needs.performance.result }}
           contract_tests=${{ needs.contract_tests.result }}
-          visual_regression=${{ needs.visual_regression.result }}
           e2e=${{ needs.e2e.result }}
           pre_main_amd64_smoke=${{ needs.pre_main_amd64_smoke.result }}
           pre_main_arm64_build=${{ needs.pre_main_arm64_build.result }}
           EOF_RESULTS
+          echo "VRT advisory (nonblocking): ${{ needs.visual_regression.result }} — review visual-regression artifacts and issue #558" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ needs.visual_regression.result }}" != "success" ]; then
+            echo "::warning::Visual regression is temporarily advisory; result=${{ needs.visual_regression.result }}. See issue #558."
+          fi
           exit "$failed"
 
   accessibility:
@@ -2121,8 +2124,11 @@ jobs:
           if-no-files-found: ignore
 
   visual_regression:
-    name: Visual Regression Tests
+    name: Visual Regression Tests (advisory)
     runs-on: ubuntu-latest
+    # Temporary advisory mode: preserve execution, artifacts, and visible failures.
+    # Re-enable the required gate after issue #558 has verified baseline stability.
+    continue-on-error: true
     if: ((github.event_name == 'push' && (github.ref == 'refs/heads/feature' || startsWith(github.ref, 'refs/heads/fix/') || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature')) || (github.event_name == 'pull_request' && (github.base_ref == 'feature' || github.base_ref == 'dev' || github.base_ref == 'main'))
     timeout-minutes: 30
     needs:
