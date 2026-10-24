@@ -1,6 +1,6 @@
 const { test, expect } = require("@playwright/test");
 const { AxeBuilder } = require("@axe-core/playwright");
-const { preparePage, waitForApp } = require("./server-helpers.cjs");
+const { preparePage, waitForApp, dismissFirstLoginTwoFactorInvitation } = require("./server-helpers.cjs");
 
 const APPLICATION_ORIGIN = new URL(
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173",
@@ -92,6 +92,12 @@ test.describe("Accessibility and localized UI acceptance", () => {
       await waitForApp(page);
 
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      // The seeded account may display its real first-login 2FA invitation.
+      // Dismiss it through the supported UI/API, before opening the workout editor.
+      const invitation = page.getByRole("dialog", { name: /secure your account/i });
+      if (await invitation.isVisible()) {
+        await dismissFirstLoginTwoFactorInvitation(page);
+      }
       // This scenario requires an unobstructed workout editor. Resolve actual
       // first-visit consent through the API-backed Reject All control rather
       // than hiding the dialog or bypassing its backend persistence.
