@@ -119,11 +119,12 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
     terms: { accepted: true, needsAcceptance: false },
   });
 
-  // Enroll through Settings, exercising the real frontend and server.
-  await page.goto("/settings");
-  await waitForApp(page);
+  // First-login 2FA enrollment follows the invitation dialog.
+  const invitation = page.getByRole("dialog", { name: /secure your account/i });
+  await expect(invitation).toBeVisible();
+  await invitation.getByRole("button", { name: /activate/i }).click();
   const setupRequest = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/v1/auth/2fa/setup");
-  await page.getByRole("button", { name: /^enable 2fa$/i }).click();
+  await invitation.getByRole("button", { name: /^enable 2fa$/i }).click();
   const setupResponse = await setupRequest;
   expect(setupResponse.status()).toBe(200);
   const { secret } = await setupResponse.json();
@@ -142,9 +143,9 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   const statusResponse = await page.context().request.get(origin + "/api/v1/auth/2fa/status");
   expect(await statusResponse.json()).toMatchObject({ enabled: true });
   await page.getByRole("button", { name: /^show backup codes$/i }).click();
-  const originalBackupCodes = await page.locator("main li code").allTextContents();
+  const originalBackupCodes = await invitation.locator("li code").allTextContents();
   expect(originalBackupCodes.length).toBeGreaterThan(0);
-  await page.getByRole("button", { name: /^done$/i }).click();
+  await invitation.getByRole("button", { name: /^done$/i }).click();
   await page.goto("/");
   await waitForApp(page);
   // End the first session and check server-side invalidation.
