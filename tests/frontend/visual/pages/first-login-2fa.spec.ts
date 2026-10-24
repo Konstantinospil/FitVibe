@@ -27,7 +27,7 @@ test("first authenticated visit offers 2FA before cookie preferences", async ({ 
   await expect(page.getByRole("dialog", { name: /secure your account/i })).toBeVisible();
   await expect(page.getByRole("dialog", { name: /cookie/i })).toHaveCount(0);
 
-  await page.getByRole("button", { name: /not now/i }).click();
+  await page.getByRole("dialog", { name: /secure your account/i }).getByRole("button", { name: /not now/i }).click();
   await expect(page.getByRole("dialog", { name: /secure your account/i })).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: /cookie/i })).toBeVisible();
 
