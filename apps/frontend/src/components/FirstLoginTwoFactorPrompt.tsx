@@ -64,7 +64,9 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   };
 
   return (
-    <Modal
+    <>
+      <span hidden data-onboarding-2fa-stage={stage} />
+      <Modal
       open={stage === "choice" || stage === "setup"}
       title={t("firstLogin2fa.title")}
       description={t("firstLogin2fa.description")}
@@ -95,6 +97,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
           }}
         />
       ) : null}
-    </Modal>
+      </Modal>
+    </>
   );
 };
