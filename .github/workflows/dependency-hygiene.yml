@@ -9,7 +9,7 @@ on:
       - 'apps/**/src/**'
       - 'packages/**/src/**'
       - 'tests/**'
-      - 'knip.jsonc'
+      - 'knip.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - '.github/workflows/dependency-hygiene.yml'
