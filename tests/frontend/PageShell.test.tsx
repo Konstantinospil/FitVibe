@@ -29,11 +29,16 @@ describe("PageShell footer collapse", () => {
     const toggle = screen.getByRole("button", { name: "Expand footer" });
     const content = screen.getByText("Footer content").closest('[data-slot="footer-collapsible"]');
     expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveAttribute("aria-label", "Expand footer");
+    expect(toggle).toHaveAttribute("aria-controls", content?.id);
     expect(content).toHaveAttribute("hidden");
+    expect(screen.getByText("Header")).toBeInTheDocument();
+    expect(screen.getByTestId("content-scroll")).toHaveTextContent("Main content");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(toggle).toHaveAttribute("aria-label", "Collapse footer");
     expect(content).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("contentinfo")).toHaveTextContent("Footer content");
     expect(screen.getByText("Header")).toBeInTheDocument();
     expect(screen.getByTestId("content-scroll")).toHaveTextContent("Main content");
     fireEvent.click(toggle);
