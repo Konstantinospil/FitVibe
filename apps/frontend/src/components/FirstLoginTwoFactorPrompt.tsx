@@ -97,7 +97,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
             }}
           />
         ) : null}
-        </Modal>
+      </Modal>
     </>
   );
 };
