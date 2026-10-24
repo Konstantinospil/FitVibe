@@ -76,7 +76,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
       title={t("firstLogin2fa.title")}
       description={t("firstLogin2fa.description")}
       onClose={() => void dismiss()}
-      closeLabel={t("firstLogin2fa.notNow")}
+      closeLabel={t("common.close")}
       closeOnBackdrop={false}
       footer={
         stage === "choice" ? (
