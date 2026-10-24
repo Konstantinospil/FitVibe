@@ -51,10 +51,9 @@ describe("AuthPageLayout", () => {
     expect(screen.getByText("Test Description")).toBeInTheDocument();
     expect(screen.getByText("Test Content")).toBeInTheDocument();
     const logos = screen.getAllByRole("img", { name: "FitVibe" });
-    expect(logos.length).toBeGreaterThanOrEqual(2);
+    expect(logos).toHaveLength(1);
     expect(logos[0]).toHaveAttribute("fetchpriority", "high");
     expect(logos[0]).toHaveAttribute("loading", "eager");
-    expect(logos[1]).toHaveAttribute("loading", "lazy");
   });
 
   it("should switch brand artwork when the application theme changes", () => {
