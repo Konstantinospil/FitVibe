@@ -443,17 +443,17 @@
     },
     {
       "name": "multer",
-      "constraint": ">=2.4.0",
+      "constraint": ">=2.5.0",
       "category": "direct-and-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [
         {
           "name": "multer",
-          "range": "^2.4.0",
+          "range": "^2.5.0",
           "manifest": "apps/backend/package.json"
         }
       ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "reason": "Production dependency audit identified GHSA-q7qp-rjg7-q26m affecting Multer versions below 2.5.0; require a patched version while tracking whether this override is still needed.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
