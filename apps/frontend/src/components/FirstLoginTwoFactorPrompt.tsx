@@ -67,37 +67,37 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
     <>
       <span hidden data-onboarding-2fa-stage={stage} />
       <Modal
-      open={stage === "choice" || stage === "setup"}
-      title={t("firstLogin2fa.title")}
-      description={t("firstLogin2fa.description")}
-      onClose={() => void dismiss()}
-      closeLabel={t("common.close")}
-      closeOnBackdrop={false}
-      footer={
-        stage === "choice" ? (
-          <>
-            <Button type="button" variant="secondary" onClick={() => void dismiss()}>
-              {t("firstLogin2fa.notNow")}
-            </Button>
-            <Button type="button" onClick={() => setStage("setup")}>
-              {t("firstLogin2fa.activate")}
-            </Button>
-          </>
-        ) : undefined
-      }
-    >
-      {stage === "setup" ? (
-        <TwoFactorManagement
-          enabled={false}
-          onStatusChanged={async () => {
-            const status = await get2FAStatus();
-            if (status.enabled) {
-              complete();
-            }
-          }}
-        />
-      ) : null}
-      </Modal>
+        open={stage === "choice" || stage === "setup"}
+        title={t("firstLogin2fa.title")}
+        description={t("firstLogin2fa.description")}
+        onClose={() => void dismiss()}
+        closeLabel={t("common.close")}
+        closeOnBackdrop={false}
+        footer={
+          stage === "choice" ? (
+            <>
+              <Button type="button" variant="secondary" onClick={() => void dismiss()}>
+                {t("firstLogin2fa.notNow")}
+              </Button>
+              <Button type="button" onClick={() => setStage("setup")}>
+                {t("firstLogin2fa.activate")}
+              </Button>
+            </>
+          ) : undefined
+        }
+      >
+        {stage === "setup" ? (
+          <TwoFactorManagement
+            enabled={false}
+            onStatusChanged={async () => {
+              const status = await get2FAStatus();
+              if (status.enabled) {
+                complete();
+              }
+            }}
+          />
+        ) : null}
+        </Modal>
     </>
   );
 };
