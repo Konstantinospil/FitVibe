@@ -5,6 +5,7 @@ const {
   preparePage,
   trackRequests,
   waitForApp,
+  dismissFirstLoginTwoFactorInvitation,
   emailInput,
   passwordInput,
 } = require("./server-helpers.cjs");
@@ -91,6 +92,7 @@ test.describe("Authentication flows on active surfaces", () => {
     await passwordInput(page).fill(TEST_USER.password);
     await page.getByRole("button", { name: /sign in/i }).click();
     await page.waitForURL((url) => url.pathname === "/");
+    await dismissFirstLoginTwoFactorInvitation(page);
 
     const logoutMutation = observeMutation(page, "POST", "/api/v1/auth/logout");
     const logoutResponsePromise = page.waitForResponse(
