@@ -52,9 +52,9 @@ describe("TwoFactorManagement", () => {
     expect(input).toHaveValue("123456");
     fireEvent.click(screen.getByRole("button", { name: "settings.security.verifyEnable" }));
     await waitFor(() => expect(api.verify2FA).toHaveBeenCalledWith("123456"));
-    expect(onStatusChanged).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "settings.security.finishBackupCodes" }));
     await waitFor(() => expect(onStatusChanged).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.finishBackupCodes" }));
+    await waitFor(() => expect(onStatusChanged).toHaveBeenCalledTimes(2));
   });
 
   it("reports enrollment API errors without claiming successful setup", async () => {
