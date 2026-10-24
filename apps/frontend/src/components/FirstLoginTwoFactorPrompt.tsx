@@ -12,20 +12,13 @@ interface Props {
 
 export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   const { t } = useTranslation();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [stage, setStage] = useState<"checking" | "choice" | "setup" | "done">("checking");
-  const userId = user?.id;
 
   useEffect(() => {
     if (!isAuthenticated) {
       setStage("done");
       onResolved();
-      return;
-    }
-    // Authentication can be restored before the user profile finishes loading.
-    // Do not permanently skip the invitation while the authenticated user ID
-    // is still pending; re-evaluate once the profile becomes available.
-    if (!userId) {
       return;
     }
     let active = true;
@@ -53,7 +46,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, userId, onResolved]);
+  }, [isAuthenticated, onResolved]);
 
   const complete = () => {
     setStage("done");
