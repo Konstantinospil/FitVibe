@@ -67,9 +67,12 @@ export default defineConfig({
       timeout: 15_000,
     },
   },
-  retries: process.env.CI ? 2 : 0,
-  workers: 1,
-  timeout: 60_000,
+  // In CI, preserve the original failure instead of spending the entire VRT
+  // step budget repeating screenshots that already mismatch or cannot load.
+  retries: process.env.CI ? 0 : 0,
+  // Two isolated browser workers reduce wall time without saturating the runner.
+  workers: process.env.CI ? 2 : 1,
+  timeout: 45_000,
   webServer:
     process.env.DISABLE_WEBSERVER === "true" || (process.env.CI && process.env.GITHUB_ACTIONS)
       ? undefined
