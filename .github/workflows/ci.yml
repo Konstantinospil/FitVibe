@@ -1431,6 +1431,7 @@ jobs:
         run: node tests/security/zap-policy-contract.cjs
 
       - name: Run ZAP baseline scan
+        id: zap_baseline_scan
         timeout-minutes: 12
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
@@ -1441,6 +1442,27 @@ jobs:
           fail_action: true
           allow_issue_writing: false
           artifact_name: zap-baseline-${{ github.run_id }}
+
+      - name: Reproduce failed ZAP scan with retained scanner output
+        if: steps.zap_baseline_scan.outcome == 'failure'
+        timeout-minutes: 6
+        continue-on-error: true
+        run: |
+          # Diagnostic reproduction only. The original security gate remains authoritative.
+          # Preserve full stdout/stderr and the exit code even if ZAP does not create reports.
+          set +e
+          docker run --rm --network=host \
+            -v "$GITHUB_WORKSPACE:/zap/wrk/:rw" \
+            -w /zap/wrk \
+            'zaproxy/zap-stable@sha256:241fd55e438fce3b6b092fdb68348581c28e391b094644ef506c1e3be4a31a78' \
+            zap-baseline.py -t http://127.0.0.1:4173 -c .zap/rules.tsv \
+            -j --client-spider -d \
+            -J zap-diagnostic-report.json -w zap-diagnostic-report.md \
+            > zap-scanner-diagnostic.log 2>&1
+          result=$?
+          set -e
+          echo "Diagnostic ZAP exit code: $result" | tee -a zap-scanner-diagnostic.log
+          tail -n 120 zap-scanner-diagnostic.log
 
       - name: Capture ZAP diagnostic context
         if: failure()
@@ -1480,6 +1502,9 @@ jobs:
             report_html.html
             zap_out.json
             zap.yaml
+            zap-scanner-diagnostic.log
+            zap-diagnostic-report.json
+            zap-diagnostic-report.md
             .zap/*.log
           if-no-files-found: warn
           retention-days: 14
