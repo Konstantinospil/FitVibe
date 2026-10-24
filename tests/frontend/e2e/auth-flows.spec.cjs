@@ -170,7 +170,7 @@ test.describe("Authentication flows on active surfaces", () => {
     const geometry = await shell.evaluate((shell) => {
       const header = shell.querySelector("header");
       const main = shell.querySelector('[data-slot="page-shell-main"]');
-      const footer = shell.querySelector("footer");
+      const footer = shell.querySelector('[data-component="page-shell-footer"]');
       if (!header || !main || !footer) return null;
       return {
         top: header.getBoundingClientRect().bottom,
