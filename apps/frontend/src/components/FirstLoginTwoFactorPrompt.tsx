@@ -89,10 +89,11 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         {stage === "setup" ? (
           <TwoFactorManagement
             enabled={false}
+            onBackupCodesFinished={complete}
             onStatusChanged={async () => {
               const status = await get2FAStatus();
-              if (status.enabled) {
-                complete();
+              if (!status.enabled) {
+                throw new Error("2FA verification did not persist");
               }
             }}
           />

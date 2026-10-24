@@ -175,6 +175,31 @@ async function dismissFirstLoginTwoFactorInvitation(page) {
   expect(await status.json()).toMatchObject({ invitationDismissed: true });
 }
 
+// Test ownership: #557, shared E2E onboarding fixture. Verify persistent
+// server state rather than hiding the first-login dialog or forcing clicks.
+async function ensureSeededOnboardingComplete(page) {
+  const request = page.context().request;
+  const statusUrl = `${APPLICATION_ORIGIN}/api/v1/auth/2fa/status`;
+  let response = await request.get(statusUrl);
+  if (!response.ok()) {
+    throw new Error(`E2E 2FA status failed: HTTP ${response.status()}`);
+  }
+  const status = await response.json();
+  if (status.enabled || status.invitationDismissed) return;
+
+  const csrf = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
+  if (!csrf.ok()) throw new Error(`E2E onboarding CSRF failed: HTTP ${csrf.status()}`);
+  const { csrfToken } = await csrf.json();
+  response = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/2fa/invitation/dismiss`, {
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+  });
+  if (!response.ok()) throw new Error(`E2E 2FA dismissal failed: HTTP ${response.status()}`);
+  const verified = await request.get(statusUrl);
+  if (!verified.ok() || !(await verified.json()).invitationDismissed) {
+    throw new Error("E2E 2FA invitation dismissal was not persisted");
+  }
+}
+
 async function preparePage(page, { authenticated = false, consent = true } = {}) {
   await installBrowserState(page, { authenticated });
   if (consent) {
@@ -182,6 +207,7 @@ async function preparePage(page, { authenticated = false, consent = true } = {})
   }
   if (authenticated) {
     await ensureSeededSession(page);
+    await ensureSeededOnboardingComplete(page);
   }
 }
 
