@@ -154,6 +154,27 @@ async function ensureEssentialCookieConsent(page) {
   }
 }
 
+// Resolve the real first-login invitation when a test exercises a different
+// journey. Never bypass the modal using forced clicks or synthetic status.
+async function dismissFirstLoginTwoFactorInvitation(page) {
+  const { expect } = require("@playwright/test");
+  const dialog = page.getByRole("dialog", { name: /secure your account/i });
+  await expect(dialog).toBeVisible();
+  const responsePromise = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
+    response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: /not now/i }).click();
+  const response = await responsePromise;
+  expect(response.ok()).toBeTruthy();
+  await expect(dialog).toHaveCount(0);
+  const status = await page.context().request.get(
+    new URL("/api/v1/auth/2fa/status", page.url()).toString(),
+  );
+  expect(status.ok()).toBeTruthy();
+  expect(await status.json()).toMatchObject({ invitationDismissed: true });
+}
+
 async function preparePage(page, { authenticated = false, consent = true } = {}) {
   await installBrowserState(page, { authenticated });
   if (consent) {
@@ -219,4 +240,5 @@ module.exports = {
   confirmPasswordInput,
   displayNameInput,
   acceptRegisterLegal,
+  dismissFirstLoginTwoFactorInvitation,
 };
