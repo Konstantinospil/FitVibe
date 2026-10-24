@@ -69,7 +69,7 @@ export default defineConfig({
   },
   // In CI, preserve the original failure instead of spending the entire VRT
   // step budget repeating screenshots that already mismatch or cannot load.
-  retries: process.env.CI ? 0 : 0,
+  retries: 0,
   // Two isolated browser workers reduce wall time without saturating the runner.
   workers: process.env.CI ? 2 : 1,
   timeout: 45_000,
