@@ -24,9 +24,10 @@ export function requiresTwoFactorSetupRestart(error: unknown): boolean {
 interface Props {
   enabled: boolean;
   onStatusChanged: () => Promise<unknown>;
+  onBackupCodesFinished?: () => void;
 }
 
-export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged }) => {
+export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged, onBackupCodesFinished }) => {
   const { t } = useTranslation();
   const [setup, setSetup] = useState<TwoFactorSetupResponse | null>(null);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -270,7 +271,8 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
             type="button"
             onClick={() => {
               clearSensitiveState();
-              void onStatusChanged();
+              if (onBackupCodesFinished) onBackupCodesFinished();
+              else void onStatusChanged();
             }}
           >
             {t("settings.security.finishBackupCodes")}
