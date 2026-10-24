@@ -24,6 +24,9 @@ test("first authenticated visit offers 2FA before cookie preferences", async ({ 
 
   await gotoAuthenticated(page, "/settings");
   await waitForAppReady(page);
+  // Regression: an expanded global footer must not obscure settings on small viewports.
+  await expect(page.locator('[data-component="page-shell-footer"]')).toHaveAttribute("data-collapsed", "true");
+  await expect(page.locator('[data-slot="page-shell-main"]')).toBeVisible();
   await expect(page.getByRole("dialog", { name: /secure your account/i })).toBeVisible();
   await expect(page.getByRole("dialog", { name: /cookie/i })).toHaveCount(0);
 
