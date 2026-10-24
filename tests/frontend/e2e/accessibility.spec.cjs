@@ -1,6 +1,6 @@
 const { test, expect } = require("@playwright/test");
 const { AxeBuilder } = require("@axe-core/playwright");
-const { preparePage, waitForApp, dismissFirstLoginTwoFactorInvitation } = require("./server-helpers.cjs");
+const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 const APPLICATION_ORIGIN = new URL(
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173",
@@ -94,9 +94,24 @@ test.describe("Accessibility and localized UI acceptance", () => {
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
       // The seeded account may display its real first-login 2FA invitation.
       // Dismiss it through the supported UI/API, before opening the workout editor.
-      const invitation = page.getByRole("dialog", { name: /secure your account/i });
-      if (await invitation.isVisible()) {
-        await dismissFirstLoginTwoFactorInvitation(page);
+      const onboarding = page.locator("[data-onboarding-2fa-stage]");
+      await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", /^(choice|done)$/);
+      if ((await onboarding.getAttribute("data-onboarding-2fa-stage")) === "choice") {
+        const invitation = page.getByRole("dialog", {
+          name: messages.firstLogin2fa.title,
+        });
+        await expect(invitation).toBeVisible();
+        const dismissal = page.waitForResponse((response) =>
+          new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
+          response.request().method() === "POST",
+        );
+        await invitation.getByRole("button", {
+          name: messages.firstLogin2fa.notNow,
+          exact: true,
+        }).click();
+        expect((await dismissal).ok()).toBe(true);
+        await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", "done");
+        await expect(invitation).toBeHidden();
       }
       // This scenario requires an unobstructed workout editor. Resolve actual
       // first-visit consent through the API-backed Reject All control rather
