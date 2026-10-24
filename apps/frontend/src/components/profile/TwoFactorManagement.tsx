@@ -100,9 +100,9 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged 
       }
       setSetup(null);
       setCode("");
-      if (backupCodes.length === 0) {
-        await onStatusChanged();
-      }
+      // Verification activates 2FA server-side; refresh UI status even while
+      // recovery codes remain visible for the user to save.
+      await onStatusChanged();
     } catch {
       setError(t("settings.security.verifyError"));
     } finally {
