@@ -39,8 +39,8 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p artifacts/dependency-hygiene
-          pnpm --yes dlx knip@6.42.1 --dependencies --reporter json --no-exit-code > artifacts/dependency-hygiene/all.json
-          pnpm --yes dlx knip@6.42.1 --production --dependencies --reporter json --no-exit-code > artifacts/dependency-hygiene/production.json
+          pnpm dlx knip@6.42.1 --dependencies --reporter json --no-exit-code > artifacts/dependency-hygiene/all.json
+          pnpm dlx knip@6.42.1 --production --dependencies --reporter json --no-exit-code > artifacts/dependency-hygiene/production.json
       - name: Report findings
         if: always()
         run: |
