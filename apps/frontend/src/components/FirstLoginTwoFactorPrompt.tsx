@@ -17,9 +17,15 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   const userId = user?.id;
 
   useEffect(() => {
-    if (!isAuthenticated || !userId) {
+    if (!isAuthenticated) {
       setStage("done");
       onResolved();
+      return;
+    }
+    // Authentication can be restored before the user profile finishes loading.
+    // Do not permanently skip the invitation while the authenticated user ID
+    // is still pending; re-evaluate once the profile becomes available.
+    if (!userId) {
       return;
     }
     let active = true;
