@@ -105,7 +105,7 @@ export async function refresh(
     }
     await assertTermsRequirementSatisfied(user.id);
 
-    const newRefresh = signRefresh({ sub: user.id, sid: session.jti });
+    const newRefresh = signRefresh({ sub: user.id, sid: session.jti, mfa: decoded.mfa === true });
     const newHash = crypto.createHash("sha256").update(newRefresh).digest("hex");
     const newExpiry = nextSessionExpiry();
     const createdAt = new Date().toISOString();
@@ -161,6 +161,7 @@ export async function refresh(
         sub: user.id,
         role: user.role_code,
         sid: session.jti,
+        mfa: decoded.mfa === true,
       }),
     };
   } catch (error: unknown) {
