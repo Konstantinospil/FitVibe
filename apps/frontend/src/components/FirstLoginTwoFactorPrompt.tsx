@@ -78,7 +78,9 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         // Required administrator enrollment fails closed if status is unavailable.
         if (active) {
           setStage(mandatory ? "choice" : "done");
-          if (!mandatory) onResolved();
+          if (!mandatory) {
+            onResolved();
+          }
         }
       },
     );
@@ -93,7 +95,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
       // with a verified second factor to obtain an MFA-attested session.
       void signOut().then(
         () => window.location.replace("/login"),
-        () => navigate("/login", { replace: true }),
+        () => window.location.replace("/login"),
       );
       return;
     }
@@ -102,7 +104,9 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   };
 
   const dismiss = async () => {
-    if (mandatory) return;
+    if (mandatory) {
+      return;
+    }
     setDismissError(false);
     try {
       await dismiss2FAInvitation();
