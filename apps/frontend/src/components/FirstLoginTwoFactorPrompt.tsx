@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@fitvibe/ui";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import i18n, {
@@ -19,7 +18,6 @@ interface Props {
 export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   const { t } = useTranslation();
   const { isAuthenticated, user, signOut } = useAuth();
-  const navigate = useNavigate();
   const mandatory = user?.role === "admin" || user?.role === "superadmin";
   const [stage, setStage] = useState<"checking" | "choice" | "setup" | "done">("checking");
   const [translationsReady, setTranslationsReady] = useState(false);
@@ -94,7 +92,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
       // An enrollment-only admin session is never upgraded in-place. Re-login
       // with a verified second factor to obtain an MFA-attested session.
       void signOut().then(
-        () => navigate("/login", { replace: true }),
+        () => window.location.replace("/login"),
         () => navigate("/login", { replace: true }),
       );
       return;
