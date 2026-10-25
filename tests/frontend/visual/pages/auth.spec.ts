@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import resetTranslations from "../../../../apps/frontend/src/i18n/locales/en/common.json";
 import { skipUnlessMatrix } from "../helpers/project.js";
 import { capturePageScreenshot, openPublicPage, prepareVisualPage, waitForAppReady } from "../helpers/capture.js";
 
@@ -18,6 +19,12 @@ test.describe("Auth Page Visual Tests", () => {
   test("reset password", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
+    // Test ownership: #557. Minimal login i18n does not contain the reset
+    // strings; do not capture a transient untranslated state as a baseline.
+    await expect(page.getByRole("heading", {
+      name: resetTranslations.resetPassword.title,
+      exact: true,
+    })).toBeVisible();
     await capturePageScreenshot(page, testInfo, "reset-password", { waitFor: '[data-component="form-stack"]' });
   });
 
