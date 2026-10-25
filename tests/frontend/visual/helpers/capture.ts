@@ -179,20 +179,39 @@ async function waitForVisualAssets(page: Page): Promise<void> {
       );
     }
 
-    await document.fonts.ready;
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
+    // Image completion can race between the `complete` check and listener
+    // registration. Decode is a settled promise even for cached/broken images.
+    // Bound asset readiness separately from the outer Playwright test timeout.
+    const withDeadline = async (task: Promise<unknown>, description: string) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          task,
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => reject(new Error(
+              `Visual asset readiness timed out: ${description}; font status=${document.fonts.status}`,
+            )), 10_000);
+          }),
+        ]);
+      } finally {
+        if (timer !== undefined) clearTimeout(timer);
+      }
+    };
 
-    await Promise.all(
-      [...document.images].map((img) =>
-        img.complete
-          ? Promise.resolve()
-          : new Promise<void>((resolve) => {
-              img.addEventListener("load", () => resolve(), { once: true });
-              img.addEventListener("error", () => resolve(), { once: true });
-            }),
+    await withDeadline(document.fonts.ready, "document.fonts.ready");
+    await withDeadline(
+      Promise.all(
+        [...document.images].map((img) =>
+          img.decode().catch(() => undefined),
+        ),
       ),
+      "image decode",
+    );
+    await withDeadline(
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+      "animation frames",
     );
   }, authenticated);
 }
