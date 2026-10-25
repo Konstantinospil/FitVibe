@@ -1186,6 +1186,7 @@
     "description": "Souhaitez-vous activer l’authentification à deux facteurs ? Vous pourrez aussi l’activer plus tard dans les paramètres.",
     "activate": "Activer la 2FA",
     "notNow": "Pas maintenant",
-    "dismissError": "Nous n’avons pas pu enregistrer votre choix. Veuillez réessayer."
+    "dismissError": "Nous n’avons pas pu enregistrer votre choix. Veuillez réessayer.",
+    "requiredAdmin": "L’authentification à deux facteurs est obligatoire pour les comptes administrateur. Terminez la configuration pour continuer."
   }
 }
