@@ -17,6 +17,7 @@ on:
     paths:
       - ".github/workflows/refresh-visual-baselines.yml"
       - "tests/frontend/visual/pages/home.spec.ts"
+      - "tests/frontend/visual/helpers/capture.ts"
 
 permissions:
   contents: write
