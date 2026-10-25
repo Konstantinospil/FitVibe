@@ -160,7 +160,7 @@ export async function login(
     const issuedAtIso = new Date().toISOString();
     const sessionExpiresAt = nextSessionExpiry();
 
-    const refreshToken = signRefresh({ sub: user.id, sid: sessionId });
+    const refreshToken = signRefresh({ sub: user.id, sid: sessionId, mfa: false });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     await createSessionWithRefresh(
@@ -183,7 +183,7 @@ export async function login(
     );
 
     const tokens: TokenPair = {
-      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId }),
+      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId, mfa: false }),
       refreshToken,
       accessExpiresIn: accessTokenTtl,
     };
