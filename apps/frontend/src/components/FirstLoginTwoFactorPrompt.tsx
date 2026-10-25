@@ -20,6 +20,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   const { isAuthenticated } = useAuth();
   const [stage, setStage] = useState<"checking" | "choice" | "setup" | "done">("checking");
   const [translationsReady, setTranslationsReady] = useState(false);
+  const [dismissError, setDismissError] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -91,12 +92,15 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   };
 
   const dismiss = async () => {
+    setDismissError(false);
     try {
       await dismiss2FAInvitation();
       complete();
     } catch {
-      // Do not claim a saved decision; retry is available on the next login.
-      complete();
+      // A failed persistence write must not be treated as a completed onboarding
+      // decision. Keep the invitation open so the user can retry explicitly.
+      setDismissError(true);
+      setStage("choice");
     }
   };
 
@@ -123,6 +127,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
           ) : undefined
         }
       >
+        {dismissError ? <p role="alert">{t("firstLogin2fa.dismissError")}</p> : null}
         {stage === "setup" ? (
           <TwoFactorManagement
             enabled={false}
