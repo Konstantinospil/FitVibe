@@ -199,21 +199,30 @@ async function waitForVisualAssets(page: Page): Promise<void> {
     };
 
     await withDeadline(document.fonts.ready, "document.fonts.ready");
-    // Remote and user-generated avatars are intentionally masked by the VRT
-    // mask helper. Waiting for those resources makes screenshots depend on
-    // third-party availability. Only deterministic same-origin images need
-    // to decode before capture.
+    // Only on-screen, eager, same-origin assets are part of the initial
+    // render contract. Decoding off-screen lazy images can wait indefinitely
+    // because the browser has not started fetching them.
     const stableImages = [...document.images].filter((img) => {
       const source = img.currentSrc || img.src;
       if (!source || new URL(source, document.baseURI).origin !== location.origin) {
         return false;
       }
-      return !/avatar/i.test(img.alt) && !img.closest('[data-testid*="avatar"]');
+      if (img.loading === "lazy" || /avatar/i.test(img.alt)) {
+        return false;
+      }
+      if (img.closest('[data-testid*="avatar"]')) {
+        return false;
+      }
+      const bounds = img.getBoundingClientRect();
+      const style = getComputedStyle(img);
+      return bounds.width > 0 && bounds.height > 0 &&
+        bounds.bottom > 0 && bounds.top < innerHeight &&
+        bounds.right > 0 && bounds.left < innerWidth &&
+        style.display !== "none" && style.visibility !== "hidden";
     });
-    await withDeadline(
-      Promise.all(stableImages.map((img) => img.decode())),
-      "same-origin image decode",
-    );
+    await Promise.all(stableImages.map((img) =>
+      withDeadline(img.decode(), `visible image decode: ${img.currentSrc || img.src}`),
+    ));
     await withDeadline(
       new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
