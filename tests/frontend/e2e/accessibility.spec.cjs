@@ -61,6 +61,9 @@ async function assertAccessible(page) {
 }
 
 test.describe("Accessibility and localized UI acceptance", () => {
+  // One account per suite, isolated browser contexts per test. Avoid parallel
+  // setup bursts against production-equivalent registration/consent throttles.
+  test.describe.configure({ mode: "serial" });
   let athleteAccount;
   test.beforeAll(async ({ browser }) => {
     const setupPage = await browser.newPage();
