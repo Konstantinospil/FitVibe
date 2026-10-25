@@ -42,7 +42,9 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         }
       } catch {
         // Preserve the onboarding flow if translations cannot be loaded.
-        if (active) setTranslationsReady(true);
+        if (active) {
+          setTranslationsReady(true);
+        }
       }
     })();
     return () => {
