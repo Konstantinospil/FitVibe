@@ -1,3 +1,4 @@
+const crypto = require("node:crypto");
 const AUTH_FLAG_KEY = "fitvibe:auth";
 const APPLICATION_BASE_URL =
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
@@ -11,31 +12,21 @@ const TEST_USER = {
   role: "admin",
 };
 
-let seededSessionCookies = null;
-let seededConsentCookies = null;
-
-async function installBrowserState(page, { authenticated = false } = {}) {
-  await page.addInitScript(
-    ({ authKey, authenticated: isAuthenticated }) => {
-      if (isAuthenticated) {
-        window.sessionStorage.setItem(authKey, "1");
-      }
-    },
-    {
-      authKey: AUTH_FLAG_KEY,
-      authenticated,
-    },
-  );
+async function getCsrfToken(request, label) {
+  const response = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
+  if (!response.ok()) {
+    throw new Error(`Unable to acquire ${label} CSRF token: HTTP ${response.status()}`);
+  }
+  const { csrfToken } = await response.json();
+  if (!csrfToken) {
+    throw new Error(`Unable to acquire ${label} CSRF token: response omitted csrfToken`);
+  }
+  return csrfToken;
 }
 
 async function createSeededSession(page) {
   const request = page.context().request;
-
-  const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
-  if (!csrfResponse.ok()) {
-    throw new Error(`Unable to acquire E2E CSRF token: HTTP ${csrfResponse.status()}`);
-  }
-  const { csrfToken } = await csrfResponse.json();
+  const csrfToken = await getCsrfToken(request, "E2E session");
 
   const loginResponse = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
     data: { email: TEST_USER.email, password: TEST_USER.password },
@@ -53,25 +44,21 @@ async function createSeededSession(page) {
     throw new Error("Seeded E2E user unexpectedly requires 2FA");
   }
 
-  seededSessionCookies = await page.context().cookies(APPLICATION_ORIGIN);
+  const sessionCheck = await request.get(`${APPLICATION_ORIGIN}/api/v1/users/me`);
+  if (!sessionCheck.ok()) {
+    throw new Error(`Seeded E2E session did not persist: HTTP ${sessionCheck.status()}`);
+  }
+  const user = await sessionCheck.json();
+  if (user.id !== TEST_USER.id && user.primaryEmail !== TEST_USER.email) {
+    throw new Error("Seeded E2E session resolved to an unexpected account");
+  }
 }
 
 async function ensureSeededSession(page) {
-  if (seededSessionCookies) {
-    await page.context().addCookies(seededSessionCookies);
-    const sessionCheck = await page.context().request.get(
-      `${APPLICATION_ORIGIN}/api/v1/users/me`,
-    );
-    if (sessionCheck.ok()) {
-      return;
-    }
-    seededSessionCookies = null;
-    await page.context().clearCookies();
-  }
-
+  // Browser contexts are test-scoped. Always establish a fresh authenticated
+  // session instead of reusing module-global cookies across parallel tests.
   await createSeededSession(page);
 }
-
 
 // Only consent status is retried: it is an idempotent read shared by many real
 // browser journeys on the CI runner's loopback IP. Respect the server's
@@ -95,10 +82,6 @@ async function getConsentStatusWithRateLimitBackoff(request, url) {
 }
 
 async function ensureEssentialCookieConsent(page) {
-  if (seededConsentCookies) {
-    await page.context().addCookies(seededConsentCookies);
-    return;
-  }
   const request = page.context().request;
   const statusUrl = `${APPLICATION_ORIGIN}/api/v1/consent/cookie-status`;
   const previous = await getConsentStatusWithRateLimitBackoff(request, statusUrl);
@@ -106,32 +89,26 @@ async function ensureEssentialCookieConsent(page) {
     throw new Error(`Unable to retrieve E2E consent status: HTTP ${previous.status()}`);
   }
   const previousBody = await previous.json();
-  if (previousBody.data?.hasConsent) {
-    seededConsentCookies = (await page.context().cookies(statusUrl)).filter(
-      (cookie) => cookie.name === "fitvibe_consent_client",
+  if (!previousBody.data?.hasConsent) {
+    const csrfToken = await getCsrfToken(request, "E2E consent");
+    const response = await request.post(
+      `${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`,
+      {
+        data: {
+          essential: true,
+          preferences: false,
+          analytics: false,
+          marketing: false,
+          source: "banner",
+        },
+        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+      },
     );
-    if (seededConsentCookies.length > 0) return;
-    throw new Error("E2E consent status was present without a browser consent cookie");
+    if (!response.ok()) {
+      throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
+    }
   }
 
-  const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
-  if (!csrfResponse.ok()) {
-    throw new Error(`Unable to acquire E2E consent CSRF token: HTTP ${csrfResponse.status()}`);
-  }
-  const { csrfToken } = await csrfResponse.json();
-  const response = await request.post(`${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`, {
-    data: {
-      essential: true,
-      preferences: false,
-      analytics: false,
-      marketing: false,
-      source: "banner",
-    },
-    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
-  });
-  if (!response.ok()) {
-    throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
-  }
   const saved = await getConsentStatusWithRateLimitBackoff(request, statusUrl);
   if (!saved.ok()) {
     throw new Error(`Unable to verify E2E consent: HTTP ${saved.status()}`);
@@ -146,25 +123,60 @@ async function ensureEssentialCookieConsent(page) {
   ) {
     throw new Error("E2E browser consent was not persisted as essential-only");
   }
-  seededConsentCookies = (await page.context().cookies(statusUrl)).filter(
+
+  const consentCookies = (await page.context().cookies(statusUrl)).filter(
     (cookie) => cookie.name === "fitvibe_consent_client",
   );
-  if (seededConsentCookies.length !== 1) {
+  if (consentCookies.length !== 1) {
     throw new Error("E2E consent API did not issue exactly one browser identity cookie");
   }
 }
 
 // Resolve the real first-login invitation when a test exercises a different
 // journey. Never bypass the modal using forced clicks or synthetic status.
+const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "el"];
+
+function normalizeLocale(locale) {
+  const normalized = String(locale || "en").slice(0, 2).toLowerCase();
+  return SUPPORTED_LOCALES.includes(normalized) ? normalized : "en";
+}
+
+function localeMessages(locale) {
+  const normalized = normalizeLocale(locale);
+  return {
+    common: require(`../../../apps/frontend/src/i18n/locales/${normalized}/common.json`),
+    cookie: require(`../../../apps/frontend/src/i18n/locales/${normalized}/cookie.json`),
+  };
+}
+
+async function currentLocale(page) {
+  return normalizeLocale(await page.locator("html").getAttribute("lang"));
+}
+
+async function getFirstLoginTwoFactorDialog(page) {
+  const { common } = localeMessages(await currentLocale(page));
+  return page.getByRole("dialog", { name: common.firstLogin2fa.title });
+}
+
+async function getCookieConsentDialog(page) {
+  const { cookie } = localeMessages(await currentLocale(page));
+  return page.getByRole("dialog", { name: cookie.title });
+}
+
+// Resolve the real first-login invitation when a test exercises a different
+// journey. Never bypass the modal using forced clicks or synthetic status.
 async function dismissFirstLoginTwoFactorInvitation(page) {
   const { expect } = require("@playwright/test");
-  const dialog = page.getByRole("dialog", { name: /secure your account/i });
+  const { common } = localeMessages(await currentLocale(page));
+  const dialog = page.getByRole("dialog", { name: common.firstLogin2fa.title });
   await expect(dialog).toBeVisible();
   const responsePromise = page.waitForResponse((response) =>
     new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
     response.request().method() === "POST",
   );
-  await dialog.getByRole("button", { name: /not now/i }).click();
+  await dialog
+    .getByRole("button", { name: common.firstLogin2fa.notNow, exact: true })
+    .click();
   const response = await responsePromise;
   expect(response.ok()).toBeTruthy();
   await expect(dialog).toHaveCount(0);
@@ -198,6 +210,131 @@ async function ensureSeededOnboardingComplete(page) {
   if (!verified.ok() || !(await verified.json()).invitationDismissed) {
     throw new Error("E2E 2FA invitation dismissal was not persisted");
   }
+}
+
+function fixtureAccountId(testInfo) {
+  const runIdentity = process.env.GITHUB_RUN_ID || process.env.CI_NODE_INDEX || String(process.pid);
+  return crypto
+    .createHash("sha256")
+    .update(`${runIdentity}:${testInfo.testId}:${testInfo.retry}:${testInfo.repeatEachIndex}`)
+    .digest("hex")
+    .slice(0, 16);
+}
+
+async function assertConsentRequired(page) {
+  const response = await getConsentStatusWithRateLimitBackoff(
+    page.context().request,
+    `${APPLICATION_ORIGIN}/api/v1/consent/cookie-status`,
+  );
+  if (!response.ok()) {
+    throw new Error(`Unable to verify consent-required state: HTTP ${response.status()}`);
+  }
+  const result = (await response.json()).data;
+  if (result?.hasConsent) {
+    throw new Error("Expected a consent-required browser state, but consent is already persisted");
+  }
+}
+
+async function setAccountLanguage(page, locale) {
+  const language = normalizeLocale(locale);
+  const request = page.context().request;
+  const csrfToken = await getCsrfToken(request, "account language");
+  const response = await request.patch(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`, {
+    data: { language },
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+  });
+  if (!response.ok()) {
+    throw new Error(`Unable to persist account language: HTTP ${response.status()}`);
+  }
+  const persisted = await request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
+  if (!persisted.ok() || (await persisted.json()).language !== language) {
+    throw new Error("Account language did not persist");
+  }
+  return language;
+}
+
+async function createFirstLoginAccount(page, testInfo) {
+  const id = fixtureAccountId(testInfo);
+  const account = {
+    email: `onboarding.${id}@fitvibe.test`,
+    username: `onboarding-${id}`,
+    password: "FixtureSecure123!",
+  };
+  const request = page.context().request;
+  const registerCsrf = await getCsrfToken(request, "first-login registration");
+  const registration = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/register`, {
+    data: {
+      email: account.email,
+      username: account.username,
+      password: account.password,
+      terms_accepted: true,
+    },
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": registerCsrf },
+  });
+  if (registration.status() !== 202) {
+    throw new Error(`Unable to create first-login fixture account: HTTP ${registration.status()}`);
+  }
+  const registrationBody = await registration.json();
+  if (!registrationBody.debugVerificationToken) {
+    throw new Error("First-login fixture registration omitted debugVerificationToken");
+  }
+
+  const verification = await request.get(
+    `${APPLICATION_ORIGIN}/api/v1/auth/verify?token=${encodeURIComponent(
+      registrationBody.debugVerificationToken,
+    )}`,
+  );
+  if (!verification.ok()) {
+    throw new Error(`Unable to verify first-login fixture account: HTTP ${verification.status()}`);
+  }
+
+  const loginCsrf = await getCsrfToken(request, "first-login session");
+  const login = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
+    data: { email: account.email, password: account.password },
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": loginCsrf },
+  });
+  if (!login.ok()) {
+    throw new Error(`Unable to login first-login fixture account: HTTP ${login.status()}`);
+  }
+  const loginBody = await login.json();
+  if (loginBody.requires2FA !== false) {
+    throw new Error("Fresh first-login fixture unexpectedly requires 2FA");
+  }
+
+  await installBrowserState(page, { authenticated: true });
+
+  const me = await request.get(`${APPLICATION_ORIGIN}/api/v1/users/me`);
+  if (!me.ok() || (await me.json()).primaryEmail !== account.email) {
+    throw new Error("First-login fixture authenticated session did not persist");
+  }
+  const status = await request.get(`${APPLICATION_ORIGIN}/api/v1/auth/2fa/status`);
+  if (!status.ok()) {
+    throw new Error(`Unable to verify first-login 2FA state: HTTP ${status.status()}`);
+  }
+  const statusBody = await status.json();
+  if (statusBody.enabled || statusBody.invitationDismissed) {
+    throw new Error("Fresh first-login fixture is not in the expected pending invitation state");
+  }
+
+  return account;
+}
+
+async function prepareFullyOnboardedPage(page) {
+  await preparePage(page, { authenticated: true, consent: true });
+  return TEST_USER;
+}
+
+async function prepareConsentRequiredPage(page) {
+  await page.context().clearCookies();
+  await installBrowserState(page, { authenticated: false });
+  await assertConsentRequired(page);
+}
+
+async function prepareFirstLoginState(page, testInfo) {
+  await page.context().clearCookies();
+  await assertConsentRequired(page);
+  const account = await createFirstLoginAccount(page, testInfo);
+  return account;
 }
 
 async function preparePage(page, { authenticated = false, consent = true } = {}) {
@@ -267,4 +404,14 @@ module.exports = {
   displayNameInput,
   acceptRegisterLegal,
   dismissFirstLoginTwoFactorInvitation,
+  getFirstLoginTwoFactorDialog,
+  getCookieConsentDialog,
+  localeMessages,
+  currentLocale,
+  setAccountLanguage,
+  assertConsentRequired,
+  createFirstLoginAccount,
+  prepareFullyOnboardedPage,
+  prepareConsentRequiredPage,
+  prepareFirstLoginState,
 };
