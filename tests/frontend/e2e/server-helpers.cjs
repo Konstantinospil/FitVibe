@@ -1,5 +1,6 @@
 const crypto = require("node:crypto");
 const AUTH_FLAG_KEY = "fitvibe:auth";
+const AUTH_HINT_INITIALIZED_KEY = "fitvibe:e2e:auth-hint-initialized";
 const APPLICATION_BASE_URL =
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
@@ -13,17 +14,24 @@ const TEST_USER = {
 };
 
 async function installBrowserState(page, { authenticated = false } = {}) {
-  // Only set the browser's UI session hint. Authentication itself must be
-  // established and verified through the real server's HttpOnly cookies.
+  // Test ownership: #557. An init script survives navigation. Seed the UI
+  // hint once per tab, never overwrite a subsequent real login or logout.
+  // HttpOnly session cookies are established/validated independently below.
   await page.addInitScript(
-    ({ storageKey, authenticated }) => {
+    ({ storageKey, initializedKey, authenticated }) => {
+      if (window.sessionStorage.getItem(initializedKey) === "1") return;
       if (authenticated) {
         window.sessionStorage.setItem(storageKey, "1");
       } else {
         window.sessionStorage.removeItem(storageKey);
       }
+      window.sessionStorage.setItem(initializedKey, "1");
     },
-    { storageKey: AUTH_FLAG_KEY, authenticated },
+    {
+      storageKey: AUTH_FLAG_KEY,
+      initializedKey: AUTH_HINT_INITIALIZED_KEY,
+      authenticated,
+    },
   );
 }
 
@@ -70,9 +78,22 @@ async function createSeededSession(page, account = TEST_USER) {
 }
 
 async function ensureSeededSession(page, account = TEST_USER) {
-  // Browser contexts are test-scoped. Always establish a fresh authenticated
-  // session instead of reusing module-global cookies across parallel tests.
-  await createSeededSession(page, account);
+  // Test ownership: #557. Ordinary read-only tests restore a real, verified
+  // session established by their Playwright worker, without repeatedly
+  // consuming the auth_login per-IP quota. Cookie jars remain test-scoped.
+  if (!account.sessionCookies) {
+    await createSeededSession(page, account);
+    return;
+  }
+  await page.context().addCookies(account.sessionCookies);
+  const response = await page.context().request.get(`${APPLICATION_ORIGIN}/api/v1/users/me`);
+  if (!response.ok()) {
+    throw new Error(`E2E cached athlete session is inactive: HTTP ${response.status()}`);
+  }
+  const user = await response.json();
+  if (user.primaryEmail !== account.email || account.role !== "athlete") {
+    throw new Error("E2E cached session does not belong to the expected athlete");
+  }
 }
 
 // Only consent status is retried: it is an idempotent read shared by many real
@@ -369,7 +390,13 @@ async function prepareConsentRequiredPage(page, account) {
   await page.context().clearCookies();
   await installBrowserState(page, { authenticated: true });
   await assertConsentRequired(page);
-  await ensureSeededSession(page, account);
+  // A consent-required fixture needs a fresh browser identity. Never restore
+  // the worker's consent cookie together with its authenticated session.
+  await ensureSeededSession(page, {
+    email: account.email,
+    password: account.password,
+    role: account.role,
+  });
   await ensureSeededOnboardingComplete(page);
 }
 
