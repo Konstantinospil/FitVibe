@@ -27,7 +27,11 @@ interface Props {
   onBackupCodesFinished?: () => void;
 }
 
-export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged, onBackupCodesFinished }) => {
+export const TwoFactorManagement: React.FC<Props> = ({
+  enabled,
+  onStatusChanged,
+  onBackupCodesFinished,
+}) => {
   const { t } = useTranslation();
   const [setup, setSetup] = useState<TwoFactorSetupResponse | null>(null);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
