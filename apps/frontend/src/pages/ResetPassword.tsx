@@ -10,7 +10,9 @@ import i18n, { ensureLegalTranslationsLoaded, minimalTranslationsReady } from ".
 
 const ResetPassword: React.FC = () => {
   const { t } = useTranslation();
-  const [translationsReady, setTranslationsReady] = useState(false);
+  const [translationsReady, setTranslationsReady] = useState(
+    () => t("resetPassword.title") !== "resetPassword.title",
+  );
   const [translationsError, setTranslationsError] = useState<Error | null>(null);
   useEffect(() => {
     let active = true;
@@ -22,14 +24,18 @@ const ResetPassword: React.FC = () => {
         if (!i18n.exists("resetPassword.title")) {
           throw new Error("Password reset translations are unavailable");
         }
-        if (active) setTranslationsReady(true);
+        if (active) {
+          setTranslationsReady(true);
+        }
       })
       .catch((error: unknown) => {
         if (active) {
           setTranslationsError(error instanceof Error ? error : new Error(String(error)));
         }
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
   const formRef = useRef<HTMLFormElement>(null);
   useRequiredFieldValidation(formRef, t);
@@ -83,7 +89,7 @@ const ResetPassword: React.FC = () => {
   }
   if (!translationsReady) {
     return (
-      <AuthPageLayout title={t("loading.app")}>
+      <AuthPageLayout title={t("loading.app")} description={t("loading.app")}>
         <p role="status">{t("loading.app")}</p>
       </AuthPageLayout>
     );
