@@ -15,6 +15,12 @@ assert.match(scan[1], /cmd_options:\s*[^\n]*\s-c\s+\.zap\/rules\.tsv(?:\s|$)/, '
 assert.equal((scan[1].match(/(?:^|\s)-c\s+\.zap\/rules\.tsv/g) || []).length, 1, 'Pass policy only once');
 assert.doesNotMatch(scan[1], /(?:^|\s)-I(?:\s|$)|(?:^|\s)-i(?:\s|$)/, 'Do not suppress warnings through scanner flags');
 
+// Diagnostic retries may collect evidence, but must never replace the gate.
+assert.match(scan[1], /id:\s*zap_baseline_scan\b/, 'Expose the authoritative scan outcome');
+assert.match(workflow, /if:\s*steps\.zap_baseline_scan\.outcome == 'failure'/, 'Collect diagnostic output only on baseline failure');
+assert.match(workflow, /zap-scanner-diagnostic\.log/, 'Retain scanner diagnostics as artifacts');
+assert.match(workflow, /Diagnostic ZAP exit code:/, 'Record diagnostic process exit code');
+
 const entries = new Map();
 for (const line of policy.split(/\r?\n/)) {
   if (!line.trim() || line.startsWith('#')) continue;

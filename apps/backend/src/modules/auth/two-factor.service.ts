@@ -357,6 +357,10 @@ export async function disable2FA(userId: string, trx?: Knex.Transaction): Promis
 
   await exec("backup_codes").where({ user_id: userId }).del();
 
+  // Test ownership: #565/#566. An account that previously enrolled in MFA
+  // must not receive a first-login invitation again after voluntarily disabling it.
+  await exec("user_2fa_invitations").insert({ user_id: userId }).onConflict("user_id").ignore();
+
   await exec("audit_log").insert({
     id: uuidv4(),
     actor_user_id: userId,
@@ -509,20 +513,33 @@ export async function getRemainingBackupCodesCount(
   return Number(result?.count ?? 0);
 }
 
+export async function dismissTwoFactorInvitation(userId: string): Promise<void> {
+  await db("user_2fa_invitations").insert({ user_id: userId }).onConflict("user_id").ignore();
+}
+
 export async function getTwoFactorStatus(
   userId: string,
   trx?: Knex.Transaction,
-): Promise<{ enabled: boolean; enabledAt: string | null; backupCodesRemaining: number }> {
+): Promise<{
+  enabled: boolean;
+  enabledAt: string | null;
+  backupCodesRemaining: number;
+  invitationDismissed: boolean;
+}> {
   const exec = trx ?? db;
   const settings = await exec<User2FASettings>("user_2fa_settings")
     .where({ user_id: userId })
     .first();
+  const invitationDismissed = Boolean(
+    await exec("user_2fa_invitations").where({ user_id: userId }).first("user_id"),
+  );
 
   if (!settings || !settings.is_enabled || !settings.is_verified) {
     return {
       enabled: false,
       enabledAt: null,
       backupCodesRemaining: 0,
+      invitationDismissed,
     };
   }
 
@@ -530,6 +547,7 @@ export async function getTwoFactorStatus(
     enabled: true,
     enabledAt: settings.enabled_at,
     backupCodesRemaining: await getRemainingBackupCodesCount(userId, trx),
+    invitationDismissed,
   };
 }
 

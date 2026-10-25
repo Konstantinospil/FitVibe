@@ -5,6 +5,7 @@ const {
   preparePage,
   trackRequests,
   waitForApp,
+  dismissFirstLoginTwoFactorInvitation,
   emailInput,
   passwordInput,
 } = require("./server-helpers.cjs");
@@ -91,6 +92,19 @@ test.describe("Authentication flows on active surfaces", () => {
     await passwordInput(page).fill(TEST_USER.password);
     await page.getByRole("button", { name: /sign in/i }).click();
     await page.waitForURL((url) => url.pathname === "/");
+    // Test ownership: #557. The seeded account may already have dismissed its
+    // one-time invitation in another real-server journey; assert its persisted
+    // state and only dismiss if it is genuinely pending.
+    const statusResponse = await page.context().request.get(
+      `${new URL(page.url()).origin}/api/v1/auth/2fa/status`,
+    );
+    expect(statusResponse.ok()).toBeTruthy();
+    const mfaStatus = await statusResponse.json();
+    if (!mfaStatus.enabled && !mfaStatus.invitationDismissed) {
+      await dismissFirstLoginTwoFactorInvitation(page);
+    } else {
+      await expect(page.getByRole("dialog", { name: /secure your account/i })).toHaveCount(0);
+    }
 
     const logoutMutation = observeMutation(page, "POST", "/api/v1/auth/logout");
     const logoutResponsePromise = page.waitForResponse(
@@ -168,7 +182,7 @@ test.describe("Authentication flows on active surfaces", () => {
     const geometry = await shell.evaluate((shell) => {
       const header = shell.querySelector("header");
       const main = shell.querySelector('[data-slot="page-shell-main"]');
-      const footer = shell.querySelector("footer");
+      const footer = shell.querySelector('[data-component="page-shell-footer"]');
       if (!header || !main || !footer) return null;
       return {
         top: header.getBoundingClientRect().bottom,

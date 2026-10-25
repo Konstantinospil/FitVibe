@@ -10,6 +10,7 @@ vi.mock("react-i18next", () => ({
 
 vi.mock("../../../../apps/frontend/src/services/api", () => ({
   setup2FA: vi.fn(),
+  restart2FASetup: vi.fn(),
   verify2FA: vi.fn(),
   disable2FA: vi.fn(),
   regenerate2FABackupCodes: vi.fn(),
@@ -52,6 +53,8 @@ describe("TwoFactorManagement", () => {
     fireEvent.click(screen.getByRole("button", { name: "settings.security.verifyEnable" }));
     await waitFor(() => expect(api.verify2FA).toHaveBeenCalledWith("123456"));
     await waitFor(() => expect(onStatusChanged).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.finishBackupCodes" }));
+    await waitFor(() => expect(onStatusChanged).toHaveBeenCalledTimes(2));
   });
 
   it("reports enrollment API errors without claiming successful setup", async () => {
@@ -180,6 +183,46 @@ describe("TwoFactorManagement", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("settings.security.disableError");
     expect(screen.getByDisplayValue("password")).toBeInTheDocument();
     expect(screen.queryByText("NEW-CODE")).not.toBeInTheDocument();
+    expect(onStatusChanged).not.toHaveBeenCalled();
+  });
+
+  it("recovers interrupted enrollment only after password step-up", async () => {
+    vi.mocked(api.setup2FA).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 409, data: { error: { code: "2FA_SETUP_RESTART_REQUIRES_STEP_UP" } } },
+    });
+    vi.mocked(api.restart2FASetup).mockResolvedValueOnce(setupResponse);
+    render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.enable" }));
+    const restart = await screen.findByRole("button", { name: "Restart 2FA setup" });
+    expect(restart).toBeDisabled();
+    expect(api.restart2FASetup).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("settings.security.disablePasswordLabel"), {
+      target: { value: "correct-password" },
+    });
+    fireEvent.click(restart);
+    await waitFor(() =>
+      expect(api.restart2FASetup).toHaveBeenCalledWith({ password: "correct-password", code: "" }),
+    );
+    expect(await screen.findByAltText("settings.security.qrAlt")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("correct-password")).not.toBeInTheDocument();
+    expect(onStatusChanged).not.toHaveBeenCalled();
+  });
+
+  it("keeps restart guarded when step-up authentication fails", async () => {
+    vi.mocked(api.setup2FA).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 409, data: { error: { code: "2FA_SETUP_RESTART_REQUIRES_STEP_UP" } } },
+    });
+    vi.mocked(api.restart2FASetup).mockRejectedValueOnce(new Error("Unauthorized"));
+    render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.enable" }));
+    fireEvent.change(await screen.findByLabelText("settings.security.disablePasswordLabel"), {
+      target: { value: "wrong-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Restart 2FA setup" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("settings.security.enableError");
+    expect(screen.queryByAltText("settings.security.qrAlt")).not.toBeInTheDocument();
     expect(onStatusChanged).not.toHaveBeenCalled();
   });
 

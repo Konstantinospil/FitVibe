@@ -26,19 +26,24 @@ describe("PageShell footer collapse", () => {
         <p>Main content</p>
       </PageShell>,
     );
-    const toggle = screen.getByRole("button", { name: "Collapse footer" });
+    const toggle = screen.getByRole("button", { name: "Expand footer" });
     const content = screen.getByText("Footer content").closest('[data-slot="footer-collapsible"]');
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-    expect(content).not.toHaveAttribute("hidden");
-    fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(toggle).toHaveAttribute("aria-label", "Expand footer");
+    expect(toggle).toHaveAttribute("aria-controls", content?.id);
     expect(content).toHaveAttribute("hidden");
     expect(screen.getByText("Header")).toBeInTheDocument();
     expect(screen.getByTestId("content-scroll")).toHaveTextContent("Main content");
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(toggle).toHaveAttribute("aria-label", "Collapse footer");
     expect(content).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("contentinfo")).toHaveTextContent("Footer content");
+    expect(screen.getByText("Header")).toBeInTheDocument();
+    expect(screen.getByTestId("content-scroll")).toHaveTextContent("Main content");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(content).toHaveAttribute("hidden");
   });
 
   it("does not render a collapse control when no footer exists", () => {

@@ -92,6 +92,27 @@ test.describe("Accessibility and localized UI acceptance", () => {
       await waitForApp(page);
 
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      // The seeded account may display its real first-login 2FA invitation.
+      // Dismiss it through the supported UI/API, before opening the workout editor.
+      const onboarding = page.locator("[data-onboarding-2fa-stage]");
+      await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", /^(choice|done)$/);
+      if ((await onboarding.getAttribute("data-onboarding-2fa-stage")) === "choice") {
+        const invitation = page.getByRole("dialog", {
+          name: messages.firstLogin2fa.title,
+        });
+        await expect(invitation).toBeVisible();
+        const dismissal = page.waitForResponse((response) =>
+          new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
+          response.request().method() === "POST",
+        );
+        await invitation.getByRole("button", {
+          name: messages.firstLogin2fa.notNow,
+          exact: true,
+        }).click();
+        expect((await dismissal).ok()).toBe(true);
+        await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", "done");
+        await expect(invitation).toBeHidden();
+      }
       // This scenario requires an unobstructed workout editor. Resolve actual
       // first-visit consent through the API-backed Reject All control rather
       // than hiding the dialog or bypassing its backend persistence.

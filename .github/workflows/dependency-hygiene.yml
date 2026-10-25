@@ -1,0 +1,89 @@
+name: Dependency Hygiene (Advisory)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature, 'fix/**']
+    paths:
+      - '**/package.json'
+      - 'apps/**/src/**'
+      - 'packages/**/src/**'
+      - 'tests/**'
+      - 'knip.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/dependency-hygiene.yml'
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-hygiene-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  knip:
+    name: Knip dependency audit (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile --no-offline
+      - name: Analyze declared dependencies
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/dependency-hygiene
+          pnpm dlx knip@6.42.1 --dependencies --reporter json --no-exit-code > artifacts/dependency-hygiene/all.json
+          pnpm dlx knip@6.42.1 --production --dependencies --reporter json --no-exit-code > artifacts/dependency-hygiene/production.json
+      - name: Validate report artifacts
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          for (const filename of ['all.json', 'production.json']) {
+            const path = 'artifacts/dependency-hygiene/' + filename;
+            if (!fs.existsSync(path)) throw new Error('Missing Knip report: ' + path);
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            if (!report || !Array.isArray(report.issues)) {
+              throw new Error('Invalid Knip report shape: ' + path);
+            }
+            const groups = report.issues;
+            const direct = groups.reduce((total, item) => total + (item.dependencies?.length || 0), 0);
+            const dev = groups.reduce((total, item) => total + (item.devDependencies?.length || 0), 0);
+            const unlisted = groups.reduce((total, item) => total + (item.unlisted?.length || 0), 0);
+            const unresolved = groups.reduce((total, item) => total + (item.unresolved?.length || 0), 0);
+            const summary = '| ' + filename + ' | ' + direct + ' | ' + dev + ' | ' + unlisted + ' | ' + unresolved + ' |';
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary + '\\n');
+            console.log(summary);
+          }
+          NODE
+      - name: Report findings
+        if: always()
+        run: |
+          echo '## Dependency hygiene (advisory)' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Knip candidates require manual review; dynamic imports, CLI tools and build configuration can be false positives.' >> "$GITHUB_STEP_SUMMARY"
+          echo '' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Columns in the report rows: file / runtime / development / unlisted / unresolved.' >> "$GITHUB_STEP_SUMMARY"
+          for report in artifacts/dependency-hygiene/*.json; do
+            if [ -f "$report" ]; then
+              echo "- $(basename "$report"): $(wc -c < "$report") bytes; download artifact for details" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+      - name: Upload dependency audit
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: dependency-hygiene-${{ github.run_id }}
+          path: artifacts/dependency-hygiene/
+          if-no-files-found: warn
+          retention-days: 30

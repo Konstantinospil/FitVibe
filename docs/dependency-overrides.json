@@ -37,11 +37,11 @@
     },
     {
       "name": "ip-address",
-      "constraint": ">=10.7.1",
+      "constraint": "10.7.4",
       "category": "transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "reason": "Security remediation: force patched ip-address 10.7.4 for transitive socks dependency following GHSA-rxp7-6hxx-x8q5; retain pending isolated necessity review.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
@@ -306,11 +306,11 @@
     },
     {
       "name": "body-parser@1",
-      "constraint": "1.20.6",
+      "constraint": "1.20.9",
       "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
+      "status": "requires-compatibility-review",
       "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'body-parser@1'. Treat as a compatibility/security constraint until dependency parents are checked.",
+      "reason": "GHSA-27r3-jxmh-p828 / CVE-2026-111181: body-parser 1.20.6 vulnerable to unauthenticated denial of service; major-scoped patch 1.20.9. Keep until all dependency parents accept patched version and regression tests pass.",
       "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
@@ -443,17 +443,17 @@
     },
     {
       "name": "multer",
-      "constraint": ">=2.4.0",
+      "constraint": ">=2.5.0",
       "category": "direct-and-transitive",
       "status": "unverified-necessity",
       "directDeclarations": [
         {
           "name": "multer",
-          "range": "^2.4.0",
+          "range": "^2.5.0",
           "manifest": "apps/backend/package.json"
         }
       ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
+      "reason": "Production dependency audit identified GHSA-q7qp-rjg7-q26m affecting Multer versions below 2.5.0; require a patched version while tracking whether this override is still needed.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
@@ -553,21 +553,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "jest",
-      "constraint": "^30.5.2",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "jest",
-          "range": "^30.5.2",
-          "manifest": "apps/backend/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "@jest/transform",
       "constraint": "^30.5.2",
       "category": "transitive",
@@ -611,6 +596,30 @@
       "directDeclarations": [],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+    },
+    {
+      "name": "lighthouse",
+      "constraint": "13.5.0",
+      "category": "direct-and-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [
+        {
+          "name": "lighthouse",
+          "range": "13.5.0",
+          "manifest": "package.json"
+        }
+      ],
+      "reason": "@lhci/cli 0.15.1 and @lhci/utils 0.15.1 pin Lighthouse 12.6.1, which pulls puppeteer-core 24.31.0 and chromium-bidi 11.0.0 with vulnerable Zod 3.25.76. Keep Lighthouse CI runner and select Lighthouse 13.5.0 with Puppeteer 25 to eliminate vulnerable Zod 3 without a Zod major-version override.",
+      "removalCriteria": "Remove when a released Lighthouse CI dependency natively selects Lighthouse >=13.5.0 and security, Lighthouse thresholds, browsers and full CI remain green."
+    },
+    {
+      "name": "body-parser@2",
+      "constraint": "2.4.0",
+      "category": "major-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "GHSA-27r3-jxmh-p828 / CVE-2026-111181: body-parser 2.3.0 vulnerable to unauthenticated denial of service; major-scoped patch 2.4.0. Keep until Express 5 dependency parent resolves safe version and integration tests pass.",
+      "removalCriteria": "Remove only after upstream parents resolve body-parser >=2.4.0 naturally and full CI/security checks pass."
     }
   ]
 }

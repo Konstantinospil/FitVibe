@@ -154,6 +154,52 @@ async function ensureEssentialCookieConsent(page) {
   }
 }
 
+// Resolve the real first-login invitation when a test exercises a different
+// journey. Never bypass the modal using forced clicks or synthetic status.
+async function dismissFirstLoginTwoFactorInvitation(page) {
+  const { expect } = require("@playwright/test");
+  const dialog = page.getByRole("dialog", { name: /secure your account/i });
+  await expect(dialog).toBeVisible();
+  const responsePromise = page.waitForResponse((response) =>
+    new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
+    response.request().method() === "POST",
+  );
+  await dialog.getByRole("button", { name: /not now/i }).click();
+  const response = await responsePromise;
+  expect(response.ok()).toBeTruthy();
+  await expect(dialog).toHaveCount(0);
+  const status = await page.context().request.get(
+    new URL("/api/v1/auth/2fa/status", page.url()).toString(),
+  );
+  expect(status.ok()).toBeTruthy();
+  expect(await status.json()).toMatchObject({ invitationDismissed: true });
+}
+
+// Test ownership: #557, shared E2E onboarding fixture. Verify persistent
+// server state rather than hiding the first-login dialog or forcing clicks.
+async function ensureSeededOnboardingComplete(page) {
+  const request = page.context().request;
+  const statusUrl = `${APPLICATION_ORIGIN}/api/v1/auth/2fa/status`;
+  let response = await request.get(statusUrl);
+  if (!response.ok()) {
+    throw new Error(`E2E 2FA status failed: HTTP ${response.status()}`);
+  }
+  const status = await response.json();
+  if (status.enabled || status.invitationDismissed) return;
+
+  const csrf = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
+  if (!csrf.ok()) throw new Error(`E2E onboarding CSRF failed: HTTP ${csrf.status()}`);
+  const { csrfToken } = await csrf.json();
+  response = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/2fa/invitation/dismiss`, {
+    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+  });
+  if (!response.ok()) throw new Error(`E2E 2FA dismissal failed: HTTP ${response.status()}`);
+  const verified = await request.get(statusUrl);
+  if (!verified.ok() || !(await verified.json()).invitationDismissed) {
+    throw new Error("E2E 2FA invitation dismissal was not persisted");
+  }
+}
+
 async function preparePage(page, { authenticated = false, consent = true } = {}) {
   await installBrowserState(page, { authenticated });
   if (consent) {
@@ -161,6 +207,7 @@ async function preparePage(page, { authenticated = false, consent = true } = {})
   }
   if (authenticated) {
     await ensureSeededSession(page);
+    await ensureSeededOnboardingComplete(page);
   }
 }
 
@@ -219,4 +266,5 @@ module.exports = {
   confirmPasswordInput,
   displayNameInput,
   acceptRegisterLegal,
+  dismissFirstLoginTwoFactorInvitation,
 };

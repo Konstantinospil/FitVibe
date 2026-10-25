@@ -100,6 +100,7 @@ export default defineConfig(() => {
       include: ["../../tests/frontend/**/*.test.{ts,tsx}"],
       exclude: [
         "../../tests/frontend/**/*.spec.{ts,tsx}",
+        "../../tests/frontend/preact/**",
         "../../tests/frontend/visual/**",
         "../../tests/frontend/e2e/**",
         "archive/**",

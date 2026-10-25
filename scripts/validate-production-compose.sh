@@ -185,6 +185,14 @@ if not any(
 ):
     raise SystemExit("clamav must persist signatures in clamav_signatures")
 
+clamav_healthcheck = services["clamav"].get("healthcheck") or {}
+clamav_test = clamav_healthcheck.get("test") or []
+clamav_command = " ".join(str(part) for part in clamav_test)
+if "$reply" not in clamav_command:
+    raise SystemExit(
+        "clamav healthcheck must preserve the reply shell variable after Compose interpolation"
+    )
+
 redis_volumes = services["redis"].get("volumes") or []
 if not any(
     (v.get("source") if isinstance(v, dict) else str(v).split(":", 1)[0]) == "redis_data"

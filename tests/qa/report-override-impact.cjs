@@ -43,15 +43,18 @@ const results = inventory.map(item => {
         ? [{manifest:file, section, requested:data[section][name]}] : []));
   const versions = versionsIn(packagesSection, name);
   const snapshots = versionsIn(snapshotsSection, name);
+  // Snapshots reflect the actual resolved graph and include peer-dependent entries.
+  // Use their versions as the authoritative fallback if package metadata is absent.
+  const resolvedVersions = [...new Set([...versions, ...snapshots])].sort();
   const linked = String(value).startsWith("link:");
-  const resolved = linked ? lock.includes(value) : versions.length > 0 || snapshots.length > 0;
+  const resolved = linked ? lock.includes(value) : resolvedVersions.length > 0;
   const classification = linked ? "local-patch-review"
     : !resolved ? "not-found-in-lockfile-review"
     : declarations.length ? "direct-and-transitive-review"
     : "transitive-review";
   return {
     name:selector, constraint:value ?? null, inventoryStatus:item.status,
-    classification, resolvedVersions:versions,
+    classification, resolvedVersions,
     snapshotVersions:snapshots, directDeclarations:declarations,
     requiresReview:item.status === "unverified-necessity",
     // A single lockfile cannot establish necessity, compatibility, or safe removal.

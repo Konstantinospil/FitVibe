@@ -22,6 +22,7 @@ jest.mock("../../../../apps/backend/src/modules/auth/two-factor.controller.js", 
   disable: jest.fn(),
   verify: jest.fn(),
   regenerateBackups: jest.fn(),
+  dismissInvitation: jest.fn(),
   status: jest.fn(),
 }));
 
@@ -88,6 +89,16 @@ describe("Two-Factor Authentication Routes", () => {
         (layer.route as { methods?: { post?: boolean } })?.methods?.post,
     );
     expect(regenerateRoute).toBeDefined();
+  });
+
+  it("should register POST /invitation/dismiss route", () => {
+    const routes = twoFactorRouter.stack;
+    const invitationRoute = routes.find(
+      (layer) =>
+        layer.route?.path === "/invitation/dismiss" &&
+        (layer.route as { methods?: { post?: boolean } })?.methods?.post,
+    );
+    expect(invitationRoute).toBeDefined();
   });
 
   it("should register GET /status route", () => {
