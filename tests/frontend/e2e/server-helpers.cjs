@@ -12,6 +12,21 @@ const TEST_USER = {
   role: "admin",
 };
 
+async function installBrowserState(page, { authenticated = false } = {}) {
+  // Only set the browser's UI session hint. Authentication itself must be
+  // established and verified through the real server's HttpOnly cookies.
+  await page.addInitScript(
+    ({ storageKey, authenticated }) => {
+      if (authenticated) {
+        window.sessionStorage.setItem(storageKey, "1");
+      } else {
+        window.sessionStorage.removeItem(storageKey);
+      }
+    },
+    { storageKey: AUTH_FLAG_KEY, authenticated },
+  );
+}
+
 async function getCsrfToken(request, label) {
   const response = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
   if (!response.ok()) {
