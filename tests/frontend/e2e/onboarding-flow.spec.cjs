@@ -139,7 +139,11 @@ test("registration, Terms, email verification, 2FA and logout", async ({ page },
   expect((await enableResponse).status()).toBe(200);
   enableMutation.assertExactlyOnce(200);
   enableMutation.stop();
-  await expect(page.getByText(/2fa is currently enabled/i)).toBeVisible();
+  // Test ownership: #565/#566. The onboarding modal deliberately retains
+  // recovery codes after server-side activation; Settings status text belongs
+  // to the separate security management surface.
+  await expect(invitation).toBeVisible();
+  await expect(invitation.getByRole("button", { name: /^show backup codes$/i })).toBeVisible();
   const statusResponse = await page.context().request.get(origin + "/api/v1/auth/2fa/status");
   expect(await statusResponse.json()).toMatchObject({ enabled: true });
   await page.getByRole("button", { name: /^show backup codes$/i }).click();

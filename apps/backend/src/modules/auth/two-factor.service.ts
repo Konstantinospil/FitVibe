@@ -357,6 +357,10 @@ export async function disable2FA(userId: string, trx?: Knex.Transaction): Promis
 
   await exec("backup_codes").where({ user_id: userId }).del();
 
+  // Test ownership: #565/#566. An account that previously enrolled in MFA
+  // must not receive a first-login invitation again after voluntarily disabling it.
+  await exec("user_2fa_invitations").insert({ user_id: userId }).onConflict("user_id").ignore();
+
   await exec("audit_log").insert({
     id: uuidv4(),
     actor_user_id: userId,
