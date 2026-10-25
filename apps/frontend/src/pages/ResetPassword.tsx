@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
@@ -6,9 +6,15 @@ import { Button, PasswordField, TextLink } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
+import { ensureLegalTranslationsLoaded } from "../i18n/config";
 
 const ResetPassword: React.FC = () => {
   const { t } = useTranslation();
+  useEffect(() => {
+    // Public recovery is reachable without login; its full translations are
+    // not part of the minimal login-only bundle.
+    void ensureLegalTranslationsLoaded();
+  }, []);
   const formRef = useRef<HTMLFormElement>(null);
   useRequiredFieldValidation(formRef, t);
   const navigate = useNavigate();
