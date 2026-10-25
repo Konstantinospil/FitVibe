@@ -39,12 +39,12 @@ async function getCsrfToken(request, label) {
   return csrfToken;
 }
 
-async function createSeededSession(page) {
+async function createSeededSession(page, account = TEST_USER) {
   const request = page.context().request;
   const csrfToken = await getCsrfToken(request, "E2E session");
 
   const loginResponse = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
-    data: { email: TEST_USER.email, password: TEST_USER.password },
+    data: { email: account.email, password: account.password },
     headers: {
       Origin: APPLICATION_ORIGIN,
       "X-CSRF-Token": csrfToken,
@@ -64,15 +64,15 @@ async function createSeededSession(page) {
     throw new Error(`Seeded E2E session did not persist: HTTP ${sessionCheck.status()}`);
   }
   const user = await sessionCheck.json();
-  if (user.id !== TEST_USER.id && user.primaryEmail !== TEST_USER.email) {
-    throw new Error("Seeded E2E session resolved to an unexpected account");
+  if (user.primaryEmail !== account.email && (!account.id || user.id !== account.id)) {
+    throw new Error("E2E session resolved to an unexpected account");
   }
 }
 
-async function ensureSeededSession(page) {
+async function ensureSeededSession(page, account = TEST_USER) {
   // Browser contexts are test-scoped. Always establish a fresh authenticated
   // session instead of reusing module-global cookies across parallel tests.
-  await createSeededSession(page);
+  await createSeededSession(page, account);
 }
 
 // Only consent status is retried: it is an idempotent read shared by many real
@@ -354,13 +354,16 @@ async function prepareFirstLoginState(page, testInfo) {
   return account;
 }
 
-async function preparePage(page, { authenticated = false, consent = true } = {}) {
+async function preparePage(
+  page,
+  { authenticated = false, consent = true, account = TEST_USER } = {},
+) {
   await installBrowserState(page, { authenticated });
   if (consent) {
     await ensureEssentialCookieConsent(page);
   }
   if (authenticated) {
-    await ensureSeededSession(page);
+    await ensureSeededSession(page, account);
     await ensureSeededOnboardingComplete(page);
   }
 }
@@ -412,6 +415,7 @@ module.exports = {
   TEST_USER,
   preparePage,
   ensureEssentialCookieConsent,
+  ensureSeededOnboardingComplete,
   getConsentStatusWithRateLimitBackoff,
   trackRequests,
   waitForApp,
