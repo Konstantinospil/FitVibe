@@ -16,6 +16,7 @@ on:
     branches: ["fix/vrt-home-state-matrix"]
     paths:
       - ".github/workflows/refresh-visual-baselines.yml"
+      - "tests/frontend/visual/pages/home.spec.ts"
 
 permissions:
   contents: write
