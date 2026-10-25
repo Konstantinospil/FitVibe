@@ -4,9 +4,23 @@ const {
   prepareFullyOnboardedPage,
   prepareFirstLoginState,
   prepareConsentRequiredPage,
+  createFirstLoginAccount,
+  ensureSeededOnboardingComplete,
 } = require("./server-helpers.cjs");
 
 const test = base.extend({
+  // Test ownership: #557. A real independently registered athlete per test.
+  // Do not use a seeded administrator to bypass mandatory MFA.
+  athleteAccount: async ({ browser }, use, testInfo) => {
+    const setupPage = await browser.newPage();
+    try {
+      const account = await createFirstLoginAccount(setupPage, testInfo);
+      await ensureSeededOnboardingComplete(setupPage);
+      await use(account);
+    } finally {
+      await setupPage.close();
+    }
+  },
   page: async ({ page }, use, testInfo) => {
     const diagnostics = watchBrowser(page);
     try {
@@ -25,16 +39,16 @@ const test = base.extend({
       }
     }
   },
-  fullyOnboardedPage: async ({ page }, use) => {
-    await prepareFullyOnboardedPage(page);
+  fullyOnboardedPage: async ({ page, athleteAccount }, use) => {
+    await prepareFullyOnboardedPage(page, athleteAccount);
     await use(page);
   },
   firstLoginPage: async ({ page }, use, testInfo) => {
     const account = await prepareFirstLoginState(page, testInfo);
     await use({ page, account });
   },
-  consentRequiredPage: async ({ page }, use) => {
-    await prepareConsentRequiredPage(page);
+  consentRequiredPage: async ({ page, athleteAccount }, use) => {
+    await prepareConsentRequiredPage(page, athleteAccount);
     await use(page);
   },
 });
