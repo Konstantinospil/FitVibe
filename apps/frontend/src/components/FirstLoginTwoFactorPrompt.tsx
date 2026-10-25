@@ -17,7 +17,8 @@ interface Props {
 
 export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const mandatory = user?.role === "admin" || user?.role === "superadmin";
   const [stage, setStage] = useState<"checking" | "choice" | "setup" | "done">("checking");
   const [translationsReady, setTranslationsReady] = useState(false);
   const [dismissError, setDismissError] = useState(false);
@@ -66,7 +67,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         if (!active) {
           return;
         }
-        if (status.enabled || status.invitationDismissed) {
+        if (status.enabled || (!mandatory && status.invitationDismissed)) {
           setStage("done");
           onResolved();
         } else {
@@ -74,17 +75,17 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         }
       },
       () => {
-        // Never block consent or the application because 2FA status is unavailable.
+        // Required administrator enrollment fails closed if status is unavailable.
         if (active) {
-          setStage("done");
-          onResolved();
+          setStage(mandatory ? "choice" : "done");
+          if (!mandatory) onResolved();
         }
       },
     );
     return () => {
       active = false;
     };
-  }, [isAuthenticated, onResolved]);
+  }, [isAuthenticated, mandatory, onResolved]);
 
   const complete = () => {
     setStage("done");
@@ -92,6 +93,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   };
 
   const dismiss = async () => {
+    if (mandatory) return;
     setDismissError(false);
     try {
       await dismiss2FAInvitation();
@@ -111,15 +113,17 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
         open={translationsReady && (stage === "choice" || stage === "setup")}
         title={t("firstLogin2fa.title")}
         description={t("firstLogin2fa.description")}
-        onClose={() => void dismiss()}
+        onClose={mandatory ? undefined : () => void dismiss()}
         closeLabel={t("common.close")}
         closeOnBackdrop={false}
         footer={
           stage === "choice" ? (
             <>
-              <Button type="button" variant="secondary" onClick={() => void dismiss()}>
-                {t("firstLogin2fa.notNow")}
-              </Button>
+              {!mandatory ? (
+                <Button type="button" variant="secondary" onClick={() => void dismiss()}>
+                  {t("firstLogin2fa.notNow")}
+                </Button>
+              ) : null}
               <Button type="button" onClick={() => setStage("setup")}>
                 {t("firstLogin2fa.activate")}
               </Button>
@@ -127,6 +131,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
           ) : undefined
         }
       >
+        {mandatory ? <p role="status">{t("firstLogin2fa.requiredAdmin")}</p> : null}
         {dismissError ? <p role="alert">{t("firstLogin2fa.dismissError")}</p> : null}
         {stage === "setup" ? (
           <TwoFactorManagement
