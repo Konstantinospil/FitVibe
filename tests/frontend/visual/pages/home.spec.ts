@@ -1,7 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gotoAuthenticated } from "../helpers/auth.js";
+import { skipUnlessMatrix } from "../helpers/project.js";
 import {
   capturePageScreenshot,
-  openAuthenticatedPage,
+  prepareVisualPage,
 } from "../helpers/capture.js";
 
 // Test ownership: #558 (visual contracts), #565 (first-login MFA).
@@ -61,13 +63,12 @@ test.describe("Home Page Visual Tests", () => {
     test(`home — 2fa ${state.invitation} — footer ${state.footer}`, async ({ page }, testInfo) => {
       // Install the account-level 2FA state before navigating. Do not dismiss
       // a real modal just to obtain a baseline with no modal.
-      await openAuthenticatedPage(page, testInfo, "/", {
-        viewports: ["xs", "sm", "md", "lg"],
-      });
-      // Route overrides installed after navigation do not change the initial
-      // response; reload so that onboarding reads the explicit state.
+      skipUnlessMatrix(testInfo, { viewports: ["xs", "sm", "md", "lg"] });
+      await prepareVisualPage(page, testInfo, { authenticated: true });
+      // Install the response before initial navigation. A post-navigation
+      // override plus reload races the onboarding status request.
       await setInvitationState(page, state.invitation);
-      await page.reload();
+      await gotoAuthenticated(page, "/");
       const shell = page.locator('[data-component="page-shell"]');
       const main = shell.locator('[data-slot="page-shell-main"]');
       await expect(main.locator("h1")).toBeVisible();
