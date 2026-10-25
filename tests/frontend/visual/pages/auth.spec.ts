@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import resetTranslations from "../../../../apps/frontend/src/i18n/locales/en/common.json";
+import { readFileSync } from "node:fs";
+
+const resetTranslations = JSON.parse(
+  readFileSync(new URL("../../../../apps/frontend/src/i18n/locales/en/common.json", import.meta.url), "utf8"),
+) as { resetPassword: { title: string } };
 import { skipUnlessMatrix } from "../helpers/project.js";
 import { capturePageScreenshot, openPublicPage, prepareVisualPage, waitForAppReady } from "../helpers/capture.js";
 
