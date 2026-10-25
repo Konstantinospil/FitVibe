@@ -27,7 +27,9 @@ function createMockQueryBuilder(defaultValue: unknown = []) {
   const builder = Object.assign(Promise.resolve(defaultValue), {
     where: jest.fn().mockReturnThis(),
     update: jest.fn().mockResolvedValue(1),
-    insert: jest.fn().mockResolvedValue([1]),
+    insert: jest.fn().mockReturnThis(),
+    onConflict: jest.fn().mockReturnThis(),
+    ignore: jest.fn().mockResolvedValue([1]),
     del: jest.fn().mockResolvedValue(1),
     first: jest.fn().mockResolvedValue(defaultValue),
     count: jest.fn().mockReturnThis(),
