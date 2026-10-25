@@ -51,16 +51,22 @@ export async function enforceAdministratorMfa(
       next();
       return;
     }
-    if (!identity.sub || !identity.sid || !(await isSessionActiveForUser(identity.sid, identity.sub))) {
+    if (
+      !identity.sub ||
+      !identity.sid ||
+      !(await isSessionActiveForUser(identity.sid, identity.sub))
+    ) {
       next();
       return;
     }
-    const role = await db("users").where({ id: identity.sub }).first<{ role_code: string }>("role_code");
+    const role = await db("users")
+      .where({ id: identity.sub })
+      .first<{ role_code: string }>("role_code");
     if (role?.role_code !== "admin" && role?.role_code !== "superadmin") {
       next();
       return;
     }
-    if (identity.mfa === true && await is2FAEnabled(identity.sub)) {
+    if (identity.mfa === true && (await is2FAEnabled(identity.sub))) {
       next();
       return;
     }
