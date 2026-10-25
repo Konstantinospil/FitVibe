@@ -86,7 +86,8 @@ jobs:
           pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
             --config tests/frontend/visual/config/playwright.config.ts \
             --update-snapshots=changed \
-            --workers=2
+            --workers=1 \
+            --timeout=90000
 
       - name: Commit refreshed Linux baselines via GitHub API
         shell: bash
