@@ -1186,6 +1186,7 @@
     "description": "¿Quieres activar la autenticación en dos pasos? También puedes activarla más adelante en Ajustes.",
     "activate": "Activar 2FA",
     "notNow": "Ahora no",
-    "dismissError": "No se pudo guardar tu elección. Inténtalo de nuevo."
+    "dismissError": "No se pudo guardar tu elección. Inténtalo de nuevo.",
+    "requiredAdmin": "La autenticación de dos factores es obligatoria para las cuentas de administrador. Completa la configuración para continuar."
   }
 }
