@@ -27,7 +27,11 @@ interface Props {
   onBackupCodesFinished?: () => void;
 }
 
-export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged, onBackupCodesFinished }) => {
+export const TwoFactorManagement: React.FC<Props> = ({
+  enabled,
+  onStatusChanged,
+  onBackupCodesFinished,
+}) => {
   const { t } = useTranslation();
   const [setup, setSetup] = useState<TwoFactorSetupResponse | null>(null);
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -271,8 +275,11 @@ export const TwoFactorManagement: React.FC<Props> = ({ enabled, onStatusChanged,
             type="button"
             onClick={() => {
               clearSensitiveState();
-              if (onBackupCodesFinished) onBackupCodesFinished();
-              else void onStatusChanged();
+              if (onBackupCodesFinished) {
+                onBackupCodesFinished();
+              } else {
+                void onStatusChanged();
+              }
             }}
           >
             {t("settings.security.finishBackupCodes")}
