@@ -39,8 +39,6 @@ import { appSettingsRouter } from "./modules/system/app-settings.routes.js";
 import { consentRouter } from "./modules/consent/consent.routes.js";
 import { logsRouter } from "./modules/logs/logs.routes.js";
 import { jwksHandler } from "./modules/auth/auth.controller.js";
-import { enforceAdministratorMfa } from "./modules/auth/administrator-mfa.guard.js";
-import { requireAccessToken } from "./modules/auth/auth.middleware.js";
 
 const app = express();
 
@@ -199,7 +197,7 @@ apiRouter.use("/plans", plansRouter);
 apiRouter.use("/progress", progressRouter);
 apiRouter.use("/points", pointsRouter);
 apiRouter.use("/feed", feedRouter);
-apiRouter.use("/admin", requireAccessToken, enforceAdministratorMfa, adminRouter);
+apiRouter.use("/admin", adminRouter);
 apiRouter.use("/contact", contactRouter);
 apiRouter.use("/logs", logsRouter);
 
