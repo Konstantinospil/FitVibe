@@ -43,13 +43,13 @@ async function createSeededSession(page, account = TEST_USER) {
   const request = page.context().request;
   const csrfToken = await getCsrfToken(request, "E2E session");
 
-  const loginResponse = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
+  const loginResponse = await retryRateLimitedMutation(() => request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
     data: { email: account.email, password: account.password },
     headers: {
       Origin: APPLICATION_ORIGIN,
       "X-CSRF-Token": csrfToken,
     },
-  });
+  }), "E2E login");
   if (!loginResponse.ok()) {
     throw new Error(`Unable to create seeded E2E session: HTTP ${loginResponse.status()}`);
   }
@@ -323,10 +323,10 @@ async function createFirstLoginAccount(page, testInfo) {
   }
 
   const loginCsrf = await getCsrfToken(request, "first-login session");
-  const login = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
+  const login = await retryRateLimitedMutation(() => request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
     data: { email: account.email, password: account.password },
     headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": loginCsrf },
-  });
+  }), "E2E first-login session");
   if (!login.ok()) {
     throw new Error(`Unable to login first-login fixture account: HTTP ${login.status()}`);
   }
