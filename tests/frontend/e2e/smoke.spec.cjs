@@ -1,7 +1,6 @@
 const { test, expect } = require("./fixtures.cjs");
 const { expectApiHttpError } = require("./browser-diagnostics.cjs");
 const {
-  TEST_USER,
   preparePage,
   waitForApp,
   emailInput,
@@ -19,12 +18,12 @@ test("login page renders the FitVibe welcome heading", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /welcome back/i })).toBeVisible();
 });
 
-test("authenticated shell shows Home after real login", async ({ page }) => {
+test("authenticated shell shows Home after real login", async ({ page, athleteAccount }) => {
   await preparePage(page);
   await page.goto("/login");
   await waitForApp(page);
-  await emailInput(page).fill(TEST_USER.email);
-  await passwordInput(page).fill(TEST_USER.password);
+  await emailInput(page).fill(athleteAccount.email);
+  await passwordInput(page).fill(athleteAccount.password);
 
   const loginResponse = page.waitForResponse(
     (response) =>
@@ -128,8 +127,8 @@ test("registration persists profile fields and scanned avatar", async ({ page },
   });
 });
 
-async function authenticatedPage(page) {
-  await preparePage(page, { authenticated: true });
+async function authenticatedPage(page, account) {
+  await preparePage(page, { authenticated: true, account });
   await page.goto("/");
   await waitForApp(page);
   await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
@@ -141,8 +140,8 @@ async function apiGet(page, path) {
   return response.json();
 }
 
-test("athlete navigates all active surfaces with real authenticated data", async ({ page }) => {
-  await authenticatedPage(page);
+test("athlete navigates all active surfaces with real authenticated data", async ({ page, athleteAccount }) => {
+  await authenticatedPage(page, athleteAccount);
   expect((await apiGet(page, "/api/v1/users/me")).id).toBeTruthy();
   for (const [label, route] of [
     ["Calendar", "/calendar"],
@@ -161,8 +160,8 @@ test("athlete navigates all active surfaces with real authenticated data", async
   }
 });
 
-test("calendar loads real sessions, allows exercise selection and persists planned workout", async ({ page }, testInfo) => {
-  await authenticatedPage(page);
+test("calendar loads real sessions, allows exercise selection and persists planned workout", async ({ page, athleteAccount }, testInfo) => {
+  await authenticatedPage(page, athleteAccount);
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await expect(page.getByRole("grid")).toBeVisible();
   await apiGet(page, "/api/v1/sessions?limit=20&offset=0");
@@ -189,8 +188,8 @@ test("calendar loads real sessions, allows exercise selection and persists plann
   await expect(page.getByText(title).first()).toBeVisible();
 });
 
-test("published legal documents render their actual backend content", async ({ page }) => {
-  await authenticatedPage(page);
+test("published legal documents render their actual backend content", async ({ page, athleteAccount }) => {
+  await authenticatedPage(page, athleteAccount);
   for (const kind of ["terms", "privacy"]) {
     const published = await apiGet(page, `/api/v1/legal/documents/${kind}?language=en`);
     expect(published.documentType).toBe(kind);
@@ -205,13 +204,13 @@ test("published legal documents render their actual backend content", async ({ p
   expect(status.privacy.currentVersion).toBeTruthy();
 });
 
-test("athlete privacy acknowledgement withdrawal and reacceptance persist on backend", async ({ page }) => {
+test("athlete privacy acknowledgement withdrawal and reacceptance persist on backend", async ({ page, athleteAccount }) => {
   const waitForPrivacyResponse = (path) =>
     page.waitForResponse(
       (response) =>
         response.request().method() === "POST" && new URL(response.url()).pathname === path,
     );
-  await authenticatedPage(page);
+  await authenticatedPage(page, athleteAccount);
   const before = await apiGet(page, "/api/v1/auth/legal-documents/status");
   await page.goto("/privacy");
   await waitForApp(page);
@@ -277,8 +276,8 @@ test("athlete logout rejects subsequent authenticated profile retrieval", async 
   expect([401, 403]).toContain(res.status());
 });
 
-test("athlete searches exercise library against the real catalog", async ({ page }) => {
-  await authenticatedPage(page);
+test("athlete searches exercise library against the real catalog", async ({ page, athleteAccount }) => {
+  await authenticatedPage(page, athleteAccount);
   await page.getByRole("link", { name: /^library$/i }).click();
   await page.waitForURL((url) => url.pathname === "/library");
   const catalog = await apiGet(page, "/api/v1/exercises?limit=20&offset=0");
@@ -520,8 +519,8 @@ test("athlete changes Vibeform and Dashboard reflects saved profile", async ({ p
   await expect(page.getByRole("combobox", { name: /body profile/i })).toHaveValue(changed);
 });
 
-test("Home and Dashboard retrieve real feed, completed activity, badges and Vibeform", async ({ page }) => {
-  await authenticatedPage(page);
+test("Home and Dashboard retrieve real feed, completed activity, badges and Vibeform", async ({ page, athleteAccount }) => {
+  await authenticatedPage(page, athleteAccount);
   await apiGet(page, "/api/v1/sessions?status=completed&limit=10");
   await apiGet(page, "/api/v1/feed?scope=public&limit=10&sort=date");
   await page.getByRole("link", { name: /^dashboard$/i }).click();
