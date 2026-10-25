@@ -40,6 +40,7 @@ import { consentRouter } from "./modules/consent/consent.routes.js";
 import { logsRouter } from "./modules/logs/logs.routes.js";
 import { jwksHandler } from "./modules/auth/auth.controller.js";
 import { enforceAdministratorMfa } from "./modules/auth/administrator-mfa.guard.js";
+import { requireAccessToken } from "./modules/auth/auth.middleware.js";
 
 const app = express();
 
@@ -189,7 +190,6 @@ const apiRouter = Router();
 // a stable API contract. CSRF validation itself remains conditional above.
 apiRouter.get("/csrf-token", csrfTokenRoute);
 
-apiRouter.use(enforceAdministratorMfa);
 apiRouter.use("/auth", authRouter);
 apiRouter.use("/users", usersRouter);
 apiRouter.use("/exercise-types", exerciseTypesRouter);
@@ -199,7 +199,7 @@ apiRouter.use("/plans", plansRouter);
 apiRouter.use("/progress", progressRouter);
 apiRouter.use("/points", pointsRouter);
 apiRouter.use("/feed", feedRouter);
-apiRouter.use("/admin", adminRouter);
+apiRouter.use("/admin", requireAccessToken, enforceAdministratorMfa, adminRouter);
 apiRouter.use("/contact", contactRouter);
 apiRouter.use("/logs", logsRouter);
 
