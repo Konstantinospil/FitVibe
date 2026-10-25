@@ -1,0 +1,811 @@
+{
+  "version": 1,
+  "authority": "tests/qa/test-ownership.json",
+  "description": "Authoritative CI job inventory and active test-runner ownership map. Product requirements, ADRs, architecture documents and the QA plan remain authoritative for intended behavior.",
+  "known_failures": [],
+  "exclusions": [
+    {
+      "name": "archived-frontend-tests",
+      "patterns": [
+        "^apps/frontend/archive/"
+      ],
+      "reason": "Archived frontend code is historical reference only and is excluded from active CI test discovery."
+    }
+  ],
+  "ci_jobs": [
+    {
+      "id": "architecture_hardcoding",
+      "name": "Architecture & Hardcoding",
+      "owner": "Frontend architecture / QA",
+      "domain": "architecture",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "apps/frontend/ARCHITECTURE.md",
+        "tests/qa/check-architecture-hardcoding.mjs"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "quality",
+      "name": "Quality Gates (Lint & Type Check)",
+      "owner": "QA / repository quality",
+      "domain": "quality",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/qa/assert-test-lifecycle.cjs",
+        "tests/qa/assert-no-silent-test-returns.cjs"
+      ],
+      "expected_artifacts": [
+        "dependency-override-impact-${{ github.run_id }}",
+        ".github job summary"
+      ]
+    },
+    {
+      "id": "deployment_contract",
+      "name": "Deployment Contract",
+      "owner": "Platform / deployment",
+      "domain": "deployment",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/qa/ci-cd-contract.test.cjs"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "release_governance",
+      "name": "Release Governance",
+      "owner": "Release engineering",
+      "domain": "release",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "backend_tests",
+      "name": "Backend Tests",
+      "owner": "Backend",
+      "domain": "backend",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "backend-coverage-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "frontend_tests",
+      "name": "Frontend Tests",
+      "owner": "Frontend",
+      "domain": "frontend",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "apps/frontend/ARCHITECTURE.md"
+      ],
+      "expected_artifacts": [
+        "frontend-coverage-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "backoffice_tests",
+      "name": "Backoffice E2E",
+      "owner": "Backoffice / security",
+      "domain": "backoffice",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "backoffice-playwright-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "database_tests",
+      "name": "Database Tests",
+      "owner": "Backend / database",
+      "domain": "database",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "coverage",
+      "name": "Coverage Gate",
+      "owner": "QA",
+      "domain": "coverage",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/qa/check-coverage.cjs"
+      ],
+      "expected_artifacts": [
+        "coverage-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "lighthouse",
+      "name": "Lighthouse CI",
+      "owner": "Frontend performance",
+      "domain": "performance",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "lighthouse-report-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "i18n",
+      "name": "i18n Coverage Check",
+      "owner": "Frontend / i18n",
+      "domain": "i18n",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "contract_tests",
+      "name": "API Contract Tests",
+      "owner": "Backend API",
+      "domain": "api-contract",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "integration",
+      "name": "Backend Integration Tests",
+      "owner": "Backend",
+      "domain": "integration",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "openapi_spec",
+      "name": "Build OpenAPI spec",
+      "owner": "Backend API",
+      "domain": "openapi",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "openapi-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "metrics_contract",
+      "name": "Metrics Contract",
+      "owner": "Observability",
+      "domain": "observability",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "security",
+      "name": "Security Scans",
+      "owner": "Security",
+      "domain": "security",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "osv-report-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "codeql_compatibility",
+      "name": "CodeQL Compatibility (javascript)",
+      "owner": "Security",
+      "domain": "security",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "zap_baseline",
+      "name": "OWASP ZAP Baseline",
+      "owner": "Security",
+      "domain": "security",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        ".zap/baseline-config.yaml",
+        ".zap/rules.tsv",
+        "tests/security/zap-policy-contract.cjs"
+      ],
+      "expected_artifacts": [
+        "zap-diagnostics-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "performance",
+      "name": "Performance Budgets (real backend)",
+      "owner": "Performance / backend",
+      "domain": "performance",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "perf-metrics-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "pre_main_amd64_smoke",
+      "name": "Pre-main amd64 Production Smoke",
+      "owner": "Platform / release",
+      "domain": "deployment",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "pre_main_arm64_build",
+      "name": "Pre-main arm64 Production Build",
+      "owner": "Platform / release",
+      "domain": "deployment",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "qa_summary",
+      "name": "QA Summary",
+      "owner": "QA",
+      "domain": "quality",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "qa-summary-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "accessibility",
+      "name": "Accessibility (axe)",
+      "owner": "Frontend accessibility",
+      "domain": "accessibility",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/frontend/e2e/accessibility.spec.cjs"
+      ],
+      "expected_artifacts": [
+        "playwright-a11y-report-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "visual_regression",
+      "name": "Visual Regression Tests (advisory)",
+      "owner": "Frontend visual QA",
+      "domain": "visual-regression",
+      "severity": "advisory",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/frontend/visual/config/playwright.config.ts"
+      ],
+      "expected_artifacts": [
+        "visual-regression-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "e2e",
+      "name": "E2E Playwright (shard ${{ matrix.shard }}/4)",
+      "owner": "QA / frontend",
+      "domain": "e2e",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/frontend/e2e/playwright.config.cjs"
+      ],
+      "expected_artifacts": [
+        "playwright-report-${{ github.run_id }}-shard-${{ matrix.shard }}"
+      ]
+    },
+    {
+      "id": "build-platform",
+      "name": "Build images (${{ matrix.platform }})",
+      "owner": "Release engineering",
+      "domain": "build",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "ingress-digests-${{ env.PLATFORM_PAIR }}",
+        "backend-digests-${{ env.PLATFORM_PAIR }}",
+        "frontend-digests-${{ env.PLATFORM_PAIR }}",
+        "backoffice-digests-${{ env.PLATFORM_PAIR }}"
+      ]
+    },
+    {
+      "id": "build",
+      "name": "Build & Publish Images",
+      "owner": "Release engineering",
+      "domain": "build",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "container-artifacts-${{ github.run_id }}"
+      ]
+    },
+    {
+      "id": "build_verification",
+      "name": "Build Verification (Container Smoke Tests)",
+      "owner": "Release engineering",
+      "domain": "release-verification",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    },
+    {
+      "id": "publish_release",
+      "name": "Publish Verified Release",
+      "owner": "Release engineering",
+      "domain": "release",
+      "severity": "blocking",
+      "status": "active",
+      "contract_sources": [
+        ".github/workflows/ci.yml"
+      ],
+      "expected_artifacts": [
+        "CI step log"
+      ]
+    }
+  ],
+  "suites": [
+    {
+      "name": "typography-contract-regressions",
+      "patterns": [
+        "^tests/qa/check-typography-contract\\.test\\.mjs$"
+      ],
+      "owner": "Frontend architecture / QA",
+      "ci_job_ids": [
+        "architecture_hardcoding"
+      ],
+      "contract_sources": [
+        "apps/frontend/ARCHITECTURE.md",
+        "tests/qa/check-typography-contract.mjs"
+      ],
+      "fixture_dependencies": [
+        "temporary CSS fixtures created by the regression test"
+      ],
+      "isolation_model": "node:test process-local temporary fixtures; no external service",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "design-authority-regressions",
+      "patterns": [
+        "^tests/qa/design-authority-core\\.test\\.mjs$"
+      ],
+      "owner": "Frontend architecture / QA",
+      "ci_job_ids": [
+        "architecture_hardcoding"
+      ],
+      "contract_sources": [
+        "apps/frontend/ARCHITECTURE.md",
+        "tests/qa/design-authority-core.mjs"
+      ],
+      "fixture_dependencies": [
+        "repository design-token and component source files"
+      ],
+      "isolation_model": "node:test static repository inspection; no external service",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "coverage-gate-negative-tests",
+      "patterns": [
+        "^tests/qa/check-coverage\\.test\\.cjs$"
+      ],
+      "owner": "QA",
+      "ci_job_ids": [
+        "coverage"
+      ],
+      "contract_sources": [
+        "tests/qa/check-coverage.cjs",
+        "docs/4.Testing_and_Quality_Assurance_Plan/4a.Testing_and_Quality_Assurance_Plan.md"
+      ],
+      "fixture_dependencies": [
+        "synthetic coverage summaries created by the test"
+      ],
+      "isolation_model": "node:test temporary coverage fixtures; no external service",
+      "expected_artifacts": [
+        "coverage-${{ github.run_id }}",
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "dependency-governance-regressions",
+      "patterns": [
+        "^tests/qa/dependency-governance\\.test\\.cjs$"
+      ],
+      "owner": "QA / dependency governance",
+      "ci_job_ids": [
+        "quality"
+      ],
+      "contract_sources": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "tests/qa/check-dependency-overrides.cjs"
+      ],
+      "fixture_dependencies": [
+        "controlled package/lockfile fixtures created by the test"
+      ],
+      "isolation_model": "node:test filesystem fixtures; no external service",
+      "expected_artifacts": [
+        "dependency-override-impact-${{ github.run_id }}",
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "override-impact-report-regressions",
+      "patterns": [
+        "^tests/qa/report-override-impact\\.test\\.cjs$"
+      ],
+      "owner": "QA / dependency governance",
+      "ci_job_ids": [
+        "quality"
+      ],
+      "contract_sources": [
+        "tests/qa/report-override-impact.cjs",
+        "package.json",
+        "pnpm-lock.yaml"
+      ],
+      "fixture_dependencies": [
+        "controlled dependency metadata fixtures created by the test"
+      ],
+      "isolation_model": "node:test filesystem fixtures; no external service",
+      "expected_artifacts": [
+        "dependency-override-impact-${{ github.run_id }}",
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "ci-cd-contract-tests",
+      "patterns": [
+        "^tests/qa/ci-cd-contract\\.test\\.cjs$"
+      ],
+      "owner": "Platform / QA",
+      "ci_job_ids": [
+        "deployment_contract"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/qa/ci-cd-contract.test.cjs"
+      ],
+      "fixture_dependencies": [
+        "workflow and deployment configuration files"
+      ],
+      "isolation_model": "node:test static repository inspection; no external service",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "clamav-readiness-regressions",
+      "patterns": [
+        "^tests/qa/clamav-readiness\\.test\\.cjs$"
+      ],
+      "owner": "Platform / security",
+      "ci_job_ids": [
+        "deployment_contract"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/qa/clamav-readiness.test.cjs"
+      ],
+      "fixture_dependencies": [
+        "compose and workflow configuration fixtures"
+      ],
+      "isolation_model": "node:test static configuration checks; no live ClamAV dependency",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "clamav-healthcheck-regressions",
+      "patterns": [
+        "^tests/qa/clamav-healthcheck\\.test\\.cjs$"
+      ],
+      "owner": "Platform / security",
+      "ci_job_ids": [
+        "deployment_contract"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/qa/clamav-healthcheck.test.cjs"
+      ],
+      "fixture_dependencies": [
+        "compose and workflow configuration fixtures"
+      ],
+      "isolation_model": "node:test static configuration checks; no live ClamAV dependency",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "backend-jest",
+      "patterns": [
+        "^tests/backend/.*\\.(?:test|spec)\\.ts$"
+      ],
+      "owner": "Backend",
+      "ci_job_ids": [
+        "backend_tests",
+        "integration",
+        "contract_tests",
+        "database_tests"
+      ],
+      "contract_sources": [
+        "apps/backend/jest.config.cjs",
+        "docs/4.Testing_and_Quality_Assurance_Plan/4a.Testing_and_Quality_Assurance_Plan.md"
+      ],
+      "fixture_dependencies": [
+        "tests/backend helpers and fixtures",
+        "PostgreSQL for database-backed suites",
+        "ClamAV for malware-scan integration where declared"
+      ],
+      "isolation_model": "Jest unit or isolated integration execution; database-backed tests use suite-owned setup/cleanup",
+      "expected_artifacts": [
+        "backend-coverage-${{ github.run_id }}",
+        "CI step logs"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "frontend-preact-pilot",
+      "patterns": [
+        "^tests/frontend/preact/.*\\.preact\\.test\\.tsx$"
+      ],
+      "owner": "Frontend",
+      "ci_job_ids": [
+        "frontend_tests"
+      ],
+      "contract_sources": [
+        "apps/frontend/ARCHITECTURE.md",
+        "apps/frontend/vitest.preact.config.ts"
+      ],
+      "fixture_dependencies": [
+        "frontend test setup and Preact compatibility configuration"
+      ],
+      "isolation_model": "Vitest DOM test environment; process-local mocks and cleanup",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "frontend-vitest",
+      "patterns": [
+        "^tests/frontend/(?!preact/).*\\.test\\.(?:ts|tsx)$"
+      ],
+      "owner": "Frontend",
+      "ci_job_ids": [
+        "frontend_tests"
+      ],
+      "contract_sources": [
+        "apps/frontend/ARCHITECTURE.md",
+        "docs/4.Testing_and_Quality_Assurance_Plan/4a.Testing_and_Quality_Assurance_Plan.md"
+      ],
+      "fixture_dependencies": [
+        "frontend test setup",
+        "module/network mocks declared by each suite"
+      ],
+      "isolation_model": "Vitest DOM test environment; per-test cleanup and isolated mocks",
+      "expected_artifacts": [
+        "frontend-coverage-${{ github.run_id }}",
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "frontend-e2e",
+      "patterns": [
+        "^tests/frontend/e2e/[^/]+\\.spec\\.cjs$"
+      ],
+      "owner": "QA / frontend",
+      "ci_job_ids": [
+        "e2e",
+        "accessibility"
+      ],
+      "contract_sources": [
+        "tests/frontend/e2e/playwright.config.cjs",
+        "docs/4.Testing_and_Quality_Assurance_Plan/4a.Testing_and_Quality_Assurance_Plan.md"
+      ],
+      "fixture_dependencies": [
+        "Playwright auth/application fixtures",
+        "isolated backend/database state",
+        "browser diagnostics and traces"
+      ],
+      "isolation_model": "browser-isolated Playwright contexts with deterministic server-backed fixture state",
+      "expected_artifacts": [
+        "playwright-report-${{ github.run_id }}-shard-${{ matrix.shard }}",
+        "playwright-a11y-report-${{ github.run_id }}",
+        "test-results traces/screenshots"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "frontend-e2e-observer-contract",
+      "patterns": [
+        "^tests/frontend/e2e/request-observer\\.test\\.cjs$",
+        "^tests/frontend/e2e/browser-diagnostics\\.test\\.cjs$"
+      ],
+      "owner": "QA / frontend",
+      "ci_job_ids": [
+        "e2e"
+      ],
+      "contract_sources": [
+        "tests/frontend/e2e/playwright.config.cjs"
+      ],
+      "fixture_dependencies": [
+        "synthetic request/diagnostic fixtures"
+      ],
+      "isolation_model": "node:test process-local fixtures; no external service",
+      "expected_artifacts": [
+        "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "frontend-visual",
+      "patterns": [
+        "^tests/frontend/visual/.*\\.spec\\.ts$"
+      ],
+      "owner": "Frontend visual QA",
+      "ci_job_ids": [
+        "visual_regression"
+      ],
+      "contract_sources": [
+        "apps/frontend/ARCHITECTURE.md",
+        "tests/frontend/visual/config/playwright.config.ts"
+      ],
+      "fixture_dependencies": [
+        "Linux visual baselines",
+        "deterministic application/auth state",
+        "browser fonts/assets"
+      ],
+      "isolation_model": "Playwright browser contexts against deterministic visual fixtures/baselines",
+      "expected_artifacts": [
+        "visual-regression-${{ github.run_id }}",
+        "visual diff screenshots",
+        "Playwright report"
+      ],
+      "severity": "advisory",
+      "status": "active"
+    },
+    {
+      "name": "backoffice-e2e",
+      "patterns": [
+        "^tests/backoffice/e2e/[^/]+\\.spec\\.cjs$"
+      ],
+      "owner": "Backoffice / security",
+      "ci_job_ids": [
+        "backoffice_tests"
+      ],
+      "contract_sources": [
+        "tests/backoffice/e2e/playwright.config.cjs",
+        "docs/2.Technical_Design_Document/2.f.Architectural_Decision_Documentation/ADR-038-superadmin-sudo-privilege-model.md"
+      ],
+      "fixture_dependencies": [
+        "backoffice auth/authorization fixture state",
+        "browser test configuration"
+      ],
+      "isolation_model": "Playwright browser contexts with role-specific deterministic state",
+      "expected_artifacts": [
+        "backoffice-playwright-${{ github.run_id }}",
+        "test-results"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    }
+  ]
+}
