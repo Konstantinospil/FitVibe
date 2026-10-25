@@ -9,9 +9,12 @@ import { feedRouter } from "../../../apps/backend/src/modules/feed/feed.routes.j
 import { pointsRouter } from "../../../apps/backend/src/modules/points/points.routes.js";
 import * as sessionTokens from "../../../apps/backend/src/modules/auth/auth.session-tokens.js";
 import * as authStateRepository from "../../../apps/backend/src/modules/auth/auth.state.repository.js";
+import { db } from "../../../apps/backend/src/db/connection.js";
 
 jest.mock("../../../apps/backend/src/modules/auth/auth.session-tokens.js");
 jest.mock("../../../apps/backend/src/modules/auth/auth.state.repository.js");
+// #557: mock the synthetic account's persisted role, not the MFA guard.
+jest.mock("../../../apps/backend/src/db/connection.js", () => ({ db: jest.fn() }));
 jest.mock("../../../apps/backend/src/modules/common/rateLimiter.js", () => ({
   rateLimit: jest.fn(() => (_req: Request, _res: Response, next: () => void) => next()),
   rateLimitByUser: jest.fn(() => (_req: Request, _res: Response, next: () => void) => next()),
@@ -48,11 +51,15 @@ jest.mock("../../../apps/backend/src/modules/points/points.controller.js", () =>
 
 const mockedTokens = jest.mocked(sessionTokens);
 const mockedAuthState = jest.mocked(authStateRepository);
+const mockedDb = db as unknown as jest.Mock;
+const mockRoleLookup = jest.fn();
 
 describe("canonical protected-route authentication", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedAuthState.isSessionActiveForUser.mockResolvedValue(true);
+    mockRoleLookup.mockResolvedValue({ role_code: "athlete" });
+    mockedDb.mockReturnValue({ where: jest.fn().mockReturnValue({ first: mockRoleLookup }) });
   });
 
   it.each([
@@ -81,9 +88,38 @@ describe("canonical protected-route authentication", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ route, sub: "user-cookie" });
     expect(mockedTokens.verifyAccess).toHaveBeenLastCalledWith("cookie-access-token");
+    expect(mockedDb).toHaveBeenCalledWith("users");
+    expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenLastCalledWith(
       "session-cookie",
       "user-cookie",
     );
   });
+  // #557: test ownership for authenticated HttpOnly-cookie routes and the
+  // authorization boundary when an already issued token becomes stale.
+  it("blocks a promoted administrator even when the cookie token still says athlete", async () => {
+    mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+    mockedTokens.verifyAccess.mockReturnValue({
+      sub: "user-cookie",
+      role: "athlete",
+      sid: "session-cookie",
+    } as never);
+
+    const app = express();
+    app.use(cookieParser());
+    app.use("/sessions", sessionsRouter);
+
+    const response = await request(app)
+      .get("/sessions")
+      .set("Cookie", `${env.ACCESS_COOKIE_NAME}=cookie-access-token`);
+
+    expect(response.status).toBe(403);
+    expect(mockedDb).toHaveBeenCalledWith("users");
+    expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
+    expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
+  });
+
 });
