@@ -199,13 +199,20 @@ async function waitForVisualAssets(page: Page): Promise<void> {
     };
 
     await withDeadline(document.fonts.ready, "document.fonts.ready");
+    // Remote and user-generated avatars are intentionally masked by the VRT
+    // mask helper. Waiting for those resources makes screenshots depend on
+    // third-party availability. Only deterministic same-origin images need
+    // to decode before capture.
+    const stableImages = [...document.images].filter((img) => {
+      const source = img.currentSrc || img.src;
+      if (!source || new URL(source, document.baseURI).origin !== location.origin) {
+        return false;
+      }
+      return !/avatar/i.test(img.alt) && !img.closest('[data-testid*="avatar"]');
+    });
     await withDeadline(
-      Promise.all(
-        [...document.images].map((img) =>
-          img.decode().catch(() => undefined),
-        ),
-      ),
-      "image decode",
+      Promise.all(stableImages.map((img) => img.decode())),
+      "same-origin image decode",
     );
     await withDeadline(
       new Promise<void>((resolve) => {
