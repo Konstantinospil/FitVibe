@@ -78,6 +78,25 @@ async function ensureSeededSession(page, account = TEST_USER) {
 // Only consent status is retried: it is an idempotent read shared by many real
 // browser journeys on the CI runner's loopback IP. Respect the server's
 // Retry-After rather than bypassing its abuse control or mocking consent.
+async function retryRateLimitedMutation(operation, label) {
+  const deadline = Date.now() + 90_000;
+  for (;;) {
+    const response = await operation();
+    if (response.status() !== 429) {
+      return response;
+    }
+    const retryAfter = Number(response.headers()["retry-after"]);
+    if (!Number.isFinite(retryAfter) || retryAfter < 0) {
+      throw new Error(`${label} rate-limited without valid Retry-After`);
+    }
+    const delay = Math.max(1000, Math.ceil(retryAfter * 1000));
+    if (Date.now() + delay > deadline) {
+      throw new Error(`${label} remained rate-limited beyond recovery deadline`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
 async function getConsentStatusWithRateLimitBackoff(request, url) {
   const deadline = Date.now() + 75_000;
   for (;;) {
@@ -106,7 +125,7 @@ async function ensureEssentialCookieConsent(page) {
   const previousBody = await previous.json();
   if (!previousBody.data?.hasConsent) {
     const csrfToken = await getCsrfToken(request, "E2E consent");
-    const response = await request.post(
+    const response = await retryRateLimitedMutation(() => request.post(
       `${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`,
       {
         data: {
@@ -118,7 +137,7 @@ async function ensureEssentialCookieConsent(page) {
         },
         headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
       },
-    );
+    ), "E2E consent persistence");
     if (!response.ok()) {
       throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
     }
@@ -277,7 +296,7 @@ async function createFirstLoginAccount(page, testInfo) {
   };
   const request = page.context().request;
   const registerCsrf = await getCsrfToken(request, "first-login registration");
-  const registration = await request.post(`${APPLICATION_ORIGIN}/api/v1/auth/register`, {
+  const registration = await retryRateLimitedMutation(() => request.post(`${APPLICATION_ORIGIN}/api/v1/auth/register`, {
     data: {
       email: account.email,
       username: account.username,
@@ -285,7 +304,7 @@ async function createFirstLoginAccount(page, testInfo) {
       terms_accepted: true,
     },
     headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": registerCsrf },
-  });
+  }), "E2E registration");
   if (registration.status() !== 202) {
     throw new Error(`Unable to create first-login fixture account: HTTP ${registration.status()}`);
   }
