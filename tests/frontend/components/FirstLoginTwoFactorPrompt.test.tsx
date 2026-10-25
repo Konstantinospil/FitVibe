@@ -9,8 +9,8 @@ vi.mock("../../../apps/frontend/src/contexts/AuthContext", () => ({ useAuth: () 
 vi.mock("../../../apps/frontend/src/services/api", () => ({ get2FAStatus: vi.fn(), dismiss2FAInvitation: vi.fn() }));
 vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock("../../../apps/frontend/src/components/profile/TwoFactorManagement", () => ({
-  TwoFactorManagement: ({ onStatusChanged }: { onStatusChanged: () => Promise<unknown> }) =>
-    <button onClick={() => void onStatusChanged()}>Finish setup</button>,
+  TwoFactorManagement: ({ onStatusChanged, onBackupCodesFinished }: { onStatusChanged: () => Promise<unknown>; onBackupCodesFinished?: () => void }) =>
+    <><button onClick={() => void onStatusChanged()}>Verify setup</button><button onClick={() => onBackupCodesFinished?.()}>Finish recovery codes</button></>,
 }));
 vi.mock("../../../apps/frontend/src/components/composites/Modal", () => ({
   Modal: ({ open, title, children, footer, onClose }: {
@@ -62,7 +62,10 @@ describe("first-login 2FA invitation", () => {
     render(<FirstLoginTwoFactorPrompt onResolved={resolved} />);
     fireEvent.click(await screen.findByText("firstLogin2fa.activate"));
     expect(resolved).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("Finish setup"));
+    fireEvent.click(screen.getByText("Verify setup"));
+    await waitFor(() => expect(get2FAStatus).toHaveBeenCalledTimes(2));
+    expect(resolved).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("Finish recovery codes"));
     await waitFor(() => expect(resolved).toHaveBeenCalledOnce());
   });
 
