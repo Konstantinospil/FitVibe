@@ -293,6 +293,7 @@ async function createFirstLoginAccount(page, testInfo) {
     email: `onboarding.${id}@fitvibe.test`,
     username: `onboarding-${id}`,
     password: "FixtureSecure123!",
+    role: "athlete",
   };
   const request = page.context().request;
   const registerCsrf = await getCsrfToken(request, "first-login registration");
@@ -353,16 +354,22 @@ async function createFirstLoginAccount(page, testInfo) {
   return account;
 }
 
-async function prepareFullyOnboardedPage(page) {
-  await preparePage(page, { authenticated: true, consent: true });
-  return TEST_USER;
+async function prepareFullyOnboardedPage(page, account) {
+  if (!account || account.role !== "athlete") {
+    throw new Error("Fully onboarded E2E fixture requires a registered athlete account");
+  }
+  await preparePage(page, { authenticated: true, consent: true, account });
+  return account;
 }
 
-async function prepareConsentRequiredPage(page) {
+async function prepareConsentRequiredPage(page, account) {
+  if (!account || account.role !== "athlete") {
+    throw new Error("Consent-required E2E fixture requires a registered athlete account");
+  }
   await page.context().clearCookies();
   await installBrowserState(page, { authenticated: true });
   await assertConsentRequired(page);
-  await ensureSeededSession(page);
+  await ensureSeededSession(page, account);
   await ensureSeededOnboardingComplete(page);
 }
 
