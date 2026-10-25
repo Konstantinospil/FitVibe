@@ -6,21 +6,29 @@ const {
   prepareConsentRequiredPage,
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
+  ensureEssentialCookieConsent,
 } = require("./server-helpers.cjs");
 
 const test = base.extend({
-  // Test ownership: #557. A real independently registered athlete per test.
-  // Do not use a seeded administrator to bypass mandatory MFA.
-  athleteAccount: async ({ browser }, use, testInfo) => {
+  // Test ownership: #557. A registered athlete per Playwright worker.
+  // Reuse only its verified session cookies in test-isolated browser contexts.
+  // Explicit registration, 2FA, logout, and revocation tests use separate flows.
+  athleteAccount: [async ({ browser }, use, workerInfo) => {
     const setupPage = await browser.newPage();
     try {
-      const account = await createFirstLoginAccount(setupPage, testInfo);
+      const account = await createFirstLoginAccount(setupPage, {
+        testId: `worker-athlete-${workerInfo.parallelIndex}`,
+        retry: workerInfo.workerIndex,
+        repeatEachIndex: 0,
+      });
       await ensureSeededOnboardingComplete(setupPage);
-      await use(account);
+      await ensureEssentialCookieConsent(setupPage);
+      const sessionCookies = await setupPage.context().cookies();
+      await use({ ...account, sessionCookies });
     } finally {
       await setupPage.close();
     }
-  },
+  }, { scope: "worker" }],
   page: async ({ page }, use, testInfo) => {
     const diagnostics = watchBrowser(page);
     try {
