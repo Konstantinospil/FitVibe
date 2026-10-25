@@ -11,6 +11,7 @@
 import { describe, it, expect, beforeEach, afterEach, beforeAll } from "@jest/globals";
 import request from "supertest";
 import bcrypt from "bcryptjs";
+import { authenticator } from "@otplib/preset-default";
 import app from "../../../apps/backend/src/app.js";
 import db from "../../../apps/backend/src/db/index.js";
 import {
@@ -127,10 +128,45 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
         password,
       });
 
+      const passwordOnlyToken: string = loginAdmin.body.tokens?.accessToken || "";
+      // Test ownership: #557. A password-only administrator can enroll MFA,
+      // but must not access the moderation queue until a verified second login.
+      const blocked = await request(app)
+        .get("/api/v1/admin/reports")
+        .set("Authorization", `Bearer ${passwordOnlyToken}`);
+      expect(blocked.status).toBe(403);
+
+      const setup = await request(app)
+        .get("/api/v1/auth/2fa/setup")
+        .set("Authorization", `Bearer ${passwordOnlyToken}`);
+      expect(setup.status).toBe(200);
+      const secret: string = setup.body.secret;
+      expect(secret).toEqual(expect.any(String));
+
+      const enabled = await request(app)
+        .post("/api/v1/auth/2fa/verify")
+        .set("Authorization", `Bearer ${passwordOnlyToken}`)
+        .send({ code: authenticator.generate(secret) });
+      expect(enabled.status).toBe(200);
+
+      const loginWithMfa = await request(app).post("/api/v1/auth/login").send({
+        email: "admin@example.com",
+        password,
+      });
+      expect(loginWithMfa.body).toMatchObject({
+        requires2FA: true,
+        pendingSessionId: expect.any(String),
+      });
+
+      const verification = await request(app).post("/api/v1/auth/login/verify-2fa").send({
+        pendingSessionId: loginWithMfa.body.pendingSessionId,
+        code: authenticator.generate(secret),
+      });
+      expect(verification.status).toBe(200);
       admin = {
         id: adminId,
         email: "admin@example.com",
-        accessToken: loginAdmin.body.tokens?.accessToken || "",
+        accessToken: verification.body.tokens?.accessToken || "",
       };
 
       // Create a public session for user1
