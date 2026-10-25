@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import * as authMiddleware from "../../../../apps/backend/src/modules/auth/auth.middleware.js";
 import * as tokensService from "../../../../apps/backend/src/modules/auth/auth.session-tokens.js";
 import * as authStateRepository from "../../../../apps/backend/src/modules/auth/auth.state.repository.js";
+import { db } from "../../../../apps/backend/src/db/connection.js";
+import { is2FAEnabled } from "../../../../apps/backend/src/modules/auth/two-factor.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 
 // Mock dependencies
@@ -10,6 +12,9 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => ({
   db: jest.fn(),
 }));
 jest.mock("../../../../apps/backend/src/modules/auth/auth.state.repository.js");
+jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js", () => ({
+  is2FAEnabled: jest.fn(),
+}));
 jest.mock("../../../../apps/backend/src/config/env.js", () => ({
   env: {
     ACCESS_COOKIE_NAME: "access_token",
@@ -18,6 +23,9 @@ jest.mock("../../../../apps/backend/src/config/env.js", () => ({
 
 const mockTokensService = jest.mocked(tokensService);
 const mockAuthStateRepository = jest.mocked(authStateRepository);
+const mockIs2FAEnabled = jest.mocked(is2FAEnabled);
+const mockDb = db as unknown as jest.Mock;
+const mockRoleLookup = jest.fn();
 
 describe("Auth Middleware", () => {
   let mockRequest: Partial<Request>;
@@ -27,6 +35,13 @@ describe("Auth Middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAuthStateRepository.isSessionActiveForUser.mockResolvedValue(true);
+    // #557: run the real MFA guard with a realistic database role lookup.
+    // The persisted role overrides stale role claims in issued access tokens.
+    mockRoleLookup.mockResolvedValue({ role_code: "athlete" });
+    mockDb.mockReturnValue({
+      where: jest.fn().mockReturnValue({ first: mockRoleLookup }),
+    });
+    mockIs2FAEnabled.mockResolvedValue(false);
 
     mockRequest = {
       headers: {},
@@ -106,6 +121,149 @@ describe("Auth Middleware", () => {
 
       expect(mockTokensService.verifyAccess).toHaveBeenCalledWith(cookieToken);
       expect(mockTokensService.verifyAccess).not.toHaveBeenCalledWith(headerToken);
+    });
+
+    it("blocks password-only admin access to protected routes", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+      mockRequest.cookies = { access_token: "admin-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "admin-123",
+        role: "admin",
+        sid: "admin-session",
+        mfa: false,
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockDb).toHaveBeenCalledWith("users");
+      expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({ code: "ADMIN_2FA_REQUIRED" }),
+      );
+      expect(mockNext).toHaveBeenCalledTimes(1);
+      expect(mockIs2FAEnabled).not.toHaveBeenCalled();
+    });
+
+    it("blocks a newly promoted admin using an old athlete token", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+      mockRequest.cookies = { access_token: "pre-promotion-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "promoted-user",
+        role: "athlete",
+        sid: "existing-session",
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({ code: "ADMIN_2FA_REQUIRED" }),
+      );
+      expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows a verified superadmin with server-enabled TOTP", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "superadmin" });
+      mockIs2FAEnabled.mockResolvedValue(true);
+      mockRequest.cookies = { access_token: "mfa-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "superadmin-123",
+        role: "superadmin",
+        sid: "verified-session",
+        mfa: true,
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockIs2FAEnabled).toHaveBeenCalledWith("superadmin-123");
+      expect(mockNext).toHaveBeenCalledWith();
+      expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
+    it("blocks stale MFA claims when server-side TOTP is disabled", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+      mockRequest.cookies = { access_token: "stale-mfa-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "admin-123",
+        role: "admin",
+        sid: "existing-session",
+        mfa: true,
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockIs2FAEnabled).toHaveBeenCalledWith("admin-123");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({ code: "ADMIN_2FA_REQUIRED" }),
+      );
+      expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows MFA enrollment status before verification", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+      mockRequest.cookies = { access_token: "enrollment-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/auth/2fa/status?from=enrollment";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "admin-123",
+        role: "admin",
+        sid: "enrollment-session",
+        mfa: false,
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockNext).toHaveBeenCalledWith();
+      expect(mockNext).toHaveBeenCalledTimes(1);
+    });
+
+    it("fails closed when the persisted user role cannot be retrieved", async () => {
+      const lookupError = new Error("Role database unavailable");
+      mockRoleLookup.mockRejectedValue(lookupError);
+      mockRequest.cookies = { access_token: "valid-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "user-123",
+        role: "athlete",
+        sid: "session-123",
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(lookupError);
+      expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
     it("should return error when no token is provided", async () => {
