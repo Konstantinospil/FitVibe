@@ -33,7 +33,14 @@ async function assertFooterState(page: Page, state: HomeVisualState["footer"]) {
   const footer = page.locator('[data-component="page-shell-footer"]');
   await expect(footer).toHaveAttribute("data-collapsed", "true");
   if (state === "expanded") {
-    await footer.locator('[data-slot="footer-toggle"]').click();
+    const toggle = footer.locator('[data-slot="footer-toggle"]');
+    if (await page.getByRole("dialog", { name: /secure your account/i }).isVisible()) {
+      // Fixture setup only: a modal correctly blocks pointer access to the footer.
+      // Render the expanded variant without bypassing the modal in user E2E tests.
+      await toggle.evaluate((button: HTMLElement) => button.click());
+    } else {
+      await toggle.click();
+    }
   }
   await expect(footer).toHaveAttribute("data-collapsed", state === "collapsed" ? "true" : "false");
   await expect(footer.locator('[data-slot="footer-toggle"]')).toHaveAttribute(
