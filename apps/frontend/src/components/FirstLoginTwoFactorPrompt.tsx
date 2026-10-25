@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
+import i18n, { ensurePrivateTranslationsLoaded, loadLanguageTranslations, minimalTranslationsReady } from "../i18n/config";
 import { dismiss2FAInvitation, get2FAStatus } from "../services/api";
 import { Modal } from "./composites/Modal";
 import { TwoFactorManagement } from "./profile/TwoFactorManagement";
@@ -14,6 +15,26 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const [stage, setStage] = useState<"checking" | "choice" | "setup" | "done">("checking");
+  const [translationsReady, setTranslationsReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        await minimalTranslationsReady;
+        await ensurePrivateTranslationsLoaded();
+        const language = i18n.language?.slice(0, 2);
+        if (language === "en" || language === "de" || language === "fr" || language === "es" || language === "el") {
+          await loadLanguageTranslations(language);
+        }
+        if (active) setTranslationsReady(true);
+      } catch {
+        // Preserve the onboarding flow if translations cannot be loaded.
+        if (active) setTranslationsReady(true);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -67,7 +88,7 @@ export const FirstLoginTwoFactorPrompt: React.FC<Props> = ({ onResolved }) => {
     <>
       <span hidden data-onboarding-2fa-stage={stage} />
       <Modal
-        open={stage === "choice" || stage === "setup"}
+        open={translationsReady && (stage === "choice" || stage === "setup")}
         title={t("firstLogin2fa.title")}
         description={t("firstLogin2fa.description")}
         onClose={() => void dismiss()}
