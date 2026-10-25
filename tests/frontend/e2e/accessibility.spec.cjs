@@ -3,6 +3,9 @@ const { AxeBuilder } = require("@axe-core/playwright");
 const {
   preparePage,
   prepareFirstLoginState,
+  createFirstLoginAccount,
+  ensureSeededOnboardingComplete,
+  ensureEssentialCookieConsent,
   setAccountLanguage,
   waitForApp,
 } = require("./server-helpers.cjs");
@@ -58,11 +61,26 @@ async function assertAccessible(page) {
 }
 
 test.describe("Accessibility and localized UI acceptance", () => {
+  let athleteAccount;
+  test.beforeAll(async ({ browser }) => {
+    const setupPage = await browser.newPage();
+    try {
+      athleteAccount = await createFirstLoginAccount(setupPage, {
+        testId: "axe-suite-athlete", retry: 0, repeatEachIndex: 0,
+      });
+      await ensureSeededOnboardingComplete(setupPage);
+    } finally {
+      await setupPage.close();
+    }
+  });
   // The real consent API can require a full rate-limit recovery window.
   test.describe.configure({ timeout: 120_000 });
   for (const scenario of accessibilityPages) {
     test(`has no WCAG A/AA violations on ${scenario.name}`, async ({ page }) => {
-      await preparePage(page, { authenticated: Boolean(scenario.requiresAuth) });
+      await preparePage(page, {
+        authenticated: Boolean(scenario.requiresAuth),
+        account: athleteAccount,
+      });
       await page.goto(scenario.path);
       await waitForApp(page);
       await page.locator("h1, h2, h3").first().waitFor({ state: "visible" });
@@ -77,6 +95,7 @@ test.describe("Accessibility and localized UI acceptance", () => {
       // the seeded administrator's persisted language preference.
       await prepareFirstLoginState(page, testInfo);
       await setAccountLanguage(page, locale);
+      await ensureEssentialCookieConsent(page);
       await page.goto("/calendar");
       await waitForApp(page);
 
