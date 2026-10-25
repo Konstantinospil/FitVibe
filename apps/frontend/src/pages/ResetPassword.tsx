@@ -6,14 +6,30 @@ import { Button, PasswordField, TextLink } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
-import { ensureLegalTranslationsLoaded } from "../i18n/config";
+import i18n, { ensureLegalTranslationsLoaded, minimalTranslationsReady } from "../i18n/config";
 
 const ResetPassword: React.FC = () => {
   const { t } = useTranslation();
+  const [translationsReady, setTranslationsReady] = useState(false);
+  const [translationsError, setTranslationsError] = useState<Error | null>(null);
   useEffect(() => {
-    // Public recovery is reachable without login; its full translations are
-    // not part of the minimal login-only bundle.
-    void ensureLegalTranslationsLoaded();
+    let active = true;
+    // Public recovery is reachable without login. Await the minimal login
+    // bundle before requesting the full translations, then trigger a rerender.
+    void minimalTranslationsReady
+      .then(() => ensureLegalTranslationsLoaded())
+      .then(() => {
+        if (!i18n.exists("resetPassword.title")) {
+          throw new Error("Password reset translations are unavailable");
+        }
+        if (active) setTranslationsReady(true);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setTranslationsError(error instanceof Error ? error : new Error(String(error)));
+        }
+      });
+    return () => { active = false; };
   }, []);
   const formRef = useRef<HTMLFormElement>(null);
   useRequiredFieldValidation(formRef, t);
@@ -61,6 +77,17 @@ const ResetPassword: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (translationsError) {
+    throw translationsError;
+  }
+  if (!translationsReady) {
+    return (
+      <AuthPageLayout title={t("loading.app")}>
+        <p role="status">{t("loading.app")}</p>
+      </AuthPageLayout>
+    );
+  }
 
   if (success) {
     return (
