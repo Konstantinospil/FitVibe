@@ -509,6 +509,7 @@ describe("Two-Factor Lifecycle Service", () => {
       queryBuilders["users"] = createMockQueryBuilder({ password_hash: passwordHash });
       queryBuilders["user_2fa_settings"] = createMockQueryBuilder(enabledSettings);
       queryBuilders["backup_codes"] = createMockQueryBuilder();
+      queryBuilders["user_2fa_invitations"] = createMockQueryBuilder();
       queryBuilders["audit_log"] = createMockQueryBuilder();
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockAuthenticator.verify.mockReturnValue(true);
@@ -516,6 +517,15 @@ describe("Two-Factor Lifecycle Service", () => {
       await expect(
         twoFactorService.disableTwoFactor(userId, password, "123456"),
       ).resolves.toBeUndefined();
+
+      // Test ownership: #566. Disabling MFA records a persisted, account-level
+      // onboarding decision so the first-login invitation cannot reappear.
+      expect(
+        (queryBuilders["user_2fa_invitations"] as { insert: jest.Mock }).insert,
+      ).toHaveBeenCalledWith({ user_id: userId });
+      expect(
+        (queryBuilders["user_2fa_invitations"] as { onConflict: jest.Mock }).onConflict,
+      ).toHaveBeenCalledWith("user_id");
 
       expect(mockBcrypt.compare).toHaveBeenCalledWith(password, passwordHash);
       expect(mockAuthenticator.verify).toHaveBeenCalledWith({
