@@ -97,6 +97,11 @@ export async function prepareVisualPage(
       observer.observe(document, { childList: true, subtree: true });
     }
   });
+  // Test ownership: #558. Pin the application locale before i18n initializes;
+  // Playwright's browser locale alone does not override fitvibe:language.
+  await page.addInitScript(() => {
+    window.localStorage.setItem("fitvibe:language", "en");
+  });
   await seedTheme(page, theme);
   await installDefaultMocks(page);
   if (options?.authenticated) {
