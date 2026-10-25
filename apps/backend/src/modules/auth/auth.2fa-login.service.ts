@@ -118,7 +118,7 @@ export async function verify2FALogin(
     const issuedAtIso = new Date().toISOString();
     const sessionExpiresAt = nextSessionExpiry();
 
-    const refreshToken = signRefresh({ sub: user.id, sid: sessionId });
+    const refreshToken = signRefresh({ sub: user.id, sid: sessionId, mfa: true });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     await createSessionWithRefresh(
@@ -141,7 +141,7 @@ export async function verify2FALogin(
     );
 
     const tokens: TokenPair = {
-      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId }),
+      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId, mfa: true }),
       refreshToken,
       accessExpiresIn: accessTokenTtl,
     };
