@@ -1,9 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { db } from "../../db/connection.js";
-import { env } from "../../config/env.js";
 import { HttpError } from "../../utils/http.js";
-import { isSessionActiveForUser } from "./auth.state.repository.js";
-import { verifyAccess } from "./auth.session-tokens.js";
 import { is2FAEnabled } from "./two-factor.service.js";
 
 const ENROLLMENT_ENDPOINTS = new Set([
@@ -13,16 +10,15 @@ const ENROLLMENT_ENDPOINTS = new Set([
   "POST /auth/2fa/enable",
   "POST /auth/2fa/verify",
   "POST /auth/logout",
-  // Minimal identity metadata necessary to render the enrolled user's account.
   "GET /users/me",
 ]);
 
 /**
- * Restrict existing and newly issued admin sessions until verified MFA exists.
- * This guard is mounted before every API router, rather than trusting the
- * frontend or a stale JWT role. Enrollment uses the real authenticated API.
+ * Enforce administrator MFA AFTER requireAccessToken has established a valid
+ * server-side session. Never derive authorization from an optional, user-
+ * supplied Authorization header here.
  *
- * Test ownership: #557, backend administrator authentication policy.
+ * Test ownership: #557 administrator MFA access control.
  */
 export async function enforceAdministratorMfa(
   req: Request,
@@ -30,35 +26,12 @@ export async function enforceAdministratorMfa(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const cookieToken = req.cookies?.[env.ACCESS_COOKIE_NAME] as string | undefined;
-    const authorization = req.headers.authorization;
-    const bearerToken =
-      typeof authorization === "string" && /^Bearer\s+\S+$/i.test(authorization)
-        ? authorization.replace(/^Bearer\s+/i, "")
-        : undefined;
-    const token = cookieToken ?? bearerToken;
-    if (!token) {
-      next();
+    const identity = req.user;
+    if (!identity?.sub || !identity.sid) {
+      next(new HttpError(401, "UNAUTHENTICATED", "Authentication required"));
       return;
     }
 
-    // Leave invalid-token rejection to the owning authenticated route. Never
-    // grant elevated access on the basis of a token that cannot be verified.
-    let identity: { sub: string; sid: string; mfa?: boolean };
-    try {
-      identity = verifyAccess(token);
-    } catch {
-      next();
-      return;
-    }
-    if (
-      !identity.sub ||
-      !identity.sid ||
-      !(await isSessionActiveForUser(identity.sid, identity.sub))
-    ) {
-      next();
-      return;
-    }
     const role = await db("users")
       .where({ id: identity.sub })
       .first<{ role_code: string }>("role_code");
@@ -70,12 +43,12 @@ export async function enforceAdministratorMfa(
       next();
       return;
     }
-
-    if (!ENROLLMENT_ENDPOINTS.has(`${req.method} ${req.path}`)) {
-      next(new HttpError(403, "ADMIN_2FA_REQUIRED", "Administrator MFA enrollment required"));
+    const path = req.originalUrl.split("?")[0]?.replace(/^\/api\/v1/, "") ?? "";
+    if (ENROLLMENT_ENDPOINTS.has(`${req.method} ${path}`)) {
+      next();
       return;
     }
-    next();
+    next(new HttpError(403, "ADMIN_2FA_REQUIRED", "Administrator MFA enrollment required"));
   } catch (error) {
     next(error);
   }
