@@ -1,5 +1,5 @@
-# Manual refresh regenerates only changed Linux visual baselines after intentional UI changes.
-# Changes to this workflow intentionally trigger the same full visual-suite refresh on feature.
+# Manual refresh regenerates only the Home Linux baselines for the explicit MFA/footer state matrix.
+# The complete VRT suite runs separately in CI without baseline updates.
 # Manual trigger after the visual suite's non-snapshot contracts are green.
 # Refresh merged fix-branch Home screenshot baselines on 2026-10-12.
 name: Refresh Visual Linux Baselines
@@ -82,7 +82,10 @@ jobs:
             exit 1
           fi
           cd "$GITHUB_WORKSPACE"
-          pnpm exec playwright test --config tests/frontend/visual/config/playwright.config.ts --update-snapshots=changed
+          pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
+            --config tests/frontend/visual/config/playwright.config.ts \
+            --update-snapshots=changed \
+            --workers=2
 
       - name: Commit refreshed Linux baselines via GitHub API
         shell: bash
