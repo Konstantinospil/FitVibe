@@ -1,5 +1,5 @@
-# Manual refresh regenerates only changed Linux visual baselines after intentional UI changes.
-# Changes to this workflow intentionally trigger the same full visual-suite refresh on feature.
+# Manual refresh regenerates only the Home Linux baselines for the explicit MFA/footer state matrix.
+# The complete VRT suite runs separately in CI without baseline updates.
 # Manual trigger after the visual suite's non-snapshot contracts are green.
 # Refresh merged fix-branch Home screenshot baselines on 2026-10-12.
 name: Refresh Visual Linux Baselines
@@ -13,9 +13,12 @@ on:
         default: feature
         type: string
   push:
-    branches: ["feature"]
+    branches: ["fix/vrt-home-state-matrix"]
     paths:
       - ".github/workflows/refresh-visual-baselines.yml"
+      - "tests/frontend/visual/pages/home.spec.ts"
+      - "tests/frontend/visual/helpers/capture.ts"
+      - "apps/frontend/src/components/FirstLoginTwoFactorPrompt.tsx"
 
 permissions:
   contents: write
@@ -33,7 +36,7 @@ jobs:
       - name: Checkout selected source branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ inputs.source_ref || 'feature' }}
+          ref: ${{ inputs.source_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Trust workspace
@@ -82,13 +85,17 @@ jobs:
             exit 1
           fi
           cd "$GITHUB_WORKSPACE"
-          pnpm exec playwright test --config tests/frontend/visual/config/playwright.config.ts --update-snapshots=changed
+          pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
+            --config tests/frontend/visual/config/playwright.config.ts \
+            --update-snapshots=changed \
+            --workers=1 \
+            --timeout=90000
 
       - name: Commit refreshed Linux baselines via GitHub API
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SOURCE_REF: ${{ inputs.source_ref || 'feature' }}
+          SOURCE_REF: ${{ inputs.source_ref || github.ref_name }}
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync } from "node:child_process";
