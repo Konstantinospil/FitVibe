@@ -20,11 +20,15 @@ export function signAccess(payload: Omit<JwtPayload, "iat" | "exp" | "jti">): st
 }
 
 export function signRefresh(payload: Pick<RefreshTokenPayload, "sub" | "sid" | "mfa">): string {
-  return jwt.sign({ sub: payload.sub, sid: payload.sid, mfa: payload.mfa === true, typ: "refresh" }, RSA_KEYS.privateKey, {
-    algorithm: "RS256",
-    expiresIn: REFRESH_TTL,
-    jwtid: uuidv4(),
-  });
+  return jwt.sign(
+    { sub: payload.sub, sid: payload.sid, mfa: payload.mfa === true, typ: "refresh" },
+    RSA_KEYS.privateKey,
+    {
+      algorithm: "RS256",
+      expiresIn: REFRESH_TTL,
+      jwtid: uuidv4(),
+    },
+  );
 }
 
 export function verifyAccess(token: string): JwtPayload {
