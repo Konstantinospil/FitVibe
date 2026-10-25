@@ -36,7 +36,7 @@ async function assertFooterState(page: Page, state: HomeVisualState["footer"]) {
   await expect(footer).toHaveAttribute("data-collapsed", "true");
   if (state === "expanded") {
     const toggle = footer.locator('[data-slot="footer-toggle"]');
-    if (await page.getByRole("dialog", { name: /secure your account/i }).isVisible()) {
+    if (await page.getByRole("dialog").isVisible()) {
       // Fixture setup only: a modal correctly blocks pointer access to the footer.
       // Render the expanded variant without bypassing the modal in user E2E tests.
       await toggle.evaluate((button: HTMLElement) => button.click());
@@ -72,10 +72,13 @@ test.describe("Home Page Visual Tests", () => {
       const shell = page.locator('[data-component="page-shell"]');
       const main = shell.locator('[data-slot="page-shell-main"]');
       await expect(main.locator("h1")).toBeVisible();
-      const dialog = page.getByRole("dialog", { name: /secure your account/i });
+      const dialog = page.getByRole("dialog");
+      const onboarding = page.locator("[data-onboarding-2fa-stage]");
       if (state.invitation === "visible") {
+        await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", "choice");
         await expect(dialog).toBeVisible();
       } else {
+        await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", "done");
         await expect(dialog).toHaveCount(0);
       }
       await assertFooterState(page, state.footer);
