@@ -326,8 +326,10 @@ async function prepareFullyOnboardedPage(page) {
 
 async function prepareConsentRequiredPage(page) {
   await page.context().clearCookies();
-  await installBrowserState(page, { authenticated: false });
+  await installBrowserState(page, { authenticated: true });
   await assertConsentRequired(page);
+  await ensureSeededSession(page);
+  await ensureSeededOnboardingComplete(page);
 }
 
 async function prepareFirstLoginState(page, testInfo) {
