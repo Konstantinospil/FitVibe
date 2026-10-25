@@ -77,6 +77,7 @@ test.describe("Home Page Visual Tests", () => {
       if (state.invitation === "visible") {
         await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", "choice");
         await expect(dialog).toBeVisible();
+        await expect(dialog).toHaveAccessibleName("Secure your account");
       } else {
         await expect(onboarding).toHaveAttribute("data-onboarding-2fa-stage", "done");
         await expect(dialog).toHaveCount(0);
