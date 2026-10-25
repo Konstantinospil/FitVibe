@@ -44,7 +44,7 @@ export async function enforceAdministratorMfa(
 
     // Leave invalid-token rejection to the owning authenticated route. Never
     // grant elevated access on the basis of a token that cannot be verified.
-    let identity: { sub: string; sid: string };
+    let identity: { sub: string; sid: string; mfa?: boolean };
     try {
       identity = verifyAccess(token);
     } catch {
@@ -60,7 +60,7 @@ export async function enforceAdministratorMfa(
       next();
       return;
     }
-    if (await is2FAEnabled(identity.sub)) {
+    if (identity.mfa === true && await is2FAEnabled(identity.sub)) {
       next();
       return;
     }
