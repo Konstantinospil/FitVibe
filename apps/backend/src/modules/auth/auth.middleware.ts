@@ -4,6 +4,7 @@ import { env } from "../../config/env.js";
 import { HttpError } from "../../utils/http.js";
 import { isSessionActiveForUser } from "./auth.state.repository.js";
 import { verifyAccess } from "./auth.session-tokens.js";
+import { enforceAdministratorMfa } from "./administrator-mfa.guard.js";
 
 function bearerToken(header?: string | null): string | null {
   if (!header) {
@@ -36,10 +37,15 @@ export async function authenticateAccessToken(
       return;
     }
     req.user = payload;
-    next();
   } catch {
     next(new HttpError(401, "UNAUTHENTICATED", "Invalid or expired access token"));
+    return;
   }
+
+  // Test ownership: #557. Every protected route using requireAccessToken
+  // must enforce current administrator MFA state, not just /api/v1/admin.
+  // This runs only after JWT and backing-session validation.
+  await enforceAdministratorMfa(req, _res, next);
 }
 
 export const requireAccessToken: RequestHandler = (req, res, next): void => {
