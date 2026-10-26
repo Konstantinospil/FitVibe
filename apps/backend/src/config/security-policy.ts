@@ -20,6 +20,10 @@ export const AUTH_SECURITY_POLICY = {
     windowSteps: 1,
     digits: 6,
   },
+  passwordReset: {
+    // Accepted PASSWORD_AND_AUTHENTICATION_POLICY.md §4: code-owned ceiling.
+    maxTtlMinutes: 15,
+  },
   backupCodes: {
     count: 10,
     length: 8,
