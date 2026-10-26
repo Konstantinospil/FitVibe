@@ -35,7 +35,13 @@ export async function enforceAdministratorMfa(
     const role = await db("users")
       .where({ id: identity.sub })
       .first<{ role_code: string }>("role_code");
-    if (role?.role_code !== "admin" && role?.role_code !== "superadmin") {
+    // #557: a missing persisted identity must never inherit non-admin access.
+    // A valid JWT and backing session are not sufficient without a live user.
+    if (!role) {
+      next(new HttpError(401, "UNAUTHENTICATED", "Account no longer exists"));
+      return;
+    }
+    if (role.role_code !== "admin" && role.role_code !== "superadmin") {
       next();
       return;
     }
