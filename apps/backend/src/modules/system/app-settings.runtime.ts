@@ -1,4 +1,5 @@
 import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { getDefaultSettings, type AppSettingKey } from "./app-settings.registry.js";
 
 export interface RuntimeGovernanceState {
@@ -64,7 +65,10 @@ export async function initializeApplicationSettingsRuntime(): Promise<void> {
       .select<{ setting_key: string; new_value: unknown }[]>(["setting_key", "new_value"]);
 
     for (const item of items) {
-      settings[item.setting_key] = item.new_value;
+      // Historical committed revisions are immutable; cap legacy reset TTL at runtime.
+      settings[item.setting_key] = item.setting_key === "auth.password_reset_ttl_minutes"
+        ? Math.min(Number(item.new_value), AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes)
+        : item.new_value;
     }
   }
 
