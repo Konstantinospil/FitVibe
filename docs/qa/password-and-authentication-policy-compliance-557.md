@@ -110,7 +110,7 @@ Passing CI only establishes success of current assertions. Do **not** close #557
 
 ## Decisions to resolve before implementation
 
-1. **Breached-password checker**: offline versioned known-breach corpus or online k-anonymity service (with availability/fail-safe policy).
+1. **Breached-password checker — DECIDED (2026-10-26)**: server-side HIBP k-anonymity range API, versioned local blocklist and fail-closed password changes if no fresh cached provider data. See [`breached-password-screening-557.md`](breached-password-screening-557.md). Implementation pending.
 2. **Legacy account migration**: determine whether pre-existing admin passwords under 16 characters must trigger forced change before privileged access. This is security-sensitive.
 3. **Operational feasibility**: TLS/proxy constraints, service accounts, privileged network restrictions, device binding and documented exceptions.
 4. **Security alert threshold**: define N lockouts per account in 10 minutes. Record who maintains 30-day baseline and evidence of quarterly review.
