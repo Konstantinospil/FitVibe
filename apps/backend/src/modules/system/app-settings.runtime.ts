@@ -66,9 +66,10 @@ export async function initializeApplicationSettingsRuntime(): Promise<void> {
 
     for (const item of items) {
       // Historical committed revisions are immutable; cap legacy reset TTL at runtime.
-      settings[item.setting_key] = item.setting_key === "auth.password_reset_ttl_minutes"
-        ? Math.min(Number(item.new_value), AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes)
-        : item.new_value;
+      settings[item.setting_key] =
+        item.setting_key === "auth.password_reset_ttl_minutes"
+          ? Math.min(Number(item.new_value), AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes)
+          : item.new_value;
     }
   }
 
