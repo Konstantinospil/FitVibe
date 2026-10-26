@@ -33,21 +33,31 @@ export class BreachedPasswordChecker {
     this.cache.set(prefix, entry);
     while (this.cache.size > MAX_PREFIXES) {
       const oldest = this.cache.keys().next().value;
-      if (oldest === undefined) break;
+      if (oldest === undefined) {
+        break;
+      }
       this.cache.delete(oldest);
     }
   }
 
   private parse(response: string): Map<string, number> {
-    if (Buffer.byteLength(response, "utf8") > MAX_RESPONSE_BYTES) throw this.unavailable();
+    if (Buffer.byteLength(response, "utf8") > MAX_RESPONSE_BYTES) {
+      throw this.unavailable();
+    }
     const lines = response.trim().split(/\r?\n/);
-    if (lines.length < 2) throw this.unavailable();
+    if (lines.length < 2) {
+      throw this.unavailable();
+    }
     const result = new Map<string, number>();
     for (const line of lines) {
       const match = SUFFIX_RE.exec(line);
-      if (!match || result.has(match[1])) throw this.unavailable();
+      if (!match || result.has(match[1])) {
+        throw this.unavailable();
+      }
       const count = Number(match[2]);
-      if (!Number.isSafeInteger(count)) throw this.unavailable();
+      if (!Number.isSafeInteger(count)) {
+        throw this.unavailable();
+      }
       result.set(match[1], count);
     }
     return result;
@@ -57,30 +67,35 @@ export class BreachedPasswordChecker {
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
     try {
-      const response = await this.transport(
-        `https://api.pwnedpasswords.com/range/${prefix}`,
-        {
-          method: "GET",
-          headers: { "Add-Padding": "true", "User-Agent": "FitVibe-Backend/2.1" },
-          signal: abort.signal,
-          redirect: "error",
-        },
-      );
-      if (!response.ok || response.status !== 200) throw this.unavailable();
+      const response = await this.transport(`https://api.pwnedpasswords.com/range/${prefix}`, {
+        method: "GET",
+        headers: { "Add-Padding": "true", "User-Agent": "FitVibe-Backend/2.1" },
+        signal: abort.signal,
+        redirect: "error",
+      });
+      if (!response.ok || response.status !== 200) {
+        throw this.unavailable();
+      }
       const length = response.headers.get("content-length");
       if (length !== null && (!/^\d+$/.test(length) || Number(length) > MAX_RESPONSE_BYTES)) {
         throw this.unavailable();
       }
-      if (!response.body) throw this.unavailable();
+      if (!response.body) {
+        throw this.unavailable();
+      }
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
       let bytes = 0;
       try {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
           bytes += value.byteLength;
-          if (bytes > MAX_RESPONSE_BYTES) throw this.unavailable();
+          if (bytes > MAX_RESPONSE_BYTES) {
+            throw this.unavailable();
+          }
           chunks.push(value);
         }
       } finally {
@@ -94,7 +109,9 @@ export class BreachedPasswordChecker {
       return entry;
     } catch {
       this.failures += 1;
-      if (this.failures >= FAILURE_THRESHOLD) this.circuitUntil = this.clock() + CIRCUIT_MS;
+      if (this.failures >= FAILURE_THRESHOLD) {
+        this.circuitUntil = this.clock() + CIRCUIT_MS;
+      }
       throw this.unavailable();
     } finally {
       clearTimeout(timer);
@@ -114,14 +131,18 @@ export class BreachedPasswordChecker {
       this.remember(prefix, cached);
       entry = cached;
     } else {
-      if (this.clock() < this.circuitUntil) throw this.unavailable();
+      if (this.clock() < this.circuitUntil) {
+        throw this.unavailable();
+      }
       let inFlight = this.pending.get(prefix);
       if (!inFlight) {
         inFlight = this.load(prefix);
         this.pending.set(prefix, inFlight);
-        void inFlight.finally(() => {
-          this.pending.delete(prefix);
-        }).catch(() => undefined);
+        void inFlight
+          .finally(() => {
+            this.pending.delete(prefix);
+          })
+          .catch(() => undefined);
       }
       entry = await inFlight;
     }
