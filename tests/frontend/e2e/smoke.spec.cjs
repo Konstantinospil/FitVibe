@@ -9,6 +9,7 @@ const {
   confirmPasswordInput,
   displayNameInput,
   acceptRegisterLegal,
+  dismissFirstLoginTwoFactorInvitation,
 } = require("./server-helpers.cjs");
 
 test("login page renders the FitVibe welcome heading", async ({ page }) => {
@@ -97,6 +98,7 @@ async function createDisposableAthlete(page, testInfo, options = {}) {
   await page.waitForURL((url) => url.pathname === "/");
   await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
   expect((await apiGet(page, "/api/v1/users/me")).primaryEmail).toBe(email);
+  await dismissFirstLoginTwoFactorInvitation(page);
   return { email, password, profile };
 }
 

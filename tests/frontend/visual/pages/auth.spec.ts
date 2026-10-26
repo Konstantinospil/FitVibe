@@ -85,10 +85,16 @@ async function assertVerticalAuthShell(page: import("@playwright/test").Page) {
   const shell = page.locator('[data-component="page-shell"]');
   const header = shell.locator("header").first();
   const main = shell.locator('[data-slot="page-shell-main"]');
-  const footer = shell.locator("footer").last();
+  // Test ownership: #558. The footer starts collapsed by design; its toggle remains visible.
+  const footer = shell.locator('[data-component="page-shell-footer"]');
+  const toggle = footer.locator('[data-slot="footer-toggle"]');
   await expect(header).toBeVisible();
   await expect(main).toBeVisible();
   await expect(footer).toBeVisible();
+  await expect(footer).toHaveAttribute("data-collapsed", "true");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(footer.locator('[data-slot="footer-collapsible"]')).toBeHidden();
   const boxes = await Promise.all([header, main, footer].map((item) => item.boundingBox()));
   const [top, center, bottom] = boxes;
   expect(top && center && bottom).toBeTruthy();

@@ -19,7 +19,8 @@ export const PageShell: React.FC<PageShellProps> = ({
   skipLinkLabel,
 }) => {
   const { t } = useTranslation();
-  const [footerCollapsed, setFooterCollapsed] = useState(false);
+  // Keep the content usable on constrained viewports before the user chooses to expand the footer.
+  const [footerCollapsed, setFooterCollapsed] = useState(true);
   const footerId = useId();
   return (
     <div data-component="page-shell">

@@ -97,6 +97,11 @@ export async function prepareVisualPage(
       observer.observe(document, { childList: true, subtree: true });
     }
   });
+  // Test ownership: #558. Pin the application locale before i18n initializes;
+  // Playwright's browser locale alone does not override fitvibe:language.
+  await page.addInitScript(() => {
+    window.localStorage.setItem("fitvibe:language", "en");
+  });
   await seedTheme(page, theme);
   await installDefaultMocks(page);
   if (options?.authenticated) {
@@ -179,20 +184,55 @@ async function waitForVisualAssets(page: Page): Promise<void> {
       );
     }
 
-    await document.fonts.ready;
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
+    // Image completion can race between the `complete` check and listener
+    // registration. Decode is a settled promise even for cached/broken images.
+    // Bound asset readiness separately from the outer Playwright test timeout.
+    const withDeadline = async (task: Promise<unknown>, description: string) => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          task,
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(() => reject(new Error(
+              `Visual asset readiness timed out: ${description}; font status=${document.fonts.status}`,
+            )), 10_000);
+          }),
+        ]);
+      } finally {
+        if (timer !== undefined) clearTimeout(timer);
+      }
+    };
 
-    await Promise.all(
-      [...document.images].map((img) =>
-        img.complete
-          ? Promise.resolve()
-          : new Promise<void>((resolve) => {
-              img.addEventListener("load", () => resolve(), { once: true });
-              img.addEventListener("error", () => resolve(), { once: true });
-            }),
-      ),
+    await withDeadline(document.fonts.ready, "document.fonts.ready");
+    // Only on-screen, eager, same-origin assets are part of the initial
+    // render contract. Decoding off-screen lazy images can wait indefinitely
+    // because the browser has not started fetching them.
+    const stableImages = [...document.images].filter((img) => {
+      const source = img.currentSrc || img.src;
+      if (!source || new URL(source, document.baseURI).origin !== location.origin) {
+        return false;
+      }
+      if (img.loading === "lazy" || /avatar/i.test(img.alt)) {
+        return false;
+      }
+      if (img.closest('[data-testid*="avatar"]')) {
+        return false;
+      }
+      const bounds = img.getBoundingClientRect();
+      const style = getComputedStyle(img);
+      return bounds.width > 0 && bounds.height > 0 &&
+        bounds.bottom > 0 && bounds.top < innerHeight &&
+        bounds.right > 0 && bounds.left < innerWidth &&
+        style.display !== "none" && style.visibility !== "hidden";
+    });
+    await Promise.all(stableImages.map((img) =>
+      withDeadline(img.decode(), `visible image decode: ${img.currentSrc || img.src}`),
+    ));
+    await withDeadline(
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+      "animation frames",
     );
   }, authenticated);
 }

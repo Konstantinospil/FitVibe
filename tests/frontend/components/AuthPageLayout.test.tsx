@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen, cleanup } from "@testing-library/react";
+import { act, fireEvent, render, screen, cleanup } from "@testing-library/react";
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import AuthPageLayout from "../../src/components/AuthPageLayout";
@@ -16,6 +16,8 @@ vi.mock("react-i18next", () => ({
         "footer.terms": "Terms",
         "footer.privacy": "Privacy",
         "brand.logoAlt": "FitVibe",
+        "footer.expand": "Expand footer",
+        "footer.collapse": "Collapse footer",
       };
       return translations[key] || key;
     },
@@ -50,11 +52,22 @@ describe("AuthPageLayout", () => {
     expect(screen.getByText("Test Title")).toBeInTheDocument();
     expect(screen.getByText("Test Description")).toBeInTheDocument();
     expect(screen.getByText("Test Content")).toBeInTheDocument();
-    const logos = screen.getAllByRole("img", { name: "FitVibe" });
-    expect(logos.length).toBeGreaterThanOrEqual(2);
-    expect(logos[0]).toHaveAttribute("fetchpriority", "high");
-    expect(logos[0]).toHaveAttribute("loading", "eager");
-    expect(logos[1]).toHaveAttribute("loading", "lazy");
+    // The global PageShell starts with the footer collapsed so it does not
+    // consume the small-screen authentication viewport. Hidden artwork must
+    // remain mounted and be available when the user expands the footer.
+    const primaryLogo = screen.getByRole("img", { name: "FitVibe" });
+    expect(primaryLogo).toHaveAttribute("fetchpriority", "high");
+    expect(primaryLogo).toHaveAttribute("loading", "eager");
+    const footer = screen.getByRole("contentinfo", { hidden: true });
+    expect(footer.closest('[data-slot="footer-collapsible"]')).toHaveAttribute("hidden");
+    const footerLogo = Array.from(footer.querySelectorAll('img')).find(
+      (image) => image.getAttribute("alt") === "FitVibe",
+    );
+    expect(footerLogo).toBeDefined();
+    expect(footerLogo).toHaveAttribute("loading", "lazy");
+    fireEvent.click(screen.getByRole("button", { name: "Expand footer" }));
+    expect(footer.closest('[data-slot="footer-collapsible"]')).not.toHaveAttribute("hidden");
+    expect(screen.getAllByRole("img", { name: "FitVibe" })).toHaveLength(2);
   });
 
   it("should switch brand artwork when the application theme changes", () => {

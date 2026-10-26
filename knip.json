@@ -1,0 +1,47 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{js,cjs,mjs,ts}",
+        "tests/qa/**/*.{js,cjs,mjs,ts}",
+        "tests/security/**/*.{js,cjs,mjs,ts}",
+        "tests/perf/**/*.{js,cjs,mjs,ts}"
+      ],
+      "project": [
+        "scripts/**/*.{js,cjs,mjs,ts}",
+        "tests/**/*.{js,cjs,mjs,ts,tsx}",
+        "!tests/**/fixtures/**"
+      ]
+    },
+    "apps/frontend": {
+      "entry": [
+        "server.ts",
+        "src/main.tsx",
+        "src/bootstrap.ts",
+        "scripts/**/*.{js,cjs,mjs,ts}"
+      ],
+      "project": [
+        "server.ts",
+        "src/**/*.{js,jsx,ts,tsx}",
+        "scripts/**/*.{js,cjs,mjs,ts}",
+        "!archive/**"
+      ]
+    },
+    "apps/backend": {
+      "entry": [
+        "src/server.ts",
+        "src/db/scripts/*.ts",
+        "scripts/**/*.{js,cjs,mjs,ts}"
+      ],
+      "project": [
+        "src/**/*.{js,ts}",
+        "scripts/**/*.{js,cjs,mjs,ts}"
+      ]
+    },
+    "apps/backoffice": {
+      "entry": ["src/main.tsx", "scripts/**/*.{js,cjs,mjs,ts}"],
+      "project": ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.{js,cjs,mjs,ts}"]
+    }
+  }
+}

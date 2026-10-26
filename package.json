@@ -81,10 +81,10 @@
     "turbo": "^2.11.9",
     "typescript": "^6.0.3",
     "typescript-eslint": "8.71.2",
-    "postcss": "8.5.31"
+    "postcss": "8.5.31",
+    "lighthouse": "13.5.0"
   },
   "dependencies": {
-    "openai": "^7.38.0",
     "snyk": "^1.1308.1"
   }
 }

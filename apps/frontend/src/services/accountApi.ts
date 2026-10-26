@@ -555,6 +555,7 @@ export interface TwoFactorSetupResponse {
 export interface TwoFactorStatusResponse {
   enabled: boolean;
   backupCodesRemaining?: number;
+  invitationDismissed?: boolean;
 }
 
 export async function setup2FA(): Promise<TwoFactorSetupResponse> {
@@ -600,6 +601,10 @@ export async function restart2FASetup(
 ): Promise<TwoFactorSetupResponse> {
   const res = await apiClient.post<TwoFactorSetupResponse>("/api/v1/auth/2fa/setup", payload);
   return res.data;
+}
+
+export async function dismiss2FAInvitation(): Promise<void> {
+  await apiClient.post("/api/v1/auth/2fa/invitation/dismiss");
 }
 
 export async function get2FAStatus(): Promise<TwoFactorStatusResponse> {
