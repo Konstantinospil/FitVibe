@@ -23,7 +23,10 @@ const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
   AUTH_SECURITY_POLICY.password.hashCost,
 );
 function passwordResetTtlSeconds(): number {
-  return getRuntimeAppSetting<number>("auth.password_reset_ttl_minutes") * SECONDS_PER_MINUTE;
+  return Math.min(
+    getRuntimeAppSetting<number>("auth.password_reset_ttl_minutes"),
+    AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes,
+  ) * SECONDS_PER_MINUTE;
 }
 
 export async function requestPasswordReset(email: string): Promise<{ resetToken?: string }> {
@@ -84,7 +87,12 @@ export async function resetPassword(token: string, newPassword: string): Promise
   if (!record) {
     throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
   }
-  if (new Date(record.expires_at).getTime() <= Date.now()) {
+  if (
+    new Date(record.expires_at).getTime() <= Date.now() ||
+    !Number.isFinite(new Date(record.created_at).getTime()) ||
+    new Date(record.created_at).getTime() +
+      AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes * SECONDS_PER_MINUTE * 1000 <= Date.now()
+  ) {
     await consumeAuthToken(record.id);
     throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
   }
