@@ -5,8 +5,12 @@ import * as metrics from "../../../../apps/backend/src/observability/metrics.js"
 import * as audit from "../../../../apps/backend/src/modules/auth/auth.audit.js";
 import * as legalGate from "../../../../apps/backend/src/modules/auth/auth.legal-gate.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
+import { is2FAEnabled } from "../../../../apps/backend/src/modules/auth/two-factor.service.js";
 
 jest.mock("jsonwebtoken");
+jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js", () => ({
+  is2FAEnabled: jest.fn(),
+}));
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
 jest.mock("../../../../apps/backend/src/observability/metrics.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.audit.js");
@@ -18,6 +22,7 @@ jest.mock("../../../../apps/backend/src/modules/auth/auth.session-tokens.js", ()
 }));
 
 const mockJwt = jest.mocked(jwt);
+const mockIs2FAEnabled = jest.mocked(is2FAEnabled);
 const mockRepository = jest.mocked(authRepository);
 const mockMetrics = jest.mocked(metrics);
 const mockAudit = jest.mocked(audit);
@@ -53,6 +58,7 @@ function mockValidState(): void {
 describe("auth.refresh.service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIs2FAEnabled.mockResolvedValue(false);
     mockLegalGate.assertTermsRequirementSatisfied.mockResolvedValue(undefined);
     mockAudit.sanitizeAuthUserAgent.mockImplementation((value) => value ?? null);
     mockJwt.verify.mockReturnValue({
@@ -103,6 +109,101 @@ describe("auth.refresh.service", () => {
       "auth.refresh",
       expect.objectContaining({ sessionId: "session-1" }),
     );
+  });
+
+  // Test ownership: #557 administrator role promotion, MFA attestation and refresh.
+  it.each(["admin", "superadmin"])(
+    "revokes password-only %s refresh without rotating or minting access",
+    async (role) => {
+      mockValidState();
+      mockRepository.findUserById.mockResolvedValue({
+        id: "user-1",
+        status: "active",
+        role_code: role,
+      } as never);
+      await expect(service.refresh("refresh-token")).rejects.toMatchObject({
+        status: 403,
+        code: "ADMIN_2FA_REQUIRED",
+      });
+      expect(mockRepository.revokeSessionFamilyAtomic).toHaveBeenCalledWith("session-1");
+      expect(mockRepository.rotateRefreshAtomic).not.toHaveBeenCalled();
+      expect(mockIs2FAEnabled).not.toHaveBeenCalled();
+    },
+  );
+
+  it("blocks pre-promotion athlete refresh after persisted promotion to admin", async () => {
+    mockValidState();
+    mockRepository.findUserById.mockResolvedValue({
+      id: "user-1",
+      status: "active",
+      role_code: "admin",
+    } as never);
+    mockJwt.verify.mockReturnValue({
+      sub: "user-1",
+      sid: "session-1",
+      typ: "refresh",
+      role: "athlete",
+      mfa: false,
+    } as never);
+    await expect(service.refresh("pre-promotion-token")).rejects.toMatchObject({
+      code: "ADMIN_2FA_REQUIRED",
+    });
+    expect(mockRepository.revokeSessionFamilyAtomic).toHaveBeenCalledWith("session-1");
+  });
+
+  it("rejects an MFA-attested admin refresh when TOTP was disabled", async () => {
+    mockValidState();
+    mockRepository.findUserById.mockResolvedValue({
+      id: "user-1",
+      status: "active",
+      role_code: "admin",
+    } as never);
+    mockJwt.verify.mockReturnValue({
+      sub: "user-1",
+      sid: "session-1",
+      typ: "refresh",
+      mfa: true,
+    } as never);
+    mockIs2FAEnabled.mockResolvedValue(false);
+    await expect(service.refresh("stale-mfa-token")).rejects.toMatchObject({
+      code: "ADMIN_2FA_REQUIRED",
+    });
+    expect(mockIs2FAEnabled).toHaveBeenCalledWith("user-1");
+    expect(mockRepository.rotateRefreshAtomic).not.toHaveBeenCalled();
+    expect(mockRepository.revokeSessionFamilyAtomic).toHaveBeenCalledWith("session-1");
+  });
+
+  it("rotates a verified admin refresh while preserving MFA attestation", async () => {
+    mockValidState();
+    mockRepository.findUserById.mockResolvedValue({
+      id: "user-1",
+      status: "active",
+      role_code: "admin",
+    } as never);
+    mockJwt.verify.mockReturnValue({
+      sub: "user-1",
+      sid: "session-1",
+      typ: "refresh",
+      mfa: true,
+    } as never);
+    mockIs2FAEnabled.mockResolvedValue(true);
+    mockRepository.rotateRefreshAtomic.mockResolvedValue(true);
+    await expect(service.refresh("verified-token")).resolves.toMatchObject({
+      accessToken: "new-access",
+      newRefresh: "new-refresh",
+    });
+    expect(mockIs2FAEnabled).toHaveBeenCalledWith("user-1");
+    expect(mockRepository.rotateRefreshAtomic).toHaveBeenCalledTimes(1);
+    expect(mockRepository.revokeSessionFamilyAtomic).not.toHaveBeenCalled();
+  });
+
+  it("keeps athlete refresh available without requiring TOTP", async () => {
+    mockValidState();
+    mockRepository.rotateRefreshAtomic.mockResolvedValue(true);
+    await expect(service.refresh("athlete-token")).resolves.toMatchObject({
+      accessToken: "new-access",
+    });
+    expect(mockIs2FAEnabled).not.toHaveBeenCalled();
   });
 
   it("revokes the session family when a concurrent rotation loses the row lock race", async () => {
