@@ -244,6 +244,31 @@ describe("Auth Middleware", () => {
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
+    it("fails closed when the authenticated identity has no persisted user", async () => {
+      mockRoleLookup.mockResolvedValue(undefined);
+      mockRequest.cookies = { access_token: "orphaned-user-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "deleted-user",
+        role: "athlete",
+        sid: "still-active-session",
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockDb).toHaveBeenCalledWith("users");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 401, code: "UNAUTHENTICATED" }),
+      );
+      expect(mockNext).toHaveBeenCalledTimes(1);
+      expect(mockIs2FAEnabled).not.toHaveBeenCalled();
+    });
+
     it("fails closed when the persisted user role cannot be retrieved", async () => {
       const lookupError = new Error("Role database unavailable");
       mockRoleLookup.mockRejectedValue(lookupError);
