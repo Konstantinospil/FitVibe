@@ -1,6 +1,6 @@
 # #557 — Breached-password screening decision
 
-**Status:** Approved design; implementation and tests pending.
+**Status:** Standalone backend checker and deterministic unit tests committed (2026-10-26); **not integrated** into registration, reset, or other password-write paths. CI pending.
 **Date:** 2026-10-26
 **Policy:** `docs/5.Policies/5.a.Ops/PASSWORD_AND_AUTHENTICATION_POLICY.md` §§2.1, 3 and 10.
 
@@ -26,7 +26,7 @@ Run screening when **creating or replacing** a password, not on login, MFA verif
 
 ## Implementation integration
 
-Create a testable backend range-check service using Node crypto and HTTPS fetch, plus an offline local-list checker. Keep existing synchronous password-length/context validation, and introduce a **separate asynchronous** orchestration method. Call this on eligible *new* registration before persistence, and on a valid password reset **before** atomic password/token/session mutation. Inventory other password-write paths, including administrator operations.
+Standalone component implemented in `apps/backend/src/modules/auth/breached-password.service.ts` with `common-passwords.blocklist.ts`; tests in `tests/backend/modules/auth/breached-password.service.test.ts` are owned by the existing `backend-jest` suite and explicitly cite #557. **CI verification is pending.** Keep existing synchronous password-length/context validation, and introduce a **separate asynchronous** orchestration method. Call this on eligible *new* registration before persistence, and on a valid password reset **before** atomic password/token/session mutation. Inventory other password-write paths, including administrator operations.
 
 The frontend should preserve the form state on HTTP 503 and use localized error messages for a common password, a breached password, and temporary screening unavailability.
 
