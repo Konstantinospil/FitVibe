@@ -21,6 +21,7 @@ import {
 } from "./auth.audit.js";
 import { toSafeUser } from "./auth.mapping.js";
 import { nextSessionExpiry, signAccess, signRefresh } from "./auth.session-tokens.js";
+import { is2FAEnabled } from "./two-factor.service.js";
 
 async function recordReuse(
   userId: string | null,
@@ -104,6 +105,16 @@ export async function refresh(
       throw new HttpError(401, "AUTH_USER_NOT_FOUND", "User not found");
     }
     await assertTermsRequirementSatisfied(user.id);
+
+    // #557: role changes are read from persistence, not from stale token claims.
+    // A password-stage or pre-promotion refresh token cannot become MFA-attested.
+    if (
+      (user.role_code === "admin" || user.role_code === "superadmin") &&
+      (decoded.mfa !== true || !(await is2FAEnabled(user.id)))
+    ) {
+      await revokeSessionFamilyAtomic(session.jti);
+      throw new HttpError(403, "ADMIN_2FA_REQUIRED", "ADMIN_2FA_REQUIRED");
+    }
 
     const newRefresh = signRefresh({ sub: user.id, sid: session.jti, mfa: decoded.mfa === true });
     const newHash = crypto.createHash("sha256").update(newRefresh).digest("hex");
