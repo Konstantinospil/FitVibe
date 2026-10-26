@@ -327,6 +327,27 @@ describe("database seed modules", () => {
     },
   );
 
+  // Test ownership: #557 — administrator bootstrap password policy boundary.
+  it("rejects bootstrap administrator passwords shorter than 16 characters before any DB writes", async () => {
+    const original = process.env.ADMIN_PASSWORD;
+    try {
+      for (const password of ["", "a".repeat(15)]) {
+        process.env.ADMIN_PASSWORD = password;
+        const { knex, knexSpy } = createKnexMock();
+        await expect(seedUsers(knex)).rejects.toThrow(
+          "ADMIN_PASSWORD must be configured with at least 16 characters",
+        );
+        expect(knexSpy).not.toHaveBeenCalled();
+      }
+    } finally {
+      if (original === undefined) {
+        delete process.env.ADMIN_PASSWORD;
+      } else {
+        process.env.ADMIN_PASSWORD = original;
+      }
+    }
+  });
+
   it("seeds only the bootstrap admin identity from 005_users", async () => {
     const { knex, getChain } = createKnexMock();
 
