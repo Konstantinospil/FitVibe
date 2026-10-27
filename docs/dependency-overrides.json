@@ -240,12 +240,12 @@
     },
     {
       "name": "qs",
-      "constraint": ">=6.15.2",
+      "constraint": ">=6.16.1",
       "category": "transitive",
-      "status": "unverified-necessity",
+      "status": "reviewed",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Security override for transitive qs used by Express/body-parser: GHSA-6pq8-jhm2-2vcw affects qs >=6.7.0 <=6.16.0. Enforce patched qs >=6.16.1 until dependency parents resolve a safe version without an override.",
+      "removalCriteria": "Remove once all dependency parents naturally resolve patched qs >=6.16.1 without forcing; regenerate pnpm lockfile, verify pnpm audit and full CI, and delete this inventory entry."
     },
     {
       "name": "morgan",
