@@ -1742,6 +1742,20 @@ jobs:
           docker build -f infra/docker/prod/Dockerfile.frontend -t fitvibe-frontend:pre-main .
           docker build -f infra/docker/prod/Dockerfile.backoffice -t fitvibe-backoffice:pre-main .
 
+      - name: Assert backend runtime excludes Jest and deepmerge
+        run: |
+          docker run --rm --entrypoint sh fitvibe-backend:pre-main -ec '
+            if find /app -type d -name deepmerge -print | grep -q .; then
+              echo "ERROR: deepmerge is present in the production image" >&2
+              exit 1
+            fi
+            if find /app -type d -name jest-config -print | grep -q .; then
+              echo "ERROR: jest-config is present in the production image" >&2
+              exit 1
+            fi
+            echo "PASS: deepmerge and jest-config absent from runtime image"
+          '
+
       - name: Start backend production container
         run: |
           docker run -d \
