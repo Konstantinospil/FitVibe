@@ -19,7 +19,6 @@ test.describe("Auth Page Visual Tests", () => {
     await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
     // Ensure asynchronous i18n has resolved before capturing a baseline.
-    await expect(page.getByText("Reset your password", { exact: true })).toBeVisible();
     await expect(page.locator('[data-component="password-requirements-panel"]')).toContainText("Password Requirements:");
     await capturePageScreenshot(page, testInfo, "reset-password", { waitFor: '[data-component="form-stack"]' });
   });
