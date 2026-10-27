@@ -11,10 +11,7 @@ const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 // ResetPassword uses keys from common.json, which the minimal login bundle omits.
 // Load its translations before mounting the public route, without inflating login.
 const ResetPassword = lazy(async () => {
-  const [module] = await Promise.all([
-    import("../pages/ResetPassword"),
-    loadFullTranslations(),
-  ]);
+  const [module] = await Promise.all([import("../pages/ResetPassword"), loadFullTranslations()]);
   return module;
 });
 const Terms = lazy(() => import("../pages/Terms"));
