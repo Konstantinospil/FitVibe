@@ -2,12 +2,21 @@ import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import PublicPageLayout from "../components/PublicPageLayout";
 import Login from "../pages/Login";
+import { loadFullTranslations } from "../i18n/config";
 
 const TwoFactorVerificationLogin = lazy(() => import("../pages/TwoFactorVerificationLogin"));
 const Register = lazy(() => import("../pages/Register"));
 const VerifyEmail = lazy(() => import("../pages/VerifyEmail"));
 const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("../pages/ResetPassword"));
+// ResetPassword uses keys from common.json, which the minimal login bundle omits.
+// Load its translations before mounting the public route, without inflating login.
+const ResetPassword = lazy(async () => {
+  const [module] = await Promise.all([
+    import("../pages/ResetPassword"),
+    loadFullTranslations(),
+  ]);
+  return module;
+});
 const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
 const Cookie = lazy(() => import("../pages/Cookie"));
