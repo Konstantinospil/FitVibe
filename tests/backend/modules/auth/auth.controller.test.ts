@@ -318,7 +318,7 @@ describe("Auth Controller", () => {
 
   // Test ownership: #557; cookie expiry must match JWT expiry, including MFA refresh.
   it("uses the shorter administrator access-cookie TTL on 2FA login", async () => {
-    mockRequest.body = { pendingSessionId: "pending", code: "123456" };
+    mockRequest.body = { pendingSessionId: "123e4567-e89b-12d3-a456-426614174000", code: "123456" };
     mockAuthService.verify2FALogin.mockResolvedValue({
       user: { id: userId, email: "admin@example.com", username: "admin", role: "admin", status: "active", created_at: new Date().toISOString() },
       tokens: { accessToken: "admin-access", refreshToken: "admin-refresh", accessExpiresIn: 300 },
