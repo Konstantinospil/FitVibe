@@ -1,27 +1,25 @@
-# Refresh approved Linux baselines for Home, auth, legal, and navigation visual contracts.
-# The complete VRT suite runs separately in CI without baseline updates.
-# Manual trigger after the visual suite's non-snapshot contracts are green.
-# Refresh merged fix-branch Home screenshot baselines on 2026-10-12.
+# Manually refresh reviewed visual baselines. Do not auto-update expected images.
 name: Refresh Visual Linux Baselines
 
 on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Branch containing the UI changes to capture
+        description: Exact source branch containing reviewed UI
         required: true
-        default: feature
         type: string
-  push:
-    branches: ["feature"]
-    paths:
-      - ".github/workflows/refresh-visual-baselines.yml"
-      - "tests/frontend/visual/pages/home.spec.ts"
-      - "tests/frontend/visual/pages/auth.spec.ts"
-      - "tests/frontend/visual/pages/legal.spec.ts"
-      - "tests/frontend/visual/components/navbar.spec.ts"
-      - "tests/frontend/visual/helpers/capture.ts"
-      - "apps/frontend/src/components/FirstLoginTwoFactorPrompt.tsx"
+      refresh_scope:
+        description: Reviewed snapshot group
+        required: true
+        type: choice
+        default: reset-password
+        options:
+          - reset-password
+          - approved-pages
+
+concurrency:
+  group: visual-baseline-refresh-${{ inputs.source_ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -67,6 +65,7 @@ jobs:
           APP_URL: http://127.0.0.1:4173
           DISABLE_WEBSERVER: "true"
           CI: "true"
+          REFRESH_SCOPE: ${{ inputs.refresh_scope }}
         run: |
           set -euo pipefail
           pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client >/tmp/fitvibe-preview.log 2>&1 &
@@ -88,29 +87,53 @@ jobs:
             exit 1
           fi
           cd "$GITHUB_WORKSPACE"
-          pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
-            tests/frontend/visual/pages/auth.spec.ts \
-            tests/frontend/visual/pages/legal.spec.ts \
-            tests/frontend/visual/components/navbar.spec.ts \
-            --config tests/frontend/visual/config/playwright.config.ts \
-            --update-snapshots=changed \
-            --workers=1 \
-            --timeout=90000
+          if [ "$REFRESH_SCOPE" = "reset-password" ]; then
+            # Run only the 8 light/dark viewport combinations for Reset Password.
+            # Seven approved images should change; dark/sm must stay unchanged.
+            pnpm exec playwright test tests/frontend/visual/pages/auth.spec.ts \
+              --grep "Auth Page Visual Tests reset password" \
+              --config tests/frontend/visual/config/playwright.config.ts \
+              --update-snapshots=changed
+          elif [ "$REFRESH_SCOPE" = "approved-pages" ]; then
+            pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
+              tests/frontend/visual/pages/auth.spec.ts \
+              tests/frontend/visual/pages/legal.spec.ts \
+              tests/frontend/visual/components/navbar.spec.ts \
+              --config tests/frontend/visual/config/playwright.config.ts \
+              --update-snapshots=changed
+          else
+            echo "::error::Unsupported refresh scope: $REFRESH_SCOPE"
+            exit 1
+          fi
 
       - name: Commit refreshed Linux baselines via GitHub API
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SOURCE_REF: ${{ inputs.source_ref || github.ref_name }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+          REFRESH_SCOPE: ${{ inputs.refresh_scope }}
         run: |
           node --input-type=module <<'NODE'
           import { execFileSync } from "node:child_process";
+          import { createHash } from "node:crypto";
           import { readFile } from "node:fs/promises";
 
           const repo = process.env.GITHUB_REPOSITORY;
           const token = process.env.GH_TOKEN;
           const branch = process.env.SOURCE_REF;
+          const scope = process.env.REFRESH_SCOPE;
           const api = "https://api.github.com";
+          const snapshotDir = "tests/frontend/visual/pages/auth.spec.ts-snapshots";
+          // #557: reviewed against VRT artifact from CI run 40243884456.
+          const approved = new Map([
+            ["reset-password-ui-dark-lg-linux.png", "741ee8f87e846236b45798d387e7d49dd13591abff30bb080c0ce8410b34279c"],
+            ["reset-password-ui-dark-md-linux.png", "23c1564c2ca36f46ba28fa53ae6b8a954bb9f93bb295cabfd97bf69271a109c7"],
+            ["reset-password-ui-dark-xs-linux.png", "ca782dae2fc82bfd987d02e4dfcdf7aac7b534baf2cfa55e9b51ef93a22d67fa"],
+            ["reset-password-ui-light-lg-linux.png", "ef70103bebd67bf3e1e943e77a9e05f3dbd3b4528417ae089afa1bedf167e604"],
+            ["reset-password-ui-light-md-linux.png", "1f8b98d0d27dabae20ff0295694dbf0d975672156f84b5fd327a6fda1ed4d93f"],
+            ["reset-password-ui-light-sm-linux.png", "d9f02a9dce44d7be3b5eba244a4a1fffee83ea4132fa4ef0c06b6ef15ba2a489"],
+            ["reset-password-ui-light-xs-linux.png", "8ea4e2419034e753a3a5de9136b7ffbb93e94e881ef56e3e3b4c53ddcb0a44bb"],
+          ].map(([name, hash]) => [`${snapshotDir}/${name}`, hash]));
           const headers = {
             Accept: "application/vnd.github+json",
             Authorization: `Bearer ${token}`,
@@ -124,16 +147,35 @@ jobs:
             { encoding: "utf8" },
           );
 
-          const files = [...new Set(
-            status
-              .split("\n")
-              .filter(Boolean)
-              .map((line) => line.slice(3).trim())
-              .filter((path) => path.includes("-snapshots/") && path.endsWith("-linux.png")),
+          const changedPaths = [...new Set(
+            status.split("\n").filter(Boolean).map((line) => line.slice(3).trim()),
           )];
+          const approvedGeneral = (path) =>
+            /^tests\/frontend\/visual\/(?:pages\/(?:home|auth|legal)|components\/navbar)\.spec\.ts-snapshots\/[^/]+-linux\.png$/.test(path);
+          const permitted = (path) => scope === "reset-password"
+            ? approved.has(path)
+            : scope === "approved-pages" && approvedGeneral(path);
+          const unexpected = changedPaths.filter((path) => !permitted(path));
+          if (unexpected.length) {
+            throw new Error(`Refusing unexpected changes: ${unexpected.join(", ")}`);
+          }
+          const files = changedPaths.filter(permitted);
+          if (scope === "reset-password") {
+            if (files.length !== approved.size) {
+              throw new Error(`Expected 7 reviewed screenshots, found ${files.length}: ${files.join(", ")}`);
+            }
+            for (const path of files) {
+              const actualHash = createHash("sha256").update(await readFile(path)).digest("hex");
+              if (actualHash !== approved.get(path)) {
+                throw new Error(`Regenerated image differs from approved CI capture: ${path}`);
+              }
+            }
+          } else if (scope !== "approved-pages") {
+            throw new Error(`Unsupported scope: ${scope}`);
+          }
 
           if (files.length === 0) {
-            console.log("No Linux visual baseline changes produced.");
+            console.log("No approved Linux visual baseline changes produced.");
             process.exit(0);
           }
 
@@ -179,7 +221,7 @@ jobs:
           const commit = await request("/git/commits", {
             method: "POST",
             body: JSON.stringify({
-              message: "test(visual): refresh Linux baselines for current feature UI",
+              message: `test(visual): refresh reviewed ${scope} Linux baselines (#557)`,
               tree: tree.sha,
               parents: [headSha],
             }),

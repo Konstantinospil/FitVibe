@@ -109,11 +109,11 @@ export async function disableTwoFactor(
 ): Promise<void> {
   await db.transaction(async (trx) => {
     const user = await trx("users").where({ id: userId }).first<{ role_code: string }>("role_code");
-    if (user?.role_code === "superadmin") {
+    if (user?.role_code === "superadmin" || user?.role_code === "admin") {
       throw new HttpError(
         409,
         "SUPERADMIN_2FA_REQUIRED",
-        "Demote the superadmin account before disabling two-factor authentication",
+        "Demote the administrator account before disabling two-factor authentication",
       );
     }
     await assertStepUp(userId, password, code, true, trx);
@@ -514,6 +514,10 @@ export async function getRemainingBackupCodesCount(
 }
 
 export async function dismissTwoFactorInvitation(userId: string): Promise<void> {
+  const user = await db("users").where({ id: userId }).first<{ role_code: string }>("role_code");
+  if (user?.role_code === "admin" || user?.role_code === "superadmin") {
+    throw new HttpError(409, "ADMIN_2FA_REQUIRED", "Administrator MFA is mandatory");
+  }
   await db("user_2fa_invitations").insert({ user_id: userId }).onConflict("user_id").ignore();
 }
 

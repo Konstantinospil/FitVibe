@@ -23,8 +23,8 @@ const ADMIN_ROLE = "admin";
 const ADMIN_STATUS = "active";
 
 async function createAdminUser() {
-  if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
-    console.error("Set ADMIN_PASSWORD in the environment (min 8 characters).");
+  if (!ADMIN_PASSWORD || ADMIN_PASSWORD.length < 16) {
+    console.error("Set ADMIN_PASSWORD in the environment (min 16 characters).");
     process.exit(1);
   }
 

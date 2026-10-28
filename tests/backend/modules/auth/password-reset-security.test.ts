@@ -107,6 +107,18 @@ describe("AC-1.9: Password Reset Security", () => {
     expect(mockAuthRepo.resetPasswordAtomic).not.toHaveBeenCalled();
   });
 
+  it("rejects a legacy reset token older than 15 minutes even if its stored expiry is later", async () => {
+    mockAuthRepo.findAuthToken.mockResolvedValue({
+      ...validResetToken,
+      created_at: new Date(Date.now() - 16 * 60_000).toISOString(),
+      expires_at: new Date(Date.now() + 60 * 60_000).toISOString(),
+    });
+    await expect(authService.resetPassword("legacy-token", "NewValidPassword123!")).rejects.toMatchObject({
+      status: 400, code: "AUTH_INVALID_TOKEN",
+    });
+    expect(mockAuthRepo.resetPasswordAtomic).not.toHaveBeenCalled();
+  });
+
   it("rejects a reset token whose user no longer exists", async () => {
     mockAuthRepo.findUserById.mockResolvedValue(undefined);
 

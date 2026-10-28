@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
@@ -6,9 +6,37 @@ import { Button, PasswordField, TextLink } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
+import i18n, { ensureLegalTranslationsLoaded, minimalTranslationsReady } from "../i18n/config";
 
 const ResetPassword: React.FC = () => {
   const { t } = useTranslation();
+  const [translationsReady, setTranslationsReady] = useState(
+    () => t("resetPassword.title") !== "resetPassword.title",
+  );
+  const [translationsError, setTranslationsError] = useState<Error | null>(null);
+  useEffect(() => {
+    let active = true;
+    // Public recovery is reachable without login. Await the minimal login
+    // bundle before requesting the full translations, then trigger a rerender.
+    void minimalTranslationsReady
+      .then(() => ensureLegalTranslationsLoaded())
+      .then(() => {
+        if (!i18n.exists("resetPassword.title")) {
+          throw new Error("Password reset translations are unavailable");
+        }
+        if (active) {
+          setTranslationsReady(true);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setTranslationsError(error instanceof Error ? error : new Error(String(error)));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const formRef = useRef<HTMLFormElement>(null);
   useRequiredFieldValidation(formRef, t);
   const navigate = useNavigate();
@@ -55,6 +83,17 @@ const ResetPassword: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (translationsError) {
+    throw translationsError;
+  }
+  if (!translationsReady) {
+    return (
+      <AuthPageLayout title={t("loading.app")} description={t("loading.app")}>
+        <p role="status">{t("loading.app")}</p>
+      </AuthPageLayout>
+    );
+  }
 
   if (success) {
     return (

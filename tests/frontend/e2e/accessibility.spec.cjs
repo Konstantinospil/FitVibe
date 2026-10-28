@@ -1,26 +1,18 @@
 const { test, expect } = require("@playwright/test");
 const { AxeBuilder } = require("@axe-core/playwright");
-const { preparePage, waitForApp } = require("./server-helpers.cjs");
+const {
+  preparePage,
+  prepareFirstLoginState,
+  createFirstLoginAccount,
+  ensureSeededOnboardingComplete,
+  ensureEssentialCookieConsent,
+  setAccountLanguage,
+  waitForApp,
+} = require("./server-helpers.cjs");
 
 const APPLICATION_ORIGIN = new URL(
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173",
 ).origin;
-
-async function setAccountLanguage(page, locale) {
-  const request = page.context().request;
-  const csrfResponse = await request.get(`${APPLICATION_ORIGIN}/api/v1/csrf-token`);
-  expect(csrfResponse.ok()).toBe(true);
-  const { csrfToken } = await csrfResponse.json();
-  const response = await request.patch(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`, {
-    data: { language: locale },
-    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
-  });
-  expect(response.status()).toBe(200);
-  expect((await response.json()).language).toBe(locale);
-  const persisted = await request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
-  expect(persisted.status()).toBe(200);
-  expect((await persisted.json()).language).toBe(locale);
-}
 
 const accessibilityPages = [
   { name: "Login", path: "/login" },
@@ -69,11 +61,29 @@ async function assertAccessible(page) {
 }
 
 test.describe("Accessibility and localized UI acceptance", () => {
+  // One account per suite, isolated browser contexts per test. Avoid parallel
+  // setup bursts against production-equivalent registration/consent throttles.
+  test.describe.configure({ mode: "serial" });
+  let athleteAccount;
+  test.beforeAll(async ({ browser }) => {
+    const setupPage = await browser.newPage();
+    try {
+      athleteAccount = await createFirstLoginAccount(setupPage, {
+        testId: "axe-suite-athlete", retry: 0, repeatEachIndex: 0,
+      });
+      await ensureSeededOnboardingComplete(setupPage);
+    } finally {
+      await setupPage.close();
+    }
+  });
   // The real consent API can require a full rate-limit recovery window.
   test.describe.configure({ timeout: 120_000 });
   for (const scenario of accessibilityPages) {
     test(`has no WCAG A/AA violations on ${scenario.name}`, async ({ page }) => {
-      await preparePage(page, { authenticated: Boolean(scenario.requiresAuth) });
+      await preparePage(page, {
+        authenticated: Boolean(scenario.requiresAuth),
+        account: athleteAccount,
+      });
       await page.goto(scenario.path);
       await waitForApp(page);
       await page.locator("h1, h2, h3").first().waitFor({ state: "visible" });
@@ -82,12 +92,13 @@ test.describe("Accessibility and localized UI acceptance", () => {
   }
 
   for (const locale of supportedLocales) {
-    test(`workout creator rest-time controls are accessible and translated: ${locale}`, async ({ page }) => {
+    test(`workout creator rest-time controls are accessible and translated: ${locale}`, async ({ page }, testInfo) => {
       const messages = localeMessages[locale];
-      await preparePage(page, { authenticated: true });
-      // Account preference is authoritative for signed-in users; test the persisted
-      // preference through the real API rather than overriding browser storage.
+      // Use a unique account per locale so fully-parallel shards cannot race on
+      // the seeded administrator's persisted language preference.
+      await prepareFirstLoginState(page, testInfo);
       await setAccountLanguage(page, locale);
+      await ensureEssentialCookieConsent(page);
       await page.goto("/calendar");
       await waitForApp(page);
 

@@ -1185,6 +1185,8 @@
     "title": "Secure your account",
     "description": "Would you like to activate two-factor authentication? You can also enable it later in Settings.",
     "activate": "Activate 2FA",
-    "notNow": "Not now"
+    "notNow": "Not now",
+    "dismissError": "We could not save your choice. Please try again.",
+    "requiredAdmin": "Two-factor authentication is required for administrator accounts. Complete setup to continue."
   }
 }

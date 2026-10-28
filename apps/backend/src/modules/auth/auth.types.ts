@@ -4,6 +4,7 @@ export interface JwtPayload {
   sub: string;
   role: string;
   sid: string;
+  mfa?: boolean;
   jti?: string;
   iat?: number;
   exp?: number;
@@ -16,6 +17,7 @@ export interface RefreshTokenPayload {
   exp?: number;
   jti?: string;
   typ?: "refresh";
+  mfa?: boolean;
 }
 
 export interface RegisterProfileInput {

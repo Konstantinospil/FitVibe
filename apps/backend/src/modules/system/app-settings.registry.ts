@@ -53,11 +53,11 @@ export const APP_SETTINGS_REGISTRY = {
   },
   "auth.password_reset_ttl_minutes": {
     key: "auth.password_reset_ttl_minutes",
-    description: "Lifetime of password-reset tokens in minutes",
+    description: "Lifetime of password-reset tokens in minutes (maximum 15)",
     category: "security",
     sensitive: false,
     activation: "restart",
-    schema: z.number().int().min(5).max(1440),
+    schema: z.number().int().min(5).max(AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes),
     defaultValue: 15,
   },
   "privacy.dsr_purge_delay_minutes": {

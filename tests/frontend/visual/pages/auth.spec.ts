@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+const resetTranslations = JSON.parse(
+  readFileSync(new URL("../../../../apps/frontend/src/i18n/locales/en/common.json", import.meta.url), "utf8"),
+) as { resetPassword: { title: string } };
 import { skipUnlessMatrix } from "../helpers/project.js";
 import { capturePageScreenshot, openPublicPage, prepareVisualPage, waitForAppReady } from "../helpers/capture.js";
 
@@ -18,9 +23,22 @@ test.describe("Auth Page Visual Tests", () => {
   test("reset password", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
+
+    // Test ownership: #557.
     // Ensure asynchronous i18n has resolved before capturing a baseline.
-    await expect(page.locator('[data-component="password-requirements-panel"]')).toContainText("Password Requirements:");
-    await capturePageScreenshot(page, testInfo, "reset-password", { waitFor: '[data-component="form-stack"]' });
+    await expect(page.getByRole("heading", {
+      name: resetTranslations.resetPassword.title,
+      exact: true,
+    })).toBeVisible();
+
+    // Verify that the password requirements are translated and rendered.
+    await expect(
+      page.locator('[data-component="password-requirements-panel"]')
+    ).toContainText("Password Requirements:");
+
+    await capturePageScreenshot(page, testInfo, "reset-password", {
+      waitFor: '[data-component="form-stack"]',
+    });
   });
 
   test("2FA challenge", async ({ page }, testInfo) => {

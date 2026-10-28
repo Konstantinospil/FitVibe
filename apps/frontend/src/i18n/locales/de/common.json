@@ -1185,6 +1185,8 @@
     "title": "Konto absichern",
     "description": "Möchten Sie die Zwei-Faktor-Authentifizierung aktivieren? Sie können sie später auch in den Einstellungen aktivieren.",
     "activate": "2FA aktivieren",
-    "notNow": "Jetzt nicht"
+    "notNow": "Jetzt nicht",
+    "dismissError": "Ihre Auswahl konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "requiredAdmin": "Für Administratorkonten ist die Zwei-Faktor-Authentifizierung verpflichtend. Schließen Sie die Einrichtung ab, um fortzufahren."
   }
 }

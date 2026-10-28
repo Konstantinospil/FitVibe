@@ -28,9 +28,9 @@ const INITIAL_VOLATILITY = 0.06;
 export async function seed(knex: Knex): Promise<void> {
   // Bootstrap credentials must never have a public, fixed production default.
   const configuredPassword = process.env.ADMIN_PASSWORD;
-  if (!configuredPassword || configuredPassword.length < 12) {
+  if (!configuredPassword || configuredPassword.length < 16) {
     throw new Error(
-      "ADMIN_PASSWORD must be configured with at least 12 characters before seeding the administrator",
+      "ADMIN_PASSWORD must be configured with at least 16 characters before seeding the administrator",
     );
   }
   const adminPassword = await bcrypt.hash(configuredPassword, 12);
