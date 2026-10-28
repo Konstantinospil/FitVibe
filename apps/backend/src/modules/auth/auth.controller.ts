@@ -33,7 +33,7 @@ import {
 import type { z } from "zod";
 import type { LoginContext } from "./auth.types.js";
 import { HttpError } from "../../utils/http.js";
-import { verifyAccess } from "./auth.session-tokens.js";
+import { accessTokenTtlForRole, verifyAccess } from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 import { prepareRegistrationAvatar } from "./auth.registration-avatar.service.js";
@@ -54,8 +54,8 @@ function setRefreshCookie(res: Response, token: string) {
   res.cookie(env.REFRESH_COOKIE_NAME, token, authCookieOptions(env.REFRESH_TOKEN_TTL * 1000));
 }
 
-function setAccessCookie(res: Response, token: string) {
-  res.cookie(env.ACCESS_COOKIE_NAME, token, authCookieOptions(env.ACCESS_TOKEN_TTL * 1000));
+function setAccessCookie(res: Response, token: string, ttlSeconds: number) {
+  res.cookie(env.ACCESS_COOKIE_NAME, token, authCookieOptions(ttlSeconds * 1000));
 }
 
 function clearAuthCookies(res: Response) {
@@ -244,7 +244,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
     // Normal login flow (no 2FA)
     // SECURITY: Tokens are ONLY set in HttpOnly cookies, never exposed to JavaScript
-    setAccessCookie(res, result.tokens.accessToken);
+    setAccessCookie(res, result.tokens.accessToken, result.tokens.accessExpiresIn);
     setRefreshCookie(res, result.tokens.refreshToken);
 
     // In non-production environments, also return tokens in JSON for testing/debugging
@@ -285,7 +285,7 @@ export async function verify2FALogin(
     );
 
     // SECURITY: Tokens are ONLY set in HttpOnly cookies, never exposed to JavaScript
-    setAccessCookie(res, tokens.accessToken);
+    setAccessCookie(res, tokens.accessToken, tokens.accessExpiresIn);
     setRefreshCookie(res, tokens.refreshToken);
 
     // In non-production environments, also return tokens in JSON for testing/debugging
@@ -333,7 +333,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     const context = buildAuthContext(req, res);
     const { user, newRefresh, accessToken } = await doRefresh(token, context);
     setRefreshCookie(res, newRefresh);
-    setAccessCookie(res, accessToken);
+    setAccessCookie(res, accessToken, accessTokenTtlForRole(user.role));
     res.json({ user });
     return;
   } catch (error) {
