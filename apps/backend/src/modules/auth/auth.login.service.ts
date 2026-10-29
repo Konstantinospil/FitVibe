@@ -25,7 +25,7 @@ import {
   resetLoginFailures,
 } from "./auth.login-attempt.service.js";
 import {
-  accessTokenTtl,
+  accessTokenTtlForRole,
   nextSessionExpiry,
   signAccess,
   signRefresh,
@@ -185,7 +185,7 @@ export async function login(
     const tokens: TokenPair = {
       accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId, mfa: false }),
       refreshToken,
-      accessExpiresIn: accessTokenTtl,
+      accessExpiresIn: accessTokenTtlForRole(user.role_code),
     };
 
     await recordAuditEvent(user.id, "auth.login", {
