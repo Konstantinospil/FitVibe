@@ -193,7 +193,7 @@ jobs:
 
       - name: Verify dependency integrity
         run: |
-          pnpm audit --prod --audit-level=moderate
+          pnpm audit --prod --audit-level=low
           echo "Dependency integrity check completed"
 
       - name: Lint
