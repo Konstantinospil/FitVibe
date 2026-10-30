@@ -187,6 +187,19 @@ async function ensureEssentialCookieConsent(page) {
   }
 }
 
+// Shared checkpoint for ordinary authenticated E2E journeys. A registration or
+// login can rotate the consent browser identity after initial preparation.
+// Persist essential-only consent through the real API, then reload so the
+// rendered application observes that exact persisted browser identity.
+// Consent-specific tests intentionally do not call this helper.
+async function ensureAuthenticatedBrowserConsent(page) {
+  const { expect } = require("@playwright/test");
+  await ensureEssentialCookieConsent(page);
+  await page.reload();
+  await waitForApp(page);
+  await expect(page.locator(".cookie-consent-backdrop")).toBeHidden();
+}
+
 // Resolve the real first-login invitation when a test exercises a different
 // journey. Never bypass the modal using forced clicks or synthetic status.
 const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "el"];
@@ -468,6 +481,7 @@ module.exports = {
   TEST_USER,
   preparePage,
   ensureEssentialCookieConsent,
+  ensureAuthenticatedBrowserConsent,
   ensureSeededOnboardingComplete,
   getConsentStatusWithRateLimitBackoff,
   trackRequests,
