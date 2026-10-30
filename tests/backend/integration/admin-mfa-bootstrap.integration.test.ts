@@ -234,7 +234,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       .set("Cookie", cookieHeader(reverified))).status).toBe(200);
   });
 
-  it("fails closed for a persisted athlete-to-admin role promotion and inactive users", async () => {
+  it("fails closed for role promotion and suspended or deleted accounts", async () => {
     const userId = uuidv4();
     const email = `stage-a-${uuidv4()}@example.com`;
     await createUser({
@@ -269,9 +269,11 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       .set("Cookie", cookieHeader(originalLogin));
     expect(promotedRefresh.status).toBe(403);
 
-    await db("users").where({ id: userId }).update({ status: "suspended" });
-    const inactive = await request(app).get("/api/v1/auth/sessions")
-      .set(auth(athleteAccess));
-    expect(inactive.status).toBe(401);
+    for (const status of ["suspended", "deleted"]) {
+      await db("users").where({ id: userId }).update({ status });
+      const inactive = await request(app).get("/api/v1/auth/sessions")
+        .set(auth(athleteAccess));
+      expect(inactive.status).toBe(401);
+    }
   });
 });
