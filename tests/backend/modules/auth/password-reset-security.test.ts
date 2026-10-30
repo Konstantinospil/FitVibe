@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
-import bcrypt from "bcryptjs";
 import * as passwordHashing from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import * as authService from "../../../../apps/backend/src/modules/auth/auth.service.js";
 import * as authRepo from "../../../../apps/backend/src/modules/auth/auth.repository.js";
@@ -11,14 +10,12 @@ import type {
 } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
-jest.mock("bcryptjs");
 jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js");
 jest.mock("../../../../apps/backend/src/services/mailer.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/email-blacklist.repository.js");
 
 const mockAuthRepo = jest.mocked(authRepo);
 const mockEmailBlacklistRepo = jest.mocked(emailBlacklistRepo);
-const mockBcrypt = jest.mocked(bcrypt);
 const mockPasswordHashing = jest.mocked(passwordHashing);
 
 describe("AC-1.9: Password Reset Security", () => {
