@@ -11,32 +11,40 @@ const ROOT = path.resolve(__dirname, "../..");
 const MANIFEST = JSON.parse(fs.readFileSync(path.join(__dirname, "test-ownership.json"), "utf8"));
 const SMOKE_MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, "e2e-smoke-traceability.json"), "utf8"));
 const CONFIGS = [
-  { suite: "frontend-e2e", prefix: "E2E-FRONTEND", config: "tests/frontend/e2e/playwright.config.cjs" },
-  { suite: "frontend-visual", prefix: "E2E-VISUAL", config: "tests/frontend/visual/config/playwright.config.ts" },
-  { suite: "backoffice-e2e", prefix: "E2E-BACKOFFICE", config: "tests/backoffice/e2e/playwright.config.cjs" },
+  { suite: "frontend-e2e", prefix: "E2E-FRONTEND", config: "tests/frontend/e2e/playwright.config.cjs", testDir: "tests/frontend/e2e" },
+  { suite: "frontend-visual", prefix: "E2E-VISUAL", config: "tests/frontend/visual/config/playwright.config.ts", testDir: "tests/frontend/visual" },
+  { suite: "backoffice-e2e", prefix: "E2E-BACKOFFICE", config: "tests/backoffice/e2e/playwright.config.cjs", testDir: "tests/backoffice/e2e" },
 ];
 const knownSmoke = new Map(SMOKE_MATRIX.cases.map((item) => [item.id, item]));
 const observed = [];
 const failures = [];
 
-function normalizeFile(file) {
-  return path.relative(ROOT, path.isAbsolute(file) ? file : path.resolve(ROOT, file)).split(path.sep).join("/");
+function normalizeFile(file, testDir) {
+  // Playwright's text --list uses paths relative to config.testDir, whereas
+  // JSON listings can contain absolute or repository-relative paths.
+  // Resolve to the actual file without losing ownership of nested spec paths.
+  const absolute = path.isAbsolute(file)
+    ? file
+    : fs.existsSync(path.resolve(ROOT, file))
+      ? path.resolve(ROOT, file)
+      : path.resolve(ROOT, testDir, file);
+  return path.relative(ROOT, absolute).split(path.sep).join("/");
 }
 
-function flattenSuite(suite, ancestors = [], project = "") {
+function flattenSuite(suite, testDir, ancestors = [], project = "") {
   const scope = [...ancestors, suite.title].filter(Boolean);
   for (const spec of suite.specs || []) {
-    const file = normalizeFile(spec.file || suite.file);
+    const file = normalizeFile(spec.file || suite.file, testDir);
     const title = [...scope, spec.title].filter(Boolean).join(" › ");
     const tests = spec.tests?.length ? spec.tests : [{ projectName: project }];
     // A scenario is the same logical requirement across visual viewport and
     // theme projects, but the project variants must remain individually visible.
     for (const test of tests) observed.push({ file, title, project: test.projectName || project });
   }
-  for (const child of suite.suites || []) flattenSuite(child, scope, project);
+  for (const child of suite.suites || []) flattenSuite(child, testDir, scope, project);
 }
 
-function parseListOutput(output, config) {
+function parseListOutput(output, item) {
   let data;
   try {
     data = JSON.parse(output.trim());
@@ -47,7 +55,7 @@ function parseListOutput(output, config) {
     }
   }
   if (data?.suites) {
-    for (const suite of data.suites) flattenSuite(suite);
+    for (const suite of data.suites) flattenSuite(suite, item.testDir);
     return;
   }
   // Playwright --list normally prints lines of the form:
@@ -58,10 +66,10 @@ function parseListOutput(output, config) {
   for (const line of lines) {
     const match = line.match(pattern);
     if (!match) continue;
-    observed.push({ file: normalizeFile(match[2]), title: match[3].trim(), project: match[1] || "" });
+    observed.push({ file: normalizeFile(match[2], item.testDir), title: match[3].trim(), project: match[1] || "" });
     found += 1;
   }
-  if (!found) throw new Error(`No Playwright test listing could be parsed for ${config}`);
+  if (!found) throw new Error(`No Playwright test listing could be parsed for ${item.config}`);
 }
 
 for (const item of CONFIGS) {
@@ -78,7 +86,7 @@ for (const item of CONFIGS) {
       stdio: ["ignore", "pipe", "pipe"],
     });
     const before = observed.length;
-    parseListOutput(output, item.config);
+    parseListOutput(output, item);
     if (observed.length === before) throw new Error("No scenarios discovered");
   } catch (error) {
     failures.push(`${item.config}: ${error.stderr?.toString().slice(-1000) || error.message}`);
