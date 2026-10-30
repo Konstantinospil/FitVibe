@@ -71,6 +71,11 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect(seeded.role_code).toBe("admin");
     expect(await bcrypt.compare(PASSWORD, seeded.password_hash)).toBe(true);
     expect(seeded.password_hash).not.toBe(PASSWORD);
+    // Restarting bootstrap must not replace the existing administrator secret
+    // or reset the original account's security state.
+    await seedBootstrapAdmin(db);
+    const restarted = await db("users").where({ id: ADMIN_ID }).first();
+    expect(restarted.password_hash).toBe(seeded.password_hash);
 
     const ip = createTestIp();
     const login = (password = PASSWORD) =>
