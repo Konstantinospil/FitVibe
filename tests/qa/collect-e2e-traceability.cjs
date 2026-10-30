@@ -65,7 +65,9 @@ function parseListOutput(output, config) {
 }
 
 for (const item of CONFIGS) {
-  const args = ["exec", "playwright", "test", "--config", item.config, "--list", "--reporter=json"];
+  // Playwright --list writes its canonical text listing directly to stdout.
+  // Do not force --reporter=json: in this mode it may emit no parseable listing.
+  const args = ["exec", "playwright", "test", "--config", item.config, "--list"];
   try {
     const output = execFileSync("pnpm", args, {
       cwd: ROOT,
