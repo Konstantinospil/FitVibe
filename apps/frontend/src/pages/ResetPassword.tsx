@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
+import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
 import { Button, PasswordField, TextLink } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
@@ -74,8 +75,11 @@ const ResetPassword: React.FC = () => {
       }, 2000);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-        setError(axiosError.response?.data?.error?.message || t("resetPassword.errorReset"));
+        const axiosError = err as {
+          response?: { data?: { error?: { code?: string; message?: string } } };
+        };
+        const code = axiosError.response?.data?.error?.code;
+        setError(code ? t(`errors.${code}`) : t("resetPassword.errorReset"));
       } else {
         setError(t("resetPassword.errorReset"));
       }
@@ -138,6 +142,7 @@ const ResetPassword: React.FC = () => {
           showPasswordLabel={t("auth.showPassword")}
           hidePasswordLabel={t("auth.hidePassword")}
         />
+        <PasswordStrengthFeedback password={password} />
         <PasswordField
           label={t("resetPassword.confirmPasswordLabel")}
           name="confirmPassword"

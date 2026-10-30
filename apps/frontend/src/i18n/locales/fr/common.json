@@ -173,7 +173,11 @@
   "errors": {
     "TERMS_ACCEPTANCE_REQUIRED": "Vous devez accepter les Conditions générales et la Politique de confidentialité pour créer un compte",
     "TERMS_VERSION_OUTDATED": "Les Conditions générales ont été mises à jour. Veuillez accepter les nouveaux termes pour continuer.",
-    "WEAK_PASSWORD": "Le mot de passe doit contenir au moins 12 caractères et inclure des majuscules, minuscules, chiffres et symboles",
+    "WEAK_PASSWORD": "Le mot de passe doit contenir au moins 12 caractères (16 pour les administrateurs). Les phrases de passe sont acceptées.",
+    "PASSWORD_COMMON": "Choisissez un mot de passe ou une phrase moins courant.",
+    "PASSWORD_BREACHED": "Ce mot de passe figure dans une fuite connue. Choisissez-en un autre.",
+    "BREACH_CHECK_UNAVAILABLE": "La vérification de sécurité des mots de passe est temporairement indisponible. Réessayez ; aucune modification n'a été enregistrée.",
+    "PASSWORD_REUSED": "Choisissez un mot de passe non utilisé récemment.",
     "PASSWORD_CONTAINS_USERNAME": "Le mot de passe ne peut pas contenir votre nom d'utilisateur",
     "PASSWORD_CONTAINS_EMAIL": "Le mot de passe ne peut pas contenir votre adresse e-mail",
     "AUTH_INVALID_TOKEN": "Jeton de vérification invalide",
@@ -255,6 +259,11 @@
     "UPLOAD_MALWARE_DETECTED": "Le fichier a échoué au scan de sécurité",
     "UPLOAD_NOT_FOUND": "Fichier introuvable",
     "EMAIL_SERVICE_UNAVAILABLE": "Service e-mail indisponible"
+  },
+  "passwordStrength": {
+    "tooShort": "Utilisez au moins {{minimum}} caractères.",
+    "minimumMet": "Longueur minimale atteinte. Préférez une phrase unique plus longue.",
+    "longPassphrase": "Phrase longue. Le serveur vérifiera aussi les fuites connues."
   },
   "validation": {
     "required": "Remplissez ce champ",
@@ -395,7 +404,7 @@
     "errorReset": "Échec de la réinitialisation du mot de passe",
     "passwordRequirements": {
       "title": "Exigences du mot de passe :",
-      "minLength": "Au moins 12 caractères",
+      "minLength": "Au moins 12 caractères (16 pour les administrateurs). Les phrases longues sont acceptées.",
       "uppercase": "Au moins une lettre majuscule (A-Z)",
       "lowercase": "Au moins une lettre minuscule (a-z)",
       "digit": "Au moins un chiffre (0-9)",

@@ -11,6 +11,7 @@ import {
   TextLink,
 } from "@fitvibe/ui";
 import AuthPageLayout from "../components/AuthPageLayout";
+import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
 import {
@@ -465,6 +466,7 @@ const Register: React.FC = () => {
           showPasswordLabel={t("auth.showPassword")}
           hidePasswordLabel={t("auth.hidePassword")}
         />
+        <PasswordStrengthFeedback password={password} />
 
         <PasswordField
           id="register-confirm-password"

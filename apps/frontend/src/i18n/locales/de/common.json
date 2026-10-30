@@ -173,7 +173,11 @@
   "errors": {
     "TERMS_ACCEPTANCE_REQUIRED": "Sie müssen die Allgemeinen Geschäftsbedingungen und die Datenschutzerklärung akzeptieren, um ein Konto zu erstellen",
     "TERMS_VERSION_OUTDATED": "Die Allgemeinen Geschäftsbedingungen wurden aktualisiert. Bitte akzeptieren Sie die neuen Bedingungen, um fortzufahren.",
-    "WEAK_PASSWORD": "Passwort muss mindestens 12 Zeichen lang sein und Großbuchstaben, Kleinbuchstaben, Ziffern und Sonderzeichen enthalten",
+    "WEAK_PASSWORD": "Das Passwort muss mindestens 12 Zeichen enthalten (16 für Administratoren). Passphrasen sind zulässig.",
+    "PASSWORD_COMMON": "Bitte wähle ein weniger verbreitetes Passwort oder eine Passphrase.",
+    "PASSWORD_BREACHED": "Dieses Passwort ist aus einem bekannten Datenleck bekannt. Bitte wähle ein anderes.",
+    "BREACH_CHECK_UNAVAILABLE": "Die Passwort-Sicherheitsprüfung ist vorübergehend nicht erreichbar. Bitte erneut versuchen; es wurde nichts geändert.",
+    "PASSWORD_REUSED": "Bitte verwende kein kürzlich genutztes Passwort.",
     "PASSWORD_CONTAINS_USERNAME": "Passwort darf deinen Benutzernamen nicht enthalten",
     "PASSWORD_CONTAINS_EMAIL": "Passwort darf deine E-Mail-Adresse nicht enthalten",
     "AUTH_INVALID_TOKEN": "Ungültiger Verifizierungstoken",
@@ -255,6 +259,11 @@
     "UPLOAD_MALWARE_DETECTED": "Datei hat Sicherheitsprüfung nicht bestanden",
     "UPLOAD_NOT_FOUND": "Datei nicht gefunden",
     "EMAIL_SERVICE_UNAVAILABLE": "E-Mail-Dienst nicht verfügbar"
+  },
+  "passwordStrength": {
+    "tooShort": "Bitte mindestens {{minimum}} Zeichen eingeben.",
+    "minimumMet": "Mindestlänge erreicht. Eine längere, einzigartige Passphrase ist empfehlenswert.",
+    "longPassphrase": "Lange Passphrase. Der Server prüft zusätzlich bekannte Datenlecks."
   },
   "validation": {
     "required": "Fülle dieses Feld aus",
@@ -395,7 +404,7 @@
     "errorReset": "Fehler beim Zurücksetzen des Passworts",
     "passwordRequirements": {
       "title": "Passwort-Anforderungen:",
-      "minLength": "Mindestens 12 Zeichen",
+      "minLength": "Mindestens 12 Zeichen (16 für Administratoren). Lange Passphrasen sind zulässig.",
       "uppercase": "Mindestens ein Großbuchstabe (A-Z)",
       "lowercase": "Mindestens ein Kleinbuchstabe (a-z)",
       "digit": "Mindestens eine Ziffer (0-9)",
