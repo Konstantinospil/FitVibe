@@ -425,12 +425,14 @@ async function preparePage(
   { authenticated = false, consent = true, account = TEST_USER } = {},
 ) {
   await installBrowserState(page, { authenticated });
-  if (consent) {
-    await ensureEssentialCookieConsent(page);
-  }
   if (authenticated) {
     await ensureSeededSession(page, account);
     await ensureSeededOnboardingComplete(page);
+  }
+  // Resolve consent after restoring the real session: the session may replace
+  // the browser identity cookie, so pre-login consent is not authoritative.
+  if (consent) {
+    await ensureEssentialCookieConsent(page);
   }
 }
 
