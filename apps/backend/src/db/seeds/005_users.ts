@@ -1,5 +1,5 @@
 import type { Knex } from "knex";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../../modules/auth/password-hashing.service.js";
 
 const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
 const ADMIN_CONTACT_ID = "33333333-3333-3333-3333-333333333333";
@@ -33,7 +33,7 @@ export async function seed(knex: Knex): Promise<void> {
       "ADMIN_PASSWORD must be configured with at least 16 characters before seeding the administrator",
     );
   }
-  const adminPassword = await bcrypt.hash(configuredPassword, 12);
+  const adminPassword = await hashPassword(configuredPassword);
   const now = new Date();
   const currentTerms = await knex("legal_document_versions")
     .where({ document_type: "terms" })
