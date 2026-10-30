@@ -7,6 +7,7 @@
  */
 import request from "supertest";
 import bcrypt from "bcryptjs";
+import { verifyPasswordHash } from "../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import { authenticator } from "@otplib/preset-default";
 import { v4 as uuidv4 } from "uuid";
 import app from "../../../apps/backend/src/app.js";
@@ -69,7 +70,8 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     await seedBootstrapAdmin(db);
     const seeded = await db("users").where({ id: ADMIN_ID }).first();
     expect(seeded.role_code).toBe("admin");
-    expect(await bcrypt.compare(PASSWORD, seeded.password_hash)).toBe(true);
+    expect(await verifyPasswordHash(PASSWORD, seeded.password_hash)).toBe(true);
+    expect(seeded.password_hash).toMatch(/^\$argon2id\$/);
     expect(seeded.password_hash).not.toBe(PASSWORD);
     // Restarting bootstrap must not replace the existing administrator secret
     // or reset the original account's security state.
