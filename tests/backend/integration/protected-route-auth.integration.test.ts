@@ -58,7 +58,7 @@ describe("canonical protected-route authentication", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedAuthState.isSessionActiveForUser.mockResolvedValue(true);
-    mockRoleLookup.mockResolvedValue({ role_code: "athlete" });
+    mockRoleLookup.mockResolvedValue({ role_code: "athlete", status: "active" });
     mockedDb.mockReturnValue({ where: jest.fn().mockReturnValue({ first: mockRoleLookup }) });
   });
 
@@ -89,7 +89,7 @@ describe("canonical protected-route authentication", () => {
     expect(response.body).toEqual({ route, sub: "user-cookie" });
     expect(mockedTokens.verifyAccess).toHaveBeenLastCalledWith("cookie-access-token");
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenLastCalledWith(
       "session-cookie",
       "user-cookie",
@@ -98,7 +98,7 @@ describe("canonical protected-route authentication", () => {
   // #557: test ownership for authenticated HttpOnly-cookie routes and the
   // authorization boundary when an already issued token becomes stale.
   it("blocks a promoted administrator even when the cookie token still says athlete", async () => {
-    mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+    mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
     mockedTokens.verifyAccess.mockReturnValue({
       sub: "user-cookie",
       role: "athlete",
@@ -115,7 +115,7 @@ describe("canonical protected-route authentication", () => {
 
     expect(response.status).toBe(403);
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
       "session-cookie",
       "user-cookie",
