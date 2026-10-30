@@ -110,7 +110,9 @@ for (const item of observed) {
   if (!existing) {
     records.set(id, {
       id, file: item.file, title: cleanTitle, suite: suite.suite,
-      requirement: smoke?.requirement || ownership.contract_sources.join("; "),
+      requirement: smoke?.requirement || null,
+      requirement_status: smoke ? "mapped" : "requires-case-level-review",
+      contract_sources: ownership.contract_sources,
       fixture: smoke?.fixture || ownership.fixture_dependencies.join("; "),
       stage: smoke?.stage || suite.suite,
       projects: [],
@@ -142,7 +144,7 @@ const lines = [
   "",
   "| Test ID | Suite | Test | Project variants | Ownership requirement |",
   "| --- | --- | --- | --- | --- |",
-  ...rows.map((r) => `| ${r.id} | ${r.suite} | ${r.title.replace(/\|/g, "\\|")} | ${r.projects.length} | ${r.requirement.replace(/\|/g, "\\|")} |`),
+  ...rows.map((r) => `| ${r.id} | ${r.suite} | ${r.title.replace(/\|/g, "\\|")} | ${r.projects.length} | ${r.requirement || "Case-level mapping pending; see suite contract"} |`),
   "",
 ];
 fs.writeFileSync(destination.replace(/\.json$/, ".md"), lines.join("\n"));
