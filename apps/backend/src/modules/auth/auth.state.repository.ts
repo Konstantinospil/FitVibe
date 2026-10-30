@@ -144,12 +144,10 @@ export async function resetPasswordAtomic(
     }
 
     const now = new Date().toISOString();
-    const updatedUser = await trx("users")
-      .where({ id: userId, status: "active" })
-      .update({
-        password_hash: passwordHash,
-        updated_at: now,
-      });
+    const updatedUser = await trx("users").where({ id: userId, status: "active" }).update({
+      password_hash: passwordHash,
+      updated_at: now,
+    });
     if (updatedUser !== 1) {
       // Roll back without consuming the token or modifying any session state.
       return false;
