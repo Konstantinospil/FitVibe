@@ -10,7 +10,6 @@ const {
   acceptRegisterLegal,
   dismissFirstLoginTwoFactorInvitation,
   ensureAuthenticatedBrowserConsent,
-  ensureSeededOnboardingComplete,
 } = require("./server-helpers.cjs");
 
 test("[E2E-SMOKE-001] login page renders the FitVibe welcome heading", async ({ page }) => {
