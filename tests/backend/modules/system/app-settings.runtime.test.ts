@@ -127,6 +127,36 @@ describe("application settings runtime governance", () => {
     expect(runtime.isEffectiveReadOnly()).toBe(true);
   });
 
+  // Test ownership: #557, Stage A legacy password-reset TTL governance.
+  it("caps an existing committed reset TTL above 15 minutes when loading runtime settings", async () => {
+    const settingsState = stateBuilder({ active_revision: 3, maintenance_enabled: false });
+    const revisionBuilder = {
+      where: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue({ id: "revision-3" }),
+    };
+    const itemsBuilder = {
+      where: jest.fn().mockReturnThis(),
+      select: jest.fn().mockResolvedValue([
+        { setting_key: "auth.password_reset_ttl_minutes", new_value: 1440 },
+      ]),
+    };
+
+    dbMock.mockImplementation((table: string) => {
+      if (table === "app_settings_state") return settingsState;
+      if (table === "app_setting_revisions") return revisionBuilder;
+      if (table === "app_setting_revision_items") return itemsBuilder;
+      throw new Error(`Unexpected table ${table}`);
+    });
+
+    const runtime = await import(
+      "../../../../apps/backend/src/modules/system/app-settings.runtime.js"
+    );
+    await runtime.initializeApplicationSettingsRuntime();
+
+    expect(runtime.getRuntimeAppSetting<number>("auth.password_reset_ttl_minutes")).toBe(15);
+    expect(runtime.isEffectiveReadOnly()).toBe(false);
+  });
+
   it("fails closed when the authority row is missing", async () => {
     const settingsState = stateBuilder({ active_revision: 0, maintenance_enabled: false });
     settingsState.first.mockResolvedValueOnce(undefined);
