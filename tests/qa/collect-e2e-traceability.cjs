@@ -87,9 +87,14 @@ if (failures.length) throw new Error("Playwright discovery failed:\n" + failures
 const seenVariants = new Set();
 const records = new Map();
 for (const item of observed) {
-  const suite = CONFIGS.find((entry) => item.file.startsWith(entry.config.split("/").slice(0, -1).join("/").replace(/\/config$/, "") + "/") && (
-    entry.suite !== "frontend-e2e" || item.file.startsWith("tests/frontend/e2e/")
-  )) || (item.file.startsWith("tests/frontend/visual/") ? CONFIGS[1] : item.file.startsWith("tests/backoffice/e2e/") ? CONFIGS[2] : CONFIGS[0]);
+  const suite = item.file.startsWith("tests/frontend/e2e/")
+    ? CONFIGS[0]
+    : item.file.startsWith("tests/frontend/visual/")
+      ? CONFIGS[1]
+      : item.file.startsWith("tests/backoffice/e2e/")
+        ? CONFIGS[2]
+        : null;
+  if (!suite) throw new Error("Unowned Playwright test path: " + item.file);
   const ownership = MANIFEST.suites.find((s) => s.name === suite.suite);
   if (!ownership) throw new Error("Unknown owned suite: " + suite.suite);
   const original = item.title.match(/\[(E2E-SMOKE-\d{3})\]/);
