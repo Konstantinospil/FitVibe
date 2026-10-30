@@ -6,17 +6,19 @@ export interface PasswordContext {
   email?: string;
   username?: string;
   alias?: string;
+  role?: string;
 }
 
-const COMPLEXITY_REGEX = new RegExp(
-  "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{" +
-    AUTH_SECURITY_POLICY.password.minLengthFloor +
-    ",}$",
-);
+export function passwordMinimumForRole(role?: string): number {
+  return role === "admin" || role === "superadmin" ? 16 : AUTH_SECURITY_POLICY.password.minLengthFloor;
+}
 
 export function assertPasswordPolicy(password: string, context?: PasswordContext) {
   const configuredMinLength = getRuntimeAppSetting<number>("auth.password_min_length");
-  if (!COMPLEXITY_REGEX.test(password) || password.length < configuredMinLength) {
+  const minimum = Math.max(configuredMinLength, passwordMinimumForRole(context?.role));
+  // Passphrases are accepted without prescribed character classes. Keep the
+  // same explicit 128-character resource limit as the API schema.
+  if (typeof password !== "string" || password.length < minimum || password.length > 128) {
     throw new HttpError(400, "WEAK_PASSWORD", "WEAK_PASSWORD");
   }
 
@@ -33,4 +35,3 @@ export function assertPasswordPolicy(password: string, context?: PasswordContext
   }
 }
 
-export const PASSWORD_COMPLEXITY_REGEX = COMPLEXITY_REGEX;

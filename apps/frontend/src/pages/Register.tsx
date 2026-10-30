@@ -168,25 +168,9 @@ const Register: React.FC = () => {
       return;
     }
 
-    const passwordErrors: string[] = [];
-    if (password.length < 12) {
-      passwordErrors.push(t("validation.passwordMinLength"));
-    }
-    if (!/[a-z]/.test(password)) {
-      passwordErrors.push(t("validation.passwordLowercase"));
-    }
-    if (!/[A-Z]/.test(password)) {
-      passwordErrors.push(t("validation.passwordUppercase"));
-    }
-    if (!/\d/.test(password)) {
-      passwordErrors.push(t("validation.passwordDigit"));
-    }
-    if (!/[^\w\s]/.test(password)) {
-      passwordErrors.push(t("validation.passwordSymbol"));
-    }
-
-    if (passwordErrors.length > 0) {
-      setError(t("errors.WEAK_PASSWORD") + ": " + passwordErrors.join(", "));
+    // Passwords are evaluated as passphrases, not by mandatory character classes.
+    if (password.length < 12 || password.length > 128) {
+      setError(t("validation.passwordMinLength"));
       return;
     }
 

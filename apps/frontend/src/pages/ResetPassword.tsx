@@ -123,10 +123,6 @@ const ResetPassword: React.FC = () => {
           </div>
           <ul className="list">
             <li className="list-item">{t("resetPassword.passwordRequirements.minLength")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.uppercase")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.lowercase")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.digit")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.special")}</li>
           </ul>
         </div>
         <PasswordField
