@@ -24,7 +24,12 @@ export function PasswordStrengthFeedback({
         : "minimumMet";
 
   return (
-    <p className="text-sm text-secondary" role="status" aria-live="polite" data-component="password-strength">
+    <p
+      className="text-sm text-secondary"
+      role="status"
+      aria-live="polite"
+      data-component="password-strength"
+    >
       {t(`passwordStrength.${key}`, { minimum })}
     </p>
   );
