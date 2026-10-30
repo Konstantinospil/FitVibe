@@ -4,6 +4,9 @@ import { env, RSA_KEYS } from "../../config/env.js";
 import type { JwtPayload, RefreshTokenPayload } from "./auth.types.js";
 
 const ACCESS_TTL = env.ACCESS_TOKEN_TTL;
+// #557: privileged JWTs are capped at five minutes, and strictly shorter
+// than member JWTs for all supported ACCESS_TOKEN_TTL_SEC values (>= 2).
+const ADMIN_ACCESS_TTL = Math.max(1, Math.min(5 * 60, Math.floor(ACCESS_TTL / 2)));
 const REFRESH_TTL = env.REFRESH_TOKEN_TTL;
 const SESSION_EXPIRY_MS = REFRESH_TTL * 1000;
 
@@ -11,10 +14,14 @@ export function nextSessionExpiry(): string {
   return new Date(Date.now() + SESSION_EXPIRY_MS).toISOString();
 }
 
+export function accessTokenTtlForRole(role: string): number {
+  return role === "admin" || role === "superadmin" ? ADMIN_ACCESS_TTL : ACCESS_TTL;
+}
+
 export function signAccess(payload: Omit<JwtPayload, "iat" | "exp" | "jti">): string {
   return jwt.sign(payload, RSA_KEYS.privateKey, {
     algorithm: "RS256",
-    expiresIn: ACCESS_TTL,
+    expiresIn: accessTokenTtlForRole(payload.role),
     jwtid: uuidv4(),
   });
 }

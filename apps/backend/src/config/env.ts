@@ -23,7 +23,7 @@ const EnvSchema = z.object({
   PGSSL_CA: z.string().optional(),
   PGSSL_CERT: z.string().optional(),
   PGSSL_KEY: z.string().optional(),
-  ACCESS_TOKEN_TTL_SEC: z.coerce.number().default(900),
+  ACCESS_TOKEN_TTL_SEC: z.coerce.number().int().min(2).default(900),
   REFRESH_TOKEN_TTL_SEC: z.coerce.number().default(60 * 60 * 24 * 14),
   COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SECURE: z.string().optional(),

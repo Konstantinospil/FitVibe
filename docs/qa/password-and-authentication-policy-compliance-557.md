@@ -116,3 +116,11 @@ Passing CI only establishes success of current assertions. Do **not** close #557
 4. **Security alert threshold**: define N lockouts per account in 10 minutes. Record who maintains 30-day baseline and evidence of quarterly review.
 
 Review decisions against the accepted policy; do not treat an undocumented exception as compliance.
+
+## Stage C progress — privileged access JWT TTL (2026-10-28)
+
+**Implementation candidate:** `fix/557-admin-access-token-ttl`. The access JWT for `admin` and `superadmin` is capped at five minutes and is strictly shorter than the configured ordinary-user TTL. The effective TTL is computed as `max(1, min(300, floor(memberTTL / 2)))`, and `ACCESS_TOKEN_TTL_SEC` is constrained to an integer >=2. Password-stage, TOTP-stage and refresh issuance all share role-aware JWT signing; access cookie max-age uses the same role-specific value. The ordinary-user TTL is unchanged.
+
+**Tests:** `tests/backend/modules/auth/auth.session-tokens.policy.test.ts` asserts actual signed JWT lifetimes, and the auth controller regression checks a 300-second administrator access cookie after verified MFA. **Validation:** CI not yet verified; do not treat this as completed Stage C acceptance.
+
+**Not resolved by this PR:** shorter administrator refresh/session lifetimes, inactivity cutoff and step-up coverage; these must be implemented separately with migration and operational evidence. The historical matrix above is the original audit snapshot and is not retroactively changed.

@@ -20,7 +20,7 @@ import {
 import { toSafeUser } from "./auth.mapping.js";
 import { resetLoginFailures } from "./auth.login-attempt.service.js";
 import {
-  accessTokenTtl,
+  accessTokenTtlForRole,
   nextSessionExpiry,
   signAccess,
   signRefresh,
@@ -143,7 +143,7 @@ export async function verify2FALogin(
     const tokens: TokenPair = {
       accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId, mfa: true }),
       refreshToken,
-      accessExpiresIn: accessTokenTtl,
+      accessExpiresIn: accessTokenTtlForRole(user.role_code),
     };
 
     await recordAuditEvent(user.id, "auth.login_2fa_success", {
