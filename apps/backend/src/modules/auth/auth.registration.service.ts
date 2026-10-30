@@ -1,8 +1,7 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "./password-hashing.service.js";
 import { v4 as uuidv4 } from "uuid";
 import { env } from "../../config/env.js";
-import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { db } from "../../db/connection.js";
 import { acceptLegalDocumentVersion, getCurrentLegalPublication } from "../legal/legal.service.js";
 import { HttpError } from "../../utils/http.js";
@@ -120,7 +119,7 @@ export async function register(
     }
 
     const id = uuidv4();
-    const password_hash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
+    const password_hash = await hashPassword(dto.password);
     const now = new Date().toISOString();
     const currentTerms = await getCurrentLegalPublication("terms");
 

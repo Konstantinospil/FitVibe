@@ -64,6 +64,7 @@ describe("AC-1.9: Password Reset Security", () => {
       "$2a$12$newpasswordhash",
       "token-123",
       "password_reset",
+      "NewValidPassword123!",
     );
   });
 

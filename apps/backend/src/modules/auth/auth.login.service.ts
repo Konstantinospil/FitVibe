@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { verifyPasswordHash, isLegacyBcryptHash } from "./password-hashing.service.js";
+import { upgradeLegacyPasswordHash } from "./auth.state.repository.js";
 import { v4 as uuidv4 } from "uuid";
 import { is2FAEnabled } from "./two-factor.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
@@ -94,7 +96,7 @@ export async function login(
       return buildOpaqueChallenge();
     }
 
-    const passwordValid = await bcrypt.compare(dto.password, user.password_hash);
+    const passwordValid = await verifyPasswordHash(dto.password, user.password_hash);
     if (!passwordValid) {
       performDummySuccessfulPath(user.id, user.role_code);
       await recordLoginFailure({
@@ -107,6 +109,11 @@ export async function login(
       return buildOpaqueChallenge();
     }
 
+    // Upgrade legacy hashes only after a successful login, with a
+    // compare-and-swap update to prevent overwriting concurrent resets.
+    if (isLegacyBcryptHash(user.password_hash)) {
+      await upgradeLegacyPasswordHash(user.id, user.password_hash, dto.password);
+    }
     await recordAuditEvent(user.id, "auth.password_verified", {
       ip: ipAddress,
       requestId: context.requestId ?? null,

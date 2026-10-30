@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { authenticator } from "@otplib/preset-default";
 import QRCode from "qrcode";
 import bcrypt from "bcryptjs";
+import { verifyPasswordHash } from "./password-hashing.service.js";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../../db/connection.js";
 import type { Knex } from "knex";
@@ -387,7 +388,7 @@ async function assertStepUp(
     throw new HttpError(404, "E.USER.NOT_FOUND", "User not found");
   }
 
-  const passwordValid = await bcrypt.compare(password, user.password_hash);
+  const passwordValid = await verifyPasswordHash(password, user.password_hash);
   if (!passwordValid) {
     throw new HttpError(401, "STEP_UP_FAILED", "Step-up authentication failed");
   }

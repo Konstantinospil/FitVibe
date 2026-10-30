@@ -1,5 +1,8 @@
 import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
+import { v4 as uuidv4 } from "uuid";
+import { HttpError } from "../../utils/http.js";
+import { verifyPasswordHash, hashPassword, isLegacyBcryptHash } from "./password-hashing.service.js";
 
 export interface SessionInsert {
   jti: string;
@@ -113,11 +116,57 @@ export async function revokeUserAuthStateAtomic(
   await db.transaction(work);
 }
 
-export async function changePasswordAndRevokeAuthAtomic(
+/**
+ * Password history is updated inside the same transaction as credential
+ * replacement and session revocation. Lock the user row to serialize two
+ * simultaneous password changes and prevent last-five reuse races.
+ */
+async function checkAndRecordPasswordHistory(
+  trx: Knex.Transaction,
   userId: string,
-  passwordHash: string,
+  candidate: string,
+  previousHash: string,
+): Promise<void> {
+  if (await verifyPasswordHash(candidate, previousHash)) {
+    throw new HttpError(400, "PASSWORD_REUSED", "PASSWORD_REUSED");
+  }
+  const history = await trx("user_password_history")
+    .where({ user_id: userId })
+    .orderBy("created_at", "desc")
+    .orderBy("id", "desc")
+    .limit(5)
+    .select<{ password_hash: string }[]>("password_hash");
+  for (const row of history) {
+    if (await verifyPasswordHash(candidate, row.password_hash)) {
+      throw new HttpError(400, "PASSWORD_REUSED", "PASSWORD_REUSED");
+    }
+  }
+  await trx("user_password_history").insert({
+    id: uuidv4(), user_id: userId, password_hash: previousHash, created_at: new Date().toISOString(),
+  });
+  const oldIds = await trx("user_password_history")
+    .where({ user_id: userId }).orderBy("created_at", "desc").orderBy("id", "desc")
+    .offset(5).pluck("id");
+  if (oldIds.length > 0) await trx("user_password_history").whereIn("id", oldIds).del();
+}
+
+export async function upgradeLegacyPasswordHash(userId: string, oldHash: string, password: string): Promise<boolean> {
+  if (!isLegacyBcryptHash(oldHash)) return false;
+  const replacement = await hashPassword(password);
+  // Conditional update: a concurrent password change must win over migration.
+  const affected = await db("users").where({ id: userId, password_hash: oldHash, status: "active" })
+    .update({ password_hash: replacement, updated_at: new Date().toISOString() });
+  return affected === 1;
+}
+
+export async function changePasswordAndRevokeAuthAtomic(
+  userId: string, passwordHash: string, candidate: string,
 ): Promise<void> {
   await db.transaction(async (trx) => {
+    const user = await trx("users").where({ id: userId, status: "active" })
+      .forUpdate().first<{ password_hash: string }>("password_hash");
+    if (!user) throw new HttpError(400, "USER_NOT_FOUND", "USER_NOT_FOUND");
+    await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
     await trx("users").where({ id: userId }).update({
       password_hash: passwordHash,
       updated_at: new Date().toISOString(),
@@ -131,6 +180,7 @@ export async function resetPasswordAtomic(
   passwordHash: string,
   resetTokenId: string,
   resetTokenType: string,
+  candidate: string,
 ): Promise<boolean> {
   return db.transaction(async (trx) => {
     const token = await trx<ResetTokenStateRow>("auth_tokens")
@@ -144,6 +194,10 @@ export async function resetPasswordAtomic(
     }
 
     const now = new Date().toISOString();
+    const user = await trx("users").where({ id: userId, status: "active" })
+      .forUpdate().first<{ password_hash: string }>("password_hash");
+    if (!user) return false;
+    await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
     const updatedUser = await trx("users").where({ id: userId, status: "active" }).update({
       password_hash: passwordHash,
       updated_at: now,

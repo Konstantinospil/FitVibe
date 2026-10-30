@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { hashPassword } from "./password-hashing.service.js";
 import { env } from "../../config/env.js";
 import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { HttpError } from "../../utils/http.js";
@@ -119,12 +120,13 @@ export async function resetPassword(token: string, newPassword: string): Promise
   // valid reset token or revoke any existing session.
   await breachedPasswordChecker.assertAcceptable(newPassword);
 
-  const password_hash = await bcrypt.hash(newPassword, AUTH_SECURITY_POLICY.password.hashCost);
+  const password_hash = await hashPassword(newPassword);
   const resetApplied = await resetPasswordAtomic(
     record.user_id,
     password_hash,
     record.id,
     TOKEN_TYPES.PASSWORD_RESET,
+    newPassword,
   );
   if (!resetApplied) {
     throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");

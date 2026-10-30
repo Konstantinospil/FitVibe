@@ -1,6 +1,5 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
-import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
+import { hashPassword, verifyPasswordHash } from "../auth/password-hashing.service.js";
 import { db } from "../../db/connection.js";
 import {
   findUserById,
@@ -100,7 +99,7 @@ export async function createUser(
   await ensureUsernameAvailable(userId, username);
   assertPasswordPolicy(dto.password, { email, username, role: roleCode });
   await breachedPasswordChecker.assertAcceptable(dto.password);
-  const passwordHash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
+  const passwordHash = await hashPassword(dto.password);
   const locale = dto.locale?.trim() || undefined;
   const preferredLang = dto.preferredLang;
 
@@ -182,7 +181,7 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
     throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
   }
 
-  const ok = await bcrypt.compare(dto.currentPassword, user.password_hash);
+  const ok = await verifyPasswordHash(dto.currentPassword, user.password_hash);
   if (!ok) {
     throw new HttpError(401, "USER_INVALID_PASSWORD", "USER_INVALID_PASSWORD");
   }
@@ -192,8 +191,8 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
 
   assertPasswordPolicy(dto.newPassword, { email, username: user.username, role: user.role_code });
   await breachedPasswordChecker.assertAcceptable(dto.newPassword);
-  const newHash = await bcrypt.hash(dto.newPassword, AUTH_SECURITY_POLICY.password.hashCost);
-  await changePasswordAndRevokeAuthAtomic(userId, newHash);
+  const newHash = await hashPassword(dto.newPassword);
+  await changePasswordAndRevokeAuthAtomic(userId, newHash, dto.newPassword);
   await insertAudit({
     actorUserId: userId,
     entityType: "users",
@@ -258,7 +257,7 @@ export async function requestAccountDeletion(
   }
 
   // SECURITY: Verify password before allowing account deletion
-  const passwordValid = await bcrypt.compare(password, user.password_hash);
+  const passwordValid = await verifyPasswordHash(password, user.password_hash);
   if (!passwordValid) {
     throw new HttpError(401, "USER_INVALID_PASSWORD", "Invalid password");
   }
