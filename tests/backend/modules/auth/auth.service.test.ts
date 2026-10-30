@@ -1,5 +1,4 @@
 import bcrypt from "bcryptjs";
-import * as passwordHashing from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import * as authService from "../../../../apps/backend/src/modules/auth/auth.service.js";
@@ -110,7 +109,6 @@ const mockGetLegalActionStatus = jest.mocked(getLegalActionStatus);
 const mockAcceptLegalDocumentVersion = jest.mocked(acceptLegalDocumentVersion);
 const mockAcceptCurrentLegalDocument = jest.mocked(acceptCurrentLegalDocument);
 const mockBcrypt = jest.mocked(bcrypt);
-const mockPasswordHashing = jest.mocked(passwordHashing);
 const mockJwt = jest.mocked(jwt);
 
 // Get access to the mocked env
