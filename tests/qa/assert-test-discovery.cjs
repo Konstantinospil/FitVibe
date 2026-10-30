@@ -3,6 +3,8 @@
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+// Enforce stable smoke-test IDs and requirement-to-fixture traceability in CI.
+require("./check-e2e-traceability.cjs");
 
 const ROOT = path.resolve(__dirname, "../..");
 const MANIFEST_PATH = path.join(__dirname, "test-ownership.json");
