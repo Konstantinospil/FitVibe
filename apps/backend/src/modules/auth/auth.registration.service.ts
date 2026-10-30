@@ -16,6 +16,7 @@ import {
 } from "../../services/i18n.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
 import { assertPasswordPolicy } from "./passwordPolicy.js";
+import { breachedPasswordChecker } from "./breached-password.service.js";
 import {
   consumeAuthToken,
   createUser,
@@ -69,6 +70,9 @@ export async function register(
       throw new HttpError(403, "AUTH_EMAIL_BLOCKED", "AUTH_EMAIL_BLOCKED");
     }
     assertPasswordPolicy(dto.password, { email, alias });
+    // Never persist a new credential or send a verification email if the
+    // k-anonymity provider is unavailable. Requests remain retryable.
+    await breachedPasswordChecker.assertAcceptable(dto.password);
     if (
       dto.profile?.sex !== undefined ||
       dto.profile?.fitness_level !== undefined ||

@@ -25,6 +25,7 @@ import {
   revokeUserAuthStateAtomic,
 } from "../auth/auth.repository.js";
 import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
+import { breachedPasswordChecker } from "../auth/breached-password.service.js";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
 import { primaryEmail, toUserDetail, toUserSafe } from "./users.mapping.js";
@@ -97,7 +98,8 @@ export async function createUser(
   }
 
   await ensureUsernameAvailable(userId, username);
-  assertPasswordPolicy(dto.password, { email, username });
+  assertPasswordPolicy(dto.password, { email, username, role: roleCode });
+  await breachedPasswordChecker.assertAcceptable(dto.password);
   const passwordHash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
   const locale = dto.locale?.trim() || undefined;
   const preferredLang = dto.preferredLang;
@@ -188,7 +190,8 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
   const contacts = await getUserContacts(userId);
   const email = primaryEmail(contacts) ?? undefined;
 
-  assertPasswordPolicy(dto.newPassword, { email, username: user.username });
+  assertPasswordPolicy(dto.newPassword, { email, username: user.username, role: user.role_code });
+  await breachedPasswordChecker.assertAcceptable(dto.newPassword);
   const newHash = await bcrypt.hash(dto.newPassword, AUTH_SECURITY_POLICY.password.hashCost);
   await changePasswordAndRevokeAuthAtomic(userId, newHash);
   await insertAudit({

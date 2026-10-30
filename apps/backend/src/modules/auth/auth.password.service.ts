@@ -13,6 +13,7 @@ import {
   resetPasswordAtomic,
 } from "./auth.repository.js";
 import { assertPasswordPolicy } from "./passwordPolicy.js";
+import { breachedPasswordChecker } from "./breached-password.service.js";
 import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
@@ -112,7 +113,11 @@ export async function resetPassword(token: string, newPassword: string): Promise
   assertPasswordPolicy(newPassword, {
     email: user.primary_email ?? undefined,
     alias: user.username,
+    role: user.role_code,
   });
+  // Screening precedes the atomic claim: provider outages cannot consume a
+  // valid reset token or revoke any existing session.
+  await breachedPasswordChecker.assertAcceptable(newPassword);
 
   const password_hash = await bcrypt.hash(newPassword, AUTH_SECURITY_POLICY.password.hashCost);
   const resetApplied = await resetPasswordAtomic(
