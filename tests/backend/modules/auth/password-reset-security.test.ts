@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import bcrypt from "bcryptjs";
+import * as passwordHashing from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import * as authService from "../../../../apps/backend/src/modules/auth/auth.service.js";
 import * as authRepo from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 import * as emailBlacklistRepo from "../../../../apps/backend/src/modules/common/email-blacklist.repository.js";
@@ -11,12 +12,14 @@ import type {
 
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
 jest.mock("bcryptjs");
+jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js");
 jest.mock("../../../../apps/backend/src/services/mailer.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/email-blacklist.repository.js");
 
 const mockAuthRepo = jest.mocked(authRepo);
 const mockEmailBlacklistRepo = jest.mocked(emailBlacklistRepo);
 const mockBcrypt = jest.mocked(bcrypt);
+const mockPasswordHashing = jest.mocked(passwordHashing);
 
 describe("AC-1.9: Password Reset Security", () => {
   const mockUser: AuthUserRecord = {
@@ -52,7 +55,7 @@ describe("AC-1.9: Password Reset Security", () => {
     mockEmailBlacklistRepo.isEmailBlacklisted.mockResolvedValue(false);
     mockAuthRepo.findAuthToken.mockResolvedValue(validResetToken);
     mockAuthRepo.findUserById.mockResolvedValue(mockUser);
-    mockBcrypt.hash.mockResolvedValue("$2a$12$newpasswordhash" as never);
+    mockPasswordHashing.hashPassword.mockResolvedValue("argon2id-newpasswordhash");
     mockAuthRepo.resetPasswordAtomic.mockResolvedValue(true);
   });
 
@@ -61,7 +64,7 @@ describe("AC-1.9: Password Reset Security", () => {
 
     expect(mockAuthRepo.resetPasswordAtomic).toHaveBeenCalledWith(
       "user-123",
-      "$2a$12$newpasswordhash",
+      "argon2id-newpasswordhash",
       "token-123",
       "password_reset",
       "NewValidPassword123!",

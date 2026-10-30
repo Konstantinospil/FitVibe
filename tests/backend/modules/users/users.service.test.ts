@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import * as passwordHashing from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import { db } from "../../../../apps/backend/src/db/connection.js";
 import * as usersService from "../../../../apps/backend/src/modules/users/users.service.js";
 import * as usersRepository from "../../../../apps/backend/src/modules/users/users.repository.js";
@@ -28,12 +29,21 @@ jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
 jest.mock("../../../../apps/backend/src/modules/users/dsr.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/audit.util.js");
 jest.mock("bcryptjs");
+jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js", () => ({
+  hashPassword: jest.fn().mockResolvedValue("new_hashed_password"),
+  verifyPasswordHash: jest.fn((candidate: string, oldHash: string) =>
+    // Preserve the existing legacy-bcrypt mock assertions in these unit tests.
+    (jest.requireMock("bcryptjs") as typeof import("bcryptjs")).compare(candidate, oldHash),
+  ),
+  isLegacyBcryptHash: jest.fn().mockReturnValue(false),
+}));
 
 const mockUsersRepo = jest.mocked(usersRepository);
 const mockAuthRepo = jest.mocked(authRepository);
 const mockDsrService = jest.mocked(dsrService);
 const mockAuditUtil = jest.mocked(auditUtil);
 const mockBcrypt = jest.mocked(bcrypt);
+const mockPasswordHashing = jest.mocked(passwordHashing);
 
 // Mock db - needs to be both a function and have methods like transaction
 jest.mock("../../../../apps/backend/src/db/connection.js", () => {
@@ -122,7 +132,7 @@ describe("Users Service", () => {
 
       expect(result.username).toBe("testuser");
       expect(result.primaryEmail).toBe("test@example.com");
-      expect(mockBcrypt.hash).toHaveBeenCalledWith("SecureP@ssw0rd123", 12);
+      expect(mockPasswordHashing.hashPassword).toHaveBeenCalledWith("SecureP@ssw0rd123");
       expect(mockUsersRepo.createUserRecord).toHaveBeenCalled();
     });
 
@@ -907,7 +917,7 @@ describe("Users Service", () => {
       await usersService.updatePassword(userId, dto);
 
       expect(mockBcrypt.compare).toHaveBeenCalledWith("OldP@ssw0rd123", "old_hash");
-      expect(mockBcrypt.hash).toHaveBeenCalledWith("NewP@ssw0rd456", 12);
+      expect(mockPasswordHashing.hashPassword).toHaveBeenCalledWith("NewP@ssw0rd456");
       expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalled();
       expect(mockAuditUtil.insertAudit).toHaveBeenCalled();
     });
@@ -970,7 +980,11 @@ describe("Users Service", () => {
 
       await usersService.updatePassword(userId, dto);
 
-      expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalledWith(userId, expect.any(String));
+      expect(mockAuthRepo.changePasswordAndRevokeAuthAtomic).toHaveBeenCalledWith(
+        userId,
+        expect.any(String),
+        dto.newPassword,
+      );
     });
   });
 

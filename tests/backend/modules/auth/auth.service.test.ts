@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import * as passwordHashing from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 import * as authService from "../../../../apps/backend/src/modules/auth/auth.service.js";
@@ -88,6 +89,14 @@ jest.mock("../../../../apps/backend/src/services/i18n.service.js", () => ({
   generateResendVerificationEmailText: jest.fn(() => "resend"),
 }));
 jest.mock("bcryptjs");
+jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js", () => ({
+  hashPassword: jest.fn().mockResolvedValue("new_hashed_password"),
+  verifyPasswordHash: jest.fn((candidate: string, oldHash: string) =>
+    // Preserve the existing legacy-bcrypt mock assertions in these unit tests.
+    (jest.requireMock("bcryptjs") as typeof import("bcryptjs")).compare(candidate, oldHash),
+  ),
+  isLegacyBcryptHash: jest.fn().mockReturnValue(false),
+}));
 jest.mock("jsonwebtoken");
 
 const mockAuthRepo = jest.mocked(authRepository);
@@ -101,6 +110,7 @@ const mockGetLegalActionStatus = jest.mocked(getLegalActionStatus);
 const mockAcceptLegalDocumentVersion = jest.mocked(acceptLegalDocumentVersion);
 const mockAcceptCurrentLegalDocument = jest.mocked(acceptCurrentLegalDocument);
 const mockBcrypt = jest.mocked(bcrypt);
+const mockPasswordHashing = jest.mocked(passwordHashing);
 const mockJwt = jest.mocked(jwt);
 
 // Get access to the mocked env
@@ -773,6 +783,7 @@ describe("Auth Service", () => {
         "new_hashed_password",
         "token-id",
         "password_reset",
+        newPassword,
       );
     });
 
