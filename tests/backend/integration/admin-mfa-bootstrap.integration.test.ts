@@ -101,7 +101,11 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
 
     const dismiss = await request(app).post("/api/v1/auth/2fa/invitation/dismiss")
       .set(auth(passwordOnlyAccess));
-    expect(dismiss.status).toBe(409);
+    // The global administrator MFA boundary denies dismissal before the route
+    // handler executes. This is intentional defense in depth.
+    expect(dismiss.status).toBe(403);
+    expect(dismiss.body.error.code).toBe("ADMIN_2FA_REQUIRED");
+    expect(await db("user_2fa_invitations").where({ user_id: ADMIN_ID }).first()).toBeUndefined();
 
     const setup = await request(app).get("/api/v1/auth/2fa/setup")
       .set(auth(passwordOnlyAccess));
@@ -149,6 +153,16 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       .send({ pendingSessionId, code: authenticator.generate(setup.body.secret) });
     expect(verified.status).toBe(200);
     expect(verifyAccess(verified.body.tokens.accessToken)).toMatchObject({ role: "admin", mfa: true });
+
+    // A fully MFA-attested administrator reaches the route, where the persisted
+    // administrator role still forbids dismissing mandatory MFA.
+    const dismissalAfterMfa = await request(app)
+      .post("/api/v1/auth/2fa/invitation/dismiss")
+      .set(auth(verified.body.tokens.accessToken));
+    expect(dismissalAfterMfa.status).toBe(409);
+    expect(dismissalAfterMfa.body.error.code).toBe("ADMIN_2FA_REQUIRED");
+    expect(await db("user_2fa_invitations").where({ user_id: ADMIN_ID }).first()).toBeUndefined();
+
     const authenticated = await request(app).get("/api/v1/auth/sessions")
       .set("Cookie", cookieHeader(verified));
     expect(authenticated.status).toBe(200);
