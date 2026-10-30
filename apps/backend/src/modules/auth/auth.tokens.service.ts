@@ -7,6 +7,7 @@ import {
   purgeAuthTokensOlderThan,
 } from "./auth.repository.js";
 import { HttpError } from "../../utils/http.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 
 const TOKEN_RETENTION_DAYS = 7;
 const RESEND_WINDOW_MS = 60 * 60 * 1000;
@@ -24,6 +25,16 @@ function generateToken(): { raw: string; hash: string } {
 }
 
 export async function issueAuthToken(userId: string, type: string, ttlSeconds: number) {
+  // Never permit a caller or legacy setting to issue a long-lived reset token.
+  if (
+    type === TOKEN_TYPES.PASSWORD_RESET &&
+    (!Number.isSafeInteger(ttlSeconds) ||
+      ttlSeconds <= 0 ||
+      ttlSeconds > AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes * 60)
+  ) {
+    throw new Error("Password-reset token TTL exceeds the security policy");
+  }
+
   const now = Date.now();
   const retentionCutoff = new Date(now - TOKEN_RETENTION_DAYS * 24 * 60 * 60 * 1000);
   await purgeAuthTokensOlderThan(type, retentionCutoff);
