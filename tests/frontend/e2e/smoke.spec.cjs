@@ -10,6 +10,7 @@ const {
   acceptRegisterLegal,
   dismissFirstLoginTwoFactorInvitation,
   ensureAuthenticatedBrowserConsent,
+  ensureSeededOnboardingComplete,
 } = require("./server-helpers.cjs");
 
 test("[E2E-SMOKE-001] login page renders the FitVibe welcome heading", async ({ page }) => {
@@ -495,10 +496,17 @@ test("[E2E-SMOKE-015] athlete uploads and removes avatar from Settings", async (
   remove.stop();
 });
 
-test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved profile", async ({ page }, testInfo) => {
-  await createDisposableAthlete(page, testInfo);
+test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved profile", async ({ firstLoginPage }) => {
+  // This is a Vibeform persistence test, not a second browser registration/login
+  // test. The isolated fixture creates a fresh real-server athlete session
+  // without introducing cross-test profile state.
+  const { page } = firstLoginPage;
+  await ensureSeededOnboardingComplete(page);
   await page.goto("/settings");
   await waitForApp(page);
+  // Authentication can rotate the consent browser identity. Verify persisted
+  // essential-only consent after navigation, before clicking Save.
+  await ensureAuthenticatedBrowserConsent(page);
   const before = await apiGet(page, "/api/v1/users/me");
   expect(before.id).toBeTruthy();
   const bodyProfile = page.getByRole("combobox", { name: /body profile/i });
