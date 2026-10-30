@@ -496,17 +496,15 @@ test("[E2E-SMOKE-015] athlete uploads and removes avatar from Settings", async (
   remove.stop();
 });
 
-test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved profile", async ({ firstLoginPage }) => {
-  // This is a Vibeform persistence test, not a second browser registration/login
-  // test. The isolated fixture creates a fresh real-server athlete session
-  // without introducing cross-test profile state.
-  const { page } = firstLoginPage;
-  await ensureSeededOnboardingComplete(page);
+test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved profile", async ({ fullyOnboardedPage }) => {
+  // Exercise Vibeform persistence using the real, already authenticated and
+  // consented worker account. A fresh first-login session and consent reload
+  // are not part of this scenario and exhaust the shared CI rate limit.
+  const page = fullyOnboardedPage;
   await page.goto("/settings");
   await waitForApp(page);
-  // Authentication can rotate the consent browser identity. Verify persisted
-  // essential-only consent after navigation, before clicking Save.
-  await ensureAuthenticatedBrowserConsent(page);
+  // Explicitly catch onboarding regressions instead of bypassing the overlay.
+  await expect(page.locator(".cookie-consent-backdrop")).toBeHidden();
   const before = await apiGet(page, "/api/v1/users/me");
   expect(before.id).toBeTruthy();
   const bodyProfile = page.getByRole("combobox", { name: /body profile/i });
@@ -527,11 +525,11 @@ test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved prof
   expect((await responsePromise).status()).toBe(200);
   mutation.assertExactlyOnce(200);
   mutation.stop();
-  await page.goto("/dashboard");
-  await waitForApp(page);
+  // In-app navigation preserves the session without reloading the entire
+  // application and rechecking consent on every route change.
+  await page.getByRole("link", { name: /^dashboard$/i }).click();
   await expect(page.locator("[data-app-surface='dashboard']")).toBeVisible();
-  await page.goto("/settings");
-  await waitForApp(page);
+  await page.getByRole("link", { name: /^settings$/i }).click();
   await expect(page.getByRole("combobox", { name: /body profile/i })).toHaveValue(changed);
 });
 
