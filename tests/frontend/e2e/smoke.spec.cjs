@@ -89,6 +89,12 @@ async function createDisposableAthlete(page, testInfo, options = {}) {
   expect(payload.debugVerificationToken).toBeTruthy();
   await page.goto(`/verify?token=${encodeURIComponent(payload.debugVerificationToken)}`);
   await waitForApp(page);
+  // Registration may rotate the browser consent identity; resolve the real banner.
+  const consentBackdrop = page.locator(".cookie-consent-backdrop");
+  if (await consentBackdrop.isVisible()) {
+    await consentBackdrop.getByRole("button", { name: /reject all/i }).click();
+    await expect(consentBackdrop).toBeHidden();
+  }
   await page.getByRole("button", { name: /go to login/i }).click();
   await page.waitForURL((url) => url.pathname === "/login");
   await emailInput(page).fill(email);
