@@ -101,8 +101,8 @@ export async function resetPassword(token: string, newPassword: string): Promise
   }
 
   const user = await findUserById(record.user_id);
-  if (!user) {
-    throw new HttpError(404, "AUTH_USER_NOT_FOUND", "AUTH_USER_NOT_FOUND");
+  if (!user || user.status !== "active") {
+    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
   }
   if (!user.primary_email || (await isEmailBlacklisted(user.primary_email))) {
     await consumeAuthToken(record.id);
