@@ -125,9 +125,18 @@ describe("AC-1.9: Password Reset Security", () => {
     await expect(
       authService.resetPassword("valid-token", "NewValidPassword123!"),
     ).rejects.toMatchObject({
-      status: 404,
-      code: "AUTH_USER_NOT_FOUND",
+      status: 400,
+      code: "AUTH_INVALID_TOKEN",
     });
+    expect(mockAuthRepo.resetPasswordAtomic).not.toHaveBeenCalled();
+  });
+
+  it("rejects a reset for a suspended account without modifying authentication state", async () => {
+    mockAuthRepo.findUserById.mockResolvedValue({ ...mockUser, status: "suspended" });
+
+    await expect(
+      authService.resetPassword("valid-token", "NewValidPassword123!"),
+    ).rejects.toMatchObject({ status: 400, code: "AUTH_INVALID_TOKEN" });
     expect(mockAuthRepo.resetPasswordAtomic).not.toHaveBeenCalled();
   });
 
