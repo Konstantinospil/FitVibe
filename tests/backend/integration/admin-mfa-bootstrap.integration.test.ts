@@ -255,7 +255,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       .set("Cookie", cookieHeader(originalLogin));
     expect(promotedRefresh.status).toBe(403);
 
-    await db("users").where({ id: userId }).update({ status: "inactive" });
+    await db("users").where({ id: userId }).update({ status: "suspended" });
     const inactive = await request(app).get("/api/v1/auth/sessions")
       .set(auth(athleteAccess));
     expect(inactive.status).toBe(401);
