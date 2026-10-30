@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
 import {
-  hashPassword, verifyPasswordHash, isLegacyBcryptHash,
+  hashPassword,
+  verifyPasswordHash,
+  isLegacyBcryptHash,
 } from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 
 // Test ownership: #557 Stage B hashing migration.
@@ -23,7 +25,9 @@ describe("Argon2id password hashing and legacy compatibility (#557)", () => {
     expect(isLegacyBcryptHash(original)).toBe(true);
     expect(await verifyPasswordHash("old password", original)).toBe(true);
     expect(await verifyPasswordHash("wrong", original)).toBe(false);
-    expect(await verifyPasswordHash("old password", "$argon2id$v=19$m=2147483647,t=9999,p=99$AA$AA")).toBe(false);
+    expect(
+      await verifyPasswordHash("old password", "$argon2id$v=19$m=2147483647,t=9999,p=99$AA$AA"),
+    ).toBe(false);
     expect(await verifyPasswordHash("old password", "unknown-hash")).toBe(false);
   });
 });

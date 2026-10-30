@@ -12,6 +12,7 @@ import { breachedPasswordChecker } from "../../../apps/backend/src/modules/auth/
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { truncateAll, ensureRolesSeeded, createTestIp } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
+import { HttpError } from "../../../apps/backend/src/utils/http.js";
 
 const OLD = "ExistingPassword123!";
 const NEW = "a completely different secure passphrase";
@@ -61,9 +62,7 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
 
   it("rejects a breach-provider outage before registration persistence", async () => {
     const checker = jest.spyOn(breachedPasswordChecker, "assertAcceptable")
-      .mockRejectedValueOnce(Object.assign(new Error("BREACH_CHECK_UNAVAILABLE"), {
-        status: 503, code: "BREACH_CHECK_UNAVAILABLE",
-      }));
+      .mockRejectedValueOnce(new HttpError(503, "BREACH_CHECK_UNAVAILABLE", "BREACH_CHECK_UNAVAILABLE"));
     const candidate = "new-stage-b@example.com";
     const response = await request(app).post("/api/v1/auth/register").send({
       email: candidate,
@@ -87,9 +86,7 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
     expect(firstToken).toEqual(expect.any(String));
 
     jest.spyOn(breachedPasswordChecker, "assertAcceptable")
-      .mockRejectedValueOnce(Object.assign(new Error("BREACH_CHECK_UNAVAILABLE"), {
-        status: 503, code: "BREACH_CHECK_UNAVAILABLE",
-      }));
+      .mockRejectedValueOnce(new HttpError(503, "BREACH_CHECK_UNAVAILABLE", "BREACH_CHECK_UNAVAILABLE"));
     const outage = await request(app).post("/api/v1/auth/password/reset")
       .send({ token: firstToken, newPassword: NEW });
     expect(outage.status).toBe(503);

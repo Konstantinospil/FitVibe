@@ -25,12 +25,29 @@ type Argon2Params = {
   passes: number;
 };
 
-function derive(password: string, salt: Buffer, memory: number, passes: number, parallelism: number, length: number): Promise<Buffer> {
-  const params: Argon2Params = { message: password, nonce: salt, memory, passes, parallelism, tagLength: length };
+function derive(
+  password: string,
+  salt: Buffer,
+  memory: number,
+  passes: number,
+  parallelism: number,
+  length: number,
+): Promise<Buffer> {
+  const params: Argon2Params = {
+    message: password,
+    nonce: salt,
+    memory,
+    passes,
+    parallelism,
+    tagLength: length,
+  };
   return new Promise<Buffer>((resolve, reject) => {
     argon2("argon2id", params, (error, result) => {
-      if (error) reject(error);
-      else resolve(result);
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
     });
   });
 }
@@ -50,16 +67,31 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPasswordHash(password: string, hash: string): Promise<boolean> {
-  if (isLegacyBcryptHash(hash)) return bcrypt.compare(password, hash);
+  if (isLegacyBcryptHash(hash)) {
+    return bcrypt.compare(password, hash);
+  }
   const match = PHC.exec(hash);
-  if (!match) return false;
+  if (!match) {
+    return false;
+  }
   const [, memoryString, passesString, parallelismString, salt64, tag64] = match;
-  const memory = Number(memoryString), passes = Number(passesString), parallelism = Number(parallelismString);
+  const memory = Number(memoryString),
+    passes = Number(passesString),
+    parallelism = Number(parallelismString);
   // Bound resource costs before performing expensive work on persisted hashes.
-  if (memory !== MEMORY_KIB || passes !== PASSES || parallelism !== PARALLELISM) return false;
+  if (memory !== MEMORY_KIB || passes !== PASSES || parallelism !== PARALLELISM) {
+    return false;
+  }
   const salt = Buffer.from(salt64, "base64");
   const tag = Buffer.from(tag64, "base64");
-  if (salt.length !== SALT_LENGTH || tag.length !== TAG_LENGTH || b64(salt) !== salt64 || b64(tag) !== tag64) return false;
+  if (
+    salt.length !== SALT_LENGTH ||
+    tag.length !== TAG_LENGTH ||
+    b64(salt) !== salt64 ||
+    b64(tag) !== tag64
+  ) {
+    return false;
+  }
   const calculated = await derive(password, salt, memory, passes, parallelism, tag.length);
   return timingSafeEqual(calculated, tag);
 }

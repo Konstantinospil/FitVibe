@@ -7,8 +7,7 @@ import type { Knex } from "knex";
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable("user_password_history", (table) => {
     table.uuid("id").primary();
-    table.uuid("user_id").notNullable().references("id").inTable("users")
-      .onDelete("CASCADE");
+    table.uuid("user_id").notNullable().references("id").inTable("users").onDelete("CASCADE");
     table.text("password_hash").notNullable();
     table.timestamp("created_at", { useTz: true }).notNullable().defaultTo(knex.fn.now());
     table.index(["user_id", "created_at"], "password_history_user_created_idx");
