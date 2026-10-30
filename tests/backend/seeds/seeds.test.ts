@@ -356,7 +356,7 @@ describeWithTestDatabase("database seeds", () => {
         const admin = await client("users").where({ id: ADMIN_ID }).first();
         expect(admin.password_hash).toBeDefined();
         expect(admin.password_hash).not.toBe("admin");
-        expect(admin.password_hash.startsWith("$2")).toBe(true); // bcrypt format
+        expect(admin.password_hash.startsWith("$argon2id$")).toBe(true); // new credentials use Argon2id
       });
 
       it("sets valid UUIDs for demo users", async () => {
