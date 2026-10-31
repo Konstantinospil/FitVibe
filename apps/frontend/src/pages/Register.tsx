@@ -281,7 +281,9 @@ const Register: React.FC = () => {
           {t("auth.register.checkEmail", { email })}
         </StatusPanel>
         {passwordWarning ? (
-          <FormFeedback tone="warning">{t(`passwordStrength.advisory.${passwordWarning}`)}</FormFeedback>
+          <FormFeedback tone="warning">
+            {t(`passwordStrength.advisory.${passwordWarning}`)}
+          </FormFeedback>
         ) : null}
 
         <FormStack as="div">
