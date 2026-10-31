@@ -5,9 +5,11 @@ import * as authStateRepository from "../../../../apps/backend/src/modules/auth/
 import { db } from "../../../../apps/backend/src/db/connection.js";
 import { is2FAEnabled } from "../../../../apps/backend/src/modules/auth/two-factor.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
+import { administratorPasswordChangeRequired } from "../../../../apps/backend/src/modules/auth/admin-password-policy.service.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/auth/auth.session-tokens.js");
+jest.mock("../../../../apps/backend/src/modules/auth/admin-password-policy.service.js");
 jest.mock("../../../../apps/backend/src/db/connection.js", () => ({
   db: jest.fn(),
 }));
@@ -24,6 +26,7 @@ jest.mock("../../../../apps/backend/src/config/env.js", () => ({
 const mockTokensService = jest.mocked(tokensService);
 const mockAuthStateRepository = jest.mocked(authStateRepository);
 const mockIs2FAEnabled = jest.mocked(is2FAEnabled);
+const mockPasswordChangeRequired = jest.mocked(administratorPasswordChangeRequired);
 const mockDb = db as unknown as jest.Mock;
 const mockRoleLookup = jest.fn();
 
@@ -43,6 +46,7 @@ describe("Auth Middleware", () => {
       where: jest.fn().mockReturnValue({ first: mockRoleLookup }),
     });
     mockIs2FAEnabled.mockResolvedValue(false);
+    mockPasswordChangeRequired.mockResolvedValue(false);
 
     mockRequest = {
       headers: {},
@@ -122,6 +126,33 @@ describe("Auth Middleware", () => {
 
       expect(mockTokensService.verifyAccess).toHaveBeenCalledWith(cookieToken);
       expect(mockTokensService.verifyAccess).not.toHaveBeenCalledWith(headerToken);
+    });
+
+    it("denies a fully MFA-authenticated legacy administrator until password attestation", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
+      mockIs2FAEnabled.mockResolvedValue(true);
+      mockPasswordChangeRequired.mockResolvedValue(true);
+      mockRequest.cookies = { access_token: "legacy-admin-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/auth/sessions";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "admin-123",
+        role: "admin",
+        sid: "admin-session",
+        mfa: true,
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockPasswordChangeRequired).toHaveBeenCalledWith("admin-123");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 403, code: "ADMIN_PASSWORD_CHANGE_REQUIRED" }),
+      );
+      expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
     it("blocks password-only admin access to protected routes", async () => {
