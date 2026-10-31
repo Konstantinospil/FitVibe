@@ -60,9 +60,6 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   return {
     db: mockDbFunction,
   };
-
-
-
 });
 jest.mock("crypto", () => ({
   ...jest.requireActual<typeof import("crypto")>("crypto"),
