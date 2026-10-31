@@ -15,6 +15,7 @@ on:
         default: reset-password
         options:
           - reset-password
+          - password-strength
           - approved-pages
 
 concurrency:
@@ -94,6 +95,13 @@ jobs:
               --grep "Auth Page Visual Tests reset password" \
               --config tests/frontend/visual/config/playwright.config.ts \
               --update-snapshots=changed
+          elif [ "$REFRESH_SCOPE" = "password-strength" ]; then
+            # #557: capture only the 16 meter states (2 flows x 2 strengths x 2 themes x 2 viewports).
+            # Existing page snapshots must not be overwritten by this scope.
+            pnpm exec playwright test tests/frontend/visual/pages/auth.spec.ts \
+              --grep "password strength states" \
+              --config tests/frontend/visual/config/playwright.config.ts \
+              --update-snapshots=missing
           elif [ "$REFRESH_SCOPE" = "approved-pages" ]; then
             pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
               tests/frontend/visual/pages/auth.spec.ts \
@@ -152,9 +160,13 @@ jobs:
           )];
           const approvedGeneral = (path) =>
             /^tests\/frontend\/visual\/(?:pages\/(?:home|auth|legal)|components\/navbar)\.spec\.ts-snapshots\/[^/]+-linux\.png$/.test(path);
+          const meterBaseline = (path) =>
+            /^tests\/frontend\/visual\/pages\/auth\.spec\.ts-snapshots\/(?:reset|register)-password-strength-(?:weak|strong)-ui-(?:light|dark)-(?:sm|lg)-linux\.png$/.test(path);
           const permitted = (path) => scope === "reset-password"
             ? approved.has(path)
-            : scope === "approved-pages" && approvedGeneral(path);
+            : scope === "password-strength"
+              ? meterBaseline(path)
+              : scope === "approved-pages" && approvedGeneral(path);
           const unexpected = changedPaths.filter((path) => !permitted(path));
           if (unexpected.length) {
             throw new Error(`Refusing unexpected changes: ${unexpected.join(", ")}`);
@@ -169,6 +181,10 @@ jobs:
               if (actualHash !== approved.get(path)) {
                 throw new Error(`Regenerated image differs from approved CI capture: ${path}`);
               }
+            }
+          } else if (scope === "password-strength") {
+            if (files.length !== 16) {
+              throw new Error(`Expected 16 password strength meter snapshots, found ${files.length}: ${files.join(", ")}`);
             }
           } else if (scope !== "approved-pages") {
             throw new Error(`Unsupported scope: ${scope}`);
