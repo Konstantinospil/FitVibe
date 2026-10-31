@@ -33,7 +33,7 @@ import {
 import type { z } from "zod";
 import type { LoginContext } from "./auth.types.js";
 import { HttpError } from "../../utils/http.js";
-import { accessTokenTtlForRole, verifyAccess } from "./auth.session-tokens.js";
+import { accessTokenTtlForRole, refreshTokenTtlForRole, verifyAccess } from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 import { prepareRegistrationAvatar } from "./auth.registration-avatar.service.js";
@@ -50,8 +50,8 @@ function authCookieOptions(maxAge?: number) {
   };
 }
 
-function setRefreshCookie(res: Response, token: string) {
-  res.cookie(env.REFRESH_COOKIE_NAME, token, authCookieOptions(env.REFRESH_TOKEN_TTL * 1000));
+function setRefreshCookie(res: Response, token: string, role: string) {
+  res.cookie(env.REFRESH_COOKIE_NAME, token, authCookieOptions(refreshTokenTtlForRole(role) * 1000));
 }
 
 function setAccessCookie(res: Response, token: string, ttlSeconds: number) {
@@ -246,7 +246,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     // Normal login flow (no 2FA)
     // SECURITY: Tokens are ONLY set in HttpOnly cookies, never exposed to JavaScript
     setAccessCookie(res, result.tokens.accessToken, result.tokens.accessExpiresIn);
-    setRefreshCookie(res, result.tokens.refreshToken);
+    setRefreshCookie(res, result.tokens.refreshToken, result.user.role);
 
     // In non-production environments, also return tokens in JSON for testing/debugging
     const response: {
@@ -287,7 +287,7 @@ export async function verify2FALogin(
 
     // SECURITY: Tokens are ONLY set in HttpOnly cookies, never exposed to JavaScript
     setAccessCookie(res, tokens.accessToken, tokens.accessExpiresIn);
-    setRefreshCookie(res, tokens.refreshToken);
+    setRefreshCookie(res, tokens.refreshToken, user.role);
 
     // In non-production environments, also return tokens in JSON for testing/debugging
     const response: {
@@ -333,7 +333,7 @@ export async function refresh(req: Request, res: Response, next: NextFunction): 
     // Token is now validated - safe to use
     const context = buildAuthContext(req, res);
     const { user, newRefresh, accessToken } = await doRefresh(token, context);
-    setRefreshCookie(res, newRefresh);
+    setRefreshCookie(res, newRefresh, user.role);
     setAccessCookie(res, accessToken, accessTokenTtlForRole(user.role));
     res.json({ user });
     return;
