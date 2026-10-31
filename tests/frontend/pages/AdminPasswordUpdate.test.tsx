@@ -11,7 +11,11 @@ const mockSignOut = vi.fn();
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
-  return { ...actual, useNavigate: () => mockNavigate };
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+    useOutletContext: () => ({ minimumPasswordLength: 16 }),
+  };
 });
 vi.mock("../../src/contexts/AuthContext", () => ({ useAuth: vi.fn() }));
 vi.mock("../../src/services/accountApi", () => ({ changePassword: vi.fn() }));
@@ -103,14 +107,7 @@ describe("Legacy administrator password transition (#557)", () => {
 
   it("denies a replacement shorter than the administrator policy minimum", () => {
     form();
-    fill(CURRENT, "15-characters!!!");
-    // A verified shorter candidate, not a synthetic successful API reply.
-    fireEvent.change(screen.getByLabelText("auth.adminPasswordTransition.new"), {
-      target: { value: "short-password" },
-    });
-    fireEvent.change(screen.getByLabelText("auth.adminPasswordTransition.confirm"), {
-      target: { value: "short-password" },
-    });
+    fill(CURRENT, "short-password");
     submit();
     expect(screen.getByRole("alert")).toHaveTextContent("auth.adminPasswordTransition.minimum");
     expect(mockChangePassword).not.toHaveBeenCalled();
