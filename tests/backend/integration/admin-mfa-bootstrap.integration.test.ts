@@ -386,7 +386,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     const updated = await db("users").where({ id: ADMIN_ID }).first();
     expect(updated.admin_password_policy_verified_at).not.toBeNull();
     expect(await verifyPasswordHash(updatedPassword, updated.password_hash)).toBe(true);
-    expect(updated.password_hash).toMatch(/^\\$argon2id\\$/);
+    expect(updated.password_hash).toMatch(/^\$argon2id\$/);
 
     // The now-compliant password does not elevate a prior revoked session.
     const stale = await request(app).get("/api/v1/auth/sessions").set(auth(access));
@@ -409,5 +409,4 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect((await request(app).get("/api/v1/auth/sessions")
       .set(auth(nextVerified.body.tokens.accessToken))).status).toBe(200);
   });
-
 });
