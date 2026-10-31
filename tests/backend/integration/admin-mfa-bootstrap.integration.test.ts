@@ -357,7 +357,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     const status = await request(app).get("/api/v1/auth/admin-password/status")
       .set(auth(access));
     expect(status.status).toBe(200);
-    expect(status.body).toEqual({ passwordChangeRequired: true });
+    expect(status.body).toEqual({ passwordChangeRequired: true, minimumPasswordLength: 16 });
 
     const invalidCurrent = await request(app).post("/api/v1/users/change-password")
       .set(auth(access)).send({
@@ -405,7 +405,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect(nextVerified.status).toBe(200);
     expect((await request(app).get("/api/v1/auth/admin-password/status")
       .set(auth(nextVerified.body.tokens.accessToken))).body)
-      .toEqual({ passwordChangeRequired: false });
+      .toEqual({ passwordChangeRequired: false, minimumPasswordLength: 16 });
     expect((await request(app).get("/api/v1/auth/sessions")
       .set(auth(nextVerified.body.tokens.accessToken))).status).toBe(200);
   });
