@@ -15,7 +15,19 @@ jest.mock("../../../../apps/backend/src/modules/auth/auth.state.repository.js", 
 jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js", () => ({
   is2FAEnabled: jest.fn(),
 }));
-jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
+// The repository barrel re-exports several modules. Automatic mocking of the
+// barrel can omit atomic helpers (notably rotateRefreshAtomic and
+// revokeSessionFamilyAtomic), leaving tests unable to reach their assertions.
+// Explicitly mock every repository operation used by this service.
+jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js", () => ({
+  findRefreshTokenRaw: jest.fn(),
+  findSessionById: jest.fn(),
+  findUserById: jest.fn(),
+  getRefreshByHash: jest.fn(),
+  revokeRefreshByHash: jest.fn(),
+  revokeSessionFamilyAtomic: jest.fn(),
+  rotateRefreshAtomic: jest.fn(),
+}));
 jest.mock("../../../../apps/backend/src/observability/metrics.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.audit.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.legal-gate.js");
