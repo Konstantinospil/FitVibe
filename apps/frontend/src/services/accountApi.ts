@@ -622,11 +622,13 @@ export interface ChangePasswordRequest {
 
 export async function changePassword(
   payload: ChangePasswordRequest,
-): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
+): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" } | undefined> {
   const res = await apiClient.post<{
     passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
   }>("/api/v1/users/change-password", payload);
-  return res.data ?? {};
+  // Preserve the existing 204 No Content contract for callers; only 200
+  // advisory responses carry a body.
+  return res.data;
 }
 
 export type UserPreferences = SharedUserPreferences;
