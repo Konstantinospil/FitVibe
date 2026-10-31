@@ -38,7 +38,7 @@ const AdminPasswordUpdate: React.FC = () => {
       await signOut().catch(() => undefined);
       void navigate("/login", {
         replace: true,
-        state: { passwordWarning: response?.passwordWarning ?? null },
+        state: { passwordWarning: response?.passwordWarning ?? null, passwordUpdated: true },
       });
     } catch (cause: unknown) {
       const code =
