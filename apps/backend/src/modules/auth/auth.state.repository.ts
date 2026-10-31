@@ -2,6 +2,7 @@ import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 import { v4 as uuidv4 } from "uuid";
 import { HttpError } from "../../utils/http.js";
+import { assertPasswordPolicy } from "./passwordPolicy.js";
 import {
   verifyPasswordHash,
   hashPassword,
@@ -188,10 +189,13 @@ export async function changePasswordAndRevokeAuthAtomic(
     const user = await trx("users")
       .where({ id: userId, status: "active" })
       .forUpdate()
-      .first<{ password_hash: string }>("password_hash");
+      .first<{ password_hash: string; role_code: string }>("password_hash", "role_code");
     if (!user) {
       throw new HttpError(400, "USER_NOT_FOUND", "USER_NOT_FOUND");
     }
+    // A role promotion can race with a password change. Recheck the role-specific
+    // minimum at the same serialization point as the current password.
+    assertPasswordPolicy(candidate, { role: user.role_code });
     // A concurrent change may already have invalidated the password checked
     // before entering this transaction. Only the locked current hash is authoritative.
     if (!(await verifyPasswordHash(currentPassword, user.password_hash))) {
