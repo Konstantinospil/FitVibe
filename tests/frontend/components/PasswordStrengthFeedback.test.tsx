@@ -31,8 +31,8 @@ describe("PasswordStrengthFeedback", () => {
   });
 
   it("updates the accessible meter as a password changes", () => {
-    const { rerender } = render(<PasswordStrengthFeedback password="a-sample-string" />);
-    expect(Number(screen.getByRole("meter").getAttribute("aria-valuenow"))).toBeLessThan(4);
+    const { rerender } = render(<PasswordStrengthFeedback password="password" />);
+    expect(screen.getByRole("meter")).toHaveAttribute("aria-valuenow", "1");
     rerender(<PasswordStrengthFeedback password="r9Q!5xmV@p7L#2tZ$4wN&6cR8yK" />);
     expect(screen.getByRole("meter")).toHaveAttribute("aria-valuenow", "4");
     expect(screen.getByRole("meter")).toHaveAttribute(
