@@ -261,6 +261,7 @@
     "EMAIL_SERVICE_UNAVAILABLE": "E-Mail-Dienst nicht verfügbar"
   },
   "passwordStrength": {
+    "advisory": {"PASSWORD_BREACHED":"Dieses Passwort ist aus einem bekannten Datenleck bekannt. Wir empfehlen dringend, es zu ändern. Der Vorgang wurde abgeschlossen.","BREACH_CHECK_UNAVAILABLE":"Die Prüfung auf bekannte Datenlecks war nicht verfügbar. Der Vorgang wurde abgeschlossen. Bitte verwenden Sie ein einzigartiges Passwort."},
     "meterLabel": "Geschätzte Passwortstärke",
     "levels": {"veryWeak":"Sehr schwach","weak":"Schwach","fair":"Mittel","strong":"Stark"},
     "serverChecks": "Die endgültige Passwortprüfung erfolgt auf dem Server.",
