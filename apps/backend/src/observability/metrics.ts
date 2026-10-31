@@ -138,11 +138,15 @@ export function incrementAuthLoginSuccess(factor: "password" | "mfa"): void {
   successfulLoginCounter.inc({ factor });
 }
 
-export function incrementAuthPasswordReset(outcome: "requested" | "completed" | "invalid_token" | "failed"): void {
+export function incrementAuthPasswordReset(
+  outcome: "requested" | "completed" | "invalid_token" | "failed",
+): void {
   passwordResetCounter.inc({ outcome });
 }
 
-export function incrementAuthMfaEvent(event: "enrolled" | "disabled" | "login_failed" | "login_success" | "blocked"): void {
+export function incrementAuthMfaEvent(
+  event: "enrolled" | "disabled" | "login_failed" | "login_success" | "blocked",
+): void {
   mfaEventCounter.inc({ event });
 }
 
