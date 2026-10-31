@@ -267,8 +267,10 @@ export type LoginResponse =
     };
 
 export type RegisterResponse = {
-  user: UserResponse;
-  session: unknown;
+  user?: UserResponse;
+  session?: unknown;
+  message?: string;
+  passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
 };
 
 export interface RegistrationReferenceOption {
@@ -482,7 +484,8 @@ export type ResetPasswordRequest = {
 };
 
 export type ResetPasswordResponse = {
-  message: string;
+  message?: string;
+  passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
 };
 
 export async function resetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse> {
