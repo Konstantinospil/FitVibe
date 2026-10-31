@@ -133,3 +133,28 @@ Review decisions against the accepted policy; do not treat an undocumented excep
 - **Verified CI checkpoint:** [CI #41136825974](https://github.com/Konstantinospil/FitVibe/actions/runs/41136825974), commit `e7464543c1ad335a7804ccb7af4b448888b4a9d7`, passed backend integration, Quality, all four Playwright shards, accessibility and QA Summary; CodeQL and advisory dependency hygiene also passed on that commit.
 - **New regression additions after green checkpoint:** explicit `suspended` and `deleted` persisted-status negative cases and a historical committed TTL of 1440 minutes capped to 15 at runtime. These additional tests must pass CI on the latest head before declaring the final Stage A commit green.
 - **Stage A boundary:** This workstream is not the complete 50-clause policy. Stage B password policy and hashing, Stage C session idle/privileged operations, Stage D observability/governance, and final merged-`feature` verification remain open. CI passing on the fix branch is not evidence that `feature` is verified. Do not close #557 or DRIFT-093 for Stage A alone.
+
+
+## Stage B implementation reconciliation — 2026-10-31
+
+**Scope:** fix branch only. Historical assessment cells above are the original October 26 audit snapshot; they must not be read as today's code status. The full issue cannot close until Stage C/D and merged-`feature` acceptance are complete.
+
+### Source implementation
+
+- Shared member (12) and administrator/superadministrator (16) new-password minima; composition-free passphrases. Server authority in `passwordPolicy.ts` plus registration/reset UI and test coverage.
+- Versioned local whole-password common-denylist remains **blocking**. HIBP SHA-1-prefix k-anonymity matches and screening unavailability are **advisory** as requested; registration, reset, admin creation and authenticated password change use the shared checker. Password reset and registration expose localized success warnings. Admin-created users return an optional `passwordWarning`; authenticated change preserves 204 for no warning, returns 200 with `passwordWarning` if advisory. Client consumers must surface this field if they provide a password-change screen.
+- Native Node 24 Argon2id, 64 MiB / 3 passes / parallelism 1 / unique salts; bcrypt verification and compare-and-swap opportunistic upgrade retained for historical credentials.
+- Transactional last-five history with row-level user locking, replay denial and atomic session revocation. A change's supplied *current* password is now verified against the **locked** hash, so simultaneous attempts with the same stale credential cannot both succeed; the promoted user's role minimum is rechecked at that lock boundary. Real database concurrency regression is in `tests/backend/integration/password-policy-stage-b.integration.test.ts`.
+- The authentication policy was amended to v1.1 for the explicit advisory breach-screening decision. `docs/qa/breached-password-screening-557.md` supersedes its original fail-closed design.
+
+### Acceptance still requiring evidence
+
+- **Current-branch CI:** run required backend/frontend/integration/database/Quality/i18n/security/axe and all four shards including VRT for the final SHA; code commits alone are not passing evidence.
+- **Existing administrators:** bcrypt cannot reveal original password length. Existing and promoted administrators with historically short secrets need an approved secure enforcement/transition procedure that does not deadlock MFA enrollment; new credentials already enforce 16.
+- **Performance:** measure Argon2id hash and verify latency, concurrency memory footprint, and selected parameters on the actual Raspberry Pi ARM64 and target amd64 environments. A successful image build is *not* a runtime benchmark.
+- **Migration and rollback:** back up and restore the history table together with user credentials; verify old-code rollback has dual-format hash verification. The pre-migration passwords cannot be reconstructed retroactively.
+- **User feedback:** verify the optional advisory response is displayed in *each actual client workflow*, without silently discarding it.
+- **Operational service accounts:** the policy's conditional 24-character floor needs an inventory and applicability decision.
+
+**Disposition:** Stage B source implementation advanced; no claim of final Stage B acceptance until the above verification and migration decisions have evidence. #557 remains open.
+
