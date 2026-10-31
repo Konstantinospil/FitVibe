@@ -35,6 +35,7 @@ describe("Auth Middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAuthStateRepository.isSessionActiveForUser.mockResolvedValue(true);
+    mockAuthStateRepository.checkAndTouchPrivilegedSession.mockResolvedValue(true);
     // #557: run the real MFA guard with a realistic database role lookup.
     // The persisted role overrides stale role claims in issued access tokens.
     mockRoleLookup.mockResolvedValue({ role_code: "athlete", status: "active" });
