@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { db } from "../../../../apps/backend/src/db/connection.js";
 import * as authRepository from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 import type { AuthUserRecord } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
@@ -16,6 +17,9 @@ function createMockQueryBuilder(defaultValue: unknown = null) {
     leftJoin: jest.fn().mockReturnThis(),
     select: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    offset: jest.fn().mockReturnThis(),
+    pluck: jest.fn().mockResolvedValue([]),
     first: jest.fn().mockResolvedValue(null),
     insert: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue([]),
@@ -56,6 +60,23 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
   return {
     db: mockDbFunction,
   };
+
+
+
+});
+jest.mock("crypto", () => ({
+  ...jest.requireActual<typeof import("crypto")>("crypto"),
+  randomUUID: jest.fn(() => "uuid-123"),
+}));
+
+describe("Auth Repository", () => {
+  const userId = "user-123";
+  const email = "test@example.com";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    Object.keys(queryBuilders).forEach((key) => delete queryBuilders[key]);
+  });
 
   describe("atomic auth state", () => {
     it("creates session and initial refresh token in one transaction", async () => {
@@ -109,12 +130,21 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
       const tokenBuilder = createMockQueryBuilder();
       tokenBuilder.first.mockResolvedValue({ id: "reset-1" });
       queryBuilders.auth_tokens = tokenBuilder;
+      const previousHash = bcrypt.hashSync("previous secret passphrase", 4);
       queryBuilders.users = createMockQueryBuilder();
+      queryBuilders.users.first.mockResolvedValue({ password_hash: previousHash });
+      queryBuilders.user_password_history = createMockQueryBuilder([]);
       queryBuilders.refresh_tokens = createMockQueryBuilder();
       queryBuilders.auth_sessions = createMockQueryBuilder();
 
       await expect(
-        authRepository.resetPasswordAtomic(userId, "new-hash", "reset-1", "password_reset"),
+        authRepository.resetPasswordAtomic(
+          userId,
+          "new-hash",
+          "reset-1",
+          "password_reset",
+          "a different test passphrase",
+        ),
       ).resolves.toBe(true);
 
       expect(tokenBuilder.forUpdate).toHaveBeenCalled();
@@ -123,20 +153,6 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
       );
       expect(queryBuilders.auth_sessions.update).toHaveBeenCalled();
     });
-  });
-
-});
-jest.mock("crypto", () => ({
-  randomUUID: jest.fn(() => "uuid-123"),
-}));
-
-describe("Auth Repository", () => {
-  const userId = "user-123";
-  const email = "test@example.com";
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    Object.keys(queryBuilders).forEach((key) => delete queryBuilders[key]);
   });
 
   describe("findUserByEmail", () => {
