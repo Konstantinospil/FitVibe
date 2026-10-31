@@ -40,13 +40,11 @@ export async function enforceAdministratorMfa(
       return;
     }
 
-    const role = await db("users")
-      .where({ id: identity.sub })
-      .first<{
-        role_code: string;
-        status: string;
-        admin_password_policy_verified_at: string | null;
-      }>(["role_code", "status", "admin_password_policy_verified_at"]);
+    const role = await db("users").where({ id: identity.sub }).first<{
+      role_code: string;
+      status: string;
+      admin_password_policy_verified_at: string | null;
+    }>(["role_code", "status", "admin_password_policy_verified_at"]);
     // #557: a missing persisted identity must never inherit non-admin access.
     // A valid JWT and backing session are not sufficient without a live user.
     if (!role || role.status !== "active") {
