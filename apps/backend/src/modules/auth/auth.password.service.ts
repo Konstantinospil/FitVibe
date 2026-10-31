@@ -2,6 +2,7 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { hashPassword } from "./password-hashing.service.js";
 import { env } from "../../config/env.js";
+import { incrementAuthPasswordReset } from "../../observability/metrics.js";
 import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { HttpError } from "../../utils/http.js";
 import { mailerService } from "../../services/mailer.service.js";
@@ -35,6 +36,8 @@ function passwordResetTtlSeconds(): number {
 
 export async function requestPasswordReset(email: string): Promise<{ resetToken?: string }> {
   const startTime = Date.now();
+  // Count all requests equally; existence must never affect public feedback.
+  incrementAuthPasswordReset("requested");
 
   try {
     const normalized = email.toLowerCase();
@@ -85,6 +88,11 @@ export async function requestPasswordReset(email: string): Promise<{ resetToken?
   }
 }
 
+function invalidResetToken(): HttpError {
+  incrementAuthPasswordReset("invalid_token");
+  return new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+}
+
 export async function resetPassword(
   token: string,
   newPassword: string,
@@ -92,7 +100,7 @@ export async function resetPassword(
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const record = await findAuthToken(TOKEN_TYPES.PASSWORD_RESET, tokenHash);
   if (!record) {
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
   if (
     new Date(record.expires_at).getTime() <= Date.now() ||
@@ -102,16 +110,16 @@ export async function resetPassword(
       Date.now()
   ) {
     await consumeAuthToken(record.id);
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
 
   const user = await findUserById(record.user_id);
   if (!user || user.status !== "active") {
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
   if (!user.primary_email || (await isEmailBlacklisted(user.primary_email))) {
     await consumeAuthToken(record.id);
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
 
   assertPasswordPolicy(newPassword, {
@@ -132,7 +140,8 @@ export async function resetPassword(
     newPassword,
   );
   if (!resetApplied) {
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
+  incrementAuthPasswordReset("completed");
   return { passwordWarning };
 }
