@@ -409,4 +409,49 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect((await request(app).get("/api/v1/auth/sessions")
       .set(auth(nextVerified.body.tokens.accessToken))).status).toBe(200);
   });
+  it("permits reset recovery for a legacy administrator but retains the MFA bootstrap boundary", async () => {
+    await seedBootstrapAdmin(db);
+    await db("users").where({ id: ADMIN_ID }).update({
+      password_hash: await bcrypt.hash("OldAdmin123!", 12),
+      admin_password_policy_verified_at: null,
+    });
+
+    const forgot = await request(app).post("/api/v1/auth/password/forgot")
+      .send({ email: "admin@fitvibe.local" });
+    expect(forgot.status).toBe(202);
+    expect(forgot.body.debugResetToken).toEqual(expect.any(String));
+
+    const short = await request(app).post("/api/v1/auth/password/reset")
+      .send({ token: forgot.body.debugResetToken, newPassword: "TooShort123!" });
+    expect(short.status).toBe(400);
+    expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
+      .toBeNull();
+    expect((await db("auth_tokens")
+      .where({ user_id: ADMIN_ID, token_type: "password_reset" }).first()).consumed_at)
+      .toBeNull();
+
+    const replacement = "Recovery-Administrator-Passphrase-2026!";
+    const recovered = await request(app).post("/api/v1/auth/password/reset")
+      .send({ token: forgot.body.debugResetToken, newPassword: replacement });
+    expect(recovered.status).toBe(200);
+    const changed = await db("users").where({ id: ADMIN_ID }).first();
+    expect(changed.admin_password_policy_verified_at).not.toBeNull();
+    expect(await verifyPasswordHash(replacement, changed.password_hash)).toBe(true);
+
+    const login = await request(app).post("/api/v1/auth/login")
+      .set("X-Forwarded-For", createTestIp())
+      .send({ email: "admin@fitvibe.local", password: replacement });
+    expect(login.status).toBe(200);
+    expect(login.body.requires2FA).toBe(false);
+    const access = login.body.tokens.accessToken;
+    expect((await request(app).get("/api/v1/auth/sessions")
+      .set(auth(access))).status).toBe(403);
+    expect((await request(app).get("/api/v1/auth/2fa/setup")
+      .set(auth(access))).status).toBe(200);
+    expect((await request(app).post("/api/v1/users/change-password")
+      .set(auth(access))
+      .send({ currentPassword: replacement, newPassword: "MustHaveMfa-Again-2026!" }))
+      .status).toBe(403);
+  });
+
 });
