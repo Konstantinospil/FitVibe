@@ -8,6 +8,7 @@
 export const AUTH_SECURITY_POLICY = {
   password: {
     minLengthFloor: 12,
+    privilegedMinLengthFloor: 16,
     hashCost: 12,
   },
   timing: {
