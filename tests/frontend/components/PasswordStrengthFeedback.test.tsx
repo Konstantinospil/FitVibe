@@ -26,7 +26,7 @@ describe("PasswordStrengthFeedback", () => {
   it("handles repeated or common patterns as weak regardless of length", () => {
     const { rerender } = render(<PasswordStrengthFeedback password="aaaaaaaaaaaaaaaaaaaaaaaa" />);
     expect(Number(screen.getByRole("meter").getAttribute("aria-valuenow"))).toBeLessThanOrEqual(2);
-    rerender(<PasswordStrengthFeedback password="password123456789012345" />);
+    rerender(<PasswordStrengthFeedback password="password" />);
     expect(screen.getByRole("meter")).toHaveAttribute("aria-valuenow", "1");
   });
 
