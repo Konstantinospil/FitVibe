@@ -9,6 +9,8 @@ import app from "../../../apps/backend/src/app.js";
 import db from "../../../apps/backend/src/db/index.js";
 import { createUser } from "../../../apps/backend/src/modules/auth/auth.repository.js";
 import { breachedPasswordChecker } from "../../../apps/backend/src/modules/auth/breached-password.service.js";
+import { changePasswordAndRevokeAuthAtomic } from "../../../apps/backend/src/modules/auth/auth.state.repository.js";
+import { hashPassword, verifyPasswordHash } from "../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { truncateAll, ensureRolesSeeded, createTestIp } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
@@ -114,4 +116,35 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
       .where({ user_id: userId, token_type: "password_reset", consumed_at: null }).first();
     expect(stillActiveToken).toBeDefined();
   });
+  it("serializes simultaneous changes with the same old password", async () => {
+    const candidateA = "a new original passphrase for the first request";
+    const candidateB = "a different original passphrase for the second request";
+    const [hashA, hashB] = await Promise.all([
+      hashPassword(candidateA),
+      hashPassword(candidateB),
+    ]);
+
+    const attempts = await Promise.allSettled([
+      changePasswordAndRevokeAuthAtomic(userId, hashA, candidateA, OLD),
+      changePasswordAndRevokeAuthAtomic(userId, hashB, candidateB, OLD),
+    ]);
+    expect(attempts.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    const failures = attempts.filter((result) => result.status === "rejected");
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toMatchObject({
+      status: "rejected",
+      reason: expect.objectContaining({ status: 401, code: "USER_INVALID_PASSWORD" }),
+    });
+
+    const actual = await db("users").where({ id: userId }).first("password_hash");
+    expect(actual).toBeDefined();
+    const aValid = await verifyPasswordHash(candidateA, actual.password_hash);
+    const bValid = await verifyPasswordHash(candidateB, actual.password_hash);
+    expect([aValid, bValid].filter(Boolean)).toHaveLength(1);
+    expect(await verifyPasswordHash(OLD, actual.password_hash)).toBe(false);
+    const history = await db("user_password_history").where({ user_id: userId });
+    expect(history).toHaveLength(1);
+    expect(await verifyPasswordHash(OLD, history[0].password_hash)).toBe(true);
+  });
+
 });
