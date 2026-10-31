@@ -35,8 +35,23 @@ Attach the **JSON only**, without any environment variables, credentials, full l
 - Five sequential synthetic-hash measurements (ms): `521, 533, 542, 535, 522`. Reported p50 `533 ms`, observed maximum / sample p95 `542 ms`. **Five samples are insufficient for a robust tail-latency estimate.**
 - Two concurrent hashes: reported individual durations `662 ms` and `649 ms`, wall time `673 ms`; observed process peak RSS sample `176 MiB` (not a guaranteed absolute peak).
 - Runtime source provenance: Pi's existing FitVibe checkout remains `8844615cc2c27f6cc3bedfa9a07912026c5d3043` (Node 22); the benchmark was run with a separately fetched script in a Node 24 container, so **do not confuse the Pi's deployed checkout SHA with the benchmark script source revision**. The precise fetched script commit was not captured in the benchmark JSON.
-- Assessment: current baseline is usable for current-scale authentication on this hardware; **do not reduce Argon2id settings** based on this run. No sustained login/registration throughput, full FitVibe-container memory footprint, or multi-process / high-concurrency stress capacity has been measured. No actual AMD64 result received.
-- Next evidence: record the benchmark script SHA, perform the same synthetic benchmark on AMD64 and observe cgroup memory/latency under real FitVibe co-resident load. Decide concurrency limits based on these results, not this five-sample run alone.
+- Assessment: current baseline is usable for current-scale authentication on this hardware; **do not reduce Argon2id settings** based on this run. No sustained login/registration throughput, full FitVibe-container memory footprint, or multi-process / high-concurrency stress capacity has been measured.
+
+### AMD64 benchmark evidence — 2026-10-31
+
+**Status: AMD64 Docker-based synthetic benchmark recorded; both ARM64 and AMD64 hardware checks collected, but not a production load test.**
+
+- Platform: Linux `x64` runtime on an Intel Core i7-10510U (1.80 GHz) Windows desktop using Docker; reported runtime memory 7.66 GiB (container/VM-reported capacity, **not independently confirmed host physical memory**).
+- Runtime: Node.js `v24.22.2` and the same Argon2id parameters `memoryKiB=65536`, `passes=3`, `parallelism=1`, `tagLength=32`.
+- Five sequential synthetic-hash measurements (ms): `411, 284, 321, 320, 333`; median `321 ms`, observed maximum / sample p95 `411 ms`. The first measurement is slower than the others; no cause is established by this small sample.
+- Two concurrent hashes: `419 ms` and `412 ms`; wall time `421 ms`. Observed peak process RSS sample `179 MiB` (not a guaranteed absolute peak).
+- Versus Raspberry Pi ARM64: sequential median 533 ms vs 321 ms (~1.66x speedup, ~40% reduction), concurrent pair wall time 673 ms vs 421 ms (~1.60x speedup). The relative numbers are indicative, not production SLA measurements.
+- Benchmarks ran with synthetic passwords and require no user or database secrets. The exact benchmark script revision was not embedded in either JSON; preserve source provenance in future runs.
+- **Conclusion:** keep Argon2id at 64 MiB / 3 passes / parallelism 1 for both environments. Real application login-load testing, container/cgroup peak-memory observation, operational rate limits, isolated database restore, rollback and legacy administrator credential-transition decisions remain outstanding.
+
+### Follow-up evidence
+
+Collect container/cgroup memory and latency under realistic co-resident FitVibe load; verify `promtool` rule syntax and auth monitoring operationally; document the hash benchmark script SHA for reproducibility. Do not classify a 5-sample hash benchmark as comprehensive load testing.
 
 ### B. Decide how to transition legacy and newly promoted administrators
 
