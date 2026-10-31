@@ -99,7 +99,8 @@ const updatePreferencesSchema = z
 export const UpdatePreferencesSchema = updatePreferencesSchema;
 
 const changePasswordSchema = z.object({
-  currentPassword: z.string().min(12).max(128),
+  // Existing bcrypt credentials may predate the 12-character requirement.
+  currentPassword: z.string().min(1).max(128),
   newPassword: passwordPolicy,
 });
 
@@ -257,13 +258,19 @@ export async function changePassword(req: Request, res: Response): Promise<void>
   }
 
   const handled = await handleIdempotentRequest(req, res, userId, {}, async () => {
-    await updatePassword(userId, parsed.data);
-    return { status: 204, body: null };
+    const result = await updatePassword(userId, parsed.data);
+    return result?.passwordWarning
+      ? { status: 200, body: result }
+      : { status: 204, body: null };
   });
 
   if (!handled) {
-    await updatePassword(userId, parsed.data);
-    res.status(204).send();
+    const result = await updatePassword(userId, parsed.data);
+    if (result?.passwordWarning) {
+      res.status(200).json(result);
+    } else {
+      res.status(204).send();
+    }
   }
 }
 
