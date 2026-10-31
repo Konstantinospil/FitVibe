@@ -261,6 +261,9 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Servicio de correo electrónico no disponible"
   },
   "passwordStrength": {
+    "meterLabel": "Estimación de seguridad de la contraseña",
+    "levels": {"veryWeak":"Muy débil","weak":"Débil","fair":"Aceptable","strong":"Fuerte"},
+    "serverChecks": "La aprobación definitiva requiere controles de seguridad en el servidor.",
     "tooShort": "Utiliza al menos {{minimum}} caracteres.",
     "minimumMet": "Se cumple la longitud mínima. Considera una frase única más larga.",
     "longPassphrase": "Frase larga. El servidor también comprobará si aparece en filtraciones."
