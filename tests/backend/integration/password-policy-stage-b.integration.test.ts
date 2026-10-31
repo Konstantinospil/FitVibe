@@ -9,7 +9,7 @@ import app from "../../../apps/backend/src/app.js";
 import db from "../../../apps/backend/src/db/index.js";
 import { createUser } from "../../../apps/backend/src/modules/auth/auth.repository.js";
 import { breachedPasswordChecker } from "../../../apps/backend/src/modules/auth/breached-password.service.js";
-import { changePasswordAndRevokeAuthAtomic } from "../../../apps/backend/src/modules/auth/auth.state.repository.js";
+import { changePasswordAndRevokeAuthAtomic, resetPasswordAtomic } from "../../../apps/backend/src/modules/auth/auth.state.repository.js";
 import { hashPassword, verifyPasswordHash } from "../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { truncateAll, ensureRolesSeeded, createTestIp } from "../../setup/test-helpers.js";
@@ -116,6 +116,29 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
       .where({ user_id: userId, token_type: "password_reset", consumed_at: null }).first();
     expect(stillActiveToken).toBeDefined();
   });
+  it("rejects a short administrator password even when promotion races with reset preflight", async () => {
+    const forgot = await request(app).post("/api/v1/auth/password/forgot").send({ email });
+    expect(forgot.status).toBe(202);
+    const token = await db("auth_tokens")
+      .where({ user_id: userId, token_type: "password_reset" })
+      .orderBy("created_at", "desc").first();
+    expect(token).toBeDefined();
+    const original = await db("users").where({ id: userId }).first("password_hash");
+
+    // Simulate a promotion after an earlier member-level policy check. The
+    // actual credential write must re-evaluate role while holding the user lock.
+    await db("users").where({ id: userId }).update({ role_code: "admin" });
+    const candidate = "twelvechars!";
+    await expect(resetPasswordAtomic(
+      userId, await hashPassword(candidate), token.id, "password_reset", candidate,
+    )).rejects.toMatchObject({ status: 400, code: "WEAK_PASSWORD" });
+
+    const current = await db("users").where({ id: userId }).first("password_hash");
+    expect(current.password_hash).toBe(original.password_hash);
+    expect((await db("auth_tokens").where({ id: token.id }).first()).consumed_at).toBeNull();
+    expect(await db("user_password_history").where({ user_id: userId })).toHaveLength(0);
+  });
+
   it("serializes simultaneous changes with the same old password", async () => {
     const candidateA = "a new original passphrase for the first request";
     const candidateB = "a different original passphrase for the second request";
