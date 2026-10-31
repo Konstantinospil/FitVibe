@@ -11,7 +11,8 @@ import { performance } from "node:perf_hooks";
 import { arch, platform, totalmem } from "node:os";
 import { hashPassword, verifyPasswordHash } from "../../apps/backend/src/modules/auth/password-hashing.service.ts";
 
-if (Number(process.versions.node.split(".")[0]) < 24) {
+const [nodeMajor, nodeMinor] = process.versions.node.split(".").map(Number);
+if (nodeMajor < 24 || (nodeMajor === 24 && nodeMinor < 7)) {
   throw new Error("The production Argon2id implementation requires Node 24.7+");
 }
 
@@ -41,6 +42,7 @@ for (let i = 0; i < 5; i += 1) {
 const parallelStart = performance.now();
 const parallelPasswords = [randomPassphrase(), randomPassphrase()];
 const hashes = await Promise.all(parallelPasswords.map(hashPassword));
+const parallelHashMs = performance.now() - parallelStart;
 for (let i = 0; i < parallelPasswords.length; i += 1) {
   if (!(await verifyPasswordHash(parallelPasswords[i], hashes[i]))) {
     throw new Error("Parallel Argon2id verification failed");
@@ -59,7 +61,7 @@ console.log(JSON.stringify({
   parameters: { memoryMiB: 64, passes: 3, parallelism: 1 },
   serialHashMs: serialMs.map(round),
   serialMedianMs: round(sorted[Math.floor(sorted.length / 2)]),
-  parallelTwoHashMs: round(performance.now() - parallelStart),
+  parallelTwoHashMs: round(parallelHashMs),
   observedRssPeakMiB: round(measuredPeakRss / (1024 ** 2)),
   totalWallMs: round(performance.now() - startTotal),
   note: "Observed RSS is an after-operation sample, not a true peak monitor; use OS metrics for load tests.",
