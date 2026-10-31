@@ -41,13 +41,16 @@ const ProtectedRoute: React.FC = () => {
   const [statusFailed, setStatusFailed] = useState(false);
   const isAdministrator = user?.role === "admin" || user?.role === "superadmin";
   const roleMissing = !user;
-  const [passwordGate, setPasswordGate] = useState<"checking" | "required" | "clear">("checking");
+  const [passwordStatus, setPasswordStatus] = useState<{
+    gate: "checking" | "required" | "clear";
+    minimumPasswordLength: number | null;
+  }>({ gate: "checking", minimumPasswordLength: null });
 
   useEffect(() => {
     let cancelled = false;
 
     if (!isAuthenticated) {
-      setPasswordGate("checking");
+      setPasswordStatus({ gate: "checking", minimumPasswordLength: null });
       setLegalStatus(null);
       setStatusFailed(false);
       return () => {
@@ -55,14 +58,17 @@ const ProtectedRoute: React.FC = () => {
       };
     }
 
-    setPasswordGate("checking");
+    setPasswordStatus({ gate: "checking", minimumPasswordLength: null });
     // The persisted browser session may precede hydration of user.role.
     // Ask the server rather than assuming a missing client role is non-admin.
     if (isAdministrator || roleMissing) {
       void getAdministratorPasswordPolicyStatus()
         .then((status) => {
           if (!cancelled) {
-            setPasswordGate(status.passwordChangeRequired ? "required" : "clear");
+            setPasswordStatus({
+              gate: status.passwordChangeRequired ? "required" : "clear",
+              minimumPasswordLength: status.minimumPasswordLength,
+            });
           }
         })
         .catch((error: unknown) => {
@@ -71,10 +77,13 @@ const ProtectedRoute: React.FC = () => {
           }
           // A password-only bootstrap login must still reach mandatory MFA
           // enrollment before credential attestation can be requested.
-          setPasswordGate(authErrorCode(error) === "ADMIN_2FA_REQUIRED" ? "clear" : "required");
+          setPasswordStatus({
+            gate: authErrorCode(error) === "ADMIN_2FA_REQUIRED" ? "clear" : "required",
+            minimumPasswordLength: null,
+          });
         });
     } else {
-      setPasswordGate("clear");
+      setPasswordStatus({ gate: "clear", minimumPasswordLength: null });
     }
 
     setStatusFailed(false);
@@ -103,12 +112,12 @@ const ProtectedRoute: React.FC = () => {
   // The transition screen is outside MainLayout and remains reachable when
   // ordinary authenticated API calls are denied by the backend.
   if (isAdministrator || roleMissing) {
-    if (passwordGate === "checking") {
+    if (passwordStatus.gate === "checking") {
       return null;
     }
-    if (passwordGate === "required") {
+    if (passwordStatus.gate === "required") {
       if (location.pathname === "/admin/password-update") {
-        return <Outlet />;
+        return <Outlet context={{ minimumPasswordLength: passwordStatus.minimumPasswordLength }} />;
       }
       return <Navigate to="/admin/password-update" replace />;
     }
