@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "../../db/connection.js";
 import type { Knex } from "knex";
 import { HttpError } from "../../utils/http.js";
+import { incrementAuthMfaEvent } from "../../observability/metrics.js";
 import { decryptTotpSecret, encryptTotpSecret } from "./totp-secret.crypto.js";
 import { env } from "../../config/env.js";
 import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
@@ -101,6 +102,8 @@ export async function enableTwoFactor(userId: string, code: string): Promise<voi
   await db.transaction(async (trx) => {
     await verifyAndEnable2FA(userId, code, trx);
   });
+  // Count only committed enrollments, not intermediate verification attempts.
+  incrementAuthMfaEvent("enrolled");
 }
 
 export async function disableTwoFactor(
@@ -120,6 +123,7 @@ export async function disableTwoFactor(
     await assertStepUp(userId, password, code, true, trx);
     await disable2FA(userId, trx);
   });
+  incrementAuthMfaEvent("disabled");
 }
 
 export async function regenerateTwoFactorBackupCodes(
