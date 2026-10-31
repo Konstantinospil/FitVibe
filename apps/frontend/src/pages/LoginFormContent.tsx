@@ -15,6 +15,10 @@ const LoginFormContent: React.FC = () => {
   const formRef = useRef<HTMLFormElement>(null);
   useRequiredFieldValidation(formRef, t);
   const location = useLocation();
+  const transitionState = location.state as {
+    passwordUpdated?: boolean;
+    passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" | null;
+  } | null;
   const requestedPath = (location.state as { from?: { pathname?: string } })?.from?.pathname;
   const from =
     typeof requestedPath === "string" &&
@@ -154,6 +158,16 @@ const LoginFormContent: React.FC = () => {
         showPasswordLabel={showPasswordLabel}
         hidePasswordLabel={hidePasswordLabel}
       />
+      {transitionState?.passwordUpdated ? (
+        <FormFeedback tone="success">
+          {t("auth.adminPasswordTransition.updated")}
+        </FormFeedback>
+      ) : null}
+      {transitionState?.passwordWarning ? (
+        <FormFeedback tone="warning">
+          {t(`passwordStrength.advisory.${transitionState.passwordWarning}`)}
+        </FormFeedback>
+      ) : null}
       {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
       <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
         {isSubmitting ? t("auth.login.submitting") : t("auth.login.submit")}
