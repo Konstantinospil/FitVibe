@@ -261,6 +261,7 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Service e-mail indisponible"
   },
   "passwordStrength": {
+    "advisory": {"PASSWORD_BREACHED":"Ce mot de passe figure dans une fuite de données connue. Nous recommandons vivement de le modifier. L'opération est terminée.","BREACH_CHECK_UNAVAILABLE":"La vérification des fuites de mots de passe était indisponible. L'opération est terminée. Nous recommandons d'utiliser un mot de passe unique."},
     "meterLabel": "Estimation de la robustesse du mot de passe",
     "levels": {"veryWeak":"Très faible","weak":"Faible","fair":"Moyenne","strong":"Forte"},
     "serverChecks": "La validation définitive nécessite des vérifications de sécurité côté serveur.",
