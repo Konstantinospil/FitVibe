@@ -235,6 +235,32 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect(verifyAccess(reverified.body.tokens.accessToken)).toMatchObject({ role: "admin", mfa: true });
     expect((await request(app).get("/api/v1/auth/sessions")
       .set("Cookie", cookieHeader(reverified))).status).toBe(200);
+    
+    // Stage B/C: privileged sudo must accept a newly migrated Argon2id hash,
+    // not only historical bcrypt. Complete a FRESH MFA login after promotion.
+    await db("users").where({ id: ADMIN_ID }).update({ role_code: "superadmin" });
+    const sudoChallenge = await login(REPLACEMENT_PASSWORD);
+    expect(sudoChallenge.body.requires2FA).toBe(true);
+    const sudoLogin = await request(app).post("/api/v1/auth/login/verify-2fa")
+      .set("X-Forwarded-For", ip)
+      .send({
+        pendingSessionId: sudoChallenge.body.pendingSessionId,
+        code: authenticator.generate(setup.body.secret),
+      });
+    expect(sudoLogin.status).toBe(200);
+    expect(verifyAccess(sudoLogin.body.tokens.accessToken)).toMatchObject({
+      role: "superadmin", mfa: true,
+    });
+    const latestHash = (await db("users").where({ id: ADMIN_ID }).first()).password_hash;
+    expect(latestHash).toMatch(/^\\$argon2id\\$/);
+    const sudoDenied = await request(app).post("/api/v1/admin/superadmin/sudo")
+      .set(auth(sudoLogin.body.tokens.accessToken)).send({ password: "incorrect-password" });
+    expect(sudoDenied.status).toBe(401);
+    const sudoGranted = await request(app).post("/api/v1/admin/superadmin/sudo")
+      .set(auth(sudoLogin.body.tokens.accessToken)).send({ password: REPLACEMENT_PASSWORD });
+    expect(sudoGranted.status).toBe(200);
+    expect(sudoGranted.body.expiresAt).toEqual(expect.any(String));
+
   });
 
   it("fails closed for role promotion and suspended or deleted accounts", async () => {
