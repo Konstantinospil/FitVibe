@@ -65,6 +65,7 @@ async function createAdminUser() {
         status: ADMIN_STATUS,
         role_code: ADMIN_ROLE,
         password_hash: passwordHash,
+        admin_password_policy_verified_at: now,
         created_at: now,
         updated_at: now,
       });
