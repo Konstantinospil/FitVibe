@@ -85,7 +85,10 @@ export async function requestPasswordReset(email: string): Promise<{ resetToken?
   }
 }
 
-export async function resetPassword(token: string, newPassword: string): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const record = await findAuthToken(TOKEN_TYPES.PASSWORD_RESET, tokenHash);
   if (!record) {
