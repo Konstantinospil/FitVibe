@@ -18,14 +18,6 @@ function estimatedStrength(password: string): number {
   return Math.max(1, lengthScore - Number(sequential || repeats));
 }
 
-const BAR_COLORS = [
-  "var(--color-danger)",
-  "var(--color-danger)",
-  "var(--color-warning)",
-  "var(--color-accent)",
-  "var(--color-success)",
-] as const;
-
 /** Visual guidance only; breached-password, history and policy checks stay server-side. */
 export function PasswordStrengthFeedback({
   password,
@@ -55,18 +47,15 @@ export function PasswordStrengthFeedback({
         aria-valuemax={4}
         aria-valuenow={score}
         aria-valuetext={t(`passwordStrength.levels.${level}`)}
-        className="flex flex--gap-xs"
+        data-score={score}
+        className="password-strength-meter"
       >
         {[1, 2, 3, 4].map((segment) => (
           <span
             key={segment}
             aria-hidden="true"
-            style={{
-              flex: 1,
-              height: "var(--space-xs)",
-              borderRadius: "var(--radius-md)",
-              backgroundColor: segment <= score ? BAR_COLORS[score] : "var(--color-border)",
-            }}
+            data-active={segment <= score ? "true" : "false"}
+            className="password-strength-segment"
           />
         ))}
       </div>
