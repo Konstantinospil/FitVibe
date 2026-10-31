@@ -984,6 +984,7 @@ describe("Users Service", () => {
         userId,
         expect.any(String),
         dto.newPassword,
+        dto.currentPassword,
       );
     });
   });
