@@ -203,14 +203,16 @@ export async function changePasswordAndRevokeAuthAtomic(
       throw new HttpError(401, "USER_INVALID_PASSWORD", "USER_INVALID_PASSWORD");
     }
     await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
-    await trx("users").where({ id: userId }).update({
-      password_hash: passwordHash,
-      admin_password_policy_verified_at:
-        user.role_code === "admin" || user.role_code === "superadmin"
-          ? new Date().toISOString()
-          : null,
-      updated_at: new Date().toISOString(),
-    });
+    await trx("users")
+      .where({ id: userId })
+      .update({
+        password_hash: passwordHash,
+        admin_password_policy_verified_at:
+          user.role_code === "admin" || user.role_code === "superadmin"
+            ? new Date().toISOString()
+            : null,
+        updated_at: new Date().toISOString(),
+      });
     await revokeUserAuthStateAtomic(userId, trx);
   });
 }
@@ -245,12 +247,14 @@ export async function resetPasswordAtomic(
     // at the same user-row lock as the credential write, not only preflight.
     assertPasswordPolicy(candidate, { role: user.role_code });
     await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
-    const updatedUser = await trx("users").where({ id: userId, status: "active" }).update({
-      password_hash: passwordHash,
-      admin_password_policy_verified_at:
-        user.role_code === "admin" || user.role_code === "superadmin" ? now : null,
-      updated_at: now,
-    });
+    const updatedUser = await trx("users")
+      .where({ id: userId, status: "active" })
+      .update({
+        password_hash: passwordHash,
+        admin_password_policy_verified_at:
+          user.role_code === "admin" || user.role_code === "superadmin" ? now : null,
+        updated_at: now,
+      });
     if (updatedUser !== 1) {
       // Roll back without consuming the token or modifying any session state.
       return false;

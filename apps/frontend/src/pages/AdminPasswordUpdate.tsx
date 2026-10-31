@@ -16,7 +16,7 @@ function passwordErrorCode(cause: unknown): string | undefined {
   return structured.response?.data?.error?.code;
 }
 
-/** #557: reachable only after a verified MFA session, never a password-only bypass. */
+/** Only accessible after MFA; password-only authentication must not bypass this form. */
 const AdminPasswordUpdate: React.FC = () => {
   const { t } = useTranslation();
   const { signOut } = useAuth();
