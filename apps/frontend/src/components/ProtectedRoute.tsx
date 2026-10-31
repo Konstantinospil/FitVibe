@@ -52,9 +52,17 @@ const ProtectedRoute: React.FC = () => {
         .then((status) => {
           if (!cancelled) setPasswordGate(status.passwordChangeRequired ? "required" : "clear");
         })
-        .catch(() => {
-          // Never treat an unreadable administrator transition as compliant.
-          if (!cancelled) setPasswordGate("required");
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          // A password-only bootstrap login must still reach the existing
+          // mandatory MFA enrollment overlay. It cannot update its password
+          // until the backend has verified MFA.
+          const code =
+            error && typeof error === "object" && "response" in error
+              ? (error as { response?: { data?: { error?: { code?: string } } } })
+                  .response?.data?.error?.code
+              : undefined;
+          setPasswordGate(code === "ADMIN_2FA_REQUIRED" ? "clear" : "required");
         });
     } else {
       setPasswordGate("clear");
