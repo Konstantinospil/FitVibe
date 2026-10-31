@@ -158,3 +158,28 @@ Review decisions against the accepted policy; do not treat an undocumented excep
 
 **Disposition:** Stage B source implementation advanced; no claim of final Stage B acceptance until the above verification and migration decisions have evidence. #557 remains open.
 
+
+## Stage B/C implementation checkpoint — 2026-10-31 (draft PR #588)
+
+**Status: implementation candidate only, not accepted.** Changes after earlier CI require independent validation at the final branch SHA.
+
+### Stage B additions
+- The reset password transaction now rechecks the current role under the locked user row. Real-Postgres regression verifies rejection of a 12-character candidate after promotion to admin and preservation of reset token, hash, and history.
+- Superadmin sudo password reauthentication now uses the shared Argon2id/bcrypt dual-format verifier, instead of bcrypt-only comparison.
+- Synthetic Argon2id benchmark script: `node apps/backend/scripts/benchmark-password-hashing.mjs` (Node >=24.7); run on actual Raspberry Pi arm64 and target amd64 and retain latency/memory JSON results.
+
+### Stage C additions
+- Previously implemented: admin access JWT <=5 minutes and shorter than member tokens.
+- New: privileged refresh JWT and cookie expiry <=8 hours, or configured member refresh TTL if shorter.
+- New: admin session absolute expiry <=8 hours from original creation, including refresh rotations, plus server-side 15-minute inactivity enforcement on protected requests and refresh.
+- Existing sessions with null activity timestamps use their original creation timestamp; expiration checks happen through a conditional PostgreSQL update and do not revive expired sessions.
+- New unit regressions: refresh JWT and cookie TTL, absolute and idle deadline boundaries, legacy/null and invalid timestamps, expired admin protected endpoint and refresh rejection.
+- Draft PR: https://github.com/Konstantinospil/FitVibe/pull/588 — no merge to `feature`.
+
+### Blocking acceptance
+1. Required CI and real database/E2E/axe/VRT verification on the latest exact SHA; no success claim yet.
+2. Stage B: legacy existing/promoted admin password minimum transition, Pi arm64 and amd64 Argon2id benchmarking, password-history database backup/restore, rollback compatibility, live warning presentation and service-account applicability.
+3. Stage C: sensitive admin action step-up inventory and enforcement (moderation, account lifecycle, action mappings, visibility overrides if applicable), corresponding UX, TLS 1.3, proxy/cookie/CSRF/redaction evidence, mTLS/IP feasibility and device binding.
+4. Review diverged `feature` history, preserve both sides and validate merged feature SHA. Stage D is a separate incomplete workstream.
+
+**Disposition:** Stage B and Stage C not yet independently accepted. Keep #557 and DRIFT-093 open.
