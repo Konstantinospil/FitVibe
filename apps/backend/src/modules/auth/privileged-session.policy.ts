@@ -26,11 +26,16 @@ export function privilegedSessionDeadline(session: PrivilegedSessionDates): numb
   return Math.min(created + ADMIN_SESSION_MAX_AGE_MS, activity + ADMIN_SESSION_IDLE_MS);
 }
 
-export function isPrivilegedSessionActive(session: PrivilegedSessionDates, now = Date.now()): boolean {
+export function isPrivilegedSessionActive(
+  session: PrivilegedSessionDates,
+  now = Date.now(),
+): boolean {
   return now < privilegedSessionDeadline(session);
 }
 
-export function privilegedAbsoluteExpiry(session: Pick<PrivilegedSessionDates, "created_at">): number {
+export function privilegedAbsoluteExpiry(
+  session: Pick<PrivilegedSessionDates, "created_at">,
+): number {
   const created = Date.parse(session.created_at);
   return Number.isFinite(created) ? created + ADMIN_SESSION_MAX_AGE_MS : Number.NEGATIVE_INFINITY;
 }
