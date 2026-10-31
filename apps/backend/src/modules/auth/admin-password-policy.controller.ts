@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
+import { passwordMinimumForRole } from "./passwordPolicy.js";
+import { administratorPasswordChangeRequired } from "./admin-password-policy.service.js";
 
 /** Current persisted state; no JWT role/attestation claim is trusted. */
 export async function administratorPasswordPolicyStatus(
@@ -20,5 +22,8 @@ export async function administratorPasswordPolicyStatus(
     throw new HttpError(401, "UNAUTHENTICATED", "Account no longer exists");
   }
   const privileged = user.role_code === "admin" || user.role_code === "superadmin";
-  res.json({ passwordChangeRequired: privileged && !user.admin_password_policy_verified_at });
+  res.json({
+    passwordChangeRequired: privileged && administratorPasswordChangeRequired(user),
+    minimumPasswordLength: passwordMinimumForRole(user.role_code),
+  });
 }
