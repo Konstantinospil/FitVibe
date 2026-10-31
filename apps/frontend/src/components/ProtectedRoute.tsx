@@ -47,7 +47,9 @@ const ProtectedRoute: React.FC = () => {
     }
 
     setPasswordGate("checking");
-    if (isAdministrator) {
+    // The persisted browser session may precede hydration of user.role.
+    // Ask the server rather than assuming a missing client role is non-admin.
+    if (isAdministrator || !user) {
       void getAdministratorPasswordPolicyStatus()
         .then((status) => {
           if (!cancelled) setPasswordGate(status.passwordChangeRequired ? "required" : "clear");
@@ -93,7 +95,7 @@ const ProtectedRoute: React.FC = () => {
 
   // The transition screen is outside MainLayout and remains reachable when
   // ordinary authenticated API calls are denied by the backend.
-  if (isAdministrator) {
+  if (isAdministrator || !user) {
     if (passwordGate === "checking") return null;
     if (passwordGate === "required") {
       return location.pathname === "/admin/password-update"
