@@ -261,6 +261,9 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Service e-mail indisponible"
   },
   "passwordStrength": {
+    "meterLabel": "Estimation de la robustesse du mot de passe",
+    "levels": {"veryWeak":"Très faible","weak":"Faible","fair":"Moyenne","strong":"Forte"},
+    "serverChecks": "La validation définitive nécessite des vérifications de sécurité côté serveur.",
     "tooShort": "Utilisez au moins {{minimum}} caractères.",
     "minimumMet": "Longueur minimale atteinte. Préférez une phrase unique plus longue.",
     "longPassphrase": "Phrase longue. Le serveur vérifiera aussi les fuites connues."
