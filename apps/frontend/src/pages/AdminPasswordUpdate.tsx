@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
 import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
@@ -21,6 +21,8 @@ const AdminPasswordUpdate: React.FC = () => {
   const { t } = useTranslation();
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const transition = useOutletContext<{ minimumPasswordLength: number | null } | undefined>();
+  const minimumPasswordLength = transition?.minimumPasswordLength ?? null;
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -34,7 +36,11 @@ const AdminPasswordUpdate: React.FC = () => {
       setError(t("auth.adminPasswordTransition.mismatch"));
       return;
     }
-    if (newPassword.length < 16) {
+    if (minimumPasswordLength === null) {
+      setError(t("auth.adminPasswordTransition.statusUnavailable"));
+      return;
+    }
+    if (newPassword.length < minimumPasswordLength) {
       setError(t("auth.adminPasswordTransition.minimum"));
       return;
     }
@@ -99,7 +105,13 @@ const AdminPasswordUpdate: React.FC = () => {
           disabled={submitting}
           onChange={(event) => setNewPassword(event.target.value)}
         />
-        <PasswordStrengthFeedback password={newPassword} minimum={16} />
+        {minimumPasswordLength !== null ? (
+          <PasswordStrengthFeedback password={newPassword} minimum={minimumPasswordLength} />
+        ) : (
+          <FormFeedback tone="warning">
+            {t("auth.adminPasswordTransition.statusUnavailable")}
+          </FormFeedback>
+        )}
         <PasswordField
           id="admin-confirm-password"
           name="confirmation"
@@ -111,7 +123,12 @@ const AdminPasswordUpdate: React.FC = () => {
           onChange={(event) => setConfirmation(event.target.value)}
         />
         {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
-        <Button type="submit" fullWidth isLoading={submitting} disabled={submitting}>
+        <Button
+          type="submit"
+          fullWidth
+          isLoading={submitting}
+          disabled={submitting || minimumPasswordLength === null}
+        >
           {t("auth.adminPasswordTransition.submit")}
         </Button>
       </FormStack>
