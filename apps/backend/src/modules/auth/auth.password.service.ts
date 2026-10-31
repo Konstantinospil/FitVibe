@@ -85,7 +85,7 @@ export async function requestPasswordReset(email: string): Promise<{ resetToken?
   }
 }
 
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
+export async function resetPassword(token: string, newPassword: string): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const record = await findAuthToken(TOKEN_TYPES.PASSWORD_RESET, tokenHash);
   if (!record) {
@@ -116,9 +116,9 @@ export async function resetPassword(token: string, newPassword: string): Promise
     alias: user.username,
     role: user.role_code,
   });
-  // Screening precedes the atomic claim: provider outages cannot consume a
-  // valid reset token or revoke any existing session.
-  await breachedPasswordChecker.assertAcceptable(newPassword);
+  // Common passwords are rejected, but breach matches and provider outages
+  // are advisory. A warning never bypasses other password-policy checks.
+  const passwordWarning = await breachedPasswordChecker.checkAdvisory(newPassword);
 
   const password_hash = await hashPassword(newPassword);
   const resetApplied = await resetPasswordAtomic(
@@ -131,4 +131,5 @@ export async function resetPassword(token: string, newPassword: string): Promise
   if (!resetApplied) {
     throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
   }
+  return { passwordWarning };
 }
