@@ -112,13 +112,20 @@ groups:
   - name: security_alerts
     interval: 1m
     rules:
-      # Failed Login Spike (> 3 sigma from baseline)
+      # Compare rates to a 30-day distribution of five-minute rates, not
+      # raw ever-increasing counter samples. The historical sample gate
+      # suppresses alerts during initial warm-up / insufficient retention.
+      # 30 days at 5-minute intervals ~8640 samples; allow scrape gaps.
       - alert: FailedLoginSpike
         expr: |
           (
             rate(auth_failed_login_total[5m])
-            - avg_over_time(auth_failed_login_total[1h])
-          ) / stddev_over_time(auth_failed_login_total[1h]) > 3
+            >
+            avg_over_time((rate(auth_failed_login_total[5m]))[30d:5m])
+            + 3 * clamp_min(stddev_over_time((rate(auth_failed_login_total[5m]))[30d:5m]), 0.0001)
+          )
+          and
+          count_over_time((rate(auth_failed_login_total[5m]))[30d:5m]) >= 8000
         for: 5m
         labels:
           severity: warning
@@ -126,6 +133,26 @@ groups:
         annotations:
           summary: "Unusual failed login activity detected"
           description: "Failed login rate is {{ $value }} standard deviations above baseline"
+
+      # Failed reset submissions divided by completed + failed submissions.
+      # Account-existence-opaque reset *requests* are separately counted and
+      # intentionally excluded from this completion failure percentage.
+      - alert: PasswordResetTokenFailureRate
+        expr: |
+          (
+            sum(increase(auth_password_reset_total{outcome="invalid_token"}[15m]))
+            /
+            clamp_min(sum(increase(auth_password_reset_total{outcome=~"invalid_token|completed"}[15m])), 1)
+          ) > 0.05
+          and
+          sum(increase(auth_password_reset_total{outcome=~"invalid_token|completed"}[15m])) >= 20
+        for: 2m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Password reset token failure rate exceeds 5%"
+          description: "More than 5% of reset submissions failed due to invalid, expired or consumed tokens in 15 minutes"
 
       # JWT Refresh Token Reuse Detected
       - alert: RefreshTokenReuseDetected
