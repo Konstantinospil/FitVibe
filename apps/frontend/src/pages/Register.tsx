@@ -202,8 +202,10 @@ const Register: React.FC = () => {
         },
       };
 
-      const response = await registerAccount(registrationPayload, avatarFile ?? undefined);
-      setPasswordWarning(response.passwordWarning ?? null);
+      const response = avatarFile
+        ? await registerAccount(registrationPayload, avatarFile)
+        : await registerAccount(registrationPayload);
+      setPasswordWarning(response?.passwordWarning ?? null);
       setSuccess(true);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
