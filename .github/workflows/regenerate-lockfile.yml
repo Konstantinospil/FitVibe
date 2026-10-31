@@ -3,11 +3,10 @@ run-name: Regenerate pnpm lockfile on ${{ inputs.target_branch || github.ref_nam
 
 on:
   push:
-    branches: ['fix/dependencies', 'fix/557-deterministic-onboarding-fixtures']
+    branches: ['fix/dependencies']
     paths:
       - 'package.json'
       - 'apps/backend/package.json'
-      - 'apps/frontend/package.json'
       - 'pnpm-workspace.yaml'
       - '.github/workflows/regenerate-lockfile.yml'
   workflow_dispatch:
@@ -89,15 +88,4 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'chore(deps): regenerate pnpm lockfile'
-          # Commits may land while dependency validation is running.
-          # Rebase the lockfile-only commit onto the newest remote head.
-          for attempt in 1 2 3 4 5; do
-            git fetch origin "$TARGET_BRANCH"
-            git rebase "origin/$TARGET_BRANCH"
-            if git push origin "HEAD:refs/heads/$TARGET_BRANCH"; then
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Could not push regenerated lockfile after retries" >&2
-          exit 1
+          git push origin "HEAD:refs/heads/$TARGET_BRANCH"
