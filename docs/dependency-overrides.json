@@ -629,6 +629,69 @@
       "directDeclarations": [],
       "reason": "GHSA-g3hv-75wg-m249 affects minimatch v10; redirect v10 range to patched v11.0.1 pending full compatibility tests.",
       "removalCriteria": "Remove once all v10 requesting parents select patched 11.0.1 without an override and CI passes."
+    },
+    {
+      "name": "@eslint/config-array>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through @eslint/config-array; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once @eslint/config-array selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "@eslint/eslintrc>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through @eslint/eslintrc; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once @eslint/eslintrc selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint-plugin-import>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-import; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint-plugin-import selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint-plugin-jsx-a11y>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-jsx-a11y; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint-plugin-jsx-a11y selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint-plugin-react>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-react; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint-plugin-react selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "test-exclude>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through test-exclude; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once test-exclude selects minimatch >=11.0.1 without override and complete CI passes."
     }
   ]
 }
