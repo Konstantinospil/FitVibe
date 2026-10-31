@@ -81,7 +81,7 @@ describe("2-Stage Login Flow (AC-1.6)", () => {
       status: "active",
       created_at: "2024-01-01T00:00:00Z",
       updated_at: "2024-01-01T00:00:00Z",
-      password_hash: "hashed-password",
+      password_hash: "$2a$12$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       terms_accepted: true,
       terms_accepted_at: "2024-01-01T00:00:00Z",
       terms_version: await getCurrentTermsVersion(),

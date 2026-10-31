@@ -3,6 +3,8 @@
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+// Enforce stable smoke-test IDs and requirement-to-fixture traceability in CI.
+require("./check-e2e-traceability.cjs");
 
 const ROOT = path.resolve(__dirname, "../..");
 const MANIFEST_PATH = path.join(__dirname, "test-ownership.json");
@@ -161,6 +163,11 @@ function main() {
   }
   for (const exclusion of manifest.exclusions) console.log(`${exclusion.name}: ${result.excluded.get(exclusion.name).length} excluded test files | ${exclusion.reason}`);
   console.log(`CI inventory: ${workflowJobs.size} workflow jobs declared; ${result.active.length} active test files have exactly one owner; negative ownership control passed.`);
+  execFileSync(process.execPath, [path.join(__dirname, "collect-e2e-traceability.cjs")], {
+    cwd: ROOT,
+    stdio: "inherit",
+    timeout: 180_000,
+  });
 }
 if (require.main===module) {
   try { main(); } catch (error) { console.error(`Test ownership manifest validation failed: ${error.message}`); process.exit(1); }

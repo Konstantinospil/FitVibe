@@ -173,7 +173,11 @@
   "errors": {
     "TERMS_ACCEPTANCE_REQUIRED": "Debes aceptar los Términos y Condiciones y la Política de Privacidad para crear una cuenta",
     "TERMS_VERSION_OUTDATED": "Los Términos y Condiciones han sido actualizados. Por favor acepta los nuevos términos para continuar.",
-    "WEAK_PASSWORD": "La contraseña debe tener al menos 12 caracteres e incluir mayúsculas, minúsculas, dígitos y símbolos",
+    "WEAK_PASSWORD": "La contraseña debe tener al menos 12 caracteres (16 para administradores). Se permiten frases de contraseña.",
+    "PASSWORD_COMMON": "Elige una contraseña o frase menos común.",
+    "PASSWORD_BREACHED": "Esta contraseña aparece en una filtración conocida. Elige otra.",
+    "BREACH_CHECK_UNAVAILABLE": "La comprobación de seguridad de contraseñas no está disponible temporalmente. Inténtalo de nuevo; no se guardaron cambios.",
+    "PASSWORD_REUSED": "Elige una contraseña que no hayas utilizado recientemente.",
     "PASSWORD_CONTAINS_USERNAME": "La contraseña no puede contener tu nombre de usuario",
     "PASSWORD_CONTAINS_EMAIL": "La contraseña no puede contener tu dirección de correo electrónico",
     "AUTH_INVALID_TOKEN": "Token de verificación inválido",
@@ -255,6 +259,15 @@
     "UPLOAD_MALWARE_DETECTED": "El archivo falló el escaneo de seguridad",
     "UPLOAD_NOT_FOUND": "Archivo no encontrado",
     "EMAIL_SERVICE_UNAVAILABLE": "Servicio de correo electrónico no disponible"
+  },
+  "passwordStrength": {
+    "advisory": {"PASSWORD_BREACHED":"Esta contraseña aparece en una filtración conocida. Recomendamos encarecidamente cambiarla. La operación se ha completado.","BREACH_CHECK_UNAVAILABLE":"No se pudo verificar si la contraseña aparece en filtraciones. La operación se ha completado. Recomendamos utilizar una contraseña única."},
+    "meterLabel": "Estimación de seguridad de la contraseña",
+    "levels": {"veryWeak":"Muy débil","weak":"Débil","fair":"Aceptable","strong":"Fuerte"},
+    "serverChecks": "La aprobación definitiva requiere controles de seguridad en el servidor.",
+    "tooShort": "Utiliza al menos {{minimum}} caracteres.",
+    "minimumMet": "Se cumple la longitud mínima. Considera una frase única más larga.",
+    "longPassphrase": "Frase larga. El servidor también comprobará si aparece en filtraciones."
   },
   "validation": {
     "required": "Completa este campo",
@@ -395,7 +408,7 @@
     "errorReset": "Error al restablecer contraseña",
     "passwordRequirements": {
       "title": "Requisitos de Contraseña:",
-      "minLength": "Al menos 12 caracteres",
+      "minLength": "Al menos 12 caracteres (16 para administradores). Puedes utilizar frases largas.",
       "uppercase": "Al menos una letra mayúscula (A-Z)",
       "lowercase": "Al menos una letra minúscula (a-z)",
       "digit": "Al menos un dígito (0-9)",

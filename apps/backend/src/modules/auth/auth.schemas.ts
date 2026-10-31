@@ -1,13 +1,8 @@
 import { z } from "zod";
 
-export const passwordPolicy = z
-  .string()
-  .min(12, "passwordMinLength")
-  .max(128)
-  .regex(/(?=.*[a-z])/, "passwordLowercase")
-  .regex(/(?=.*[A-Z])/, "passwordUppercase")
-  .regex(/(?=.*\d)/, "passwordDigit")
-  .regex(/(?=.*[^\w\s])/, "passwordSymbol");
+// Structural validation only. The role-aware shared policy and online breach
+// screening execute server-side before credential persistence.
+export const passwordPolicy = z.string().min(12, "passwordMinLength").max(128);
 
 const aliasSchema = z
   .string()

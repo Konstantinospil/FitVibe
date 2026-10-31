@@ -537,7 +537,14 @@ describe("Register", () => {
     expect(api.register).not.toHaveBeenCalled();
   });
 
-  it("validates password contains lowercase letter", async () => {
+  // #557 Stage B: composition rules were removed intentionally.
+  // Verify actual API submission rather than merely the absence of a validation error.
+  it.each([
+    ["lowercase", "PASSWORD123!"],
+    ["uppercase", "password123!"],
+    ["digit", "PasswordLong!"],
+    ["symbol", "Password123Long"],
+  ])("accepts a length-compliant password without %s", async (_missingClass, candidate) => {
     renderWithProviders(<Register />);
     await fillRequiredProfileFields();
 
@@ -550,12 +557,11 @@ describe("Register", () => {
     await act(() => {
       fireEvent.change(nameInput, { target: { value: "John Doe" } });
       fireEvent.change(emailInput, { target: { value: "john@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "PASSWORD123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "PASSWORD123!" } });
+      fireEvent.change(passwordInput, { target: { value: candidate } });
+      fireEvent.change(confirmPasswordInput, { target: { value: candidate } });
     });
     const checkboxes = screen.getAllByRole("checkbox", { name: /accept the/i });
     await act(() => {
-      // Click both checkboxes (terms and privacy)
       checkboxes.forEach((checkbox) => {
         fireEvent.click(checkbox);
       });
@@ -564,109 +570,12 @@ describe("Register", () => {
       }
     });
 
-    const alert = await screen.findByRole("alert", {}, { timeout: 1000 });
-    expect(alert.textContent).toMatch(/password must contain at least one lowercase/i);
-
-    expect(api.register).not.toHaveBeenCalled();
-  });
-
-  it("validates password contains uppercase letter", async () => {
-    renderWithProviders(<Register />);
-    await fillRequiredProfileFields();
-
-    const nameInput = screen.getByRole("textbox", { name: /full name/i });
-    const emailInput = screen.getByRole("textbox", { name: /email/i });
-    const passwordInput = screen.getByPlaceholderText(/create a strong password/i);
-    const confirmPasswordInput = screen.getByPlaceholderText(/confirm your password/i);
-    const form = nameInput.closest("form");
-
-    await act(() => {
-      fireEvent.change(nameInput, { target: { value: "John Doe" } });
-      fireEvent.change(emailInput, { target: { value: "john@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "password123!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "password123!" } });
+    await waitFor(() => {
+      expect(api.register).toHaveBeenCalledWith(
+        expect.objectContaining({ password: candidate }),
+      );
     });
-    const checkboxes = screen.getAllByRole("checkbox", { name: /accept the/i });
-    await act(() => {
-      // Click both checkboxes (terms and privacy)
-      checkboxes.forEach((checkbox) => {
-        fireEvent.click(checkbox);
-      });
-      if (form) {
-        fireEvent.submit(form);
-      }
-    });
-
-    const alert = await screen.findByRole("alert", {}, { timeout: 1000 });
-    expect(alert.textContent).toMatch(/password must contain at least one uppercase/i);
-
-    expect(api.register).not.toHaveBeenCalled();
-  });
-
-  it("validates password contains digit", async () => {
-    renderWithProviders(<Register />);
-    await fillRequiredProfileFields();
-
-    const nameInput = screen.getByRole("textbox", { name: /full name/i });
-    const emailInput = screen.getByRole("textbox", { name: /email/i });
-    const passwordInput = screen.getByPlaceholderText(/create a strong password/i);
-    const confirmPasswordInput = screen.getByPlaceholderText(/confirm your password/i);
-    const form = nameInput.closest("form");
-
-    await act(() => {
-      fireEvent.change(nameInput, { target: { value: "John Doe" } });
-      fireEvent.change(emailInput, { target: { value: "john@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "PasswordLong!" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "PasswordLong!" } });
-    });
-    const checkboxes = screen.getAllByRole("checkbox", { name: /accept the/i });
-    await act(() => {
-      // Click both checkboxes (terms and privacy)
-      checkboxes.forEach((checkbox) => {
-        fireEvent.click(checkbox);
-      });
-      if (form) {
-        fireEvent.submit(form);
-      }
-    });
-
-    const alert = await screen.findByRole("alert", {}, { timeout: 1000 });
-    expect(alert.textContent).toMatch(/password must contain at least one digit/i);
-
-    expect(api.register).not.toHaveBeenCalled();
-  });
-
-  it("validates password contains symbol", async () => {
-    renderWithProviders(<Register />);
-    await fillRequiredProfileFields();
-
-    const nameInput = screen.getByRole("textbox", { name: /full name/i });
-    const emailInput = screen.getByRole("textbox", { name: /email/i });
-    const passwordInput = screen.getByPlaceholderText(/create a strong password/i);
-    const confirmPasswordInput = screen.getByPlaceholderText(/confirm your password/i);
-    const form = nameInput.closest("form");
-
-    await act(() => {
-      fireEvent.change(nameInput, { target: { value: "John Doe" } });
-      fireEvent.change(emailInput, { target: { value: "john@example.com" } });
-      fireEvent.change(passwordInput, { target: { value: "Password123Long" } });
-      fireEvent.change(confirmPasswordInput, { target: { value: "Password123Long" } });
-    });
-    const checkboxes = screen.getAllByRole("checkbox", { name: /accept the/i });
-    await act(() => {
-      // Click both checkboxes (terms and privacy)
-      checkboxes.forEach((checkbox) => {
-        fireEvent.click(checkbox);
-      });
-      if (form) {
-        fireEvent.submit(form);
-      }
-    });
-
-    const alert = await screen.findByRole("alert", {}, { timeout: 1000 });
-    expect(alert.textContent).toMatch(/password must contain at least one symbol/i);
-
-    expect(api.register).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("requires terms acceptance", async () => {

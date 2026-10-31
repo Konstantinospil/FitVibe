@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import type { Knex } from "knex";
 
@@ -6,6 +5,7 @@ import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
 import { verifyTotpOnly } from "../auth/two-factor.service.js";
+import { verifyPasswordHash } from "../auth/password-hashing.service.js";
 
 const SUDO_TTL_MS = 5 * 60 * 1000;
 
@@ -96,7 +96,7 @@ export async function beginSudo(
     throw new HttpError(403, "SUPERADMIN_TOTP_REQUIRED", "Verified authenticator TOTP is required");
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  const valid = await verifyPasswordHash(password, user.passwordHash);
   if (!valid) {
     await insertAudit({
       actorUserId: userId,

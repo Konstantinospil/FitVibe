@@ -1,8 +1,7 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "./password-hashing.service.js";
 import { v4 as uuidv4 } from "uuid";
 import { env } from "../../config/env.js";
-import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { db } from "../../db/connection.js";
 import { acceptLegalDocumentVersion, getCurrentLegalPublication } from "../legal/legal.service.js";
 import { HttpError } from "../../utils/http.js";
@@ -16,6 +15,7 @@ import {
 } from "../../services/i18n.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
 import { assertPasswordPolicy } from "./passwordPolicy.js";
+import { breachedPasswordChecker } from "./breached-password.service.js";
 import {
   consumeAuthToken,
   createUser,
@@ -59,7 +59,11 @@ function dateOfBirthFromAge(age?: number | null): string | undefined {
 export async function register(
   dto: RegisterDTO,
   preparedAvatar?: Buffer,
-): Promise<{ verificationToken?: string; user?: UserSafe }> {
+): Promise<{
+  verificationToken?: string;
+  user?: UserSafe;
+  passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
+}> {
   const startTime = Date.now();
 
   try {
@@ -69,6 +73,9 @@ export async function register(
       throw new HttpError(403, "AUTH_EMAIL_BLOCKED", "AUTH_EMAIL_BLOCKED");
     }
     assertPasswordPolicy(dto.password, { email, alias });
+    // Keep the local common-password denylist mandatory. A breach match or
+    // provider outage is advisory and must not prevent account creation.
+    const passwordWarning = await breachedPasswordChecker.checkAdvisory(dto.password);
     if (
       dto.profile?.sex !== undefined ||
       dto.profile?.fitness_level !== undefined ||
@@ -106,7 +113,7 @@ export async function register(
           });
         }
 
-        return { verificationToken: token, user: toSafeUser(existingByEmail) };
+        return { verificationToken: token, user: toSafeUser(existingByEmail), passwordWarning };
       }
       throw new HttpError(409, "AUTH_CONFLICT", "AUTH_CONFLICT");
     }
@@ -116,7 +123,7 @@ export async function register(
     }
 
     const id = uuidv4();
-    const password_hash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
+    const password_hash = await hashPassword(dto.password);
     const now = new Date().toISOString();
     const currentTerms = await getCurrentLegalPublication("terms");
 
@@ -181,7 +188,7 @@ export async function register(
     }
 
     const user = await findUserById(id);
-    return { verificationToken, user: user ? toSafeUser(user) : undefined };
+    return { verificationToken, user: user ? toSafeUser(user) : undefined, passwordWarning };
   } finally {
     await normalizeAuthTiming(startTime);
   }

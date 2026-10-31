@@ -43,6 +43,28 @@ describe("breached password range checker (#557)", () => {
     expect(init.headers).toMatchObject({ "Add-Padding": "true" });
   });
 
+  it("returns advisory rather than blocking on a breached match or provider outage", async () => {
+    const breached = new BreachedPasswordChecker(
+      jest.fn().mockResolvedValue(response([row(candidate, 42), filler])),
+    );
+    await expect(breached.checkAdvisory(candidate)).resolves.toBe("PASSWORD_BREACHED");
+
+    const unavailable = new BreachedPasswordChecker(
+      jest.fn().mockRejectedValue(new Error("offline")),
+    );
+    await expect(unavailable.checkAdvisory(candidate)).resolves.toBe("BREACH_CHECK_UNAVAILABLE");
+  });
+
+  it("continues to reject locally blocked common passwords under advisory mode", async () => {
+    const transport = jest.fn();
+    const checker = new BreachedPasswordChecker(transport);
+    await expect(checker.checkAdvisory("password123")).rejects.toMatchObject({
+      status: 400,
+      code: "PASSWORD_COMMON",
+    });
+    expect(transport).not.toHaveBeenCalled();
+  });
+
   it("does not mistake a zero-count padding suffix for a breach", async () => {
     const transport = jest.fn().mockResolvedValue(response([row(candidate, 0), filler]));
     await expect(new BreachedPasswordChecker(transport).assertAcceptable(candidate)).resolves.toBeUndefined();

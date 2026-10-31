@@ -1,4 +1,5 @@
 import { db } from "../../db/index.js";
+import { incrementAuthFailedLogin } from "../../observability/metrics.js";
 import {
   getFailedAttempt,
   recordFailedAttempt,
@@ -80,6 +81,9 @@ export async function recordLoginFailure({
     const ip = await recordFailedAttemptByIP(ipAddress, identifier, trx);
     return { account, ip };
   });
+  // Count every failed credential check, including nonexistent accounts. The
+  // audit event below carries an actor only when an account was identified.
+  incrementAuthFailedLogin();
 
   if (isIPLocked(attempts.ip)) {
     await recordAuditEvent(actorUserId, "auth.login_blocked_ip", {

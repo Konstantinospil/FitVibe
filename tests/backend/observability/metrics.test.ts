@@ -34,6 +34,11 @@ import {
   metricsRoute,
   incrementRefreshReuse,
   incrementPointsAwarded,
+  incrementAuthFailedLogin,
+  incrementAuthBlockedLogin,
+  incrementAuthLoginSuccess,
+  incrementAuthPasswordReset,
+  incrementAuthMfaEvent,
   stopMetricsCollection,
 } from "../../../apps/backend/src/observability/metrics.js";
 
@@ -144,6 +149,43 @@ describe("Metrics", () => {
     it("should increment points awarded counter with different rules", () => {
       expect(() => incrementPointsAwarded("streak_bonus", 5)).not.toThrow();
       expect(() => incrementPointsAwarded("daily_login", 2)).not.toThrow();
+    });
+  });
+
+  describe("Security outcome counters (#557)", () => {
+    it("records failed credentials without dynamic identifier labels", () => {
+      incrementAuthFailedLogin();
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith();
+    });
+
+    it("records only bounded lockout scope labels", () => {
+      incrementAuthBlockedLogin("account");
+      incrementAuthBlockedLogin("ip");
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ scope: "account" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ scope: "ip" });
+    });
+
+    it("distinguishes completed password and MFA login sessions", () => {
+      incrementAuthLoginSuccess("password");
+      incrementAuthLoginSuccess("mfa");
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ factor: "password" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ factor: "mfa" });
+    });
+
+    it("tracks reset initiation, completion and invalid tokens separately", () => {
+      incrementAuthPasswordReset("requested");
+      incrementAuthPasswordReset("completed");
+      incrementAuthPasswordReset("invalid_token");
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ outcome: "requested" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ outcome: "completed" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ outcome: "invalid_token" });
+    });
+
+    it("records an allowlisted MFA lifecycle event rather than account data", () => {
+      incrementAuthMfaEvent("enrolled");
+      incrementAuthMfaEvent("login_failed");
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ event: "enrolled" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ event: "login_failed" });
     });
   });
 

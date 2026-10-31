@@ -1,6 +1,5 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
-import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
+import { hashPassword, verifyPasswordHash } from "../auth/password-hashing.service.js";
 import { db } from "../../db/connection.js";
 import {
   findUserById,
@@ -25,6 +24,7 @@ import {
   revokeUserAuthStateAtomic,
 } from "../auth/auth.repository.js";
 import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
+import { breachedPasswordChecker } from "../auth/breached-password.service.js";
 import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
 import { primaryEmail, toUserDetail, toUserSafe } from "./users.mapping.js";
@@ -71,7 +71,7 @@ function isUniqueViolation(error: unknown): boolean {
 export async function createUser(
   actorUserId: string | null,
   dto: CreateUserDTO,
-): Promise<UserDetail> {
+): Promise<UserDetail & { passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
   const userId = crypto.randomUUID();
   const username = dto.username.trim();
   const displayName = dto.displayName.trim();
@@ -97,8 +97,9 @@ export async function createUser(
   }
 
   await ensureUsernameAvailable(userId, username);
-  assertPasswordPolicy(dto.password, { email, username });
-  const passwordHash = await bcrypt.hash(dto.password, AUTH_SECURITY_POLICY.password.hashCost);
+  assertPasswordPolicy(dto.password, { email, username, role: roleCode });
+  const passwordWarning = await breachedPasswordChecker.checkAdvisory(dto.password);
+  const passwordHash = await hashPassword(dto.password);
   const locale = dto.locale?.trim() || undefined;
   const preferredLang = dto.preferredLang;
 
@@ -156,7 +157,8 @@ export async function createUser(
   if (!created) {
     throw new HttpError(500, "USER_REFRESH_FAILED", "USER_REFRESH_FAILED");
   }
-  return await toUserDetail(created.user, created.contacts, created.avatar);
+  const detail = await toUserDetail(created.user, created.contacts, created.avatar);
+  return passwordWarning ? { ...detail, passwordWarning } : detail;
 }
 
 export async function getMe(id: string): Promise<UserDetail | null> {
@@ -174,13 +176,16 @@ export async function listAll(limit = 50, offset = 0): Promise<UserSafe[]> {
 
 export { updateProfile } from "./users.profile.service.js";
 
-export async function updatePassword(userId: string, dto: ChangePasswordDTO): Promise<void> {
+export async function updatePassword(
+  userId: string,
+  dto: ChangePasswordDTO,
+): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
   const user = await findUserById(userId);
   if (!user) {
     throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
   }
 
-  const ok = await bcrypt.compare(dto.currentPassword, user.password_hash);
+  const ok = await verifyPasswordHash(dto.currentPassword, user.password_hash);
   if (!ok) {
     throw new HttpError(401, "USER_INVALID_PASSWORD", "USER_INVALID_PASSWORD");
   }
@@ -188,9 +193,10 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
   const contacts = await getUserContacts(userId);
   const email = primaryEmail(contacts) ?? undefined;
 
-  assertPasswordPolicy(dto.newPassword, { email, username: user.username });
-  const newHash = await bcrypt.hash(dto.newPassword, AUTH_SECURITY_POLICY.password.hashCost);
-  await changePasswordAndRevokeAuthAtomic(userId, newHash);
+  assertPasswordPolicy(dto.newPassword, { email, username: user.username, role: user.role_code });
+  const passwordWarning = await breachedPasswordChecker.checkAdvisory(dto.newPassword);
+  const newHash = await hashPassword(dto.newPassword);
+  await changePasswordAndRevokeAuthAtomic(userId, newHash, dto.newPassword, dto.currentPassword);
   await insertAudit({
     actorUserId: userId,
     entityType: "users",
@@ -198,6 +204,7 @@ export async function updatePassword(userId: string, dto: ChangePasswordDTO): Pr
     entityId: userId,
     metadata: { rotatedSessions: true, accessInvalidated: true },
   });
+  return { passwordWarning };
 }
 
 export async function changeStatus(
@@ -255,7 +262,7 @@ export async function requestAccountDeletion(
   }
 
   // SECURITY: Verify password before allowing account deletion
-  const passwordValid = await bcrypt.compare(password, user.password_hash);
+  const passwordValid = await verifyPasswordHash(password, user.password_hash);
   if (!passwordValid) {
     throw new HttpError(401, "USER_INVALID_PASSWORD", "Invalid password");
   }

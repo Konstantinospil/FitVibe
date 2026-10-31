@@ -11,6 +11,7 @@ import {
   TextLink,
 } from "@fitvibe/ui";
 import AuthPageLayout from "../components/AuthPageLayout";
+import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
 import {
@@ -54,6 +55,7 @@ const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [passwordWarning, setPasswordWarning] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -168,25 +170,9 @@ const Register: React.FC = () => {
       return;
     }
 
-    const passwordErrors: string[] = [];
-    if (password.length < 12) {
-      passwordErrors.push(t("validation.passwordMinLength"));
-    }
-    if (!/[a-z]/.test(password)) {
-      passwordErrors.push(t("validation.passwordLowercase"));
-    }
-    if (!/[A-Z]/.test(password)) {
-      passwordErrors.push(t("validation.passwordUppercase"));
-    }
-    if (!/\d/.test(password)) {
-      passwordErrors.push(t("validation.passwordDigit"));
-    }
-    if (!/[^\w\s]/.test(password)) {
-      passwordErrors.push(t("validation.passwordSymbol"));
-    }
-
-    if (passwordErrors.length > 0) {
-      setError(t("errors.WEAK_PASSWORD") + ": " + passwordErrors.join(", "));
+    // Passwords are evaluated as passphrases, not by mandatory character classes.
+    if (password.length < 12 || password.length > 128) {
+      setError(t("validation.passwordMinLength"));
       return;
     }
 
@@ -216,12 +202,10 @@ const Register: React.FC = () => {
         },
       };
 
-      if (avatarFile) {
-        await registerAccount(registrationPayload, avatarFile);
-      } else {
-        await registerAccount(registrationPayload);
-      }
-
+      const response = avatarFile
+        ? await registerAccount(registrationPayload, avatarFile)
+        : await registerAccount(registrationPayload);
+      setPasswordWarning(response?.passwordWarning ?? null);
       setSuccess(true);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -298,6 +282,11 @@ const Register: React.FC = () => {
         >
           {t("auth.register.checkEmail", { email })}
         </StatusPanel>
+        {passwordWarning ? (
+          <FormFeedback tone="warning">
+            {t(`passwordStrength.advisory.${passwordWarning}`)}
+          </FormFeedback>
+        ) : null}
 
         <FormStack as="div">
           {resendSuccess ? (
@@ -481,6 +470,7 @@ const Register: React.FC = () => {
           showPasswordLabel={t("auth.showPassword")}
           hidePasswordLabel={t("auth.hidePassword")}
         />
+        <PasswordStrengthFeedback password={password} />
 
         <PasswordField
           id="register-confirm-password"

@@ -173,7 +173,11 @@
   "errors": {
     "TERMS_ACCEPTANCE_REQUIRED": "You must accept the Terms and Conditions and Privacy Policy to create an account",
     "TERMS_VERSION_OUTDATED": "Terms and Conditions have been updated. Please accept the new terms to continue.",
-    "WEAK_PASSWORD": "Password must be at least 12 characters and include uppercase, lowercase, digit, and symbol",
+    "WEAK_PASSWORD": "Password must meet the minimum length (12 characters, or 16 for administrators). Passphrases are allowed.",
+    "PASSWORD_COMMON": "Choose a less common password or passphrase.",
+    "PASSWORD_BREACHED": "This password appears in a known breach. Choose a different one.",
+    "BREACH_CHECK_UNAVAILABLE": "Password safety verification is temporarily unavailable. Please retry; no changes were saved.",
+    "PASSWORD_REUSED": "Choose a password that you have not used recently.",
     "PASSWORD_CONTAINS_USERNAME": "Password cannot contain your username",
     "PASSWORD_CONTAINS_EMAIL": "Password cannot contain your email address",
     "AUTH_INVALID_TOKEN": "Invalid verification token",
@@ -255,6 +259,15 @@
     "UPLOAD_MALWARE_DETECTED": "File failed security scan",
     "UPLOAD_NOT_FOUND": "File not found",
     "EMAIL_SERVICE_UNAVAILABLE": "Email service unavailable"
+  },
+  "passwordStrength": {
+    "advisory": {"PASSWORD_BREACHED":"This password appeared in a known data breach. We strongly recommend changing it; your request was completed.","BREACH_CHECK_UNAVAILABLE":"Password breach verification was unavailable. Your request was completed, but we recommend using a unique password."},
+    "meterLabel": "Password strength estimate",
+    "levels": {"veryWeak":"Very weak","weak":"Weak","fair":"Fair","strong":"Strong"},
+    "serverChecks": "Final password approval requires server-side security checks.",
+    "tooShort": "Use at least {{minimum}} characters.",
+    "minimumMet": "Length requirement met. Consider a longer unique passphrase.",
+    "longPassphrase": "Long passphrase. The server will also check whether it has been breached."
   },
   "validation": {
     "required": "Fill in this field",
@@ -395,7 +408,7 @@
     "errorReset": "Failed to reset password",
     "passwordRequirements": {
       "title": "Password Requirements:",
-      "minLength": "At least 12 characters",
+      "minLength": "Use at least 12 characters (16 for administrators). Long passphrases are welcome.",
       "uppercase": "At least one uppercase letter (A-Z)",
       "lowercase": "At least one lowercase letter (a-z)",
       "digit": "At least one digit (0-9)",

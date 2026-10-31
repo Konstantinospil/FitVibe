@@ -58,7 +58,9 @@ describe("canonical protected-route authentication", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedAuthState.isSessionActiveForUser.mockResolvedValue(true);
-    mockRoleLookup.mockResolvedValue({ role_code: "athlete" });
+    // A valid backing session must also pass the administrator idle/absolute expiry guard.
+    mockedAuthState.checkAndTouchPrivilegedSession.mockResolvedValue(true);
+    mockRoleLookup.mockResolvedValue({ role_code: "athlete", status: "active" });
     mockedDb.mockReturnValue({ where: jest.fn().mockReturnValue({ first: mockRoleLookup }) });
   });
 
@@ -89,7 +91,7 @@ describe("canonical protected-route authentication", () => {
     expect(response.body).toEqual({ route, sub: "user-cookie" });
     expect(mockedTokens.verifyAccess).toHaveBeenLastCalledWith("cookie-access-token");
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenLastCalledWith(
       "session-cookie",
       "user-cookie",
@@ -98,7 +100,7 @@ describe("canonical protected-route authentication", () => {
   // #557: test ownership for authenticated HttpOnly-cookie routes and the
   // authorization boundary when an already issued token becomes stale.
   it("blocks a promoted administrator even when the cookie token still says athlete", async () => {
-    mockRoleLookup.mockResolvedValue({ role_code: "admin" });
+    mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
     mockedTokens.verifyAccess.mockReturnValue({
       sub: "user-cookie",
       role: "athlete",
@@ -115,11 +117,44 @@ describe("canonical protected-route authentication", () => {
 
     expect(response.status).toBe(403);
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith("role_code");
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
+    expect(mockedAuthState.checkAndTouchPrivilegedSession).toHaveBeenCalledWith(
       "session-cookie",
       "user-cookie",
     );
   });
 
+  it("rejects an expired privileged session before evaluating administrator MFA", async () => {
+    mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
+    mockedAuthState.checkAndTouchPrivilegedSession.mockResolvedValue(false);
+    mockedTokens.verifyAccess.mockReturnValue({
+      sub: "user-cookie",
+      role: "athlete",
+      sid: "session-cookie",
+    } as never);
+
+    const app = express();
+    app.use(cookieParser());
+    app.use("/sessions", sessionsRouter);
+
+    const response = await request(app)
+      .get("/sessions")
+      .set("Cookie", `${env.ACCESS_COOKIE_NAME}=cookie-access-token`);
+
+    expect(response.status).toBe(401);
+    expect(mockedDb).toHaveBeenCalledWith("users");
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
+    expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
+    expect(mockedAuthState.checkAndTouchPrivilegedSession).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
+  });
 });

@@ -28,7 +28,7 @@ Passing CI only establishes success of current assertions. Do **not** close #557
 | §2.1 | Progressive failed-login backoff, generic errors | **Implemented/Partial** | `auth.login-attempt.service.ts` + `bruteforce.repository.ts` account and IP lockout; opaque login challenge. Verify IP+identifier alias behavior and status-code contract |
 | §2.1 | Offer optional TOTP for members | **Implemented** | `two-factor.service.ts`, onboarding component and related E2E/unit tests |
 | §2.2 | Admin >=16-character password | **Gap** | Registration/reset shared 12-character minimum; no verified role-based elevated minimum. Account promotion and existing credentials need migration rule |
-| §2.2 | Admin mandatory MFA | **Implemented, acceptance tests pending** | `administrator-mfa.guard.ts` persisted role+TOTP+MFA-attested session, `auth.middleware.ts` after JWT+session validation, `two-factor.service.ts` admin disable/dismiss rejected. Test bootstrap/promoted/refresh/recovery |
+| §2.2 | Admin mandatory MFA | **Implemented; Stage A API integration passed** | `administrator-mfa.guard.ts`, `auth.middleware.ts`, `two-factor.service.ts`; real-database `admin-mfa-bootstrap.integration.test.ts` covers initial enrollment, invalid codes, renewed login, refresh, backup recovery, dismissal rejection and promotion. CI #41136825974 passed; independent merged-feature acceptance remains outstanding |
 | §2.2 | Admin shorter access-token lifetime | **Gap** | `auth.session-tokens.ts` signs a single `env.ACCESS_TOKEN_TTL` (default 900 seconds) irrespective of role |
 | §2.2 | Reauthentication for sensitive admin actions | **Partial** | `superadmin.service.ts` has sudo reauth + fresh TOTP for privileged role change; inventory other privileged actions, visibility overrides and step-up boundaries |
 | §2.2 | Prefer IP allow-listing or mTLS where feasible | **Conditional** | Deployment topology and remote access not assessed; record feasibility and compensating controls |
@@ -37,10 +37,10 @@ Passing CI only establishes success of current assertions. Do **not** close #557
 | §3 | TLS 1.3, no plaintext password logs, trace redaction | **Verify** | `docs/SECURITY.md` specifies TLS 1.3; actual proxy/deployment, request logging, traces and redaction require audit |
 | §3 | Password manager support, paste and long passphrases | **Partial/Verify** | Shared `PasswordField.tsx` supports standard input; validators cap at 128 chars (not necessarily a violation), no verified anti-paste logic. Add interaction tests |
 | §3 | Strength checks locally and server-side (length + breach check) | **Gap** | Frontend and backend checks exist but rely on character classes; no verified breach check |
-| §4 | Password reset token single-use, TTL <=15m | **Partial + confirmed gap** | `auth.tokens.service.ts` hashed token+expiry; `auth.state.repository.ts` transactional consumption. `app-settings.registry.ts` defaults 15m but permits **1440m**; enforce <=15m in all persisted settings and defaults |
+| §4 | Password reset token single-use, TTL <=15m | **Implemented; Stage A coverage** | `app-settings.registry.ts` caps new settings at 15m; `app-settings.runtime.ts` caps previously committed longer values; `auth.tokens.service.ts` rejects issue-time TTL >900s; `auth.password.service.ts` rejects historical reset tokens >15m old even if stored expiry is later; atomic single use. `auth.tokens.service.policy.test.ts`, `password-reset-security.test.ts`, runtime governance test and real-API bootstrap test. Latest runtime legacy regression requires fresh CI |
 | §4 | Bind reset token to user and device/session fingerprint where possible | **Conditional** | Bound to user in `auth_tokens`; device-binding feasibility/risk and legitimate cross-device recovery need assessment |
 | §4 | Reset invalidates all user sessions and refresh tokens | **Implemented** | `resetPasswordAtomic` -> `revokeUserAuthStateAtomic` within one transaction, `password-reset-security.test.ts` |
-| §4 | Rechallenge admin MFA after reset | **Partial/Verify** | Fresh login for TOTP-enabled account invokes second factor; dedicated admin-after-reset regression still required |
+| §4 | Rechallenge admin MFA after reset | **Implemented; Stage A API integration passed** | `admin-mfa-bootstrap.integration.test.ts` verifies reset revokes existing sessions/refresh and fresh administrator login still requires verified TOTP; CI #41136825974 |
 | §4 | Non-enumerating reset email/response | **Implemented/Verify** | `auth.controller.ts` fixed 202 response; `auth.password.service.ts` nonexisting account decoy. Test output, timing and email behavior |
 | §5 | RFC6238 TOTP + one-use limited recovery codes | **Implemented** | `two-factor.service.ts` and unit tests include TOTP+backup code consumption; inspect regeneration/recovery audit for admin |
 | §5 | SameSite/Secure/HttpOnly cookies and CSRF for mutations | **Implemented/Verify** | `auth.controller.ts` SameSite=Lax, HttpOnly, secure flag; `csrf.ts` double-submit + origin verification; verify HTTPS production config |
@@ -74,9 +74,9 @@ Passing CI only establishes success of current assertions. Do **not** close #557
 
 ### Stage A — Protect core security invariants (blockers)
 
-- [ ] Enforce reset TTL ceiling **15 minutes** at governance/schema/runtime boundaries, include persisted out-of-range migration handling and negative tests.
-- [ ] Verify deleted/inactive user fail-closed boundaries, privileged role promotion/revocation and fresh MFA after reset using realistic integration/E2E tests.
-- [ ] Complete bootstrap administrator MFA and backup-code recovery journeys, retaining a limited enrollment session.
+- [x] Enforce reset TTL ceiling **15 minutes** for new settings, previously committed oversized settings (effective runtime cap), token issuance and old outstanding tokens; negative tests included. Legacy governance revisions are read with a safe effective cap rather than rewritten in place. Runtime regression CI pending on latest commit.
+- [x] Verify suspended/deleted account fail-closed behavior, stale sessions after direct persisted role promotion, refresh revocation and fresh administrator MFA after reset through real API + PostgreSQL integration tests. Latest suspended/deleted extension CI pending.
+- [x] Complete production-seed bootstrap through restricted password-only enrollment, TOTP, fresh MFA login, protected API, refresh rotation, single-use backup-code recovery, and mandatory MFA after reset. CI #41136825974 passed on earlier candidate.
 
 ### Stage B — Password policy convergence
 
@@ -124,3 +124,62 @@ Review decisions against the accepted policy; do not treat an undocumented excep
 **Tests:** `tests/backend/modules/auth/auth.session-tokens.policy.test.ts` asserts actual signed JWT lifetimes, and the auth controller regression checks a 300-second administrator access cookie after verified MFA. **Validation:** CI not yet verified; do not treat this as completed Stage C acceptance.
 
 **Not resolved by this PR:** shorter administrator refresh/session lifetimes, inactivity cutoff and step-up coverage; these must be implemented separately with migration and operational evidence. The historical matrix above is the original audit snapshot and is not retroactively changed.
+
+## Stage A acceptance evidence (2026-10-30)
+
+- **Source controls:** `AUTH_SECURITY_POLICY.passwordReset.maxTtlMinutes=15`; `app-settings.registry.ts` rejects configured TTL >15; `app-settings.runtime.ts` caps any pre-existing committed out-of-range value when loaded. `auth.tokens.service.ts` enforces 900 seconds before persistence; `auth.password.service.ts` rejects legacy reset tokens older than 15 minutes even if their historical expiry permits longer.
+- **Real API / actual database:** `tests/backend/integration/admin-mfa-bootstrap.integration.test.ts` exercises the production bootstrap seed with real credential hashing, restricted pre-MFA routes, persisted TOTP, fresh 2FA session, cookie refresh, single-use recovery and replay rejection, reset revocation/MFA rechallenge and stale athlete session after promotion. There are no mocked session repositories or synthetic authenticated JWTs in this acceptance test.
+- **Other regression coverage:** `auth.tokens.service.policy.test.ts`, `password-reset-security.test.ts`, `app-settings.runtime.test.ts`, `auth.refresh.service.test.ts`, `protected-route-auth.integration.test.ts` cover issuance, history-compatible revocation, expired legacy tokens, persisted configuration caps, privileged role refresh, and cookie-authenticated protected routes.
+- **Verified CI checkpoint:** [CI #41136825974](https://github.com/Konstantinospil/FitVibe/actions/runs/41136825974), commit `e7464543c1ad335a7804ccb7af4b448888b4a9d7`, passed backend integration, Quality, all four Playwright shards, accessibility and QA Summary; CodeQL and advisory dependency hygiene also passed on that commit.
+- **New regression additions after green checkpoint:** explicit `suspended` and `deleted` persisted-status negative cases and a historical committed TTL of 1440 minutes capped to 15 at runtime. These additional tests must pass CI on the latest head before declaring the final Stage A commit green.
+- **Stage A boundary:** This workstream is not the complete 50-clause policy. Stage B password policy and hashing, Stage C session idle/privileged operations, Stage D observability/governance, and final merged-`feature` verification remain open. CI passing on the fix branch is not evidence that `feature` is verified. Do not close #557 or DRIFT-093 for Stage A alone.
+
+
+## Stage B implementation reconciliation — 2026-10-31
+
+**Scope:** fix branch only. Historical assessment cells above are the original October 26 audit snapshot; they must not be read as today's code status. The full issue cannot close until Stage C/D and merged-`feature` acceptance are complete.
+
+### Source implementation
+
+- Shared member (12) and administrator/superadministrator (16) new-password minima; composition-free passphrases. Server authority in `passwordPolicy.ts` plus registration/reset UI and test coverage.
+- Versioned local whole-password common-denylist remains **blocking**. HIBP SHA-1-prefix k-anonymity matches and screening unavailability are **advisory** as requested; registration, reset, admin creation and authenticated password change use the shared checker. Password reset and registration expose localized success warnings. Admin-created users return an optional `passwordWarning`; authenticated change preserves 204 for no warning, returns 200 with `passwordWarning` if advisory. Client consumers must surface this field if they provide a password-change screen.
+- Native Node 24 Argon2id, 64 MiB / 3 passes / parallelism 1 / unique salts; bcrypt verification and compare-and-swap opportunistic upgrade retained for historical credentials.
+- Transactional last-five history with row-level user locking, replay denial and atomic session revocation. A change's supplied *current* password is now verified against the **locked** hash, so simultaneous attempts with the same stale credential cannot both succeed; the promoted user's role minimum is rechecked at that lock boundary. Real database concurrency regression is in `tests/backend/integration/password-policy-stage-b.integration.test.ts`.
+- The authentication policy was amended to v1.1 for the explicit advisory breach-screening decision. `docs/qa/breached-password-screening-557.md` supersedes its original fail-closed design.
+
+### Acceptance still requiring evidence
+
+- **Current-branch CI:** run required backend/frontend/integration/database/Quality/i18n/security/axe and all four shards including VRT for the final SHA; code commits alone are not passing evidence.
+- **Existing administrators:** bcrypt cannot reveal original password length. Existing and promoted administrators with historically short secrets need an approved secure enforcement/transition procedure that does not deadlock MFA enrollment; new credentials already enforce 16.
+- **Performance:** measure Argon2id hash and verify latency, concurrency memory footprint, and selected parameters on the actual Raspberry Pi ARM64 and target amd64 environments. A successful image build is *not* a runtime benchmark.
+- **Migration and rollback:** back up and restore the history table together with user credentials; verify old-code rollback has dual-format hash verification. The pre-migration passwords cannot be reconstructed retroactively.
+- **User feedback:** verify the optional advisory response is displayed in *each actual client workflow*, without silently discarding it.
+- **Operational service accounts:** the policy's conditional 24-character floor needs an inventory and applicability decision.
+
+**Disposition:** Stage B source implementation advanced; no claim of final Stage B acceptance until the above verification and migration decisions have evidence. #557 remains open.
+
+
+## Stage B/C implementation checkpoint — 2026-10-31 (draft PR #588)
+
+**Status: implementation candidate only, not accepted.** Changes after earlier CI require independent validation at the final branch SHA.
+
+### Stage B additions
+- The reset password transaction now rechecks the current role under the locked user row. Real-Postgres regression verifies rejection of a 12-character candidate after promotion to admin and preservation of reset token, hash, and history.
+- Superadmin sudo password reauthentication now uses the shared Argon2id/bcrypt dual-format verifier, instead of bcrypt-only comparison.
+- Synthetic Argon2id benchmark script: `node apps/backend/scripts/benchmark-password-hashing.mjs` (Node >=24.7); run on actual Raspberry Pi arm64 and target amd64 and retain latency/memory JSON results.
+
+### Stage C additions
+- Previously implemented: admin access JWT <=5 minutes and shorter than member tokens.
+- New: privileged refresh JWT and cookie expiry <=8 hours, or configured member refresh TTL if shorter.
+- New: admin session absolute expiry <=8 hours from original creation, including refresh rotations, plus server-side 15-minute inactivity enforcement on protected requests and refresh.
+- Existing sessions with null activity timestamps use their original creation timestamp; expiration checks happen through a conditional PostgreSQL update and do not revive expired sessions.
+- New unit regressions: refresh JWT and cookie TTL, absolute and idle deadline boundaries, legacy/null and invalid timestamps, expired admin protected endpoint and refresh rejection.
+- Draft PR: https://github.com/Konstantinospil/FitVibe/pull/588 — no merge to `feature`.
+
+### Blocking acceptance
+1. Required CI and real database/E2E/axe/VRT verification on the latest exact SHA; no success claim yet.
+2. Stage B: legacy existing/promoted admin password minimum transition, Pi arm64 and amd64 Argon2id benchmarking, password-history database backup/restore, rollback compatibility, live warning presentation and service-account applicability.
+3. Stage C: sensitive admin action step-up inventory and enforcement (moderation, account lifecycle, action mappings, visibility overrides if applicable), corresponding UX, TLS 1.3, proxy/cookie/CSRF/redaction evidence, mTLS/IP feasibility and device binding.
+4. Review diverged `feature` history, preserve both sides and validate merged feature SHA. Stage D is a separate incomplete workstream.
+
+**Disposition:** Stage B and Stage C not yet independently accepted. Keep #557 and DRIFT-093 open.

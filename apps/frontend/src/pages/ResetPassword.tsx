@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
+import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
 import { Button, PasswordField, TextLink } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
@@ -48,6 +49,7 @@ const ResetPassword: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [passwordWarning, setPasswordWarning] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -66,16 +68,26 @@ const ResetPassword: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await resetPassword({ token, newPassword: password });
+      const response = await resetPassword({ token, newPassword: password });
+      setPasswordWarning(response.passwordWarning ?? null);
       setSuccess(true);
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        void navigate("/login");
-      }, 2000);
+      // Retain the warning on screen so the user can make an informed decision.
+      if (!response.passwordWarning) {
+        setTimeout(() => {
+          void navigate("/login");
+        }, 2000);
+      }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as { response?: { data?: { error?: { message?: string } } } };
-        setError(axiosError.response?.data?.error?.message || t("resetPassword.errorReset"));
+        const axiosError = err as {
+          response?: { data?: { error?: { code?: string; message?: string } } };
+        };
+        const code = axiosError.response?.data?.error?.code;
+        setError(
+          code
+            ? t(`errors.${code}`)
+            : axiosError.response?.data?.error?.message || t("resetPassword.errorReset"),
+        );
       } else {
         setError(t("resetPassword.errorReset"));
       }
@@ -102,6 +114,16 @@ const ResetPassword: React.FC = () => {
         description={t("resetPassword.descSuccess")}
       >
         <FormFeedback tone="success">{t("resetPassword.successText")}</FormFeedback>
+        {passwordWarning ? (
+          <FormFeedback tone="warning">
+            {t(`passwordStrength.advisory.${passwordWarning}`)}
+          </FormFeedback>
+        ) : null}
+        {passwordWarning ? (
+          <TextLink as={NavLink} to="/login">
+            {t("resetPassword.backToLogin")}
+          </TextLink>
+        ) : null}
       </AuthPageLayout>
     );
   }
@@ -123,10 +145,6 @@ const ResetPassword: React.FC = () => {
           </div>
           <ul className="list">
             <li className="list-item">{t("resetPassword.passwordRequirements.minLength")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.uppercase")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.lowercase")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.digit")}</li>
-            <li className="list-item">{t("resetPassword.passwordRequirements.special")}</li>
           </ul>
         </div>
         <PasswordField
@@ -142,6 +160,7 @@ const ResetPassword: React.FC = () => {
           showPasswordLabel={t("auth.showPassword")}
           hidePasswordLabel={t("auth.hidePassword")}
         />
+        <PasswordStrengthFeedback password={password} />
         <PasswordField
           label={t("resetPassword.confirmPasswordLabel")}
           name="confirmPassword"

@@ -310,7 +310,7 @@ describe("Users Controller", () => {
 
       mockRequest.body = passwordData;
       mockRequest.method = "PATCH";
-      mockUsersService.updatePassword.mockResolvedValue(undefined);
+      mockUsersService.updatePassword.mockResolvedValue({});
 
       await usersController.changePassword(mockRequest as Request, mockResponse as Response);
 
@@ -333,12 +333,38 @@ describe("Users Controller", () => {
         type: "new",
         recordId: "record-123",
       });
-      mockUsersService.updatePassword.mockResolvedValue(undefined);
+      mockUsersService.updatePassword.mockResolvedValue({});
       mockIdempotencyService.persistIdempotencyResult.mockResolvedValue(undefined);
 
       await usersController.changePassword(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.set).toHaveBeenCalledWith("Idempotency-Key", idempotencyKey);
+      expect(mockResponse.status).toHaveBeenCalledWith(204);
+    });
+
+    it("returns advisory breach feedback after a successful password change", async () => {
+      mockRequest.body = {
+        currentPassword: "CurrentPassword123!",
+        newPassword: "NewSecurePassword123!",
+      };
+      mockUsersService.updatePassword.mockResolvedValue({ passwordWarning: "PASSWORD_BREACHED" });
+
+      await usersController.changePassword(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({ passwordWarning: "PASSWORD_BREACHED" });
+    });
+
+    it("accepts short legacy current passwords while validating new password length", async () => {
+      mockRequest.body = {
+        currentPassword: "oldpass",
+        newPassword: "a longer replacement passphrase",
+      };
+      mockUsersService.updatePassword.mockResolvedValue({});
+
+      await usersController.changePassword(mockRequest as Request, mockResponse as Response);
+
+      expect(mockUsersService.updatePassword).toHaveBeenCalled();
       expect(mockResponse.status).toHaveBeenCalledWith(204);
     });
 

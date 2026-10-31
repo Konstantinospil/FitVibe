@@ -58,7 +58,9 @@ describe("Two-Factor Lifecycle Service", () => {
   const userId = "user-123";
   const userEmail = "test@example.com";
   const password = "SecureP@ssw0rd123";
-  const passwordHash = "hashed_password";
+  // The hashing boundary routes supported legacy bcrypt identifiers through
+  // bcrypt.compare; an unrecognized fake hash is deliberately rejected.
+  const passwordHash = "$2b$12$" + "a".repeat(53);
 
   beforeEach(() => {
     jest.clearAllMocks();
