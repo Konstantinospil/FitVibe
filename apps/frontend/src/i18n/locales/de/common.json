@@ -261,6 +261,9 @@
     "EMAIL_SERVICE_UNAVAILABLE": "E-Mail-Dienst nicht verfügbar"
   },
   "passwordStrength": {
+    "meterLabel": "Geschätzte Passwortstärke",
+    "levels": {"veryWeak":"Sehr schwach","weak":"Schwach","fair":"Mittel","strong":"Stark"},
+    "serverChecks": "Die endgültige Passwortprüfung erfolgt auf dem Server.",
     "tooShort": "Bitte mindestens {{minimum}} Zeichen eingeben.",
     "minimumMet": "Mindestlänge erreicht. Eine längere, einzigartige Passphrase ist empfehlenswert.",
     "longPassphrase": "Lange Passphrase. Der Server prüft zusätzlich bekannte Datenlecks."
