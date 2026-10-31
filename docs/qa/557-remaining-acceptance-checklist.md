@@ -53,14 +53,23 @@ Attach the **JSON only**, without any environment variables, credentials, full l
 
 Collect container/cgroup memory and latency under realistic co-resident FitVibe load; verify `promtool` rule syntax and auth monitoring operationally; document the hash benchmark script SHA for reproducibility. Do not classify a 5-sample hash benchmark as comprehensive load testing.
 
-### B. Decide how to transition legacy and newly promoted administrators
+### B. Legacy administrator transition — implementation candidate (2026-10-31)
 
-Existing bcrypt and Argon2id hashes **do not reveal password length**. The owner must approve a rule and a deadline to replace historically short administrator credentials. Options:
+**Decision:** After genuinely verified MFA, require an administrator password set under the current >=16-character policy before privileged access; **no grace period**.
 
-- Require a new >=16-character secret at the next fully MFA-authenticated administrator login before privileged use, with a limited password-change/enrollment path.
-- Run a scheduled, notified transition period with explicit expiry, secure recovery and forced password-change after the grace period.
+**Implementation on the fix branch, pending exact-HEAD CI acceptance:**
 
-Do not guess historic length, convert passwords offline, remove MFA or block the only account capable of secure enrollment. Document tests of bootstrap, promotion, MFA, failed transition and recovery.
+- Migration `202610310002_admin_password_policy_attestation.ts` adds `users.admin_password_policy_verified_at`, **nullable with no grandfathered default**. Existing administrator bcrypt or Argon2id hashes do not demonstrate original password length, so legacy administrators start without attestation. This marker is **not** inferred from hash format or successful sign-in / opportunistic bcrypt migration.
+- The verified-MFA administrator guard checks current persisted role, active session, MFA state and the persisted attestation before any protected action. An unenforced legacy administrator can only use `GET /auth/admin-password/status`, `POST /users/change-password` and logout. Without MFA, the existing limited TOTP enrollment remains the only permitted path.
+- Authenticated password change and recovery reset validate >=16 against the actual current role under the locked user row, preserve last-five history, write the new Argon2id hash and attestation together, and revoke all previous sessions atomically. A failed password check, weak password or reuse rejection must not attest or revoke sessions.
+- New admin credentials written through the protected user-creation service, production bootstrap seed and standalone CLI bootstrap receive attestation from the validated 16+ character write. Rerunning the seed does **not** stamp pre-existing administrator credentials or silently reset them.
+- The frontend redirects MFA-verified legacy administrators to an isolated `/admin/password-update` form, uses existing global form/password/strength components, and provides EN/DE/EL/FR/ES guidance and advisory feedback. After change, sign out and authenticate again with MFA.
+- Real-Express/PostgreSQL integration regressions in `admin-mfa-bootstrap.integration.test.ts` verify bootstrap enrollment, MFA requirement before password update, 403 for other API actions, wrong-current/short-password refusal, committed update, session revocation, fresh MFA and compliant status; separate recovery reset verifies an invalid candidate preserves token/attestation, successful recovery, and MFA enrollment remains mandatory. Pre-existing tests/assertions were retained.
+- **Current status:** source changes committed but not independently accepted until CI (Quality, backend, DB migrations, integration, frontend, axe, VRT, all four shards) succeeds on the exact final SHA.
+
+**Deployment constraints:** Apply the schema migration and verified dual-format Argon2id-capable backend **before** enabling the new guard in live traffic. Take and restore a secure PostgreSQL backup in a disposable environment first. A rollback to code without the attestation guard would permit already-MFA-enrolled legacy administrators to reach privileged routes without the new minimum; use a known compatible release and security-owner rollback plan. Do not force an offline mass password reset, inspect/guess old password length, export credential hashes or bypass MFA.
+
+**Remaining owner acceptance:** Test deployment staging with an existing administrator and a newly promoted user, prove secure password reset and authenticator recovery, and document a tested rollback / restoration drill. The initial credential migration does not retroactively reconstruct five historical passwords.
 
 ### C. Perform isolated backup, migration and rollback drills
 
