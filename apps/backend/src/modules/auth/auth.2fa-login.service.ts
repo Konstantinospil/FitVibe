@@ -118,7 +118,12 @@ export async function verify2FALogin(
     const issuedAtIso = new Date().toISOString();
     const sessionExpiresAt = nextSessionExpiry(user.role_code);
 
-    const refreshToken = signRefresh({ sub: user.id, sid: sessionId, mfa: true, role: user.role_code });
+    const refreshToken = signRefresh({
+      sub: user.id,
+      sid: sessionId,
+      mfa: true,
+      role: user.role_code,
+    });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     await createSessionWithRefresh(
