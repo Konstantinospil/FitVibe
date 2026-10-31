@@ -91,7 +91,7 @@ describe("canonical protected-route authentication", () => {
     expect(response.body).toEqual({ route, sub: "user-cookie" });
     expect(mockedTokens.verifyAccess).toHaveBeenLastCalledWith("cookie-access-token");
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status", "admin_password_policy_verified_at"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenLastCalledWith(
       "session-cookie",
       "user-cookie",
@@ -117,7 +117,7 @@ describe("canonical protected-route authentication", () => {
 
     expect(response.status).toBe(403);
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status", "admin_password_policy_verified_at"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
       "session-cookie",
       "user-cookie",
@@ -147,7 +147,7 @@ describe("canonical protected-route authentication", () => {
 
     expect(response.status).toBe(401);
     expect(mockedDb).toHaveBeenCalledWith("users");
-    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status", "admin_password_policy_verified_at"]);
     expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
       "session-cookie",
       "user-cookie",
