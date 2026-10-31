@@ -21,7 +21,7 @@ allowBuilds:
 overrides:
   'lighthouse': '13.5.0'
   'uuid': '14.0.3'
-  'follow-redirects': '1.16.1'
+  'follow-redirects': '1.16.2'
   'fast-xml-parser': '>=5.5.6'
   'ip-address': '10.7.4'
   'fast-xml-builder': '>=1.1.7'
@@ -36,7 +36,7 @@ overrides:
   'vitest': '^5.0.1'
   'chrome-launcher': '^1.2.1'
   'tmp': '^0.2.7'
-  'glob': '10.5.0'
+  'glob': '14.0.2'
   'extract-zip': 'link:packages/patched-extract-zip'
   'esbuild': '^0.25.0'
   'js-yaml': '>=4.3.1'
@@ -56,7 +56,8 @@ overrides:
   'express@4': '4.22.0'
   'minimatch@3': '>=3.1.4'
   'minimatch@5': '>=5.1.8'
-  'minimatch@9': '>=9.0.7'
+  'minimatch@9': '11.0.1'
+  'minimatch@10': '11.0.1'
   'brace-expansion@1': '^1.1.12'
   'brace-expansion@2': '^2.0.2'
   'brace-expansion@5': '>=5.0.9'
@@ -80,3 +81,4 @@ overrides:
   'jest-message-util': '^30.5.1'
   '@jest/types': '^30.5.1'
   'jest-util': '^30.5.1'
+
