@@ -362,7 +362,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     const invalidCurrent = await request(app).post("/api/v1/users/change-password")
       .set(auth(access)).send({
         currentPassword: "incorrect",
-        newPassword: "Compliant-Administrator-2026!",
+        newPassword: "Secure-Rotated-Credential-2026!",
       });
     expect(invalidCurrent.status).toBe(401);
     expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
@@ -377,7 +377,17 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
       .toBeNull();
 
-    const updatedPassword = "Compliant-Administrator-2026!";
+    const usernameCandidate = await request(app).post("/api/v1/users/change-password")
+      .set(auth(access)).send({
+        currentPassword: legacyPassword,
+        newPassword: "Secure-Administrator-2026!",
+      });
+    expect(usernameCandidate.status).toBe(400);
+    expect(usernameCandidate.body.error.code).toBe("PASSWORD_CONTAINS_USERNAME");
+    expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
+      .toBeNull();
+
+    const updatedPassword = "Secure-Rotated-Credential-2026!";
     const changed = await request(app).post("/api/v1/users/change-password")
       .set(auth(access)).send({
         currentPassword: legacyPassword, newPassword: updatedPassword,
@@ -430,7 +440,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       .where({ user_id: ADMIN_ID, token_type: "password_reset" }).first()).consumed_at)
       .toBeNull();
 
-    const replacement = "Recovery-Administrator-Passphrase-2026!";
+    const replacement = "Secure-Recovered-Credential-2026!";
     const recovered = await request(app).post("/api/v1/auth/password/reset")
       .send({ token: forgot.body.debugResetToken, newPassword: replacement });
     expect(recovered.status).toBe(200);
