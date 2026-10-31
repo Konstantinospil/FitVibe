@@ -22,6 +22,7 @@ const Terms = lazy(() => import("../pages/Terms"));
 const Privacy = lazy(() => import("../pages/Privacy"));
 const Cookie = lazy(() => import("../pages/Cookie"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
+const AdminPasswordUpdate = lazy(() => import("../pages/AdminPasswordUpdate"));
 
 const fallback = (
   <div
@@ -93,6 +94,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
     <Suspense fallback={fallback}>
       <Routes>
         <Route element={<ProtectedRoute />}>
+          <Route path="admin/password-update" element={<AdminPasswordUpdate />} />
           <Route element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="calendar" element={<Calendar />} />
