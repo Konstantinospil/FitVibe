@@ -620,8 +620,14 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
-export async function changePassword(payload: ChangePasswordRequest): Promise<void> {
-  await apiClient.post("/api/v1/users/change-password", payload);
+export async function changePassword(
+  payload: ChangePasswordRequest,
+): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
+  const res = await apiClient.post<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }>(
+    "/api/v1/users/change-password",
+    payload,
+  );
+  return res.data ?? {};
 }
 
 export type UserPreferences = SharedUserPreferences;
