@@ -60,7 +60,7 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
     expect(second.body.tokens.accessToken).toBeDefined();
   });
 
-  it("rejects a breach-provider outage before registration persistence", async () => {
+  it("allows registration on breach-provider outage and returns a warning", async () => {
     const checker = jest.spyOn(breachedPasswordChecker, "assertAcceptable")
       .mockRejectedValueOnce(new HttpError(503, "BREACH_CHECK_UNAVAILABLE", "BREACH_CHECK_UNAVAILABLE"));
     const candidate = "new-stage-b@example.com";
@@ -71,12 +71,14 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
       terms_accepted: true,
     });
     expect(checker).toHaveBeenCalledTimes(1);
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(202);
+    expect(response.body.passwordWarning).toBe("BREACH_CHECK_UNAVAILABLE");
     const contact = await db("user_contacts").where({ value: candidate }).first();
-    expect(contact).toBeUndefined();
+    expect(contact).toBeDefined();
+    checker.mockRestore();
   });
 
-  it("preserves reset tokens and active sessions on screening outage; rejects reuse atomically", async () => {
+  it("allows reset on screening outage, revokes sessions and rejects reuse atomically", async () => {
     const signin = await request(app).post("/api/v1/auth/login")
       .set("X-Forwarded-For", createTestIp()).send({ email, password: OLD });
     expect(signin.status).toBe(200);
@@ -85,21 +87,22 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
     const firstToken = (await forgot()).body.debugResetToken;
     expect(firstToken).toEqual(expect.any(String));
 
-    jest.spyOn(breachedPasswordChecker, "assertAcceptable")
+    const checker = jest.spyOn(breachedPasswordChecker, "assertAcceptable")
       .mockRejectedValueOnce(new HttpError(503, "BREACH_CHECK_UNAVAILABLE", "BREACH_CHECK_UNAVAILABLE"));
-    const outage = await request(app).post("/api/v1/auth/password/reset")
-      .send({ token: firstToken, newPassword: NEW });
-    expect(outage.status).toBe(503);
-    expect((await db("auth_tokens").where({ user_id: userId, token_type: "password_reset" }).first()).consumed_at)
-      .toBeNull();
-    expect((await request(app).get("/api/v1/auth/sessions")
-      .set("Authorization", `Bearer ${access}`)).status).toBe(200);
-
     const updated = await request(app).post("/api/v1/auth/password/reset")
       .send({ token: firstToken, newPassword: NEW });
-    expect(updated.status).toBe(204);
+    expect(updated.status).toBe(200);
+    expect(updated.body.passwordWarning).toBe("BREACH_CHECK_UNAVAILABLE");
+    expect(checker).toHaveBeenCalledTimes(1);
+    checker.mockRestore();
+
+    expect((await db("auth_tokens").where({ user_id: userId, token_type: "password_reset" }).first()).consumed_at)
+      .not.toBeNull();
+    expect((await request(app).get("/api/v1/auth/sessions")
+      .set("Authorization", `Bearer ${access}`)).status).toBe(401);
+
     const changed = await db("users").where({ id: userId }).first();
-    expect(changed.password_hash).toMatch(/^\$argon2id\$/);
+    expect(changed.password_hash).toMatch(/^\\$argon2id\\$/);
     expect((await db("user_password_history").where({ user_id: userId })).length).toBe(1);
 
     const nextToken = (await forgot()).body.debugResetToken;
