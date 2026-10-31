@@ -11,7 +11,7 @@ export interface PasswordContext {
 
 export function passwordMinimumForRole(role?: string): number {
   return role === "admin" || role === "superadmin"
-    ? 16
+    ? AUTH_SECURITY_POLICY.password.privilegedMinLengthFloor
     : AUTH_SECURITY_POLICY.password.minLengthFloor;
 }
 
