@@ -205,6 +205,8 @@ export async function changePasswordAndRevokeAuthAtomic(
     await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
     await trx("users").where({ id: userId }).update({
       password_hash: passwordHash,
+      admin_password_policy_verified_at:
+        user.role_code === "admin" || user.role_code === "superadmin" ? new Date().toISOString() : null,
       updated_at: new Date().toISOString(),
     });
     await revokeUserAuthStateAtomic(userId, trx);
@@ -243,6 +245,8 @@ export async function resetPasswordAtomic(
     await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
     const updatedUser = await trx("users").where({ id: userId, status: "active" }).update({
       password_hash: passwordHash,
+      admin_password_policy_verified_at:
+        user.role_code === "admin" || user.role_code === "superadmin" ? now : null,
       updated_at: now,
     });
     if (updatedUser !== 1) {
