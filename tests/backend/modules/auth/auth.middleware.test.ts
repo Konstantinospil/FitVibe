@@ -223,6 +223,29 @@ describe("Auth Middleware", () => {
       expect(mockNext).toHaveBeenCalledTimes(1);
     });
 
+    it("rejects expired administrator sessions even with verified MFA", async () => {
+      mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
+      mockAuthStateRepository.checkAndTouchPrivilegedSession.mockResolvedValue(false);
+      mockIs2FAEnabled.mockResolvedValue(true);
+      mockRequest.cookies = { access_token: "expired-admin-token" };
+      mockRequest.method = "GET";
+      mockRequest.originalUrl = "/api/v1/workouts";
+      mockTokensService.verifyAccess.mockReturnValue({
+        sub: "admin-123", role: "admin", sid: "expired-session", mfa: true,
+      } as never);
+
+      await authMiddleware.authenticateAccessToken(
+        mockRequest as Request, mockResponse as Response, mockNext,
+      );
+
+      expect(mockAuthStateRepository.checkAndTouchPrivilegedSession)
+        .toHaveBeenCalledWith("expired-session", "admin-123");
+      expect(mockNext).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 401, code: "AUTH_SESSION_EXPIRED" }),
+      );
+      expect(mockNext).not.toHaveBeenCalledWith();
+    });
+
     it("allows MFA enrollment status before verification", async () => {
       mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
       mockRequest.cookies = { access_token: "enrollment-token" };
