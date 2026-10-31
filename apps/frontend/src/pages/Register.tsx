@@ -55,6 +55,7 @@ const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [passwordWarning, setPasswordWarning] = useState<string | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -201,12 +202,8 @@ const Register: React.FC = () => {
         },
       };
 
-      if (avatarFile) {
-        await registerAccount(registrationPayload, avatarFile);
-      } else {
-        await registerAccount(registrationPayload);
-      }
-
+      const response = await registerAccount(registrationPayload, avatarFile ?? undefined);
+      setPasswordWarning(response.passwordWarning ?? null);
       setSuccess(true);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
@@ -283,6 +280,9 @@ const Register: React.FC = () => {
         >
           {t("auth.register.checkEmail", { email })}
         </StatusPanel>
+        {passwordWarning ? (
+          <FormFeedback tone="warning">{t(`passwordStrength.advisory.${passwordWarning}`)}</FormFeedback>
+        ) : null}
 
         <FormStack as="div">
           {resendSuccess ? (
