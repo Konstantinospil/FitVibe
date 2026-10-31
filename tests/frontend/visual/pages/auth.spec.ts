@@ -57,7 +57,7 @@ test.describe("Auth Page Visual Tests", () => {
       await expect(input).toBeVisible();
       await expect(meter).toHaveCount(0);
 
-      await input.fill("password123456789012345");
+      await input.fill("password");
       await expect(meter).toHaveAttribute("aria-valuetext", "Very weak");
       await capturePageScreenshot(page, testInfo, `${flow.name}-password-strength-weak`, {
         locator: page.locator('[data-component="password-strength"]'),
