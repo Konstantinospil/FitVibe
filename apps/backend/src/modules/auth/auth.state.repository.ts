@@ -233,10 +233,13 @@ export async function resetPasswordAtomic(
     const user = await trx("users")
       .where({ id: userId, status: "active" })
       .forUpdate()
-      .first<{ password_hash: string }>("password_hash");
+      .first<{ password_hash: string; role_code: string }>("password_hash", "role_code");
     if (!user) {
       return false;
     }
+    // A promotion can race with a reset; enforce the persisted elevated floor
+    // at the same user-row lock as the credential write, not only preflight.
+    assertPasswordPolicy(candidate, { role: user.role_code });
     await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
     const updatedUser = await trx("users").where({ id: userId, status: "active" }).update({
       password_hash: passwordHash,
