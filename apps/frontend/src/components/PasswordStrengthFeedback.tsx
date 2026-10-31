@@ -4,10 +4,15 @@ const COMMON_PATTERNS = /^(?:password|passwort|qwerty|welcome|admin|letmein|1234
 const REPEATED = /^(.)\1+$/u;
 
 function estimatedStrength(password: string): number {
-  if (!password) return 0;
-  if (COMMON_PATTERNS.test(password) || REPEATED.test(password)) return 1;
+  if (!password) {
+    return 0;
+  }
+  if (COMMON_PATTERNS.test(password) || REPEATED.test(password)) {
+    return 1;
+  }
   // Heuristic guidance only: never implies that the server has approved the password.
-  const lengthScore = password.length < 12 ? 1 : password.length < 16 ? 2 : password.length < 20 ? 3 : 4;
+  const lengthScore =
+    password.length < 12 ? 1 : password.length < 16 ? 2 : password.length < 20 ? 3 : 4;
   const sequential = /(?:1234|abcd|qwer|asdf)/iu.test(password);
   const repeats = /(.)\1{3,}/u.test(password);
   return Math.max(1, lengthScore - Number(sequential || repeats));
@@ -30,13 +35,16 @@ export function PasswordStrengthFeedback({
   minimum?: number;
 }) {
   const { t } = useTranslation();
-  if (!password) return null;
+  if (!password) {
+    return null;
+  }
 
   const score = estimatedStrength(password);
   const level = ["", "veryWeak", "weak", "fair", "strong"][score];
-  const advice = password.length < minimum
-    ? t("passwordStrength.tooShort", { minimum })
-    : t("passwordStrength.minimumMet");
+  const advice =
+    password.length < minimum
+      ? t("passwordStrength.tooShort", { minimum })
+      : t("passwordStrength.minimumMet");
 
   return (
     <div data-component="password-strength" className="grid grid--gap-xs">
