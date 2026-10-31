@@ -56,6 +56,7 @@ export async function seed(knex: Knex): Promise<void> {
         status: "active",
         role_code: "admin",
         password_hash: adminPassword,
+        admin_password_policy_verified_at: now,
         terms_accepted: true,
         terms_accepted_at: now,
         terms_version: termsVersion,
