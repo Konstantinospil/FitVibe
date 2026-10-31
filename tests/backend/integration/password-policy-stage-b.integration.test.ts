@@ -102,7 +102,7 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
       .set("Authorization", `Bearer ${access}`)).status).toBe(401);
 
     const changed = await db("users").where({ id: userId }).first();
-    expect(changed.password_hash).toMatch(/^\\$argon2id\\$/);
+    expect(changed.password_hash).toMatch(/^\$argon2id\$/);
     expect((await db("user_password_history").where({ user_id: userId })).length).toBe(1);
 
     const nextToken = (await forgot()).body.debugResetToken;
