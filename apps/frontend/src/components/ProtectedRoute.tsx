@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { getLegalDocumentsStatus, type LegalDocumentsStatus } from "../services/api";
+import {
+  getAdministratorPasswordPolicyStatus,
+  getLegalDocumentsStatus,
+  type LegalDocumentsStatus,
+} from "../services/api";
 
 const TERMS_GATE_ALLOWED_PATHS = new Set([
   "/terms-reacceptance",
@@ -23,20 +27,37 @@ const PRIVACY_GATE_ALLOWED_PATHS = new Set([
 ]);
 
 const ProtectedRoute: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   const [legalStatus, setLegalStatus] = useState<LegalDocumentsStatus | null>(null);
   const [statusFailed, setStatusFailed] = useState(false);
+  const isAdministrator = user?.role === "admin" || user?.role === "superadmin";
+  const [passwordGate, setPasswordGate] = useState<"checking" | "required" | "clear">("checking");
 
   useEffect(() => {
     let cancelled = false;
 
     if (!isAuthenticated) {
+      setPasswordGate("checking");
       setLegalStatus(null);
       setStatusFailed(false);
       return () => {
         cancelled = true;
       };
+    }
+
+    setPasswordGate("checking");
+    if (isAdministrator) {
+      void getAdministratorPasswordPolicyStatus()
+        .then((status) => {
+          if (!cancelled) setPasswordGate(status.passwordChangeRequired ? "required" : "clear");
+        })
+        .catch(() => {
+          // Never treat an unreadable administrator transition as compliant.
+          if (!cancelled) setPasswordGate("required");
+        });
+    } else {
+      setPasswordGate("clear");
     }
 
     setStatusFailed(false);
@@ -56,10 +77,24 @@ const ProtectedRoute: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isAdministrator, user?.id]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  // The transition screen is outside MainLayout and remains reachable when
+  // ordinary authenticated API calls are denied by the backend.
+  if (isAdministrator) {
+    if (passwordGate === "checking") return null;
+    if (passwordGate === "required") {
+      return location.pathname === "/admin/password-update"
+        ? <Outlet />
+        : <Navigate to="/admin/password-update" replace />;
+    }
+    if (location.pathname === "/admin/password-update") {
+      return <Navigate to="/" replace />;
+    }
   }
 
   const pathAllowedDuringTermsGate = TERMS_GATE_ALLOWED_PATHS.has(location.pathname);
