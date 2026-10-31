@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
 import { is2FAEnabled } from "./two-factor.service.js";
+import { checkAndTouchPrivilegedSession } from "./auth.state.repository.js";
 
 const ENROLLMENT_ENDPOINTS = new Set([
   "GET /auth/2fa/status",
@@ -43,6 +44,10 @@ export async function enforceAdministratorMfa(
     }
     if (role.role_code !== "admin" && role.role_code !== "superadmin") {
       next();
+      return;
+    }
+    if (!(await checkAndTouchPrivilegedSession(identity.sid, identity.sub))) {
+      next(new HttpError(401, "AUTH_SESSION_EXPIRED", "Administrator session expired"));
       return;
     }
     if (identity.mfa === true && (await is2FAEnabled(identity.sub))) {
