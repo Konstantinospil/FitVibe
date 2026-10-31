@@ -167,7 +167,12 @@ export async function login(
     const issuedAtIso = new Date().toISOString();
     const sessionExpiresAt = nextSessionExpiry(user.role_code);
 
-    const refreshToken = signRefresh({ sub: user.id, sid: sessionId, mfa: false, role: user.role_code });
+    const refreshToken = signRefresh({
+      sub: user.id,
+      sid: sessionId,
+      mfa: false,
+      role: user.role_code,
+    });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     await createSessionWithRefresh(
