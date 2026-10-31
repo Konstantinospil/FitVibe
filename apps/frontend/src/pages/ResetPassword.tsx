@@ -115,10 +115,14 @@ const ResetPassword: React.FC = () => {
       >
         <FormFeedback tone="success">{t("resetPassword.successText")}</FormFeedback>
         {passwordWarning ? (
-          <FormFeedback tone="warning">{t(`passwordStrength.advisory.${passwordWarning}`)}</FormFeedback>
+          <FormFeedback tone="warning">
+            {t(`passwordStrength.advisory.${passwordWarning}`)}
+          </FormFeedback>
         ) : null}
         {passwordWarning ? (
-          <TextLink as={NavLink} to="/login">{t("resetPassword.backToLogin")}</TextLink>
+          <TextLink as={NavLink} to="/login">
+            {t("resetPassword.backToLogin")}
+          </TextLink>
         ) : null}
       </AuthPageLayout>
     );
