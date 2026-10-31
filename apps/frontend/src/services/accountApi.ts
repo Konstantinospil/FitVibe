@@ -623,10 +623,9 @@ export interface ChangePasswordRequest {
 export async function changePassword(
   payload: ChangePasswordRequest,
 ): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
-  const res = await apiClient.post<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }>(
-    "/api/v1/users/change-password",
-    payload,
-  );
+  const res = await apiClient.post<{
+    passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
+  }>("/api/v1/users/change-password", payload);
   return res.data ?? {};
 }
 
