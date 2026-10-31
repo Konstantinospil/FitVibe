@@ -524,8 +524,8 @@ describe("Auth Controller", () => {
 
       expect(mockAuthService.logout).toHaveBeenCalled();
       expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect(mockResponse.send).toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({});
       expect(mockNext).not.toHaveBeenCalled();
     });
   });
@@ -586,7 +586,7 @@ describe("Auth Controller", () => {
       };
 
       mockRequest.body = payload;
-      mockAuthService.resetPassword.mockResolvedValue(undefined);
+      mockAuthService.resetPassword.mockResolvedValue({});
 
       await authController.resetPassword(
         mockRequest as Request,
