@@ -59,7 +59,7 @@ function dateOfBirthFromAge(age?: number | null): string | undefined {
 export async function register(
   dto: RegisterDTO,
   preparedAvatar?: Buffer,
-): Promise<{ verificationToken?: string; user?: UserSafe }> {
+): Promise<{ verificationToken?: string; user?: UserSafe; passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
   const startTime = Date.now();
 
   try {
@@ -69,9 +69,9 @@ export async function register(
       throw new HttpError(403, "AUTH_EMAIL_BLOCKED", "AUTH_EMAIL_BLOCKED");
     }
     assertPasswordPolicy(dto.password, { email, alias });
-    // Never persist a new credential or send a verification email if the
-    // k-anonymity provider is unavailable. Requests remain retryable.
-    await breachedPasswordChecker.assertAcceptable(dto.password);
+    // Keep the local common-password denylist mandatory. A breach match or
+    // provider outage is advisory and must not prevent account creation.
+    const passwordWarning = await breachedPasswordChecker.checkAdvisory(dto.password);
     if (
       dto.profile?.sex !== undefined ||
       dto.profile?.fitness_level !== undefined ||
@@ -109,7 +109,7 @@ export async function register(
           });
         }
 
-        return { verificationToken: token, user: toSafeUser(existingByEmail) };
+        return { verificationToken: token, user: toSafeUser(existingByEmail), passwordWarning };
       }
       throw new HttpError(409, "AUTH_CONFLICT", "AUTH_CONFLICT");
     }
@@ -184,7 +184,7 @@ export async function register(
     }
 
     const user = await findUserById(id);
-    return { verificationToken, user: user ? toSafeUser(user) : undefined };
+    return { verificationToken, user: user ? toSafeUser(user) : undefined, passwordWarning };
   } finally {
     await normalizeAuthTiming(startTime);
   }
