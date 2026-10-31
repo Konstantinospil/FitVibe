@@ -150,6 +150,19 @@ export class BreachedPasswordChecker {
       throw new HttpError(400, "PASSWORD_BREACHED", "PASSWORD_BREACHED");
     }
   }
+  /** A breach-list match is advisory; whole-secret common-password denylist remains mandatory. */
+  async checkAdvisory(password: string): Promise<"PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" | undefined> {
+    try {
+      await this.assertAcceptable(password);
+      return undefined;
+    } catch (error) {
+      if (error instanceof HttpError &&
+          (error.code === "PASSWORD_BREACHED" || error.code === "BREACH_CHECK_UNAVAILABLE")) {
+        return error.code;
+      }
+      throw error;
+    }
+  }
 }
 
 export const breachedPasswordChecker = new BreachedPasswordChecker();
