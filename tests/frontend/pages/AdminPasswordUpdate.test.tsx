@@ -7,6 +7,7 @@ import { changePassword } from "../../src/services/accountApi";
 import { useAuth } from "../../src/contexts/AuthContext";
 
 const mockNavigate = vi.fn();
+const mockMinimum = vi.hoisted(() => ({ value: 16 as number | null }));
 const mockSignOut = vi.fn();
 
 vi.mock("react-router-dom", async () => {
@@ -14,7 +15,7 @@ vi.mock("react-router-dom", async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useOutletContext: () => ({ minimumPasswordLength: 16 }),
+    useOutletContext: () => ({ minimumPasswordLength: mockMinimum.value }),
   };
 });
 vi.mock("../../src/contexts/AuthContext", () => ({ useAuth: vi.fn() }));
@@ -71,6 +72,7 @@ function submit() {
 describe("Legacy administrator password transition (#557)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMinimum.value = 16;
     mockSignOut.mockResolvedValue(undefined);
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
@@ -110,6 +112,25 @@ describe("Legacy administrator password transition (#557)", () => {
     fill(CURRENT, "short-password");
     submit();
     expect(screen.getByRole("alert")).toHaveTextContent("auth.adminPasswordTransition.minimum");
+    expect(mockChangePassword).not.toHaveBeenCalled();
+  });
+
+  it("uses a stricter runtime minimum supplied by the backend policy", () => {
+    mockMinimum.value = 20;
+    form();
+    fill(CURRENT, "0123456789ABCDEF");
+    expect(screen.getByTestId("password-strength")).toHaveAttribute("data-minimum", "20");
+    submit();
+    expect(screen.getByRole("alert")).toHaveTextContent("auth.adminPasswordTransition.minimum");
+    expect(mockChangePassword).not.toHaveBeenCalled();
+  });
+
+  it("disables transition when the server policy value is unavailable", () => {
+    mockMinimum.value = null;
+    form();
+    expect(screen.getByText("auth.adminPasswordTransition.statusUnavailable")).toBeInTheDocument();
+    expect(screen.queryByTestId("password-strength")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "auth.adminPasswordTransition.submit" })).toBeDisabled();
     expect(mockChangePassword).not.toHaveBeenCalled();
   });
 
