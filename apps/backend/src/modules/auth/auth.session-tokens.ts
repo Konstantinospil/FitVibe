@@ -18,10 +18,12 @@ export function refreshTokenTtlForRole(role: string): number {
 }
 
 export function nextSessionExpiry(role = "athlete", createdAt = Date.now()): string {
-  return new Date(Math.min(
-    Date.now() + SESSION_EXPIRY_MS,
-    isPrivilegedRole(role) ? createdAt + ADMIN_SESSION_MAX_AGE_MS : Number.POSITIVE_INFINITY,
-  )).toISOString();
+  return new Date(
+    Math.min(
+      Date.now() + SESSION_EXPIRY_MS,
+      isPrivilegedRole(role) ? createdAt + ADMIN_SESSION_MAX_AGE_MS : Number.POSITIVE_INFINITY,
+    ),
+  ).toISOString();
 }
 
 export function accessTokenTtlForRole(role: string): number {
@@ -36,7 +38,9 @@ export function signAccess(payload: Omit<JwtPayload, "iat" | "exp" | "jti">): st
   });
 }
 
-export function signRefresh(payload: Pick<RefreshTokenPayload, "sub" | "sid" | "mfa"> & { role?: string }): string {
+export function signRefresh(
+  payload: Pick<RefreshTokenPayload, "sub" | "sid" | "mfa"> & { role?: string },
+): string {
   return jwt.sign(
     { sub: payload.sub, sid: payload.sid, mfa: payload.mfa === true, typ: "refresh" },
     RSA_KEYS.privateKey,
