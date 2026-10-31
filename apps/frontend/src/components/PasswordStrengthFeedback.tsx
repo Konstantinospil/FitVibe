@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-const COMMON_PATTERNS = /^(?:password|passwort|qwerty|welcome|admin|letmein|123456|abcdef)/iu;
+const COMMON_PATTERNS = /^(?:password|passwort|qwerty|welcome|admin|letmein|123456|abcdef|wewillrockyou)/iu;
 const REPEATED = /^(.)\1+$/u;
 
 function estimatedStrength(password: string): number {
