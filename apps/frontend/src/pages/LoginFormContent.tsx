@@ -165,7 +165,11 @@ const LoginFormContent: React.FC = () => {
       ) : null}
       {transitionState?.passwordWarning ? (
         <FormFeedback tone="warning">
-          {t(`passwordStrength.advisory.${transitionState.passwordWarning}`)}
+          {t(
+            transitionState.passwordWarning === "PASSWORD_BREACHED"
+              ? "auth.adminPasswordTransition.breachedWarning"
+              : "auth.adminPasswordTransition.unavailableWarning",
+          )}
         </FormFeedback>
       ) : null}
       {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
