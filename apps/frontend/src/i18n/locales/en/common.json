@@ -261,6 +261,7 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Email service unavailable"
   },
   "passwordStrength": {
+    "advisory": {"PASSWORD_BREACHED":"This password appeared in a known data breach. We strongly recommend changing it; your request was completed.","BREACH_CHECK_UNAVAILABLE":"Password breach verification was unavailable. Your request was completed, but we recommend using a unique password."},
     "meterLabel": "Password strength estimate",
     "levels": {"veryWeak":"Very weak","weak":"Weak","fair":"Fair","strong":"Strong"},
     "serverChecks": "Final password approval requires server-side security checks.",
