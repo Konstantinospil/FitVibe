@@ -114,6 +114,8 @@ export async function createUser(
           status: initialStatus,
           roleCode,
           passwordHash,
+          adminPasswordPolicyVerifiedAt:
+            roleCode === "admin" || roleCode === "superadmin" ? new Date().toISOString() : null,
         },
         trx,
       );
