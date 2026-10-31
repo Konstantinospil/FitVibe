@@ -128,11 +128,12 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const scopeUserId = `anon:${payload.email}`;
 
     const execute = async (): Promise<Record<string, unknown>> => {
-      const { verificationToken } = preparedAvatar
+      const { verificationToken, passwordWarning } = preparedAvatar
         ? await doRegister(payload, preparedAvatar)
         : await doRegister(payload);
       const response: Record<string, unknown> = {
         message: "If the email is valid, a verification link will be sent shortly.",
+        ...(passwordWarning ? { passwordWarning } : {}),
       };
       if (!env.isProduction && verificationToken) {
         response.debugVerificationToken = verificationToken;
@@ -402,9 +403,9 @@ export async function resetPassword(
     // where attackers could manipulate scoping to bypass checks or access cached responses.
     // Password resets are one-time operations where the risk of duplicate requests is minimal.
 
-    await doResetPassword(payload.token, payload.newPassword);
+    const { passwordWarning } = await doResetPassword(payload.token, payload.newPassword);
     clearAuthCookies(res);
-    res.status(204).send();
+    res.status(200).json(passwordWarning ? { passwordWarning } : {});
     return;
   } catch (error) {
     next(error);
