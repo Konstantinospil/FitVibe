@@ -605,6 +605,23 @@ describe("Auth Controller", () => {
     });
   });
 
+  it("returns a nonblocking advisory when a reset password was breached", async () => {
+    const payload = { token: "reset-token", newPassword: "UniqueFixturePassphraseForReset" };
+    mockRequest.body = payload;
+    mockAuthService.resetPassword.mockResolvedValue({ passwordWarning: "PASSWORD_BREACHED" });
+
+    await authController.resetPassword(
+      mockRequest as Request,
+      mockResponse as Response,
+      mockNext,
+    );
+
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({ passwordWarning: "PASSWORD_BREACHED" });
+    expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
   describe("listSessions", () => {
     it("should list sessions successfully", async () => {
       const mockSessions = [
