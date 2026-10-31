@@ -213,7 +213,8 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
 
     const reset = await request(app).post("/api/v1/auth/password/reset")
       .send({ token: forgot.body.debugResetToken, newPassword: REPLACEMENT_PASSWORD });
-    expect(reset.status).toBe(204);
+    expect(reset.status).toBe(200);
+    expect(reset.body).toEqual({});
     const revoked = await request(app).get("/api/v1/auth/sessions")
       .set("Cookie", cookieHeader(refresh));
     expect(revoked.status).toBe(401);
