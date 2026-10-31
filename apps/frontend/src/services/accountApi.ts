@@ -615,6 +615,13 @@ export async function get2FAStatus(): Promise<TwoFactorStatusResponse> {
   return res.data;
 }
 
+export async function getAdministratorPasswordPolicyStatus(): Promise<{ passwordChangeRequired: boolean }> {
+  const res = await apiClient.get<{ passwordChangeRequired: boolean }>(
+    "/api/v1/auth/admin-password/status",
+  );
+  return res.data;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
