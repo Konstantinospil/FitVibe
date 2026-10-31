@@ -1,15 +1,10 @@
-import { db } from "../../db/connection.js";
-
 /**
- * Only credential writes validated against the *active admin role* may set
- * this timestamp. Do not infer it from Argon2id/bcrypt hashes, authentication
- * success or opportunistic hash upgrades.
+ * Historic hashes cannot establish their original plaintext password length.
+ * Only a password write checked against the active admin role may attest it.
+ * Pure predicate: guard reuses the user row it already fetched.
  */
-export async function administratorPasswordChangeRequired(userId: string): Promise<boolean> {
-  const row = await db("users")
-    .where({ id: userId })
-    .first<{ admin_password_policy_verified_at: string | null }>(
-      "admin_password_policy_verified_at",
-    );
-  return !row?.admin_password_policy_verified_at;
+export function administratorPasswordChangeRequired(
+  user: { admin_password_policy_verified_at: string | null },
+): boolean {
+  return !user.admin_password_policy_verified_at;
 }
