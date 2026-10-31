@@ -3,6 +3,13 @@ import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
 import { is2FAEnabled } from "./two-factor.service.js";
 import { checkAndTouchPrivilegedSession } from "./auth.state.repository.js";
+import { administratorPasswordChangeRequired } from "./admin-password-policy.service.js";
+
+const PASSWORD_TRANSITION_ENDPOINTS = new Set([
+  "GET /auth/admin-password/status",
+  "POST /users/change-password",
+  "POST /auth/logout",
+]);
 
 const ENROLLMENT_ENDPOINTS = new Set([
   "GET /auth/2fa/status",
@@ -50,11 +57,17 @@ export async function enforceAdministratorMfa(
       next(new HttpError(401, "AUTH_SESSION_EXPIRED", "Administrator session expired"));
       return;
     }
+    const path = req.originalUrl.split("?")[0]?.replace(/^\/api\/v1/, "") ?? "";
     if (identity.mfa === true && (await is2FAEnabled(identity.sub))) {
+      if (await administratorPasswordChangeRequired(identity.sub)) {
+        if (!PASSWORD_TRANSITION_ENDPOINTS.has(`${req.method} ${path}`)) {
+          next(new HttpError(403, "ADMIN_PASSWORD_CHANGE_REQUIRED", "Administrator password update required"));
+          return;
+        }
+      }
       next();
       return;
     }
-    const path = req.originalUrl.split("?")[0]?.replace(/^\/api\/v1/, "") ?? "";
     if (ENROLLMENT_ENDPOINTS.has(`${req.method} ${path}`)) {
       next();
       return;
