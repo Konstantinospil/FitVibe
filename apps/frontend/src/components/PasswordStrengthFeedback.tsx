@@ -1,21 +1,19 @@
 import { useTranslation } from "react-i18next";
+import { ZxcvbnFactory } from "@zxcvbn-ts/core";
+import { adjacencyGraphs, dictionary as commonDictionary } from "@zxcvbn-ts/language-common";
+import { dictionary as englishDictionary, translations } from "@zxcvbn-ts/language-en";
 
-const COMMON_PATTERNS = /^(?:password|passwort|qwerty|welcome|admin|letmein|123456|abcdef|wewillrockyou)/iu;
-const REPEATED = /^(.)\1+$/u;
+// Reuse a deterministic, version-pinned local estimator; never submit passwords
+// to an external strength-scoring endpoint.
+const estimator = new ZxcvbnFactory({
+  dictionary: { ...commonDictionary, ...englishDictionary },
+  graphs: adjacencyGraphs,
+  translations,
+});
 
 function estimatedStrength(password: string): number {
-  if (!password) {
-    return 0;
-  }
-  if (COMMON_PATTERNS.test(password) || REPEATED.test(password)) {
-    return 1;
-  }
-  // Heuristic guidance only: never implies that the server has approved the password.
-  const lengthScore =
-    password.length < 12 ? 1 : password.length < 16 ? 2 : password.length < 20 ? 3 : 4;
-  const sequential = /(?:1234|abcd|qwer|asdf)/iu.test(password);
-  const repeats = /(.)\1{3,}/u.test(password);
-  return Math.max(1, lengthScore - Number(sequential || repeats));
+  // The UI shows four filled levels. zxcvbn-ts provides a 0–4 score.
+  return Math.max(1, estimator.check(password).score);
 }
 
 /** Visual guidance only; breached-password, history and policy checks stay server-side. */
