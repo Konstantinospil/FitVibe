@@ -163,10 +163,32 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
         code: authenticator.generate(secret),
       });
       expect(verification.status).toBe(200);
+      const nextPassword = "Unique testing passphrase for administrative login!";
+      const changed = await request(app)
+        .post("/api/v1/users/change-password")
+        .set("Authorization", `Bearer ${verification.body.tokens?.accessToken}`)
+        .send({ currentPassword: password, newPassword: nextPassword });
+      expect(changed.status).toBe(200);
+
+      const nextLogin = await request(app).post("/api/v1/auth/login").send({
+        email: "admin@example.com",
+        password: nextPassword,
+      });
+      expect(nextLogin.body).toMatchObject({
+        requires2FA: true,
+        pendingSessionId: expect.any(String),
+      });
+      const nextVerification = await request(app)
+        .post("/api/v1/auth/login/verify-2fa")
+        .send({
+          pendingSessionId: nextLogin.body.pendingSessionId,
+          code: authenticator.generate(secret),
+        });
+      expect(nextVerification.status).toBe(200);
       admin = {
         id: adminId,
         email: "admin@example.com",
-        accessToken: verification.body.tokens?.accessToken || "",
+        accessToken: nextVerification.body.tokens?.accessToken || "",
       };
 
       // Create a public session for user1
