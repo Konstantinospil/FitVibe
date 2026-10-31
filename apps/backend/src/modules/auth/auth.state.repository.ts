@@ -182,6 +182,7 @@ export async function changePasswordAndRevokeAuthAtomic(
   userId: string,
   passwordHash: string,
   candidate: string,
+  currentPassword: string,
 ): Promise<void> {
   await db.transaction(async (trx) => {
     const user = await trx("users")
@@ -190,6 +191,11 @@ export async function changePasswordAndRevokeAuthAtomic(
       .first<{ password_hash: string }>("password_hash");
     if (!user) {
       throw new HttpError(400, "USER_NOT_FOUND", "USER_NOT_FOUND");
+    }
+    // A concurrent change may already have invalidated the password checked
+    // before entering this transaction. Only the locked current hash is authoritative.
+    if (!(await verifyPasswordHash(currentPassword, user.password_hash))) {
+      throw new HttpError(401, "USER_INVALID_PASSWORD", "USER_INVALID_PASSWORD");
     }
     await checkAndRecordPasswordHistory(trx, userId, candidate, user.password_hash);
     await trx("users").where({ id: userId }).update({
