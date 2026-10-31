@@ -259,9 +259,7 @@ export async function changePassword(req: Request, res: Response): Promise<void>
 
   const handled = await handleIdempotentRequest(req, res, userId, {}, async () => {
     const result = await updatePassword(userId, parsed.data);
-    return result?.passwordWarning
-      ? { status: 200, body: result }
-      : { status: 204, body: null };
+    return result?.passwordWarning ? { status: 200, body: result } : { status: 204, body: null };
   });
 
   if (!handled) {
