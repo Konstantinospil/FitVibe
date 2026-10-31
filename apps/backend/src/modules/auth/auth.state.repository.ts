@@ -206,7 +206,9 @@ export async function changePasswordAndRevokeAuthAtomic(
     await trx("users").where({ id: userId }).update({
       password_hash: passwordHash,
       admin_password_policy_verified_at:
-        user.role_code === "admin" || user.role_code === "superadmin" ? new Date().toISOString() : null,
+        user.role_code === "admin" || user.role_code === "superadmin"
+          ? new Date().toISOString()
+          : null,
       updated_at: new Date().toISOString(),
     });
     await revokeUserAuthStateAtomic(userId, trx);

@@ -26,12 +26,21 @@ const PRIVACY_GATE_ALLOWED_PATHS = new Set([
   "/settings",
 ]);
 
+function authErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object" || !("response" in error)) {
+    return undefined;
+  }
+  const structured = error as { response?: { data?: { error?: { code?: string } } } };
+  return structured.response?.data?.error?.code;
+}
+
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   const [legalStatus, setLegalStatus] = useState<LegalDocumentsStatus | null>(null);
   const [statusFailed, setStatusFailed] = useState(false);
   const isAdministrator = user?.role === "admin" || user?.role === "superadmin";
+  const roleMissing = !user;
   const [passwordGate, setPasswordGate] = useState<"checking" | "required" | "clear">("checking");
 
   useEffect(() => {
@@ -49,22 +58,20 @@ const ProtectedRoute: React.FC = () => {
     setPasswordGate("checking");
     // The persisted browser session may precede hydration of user.role.
     // Ask the server rather than assuming a missing client role is non-admin.
-    if (isAdministrator || !user) {
+    if (isAdministrator || roleMissing) {
       void getAdministratorPasswordPolicyStatus()
         .then((status) => {
-          if (!cancelled) setPasswordGate(status.passwordChangeRequired ? "required" : "clear");
+          if (!cancelled) {
+            setPasswordGate(status.passwordChangeRequired ? "required" : "clear");
+          }
         })
         .catch((error: unknown) => {
-          if (cancelled) return;
-          // A password-only bootstrap login must still reach the existing
-          // mandatory MFA enrollment overlay. It cannot update its password
-          // until the backend has verified MFA.
-          const code =
-            error && typeof error === "object" && "response" in error
-              ? (error as { response?: { data?: { error?: { code?: string } } } })
-                  .response?.data?.error?.code
-              : undefined;
-          setPasswordGate(code === "ADMIN_2FA_REQUIRED" ? "clear" : "required");
+          if (cancelled) {
+            return;
+          }
+          // A password-only bootstrap login must still reach mandatory MFA
+          // enrollment before credential attestation can be requested.
+          setPasswordGate(authErrorCode(error) === "ADMIN_2FA_REQUIRED" ? "clear" : "required");
         });
     } else {
       setPasswordGate("clear");
@@ -87,7 +94,7 @@ const ProtectedRoute: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isAdministrator, user?.id]);
+  }, [isAuthenticated, isAdministrator, roleMissing, user?.id]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
@@ -95,12 +102,15 @@ const ProtectedRoute: React.FC = () => {
 
   // The transition screen is outside MainLayout and remains reachable when
   // ordinary authenticated API calls are denied by the backend.
-  if (isAdministrator || !user) {
-    if (passwordGate === "checking") return null;
+  if (isAdministrator || roleMissing) {
+    if (passwordGate === "checking") {
+      return null;
+    }
     if (passwordGate === "required") {
-      return location.pathname === "/admin/password-update"
-        ? <Outlet />
-        : <Navigate to="/admin/password-update" replace />;
+      if (location.pathname === "/admin/password-update") {
+        return <Outlet />;
+      }
+      return <Navigate to="/admin/password-update" replace />;
     }
     if (location.pathname === "/admin/password-update") {
       return <Navigate to="/" replace />;

@@ -159,9 +159,7 @@ const LoginFormContent: React.FC = () => {
         hidePasswordLabel={hidePasswordLabel}
       />
       {transitionState?.passwordUpdated ? (
-        <FormFeedback tone="success">
-          {t("auth.adminPasswordTransition.updated")}
-        </FormFeedback>
+        <FormFeedback tone="success">{t("auth.adminPasswordTransition.updated")}</FormFeedback>
       ) : null}
       {transitionState?.passwordWarning ? (
         <FormFeedback tone="warning">

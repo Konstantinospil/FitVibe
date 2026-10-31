@@ -8,6 +8,14 @@ import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { changePassword } from "../services/accountApi";
 import { useAuth } from "../contexts/AuthContext";
 
+function passwordErrorCode(cause: unknown): string | undefined {
+  if (!cause || typeof cause !== "object" || !("response" in cause)) {
+    return undefined;
+  }
+  const structured = cause as { response?: { data?: { error?: { code?: string } } } };
+  return structured.response?.data?.error?.code;
+}
+
 /** #557: reachable only after a verified MFA session, never a password-only bypass. */
 const AdminPasswordUpdate: React.FC = () => {
   const { t } = useTranslation();
@@ -41,15 +49,20 @@ const AdminPasswordUpdate: React.FC = () => {
         state: { passwordWarning: response?.passwordWarning ?? null, passwordUpdated: true },
       });
     } catch (cause: unknown) {
-      const code =
-        cause && typeof cause === "object" && "response" in cause
-          ? (cause as { response?: { data?: { error?: { code?: string } } } }).response?.data?.error?.code
-          : undefined;
-      const known = ["WEAK_PASSWORD", "PASSWORD_REUSED", "USER_INVALID_PASSWORD",
-        "PASSWORD_COMMON", "PASSWORD_CONTAINS_USERNAME", "PASSWORD_CONTAINS_EMAIL"];
-      setError(code && known.includes(code)
-        ? t(`errors.${code}`, { defaultValue: t("auth.adminPasswordTransition.failure") })
-        : t("auth.adminPasswordTransition.failure"));
+      const code = passwordErrorCode(cause);
+      const known = new Set([
+        "WEAK_PASSWORD",
+        "PASSWORD_REUSED",
+        "USER_INVALID_PASSWORD",
+        "PASSWORD_COMMON",
+        "PASSWORD_CONTAINS_USERNAME",
+        "PASSWORD_CONTAINS_EMAIL",
+      ]);
+      setError(
+        code && known.has(code)
+          ? t(`errors.${code}`, { defaultValue: t("auth.adminPasswordTransition.failure") })
+          : t("auth.adminPasswordTransition.failure"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -60,10 +73,12 @@ const AdminPasswordUpdate: React.FC = () => {
       title={t("auth.adminPasswordTransition.title")}
       description={t("auth.adminPasswordTransition.description")}
     >
-      <FormStack onSubmit={(event) => { void submit(event); }}>
-        <FormFeedback tone="warning">
-          {t("auth.adminPasswordTransition.explanation")}
-        </FormFeedback>
+      <FormStack
+        onSubmit={(event) => {
+          void submit(event);
+        }}
+      >
+        <FormFeedback tone="warning">{t("auth.adminPasswordTransition.explanation")}</FormFeedback>
         <PasswordField
           id="admin-current-password"
           name="currentPassword"

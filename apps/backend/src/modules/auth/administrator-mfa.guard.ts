@@ -61,7 +61,9 @@ export async function enforceAdministratorMfa(
     if (identity.mfa === true && (await is2FAEnabled(identity.sub))) {
       if (await administratorPasswordChangeRequired(identity.sub)) {
         if (!PASSWORD_TRANSITION_ENDPOINTS.has(`${req.method} ${path}`)) {
-          next(new HttpError(403, "ADMIN_PASSWORD_CHANGE_REQUIRED", "Administrator password update required"));
+          next(
+            new HttpError(403, "ADMIN_PASSWORD_CHANGE_REQUIRED", "Administrator password update required"),
+          );
           return;
         }
       }

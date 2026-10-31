@@ -114,7 +114,11 @@ authRouter.post("/refresh", rateLimit("auth_refresh"), asyncHandler(refresh));
 authRouter.post("/logout", rateLimit("auth_logout"), asyncHandler(logout));
 // After verified MFA, legacy administrators may query only this transition
 // status and the password update endpoint until a compliant write succeeds.
-authRouter.get("/admin-password/status", requireAccessToken, asyncHandler(administratorPasswordPolicyStatus));
+authRouter.get(
+  "/admin-password/status",
+  requireAccessToken,
+  asyncHandler(administratorPasswordPolicyStatus),
+);
 authRouter.post(
   "/password/forgot",
   rateLimit("auth_pw_forgot"),
