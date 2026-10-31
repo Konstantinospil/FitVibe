@@ -2,6 +2,7 @@ import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 import { v4 as uuidv4 } from "uuid";
 import { HttpError } from "../../utils/http.js";
+import { ADMIN_SESSION_IDLE_MS, ADMIN_SESSION_MAX_AGE_MS } from "./privileged-session.policy.js";
 import { assertPasswordPolicy } from "./passwordPolicy.js";
 import {
   verifyPasswordHash,
@@ -261,4 +262,28 @@ export async function isSessionActiveForUser(sessionJti: string, userId: string)
     .andWhere("expires_at", ">", new Date().toISOString())
     .first("jti");
   return Boolean(row);
+}
+
+/**
+ * Atomic server-side administrator idle and absolute expiry enforcement.
+ * Older sessions with no activity timestamp use their creation timestamp,
+ * rather than receiving a fresh idle window on deployment.
+ * The predicate is evaluated by PostgreSQL during the update so concurrent
+ * requests cannot revive a session that has passed either deadline.
+ */
+export async function checkAndTouchPrivilegedSession(
+  sessionJti: string,
+  userId: string,
+): Promise<boolean> {
+  const now = Date.now();
+  const updated = await db("auth_sessions")
+    .where({ jti: sessionJti, user_id: userId })
+    .whereNull("revoked_at")
+    .andWhere("expires_at", ">", new Date(now).toISOString())
+    .andWhere("created_at", ">", new Date(now - ADMIN_SESSION_MAX_AGE_MS).toISOString())
+    .whereRaw("COALESCE(last_active_at, created_at) > ?", [
+      new Date(now - ADMIN_SESSION_IDLE_MS).toISOString(),
+    ])
+    .update({ last_active_at: new Date(now).toISOString() });
+  return updated === 1;
 }
