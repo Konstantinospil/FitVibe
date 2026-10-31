@@ -53,6 +53,9 @@ describe("Auth Controller", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTokensService.refreshTokenTtlForRole.mockImplementation((role) =>
+      role === "admin" || role === "superadmin" ? 8 * 60 * 60 : 604800,
+    );
 
     mockRequest = {
       user: { sub: userId, sid: sessionId, role: "athlete" },
@@ -327,6 +330,8 @@ describe("Auth Controller", () => {
     await authController.verify2FALogin(mockRequest as Request, mockResponse as Response, mockNext);
     expect(mockResponse.cookie).toHaveBeenCalledWith("access_token", "admin-access",
       expect.objectContaining({ maxAge: 300_000 }));
+    expect(mockResponse.cookie).toHaveBeenCalledWith("refresh_token", "admin-refresh",
+      expect.objectContaining({ maxAge: 8 * 60 * 60 * 1000 }));
     expect(mockNext).not.toHaveBeenCalled();
   });
 
