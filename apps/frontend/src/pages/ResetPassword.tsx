@@ -79,7 +79,11 @@ const ResetPassword: React.FC = () => {
           response?: { data?: { error?: { code?: string; message?: string } } };
         };
         const code = axiosError.response?.data?.error?.code;
-        setError(code ? t(`errors.${code}`) : t("resetPassword.errorReset"));
+        setError(
+          code
+            ? t(`errors.${code}`)
+            : axiosError.response?.data?.error?.message || t("resetPassword.errorReset"),
+        );
       } else {
         setError(t("resetPassword.errorReset"));
       }

@@ -52,10 +52,6 @@ void testI18n.use(initReactI18next).init({
         "resetPassword.errorReset": "Failed to reset password",
         "resetPassword.passwordRequirements.title": "Password Requirements:",
         "resetPassword.passwordRequirements.minLength": "At least 12 characters",
-        "resetPassword.passwordRequirements.uppercase": "At least one uppercase letter",
-        "resetPassword.passwordRequirements.lowercase": "At least one lowercase letter",
-        "resetPassword.passwordRequirements.digit": "At least one digit",
-        "resetPassword.passwordRequirements.special": "At least one special character",
         "auth.showPassword": "Show password",
         "auth.hidePassword": "Hide password",
       },
@@ -91,10 +87,9 @@ describe("ResetPassword", () => {
 
     expect(screen.getByText("Password Requirements:")).toBeInTheDocument();
     expect(screen.getByText("At least 12 characters")).toBeInTheDocument();
-    expect(screen.getByText(/At least one uppercase letter/i)).toBeInTheDocument();
-    expect(screen.getByText(/At least one lowercase letter/i)).toBeInTheDocument();
-    expect(screen.getByText(/At least one digit/i)).toBeInTheDocument();
-    expect(screen.getByText(/At least one special character/i)).toBeInTheDocument();
+    // Password composition restrictions are no longer part of the Stage B policy.
+    expect(screen.queryByText(/At least one uppercase letter/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/At least one digit/i)).not.toBeInTheDocument();
   });
 
   it("has password visibility toggles", () => {
