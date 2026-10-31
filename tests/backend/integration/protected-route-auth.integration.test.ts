@@ -58,6 +58,8 @@ describe("canonical protected-route authentication", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockedAuthState.isSessionActiveForUser.mockResolvedValue(true);
+    // A valid backing session must also pass the administrator idle/absolute expiry guard.
+    mockedAuthState.checkAndTouchPrivilegedSession.mockResolvedValue(true);
     mockRoleLookup.mockResolvedValue({ role_code: "athlete", status: "active" });
     mockedDb.mockReturnValue({ where: jest.fn().mockReturnValue({ first: mockRoleLookup }) });
   });
@@ -120,6 +122,39 @@ describe("canonical protected-route authentication", () => {
       "session-cookie",
       "user-cookie",
     );
+    expect(mockedAuthState.checkAndTouchPrivilegedSession).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
   });
 
+  it("rejects an expired privileged session before evaluating administrator MFA", async () => {
+    mockRoleLookup.mockResolvedValue({ role_code: "admin", status: "active" });
+    mockedAuthState.checkAndTouchPrivilegedSession.mockResolvedValue(false);
+    mockedTokens.verifyAccess.mockReturnValue({
+      sub: "user-cookie",
+      role: "athlete",
+      sid: "session-cookie",
+    } as never);
+
+    const app = express();
+    app.use(cookieParser());
+    app.use("/sessions", sessionsRouter);
+
+    const response = await request(app)
+      .get("/sessions")
+      .set("Cookie", `${env.ACCESS_COOKIE_NAME}=cookie-access-token`);
+
+    expect(response.status).toBe(401);
+    expect(mockedDb).toHaveBeenCalledWith("users");
+    expect(mockRoleLookup).toHaveBeenCalledWith(["role_code", "status"]);
+    expect(mockedAuthState.isSessionActiveForUser).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
+    expect(mockedAuthState.checkAndTouchPrivilegedSession).toHaveBeenCalledWith(
+      "session-cookie",
+      "user-cookie",
+    );
+  });
 });
