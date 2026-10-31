@@ -33,7 +33,11 @@ import {
 import type { z } from "zod";
 import type { LoginContext } from "./auth.types.js";
 import { HttpError } from "../../utils/http.js";
-import { accessTokenTtlForRole, refreshTokenTtlForRole, verifyAccess } from "./auth.session-tokens.js";
+import {
+  accessTokenTtlForRole,
+  refreshTokenTtlForRole,
+  verifyAccess,
+} from "./auth.session-tokens.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 import { prepareRegistrationAvatar } from "./auth.registration-avatar.service.js";
@@ -51,7 +55,11 @@ function authCookieOptions(maxAge?: number) {
 }
 
 function setRefreshCookie(res: Response, token: string, role: string) {
-  res.cookie(env.REFRESH_COOKIE_NAME, token, authCookieOptions(refreshTokenTtlForRole(role) * 1000));
+  res.cookie(
+    env.REFRESH_COOKIE_NAME,
+    token,
+    authCookieOptions(refreshTokenTtlForRole(role) * 1000),
+  );
 }
 
 function setAccessCookie(res: Response, token: string, ttlSeconds: number) {
