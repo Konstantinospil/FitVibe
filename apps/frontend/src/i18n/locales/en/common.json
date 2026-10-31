@@ -261,6 +261,9 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Email service unavailable"
   },
   "passwordStrength": {
+    "meterLabel": "Password strength estimate",
+    "levels": {"veryWeak":"Very weak","weak":"Weak","fair":"Fair","strong":"Strong"},
+    "serverChecks": "Final password approval requires server-side security checks.",
     "tooShort": "Use at least {{minimum}} characters.",
     "minimumMet": "Length requirement met. Consider a longer unique passphrase.",
     "longPassphrase": "Long passphrase. The server will also check whether it has been breached."
