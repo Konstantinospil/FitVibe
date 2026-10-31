@@ -59,7 +59,11 @@ function dateOfBirthFromAge(age?: number | null): string | undefined {
 export async function register(
   dto: RegisterDTO,
   preparedAvatar?: Buffer,
-): Promise<{ verificationToken?: string; user?: UserSafe; passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
+): Promise<{
+  verificationToken?: string;
+  user?: UserSafe;
+  passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
+}> {
   const startTime = Date.now();
 
   try {
