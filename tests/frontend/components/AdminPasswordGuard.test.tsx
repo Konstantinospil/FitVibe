@@ -77,7 +77,7 @@ describe("Administrator password transition route guard (#557)", () => {
     vi.clearAllMocks();
     signInAs("admin");
     mockLegal.mockResolvedValue(approvedLegal);
-    mockStatus.mockResolvedValue({ passwordChangeRequired: false });
+    mockStatus.mockResolvedValue({ passwordChangeRequired: false, minimumPasswordLength: 16 });
   });
 
   afterEach(cleanup);
@@ -86,7 +86,7 @@ describe("Administrator password transition route guard (#557)", () => {
     "redirects an MFA-authenticated legacy %s to credential update",
     async (role) => {
       signInAs(role);
-      mockStatus.mockResolvedValue({ passwordChangeRequired: true });
+      mockStatus.mockResolvedValue({ passwordChangeRequired: true, minimumPasswordLength: 16 });
       renderAt("/dashboard");
       expect(await screen.findByText("Administrator credential update")).toBeInTheDocument();
       expect(screen.queryByText("Privileged dashboard")).not.toBeInTheDocument();
@@ -95,7 +95,7 @@ describe("Administrator password transition route guard (#557)", () => {
   );
 
   it("allows the transition page while the legacy credential is unverified", async () => {
-    mockStatus.mockResolvedValue({ passwordChangeRequired: true });
+    mockStatus.mockResolvedValue({ passwordChangeRequired: true, minimumPasswordLength: 16 });
     renderAt("/admin/password-update");
     expect(await screen.findByText("Administrator credential update")).toBeInTheDocument();
     expect(screen.queryByText("Application home")).not.toBeInTheDocument();
@@ -122,7 +122,7 @@ describe("Administrator password transition route guard (#557)", () => {
 
   it("resolves missing client-side role through the persisted server status", async () => {
     signInAs(null);
-    mockStatus.mockResolvedValue({ passwordChangeRequired: true });
+    mockStatus.mockResolvedValue({ passwordChangeRequired: true, minimumPasswordLength: 16 });
     renderAt("/dashboard");
     expect(await screen.findByText("Administrator credential update")).toBeInTheDocument();
     expect(mockStatus).toHaveBeenCalledOnce();
@@ -159,7 +159,7 @@ describe("Administrator password transition route guard (#557)", () => {
   });
 
   it("keeps the transition route available during terms reacceptance", async () => {
-    mockStatus.mockResolvedValue({ passwordChangeRequired: true });
+    mockStatus.mockResolvedValue({ passwordChangeRequired: true, minimumPasswordLength: 16 });
     mockLegal.mockResolvedValue({
       ...approvedLegal,
       terms: { ...approvedLegal.terms, needsAcceptance: true, requiredAction: "accept" },
@@ -169,7 +169,7 @@ describe("Administrator password transition route guard (#557)", () => {
   });
 
   it("handles legal-status failure while a legacy administrator changes password", async () => {
-    mockStatus.mockResolvedValue({ passwordChangeRequired: true });
+    mockStatus.mockResolvedValue({ passwordChangeRequired: true, minimumPasswordLength: 16 });
     mockLegal.mockRejectedValue(new Error("legal service outage"));
     renderAt("/admin/password-update");
     expect(await screen.findByText("Administrator credential update")).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe("Administrator password transition route guard (#557)", () => {
   });
 
   it("does not redirect based on a stale status response after unmount", async () => {
-    let resolveStatus!: (value: { passwordChangeRequired: boolean }) => void;
+    let resolveStatus!: (value: { passwordChangeRequired: boolean; minimumPasswordLength: number }) => void;
     mockStatus.mockReturnValue(
       new Promise((resolve) => {
         resolveStatus = resolve;
@@ -199,7 +199,7 @@ describe("Administrator password transition route guard (#557)", () => {
     const view = renderAt("/dashboard");
     expect(screen.queryByText("Privileged dashboard")).not.toBeInTheDocument();
     view.unmount();
-    resolveStatus({ passwordChangeRequired: true });
+    resolveStatus({ passwordChangeRequired: true, minimumPasswordLength: 16 });
     await waitFor(() => expect(screen.queryByText("Administrator credential update")).not.toBeInTheDocument());
   });
 });
