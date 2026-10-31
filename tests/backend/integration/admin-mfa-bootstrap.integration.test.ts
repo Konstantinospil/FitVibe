@@ -252,7 +252,7 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       role: "superadmin", mfa: true,
     });
     const latestHash = (await db("users").where({ id: ADMIN_ID }).first()).password_hash;
-    expect(latestHash).toMatch(/^\\$argon2id\\$/);
+    expect(latestHash).toMatch(/^\$argon2id\$/);
     const sudoDenied = await request(app).post("/api/v1/admin/superadmin/sudo")
       .set(auth(sudoLogin.body.tokens.accessToken)).send({ password: "incorrect-password" });
     expect(sudoDenied.status).toBe(401);
@@ -260,7 +260,6 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       .set(auth(sudoLogin.body.tokens.accessToken)).send({ password: REPLACEMENT_PASSWORD });
     expect(sudoGranted.status).toBe(200);
     expect(sudoGranted.body.expiresAt).toEqual(expect.any(String));
-
   });
 
   it("fails closed for role promotion and suspended or deleted accounts", async () => {
