@@ -26,6 +26,18 @@ docker run --rm -v "$PWD:/work:ro" -w /work node:24 \
 
 Attach the **JSON only**, without any environment variables, credentials, full logs or database backups. Record host RAM, CPU, current load and container memory limits. The script samples RSS and may underestimate the real peak; collect container/cgroup memory evidence under concurrent hashing separately.
 
+### ARM64 benchmark evidence — 2026-10-31
+
+**Status: Raspberry Pi 4 ARM64 single-host benchmark recorded; not yet full Stage B hardware/capacity acceptance.**
+
+- Device: Raspberry Pi 4, Cortex-A72, Linux `arm64`, 7.64 GiB RAM.
+- Runtime: Docker Node.js `v24.22.2`; benchmark parameters Argon2id `memoryKiB=65536`, `passes=3`, `parallelism=1`, `tagLength=32`.
+- Five sequential synthetic-hash measurements (ms): `521, 533, 542, 535, 522`. Reported p50 `533 ms`, observed maximum / sample p95 `542 ms`. **Five samples are insufficient for a robust tail-latency estimate.**
+- Two concurrent hashes: reported individual durations `662 ms` and `649 ms`, wall time `673 ms`; observed process peak RSS sample `176 MiB` (not a guaranteed absolute peak).
+- Runtime source provenance: Pi's existing FitVibe checkout remains `8844615cc2c27f6cc3bedfa9a07912026c5d3043` (Node 22); the benchmark was run with a separately fetched script in a Node 24 container, so **do not confuse the Pi's deployed checkout SHA with the benchmark script source revision**. The precise fetched script commit was not captured in the benchmark JSON.
+- Assessment: current baseline is usable for current-scale authentication on this hardware; **do not reduce Argon2id settings** based on this run. No sustained login/registration throughput, full FitVibe-container memory footprint, or multi-process / high-concurrency stress capacity has been measured. No actual AMD64 result received.
+- Next evidence: record the benchmark script SHA, perform the same synthetic benchmark on AMD64 and observe cgroup memory/latency under real FitVibe co-resident load. Decide concurrency limits based on these results, not this five-sample run alone.
+
 ### B. Decide how to transition legacy and newly promoted administrators
 
 Existing bcrypt and Argon2id hashes **do not reveal password length**. The owner must approve a rule and a deadline to replace historically short administrator credentials. Options:
