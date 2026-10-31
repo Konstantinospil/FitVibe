@@ -49,6 +49,7 @@ const ResetPassword: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [passwordWarning, setPasswordWarning] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -67,12 +68,15 @@ const ResetPassword: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      await resetPassword({ token, newPassword: password });
+      const response = await resetPassword({ token, newPassword: password });
+      setPasswordWarning(response.passwordWarning ?? null);
       setSuccess(true);
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        void navigate("/login");
-      }, 2000);
+      // Retain the warning on screen so the user can make an informed decision.
+      if (!response.passwordWarning) {
+        setTimeout(() => {
+          void navigate("/login");
+        }, 2000);
+      }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "response" in err) {
         const axiosError = err as {
@@ -110,6 +114,12 @@ const ResetPassword: React.FC = () => {
         description={t("resetPassword.descSuccess")}
       >
         <FormFeedback tone="success">{t("resetPassword.successText")}</FormFeedback>
+        {passwordWarning ? (
+          <FormFeedback tone="warning">{t(`passwordStrength.advisory.${passwordWarning}`)}</FormFeedback>
+        ) : null}
+        {passwordWarning ? (
+          <TextLink as={NavLink} to="/login">{t("resetPassword.backToLogin")}</TextLink>
+        ) : null}
       </AuthPageLayout>
     );
   }
