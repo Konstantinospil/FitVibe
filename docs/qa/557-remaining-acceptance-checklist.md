@@ -1,6 +1,6 @@
 # Issue #557 — final acceptance and owner actions
 
-**Current scope:** Fix branch `fix/557-deterministic-onboarding-fixtures`, draft PR #588.
+**Current scope:** Fix branch `fix/557-deterministic-onboarding-fixtures`, PR #588. Engineering additions require exact-head CI verification before acceptance.
 **Purpose:** Separate engineering implementation from real-environment and security-owner decisions. A green CI on the fix branch does not accept deployment, close DRIFT-093, or validate merged `feature`.
 
 ## 1. Stage B — owner actions
@@ -114,6 +114,51 @@ The fix branch now emits bounded, no-identity Prometheus authentication counters
 - Decide the geo/ASN anomaly source and privacy/compliance constraints, then implement and verify those signals if applicable.
 - Record quarterly privileged-access attestation owner and evidence, security/tabletop cadence, and automatic expiry for `EX-YYYY-####` exceptions within 90 days.
 - Reconcile PASSWORD_AND_AUTHENTICATION_POLICY v1.1, SECURITY and Key Management documents, DRIFT-093 and the original 50-clause acceptance matrix with current evidence. The matrix's 2026-10-26 findings are historical and should not be copied into a final status without reclassification.
+
+## Engineering continuation — 2026-11-01
+
+**Code changes on the fix branch (CI acceptance pending):**
+
+- Reused the existing authenticator verification and single-use replay table to
+  require fresh verified TOTP before administrator report hide/ban and
+  suspend/ban/activate/delete actions. Report dismissal remains an ordinary
+  reviewed-state action. Native modal UI in the backoffice collects a new code,
+  displays failures accessibly and never persists or logs the code. The
+  backoffice action adapter now maps its old blacklist/unblacklist labels to
+  the supported backend ban/activate actions. Added unit and real-API
+  regressions for denial, success and replay.
+- Applied the same shared fresh-TOTP middleware to admin user creation and
+  admin status mutations on `/api/v1/users`. The change is enforced server-side
+  after existing verified session and role checks.
+- Activated auth anomaly/lockout rules in the observability stack actually
+  loaded by `infra/observability/prometheus.yml`. Alertmanager now routes both
+  existing `category: security` and `component: security` label conventions;
+  a CI metrics contract checks that the counters, active rules and routes
+  match.
+- Recorded per-account **new lockout** threshold crossings in private audit
+  storage, and exported only a count of affected accounts to Prometheus.
+  `AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD` is deliberately optional: only
+  the security owner may approve `N`. When unset, a dedicated alert
+  reports missing policy configuration; no guessed threshold or account/IP
+  identifiers enter metric labels.
+- Required security CI now validates machine-readable exceptions in
+  `infra/security/exceptions/EX-YYYY-####.json`, rejecting missing approval,
+  absent controls, bad dates or expiry beyond 90 days. An expired record
+  blocks CI, but CI expiry does not itself revoke any separately implemented
+  runtime bypass; no such bypass is authorized by an exception file.
+
+**Not yet proved by these commits:** CI on the final new SHA, production
+Alertmanager delivery, Prometheus retention and true 30-day history,
+staging database restore/rollback, browser/manual recovery of existing
+administrator credentials, actual live TLS/proxy/cookie/CSRF/log controls,
+and approval of lockout threshold and conditional network/device policy.
+
+**Sensitivity decisions:** The implementation requires a fresh TOTP on
+destructive content/user mutations and administrator account creation/status
+updates; other read-only/mapping actions remain under mandatory admin MFA.
+Do not silently add a password-only or synthetic bypass. Approve the
+sensitivity mapping and complete a browser walkthrough before declaring
+Stage C accepted.
 
 ## 4. Final integration gate
 
