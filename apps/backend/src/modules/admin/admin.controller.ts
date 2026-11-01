@@ -52,7 +52,7 @@ export async function moderateReportHandler(req: Request, res: Response): Promis
   // Dismissing a report changes only its review status; hiding or banning
   // content requires a fresh, single-use administrator TOTP challenge.
   if (action !== "dismiss") {
-    if (typeof body.totpCode !== "string" || !/^\\d{6}$/.test(body.totpCode)) {
+    if (typeof body.totpCode !== "string" || !/^\d{6}$/.test(body.totpCode)) {
       throw new HttpError(403, "ADMIN_STEP_UP_REQUIRED", "Fresh administrator TOTP required");
     }
     await assertFreshPrivilegedTotp(req.user.sub, body.totpCode);
@@ -118,7 +118,7 @@ export async function userActionHandler(req: Request, res: Response): Promise<vo
 
   // Suspension, ban, activation and deletion are identity-impacting changes.
   // Check a fresh TOTP before invoking any persistence side effect.
-  if (typeof body.totpCode !== "string" || !/^\\d{6}$/.test(body.totpCode)) {
+  if (typeof body.totpCode !== "string" || !/^\d{6}$/.test(body.totpCode)) {
     throw new HttpError(403, "ADMIN_STEP_UP_REQUIRED", "Fresh administrator TOTP required");
   }
   await assertFreshPrivilegedTotp(req.user.sub, body.totpCode);
