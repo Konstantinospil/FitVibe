@@ -168,3 +168,31 @@ Stage C accepted.
 4. Only after that, close DRIFT-093 and #557. Neither an untested document nor fix-branch-only green CI is closure evidence.
 
 **Security note:** Never upload production database dumps, account passwords, TOTP recovery codes, SMTP credentials, Tailscale auth keys, or private environment files into GitHub issues or CI artifacts.
+
+
+## Evidence checkpoint — 2026-11-02 (exact head `66e72289b9d51c6d3bb530fdf13e1f79eeb69117`)
+
+### Verified GitHub Actions
+
+- [CI run 41331420133](https://github.com/Konstantinospil/FitVibe/actions/runs/41331420133): **success**. Latest attempt: Backend Tests, Backend Integration Tests, Database Tests, Frontend Tests, Coverage Gate, Quality Gates, Security Scans, CodeQL Compatibility, OWASP ZAP Baseline, Accessibility (axe), Backoffice E2E, Lighthouse CI, API Contract Tests, Metrics Contract, both architecture production smoke/build jobs, and **all four E2E shards** concluded success.
+- [CodeQL run 41331420090](https://github.com/Konstantinospil/FitVibe/actions/runs/41331420090): **success**.
+- Visual Regression Tests (advisory) concluded success; **advisory mode remains nonblocking**, so do not count this as proof of a strict blocking VRT gate.
+- Release Governance and image publication jobs were skipped; do not report them as having passed.
+
+### External findings require disposition
+
+- The separate Snyk commit status reported `error` for the exact head (check context `security/snyk (konstantinospil)`). The connector does not expose whether this is a scanner outage, an authentication/integration problem, or confirmed vulnerability. **Blocking until reviewed in the linked Snyk dashboard.** Do not classify it as a passing scan merely because GitHub's own Security Scans job passed.
+- GitGuardian PR #588 reported two `Generic Password` findings, in `tests/frontend/components/PasswordStrengthFeedback.test.tsx` and `tests/backend/modules/auth/auth.middleware.test.ts`. The inspected current files contain hardcoded synthetic strength-meter and authentication-middleware test data, not an observed production credential configuration. This is **source-context evidence of probable false positives, not dashboard dismissal or confirmation that no real secret was exposed**. A reviewer must compare the exact flagged occurrences and record the GitGuardian incident disposition. Do not rotate arbitrary production secrets without evidence of real exposure, and do not silently suppress scanning.
+
+### Acceptance still blocked after green branch CI
+
+- [ ] Verify actual GitGuardian/Snyk incident status and approve documented dispositions.
+- [ ] Execute disposable-environment PostgreSQL backup/restore and dual-verifier-compatible rollback; capture only redacted pass/fail, versions and recovery time.
+- [ ] Exercise promoted and legacy admin MFA/password transition plus recovery on a production-like staging deployment; verify client warnings.
+- [ ] Validate live Prometheus scrape/retention, `promtool` rule checks, alert firing/routing and secure Alertmanager delivery; security owner must approve per-account lockout threshold `N`.
+- [ ] Verify actual HTTPS/proxy/cookie/CSRF/log controls and inventory service accounts; record applicable geo/ASN and network/device decisions.
+- [ ] Approve privileged-action sensitivity mapping and complete live backoffice browser walkthrough.
+- [ ] Update 50-clause policy matrix with evidence and conditional dispositions, reconcile DRIFT-093 and quarterly review ownership.
+- [ ] Forward-merge the one `feature`-only commit without losing changes, then verify full required CI on **merged feature**, not only the fix branch.
+
+**Closure verdict:** Engineering CI is green at the above fix-head SHA, but operational acceptance and external security findings remain unresolved. **Keep #557 open and PR #588 unmerged.**
