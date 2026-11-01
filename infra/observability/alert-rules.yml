@@ -113,6 +113,28 @@ groups:
           summary: "Unusual failed login activity detected"
           description: "The five-minute failed login rate exceeded the 30-day statistical baseline"
 
+      # An approved N is an explicit prerequisite; no default policy number.
+      # Metric queries aggregate in PostgreSQL and export no account labels.
+      - alert: AccountLockoutIncidentThresholdExceeded
+        expr: auth_accounts_exceeding_lockout_threshold > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Repeated lockouts detected for at least one account"
+          description: "At least one account exceeded its approved ten-minute lockout count"
+
+      - alert: AccountLockoutDetectionUnconfigured
+        expr: auth_account_lockout_monitor_configured == 0
+        for: 15m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Per-account lockout detection requires a threshold decision"
+          description: "Set AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD to the approved policy value"
+
       - alert: PasswordResetTokenFailureRate
         expr: |
           (
