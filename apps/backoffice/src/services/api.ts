@@ -763,7 +763,8 @@ export const usersApi = {
     totpCode?: string,
   ) => {
     // Backoffice wording differs from the documented backend action values.
-    const backendAction = action === "blacklist" ? "ban" : action === "unblacklist" ? "activate" : "delete";
+    const backendAction =
+      action === "blacklist" ? "ban" : action === "unblacklist" ? "activate" : "delete";
     await apiClient.post(`/api/v1/admin/users/${userId}/action`, {
       action: backendAction,
       reason,
