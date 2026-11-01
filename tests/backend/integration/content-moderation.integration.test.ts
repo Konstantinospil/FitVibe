@@ -272,7 +272,9 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
       .send({ reason: "inappropriate", details: "Requires moderation" });
     expect(report.status).toBe(201);
 
-    const row = await db("feed_reports").where({ feed_item_id: feedItemId }).first<{ id: string; status: string }>();
+    const row = await db("feed_reports")
+      .where({ feed_item_id: feedItemId })
+      .first<{ id: string; status: string }>();
     expect(row?.status).toBe("pending");
 
     const denied = await request(app)
@@ -280,7 +282,7 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
       .set("Authorization", `Bearer ${admin.accessToken}`)
       .send({ action: "hide" });
     expect(denied.status).toBe(403);
-    expect(denied.body).toMatchObject({ code: "ADMIN_STEP_UP_REQUIRED" });
+    expect(denied.body).toMatchObject({ error: { code: "ADMIN_STEP_UP_REQUIRED" } });
     expect((await db("feed_reports").where({ id: row?.id }).first()).status).toBe("pending");
 
     const code = authenticator.generate(adminTotpSecret);
