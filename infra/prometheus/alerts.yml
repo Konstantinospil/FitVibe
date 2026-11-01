@@ -154,6 +154,28 @@ groups:
           summary: "Password reset token failure rate exceeds 5%"
           description: "More than 5% of reset submissions failed due to invalid, expired or consumed tokens in 15 minutes"
 
+      # An approved N is an explicit prerequisite; no default policy number.
+      # Metric queries aggregate in PostgreSQL and export no account labels.
+      - alert: AccountLockoutIncidentThresholdExceeded
+        expr: auth_accounts_exceeding_lockout_threshold > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Repeated lockouts detected for at least one account"
+          description: "At least one account exceeded its approved ten-minute lockout count"
+
+      - alert: AccountLockoutDetectionUnconfigured
+        expr: auth_account_lockout_monitor_configured == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Per-account lockout detection requires a threshold decision"
+          description: "Set AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD to the approved policy value"
+
       # JWT Refresh Token Reuse Detected
       - alert: RefreshTokenReuseDetected
         expr: increase(jwt_refresh_reuse_total[5m]) > 0
