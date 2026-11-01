@@ -18,7 +18,10 @@ const ContentReportsV2: React.FC = () => {
   );
   const [reports, setReports] = useState<FeedReport[]>([]);
   const [loading, setLoading] = useState(false);
-  const [pendingModeration, setPendingModeration] = useState<{ reportId: string; action: "hide" | "ban" } | null>(null);
+  const [pendingModeration, setPendingModeration] = useState<{
+    reportId: string;
+    action: "hide" | "ban";
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -71,7 +74,9 @@ const ContentReportsV2: React.FC = () => {
       setPendingModeration(null);
     } catch (error) {
       toast.error(`Failed to ${action} content. Please try again.`);
-      if (totpCode) throw error;
+      if (totpCode) {
+        throw error;
+      }
     }
   };
 
