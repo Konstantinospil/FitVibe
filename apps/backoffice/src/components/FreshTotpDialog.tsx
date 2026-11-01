@@ -8,7 +8,7 @@ type Props = {
 };
 
 /**
- * #557: One-time MFA challenge for identity-impacting administrator actions.
+ * Issue 557: One-time MFA challenge for identity-impacting administrator actions.
  * Native modal focus management avoids password or TOTP codes in URLs/storage.
  */
 export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
