@@ -7,6 +7,7 @@ import { HttpError, readRouteParam } from "../../utils/http.js";
 import * as service from "./admin.service.js";
 import { db } from "../../db/index.js";
 import type { ListReportsQuery, SearchUsersQuery } from "./admin.types.js";
+import { assertFreshPrivilegedTotp } from "./superadmin.service.js";
 
 /**
  * List feed reports
@@ -33,7 +34,8 @@ export async function listReportsHandler(req: Request, res: Response): Promise<v
  */
 export async function moderateReportHandler(req: Request, res: Response): Promise<void> {
   const reportId = readRouteParam(req.params.reportId, "reportId");
-  const action = (req.body as { action?: string }).action;
+  const body = req.body as { action?: string; totpCode?: string };
+  const action = body.action;
 
   if (!req.user?.sub) {
     throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
@@ -45,6 +47,15 @@ export async function moderateReportHandler(req: Request, res: Response): Promis
       "INVALID_ACTION",
       "Invalid action. Must be 'dismiss', 'hide', or 'ban'",
     );
+  }
+
+  // Dismissing a report changes only its review status; hiding or banning
+  // content requires a fresh, single-use administrator TOTP challenge.
+  if (action !== "dismiss") {
+    if (typeof body.totpCode !== "string" || !/^\\d{6}$/.test(body.totpCode)) {
+      throw new HttpError(403, "ADMIN_STEP_UP_REQUIRED", "Fresh administrator TOTP required");
+    }
+    await assertFreshPrivilegedTotp(req.user.sub, body.totpCode);
   }
 
   await service.moderateReport({
@@ -89,7 +100,7 @@ export async function searchUsersHandler(req: Request, res: Response): Promise<v
  */
 export async function userActionHandler(req: Request, res: Response): Promise<void> {
   const userId = readRouteParam(req.params.userId, "userId");
-  const body = req.body as { action?: string; reason?: string };
+  const body = req.body as { action?: string; reason?: string; totpCode?: string };
   const action = body.action;
   const reason = body.reason;
 
@@ -104,6 +115,13 @@ export async function userActionHandler(req: Request, res: Response): Promise<vo
       "Invalid action. Must be 'suspend', 'ban', 'activate', or 'delete'",
     );
   }
+
+  // Suspension, ban, activation and deletion are identity-impacting changes.
+  // Check a fresh TOTP before invoking any persistence side effect.
+  if (typeof body.totpCode !== "string" || !/^\\d{6}$/.test(body.totpCode)) {
+    throw new HttpError(403, "ADMIN_STEP_UP_REQUIRED", "Fresh administrator TOTP required");
+  }
+  await assertFreshPrivilegedTotp(req.user.sub, body.totpCode);
 
   await service.performUserAction({
     userId,
