@@ -272,6 +272,46 @@ Defined in `grafana/dashboards/slo-dashboard.json`:
 5. **Alerts**: Keep alerts actionable and specific
 6. **Dashboards**: Create focused, purpose-driven dashboards
 
+## Authentication policy alerts (Issue 557)
+
+The active `alert-rules.yml` includes failed-login deviation from a
+30-day five-minute-rate baseline, password-reset token failures, repeated
+per-account lockout incidents and missing lockout threshold configuration.
+All exported authentication metrics use bounded or **no identity labels**.
+
+**Required runtime configuration:**
+
+- Set `AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD` to the security owner's
+  explicitly approved positive integer `N`; it counts distinct account
+  lockout activations within ten minutes. Do not invent or silently default
+  the policy value. Until configured, a dedicated monitor-unconfigured
+  alert is raised once the monitoring stack is operating.
+- Retain at least 30 days of Prometheus samples for the anomaly baseline
+  plus safety margin. For an isolated small deployment, set
+  `--storage.tsdb.retention.time=32d` in the Prometheus container command,
+  then verify actual disk headroom and retention. Historical samples cannot
+  be fabricated during the warm-up period.
+- Ensure the `alertmanager:9093` service is deployed on the same private
+  network. The bundled Alertmanager configuration contains example
+  notification addresses and requires real receiver configuration and a
+  live delivery test; no notification is guaranteed merely by passing CI.
+- Keep `/metrics`, Prometheus and Alertmanager private. Verify the intended
+  backend scrape target and do not publish monitoring ports.
+
+**Validation commands** (with a compatible Prometheus installation):
+
+```bash
+promtool check config infra/observability/prometheus.yml
+promtool check rules infra/observability/alert-rules.yml
+amtool check-config infra/observability/alertmanager.yml
+node tests/metrics/assert-prom.cjs
+```
+
+The authentication lockout metric is computed from private audit events;
+only the aggregate number of accounts over the approved threshold is
+exposed. Test alert delivery with synthetic events in an isolated
+environment before accepting policy compliance.
+
 ## Troubleshooting
 
 ### Prometheus Not Scraping
