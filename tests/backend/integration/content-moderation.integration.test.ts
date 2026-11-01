@@ -163,7 +163,7 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
         code: authenticator.generate(secret),
       });
       expect(verification.status).toBe(200);
-      const nextPassword = "Unique testing passphrase for administrative login!";
+      const nextPassword = "Moonlit Cedar River Lantern 2026!";
       const changed = await request(app)
         .post("/api/v1/users/change-password")
         .set("Authorization", `Bearer ${verification.body.tokens?.accessToken}`)
