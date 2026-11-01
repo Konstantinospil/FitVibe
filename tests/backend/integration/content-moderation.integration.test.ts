@@ -36,6 +36,7 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
   let user2: { id: string; email: string; accessToken: string };
   let admin: { id: string; email: string; accessToken: string };
   let feedItemId: string;
+  let adminTotpSecret: string;
 
   beforeAll(async () => {
     await ensureUsernameColumnExists();
@@ -141,6 +142,7 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
         .set("Authorization", `Bearer ${passwordOnlyToken}`);
       expect(setup.status).toBe(200);
       const secret: string = setup.body.secret;
+      adminTotpSecret = secret;
       expect(secret).toEqual(expect.any(String));
 
       const enabled = await request(app)
@@ -261,6 +263,39 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
 
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body.reports)).toBe(true);
+  });
+
+  it("enforces fresh single-use administrator TOTP before hiding a reported item", async () => {
+    const report = await request(app)
+      .post(`/api/v1/feed/item/${feedItemId}/report`)
+      .set("Authorization", `Bearer ${user2.accessToken}`)
+      .send({ reason: "inappropriate", details: "Requires moderation" });
+    expect(report.status).toBe(201);
+
+    const row = await db("feed_reports").where({ feed_item_id: feedItemId }).first<{ id: string; status: string }>();
+    expect(row?.status).toBe("pending");
+
+    const denied = await request(app)
+      .post(`/api/v1/admin/reports/${row?.id}/moderate`)
+      .set("Authorization", `Bearer ${admin.accessToken}`)
+      .send({ action: "hide" });
+    expect(denied.status).toBe(403);
+    expect(denied.body).toMatchObject({ code: "ADMIN_STEP_UP_REQUIRED" });
+    expect((await db("feed_reports").where({ id: row?.id }).first()).status).toBe("pending");
+
+    const code = authenticator.generate(adminTotpSecret);
+    const allowed = await request(app)
+      .post(`/api/v1/admin/reports/${row?.id}/moderate`)
+      .set("Authorization", `Bearer ${admin.accessToken}`)
+      .send({ action: "hide", totpCode: code });
+    expect(allowed.status).toBe(200);
+    expect((await db("feed_reports").where({ id: row?.id }).first()).status).toBe("reviewed");
+
+    const replay = await request(app)
+      .post(`/api/v1/admin/reports/${row?.id}/moderate`)
+      .set("Authorization", `Bearer ${admin.accessToken}`)
+      .send({ action: "ban", totpCode: code });
+    expect(replay.status).toBe(409);
   });
 
   it("should enforce rate limiting on reports", async () => {
