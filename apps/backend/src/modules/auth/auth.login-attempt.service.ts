@@ -6,6 +6,7 @@ import {
   resetFailedAttempts,
   isAccountLocked,
   getRemainingLockoutSeconds,
+  getMaxAccountAttempts,
   getFailedAttemptByIP,
   recordFailedAttemptByIP,
   isIPLocked,
@@ -102,6 +103,20 @@ export async function recordLoginFailure({
       remainingSeconds: getRemainingLockoutSeconds(attempts.account),
       attemptCount: attempts.account.attempt_count,
       requestId,
+    });
+  }
+
+  // Count only new threshold crossings, not each subsequent request while
+  // already locked. Known accounts are aggregated privately in PostgreSQL;
+  // identities are never exposed to Prometheus time-series labels.
+  if (
+    actorUserId &&
+    isAccountLocked(attempts.account) &&
+    attempts.account.attempt_count === getMaxAccountAttempts()
+  ) {
+    await recordAuditEvent(actorUserId, "auth.login_lockout_started", {
+      requestId,
+      scope: "account",
     });
   }
 
