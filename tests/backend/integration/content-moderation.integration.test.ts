@@ -168,7 +168,7 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
         .post("/api/v1/users/change-password")
         .set("Authorization", `Bearer ${verification.body.tokens?.accessToken}`)
         .send({ currentPassword: password, newPassword: nextPassword });
-      expect(changed.status).toBe(200);
+      expect(changed.status).toBe(204);
 
       const nextLogin = await request(app).post("/api/v1/auth/login").send({
         email: "admin@example.com",
