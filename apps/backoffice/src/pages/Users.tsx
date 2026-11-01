@@ -15,7 +15,10 @@ const UsersPage: React.FC = () => {
   const [filter, setFilter] = useState<UserFilter>("all");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionReason, setActionReason] = useState("");
-  const [pendingUserAction, setPendingUserAction] = useState<{ user: User; action: "blacklist" | "unblacklist" | "delete" } | null>(null);
+  const [pendingUserAction, setPendingUserAction] = useState<{
+    user: User;
+    action: "blacklist" | "unblacklist" | "delete";
+  } | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
