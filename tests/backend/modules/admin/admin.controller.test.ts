@@ -326,7 +326,7 @@ describe("Admin Controller", () => {
 
     it("should perform ban action", async () => {
       mockRequest.params = { userId: "user-123" };
-      mockRequest.body = { action: "ban" };
+      mockRequest.body = { action: "ban", totpCode: "123456" };
       mockAdminService.performUserAction.mockResolvedValue(undefined);
 
       await userActionHandler(mockRequest as Request, mockResponse as Response);
