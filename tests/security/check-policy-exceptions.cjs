@@ -81,4 +81,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { validateException, readDate };
+module.exports = { validateException, readDate, main };
