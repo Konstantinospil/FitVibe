@@ -17,7 +17,7 @@ export async function requireFreshAdminTotp(
   }
 
   const code = (req.body as { totpCode?: unknown } | undefined)?.totpCode;
-  if (typeof code !== "string" || !/^\\d{6}$/.test(code)) {
+  if (typeof code !== "string" || !/^\d{6}$/.test(code)) {
     throw new HttpError(403, "ADMIN_STEP_UP_REQUIRED", "Fresh administrator TOTP required");
   }
 
