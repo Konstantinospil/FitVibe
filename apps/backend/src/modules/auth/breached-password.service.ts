@@ -122,6 +122,12 @@ export class BreachedPasswordChecker {
     if (isCommonPassword(password)) {
       throw new HttpError(400, "PASSWORD_COMMON", "PASSWORD_COMMON");
     }
+    // HIBP Pwned Passwords range protocol requires a SHA-1 lookup digest.
+    // Only its first five hex characters leave this service; the remaining
+    // suffix is compared locally, never stored as a credential verifier.
+    // Persisted passwords use the separate salted Argon2id password-hashing service.
+    // This is not a password-storage hash (CodeQL #1000, CWE-916).
+    // codeql[js/insufficient-password-hash]
     const digest = createHash("sha1").update(password, "utf8").digest("hex").toUpperCase();
     const prefix = digest.slice(0, 5);
     const suffix = digest.slice(5);
