@@ -51,13 +51,13 @@ function main() {
   const rules = fs.readFileSync(alertRulesFile, "utf8");
   const manager = fs.readFileSync(alertmanagerFile, "utf8");
   const prometheus = fs.readFileSync(prometheusFile, "utf8");
-  for (const metric of ["auth_failed_login_total", "auth_password_reset_total"]) {
+  for (const metric of ["auth_failed_login_total", "auth_password_reset_total", "auth_accounts_exceeding_lockout_threshold", "auth_account_lockout_monitor_configured"]) {
     if (!contents.includes(`"${metric}"`) || !rules.includes(metric)) {
       console.error(`Missing emitted metric or active security alert reference: ${metric}`);
       process.exit(1);
     }
   }
-  for (const alert of ["FailedLoginSpike", "PasswordResetTokenFailureRate"]) {
+  for (const alert of ["FailedLoginSpike", "PasswordResetTokenFailureRate", "AccountLockoutIncidentThresholdExceeded", "AccountLockoutDetectionUnconfigured"]) {
     if (!rules.includes(`- alert: ${alert}`)) {
       console.error(`Missing authentication policy alert: ${alert}`);
       process.exit(1);
