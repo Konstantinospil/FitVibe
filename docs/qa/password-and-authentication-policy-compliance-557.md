@@ -183,3 +183,33 @@ Review decisions against the accepted policy; do not treat an undocumented excep
 4. Review diverged `feature` history, preserve both sides and validate merged feature SHA. Stage D is a separate incomplete workstream.
 
 **Disposition:** Stage B and Stage C not yet independently accepted. Keep #557 and DRIFT-093 open.
+
+
+## 2026-11-02 — Current implementation and acceptance reconciliation
+
+This section supersedes the **historical 2026-10-26 gap labels for progress reporting**; the original 50-clause table remains intact as an audit trail. It is **not** an assertion that all clauses pass. Source-control implementation, CI assertions, and evidence from a running deployment are different acceptance types.
+
+**Verified source:** fix branch `e744dca13998acaeb931ee2071b7f080b707cb34`. [CI #41361246803](https://github.com/Konstantinospil/FitVibe/actions/runs/41361246803) and [CodeQL #41361246874](https://github.com/Konstantinospil/FitVibe/actions/runs/41361246874) both concluded success. The visual regression job is **advisory**, not a blocking visual acceptance gate. The fix branch has not been merged into `feature`.
+
+| Policy area / historical gaps | Current source & regression evidence | Acceptance still needed |
+| --- | --- | --- |
+| §2 password length/composition, reuse, admin minimum | `passwordPolicy.ts`, `auth.schemas.ts`, `auth.password.service.ts`, migrations `202610310001` and `202610310002`; backend password-policy integration and admin bootstrap tests. Code now implements 12-character member / 16-character privileged minimum, no required composition classes, last-five history and attestation of administrator password changes. | Staged migration/recovery, isolated database backup/restore and compatible rollback; pre-existing history cannot be reconstructed. |
+| §2 breached/common password detection | `breached-password.service.ts` plus backend tests; local common-password denial with HIBP k-anonymity advisory warnings, following approved policy v1.1 behavior. SHA-1 is exclusively the HIBP lookup digest, **not** the password-storage KDF. | Confirm live warning presentation, external-scan findings disposition; no claim of external scanner success during usage-limit errors. |
+| §§2–3 Argon2id hashing | `password-hashing.service.ts` and password-hash tests: 64 MiB, 3 passes, p=1, random salts, legacy bcrypt verifier. ARM64 Pi and AMD64 short synthetic benchmarks are recorded in `557-remaining-acceptance-checklist.md`. | Sustained full-app concurrent load/cgroup memory observation and rollback rehearsal; synthetic samples are not capacity evidence. |
+| §§2,5,8 administrator MFA and privileged sessions | `administrator-mfa.guard.ts`, `auth.session-tokens.ts`, `auth.state.repository.ts`, `privileged-totp.middleware.ts`; real-API integration and unit tests. Server-side MFA enrollment gate; privileged password attestation; 5-minute access, <=8-hour absolute refresh/session and 15-minute inactivity boundary; fresh TOTP on selected destructive admin actions. | Confirm sensitivity/exception mapping, legacy/promoted-account recovery in a browser, live authorization and audit evidence. |
+| §4 reset lifecycle | Runtime <=15-minute token cap, atomic reset, token reuse refusal and session revocation; reset and admin bootstrap integration regressions. | Verify staging emails, recovery and genuine cross-device/reset behavior. |
+| §§5–6 CSRF, transport and detection | Existing CSRF/cookie code and security tests; authentication metrics, lockout threshold aggregation, metrics contract and alert rules under `infra/observability`. | Actual TLS/proxy/cookie/log configuration, `promtool` + alert delivery, >=30-day retained history, security-owner choice of lockout threshold `N`, geo/ASN applicability. |
+| §7 accessible passphrase feedback | Shared `PasswordStrengthFeedback.tsx`, locale dictionaries (EN/DE/EL/ES/FR), reset/register/admin form tests, axe job and advisory visual snapshots. | Staging EN/DE flows, high-contrast / screen-reader interaction and final blocking VRT decision. |
+| §§8–12 governance, service accounts and exceptions | `tests/security/check-policy-exceptions.cjs` enforces checked-in exception record schema and <=90-day expiry in CI; security and policy documents exist. | Service-account and key ownership inventory, quarterly role reviews and tabletop owners, exception revocation process, cross-policy reconciliation and DRIFT-093 closure. |
+
+### External findings and source distinctions
+
+- A separate Snyk status previously reported an error; the user reports exhausted scanner usage limits. This is a **verification-unavailable** disposition, not a passing scan or established vulnerability. Review/approval of any required time-limited exception is still necessary.
+- GitGuardian reported two generic-password alerts in test fixtures. Review of the current file content indicates synthetic examples, but each incident needs its dashboard disposition; a scanner alert is not automatically a real leaked credential.
+- A CodeQL `js/insufficient-password-hash` finding traces the HIBP SHA-1 prefix lookup. That SHA-1 value is never stored as a password verifier; persisted secrets use Argon2id. The user reports dismissing the alert after review; independent alert-state verification has not been retrieved. The successful CodeQL workflow alone does not establish a zero-open-alert state.
+
+### Merge and closure gate
+
+At this checkpoint the fix branch is **303 commits ahead and one behind** `feature`. Comparison shows the `feature`-only differences involve version updates in README and four package manifests. Preserve this release-version change when reconciling branches; do not replace it with the fix branch's older metadata. GitHub CI on the **final merged `feature` SHA** is required after approval.
+
+**Decision:** Stage A and substantial Stage B/C/D implementation are backed by green CI. Operational evidence and security-owner acceptance remain outstanding. Keep PR #588 and #557 open; DRIFT-093 cannot yet be considered reconciled and closed.
