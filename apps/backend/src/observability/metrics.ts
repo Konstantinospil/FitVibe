@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import client from "prom-client";
+import { env } from "../config/env.js";
 
 const register = new client.Registry();
 
@@ -67,6 +68,17 @@ const mfaEventCounter = new client.Counter({
   labelNames: ["event"],
 });
 
+// The security owner configures the threshold. Both series have no identity
+// labels. The second gauge is zero when the policy value has not been approved.
+const accountsOverLockoutThreshold = new client.Gauge({
+  name: "auth_accounts_exceeding_lockout_threshold",
+  help: "Number of accounts exceeding the approved count of distinct lockouts in ten minutes",
+});
+const accountLockoutMonitorConfigured = new client.Gauge({
+  name: "auth_account_lockout_monitor_configured",
+  help: "Whether an approved per-account lockout alert threshold is configured",
+});
+
 const pointsAwardedCounter = new client.Counter({
   name: "points_awarded_total",
   help: "Total points awarded grouped by rule",
@@ -81,6 +93,8 @@ register.registerMetric(blockedLoginCounter);
 register.registerMetric(successfulLoginCounter);
 register.registerMetric(passwordResetCounter);
 register.registerMetric(mfaEventCounter);
+register.registerMetric(accountsOverLockoutThreshold);
+register.registerMetric(accountLockoutMonitorConfigured);
 register.registerMetric(pointsAwardedCounter);
 
 function resolveRouteLabel(req: Request): string {
@@ -116,7 +130,37 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
   next();
 }
 
+async function updateAccountLockoutIncidents(): Promise<void> {
+  const threshold = env.authAccountLockoutAlertThreshold;
+  accountLockoutMonitorConfigured.set(threshold === undefined ? 0 : 1);
+  if (threshold === undefined) {
+    accountsOverLockoutThreshold.set(0);
+    return;
+  }
+
+  const { db } = await import("../db/index.js");
+  const since = new Date(Date.now() - 10 * 60 * 1000);
+  // Subquery returns an aggregate row per account; outer query returns only a
+  // count. Account identities never leave PostgreSQL or reach metrics labels.
+  const triggeredAccounts = db("audit_log")
+    .select("actor_user_id")
+    .where({
+      entity_type: "auth",
+      action: "auth.login_lockout_started",
+    })
+    .whereNotNull("actor_user_id")
+    .where("created_at", ">=", since)
+    .groupBy("actor_user_id")
+    .havingRaw("count(*) > ?", [threshold]);
+  const row = await db
+    .from(triggeredAccounts.as("over_threshold"))
+    .count({ count: "*" })
+    .first<{ count: number | string }>();
+  accountsOverLockoutThreshold.set(Number(row?.count ?? 0));
+}
+
 export async function metricsRoute(_req: Request, res: Response) {
+  await updateAccountLockoutIncidents();
   res.set("Content-Type", register.contentType);
   const metrics = await register.metrics();
   res.end(metrics);
