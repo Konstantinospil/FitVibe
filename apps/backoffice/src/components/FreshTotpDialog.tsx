@@ -46,10 +46,13 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
   return (
     <dialog
       ref={dialogRef}
-      onClose={onCancel}
       onCancel={(event) => {
-        if (pending) {
-          event.preventDefault();
+        // Escape closes the challenge only through the controlled parent.
+        // Prevent native close events from effect cleanup from cancelling a
+        // replacement challenge during React StrictMode remounting.
+        event.preventDefault();
+        if (!pending) {
+          onCancel();
         }
       }}
       aria-labelledby="fresh-totp-title"
