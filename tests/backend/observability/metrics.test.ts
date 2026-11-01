@@ -7,6 +7,9 @@ const mockHistogramInstance = {
 const mockCounterInstance = {
   inc: jest.fn(),
 };
+const mockGaugeInstance = {
+  set: jest.fn(),
+};
 const mockRegistryInstance = {
   registerMetric: jest.fn(),
   contentType: "text/plain; version=0.0.4; charset=utf-8",
@@ -17,6 +20,7 @@ jest.mock("prom-client", () => {
   const mockRegistry = jest.fn().mockImplementation(() => mockRegistryInstance);
   const mockHistogram = jest.fn().mockImplementation(() => mockHistogramInstance);
   const mockCounter = jest.fn().mockImplementation(() => mockCounterInstance);
+  const mockGauge = jest.fn().mockImplementation(() => mockGaugeInstance);
 
   return {
     __esModule: true,
@@ -24,6 +28,7 @@ jest.mock("prom-client", () => {
       Registry: mockRegistry,
       Histogram: mockHistogram,
       Counter: mockCounter,
+      Gauge: mockGauge,
       collectDefaultMetrics: jest.fn(),
     },
   };
@@ -132,6 +137,7 @@ describe("Metrics", () => {
         "text/plain; version=0.0.4; charset=utf-8",
       );
       expect(mockResponse.end).toHaveBeenCalledWith("mock metrics output");
+      expect(mockGaugeInstance.set).toHaveBeenCalledWith(0);
     });
   });
 
