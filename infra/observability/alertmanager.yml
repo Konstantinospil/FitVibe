@@ -41,7 +41,7 @@ route:
     # Security alerts go to security team
     - receiver: "security-team"
       match:
-        category: security
+        component: security
       group_wait: 10s
       repeat_interval: 2h
 
