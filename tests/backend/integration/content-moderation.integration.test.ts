@@ -300,6 +300,32 @@ describeWithTestDatabase("Integration: Content Moderation", () => {
     expect(replay.status).toBe(409);
   });
 
+  it("denies administrator status changes and account creation without fresh MFA", async () => {
+    const status = await request(app)
+      .patch(`/api/v1/users/${user1.id}/status`)
+      .set("Authorization", `Bearer ${admin.accessToken}`)
+      .send({ status: "suspended" });
+    expect(status.status).toBe(403);
+    expect(status.body).toMatchObject({ error: { code: "ADMIN_STEP_UP_REQUIRED" } });
+    const userAfterDenial = await db("users").where({ id: user1.id }).first<{ status: string }>();
+    expect(userAfterDenial?.status).toBe("active");
+
+    const create = await request(app)
+      .post("/api/v1/users")
+      .set("Authorization", `Bearer ${admin.accessToken}`)
+      .send({
+        username: "should-not-be-created",
+        displayName: "Denied user",
+        email: "denied@example.test",
+        password: "Original passphrase with sufficient length",
+        role: "athlete",
+      });
+    expect(create.status).toBe(403);
+    expect(create.body).toMatchObject({ error: { code: "ADMIN_STEP_UP_REQUIRED" } });
+    const row = await db("profiles").where({ alias: "should-not-be-created" }).first();
+    expect(row).toBeUndefined();
+  });
+
   it("should enforce rate limiting on reports", async () => {
     // Try to create more than 10 reports (rate limit is 10 per day)
     const reports = [];
