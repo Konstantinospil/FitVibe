@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { hashPassword } from "./password-hashing.service.js";
 import { env } from "../../config/env.js";
+import { incrementAuthPasswordReset } from "../../observability/metrics.js";
 import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { HttpError } from "../../utils/http.js";
 import { mailerService } from "../../services/mailer.service.js";
@@ -13,6 +15,7 @@ import {
   resetPasswordAtomic,
 } from "./auth.repository.js";
 import { assertPasswordPolicy } from "./passwordPolicy.js";
+import { breachedPasswordChecker } from "./breached-password.service.js";
 import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
@@ -33,6 +36,8 @@ function passwordResetTtlSeconds(): number {
 
 export async function requestPasswordReset(email: string): Promise<{ resetToken?: string }> {
   const startTime = Date.now();
+  // Count all requests equally; existence must never affect public feedback.
+  incrementAuthPasswordReset("requested");
 
   try {
     const normalized = email.toLowerCase();
@@ -83,11 +88,19 @@ export async function requestPasswordReset(email: string): Promise<{ resetToken?
   }
 }
 
-export async function resetPassword(token: string, newPassword: string): Promise<void> {
+function invalidResetToken(): HttpError {
+  incrementAuthPasswordReset("invalid_token");
+  return new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+}
+
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" }> {
   const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
   const record = await findAuthToken(TOKEN_TYPES.PASSWORD_RESET, tokenHash);
   if (!record) {
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
   if (
     new Date(record.expires_at).getTime() <= Date.now() ||
@@ -97,31 +110,38 @@ export async function resetPassword(token: string, newPassword: string): Promise
       Date.now()
   ) {
     await consumeAuthToken(record.id);
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
 
   const user = await findUserById(record.user_id);
-  if (!user) {
-    throw new HttpError(404, "AUTH_USER_NOT_FOUND", "AUTH_USER_NOT_FOUND");
+  if (!user || user.status !== "active") {
+    throw invalidResetToken();
   }
   if (!user.primary_email || (await isEmailBlacklisted(user.primary_email))) {
     await consumeAuthToken(record.id);
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
 
   assertPasswordPolicy(newPassword, {
     email: user.primary_email ?? undefined,
     alias: user.username,
+    role: user.role_code,
   });
+  // Common passwords are rejected, but breach matches and provider outages
+  // are advisory. A warning never bypasses other password-policy checks.
+  const passwordWarning = await breachedPasswordChecker.checkAdvisory(newPassword);
 
-  const password_hash = await bcrypt.hash(newPassword, AUTH_SECURITY_POLICY.password.hashCost);
+  const password_hash = await hashPassword(newPassword);
   const resetApplied = await resetPasswordAtomic(
     record.user_id,
     password_hash,
     record.id,
     TOKEN_TYPES.PASSWORD_RESET,
+    newPassword,
   );
   if (!resetApplied) {
-    throw new HttpError(400, "AUTH_INVALID_TOKEN", "AUTH_INVALID_TOKEN");
+    throw invalidResetToken();
   }
+  incrementAuthPasswordReset("completed");
+  return { passwordWarning };
 }

@@ -88,6 +88,14 @@ jest.mock("../../../../apps/backend/src/services/i18n.service.js", () => ({
   generateResendVerificationEmailText: jest.fn(() => "resend"),
 }));
 jest.mock("bcryptjs");
+jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js", () => ({
+  hashPassword: jest.fn().mockResolvedValue("new_hashed_password"),
+  verifyPasswordHash: jest.fn((candidate: string, oldHash: string) =>
+    // Preserve the existing legacy-bcrypt mock assertions in these unit tests.
+    (jest.requireMock("bcryptjs") as typeof import("bcryptjs")).compare(candidate, oldHash),
+  ),
+  isLegacyBcryptHash: jest.fn().mockReturnValue(false),
+}));
 jest.mock("jsonwebtoken");
 
 const mockAuthRepo = jest.mocked(authRepository);
@@ -773,6 +781,7 @@ describe("Auth Service", () => {
         "new_hashed_password",
         "token-id",
         "password_reset",
+        newPassword,
       );
     });
 

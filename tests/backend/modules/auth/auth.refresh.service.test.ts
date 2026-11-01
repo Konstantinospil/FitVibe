@@ -5,13 +5,29 @@ import * as metrics from "../../../../apps/backend/src/observability/metrics.js"
 import * as audit from "../../../../apps/backend/src/modules/auth/auth.audit.js";
 import * as legalGate from "../../../../apps/backend/src/modules/auth/auth.legal-gate.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
+import { checkAndTouchPrivilegedSession } from "../../../../apps/backend/src/modules/auth/auth.state.repository.js";
 import { is2FAEnabled } from "../../../../apps/backend/src/modules/auth/two-factor.service.js";
 
 jest.mock("jsonwebtoken");
+jest.mock("../../../../apps/backend/src/modules/auth/auth.state.repository.js", () => ({
+  checkAndTouchPrivilegedSession: jest.fn(),
+}));
 jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js", () => ({
   is2FAEnabled: jest.fn(),
 }));
-jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
+// The repository barrel re-exports several modules. Automatic mocking of the
+// barrel can omit atomic helpers (notably rotateRefreshAtomic and
+// revokeSessionFamilyAtomic), leaving tests unable to reach their assertions.
+// Explicitly mock every repository operation used by this service.
+jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js", () => ({
+  findRefreshTokenRaw: jest.fn(),
+  findSessionById: jest.fn(),
+  findUserById: jest.fn(),
+  getRefreshByHash: jest.fn(),
+  revokeRefreshByHash: jest.fn(),
+  revokeSessionFamilyAtomic: jest.fn(),
+  rotateRefreshAtomic: jest.fn(),
+}));
 jest.mock("../../../../apps/backend/src/observability/metrics.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.audit.js");
 jest.mock("../../../../apps/backend/src/modules/auth/auth.legal-gate.js");
@@ -22,6 +38,7 @@ jest.mock("../../../../apps/backend/src/modules/auth/auth.session-tokens.js", ()
 }));
 
 const mockJwt = jest.mocked(jwt);
+const mockPrivilegedSessionCheck = jest.mocked(checkAndTouchPrivilegedSession);
 const mockIs2FAEnabled = jest.mocked(is2FAEnabled);
 const mockRepository = jest.mocked(authRepository);
 const mockMetrics = jest.mocked(metrics);
@@ -59,6 +76,7 @@ describe("auth.refresh.service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockIs2FAEnabled.mockResolvedValue(false);
+    mockPrivilegedSessionCheck.mockResolvedValue(true);
     mockLegalGate.assertTermsRequirementSatisfied.mockResolvedValue(undefined);
     mockAudit.sanitizeAuthUserAgent.mockImplementation((value) => value ?? null);
     mockJwt.verify.mockReturnValue({
@@ -195,6 +213,24 @@ describe("auth.refresh.service", () => {
     expect(mockIs2FAEnabled).toHaveBeenCalledWith("user-1");
     expect(mockRepository.rotateRefreshAtomic).toHaveBeenCalledTimes(1);
     expect(mockRepository.revokeSessionFamilyAtomic).not.toHaveBeenCalled();
+  });
+
+  it("rejects expired privileged inactivity without rotating a refresh token", async () => {
+    mockValidState();
+    mockRepository.findUserById.mockResolvedValue({
+      id: "user-1", status: "active", role_code: "admin",
+    } as never);
+    mockJwt.verify.mockReturnValue({
+      sub: "user-1", sid: "session-1", typ: "refresh", mfa: true,
+    } as never);
+    mockIs2FAEnabled.mockResolvedValue(true);
+    mockPrivilegedSessionCheck.mockResolvedValue(false);
+
+    await expect(service.refresh("idle-admin-token")).rejects.toMatchObject({
+      status: 401, code: "AUTH_SESSION_EXPIRED",
+    });
+    expect(mockRepository.revokeSessionFamilyAtomic).toHaveBeenCalledWith("session-1");
+    expect(mockRepository.rotateRefreshAtomic).not.toHaveBeenCalled();
   });
 
   it("keeps athlete refresh available without requiring TOTP", async () => {

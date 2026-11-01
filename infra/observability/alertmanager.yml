@@ -41,6 +41,15 @@ route:
     # Security alerts go to security team
     - receiver: "security-team"
       match:
+        component: security
+      group_wait: 10s
+      repeat_interval: 2h
+
+    # Historical observability rules emit category=security, while the
+    # authentication-policy rules emit component=security. Route both
+    # schemas to the same receiver without exposing identity labels.
+    - receiver: "security-team"
+      match:
         category: security
       group_wait: 10s
       repeat_interval: 2h

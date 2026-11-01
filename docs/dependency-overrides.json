@@ -19,12 +19,12 @@
     },
     {
       "name": "follow-redirects",
-      "constraint": "1.16.1",
+      "constraint": "1.16.2",
       "category": "transitive",
       "status": "security-patch-required",
       "directDeclarations": [],
-      "reason": "Security advisories GHSA-q3jh-wrc6-jgq8 and GHSA-8r9p-f939-6h3c affect 1.16.0; axios introduces follow-redirects into frontend and backoffice.",
-      "removalCriteria": "Remove only after axios and dependency resolution guarantee follow-redirects >=1.16.1 without override and full security CI passes."
+      "reason": "GHSA-mrwp-f3q8-3g9p (CVE-2026-116689) affects follow-redirects 1.16.0–1.16.1; upgrade to 1.16.2 while preserving Axios compatibility.",
+      "removalCriteria": "Remove only after the dependency graph selects >=1.16.2 without override and OSV, pnpm audit, CI and production image smoke pass."
     },
     {
       "name": "fast-xml-parser",
@@ -171,12 +171,12 @@
     },
     {
       "name": "glob",
-      "constraint": "10.5.0",
+      "constraint": "14.0.2",
       "category": "transitive",
-      "status": "unverified-necessity",
+      "status": "security-patch-required",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "GHSA-3g3m-2fjr-6pw4 affects glob 9 through 14.0.1; v14.0.2 fixes abort handling. Explicit override is provisional pending CI compatibility and graph review.",
+      "removalCriteria": "Remove once direct parents resolve glob >=14.0.2 without forced override and full CI passes."
     },
     {
       "name": "extract-zip",
@@ -360,12 +360,12 @@
     },
     {
       "name": "minimatch@9",
-      "constraint": ">=9.0.7",
+      "constraint": "11.0.1",
       "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
+      "status": "requires-compatibility-review",
       "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'minimatch@9'. Treat as a compatibility/security constraint until dependency parents are checked.",
-      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
+      "reason": "GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 (OSV); major-scoped override replaces vulnerable v9 requests with v11. Compatibility must be verified in CI.",
+      "removalCriteria": "Remove once no vulnerable v9 requests remain and all affected consumers support v11."
     },
     {
       "name": "brace-expansion@1",
@@ -620,6 +620,78 @@
       "directDeclarations": [],
       "reason": "GHSA-27r3-jxmh-p828 / CVE-2026-111181: body-parser 2.3.0 vulnerable to unauthenticated denial of service; major-scoped patch 2.4.0. Keep until Express 5 dependency parent resolves safe version and integration tests pass.",
       "removalCriteria": "Remove only after upstream parents resolve body-parser >=2.4.0 naturally and full CI/security checks pass."
+    },
+    {
+      "name": "minimatch@10",
+      "constraint": "11.0.1",
+      "category": "major-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "GHSA-g3hv-75wg-m249 affects minimatch v10; redirect v10 range to patched v11.0.1 pending full compatibility tests.",
+      "removalCriteria": "Remove once all v10 requesting parents select patched 11.0.1 without an override and CI passes."
+    },
+    {
+      "name": "@eslint/config-array>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through @eslint/config-array; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once @eslint/config-array selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "@eslint/eslintrc>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through @eslint/eslintrc; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once @eslint/eslintrc selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint-plugin-import>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-import; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint-plugin-import selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint-plugin-jsx-a11y>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-jsx-a11y; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint-plugin-jsx-a11y selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint-plugin-react>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-react; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint-plugin-react selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "eslint>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once eslint selects minimatch >=11.0.1 without override and complete CI passes."
+    },
+    {
+      "name": "test-exclude>minimatch",
+      "constraint": "11.0.1",
+      "category": "parent-scoped-transitive",
+      "status": "requires-compatibility-review",
+      "directDeclarations": [],
+      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through test-exclude; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
+      "removalCriteria": "Remove once test-exclude selects minimatch >=11.0.1 without override and complete CI passes."
     }
   ]
 }

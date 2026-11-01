@@ -94,6 +94,7 @@ export async function createUser(
     status: UserStatus;
     role_code: string;
     password_hash: string;
+    adminPasswordPolicyVerifiedAt?: string | null;
     primaryEmail: string;
     emailVerified?: boolean;
     terms_accepted?: boolean;
@@ -121,6 +122,7 @@ export async function createUser(
       status: input.status,
       role_code: input.role_code,
       password_hash: input.password_hash,
+      admin_password_policy_verified_at: input.adminPasswordPolicyVerifiedAt ?? null,
       terms_accepted: input.terms_accepted ?? false,
       terms_accepted_at: input.terms_accepted_at ?? null,
       terms_version: input.terms_version ?? null,

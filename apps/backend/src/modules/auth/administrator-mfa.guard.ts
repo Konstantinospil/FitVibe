@@ -2,6 +2,14 @@ import type { NextFunction, Request, Response } from "express";
 import { db } from "../../db/connection.js";
 import { HttpError } from "../../utils/http.js";
 import { is2FAEnabled } from "./two-factor.service.js";
+import { checkAndTouchPrivilegedSession } from "./auth.state.repository.js";
+import { administratorPasswordChangeRequired } from "./admin-password-policy.service.js";
+
+const PASSWORD_TRANSITION_ENDPOINTS = new Set([
+  "GET /auth/admin-password/status",
+  "POST /users/change-password",
+  "POST /auth/logout",
+]);
 
 const ENROLLMENT_ENDPOINTS = new Set([
   "GET /auth/2fa/status",
@@ -32,12 +40,14 @@ export async function enforceAdministratorMfa(
       return;
     }
 
-    const role = await db("users")
-      .where({ id: identity.sub })
-      .first<{ role_code: string }>("role_code");
+    const role = await db("users").where({ id: identity.sub }).first<{
+      role_code: string;
+      status: string;
+      admin_password_policy_verified_at: string | null;
+    }>(["role_code", "status", "admin_password_policy_verified_at"]);
     // #557: a missing persisted identity must never inherit non-admin access.
     // A valid JWT and backing session are not sufficient without a live user.
-    if (!role) {
+    if (!role || role.status !== "active") {
       next(new HttpError(401, "UNAUTHENTICATED", "Account no longer exists"));
       return;
     }
@@ -45,11 +55,27 @@ export async function enforceAdministratorMfa(
       next();
       return;
     }
-    if (identity.mfa === true && (await is2FAEnabled(identity.sub))) {
-      next();
+    if (!(await checkAndTouchPrivilegedSession(identity.sid, identity.sub))) {
+      next(new HttpError(401, "AUTH_SESSION_EXPIRED", "Administrator session expired"));
       return;
     }
     const path = req.originalUrl.split("?")[0]?.replace(/^\/api\/v1/, "") ?? "";
+    if (identity.mfa === true && (await is2FAEnabled(identity.sub))) {
+      if (administratorPasswordChangeRequired(role)) {
+        if (!PASSWORD_TRANSITION_ENDPOINTS.has(`${req.method} ${path}`)) {
+          next(
+            new HttpError(
+              403,
+              "ADMIN_PASSWORD_CHANGE_REQUIRED",
+              "Administrator password update required",
+            ),
+          );
+          return;
+        }
+      }
+      next();
+      return;
+    }
     if (ENROLLMENT_ENDPOINTS.has(`${req.method} ${path}`)) {
       next();
       return;

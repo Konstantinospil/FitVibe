@@ -88,6 +88,70 @@ groups:
           description: "Registration rate: {{ $value }} per second (sustained for 10 minutes)"
           runbook_url: "https://docs.fitvibe.app/runbooks/registration-spike"
 
+  # #557: Policy-defined authentication signals, sourced from the backend's
+  # bounded-cardinality counters. No user, email, IP or session labels.
+  - name: auth_policy_alerts
+    interval: 1m
+    rules:
+      # Baseline uses five-minute rates over 30 days; the sample guard
+      # prevents a false claim of anomaly detection before sufficient history.
+      - alert: FailedLoginSpike
+        expr: |
+          (
+            rate(auth_failed_login_total[5m])
+            >
+            avg_over_time((rate(auth_failed_login_total[5m]))[30d:5m])
+            + 3 * clamp_min(stddev_over_time((rate(auth_failed_login_total[5m]))[30d:5m]), 0.0001)
+          )
+          and
+          count_over_time((rate(auth_failed_login_total[5m]))[30d:5m]) >= 8000
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Unusual failed login activity detected"
+          description: "The five-minute failed login rate exceeded the 30-day statistical baseline"
+
+      # An approved N is an explicit prerequisite; no default policy number.
+      # Metric queries aggregate in PostgreSQL and export no account labels.
+      - alert: AccountLockoutIncidentThresholdExceeded
+        expr: auth_accounts_exceeding_lockout_threshold > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Repeated lockouts detected for at least one account"
+          description: "At least one account exceeded its approved ten-minute lockout count"
+
+      - alert: AccountLockoutDetectionUnconfigured
+        expr: auth_account_lockout_monitor_configured == 0
+        for: 15m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Per-account lockout detection requires a threshold decision"
+          description: "Set AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD to the approved policy value"
+
+      - alert: PasswordResetTokenFailureRate
+        expr: |
+          (
+            sum(increase(auth_password_reset_total{outcome="invalid_token"}[15m]))
+            /
+            clamp_min(sum(increase(auth_password_reset_total{outcome=~"invalid_token|completed"}[15m])), 1)
+          ) > 0.05
+          and
+          sum(increase(auth_password_reset_total{outcome=~"invalid_token|completed"}[15m])) >= 20
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Password reset token failure rate exceeds 5%"
+          description: "Invalid, expired or consumed reset tokens exceed 5% of completed and failed submissions over 15 minutes"
+
   # O-10: AV scan failure alert
   - name: av_scan_alerts
     interval: 30s

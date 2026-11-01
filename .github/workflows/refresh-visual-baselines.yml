@@ -15,6 +15,7 @@ on:
         default: reset-password
         options:
           - reset-password
+          - password-strength
           - approved-pages
 
 concurrency:
@@ -89,11 +90,19 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           if [ "$REFRESH_SCOPE" = "reset-password" ]; then
             # Run only the 8 light/dark viewport combinations for Reset Password.
-            # Seven approved images should change; dark/sm must stay unchanged.
+            # Eight reset-page snapshots are reviewed against CI #41210488048
+            # and refresh run #41217380110; both produced identical images.
             pnpm exec playwright test tests/frontend/visual/pages/auth.spec.ts \
               --grep "Auth Page Visual Tests reset password" \
               --config tests/frontend/visual/config/playwright.config.ts \
               --update-snapshots=changed
+          elif [ "$REFRESH_SCOPE" = "password-strength" ]; then
+            # #557: capture only the 16 meter states (2 flows x 2 strengths x 2 themes x 2 viewports).
+            # Existing page snapshots must not be overwritten by this scope.
+            pnpm exec playwright test tests/frontend/visual/pages/auth.spec.ts \
+              --grep "password strength states" \
+              --config tests/frontend/visual/config/playwright.config.ts \
+              --update-snapshots=missing
           elif [ "$REFRESH_SCOPE" = "approved-pages" ]; then
             pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
               tests/frontend/visual/pages/auth.spec.ts \
@@ -124,15 +133,18 @@ jobs:
           const scope = process.env.REFRESH_SCOPE;
           const api = "https://api.github.com";
           const snapshotDir = "tests/frontend/visual/pages/auth.spec.ts-snapshots";
-          // #557: reviewed against VRT artifact from CI run 40243884456.
+          // #557: these 8 reset page captures were manually reviewed and are
+          // byte-identical across CI #41210488048 and refresh #41217380110.
+          // Update this allowlist only after checking actual screenshots.
           const approved = new Map([
-            ["reset-password-ui-dark-lg-linux.png", "741ee8f87e846236b45798d387e7d49dd13591abff30bb080c0ce8410b34279c"],
-            ["reset-password-ui-dark-md-linux.png", "23c1564c2ca36f46ba28fa53ae6b8a954bb9f93bb295cabfd97bf69271a109c7"],
-            ["reset-password-ui-dark-xs-linux.png", "ca782dae2fc82bfd987d02e4dfcdf7aac7b534baf2cfa55e9b51ef93a22d67fa"],
-            ["reset-password-ui-light-lg-linux.png", "ef70103bebd67bf3e1e943e77a9e05f3dbd3b4528417ae089afa1bedf167e604"],
-            ["reset-password-ui-light-md-linux.png", "1f8b98d0d27dabae20ff0295694dbf0d975672156f84b5fd327a6fda1ed4d93f"],
-            ["reset-password-ui-light-sm-linux.png", "d9f02a9dce44d7be3b5eba244a4a1fffee83ea4132fa4ef0c06b6ef15ba2a489"],
-            ["reset-password-ui-light-xs-linux.png", "8ea4e2419034e753a3a5de9136b7ffbb93e94e881ef56e3e3b4c53ddcb0a44bb"],
+            ["reset-password-ui-dark-lg-linux.png", "d64d0a6dc0f4559341c973cf60dee282f8b5642e860f86adfe6cb2658d056ae6"],
+            ["reset-password-ui-dark-md-linux.png", "f28dec7955a5def12d9cb7019d79eac9d5f36ba6b0204fd73d3cf82b67af1ac9"],
+            ["reset-password-ui-dark-sm-linux.png", "c6a55144eb1f1df4313095b06b7138ea934ce204bc4ab3621ba2a1a307ee0f5e"],
+            ["reset-password-ui-dark-xs-linux.png", "0b58582521070b14b24bfbfdf7369f69776851bec9874d4ddc7729d27edbb623"],
+            ["reset-password-ui-light-lg-linux.png", "c001404c8f92f1a2c645b041a6d324e44cacd9ceb558faa2a1163807f940276b"],
+            ["reset-password-ui-light-md-linux.png", "933f34bb9373c1e47765d940e9b7add3fce488fa0bde7f4a74d41becac6a5ffd"],
+            ["reset-password-ui-light-sm-linux.png", "dd52300a2cc3ae351d1a793beec94e7743efcdc5ac36fc3a2027b1d4dadabf2f"],
+            ["reset-password-ui-light-xs-linux.png", "9e4cafe4036df65e1d53dfa0fd8ea5ae871bb4111f10fb134d7304f42cff4d62"],
           ].map(([name, hash]) => [`${snapshotDir}/${name}`, hash]));
           const headers = {
             Accept: "application/vnd.github+json",
@@ -152,9 +164,13 @@ jobs:
           )];
           const approvedGeneral = (path) =>
             /^tests\/frontend\/visual\/(?:pages\/(?:home|auth|legal)|components\/navbar)\.spec\.ts-snapshots\/[^/]+-linux\.png$/.test(path);
+          const meterBaseline = (path) =>
+            /^tests\/frontend\/visual\/pages\/auth\.spec\.ts-snapshots\/(?:reset|register)-password-strength-(?:weak|strong)-ui-(?:light|dark)-(?:sm|lg)-linux\.png$/.test(path);
           const permitted = (path) => scope === "reset-password"
             ? approved.has(path)
-            : scope === "approved-pages" && approvedGeneral(path);
+            : scope === "password-strength"
+              ? meterBaseline(path)
+              : scope === "approved-pages" && approvedGeneral(path);
           const unexpected = changedPaths.filter((path) => !permitted(path));
           if (unexpected.length) {
             throw new Error(`Refusing unexpected changes: ${unexpected.join(", ")}`);
@@ -162,13 +178,17 @@ jobs:
           const files = changedPaths.filter(permitted);
           if (scope === "reset-password") {
             if (files.length !== approved.size) {
-              throw new Error(`Expected 7 reviewed screenshots, found ${files.length}: ${files.join(", ")}`);
+              throw new Error(`Expected 8 reviewed screenshots, found ${files.length}: ${files.join(", ")}`);
             }
             for (const path of files) {
               const actualHash = createHash("sha256").update(await readFile(path)).digest("hex");
               if (actualHash !== approved.get(path)) {
                 throw new Error(`Regenerated image differs from approved CI capture: ${path}`);
               }
+            }
+          } else if (scope === "password-strength") {
+            if (files.length !== 16) {
+              throw new Error(`Expected 16 password strength meter snapshots, found ${files.length}: ${files.join(", ")}`);
             }
           } else if (scope !== "approved-pages") {
             throw new Error(`Unsupported scope: ${scope}`);

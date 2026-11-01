@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "scope": "tests/frontend/e2e/smoke.spec.cjs",
+  "owner": "E2E Playwright (shards 1-4)",
+  "execution": "independent; no inter-test ordering or shared mutation dependencies",
+  "prerequisite_contracts": {
+    "public-page": "isolated context; essential-only consent verified",
+    "worker-athlete": "worker fixture; persisted authenticated session, onboarding and essential-only consent verified",
+    "disposable-athlete": "per-test registration and verification, then persisted essential-only consent and invitation dismissal"
+  },
+  "cases": [
+    {
+      "id": "E2E-SMOKE-001",
+      "title": "login page renders the FitVibe welcome heading",
+      "requirement": "AUTH-LOGIN-UI",
+      "stage": "public",
+      "fixture": "public-page",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-002",
+      "title": "authenticated shell shows Home after real login",
+      "requirement": "AUTH-LOGIN",
+      "stage": "authenticated",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-003",
+      "title": "registration persists profile fields and scanned avatar",
+      "requirement": "AUTH-REGISTRATION",
+      "stage": "onboarding",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-004",
+      "title": "athlete navigates all active surfaces with real authenticated data",
+      "requirement": "NAV-SURFACES",
+      "stage": "authenticated",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-005",
+      "title": "calendar loads real sessions, allows exercise selection and persists planned workout",
+      "requirement": "WORKOUT-PLAN-CALENDAR",
+      "stage": "workflow",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-006",
+      "title": "published legal documents render their actual backend content",
+      "requirement": "LEGAL-PUBLICATIONS",
+      "stage": "authenticated",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-007",
+      "title": "athlete privacy acknowledgement withdrawal and reacceptance persist on backend",
+      "requirement": "LEGAL-PRIVACY-LIFECYCLE",
+      "stage": "mutation",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-008",
+      "title": "athlete can revoke Terms and the account session is invalidated",
+      "requirement": "LEGAL-TERMS-REVOCATION",
+      "stage": "mutation",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-009",
+      "title": "athlete logout rejects subsequent authenticated profile retrieval",
+      "requirement": "AUTH-LOGOUT",
+      "stage": "mutation",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-010",
+      "title": "athlete searches exercise library against the real catalog",
+      "requirement": "LIBRARY-SEARCH",
+      "stage": "authenticated",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-011",
+      "title": "athlete starts an exercise workout and backend records an in-progress session",
+      "requirement": "WORKOUT-START",
+      "stage": "workflow",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-012",
+      "title": "athlete creates personal exercise and finds it after reload",
+      "requirement": "LIBRARY-CREATE",
+      "stage": "workflow",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-013",
+      "title": "athlete saves complete editable profile across navigation",
+      "requirement": "PROFILE-SAVE",
+      "stage": "mutation",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-014",
+      "title": "Settings rejects invalid profile edits and preserves persisted data",
+      "requirement": "PROFILE-VALIDATION",
+      "stage": "mutation",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-015",
+      "title": "athlete uploads and removes avatar from Settings",
+      "requirement": "PROFILE-AVATAR",
+      "stage": "mutation",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-016",
+      "title": "athlete changes Vibeform and Dashboard reflects saved profile",
+      "requirement": "VIBEFORM-PERSISTENCE",
+      "stage": "workflow",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-017",
+      "title": "Home and Dashboard retrieve real feed, completed activity, badges and Vibeform",
+      "requirement": "DASHBOARD-DATA",
+      "stage": "authenticated",
+      "fixture": "worker-athlete",
+      "depends_on": []
+    },
+    {
+      "id": "E2E-SMOKE-018",
+      "title": "athlete uses Library exercise to open workout planning across surfaces",
+      "requirement": "LIBRARY-WORKOUT-INTEGRATION",
+      "stage": "workflow",
+      "fixture": "disposable-athlete",
+      "depends_on": []
+    }
+  ]
+}

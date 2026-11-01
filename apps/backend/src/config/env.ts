@@ -31,6 +31,7 @@ const EnvSchema = z.object({
   CSRF_ALLOWED_ORIGINS: z.string().optional(),
   CSRF_ENABLED: z.string().optional(),
   METRICS_ENABLED: z.string().optional(),
+  AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD: z.coerce.number().int().min(1).optional(),
   ACCESS_COOKIE_NAME: z.string().default("fitvibe_access"),
   REFRESH_COOKIE_NAME: z.string().default("fitvibe_refresh"),
   APP_BASE_URL: z.string().default("http://localhost:4000"),
@@ -217,6 +218,8 @@ export const env = {
     allowedOrigins: csrfAllowedOrigins,
   },
   metricsEnabled: parseBoolean(raw.METRICS_ENABLED, true),
+  // No default: the security owner must approve the per-account 10-minute threshold.
+  authAccountLockoutAlertThreshold: raw.AUTH_ACCOUNT_LOCKOUT_ALERT_THRESHOLD,
   appBaseUrl: raw.APP_BASE_URL,
   frontendUrl: raw.FRONTEND_URL,
   appName: raw.APP_NAME,

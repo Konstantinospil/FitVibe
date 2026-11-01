@@ -122,6 +122,12 @@ export class BreachedPasswordChecker {
     if (isCommonPassword(password)) {
       throw new HttpError(400, "PASSWORD_COMMON", "PASSWORD_COMMON");
     }
+    // HIBP Pwned Passwords range protocol requires a SHA-1 lookup digest.
+    // Only its first five hex characters leave this service; the remaining
+    // suffix is compared locally, never stored as a credential verifier.
+    // Persisted passwords use the separate salted Argon2id password-hashing service.
+    // This is not a password-storage hash (CodeQL #1000, CWE-916).
+    // codeql[js/insufficient-password-hash]
     const digest = createHash("sha1").update(password, "utf8").digest("hex").toUpperCase();
     const prefix = digest.slice(0, 5);
     const suffix = digest.slice(5);
@@ -148,6 +154,23 @@ export class BreachedPasswordChecker {
     }
     if ((entry.suffixCounts.get(suffix) ?? 0) > 0) {
       throw new HttpError(400, "PASSWORD_BREACHED", "PASSWORD_BREACHED");
+    }
+  }
+  /** A breach-list match is advisory; whole-secret common-password denylist remains mandatory. */
+  async checkAdvisory(
+    password: string,
+  ): Promise<"PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" | undefined> {
+    try {
+      await this.assertAcceptable(password);
+      return undefined;
+    } catch (error) {
+      if (
+        error instanceof HttpError &&
+        (error.code === "PASSWORD_BREACHED" || error.code === "BREACH_CHECK_UNAVAILABLE")
+      ) {
+        return error.code;
+      }
+      throw error;
     }
   }
 }
