@@ -4,6 +4,7 @@ import { usersApi, type User } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeColors } from "../hooks/useThemeColors";
 import { Button } from "../components/ui/Button";
+import { FreshTotpDialog } from "../components/FreshTotpDialog";
 import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 
 type UserFilter = "all" | "registered" | "unverified" | "blacklisted";
@@ -14,6 +15,7 @@ const UsersPage: React.FC = () => {
   const [filter, setFilter] = useState<UserFilter>("all");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionReason, setActionReason] = useState("");
+  const [pendingUserAction, setPendingUserAction] = useState<{ user: User; action: "blacklist" | "unblacklist" | "delete" } | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -55,14 +57,17 @@ const UsersPage: React.FC = () => {
     mutationFn: ({
       userId,
       action,
+      totpCode,
     }: {
       userId: string;
       action: "blacklist" | "unblacklist" | "delete";
-    }) => usersApi.action(userId, action, actionReason || undefined),
+      totpCode: string;
+    }) => usersApi.action(userId, action, actionReason || undefined, totpCode),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedUser(null);
       setActionReason("");
+      setPendingUserAction(null);
       setErrorMessage(null);
       void refetch();
     },
@@ -160,12 +165,7 @@ const UsersPage: React.FC = () => {
 
   const handleAction = (user: User, action: "blacklist" | "unblacklist" | "delete") => {
     setSelectedUser(user);
-    const actionText =
-      action === "delete" ? "delete" : action === "blacklist" ? "blacklist" : "unblacklist";
-    const label = user.display_name || user.username;
-    if (confirm(`Are you sure you want to ${actionText} user ${label}?`)) {
-      actionMutation.mutate({ userId: user.id, action });
-    }
+    setPendingUserAction({ user, action });
   };
 
   const handleChangeRole = (user: User) => {
@@ -261,6 +261,22 @@ const UsersPage: React.FC = () => {
 
   return (
     <div>
+      {pendingUserAction ? (
+        <FreshTotpDialog
+          actionLabel={`${pendingUserAction.action} user ${pendingUserAction.user.display_name || pendingUserAction.user.username}`}
+          onCancel={() => {
+            setPendingUserAction(null);
+            setSelectedUser(null);
+          }}
+          onConfirm={async (totpCode) => {
+            await actionMutation.mutateAsync({
+              userId: pendingUserAction.user.id,
+              action: pendingUserAction.action,
+              totpCode,
+            });
+          }}
+        />
+      ) : null}
       <h1
         style={{
           color: colors.text,
