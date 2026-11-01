@@ -259,6 +259,7 @@ export interface FeedReportsResponse {
 
 export interface ModerateContentRequest {
   action: "hide" | "dismiss" | "ban";
+  totpCode?: string;
   notes?: string;
 }
 
@@ -290,6 +291,7 @@ export interface UserSearchResponse {
 }
 
 export interface UserActionRequest {
+  totpCode?: string;
   reason?: string;
   notes?: string;
 }
@@ -758,8 +760,15 @@ export const usersApi = {
     userId: string,
     action: "blacklist" | "unblacklist" | "delete",
     reason?: string,
+    totpCode?: string,
   ) => {
-    await apiClient.post(`/api/v1/admin/users/${userId}/action`, { action, reason });
+    // Backoffice wording differs from the documented backend action values.
+    const backendAction = action === "blacklist" ? "ban" : action === "unblacklist" ? "activate" : "delete";
+    await apiClient.post(`/api/v1/admin/users/${userId}/action`, {
+      action: backendAction,
+      reason,
+      totpCode,
+    });
   },
   changeRole: async (userId: string, role: string, reason?: string) => {
     await apiClient.post(`/api/v1/admin/users/${userId}/role`, { role, reason });
