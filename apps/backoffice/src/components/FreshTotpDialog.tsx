@@ -19,14 +19,18 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
+    if (!dialog) {
+      return;
+    }
     dialog.showModal();
     return () => dialog.close();
   }, []);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!/^\\d{6}$/.test(totpCode) || pending) return;
+    if (!/^\d{6}$/.test(totpCode) || pending) {
+      return;
+    }
     setPending(true);
     setError(false);
     try {
@@ -44,7 +48,9 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
       ref={dialogRef}
       onClose={onCancel}
       onCancel={(event) => {
-        if (pending) event.preventDefault();
+        if (pending) {
+          event.preventDefault();
+        }
       }}
       aria-labelledby="fresh-totp-title"
       aria-describedby="fresh-totp-description"
@@ -72,7 +78,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
           autoFocus
           required
           value={totpCode}
-          onChange={(event) => setTotpCode(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+          onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
           disabled={pending}
         />
         {error ? (
