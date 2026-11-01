@@ -1271,7 +1271,9 @@ jobs:
         id: static_secrets
         continue-on-error: true
         timeout-minutes: 5
-        run: node tests/security/secret-scan.cjs
+        run: |
+          node tests/security/secret-scan.cjs
+          node --test tests/security/check-policy-exceptions.test.cjs
 
       - name: Filesystem vulnerability scan
         id: trivy
