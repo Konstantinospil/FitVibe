@@ -4,7 +4,7 @@
 
 The review covers **all categories** of the first 500 `findings` in the AST inventory from GitHub Actions run [41533808821](https://github.com/Konstantinospil/FitVibe/actions/runs/41533808821), artifact `ui-literal-audit-41533808821` / `ui-literals.json`. It does not mean the first 500 *UI-only* findings.
 
-Individual decisions, in baseline index order, are stored in [first500-verdicts.json](./first500-verdicts.json) as run-length-encoded categories, anchored to SHA-256 of the original 500 finding IDs joined with newline characters. The baseline report supplies each ID, source file, line, AST reason, and literal. [first500-summary.json](./first500-summary.json) records the baseline.
+Individual decisions, in baseline index order, are stored in [first500-verdicts.json](./first500-verdicts.json) as run-length-encoded categories, anchored to SHA-256 of the original 500 finding IDs joined with newline characters. The immutable sets of all 103 corrected UI literal IDs and 56 false-positive IDs are preserved in [first500-baseline-id-sets.json](./first500-baseline-id-sets.json). The `first500-localization.test.cjs` regression gate rescans both applications and requires corrected UI literal IDs to stay absent and remaining false-positive IDs to stay technical; this check does not depend on the 90-day retention of the original workflow artifact. The baseline report supplies each ID, source file, line, AST reason, and literal. [first500-summary.json](./first500-summary.json) records the baseline.
 
 | Category | Occurrences | Review outcome |
 |---|---:|---|
