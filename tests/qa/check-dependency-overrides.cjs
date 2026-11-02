@@ -88,5 +88,26 @@ for (const file of manifests) {
     }
   }
 }
+// Prevent accidentally reintroducing the retired cloud integration. Transitive
+// AWS typing packages used by @types/nodemailer are not runtime dependencies.
+for (const file of manifests) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, file), "utf8"));
+  const awsDeps = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies })
+    .filter(name => name.startsWith("@aws-sdk/"));
+  if (awsDeps.length) errors.push(file + ": retired AWS SDK direct dependencies: " + awsDeps.join(", "));
+}
+const secretsImplementation = fs.readFileSync(
+  path.join(root, "apps/backend/src/services/secrets.service.ts"), "utf8"
+);
+if (/@aws-sdk\\/|SecretsManagerClient|GetSecretValueCommand|CreateSecretCommand|DescribeSecretCommand/.test(secretsImplementation)) {
+  errors.push("Secrets service must not import or implement the retired AWS Secrets Manager provider");
+}
+const backupScript = fs.readFileSync(path.join(root, "infra/scripts/backup-database.sh"), "utf8");
+if (/\\baws\\s+s3\\b|\\bS3_BUCKET=/.test(backupScript)) {
+  errors.push("Backup script must not assume AWS S3 storage or silently skip remote upload");
+}
+if (fs.existsSync(path.join(root, "infra/kubernetes/storage-class-encrypted.yaml"))) {
+  errors.push("Unsupported AWS EBS StorageClass placeholder must not be restored");
+}
 if (errors.length) { console.error(errors.join("\n")); process.exit(1); }
 console.log("Verified " + actual.size + " documented overrides against pnpm-workspace.yaml");
