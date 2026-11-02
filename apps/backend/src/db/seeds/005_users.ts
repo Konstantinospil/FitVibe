@@ -56,22 +56,22 @@ export async function seed(knex: Knex): Promise<void> {
   if (!existingAdmin) {
     await knex("users")
       .insert([
-      {
-        id: ADMIN_ID,
-        display_name: "FitVibe Admin",
-        locale: "en-US",
-        preferred_lang: "en",
-        status: "active",
-        role_code: "admin",
-        password_hash: adminPassword,
-        admin_password_policy_verified_at: now,
-        terms_accepted: true,
-        terms_accepted_at: now,
-        terms_version: termsVersion,
-        created_at: now,
-        updated_at: now,
-      },
-    ])
+        {
+          id: ADMIN_ID,
+          display_name: "FitVibe Admin",
+          locale: "en-US",
+          preferred_lang: "en",
+          status: "active",
+          role_code: "admin",
+          password_hash: adminPassword,
+          admin_password_policy_verified_at: now,
+          terms_accepted: true,
+          terms_accepted_at: now,
+          terms_version: termsVersion,
+          created_at: now,
+          updated_at: now,
+        },
+      ])
       .onConflict("id")
       .ignore();
   }
