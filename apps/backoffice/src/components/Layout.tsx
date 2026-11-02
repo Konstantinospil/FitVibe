@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useUiText } from "../i18n/ui";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeStore } from "../store/theme.store";
