@@ -1,5 +1,7 @@
 # Disaster Recovery Test Plan
 
+**Status: Historical AWS regional disaster-recovery plan — NOT executable for the current self-hosted deployment (2026-11-02).** The AWS RDS, S3, Route53 and cross-region assumptions in this document are placeholders, not configured FitVibe services. Current production uses persistent Docker volumes for PostgreSQL and media; verify a protected independent copy of both database and media before any recovery exercise. A locally readable PostgreSQL archive is not proof of off-host backups or successful restore. Refer to [`infra/docker/prod/README.md`](../../../infra/docker/prod/README.md) for the actual deployment and data volumes. A new end-to-end self-hosted restore runbook is still required.
+
 **Version:** 1.0
 **Last Updated:** 2025-11-11
 **Owner:** DevOps & Infrastructure Team

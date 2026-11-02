@@ -339,8 +339,22 @@ test("[E2E-SMOKE-012] athlete creates personal exercise and finds it after reloa
   create.stop();
   await page.reload();
   await waitForApp(page);
-  await page.locator("[data-component='library-filter-grid'] input").first().fill(name);
-  await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+  const library = page.locator("[data-app-surface='library'][data-client-hydrated='true']");
+  await expect(library).toBeVisible();
+  const search = library.getByRole("textbox", { name: /search exercises/i });
+  // A successful POST is insufficient: prove the record survives reload and
+  // that the authenticated search endpoint returns exactly the saved exercise.
+  const searchResponse = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === "/api/v1/exercises" && url.searchParams.get("q") === name &&
+      response.request().method() === "GET";
+  });
+  await search.fill(name);
+  const response = await searchResponse;
+  expect(response.status()).toBe(200);
+  expect((await response.json()).data.some((exercise) => exercise.name === name)).toBe(true);
+  await expect(search).toHaveValue(name);
+  await expect(library.getByText(name, { exact: true }).first()).toBeVisible();
 });
 
 test("[E2E-SMOKE-013] athlete saves complete editable profile across navigation", async ({ page }, testInfo) => {

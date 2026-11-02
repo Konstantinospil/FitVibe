@@ -82,7 +82,7 @@ FitVibe uses RS256 (RSA asymmetric) JWT tokens for authentication. Per ADR-002 a
 ### 3. Access Verification
 
 - [ ] Verify SSH access to production servers
-- [ ] Verify access to secrets manager (Vault/AWS Secrets Manager)
+- [ ] Verify access to mounted signing-key files or optional Vault
 - [ ] Verify deployment permissions (CI/CD, K8s, etc.)
 
 ---
@@ -122,17 +122,9 @@ FitVibe uses RS256 (RSA asymmetric) JWT tokens for authentication. Per ADR-002 a
      kid="$NEW_KID"
    ```
 
-   **AWS Secrets Manager:**
-
-   ```bash
-   aws secretsmanager create-secret \
-     --name fitvibe/staging/jwt-new \
-     --secret-string "$(jq -n \
-       --arg priv "$(cat jwt_rs256_new.key)" \
-       --arg pub "$(cat jwt_rs256_new.pub)" \
-       --arg kid "$NEW_KID" \
-       '{private_key: $priv, public_key: $pub, kid: $kid}')"
-   ```
+   **Self-hosted Docker deployment:** Keep the new private key in a restricted
+   local key directory, with permissions suitable for the backend runtime.
+   Do not upload a signing private key to an unconfigured cloud service.
 
 4. **Deploy to staging:**
 
@@ -339,14 +331,11 @@ During the 24-hour overlap:
 
 3. **Archive old key (do NOT delete):**
 
-   ```bash
-   # Move to secure archive (retain for 2 years per compliance)
-   aws s3 cp jwt_rs256.key s3://fitvibe-secrets-archive/jwt/2025/
-   aws s3 cp jwt_rs256.pub s3://fitvibe-secrets-archive/jwt/2025/
-
-   # Update secrets manager
-   vault kv metadata delete secret/fitvibe/production/jwt-old
-   ```
+   Archive superseded key material in a separate encrypted, access-restricted
+   offline backup, following the applicable retention policy. Verify that all
+   relevant tokens have expired before retiring a key. If Vault is used,
+   follow its separately approved secret-version retention process; do not
+   delete versions automatically in this generic procedure.
 
 ---
 
