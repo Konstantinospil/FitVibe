@@ -61,7 +61,11 @@ function createKnexMock() {
   const chains = new Map<string, InsertChain>();
   const knexSpy = jest.fn((table: string) => {
     if (!chains.has(table)) {
-      chains.set(table, createInsertChain());
+      const chain = createInsertChain();
+      if (table === "users") {
+        chain.first.mockResolvedValue(undefined);
+      }
+      chains.set(table, chain);
     }
     return chains.get(table)!;
   });
@@ -332,13 +336,46 @@ describe("database seed modules", () => {
     const original = process.env.ADMIN_PASSWORD;
     try {
       for (const password of ["", "a".repeat(15)]) {
+        jest.mocked(hashPassword).mockClear();
         process.env.ADMIN_PASSWORD = password;
-        const { knex, knexSpy } = createKnexMock();
+        const { knex, knexSpy, getChain } = createKnexMock();
         await expect(seedUsers(knex)).rejects.toThrow(
           "ADMIN_PASSWORD must be configured with at least 16 characters",
         );
-        expect(knexSpy).not.toHaveBeenCalled();
+        expect(knexSpy).toHaveBeenCalledWith("users");
+        expect(getChain("users").insert).not.toHaveBeenCalled();
+        expect(jest.mocked(hashPassword)).not.toHaveBeenCalled();
       }
+    } finally {
+      if (original === undefined) {
+        delete process.env.ADMIN_PASSWORD;
+      } else {
+        process.env.ADMIN_PASSWORD = original;
+      }
+    }
+  });
+
+  // Test ownership: #557 — production deployments must not need bootstrap
+  // secrets again or overwrite credential attestations of existing admins.
+  it("does not require ADMIN_PASSWORD or mutate an existing administrator during reseeding", async () => {
+    const original = process.env.ADMIN_PASSWORD;
+    try {
+      delete process.env.ADMIN_PASSWORD;
+      const { knex, getChain } = createKnexMock();
+      // Initialize the user query chain before overriding its lookup result.
+      knex("users");
+      const users = getChain("users");
+      users.first.mockResolvedValue({ id: ADMIN_ID });
+      const hashMock = jest.mocked(hashPassword);
+      hashMock.mockClear();
+
+      await expect(seedUsers(knex)).resolves.toBeUndefined();
+
+      expect(users.where).toHaveBeenCalledWith({ id: ADMIN_ID });
+      expect(users.insert).not.toHaveBeenCalled();
+      expect(hashMock).not.toHaveBeenCalled();
+      expect(getChain("user_contacts").insert).toHaveBeenCalled();
+      expect(getChain("profiles").insert).toHaveBeenCalled();
     } finally {
       if (original === undefined) {
         delete process.env.ADMIN_PASSWORD;
