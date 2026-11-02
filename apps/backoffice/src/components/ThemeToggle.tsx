@@ -1,4 +1,5 @@
 import React from "react";
+import { useUiText } from "../i18n/ui";
 import { Sun, Moon } from "lucide-react";
 import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
