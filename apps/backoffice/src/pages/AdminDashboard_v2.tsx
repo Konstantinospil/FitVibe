@@ -22,7 +22,7 @@ const AdminDashboardV2: React.FC = () => {
   const items = [
     {
       path: "/admin/reports",
-      label: "Content Reports",
+      label: t("nav.reports"),
       icon: <AlertTriangle size={20} />,
       description: "Moderate reported content and policy violations.",
     },
