@@ -424,7 +424,7 @@ const AuditLogsPage: React.FC = () => {
                 gap: "0.5rem",
               }}
             >
-              {actionFilter.length > 0 ? `${actionFilter.length} selected` : "All"}
+              {actionFilter.length > 0 ? t("audit.selected", { count: actionFilter.length }) : t("audit.all")}
             </summary>
             <div
               style={{
@@ -539,7 +539,7 @@ const AuditLogsPage: React.FC = () => {
         <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
         <div style={{ color: colors.text, padding: "2rem" }}>
-          Error loading audit logs: {error instanceof Error ? error.message : String(error)}
+          {t("audit.error")}
         </div>
       ) : !data || !data.logs || data.logs.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
@@ -558,8 +558,8 @@ const AuditLogsPage: React.FC = () => {
           >
             <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
               {selectedLogIds.size > 0
-                ? `${selectedLogIds.size} selected`
-                : "Select logs to resolve in bulk"}
+                ? t("audit.selected", { count: selectedLogIds.size })
+                : t("audit.selectBulk")}
             </span>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <Button
@@ -609,7 +609,7 @@ const AuditLogsPage: React.FC = () => {
                       checked={allSelected}
                       onChange={handleToggleSelectAll}
                       disabled={currentLogIds.length === 0}
-                      aria-label="Select all logs on this page"
+                      aria-label={t("audit.selectAll")}
                     />
                   </th>
                   <th
@@ -713,7 +713,7 @@ const AuditLogsPage: React.FC = () => {
                         checked={selectedLogIds.has(log.id)}
                         onChange={() => handleToggleSelectLog(log.id)}
                         disabled={bulkUpdateResolvedMutation.isPending}
-                        aria-label={`Select log ${log.id}`}
+                        aria-label={t("audit.selectLog", { id: log.id })}
                       />
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
@@ -790,7 +790,7 @@ const AuditLogsPage: React.FC = () => {
                           }
                           style={{ color: colors.text, whiteSpace: "nowrap" }}
                         >
-                          {log.resolvedAt ? "Reopen" : "Mark Resolved"}
+                          {log.resolvedAt ? t("audit.reopen") : t("audit.markResolved")}
                         </Button>
                       </div>
                     </td>
@@ -810,7 +810,7 @@ const AuditLogsPage: React.FC = () => {
               >
                 {t("audit.previous")}
               </Button>
-              <span style={{ color: colors.text }}>Page {page + 1}</span>
+              <span style={{ color: colors.text }}>{t("audit.page", { number: page + 1 })}</span>
               <Button
                 type="button"
                 variant="secondary"
