@@ -18,6 +18,7 @@ allowBuilds:
   msgpackr-extract: false
 
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
+# Regenerate combined PR #594/#595 OpenTelemetry 3 dependency lockfile.
 overrides:
   'lighthouse': '13.6.0'
   'uuid': '14.0.3'
