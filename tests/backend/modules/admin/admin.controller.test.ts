@@ -216,6 +216,24 @@ describe("Admin Controller", () => {
       expect(assertFreshPrivilegedTotp).not.toHaveBeenCalled();
     });
 
+    it.each([undefined, null])("rejects an absent moderation body (%s) without a server error", async (body) => {
+      mockRequest.params = { reportId: "report-123" };
+      mockRequest.body = body;
+      await expect(moderateReportHandler(mockRequest as Request, mockResponse as Response))
+        .rejects.toMatchObject({ status: 400, code: "INVALID_ACTION" });
+      expect(mockAdminService.moderateReport).not.toHaveBeenCalled();
+      expect(assertFreshPrivilegedTotp).not.toHaveBeenCalled();
+    });
+
+    it.each([undefined, null])("rejects an absent user-action body (%s) without a server error", async (body) => {
+      mockRequest.params = { userId: "user-123" };
+      mockRequest.body = body;
+      await expect(userActionHandler(mockRequest as Request, mockResponse as Response))
+        .rejects.toMatchObject({ status: 400, code: "INVALID_ACTION" });
+      expect(mockAdminService.performUserAction).not.toHaveBeenCalled();
+      expect(assertFreshPrivilegedTotp).not.toHaveBeenCalled();
+    });
+
     it("blocks report hiding without a fresh TOTP before the service call", async () => {
       mockRequest.params = { reportId: "report-123" };
       mockRequest.body = { action: "hide" };
