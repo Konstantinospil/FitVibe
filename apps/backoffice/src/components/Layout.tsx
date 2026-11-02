@@ -11,6 +11,7 @@ import AdminDashboardV2 from "../pages/AdminDashboard_v2";
 import AdminStatusHeader from "./AdminStatusHeader";
 
 const Layout: React.FC = () => {
+  const t = useUiText();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
