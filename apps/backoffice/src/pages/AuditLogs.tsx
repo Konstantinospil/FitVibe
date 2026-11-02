@@ -365,7 +365,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          Severity
+          {t("audit.severity")}
           <SelectControl
             value={severityFilter}
             onChange={(e) => {
@@ -373,7 +373,7 @@ const AuditLogsPage: React.FC = () => {
               setPage(0);
             }}
           >
-            <option value="all">All</option>
+            <option value="all">{t("audit.all")}</option>
             {severityOptions.map((severity) => (
               <option key={severity} value={severity}>
                 {severity}
@@ -385,7 +385,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          Resolved
+          {t("audit.resolved")}
           <SelectControl
             value={resolvedFilter}
             onChange={(e) => {
@@ -393,9 +393,9 @@ const AuditLogsPage: React.FC = () => {
               setPage(0);
             }}
           >
-            <option value="all">All</option>
-            <option value="resolved">Resolved</option>
-            <option value="unresolved">Unresolved</option>
+            <option value="all">{t("audit.all")}</option>
+            <option value="resolved">{t("audit.resolved")}</option>
+            <option value="unresolved">{t("audit.unresolved")}</option>
           </SelectControl>
         </label>
 
@@ -408,7 +408,7 @@ const AuditLogsPage: React.FC = () => {
             minWidth: "220px",
           }}
         >
-          <span>Action</span>
+          <span>{t("audit.action")}</span>
           <details style={{ position: "relative" }}>
             <summary
               style={{
@@ -630,7 +630,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Action
+                    {t("audit.action")}
                   </th>
                   <th
                     style={{
@@ -660,7 +660,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Severity
+                    {t("audit.severity")}
                   </th>
                   <th
                     style={{
@@ -690,7 +690,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Resolved
+                    {t("audit.resolved")}
                   </th>
                   <th
                     style={{
@@ -760,7 +760,7 @@ const AuditLogsPage: React.FC = () => {
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {log.resolvedAt ? (
-                        <span style={{ color: colors.success }}>Resolved</span>
+                        <span style={{ color: colors.success }}>{t("audit.resolved")}</span>
                       ) : (
                         <span style={{ color: colors.warning }}>Open</span>
                       )}
@@ -898,7 +898,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Action
+                {t("audit.action")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {getActionLabel(selectedLog.action)}
@@ -925,7 +925,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Severity
+                {t("audit.severity")}
               </div>
               <div
                 style={{
@@ -949,7 +949,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Resolved
+                {t("audit.resolved")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.resolvedAt
