@@ -231,7 +231,7 @@ const AuditLogsPage: React.FC = () => {
     });
     return actions.map((action) => ({
       value: action,
-      label: actionUiNameMap[action] ?? actionLabelMap[action] ?? formatAction(action),
+      label: actionUiNameMap[action] ?? (actionLabelMap[action] ? t(actionLabelMap[action]) : formatAction(action)),
     }));
   }, [actionMappingsData, actionUiNameMap, data?.logs]);
 
