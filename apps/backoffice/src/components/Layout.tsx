@@ -44,7 +44,7 @@ const Layout: React.FC = () => {
 
         <div className="backoffice-account">
           <div className="backoffice-account__identity">
-            Logged in as: {user?.displayName || user?.username}
+            {t("common.loggedInAs")} {user?.displayName || user?.username}
           </div>
           <ThemeToggle />
           <button
@@ -52,7 +52,7 @@ const Layout: React.FC = () => {
             className="backoffice-account__logout"
             type="button"
           >
-            Logout
+            {t("common.logout")}
           </button>
         </div>
       </aside>
