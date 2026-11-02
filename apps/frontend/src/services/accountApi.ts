@@ -600,7 +600,7 @@ export async function regenerate2FABackupCodes(
 }
 
 export async function restart2FASetup(
-  payload: TwoFactorStepUpRequest,
+  payload: { password: string; code?: string },
 ): Promise<TwoFactorSetupResponse> {
   const res = await apiClient.post<TwoFactorSetupResponse>("/api/v1/auth/2fa/setup", payload);
   return res.data;
