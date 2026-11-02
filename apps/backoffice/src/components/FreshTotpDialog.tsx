@@ -91,10 +91,10 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
         ) : null}
         <div className="flex flex--gap-sm">
           <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={pending || totpCode.length !== 6} isLoading={pending}>
-            Confirm action
+            {t("mfa.confirm")}
           </Button>
         </div>
       </form>
