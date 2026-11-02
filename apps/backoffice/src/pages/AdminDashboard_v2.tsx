@@ -30,53 +30,53 @@ const AdminDashboardV2: React.FC = () => {
       path: "/audit-logs",
       label: t("nav.audit"),
       icon: <ListChecks size={20} />,
-      description: "Review system actions, incidents, and severity trends.",
+      description: t("nav.auditDesc"),
     },
     {
       path: "/messages",
-      label: "Message Board",
+      label: t("nav.messages"),
       icon: <Mail size={20} />,
-      description: "Track incoming user messages and follow-ups.",
+      description: t("nav.messagesDesc"),
     },
     {
       path: "/users",
-      label: "User Management",
+      label: t("nav.users"),
       icon: <Users size={20} />,
-      description: "Audit accounts, roles, and account health status.",
+      description: t("nav.usersDesc"),
     },
     {
       path: "/settings",
-      label: "System Controls",
+      label: t("nav.settings"),
       icon: <SettingsIcon size={20} />,
-      description: "Adjust platform configuration and runtime controls.",
+      description: t("nav.settingsDesc"),
     },
     {
       path: "/translations",
-      label: "Translation",
+      label: t("nav.translations"),
       icon: <Languages size={20} />,
-      description: "Maintain language keys and content consistency.",
+      description: t("nav.translationsDesc"),
     },
     {
       path: "/legal-publications",
-      label: "Legal Publications",
+      label: t("nav.legal"),
       icon: <FileCheck2 size={20} />,
-      description: "Publish immutable legal document versions from reviewed translations.",
+      description: t("nav.legalDesc"),
     },
   ];
 
   if (role === "superadmin") {
     items.splice(5, 0, {
       path: "/superadmin/privileges",
-      label: "Privilege Management",
+      label: t("nav.privileges"),
       icon: <ShieldCheck size={20} />,
-      description: "Manage superadmin privileges with sudo and fresh TOTP approval.",
+      description: t("nav.privilegesDesc"),
     });
   }
 
   return (
     <div className="grid grid--gap-md">
       <div>
-        <h2 style={{ marginBottom: "0.35rem" }}>Admin Dashboard</h2>
+        <h2 style={{ marginBottom: "0.35rem" }}>{t("nav.dashboard")}</h2>
       </div>
 
       <div
