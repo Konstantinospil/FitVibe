@@ -138,6 +138,8 @@ function buildSummary(log: AuditLogEntry, getActionLabel: (action: string) => st
 
 const AuditLogsPage: React.FC = () => {
   const t = useUiText();
+  const severityLabel = (severity: AuditLogSeverity) =>
+    t(severity === "error" ? "audit.errorSeverity" : `audit.${severity}`);
   const colors = useThemeColors();
   const [page, setPage] = useState(0);
   const [severityFilter, setSeverityFilter] = useState<AuditLogSeverity | "all">("all");
@@ -381,7 +383,7 @@ const AuditLogsPage: React.FC = () => {
             <option value="all">{t("audit.all")}</option>
             {severityOptions.map((severity) => (
               <option key={severity} value={severity}>
-                {t(`audit.${severity === "error" ? "errorSeverity" : severity}`)}
+                {severityLabel(severity)}
               </option>
             ))}
           </SelectControl>
@@ -752,7 +754,7 @@ const AuditLogsPage: React.FC = () => {
                       >
                         {severityOptions.map((severity) => (
                           <option key={severity} value={severity}>
-                            {t(`audit.${severity === "error" ? "errorSeverity" : severity}`)}
+                            {severityLabel(severity)}
                           </option>
                         ))}
                       </SelectControl>
@@ -939,7 +941,7 @@ const AuditLogsPage: React.FC = () => {
                   fontWeight: "var(--font-weight-semibold)",
                 }}
               >
-                {t(`audit.${selectedLog.severity === "error" ? "errorSeverity" : selectedLog.severity}`)}
+                {severityLabel(selectedLog.severity)}
               </div>
             </div>
 
