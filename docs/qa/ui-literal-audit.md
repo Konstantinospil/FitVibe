@@ -102,3 +102,4 @@ routes and visible states; do not represent it as exhaustive of all
 interactive flows. Runtime collection is advisory while existing findings
 are triaged, but actual language/locale selection and expected login
 translations are asserted.
+
