@@ -29,7 +29,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Subsequent deploys must not require or re-hash bootstrap credentials.
   // Never infer compliance of a pre-existing administrator from this seed:
   // the MFA and password-attestation guards handle legacy credentials.
-  const existingAdmin = await knex("users").where({ id: ADMIN_ID }).first("id");
+  const existingAdmin = await knex("users").where({ id: ADMIN_ID }).first<{ id: string }>("id");
   let adminPassword: string | undefined;
   if (!existingAdmin) {
     // Fresh bootstrap still requires a strong, non-default credential.
