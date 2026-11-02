@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import french from "./fr.json";
 import spanish from "./es.json";
 import greek from "./el.json";
@@ -68,7 +68,7 @@ const translations: Record<string, Record<string, string>> = {
     "audit.noActions": "No actions available",
     "audit.from": "From",
     "audit.to": "To",
-    "audit.error": "Error loading audit logs:",
+    "audit.error": "Unable to load audit logs.",
     "audit.noLogs": "No audit logs found",
     "audit.selectBulk": "Select logs to resolve in bulk",
     "audit.resolveSelected": "Mark Selected Resolved",
@@ -182,7 +182,7 @@ const translations: Record<string, Record<string, string>> = {
     "audit.noActions": "Keine Aktionen verfügbar",
     "audit.from": "Von",
     "audit.to": "Bis",
-    "audit.error": "Fehler beim Laden der Audit-Protokolle:",
+    "audit.error": "Audit-Protokolle konnten nicht geladen werden.",
     "audit.noLogs": "Keine Audit-Protokolle gefunden",
     "audit.selectBulk": "Protokolle für die Sammelbearbeitung auswählen",
     "audit.resolveSelected": "Ausgewählte als erledigt markieren",
@@ -272,5 +272,5 @@ export function translate(key: string, values?: Record<string, string | number>,
 
 export function useUiText(): (key: string, values?: Record<string, string | number>) => string {
   const language = useSyncExternalStore(subscribe, activeLanguage, () => "en");
-  return (key, values) => translate(key, values, language);
+  return useCallback((key: string, values?: Record<string, string | number>) => translate(key, values, language), [language]);
 }
