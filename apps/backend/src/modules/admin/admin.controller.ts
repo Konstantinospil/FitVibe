@@ -34,7 +34,7 @@ export async function listReportsHandler(req: Request, res: Response): Promise<v
  */
 export async function moderateReportHandler(req: Request, res: Response): Promise<void> {
   const reportId = readRouteParam(req.params.reportId, "reportId");
-  const body = req.body as { action?: string; totpCode?: string };
+  const body = (req.body ?? {}) as { action?: string; totpCode?: string };
   const action = body.action;
 
   if (!req.user?.sub) {
@@ -100,7 +100,7 @@ export async function searchUsersHandler(req: Request, res: Response): Promise<v
  */
 export async function userActionHandler(req: Request, res: Response): Promise<void> {
   const userId = readRouteParam(req.params.userId, "userId");
-  const body = req.body as { action?: string; reason?: string; totpCode?: string };
+  const body = (req.body ?? {}) as { action?: string; reason?: string; totpCode?: string };
   const action = body.action;
   const reason = body.reason;
 
@@ -154,7 +154,7 @@ export async function listActionMappingsHandler(_req: Request, res: Response): P
 
 /** POST /api/v1/admin/action-mappings */
 export async function upsertActionMappingHandler(req: Request, res: Response): Promise<void> {
-  const { action, uiName } = req.body as { action?: unknown; uiName?: unknown };
+  const { action, uiName } = (req.body ?? {}) as { action?: unknown; uiName?: unknown };
   if (
     typeof action !== "string" ||
     !action.trim() ||
