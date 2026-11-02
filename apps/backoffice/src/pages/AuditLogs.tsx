@@ -210,7 +210,7 @@ const AuditLogsPage: React.FC = () => {
   }, [actionMappingsData]);
 
   const getActionLabel = (action: string) =>
-    actionUiNameMap[action] ?? actionLabelMap[action] ?? formatAction(action);
+    actionUiNameMap[action] ?? (actionLabelMap[action] ? t(actionLabelMap[action]) : formatAction(action));
 
   const actionOptions = useMemo(() => {
     const actionSet = new Set<string>();
