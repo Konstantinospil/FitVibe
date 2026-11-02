@@ -3,59 +3,38 @@ const fs = require("node:fs");
 const path = require("node:path");
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const crypto = require("node:crypto");
-const ts = require("typescript");
 
 const root = path.resolve(__dirname, "../..");
-const catalogFile = path.join(root, "apps/backoffice/src/i18n/ui.ts");
-const source = fs.readFileSync(catalogFile, "utf8");
-const ast = ts.createSourceFile(catalogFile, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-
-function embeddedCatalog(locale) {
-  let result;
-  function walk(node) {
-    if (ts.isVariableDeclaration(node) && node.name.getText(ast) === "translations" &&
-        node.initializer && ts.isObjectLiteralExpression(node.initializer)) {
-      const property = node.initializer.properties.find(
-        (p) => ts.isPropertyAssignment(p) && (ts.isStringLiteral(p.name) ? p.name.text : p.name.getText(ast)) === locale,
-      );
-      if (property && ts.isPropertyAssignment(property)) {
-        result = JSON.parse(property.initializer.getText(ast));
-      }
-    }
-    ts.forEachChild(node, walk);
-  }
-  walk(ast);
-  assert.ok(result, "Embedded translation catalog missing: " + locale);
-  return result;
-}
-
 const bundles = {
-  en: embeddedCatalog("en"),
-  de: embeddedCatalog("de"),
+  en: require("../../apps/backoffice/src/i18n/en.json"),
+  de: require("../../apps/backoffice/src/i18n/de.json"),
   fr: require("../../apps/backoffice/src/i18n/fr.json"),
   es: require("../../apps/backoffice/src/i18n/es.json"),
   el: require("../../apps/backoffice/src/i18n/el.json"),
 };
 const locales = Object.keys(bundles);
-const placeholders = (s) => [...s.matchAll(/\{([a-zA-Z_]\w*)\}/g)].map((m) => m[1]).sort();
+const placeholders = (value) =>
+  [...value.matchAll(/\{([a-zA-Z_]\w*)\}/g)].map((match) => match[1]).sort();
 
-test("all five audited Backoffice locales have the exact same keys and placeholders", () => {
+test("all five audited Backoffice locales have matching keys and placeholders", () => {
   const keys = Object.keys(bundles.en).sort();
-  assert.ok(keys.length >= 112);
+  assert.equal(keys.length, 112);
   for (const locale of locales) {
     assert.deepEqual(Object.keys(bundles[locale]).sort(), keys, locale + " key mismatch");
     for (const key of keys) {
-      const text = bundles[locale][key];
-      assert.equal(typeof text, "string", locale + " / " + key);
-      assert.ok(text.trim(), locale + " / " + key + " is empty");
-      assert.deepEqual(placeholders(text), placeholders(bundles.en[key]),
-        locale + " / " + key + " placeholder mismatch");
+      const value = bundles[locale][key];
+      assert.equal(typeof value, "string", locale + " / " + key);
+      assert.ok(value.trim(), locale + " / " + key + " is empty");
+      assert.deepEqual(
+        placeholders(value),
+        placeholders(bundles.en[key]),
+        locale + " / " + key + " placeholder mismatch",
+      );
     }
   }
 });
 
-test("all direct translation keys in the first-500 remediation surfaces exist", () => {
+test("every referenced translation key in the audited surfaces exists", () => {
   const files = [
     "apps/backoffice/src/App.tsx",
     "apps/backoffice/src/components/AdminStatusHeader.tsx",
@@ -65,60 +44,64 @@ test("all direct translation keys in the first-500 remediation surfaces exist", 
     "apps/backoffice/src/pages/AdminDashboard_v2.tsx",
     "apps/backoffice/src/pages/AuditLogs.tsx",
   ];
-  let found = 0;
+  let count = 0;
   for (const relative of files) {
-    const text = fs.readFileSync(path.join(root, relative), "utf8");
-    for (const m of text.matchAll(/\bt\("([a-z][a-zA-Z0-9.]*)"/g)) {
-      assert.ok(m[1] in bundles.en, relative + " references unknown translation: " + m[1]);
-      found++;
+    const source = fs.readFileSync(path.join(root, relative), "utf8");
+    for (const match of source.matchAll(/\bt\("([a-z][a-zA-Z0-9.]*)"/g)) {
+      assert.ok(match[1] in bundles.en, relative + " references unknown key: " + match[1]);
+      count++;
     }
   }
-  assert.ok(found > 30, "Translation test unexpectedly lost coverage");
+  assert.ok(count > 30, "Translation coverage unexpectedly reduced");
 });
 
-test("first 500 review decisions are accounted for and anchored to the baseline artifact", () => {
+test("the 500 review verdicts match their documented baseline", () => {
   const review = require("../../docs/qa/first500-verdicts.json");
-  const values = [];
+  const categories = [];
   for (const token of review.statusRunLengths.split(/\s+/)) {
     const match = /^([TFL])(\d+)$/.exec(token);
-    assert.ok(match, "Invalid review token: " + token);
-    values.push(...Array(Number(match[2])).fill(match[1]));
+    assert.ok(match, "Invalid verdict token: " + token);
+    categories.push(...Array(Number(match[2])).fill(match[1]));
   }
-  assert.equal(values.length, 500);
-  for (const status of ["T", "F", "L"]) {
-    assert.equal(values.filter((v) => v === status).length, review.counts[status]);
+  assert.equal(categories.length, 500);
+  for (const category of ["T", "F", "L"]) {
+    assert.equal(categories.filter((value) => value === category).length, review.counts[category]);
   }
-  assert.equal(review.baseline.idsJoinedByNewlinesSha256.length, 64);
-  assert.match(review.baseline.idsJoinedByNewlinesSha256, /^[0-9a-f]{64}$/);
+  assert.equal(
+    review.baseline.idsJoinedByNewlinesSha256,
+    "75531edac44999c5627f3f7c09bf887b62ea97028a648fa096da4830abbf1d39",
+  );
 });
 
-test("AST audit keeps CSS custom-property values technical and navigation props technical", () => {
+test("CSS custom properties and router destinations are technical literals", () => {
   const { analyzeSource } = require("./audit-ui-literals.cjs");
-  const findings = analyzeSource("sample.tsx",
-    'const x={text:"var(--color-text-primary)"}; const c=<Navigate to="/login" replace />;');
-  assert.equal(findings.find((x) => x.text === "var(--color-text-primary)").classification, "technical");
-  assert.equal(findings.find((x) => x.text === "/login").classification, "technical");
+  const findings = analyzeSource(
+    "sample.tsx",
+    'const colors = { text: "var(--color-text-primary)" }; const c = <Navigate to="/login" replace />;',
+  );
+  assert.equal(
+    findings.find((finding) => finding.text === "var(--color-text-primary)").classification,
+    "technical",
+  );
+  assert.equal(findings.find((finding) => finding.text === "/login").classification, "technical");
 });
 
-test("known typed audit protocol sentinels stay technical without hiding ordinary labels", () => {
+test("typed audit protocol values are technical but display labels remain visible candidates", () => {
   const { analyzeSource } = require("./audit-ui-literals.cjs");
-  const source = [
+  const input = [
     'const severityOptions: AuditLogSeverity[] = ["info", "warning", "error", "critical"];',
     'const [severity, setSeverity] = useState<AuditLogSeverity | "all">("all");',
     'function formatMetadataValue(value: unknown) { if (value === null) return "null"; }',
-    'const visibleOptions = ["All", "Critical"];'
+    'const visibleOptions = ["All", "Critical"];',
   ].join("\n");
-  const matches = analyzeSource("sample.tsx", source);
+  const findings = analyzeSource("sample.tsx", input);
   for (const value of ["info", "warning", "error", "critical", "all", "null"]) {
-    assert.ok(matches.some((entry) => entry.text === value && entry.classification === "technical"),
-      value + " must remain a technical protocol value");
+    assert.ok(
+      findings.some((entry) => entry.text === value && entry.classification === "technical"),
+      value + " should remain a technical protocol value",
+    );
   }
-  assert.ok(matches.some((entry) => entry.text === "All" && entry.classification !== "technical"));
-  assert.ok(matches.some((entry) => entry.text === "Critical" && entry.classification !== "technical"));
-});
-
-test("review log SHA-256 field is stable and valid", () => {
-  const review = require("../../docs/qa/first500-verdicts.json");
-  assert.equal(crypto.createHash("sha256").update("test").digest("hex").length, 64);
-  assert.match(review.baseline.idsJoinedByNewlinesSha256, /^[0-9a-f]{64}$/);
+  for (const label of ["All", "Critical"]) {
+    assert.ok(findings.some((entry) => entry.text === label && entry.classification !== "technical"));
+  }
 });
