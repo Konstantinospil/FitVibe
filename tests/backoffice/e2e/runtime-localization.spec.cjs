@@ -65,6 +65,7 @@ for (const locale of LOCALES) {
       await page.goto("/audit-logs");
 
       const copy = expectedAdminCopy[locale];
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
       await expect(page.getByRole("heading", { name: copy.audit, level: 1 })).toBeVisible();
       await expect(page.getByText(copy.search, { exact: true })).toBeVisible();
       await expect(page.getByText(copy.empty, { exact: true })).toBeVisible();
@@ -77,6 +78,7 @@ for (const locale of LOCALES) {
       // These components were audited in the first 500 findings. Assert actual
       // rendered localized UI rather than simply collecting English text.
       const copy = expectedAdminCopy[locale];
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
       await expect(page.getByRole("heading", { name: copy.dashboard, exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: copy.logout, exact: true })).toBeVisible();
       await expect(page.getByText(copy.audit, { exact: true }).first()).toBeVisible();
