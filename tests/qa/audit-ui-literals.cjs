@@ -87,6 +87,24 @@ function contextOf(node) {
   if (typeof node.text === "string" && /^-?\d+(?:\.\d+)?(?:px|rem|em|vh|vw|%|ch|vmin|vmax)$/.test(node.text)) {
     return { classification: "technical", reason: "css-dimension" };
   }
+  // Narrowly identify known wire-format enums and typed filter sentinels.
+  // Do not blanket-ignore ordinary option arrays: those may contain UI labels.
+  const typedDeclaration = ancestor(node, (candidate) => ts.isVariableDeclaration(candidate));
+  if (typedDeclaration && typedDeclaration.name.getText() === "severityOptions" &&
+      typedDeclaration.type?.getText().includes("AuditLogSeverity") &&
+      ts.isArrayLiteralExpression(typedDeclaration.initializer)) {
+    return { classification: "technical", reason: "typed-severity-enum" };
+  }
+  if (node.text === "all" && ts.isCallExpression(node.parent) &&
+      node.parent.expression.getText() === "useState" && node.parent.arguments[0] === node &&
+      node.parent.typeArguments?.some((type) => type.getText().includes('"all"'))) {
+    return { classification: "technical", reason: "typed-filter-sentinel" };
+  }
+  if (node.text === "null" && ts.isReturnStatement(node.parent) &&
+      ancestor(node, (candidate) =>
+        ts.isFunctionDeclaration(candidate) && candidate.name?.getText() === "formatMetadataValue")) {
+    return { classification: "technical", reason: "metadata-null-representation" };
+  }
   // CSS custom properties are styling tokens, even under objects named `text`.
   if (!ts.isJsxText(node) && typeof node.text === "string" && /^var\(--[a-z0-9-]+\)$/.test(node.text)) return { classification: "technical", reason: "css-custom-property" };
   if (ts.isImportDeclaration(node.parent) || ts.isExportDeclaration(node.parent) || ts.isExternalModuleReference(node.parent)) {
