@@ -69,9 +69,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
     >
       <form onSubmit={(event) => void submit(event)} className="grid grid--gap-md">
         <h2 id="fresh-totp-title">{t("mfa.title")}</h2>
-        <p id="fresh-totp-description">
-          {t("mfa.description", { action: actionLabel })}
-        </p>
+        <p id="fresh-totp-description">{t("mfa.description", { action: actionLabel })}</p>
         <label htmlFor="fresh-totp-input">{t("mfa.code")}</label>
         <input
           id="fresh-totp-input"
@@ -86,9 +84,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
           onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
           disabled={pending}
         />
-        {error ? (
-          <p role="alert">{t("mfa.error")}</p>
-        ) : null}
+        {error && <p role="alert">{t("mfa.error")}</p>}
         <div className="flex flex--gap-sm">
           <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
             {t("common.cancel")}
