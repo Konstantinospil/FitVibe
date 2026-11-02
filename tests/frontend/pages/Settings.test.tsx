@@ -213,6 +213,39 @@ describe("Settings", () => {
     });
   });
 
+  it("does not upload a previously selected file after selecting an invalid replacement", async () => {
+    renderSettings();
+    const input = await screen.findByLabelText("settings.profile.avatarSelect");
+    fireEvent.change(input, {
+      target: { files: [new File(["valid"], "avatar.png", { type: "image/png" })] },
+    });
+    expect(await screen.findByRole("button", { name: "settings.profile.avatarUpload" })).toBeInTheDocument();
+
+    fireEvent.change(input, {
+      target: { files: [new File(["invalid"], "document.pdf", { type: "application/pdf" })] },
+    });
+
+    expect(screen.queryByRole("button", { name: "settings.profile.avatarUpload" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("settings.profile.avatarInvalidType");
+    expect(api.uploadAvatar).not.toHaveBeenCalled();
+  });
+
+  it("does not upload a previously selected file after selecting an oversized replacement", async () => {
+    renderSettings();
+    const input = await screen.findByLabelText("settings.profile.avatarSelect");
+    fireEvent.change(input, {
+      target: { files: [new File(["valid"], "avatar.png", { type: "image/png" })] },
+    });
+
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array(5 * 1024 * 1024 + 1)], "huge.png", { type: "image/png" })] },
+    });
+
+    expect(screen.queryByRole("button", { name: "settings.profile.avatarUpload" })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("settings.profile.avatarTooLarge");
+    expect(api.uploadAvatar).not.toHaveBeenCalled();
+  });
+
   it("persists profile changes through the canonical account API", async () => {
     renderSettings();
     const displayName = await screen.findByLabelText("settings.profile.displayName");
