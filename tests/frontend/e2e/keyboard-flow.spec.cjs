@@ -1,6 +1,5 @@
 const { test, expect } = require("./fixtures.cjs");
 const {
-  TEST_USER,
   preparePage,
   waitForApp,
   emailInput,
@@ -19,14 +18,14 @@ async function focusByTab(page, locator, maxTabs = 50) {
 }
 
 test.describe("Keyboard-only flows on active surfaces", () => {
-  test("user can complete real login with keyboard navigation", async ({ page }) => {
+  test("user can complete real login with keyboard navigation", async ({ page, athleteAccount }) => {
     await preparePage(page);
     await page.goto("/login");
     await waitForApp(page);
     await focusByTab(page, emailInput(page));
-    await page.keyboard.type(TEST_USER.email);
+    await page.keyboard.type(athleteAccount.email);
     await focusByTab(page, passwordInput(page));
-    await page.keyboard.type(TEST_USER.password);
+    await page.keyboard.type(athleteAccount.password);
     await focusByTab(page, page.getByRole("button", { name: /sign in/i }));
 
     const loginResponse = page.waitForResponse(
@@ -95,8 +94,8 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible();
   });
 
-  test("current application navigation is keyboard reachable with a real session", async ({ page }) => {
-    await preparePage(page, { authenticated: true });
+  test("current application navigation is keyboard reachable with a real session", async ({ page, athleteAccount }) => {
+    await preparePage(page, { authenticated: true, account: athleteAccount });
     await page.goto("/");
     await waitForApp(page);
     await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();

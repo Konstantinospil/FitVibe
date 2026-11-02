@@ -576,3 +576,30 @@
 [data-slot="toast-close"]>svg{width:var(--control-icon-md);height:var(--control-icon-md)}
 @keyframes toast-slide-in{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @media (prefers-reduced-motion:reduce){[data-component="toast"]{animation:none}}
+
+
+/* Shared password-strength meter: tokens and presentation belong in CSS. */
+[data-component="password-strength"] .password-strength-meter {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+[data-component="password-strength"] .password-strength-segment {
+  flex: 1 1 0;
+  height: var(--space-xs);
+  border-radius: var(--radius-md);
+  background-color: var(--color-border);
+}
+
+[data-component="password-strength"] .password-strength-meter[data-score="1"] .password-strength-segment[data-active="true"],
+[data-component="password-strength"] .password-strength-meter[data-score="2"] .password-strength-segment[data-active="true"] {
+  background-color: var(--color-danger);
+}
+
+[data-component="password-strength"] .password-strength-meter[data-score="3"] .password-strength-segment[data-active="true"] {
+  background-color: var(--color-warning);
+}
+
+[data-component="password-strength"] .password-strength-meter[data-score="4"] .password-strength-segment[data-active="true"] {
+  background-color: var(--color-success);
+}

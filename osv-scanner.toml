@@ -1,0 +1,6 @@
+# Temporary, reviewed OSV exception. All other advisories remain blocking.
+# Evidence: https://github.com/Konstantinospil/FitVibe/actions/runs/40600868520
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2026-11-28
+reason = "CVE-2026-93753 affects deepmerge@4.3.1 only via Jest development dependency jest-config@30.5.2. Production amd64 image smoke verified deepmerge and jest-config absent; arm64 production build passed. Review by 2026-11-28; remove as soon as upstream remediation is available."

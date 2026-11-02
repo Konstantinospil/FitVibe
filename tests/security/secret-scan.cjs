@@ -182,3 +182,16 @@ if (findings.length > 0) {
 }
 
 console.log(`Secret scan completed for ${path.relative(repoRoot, scanRoot) || "."} — no patterns detected.`);
+
+// Required security CI runs this scanner directly, not the optional wrapper.
+// A policy exception that expired must fail this same mandatory job.
+if (!explicitScanRoot) {
+  const { main: checkPolicyExceptions } = require("./check-policy-exceptions.cjs");
+  try {
+    checkPolicyExceptions();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  }
+}
+

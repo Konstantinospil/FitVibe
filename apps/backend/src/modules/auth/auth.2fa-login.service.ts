@@ -20,7 +20,7 @@ import {
 import { toSafeUser } from "./auth.mapping.js";
 import { resetLoginFailures } from "./auth.login-attempt.service.js";
 import {
-  accessTokenTtl,
+  accessTokenTtlForRole,
   nextSessionExpiry,
   signAccess,
   signRefresh,
@@ -116,9 +116,14 @@ export async function verify2FALogin(
 
     const sessionId = uuidv4();
     const issuedAtIso = new Date().toISOString();
-    const sessionExpiresAt = nextSessionExpiry();
+    const sessionExpiresAt = nextSessionExpiry(user.role_code);
 
-    const refreshToken = signRefresh({ sub: user.id, sid: sessionId });
+    const refreshToken = signRefresh({
+      sub: user.id,
+      sid: sessionId,
+      mfa: true,
+      role: user.role_code,
+    });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     await createSessionWithRefresh(
@@ -141,9 +146,9 @@ export async function verify2FALogin(
     );
 
     const tokens: TokenPair = {
-      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId }),
+      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId, mfa: true }),
       refreshToken,
-      accessExpiresIn: accessTokenTtl,
+      accessExpiresIn: accessTokenTtlForRole(user.role_code),
     };
 
     await recordAuditEvent(user.id, "auth.login_2fa_success", {

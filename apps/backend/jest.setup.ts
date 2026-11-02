@@ -24,6 +24,12 @@ process.env.JWT_PUBLIC_KEY = process.env.JWT_PUBLIC_KEY ?? testJwtKeys.publicKey
 jest.setTimeout(1000 * 30);
 
 beforeEach(async () => {
+  // Mock only the remote HIBP boundary for ordinary Jest runs. The real
+  // checker has its own deterministic transport tests (including outages).
+  // Production has no such override; integration tests can explicitly
+  // override this spy to prove fail-closed API behavior.
+  const { breachedPasswordChecker } = await import("./src/modules/auth/breached-password.service.js");
+  jest.spyOn(breachedPasswordChecker, "assertAcceptable").mockResolvedValue(undefined);
   try {
     const { clearRateLimiters } = await import("./src/middlewares/rate-limit.js");
     clearRateLimiters();

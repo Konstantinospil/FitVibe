@@ -10,6 +10,12 @@
   grid-template-columns: minmax(0, 1fr) var(--scrollbar-track-size);
   column-gap: var(--scrollbar-gap);
 }
+/* Read natural content height at the full viewport width, without reserving
+   space for the track. This temporary state is restored before browser paint. */
+.custom-scrollbar[data-measuring-overflow="true"] {
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: 0;
+}
 /* Shell geometry belongs to PageShell; scrolling belongs to this component. */
 .page-shell-content-scroll { min-height: 0; }
 .page-shell-content-scroll > .custom-scrollbar__viewport > .custom-scrollbar__inner {

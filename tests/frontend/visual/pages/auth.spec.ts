@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+const resetTranslations = JSON.parse(
+  readFileSync(new URL("../../../../apps/frontend/src/i18n/locales/en/common.json", import.meta.url), "utf8"),
+) as { resetPassword: { title: string } };
 import { skipUnlessMatrix } from "../helpers/project.js";
 import { capturePageScreenshot, openPublicPage, prepareVisualPage, waitForAppReady } from "../helpers/capture.js";
 
@@ -18,8 +23,54 @@ test.describe("Auth Page Visual Tests", () => {
   test("reset password", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
-    await capturePageScreenshot(page, testInfo, "reset-password", { waitFor: '[data-component="form-stack"]' });
+
+    // Test ownership: #557.
+    // Ensure asynchronous i18n has resolved before capturing a baseline.
+    await expect(page.getByRole("heading", {
+      name: resetTranslations.resetPassword.title,
+      exact: true,
+    })).toBeVisible();
+
+    // Verify that the password requirements are translated and rendered.
+    await expect(
+      page.locator('[data-component="password-requirements-panel"]')
+    ).toContainText("Password Requirements:");
+
+    await capturePageScreenshot(page, testInfo, "reset-password", {
+      waitFor: '[data-component="form-stack"]',
+    });
   });
+
+  // #557: capture the live strength indicator separately from the empty form.
+  for (const flow of [
+    { name: "reset", url: "/reset-password?token=visual-fixture" },
+    { name: "register", url: "/register" },
+  ] as const) {
+    test(`${flow.name} password strength states`, async ({ page }, testInfo) => {
+      await openPublicPage(page, testInfo, flow.url, {
+        themes: ["light", "dark"],
+        viewports: ["sm", "lg"],
+      });
+      await assertVerticalAuthShell(page);
+      const input = page.locator('input[name="password"]');
+      const meter = page.getByRole("meter", { name: "Password strength estimate" });
+      await expect(input).toBeVisible();
+      await expect(meter).toHaveCount(0);
+
+      await input.fill("password");
+      await expect(meter).toHaveAttribute("aria-valuetext", "Very weak");
+      await capturePageScreenshot(page, testInfo, `${flow.name}-password-strength-weak`, {
+        locator: page.locator('[data-component="password-strength"]'),
+      });
+
+      // Fixed synthetic fixture; score is deterministic with pinned dictionaries.
+      await input.fill("r9Q!5xmV@p7L#2tZ$4wN&6cR8yK");
+      await expect(meter).toHaveAttribute("aria-valuetext", "Strong");
+      await capturePageScreenshot(page, testInfo, `${flow.name}-password-strength-strong`, {
+        locator: page.locator('[data-component="password-strength"]'),
+      });
+    });
+  }
 
   test("2FA challenge", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/login", { viewports: ["xs", "sm", "md", "lg"] });

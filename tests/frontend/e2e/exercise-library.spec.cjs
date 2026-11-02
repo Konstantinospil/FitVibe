@@ -2,8 +2,8 @@ const { test, expect } = require("./fixtures.cjs");
 const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 test.describe("Library surface contract", () => {
-  test.beforeEach(async ({ page }) => {
-    await preparePage(page, { authenticated: true });
+  test.beforeEach(async ({ page, athleteAccount }) => {
+    await preparePage(page, { authenticated: true, account: athleteAccount });
   });
 
   test("current /library route renders the intentionally minimal Library surface", async ({ page }) => {

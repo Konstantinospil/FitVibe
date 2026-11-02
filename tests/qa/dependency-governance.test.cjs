@@ -25,7 +25,7 @@ test("source report respects declared TypeScript path aliases", () => {
 test("transitive package fixture occurs after the first snapshots section", () => {
   const lock = fs.readFileSync(path.join(root, "pnpm-lock.yaml"), "utf8");
   const firstSnapshots = lock.indexOf("\n".concat("snapshots:"));
-  const transitive = lock.indexOf("  follow-redirects@1.16.1:");
+  const transitive = lock.indexOf("  follow-redirects@1.16.2(", firstSnapshots);
   assert.ok(firstSnapshots >= 0 && transitive > firstSnapshots, "fixture must exercise post-snapshots entries");
   const r = report("report-dependency-relevance.cjs");
   assert.ok(!r.findings.some(f => f.name === "follow-redirects"));

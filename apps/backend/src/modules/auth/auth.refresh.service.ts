@@ -21,6 +21,9 @@ import {
 } from "./auth.audit.js";
 import { toSafeUser } from "./auth.mapping.js";
 import { nextSessionExpiry, signAccess, signRefresh } from "./auth.session-tokens.js";
+import { is2FAEnabled } from "./two-factor.service.js";
+import { checkAndTouchPrivilegedSession } from "./auth.state.repository.js";
+import { isPrivilegedRole } from "./privileged-session.policy.js";
 
 async function recordReuse(
   userId: string | null,
@@ -105,9 +108,32 @@ export async function refresh(
     }
     await assertTermsRequirementSatisfied(user.id);
 
-    const newRefresh = signRefresh({ sub: user.id, sid: session.jti });
+    // #557: role changes are read from persistence, not from stale token claims.
+    // A password-stage or pre-promotion refresh token cannot become MFA-attested.
+    if (
+      (user.role_code === "admin" || user.role_code === "superadmin") &&
+      (decoded.mfa !== true || !(await is2FAEnabled(user.id)))
+    ) {
+      await revokeSessionFamilyAtomic(session.jti);
+      throw new HttpError(403, "ADMIN_2FA_REQUIRED", "ADMIN_2FA_REQUIRED");
+    }
+
+    if (
+      isPrivilegedRole(user.role_code) &&
+      !(await checkAndTouchPrivilegedSession(session.jti, user.id))
+    ) {
+      await revokeSessionFamilyAtomic(session.jti);
+      throw new HttpError(401, "AUTH_SESSION_EXPIRED", "AUTH_SESSION_EXPIRED");
+    }
+
+    const newRefresh = signRefresh({
+      sub: user.id,
+      sid: session.jti,
+      mfa: decoded.mfa === true,
+      role: user.role_code,
+    });
     const newHash = crypto.createHash("sha256").update(newRefresh).digest("hex");
-    const newExpiry = nextSessionExpiry();
+    const newExpiry = nextSessionExpiry(user.role_code, Date.parse(session.created_at));
     const createdAt = new Date().toISOString();
 
     const patch: { expires_at: string; user_agent?: string | null; ip?: string | null } = {
@@ -161,6 +187,7 @@ export async function refresh(
         sub: user.id,
         role: user.role_code,
         sid: session.jti,
+        mfa: decoded.mfa === true,
       }),
     };
   } catch (error: unknown) {

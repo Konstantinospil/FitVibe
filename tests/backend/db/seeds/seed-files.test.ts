@@ -19,10 +19,10 @@ import { seed as seedFollowers } from "../../../../apps/backend/src/db/seeds/Dem
 import { seed as seedMedia } from "../../../../apps/backend/src/db/seeds/Demo Data/017_media.js";
 import { seed as seedExerciseSets } from "../../../../apps/backend/src/db/seeds/Demo Data/019_exercise_sets.js";
 import { seed as seedPlans } from "../../../../apps/backend/src/db/seeds/Demo Data/020_plans.js";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 
-jest.mock("bcryptjs", () => ({
-  hash: jest.fn((value: string) => Promise.resolve(`hashed-${value}`)),
+jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js", () => ({
+  hashPassword: jest.fn((value: string) => Promise.resolve(`hashed-${value}`)),
 }));
 
 type InsertChain = {
@@ -142,9 +142,9 @@ describe("database seed modules", () => {
       strategy: "ignore",
       sampleMatcher: { id: ADMIN_ID },
       assertInsert: (rows) => {
-        const hashMock = bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>;
+        const hashMock = jest.mocked(hashPassword);
         expect(hashMock).toHaveBeenCalledTimes(1);
-        expect(hashMock).toHaveBeenCalledWith(process.env.ADMIN_PASSWORD, 12);
+        expect(hashMock).toHaveBeenCalledWith(process.env.ADMIN_PASSWORD);
         expect(rows).toHaveLength(1);
         const row = (rows as Array<{ id?: string; password_hash?: string }>).find(
           (entry) => entry.id === ADMIN_ID,
@@ -326,6 +326,61 @@ describe("database seed modules", () => {
       });
     },
   );
+
+  // Test ownership: #557 — administrator bootstrap password policy boundary.
+  it("rejects bootstrap administrator passwords shorter than 16 characters before any DB writes", async () => {
+    const original = process.env.ADMIN_PASSWORD;
+    try {
+      for (const password of ["", "a".repeat(15)]) {
+        process.env.ADMIN_PASSWORD = password;
+        const { knex, knexSpy } = createKnexMock();
+        await expect(seedUsers(knex)).rejects.toThrow(
+          "ADMIN_PASSWORD must be configured with at least 16 characters",
+        );
+        expect(knexSpy).not.toHaveBeenCalled();
+      }
+    } finally {
+      if (original === undefined) {
+        delete process.env.ADMIN_PASSWORD;
+      } else {
+        process.env.ADMIN_PASSWORD = original;
+      }
+    }
+  });
+
+  // Test ownership: #557 — bootstrap administrator exact minimum acceptance.
+  it("accepts an exactly 16-character bootstrap admin password and persists only its hash", async () => {
+    const original = process.env.ADMIN_PASSWORD;
+    const minimumPassword = "a".repeat(16);
+    try {
+      process.env.ADMIN_PASSWORD = minimumPassword;
+      const { knex, getChain } = createKnexMock();
+      const hashMock = jest.mocked(hashPassword);
+
+      await expect(seedUsers(knex)).resolves.toBeUndefined();
+
+      expect(hashMock).toHaveBeenCalledWith(minimumPassword);
+      const userRows = getChain("users").insert.mock.calls[0][0] as Array<{
+        id: string;
+        role_code: string;
+        password_hash: string;
+      }>;
+      expect(userRows).toEqual([
+        expect.objectContaining({
+          id: ADMIN_ID,
+          role_code: "admin",
+          password_hash: `hashed-${minimumPassword}`,
+        }),
+      ]);
+      expect(userRows[0].password_hash).not.toBe(minimumPassword);
+    } finally {
+      if (original === undefined) {
+        delete process.env.ADMIN_PASSWORD;
+      } else {
+        process.env.ADMIN_PASSWORD = original;
+      }
+    }
+  });
 
   it("seeds only the bootstrap admin identity from 005_users", async () => {
     const { knex, getChain } = createKnexMock();

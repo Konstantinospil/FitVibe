@@ -6,7 +6,7 @@ import AuthPageLayout from "../components/AuthPageLayout";
 import { Button, CodeField, TextLink } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { useAuth } from "../contexts/AuthContext";
-import { verify2FALogin } from "../services/api";
+import { getAdministratorPasswordPolicyStatus, verify2FALogin } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 
 type LocationState = {
@@ -60,6 +60,19 @@ const TwoFactorVerificationLogin: React.FC = () => {
 
       // Backend has set HttpOnly cookies; just update auth state with user data
       signIn(response.user);
+      if (response.user.role === "admin" || response.user.role === "superadmin") {
+        // The password policy is authoritative in PostgreSQL, not the JWT or UI.
+        // Any transient status failure is handled by the protected route gate.
+        try {
+          const status = await getAdministratorPasswordPolicyStatus();
+          if (status.passwordChangeRequired) {
+            void navigate("/admin/password-update", { replace: true });
+            return;
+          }
+        } catch {
+          // ProtectedRoute will independently resolve the server transition gate.
+        }
+      }
       void navigate(from, { replace: true });
     } catch (err) {
       // Handle specific error types

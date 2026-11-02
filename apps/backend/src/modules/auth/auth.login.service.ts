@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { verifyPasswordHash, isLegacyBcryptHash } from "./password-hashing.service.js";
+import { upgradeLegacyPasswordHash } from "./auth.state.repository.js";
 import { v4 as uuidv4 } from "uuid";
 import { is2FAEnabled } from "./two-factor.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
@@ -25,7 +27,7 @@ import {
   resetLoginFailures,
 } from "./auth.login-attempt.service.js";
 import {
-  accessTokenTtl,
+  accessTokenTtlForRole,
   nextSessionExpiry,
   signAccess,
   signRefresh,
@@ -94,7 +96,7 @@ export async function login(
       return buildOpaqueChallenge();
     }
 
-    const passwordValid = await bcrypt.compare(dto.password, user.password_hash);
+    const passwordValid = await verifyPasswordHash(dto.password, user.password_hash);
     if (!passwordValid) {
       performDummySuccessfulPath(user.id, user.role_code);
       await recordLoginFailure({
@@ -107,6 +109,11 @@ export async function login(
       return buildOpaqueChallenge();
     }
 
+    // Upgrade legacy hashes only after a successful login, with a
+    // compare-and-swap update to prevent overwriting concurrent resets.
+    if (isLegacyBcryptHash(user.password_hash)) {
+      await upgradeLegacyPasswordHash(user.id, user.password_hash, dto.password);
+    }
     await recordAuditEvent(user.id, "auth.password_verified", {
       ip: ipAddress,
       requestId: context.requestId ?? null,
@@ -158,9 +165,14 @@ export async function login(
 
     const sessionId = uuidv4();
     const issuedAtIso = new Date().toISOString();
-    const sessionExpiresAt = nextSessionExpiry();
+    const sessionExpiresAt = nextSessionExpiry(user.role_code);
 
-    const refreshToken = signRefresh({ sub: user.id, sid: sessionId });
+    const refreshToken = signRefresh({
+      sub: user.id,
+      sid: sessionId,
+      mfa: false,
+      role: user.role_code,
+    });
     const token_hash = crypto.createHash("sha256").update(refreshToken).digest("hex");
 
     await createSessionWithRefresh(
@@ -183,9 +195,9 @@ export async function login(
     );
 
     const tokens: TokenPair = {
-      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId }),
+      accessToken: signAccess({ sub: user.id, role: user.role_code, sid: sessionId, mfa: false }),
       refreshToken,
-      accessExpiresIn: accessTokenTtl,
+      accessExpiresIn: accessTokenTtlForRole(user.role_code),
     };
 
     await recordAuditEvent(user.id, "auth.login", {

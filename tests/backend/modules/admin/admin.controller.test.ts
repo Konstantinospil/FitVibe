@@ -7,9 +7,13 @@ import {
 } from "../../../../apps/backend/src/modules/admin/admin.controller.js";
 import * as adminService from "../../../../apps/backend/src/modules/admin/admin.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
+import { assertFreshPrivilegedTotp } from "../../../../apps/backend/src/modules/admin/superadmin.service.js";
 
 // Mock admin service
 jest.mock("../../../../apps/backend/src/modules/admin/admin.service.js");
+jest.mock("../../../../apps/backend/src/modules/admin/superadmin.service.js", () => ({
+  assertFreshPrivilegedTotp: jest.fn(),
+}));
 
 const mockAdminService = jest.mocked(adminService);
 
@@ -20,6 +24,7 @@ describe("Admin Controller", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(assertFreshPrivilegedTotp).mockResolvedValue(undefined);
 
     mockRequest = {
       user: {
@@ -117,7 +122,7 @@ describe("Admin Controller", () => {
 
     it("should moderate report with hide action", async () => {
       mockRequest.params = { reportId: "report-123" };
-      mockRequest.body = { action: "hide" };
+      mockRequest.body = { action: "hide", totpCode: "123456" };
       mockAdminService.moderateReport.mockResolvedValue(undefined);
 
       await moderateReportHandler(mockRequest as Request, mockResponse as Response);
@@ -135,7 +140,7 @@ describe("Admin Controller", () => {
 
     it("should moderate report with ban action", async () => {
       mockRequest.params = { reportId: "report-123" };
-      mockRequest.body = { action: "ban" };
+      mockRequest.body = { action: "ban", totpCode: "123456" };
       mockAdminService.moderateReport.mockResolvedValue(undefined);
 
       await moderateReportHandler(mockRequest as Request, mockResponse as Response);
@@ -203,6 +208,42 @@ describe("Admin Controller", () => {
     });
   });
 
+  describe("fresh privileged step-up (#557)", () => {
+    it("does not require another TOTP to dismiss a report", async () => {
+      mockRequest.params = { reportId: "report-123" };
+      mockRequest.body = { action: "dismiss" };
+      await moderateReportHandler(mockRequest as Request, mockResponse as Response);
+      expect(assertFreshPrivilegedTotp).not.toHaveBeenCalled();
+    });
+
+    it("blocks report hiding without a fresh TOTP before the service call", async () => {
+      mockRequest.params = { reportId: "report-123" };
+      mockRequest.body = { action: "hide" };
+      await expect(moderateReportHandler(mockRequest as Request, mockResponse as Response))
+        .rejects.toMatchObject({ status: 403, code: "ADMIN_STEP_UP_REQUIRED" });
+      expect(mockAdminService.moderateReport).not.toHaveBeenCalled();
+    });
+
+    it("blocks user suspension without a fresh TOTP before the service call", async () => {
+      mockRequest.params = { userId: "user-123" };
+      mockRequest.body = { action: "suspend" };
+      await expect(userActionHandler(mockRequest as Request, mockResponse as Response))
+        .rejects.toMatchObject({ status: 403, code: "ADMIN_STEP_UP_REQUIRED" });
+      expect(mockAdminService.performUserAction).not.toHaveBeenCalled();
+    });
+
+    it("rejects a replayed or invalid TOTP without performing moderation", async () => {
+      mockRequest.params = { reportId: "report-123" };
+      mockRequest.body = { action: "ban", totpCode: "123456" };
+      jest.mocked(assertFreshPrivilegedTotp).mockRejectedValue(
+        new HttpError(409, "PRIVILEGED_TOTP_ALREADY_USED", "TOTP already used"),
+      );
+      await expect(moderateReportHandler(mockRequest as Request, mockResponse as Response))
+        .rejects.toMatchObject({ status: 409, code: "PRIVILEGED_TOTP_ALREADY_USED" });
+      expect(mockAdminService.moderateReport).not.toHaveBeenCalled();
+    });
+  });
+
   describe("searchUsersHandler", () => {
     it("should search users with query", async () => {
       const mockUsers = [{ id: "user-1", username: "testuser" }];
@@ -266,7 +307,7 @@ describe("Admin Controller", () => {
   describe("userActionHandler", () => {
     it("should perform suspend action", async () => {
       mockRequest.params = { userId: "user-123" };
-      mockRequest.body = { action: "suspend", reason: "Violation" };
+      mockRequest.body = { action: "suspend", reason: "Violation", totpCode: "123456" };
       mockAdminService.performUserAction.mockResolvedValue(undefined);
 
       await userActionHandler(mockRequest as Request, mockResponse as Response);
@@ -285,7 +326,7 @@ describe("Admin Controller", () => {
 
     it("should perform ban action", async () => {
       mockRequest.params = { userId: "user-123" };
-      mockRequest.body = { action: "ban" };
+      mockRequest.body = { action: "ban", totpCode: "123456" };
       mockAdminService.performUserAction.mockResolvedValue(undefined);
 
       await userActionHandler(mockRequest as Request, mockResponse as Response);
@@ -304,7 +345,7 @@ describe("Admin Controller", () => {
 
     it("should perform activate action", async () => {
       mockRequest.params = { userId: "user-123" };
-      mockRequest.body = { action: "activate" };
+      mockRequest.body = { action: "activate", totpCode: "123456" };
       mockAdminService.performUserAction.mockResolvedValue(undefined);
 
       await userActionHandler(mockRequest as Request, mockResponse as Response);
@@ -323,7 +364,7 @@ describe("Admin Controller", () => {
 
     it("should perform delete action", async () => {
       mockRequest.params = { userId: "user-123" };
-      mockRequest.body = { action: "delete" };
+      mockRequest.body = { action: "delete", totpCode: "123456" };
       mockAdminService.performUserAction.mockResolvedValue(undefined);
 
       await userActionHandler(mockRequest as Request, mockResponse as Response);

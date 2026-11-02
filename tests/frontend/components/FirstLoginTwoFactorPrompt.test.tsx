@@ -72,6 +72,43 @@ describe("first-login 2FA invitation", () => {
     await waitFor(() => expect(resolved).toHaveBeenCalledOnce());
   });
 
+
+  it("waits for a delayed status response before advancing onboarding", async () => {
+    let resolveStatus: ((value: { enabled: boolean; invitationDismissed?: boolean }) => void) | undefined;
+    vi.mocked(get2FAStatus).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveStatus = resolve;
+        }),
+    );
+    const resolved = vi.fn();
+
+    render(<FirstLoginTwoFactorPrompt onResolved={resolved} />);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(resolved).not.toHaveBeenCalled();
+
+    resolveStatus?.({ enabled: false, invitationDismissed: false });
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(resolved).not.toHaveBeenCalled();
+  });
+
+  it("keeps onboarding unresolved when invitation dismissal fails", async () => {
+    vi.mocked(dismiss2FAInvitation).mockRejectedValueOnce(new Error("Network"));
+    const resolved = vi.fn();
+
+    render(<FirstLoginTwoFactorPrompt onResolved={resolved} />);
+
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(screen.getByText("firstLogin2fa.notNow"));
+
+    await waitFor(() => expect(dismiss2FAInvitation).toHaveBeenCalledOnce());
+    expect(resolved).not.toHaveBeenCalled();
+    expect(dialog).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("firstLogin2fa.dismissError");
+  });
+
   it("does not block subsequent onboarding if status is unavailable", async () => {
     vi.mocked(get2FAStatus).mockRejectedValueOnce(new Error("Network"));
     const resolved = vi.fn();

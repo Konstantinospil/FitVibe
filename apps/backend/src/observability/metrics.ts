@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import client from "prom-client";
+import { env } from "../config/env.js";
 
 const register = new client.Registry();
 
@@ -36,6 +37,48 @@ const refreshReuseCounter = new client.Counter({
   help: "Number of refresh token reuse incidents that triggered session family revocation",
 });
 
+// Security counters intentionally contain NO user ID, email, token, IP or session labels.
+// Fixed enumerations bound cardinality and avoid exporting sensitive identifiers.
+const failedLoginCounter = new client.Counter({
+  name: "auth_failed_login_total",
+  help: "Failed credential verification attempts, including unknown identifiers",
+});
+
+const blockedLoginCounter = new client.Counter({
+  name: "auth_login_blocked_total",
+  help: "Authentication attempts blocked by an existing account or IP lockout",
+  labelNames: ["scope"],
+});
+
+const successfulLoginCounter = new client.Counter({
+  name: "auth_login_success_total",
+  help: "Completed login sessions by authentication method",
+  labelNames: ["factor"],
+});
+
+const passwordResetCounter = new client.Counter({
+  name: "auth_password_reset_total",
+  help: "Password reset requests and completion outcomes",
+  labelNames: ["outcome"],
+});
+
+const mfaEventCounter = new client.Counter({
+  name: "auth_mfa_events_total",
+  help: "MFA enrollment, disablement and login outcomes",
+  labelNames: ["event"],
+});
+
+// The security owner configures the threshold. Both series have no identity
+// labels. The second gauge is zero when the policy value has not been approved.
+const accountsOverLockoutThreshold = new client.Gauge({
+  name: "auth_accounts_exceeding_lockout_threshold",
+  help: "Number of accounts exceeding the approved count of distinct lockouts in ten minutes",
+});
+const accountLockoutMonitorConfigured = new client.Gauge({
+  name: "auth_account_lockout_monitor_configured",
+  help: "Whether an approved per-account lockout alert threshold is configured",
+});
+
 const pointsAwardedCounter = new client.Counter({
   name: "points_awarded_total",
   help: "Total points awarded grouped by rule",
@@ -45,6 +88,13 @@ const pointsAwardedCounter = new client.Counter({
 register.registerMetric(httpRequestDuration);
 register.registerMetric(httpRequestsTotal);
 register.registerMetric(refreshReuseCounter);
+register.registerMetric(failedLoginCounter);
+register.registerMetric(blockedLoginCounter);
+register.registerMetric(successfulLoginCounter);
+register.registerMetric(passwordResetCounter);
+register.registerMetric(mfaEventCounter);
+register.registerMetric(accountsOverLockoutThreshold);
+register.registerMetric(accountLockoutMonitorConfigured);
 register.registerMetric(pointsAwardedCounter);
 
 function resolveRouteLabel(req: Request): string {
@@ -80,7 +130,37 @@ export function metricsMiddleware(req: Request, res: Response, next: NextFunctio
   next();
 }
 
+async function updateAccountLockoutIncidents(): Promise<void> {
+  const threshold = env.authAccountLockoutAlertThreshold;
+  accountLockoutMonitorConfigured.set(threshold === undefined ? 0 : 1);
+  if (threshold === undefined) {
+    accountsOverLockoutThreshold.set(0);
+    return;
+  }
+
+  const { db } = await import("../db/index.js");
+  const since = new Date(Date.now() - 10 * 60 * 1000);
+  // Subquery returns an aggregate row per account; outer query returns only a
+  // count. Account identities never leave PostgreSQL or reach metrics labels.
+  const triggeredAccounts = db("audit_log")
+    .select("actor_user_id")
+    .where({
+      entity_type: "auth",
+      action: "auth.login_lockout_started",
+    })
+    .whereNotNull("actor_user_id")
+    .where("created_at", ">=", since)
+    .groupBy("actor_user_id")
+    .havingRaw("count(*) > ?", [threshold]);
+  const row = await db
+    .from(triggeredAccounts.as("over_threshold"))
+    .count({ count: "*" })
+    .first<{ count: number | string }>();
+  accountsOverLockoutThreshold.set(Number(row?.count ?? 0));
+}
+
 export async function metricsRoute(_req: Request, res: Response) {
+  await updateAccountLockoutIncidents();
   res.set("Content-Type", register.contentType);
   const metrics = await register.metrics();
   res.end(metrics);
@@ -88,6 +168,30 @@ export async function metricsRoute(_req: Request, res: Response) {
 
 export function incrementRefreshReuse() {
   refreshReuseCounter.inc();
+}
+
+export function incrementAuthFailedLogin(): void {
+  failedLoginCounter.inc();
+}
+
+export function incrementAuthBlockedLogin(scope: "account" | "ip"): void {
+  blockedLoginCounter.inc({ scope });
+}
+
+export function incrementAuthLoginSuccess(factor: "password" | "mfa"): void {
+  successfulLoginCounter.inc({ factor });
+}
+
+export function incrementAuthPasswordReset(
+  outcome: "requested" | "completed" | "invalid_token" | "failed",
+): void {
+  passwordResetCounter.inc({ outcome });
+}
+
+export function incrementAuthMfaEvent(
+  event: "enrolled" | "disabled" | "login_failed" | "login_success" | "blocked",
+): void {
+  mfaEventCounter.inc({ event });
 }
 
 export function incrementPointsAwarded(rule: string, amount: number) {

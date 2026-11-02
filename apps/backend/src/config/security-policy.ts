@@ -8,6 +8,7 @@
 export const AUTH_SECURITY_POLICY = {
   password: {
     minLengthFloor: 12,
+    privilegedMinLengthFloor: 16,
     hashCost: 12,
   },
   timing: {
@@ -19,6 +20,10 @@ export const AUTH_SECURITY_POLICY = {
     stepSeconds: 30,
     windowSteps: 1,
     digits: 6,
+  },
+  passwordReset: {
+    // Accepted PASSWORD_AND_AUTHENTICATION_POLICY.md §4: code-owned ceiling.
+    maxTtlMinutes: 15,
   },
   backupCodes: {
     count: 10,

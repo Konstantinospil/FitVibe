@@ -11,7 +11,7 @@ export interface ModalProps {
   children?: React.ReactNode;
   footer?: React.ReactNode;
   closeLabel?: string;
-  onClose: () => void;
+  onClose?: () => void;
   closeOnBackdrop?: boolean;
   width?: "sm" | "md" | "lg";
 }
@@ -39,7 +39,7 @@ export const Modal: React.FC<ModalProps> = ({
 
     const previous = document.activeElement as HTMLElement | null;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && onClose) {
         event.preventDefault();
         onClose();
       }
@@ -62,7 +62,7 @@ export const Modal: React.FC<ModalProps> = ({
     <div
       data-component="modal-layer"
       onClick={(event) => {
-        if (closeOnBackdrop && event.target === event.currentTarget) {
+        if (onClose && closeOnBackdrop && event.target === event.currentTarget) {
           onClose();
         }
       }}
@@ -88,12 +88,14 @@ export const Modal: React.FC<ModalProps> = ({
               </p>
             ) : null}
           </div>
-          <IconButton
-            icon={<X aria-hidden="true" />}
-            label={closeLabel}
-            size="md"
-            onClick={onClose}
-          />
+          {onClose ? (
+            <IconButton
+              icon={<X aria-hidden="true" />}
+              label={closeLabel}
+              size="md"
+              onClick={onClose}
+            />
+          ) : null}
         </header>
         <CustomScrollbar data-slot="modal-body" label={t("scrollbar.dialogLabel")}>
           {children}

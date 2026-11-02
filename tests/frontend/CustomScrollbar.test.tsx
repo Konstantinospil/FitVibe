@@ -99,6 +99,45 @@ describe("CustomScrollbar", () => {
     expect(track).toHaveAttribute("data-scrollable", "false");
   });
 
+  it("removes a self-sustaining scrollbar caused only by its reserved gutter", () => {
+    const { container, viewport, track } = setup(300, 200);
+    const root = container.firstElementChild as HTMLDivElement;
+    expect(root.dataset.scrollable).toBe("true");
+
+    // Simulate responsive text wrapping: only the narrowed viewport overflows.
+    // The test deliberately models two layouts because jsdom cannot reflow CSS.
+    let fullWidthContentHeight = 200;
+    Object.defineProperty(viewport, "scrollHeight", {
+      configurable: true,
+      get: () =>
+        root.dataset.scrollable === "true" && root.dataset.measuringOverflow !== "true"
+          ? 260
+          : fullWidthContentHeight,
+    });
+
+    act(() => notifyResize?.());
+    expect(root.dataset.scrollable).toBe("false");
+    expect(track.dataset.scrollable).toBe("false");
+    expect(root).not.toHaveAttribute("data-measuring-overflow");
+
+    // Repeated ResizeObserver callbacks must not bring the track back.
+    act(() => notifyResize?.());
+    expect(root.dataset.scrollable).toBe("false");
+
+    // Genuine overflow at full width must still enable the scrollbar.
+    fullWidthContentHeight = 240;
+    act(() => notifyResize?.());
+    expect(root.dataset.scrollable).toBe("true");
+    expect(root).not.toHaveAttribute("data-measuring-overflow");
+    act(() => notifyResize?.());
+    expect(root.dataset.scrollable).toBe("true");
+
+    // Once the natural content fits again, remove the track.
+    fullWidthContentHeight = 200;
+    act(() => notifyResize?.());
+    expect(root.dataset.scrollable).toBe("false");
+  });
+
   it("reflects delayed document growth and shrinkage in the canonical track", () => {
     const { viewport, track, container } = setup(200, 200);
     expect(track.dataset.scrollable).toBe("false");

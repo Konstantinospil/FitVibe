@@ -1203,10 +1203,18 @@ describe("API Service Functions", () => {
         entries: [],
       });
 
-      apiMock.onPost("/api/v1/users/change-password").reply(204);
+      apiMock.onPost("/api/v1/users/change-password").replyOnce(204);
       await expect(
         changePassword({ currentPassword: "a", newPassword: "b" }),
       ).resolves.toBeUndefined();
+
+      // Breach screening is advisory and must not change the 204 contract.
+      apiMock.onPost("/api/v1/users/change-password").replyOnce(200, {
+        passwordWarning: "PASSWORD_BREACHED",
+      });
+      await expect(
+        changePassword({ currentPassword: "a", newPassword: "b" }),
+      ).resolves.toEqual({ passwordWarning: "PASSWORD_BREACHED" });
       apiMock.onGet("/api/v1/users/me/privacy").reply(200, {
         defaultVisibility: "private",
         allowFollowers: true,
