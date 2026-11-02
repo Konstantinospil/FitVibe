@@ -225,15 +225,15 @@ const AuditLogsPage: React.FC = () => {
     }
     const actions = Array.from(actionSet);
     actions.sort((left, right) => {
-      const leftLabel = actionUiNameMap[left] ?? actionLabelMap[left] ?? formatAction(left);
-      const rightLabel = actionUiNameMap[right] ?? actionLabelMap[right] ?? formatAction(right);
+      const leftLabel = actionUiNameMap[left] ?? (actionLabelMap[left] ? t(actionLabelMap[left]) : formatAction(left));
+      const rightLabel = actionUiNameMap[right] ?? (actionLabelMap[right] ? t(actionLabelMap[right]) : formatAction(right));
       return leftLabel.localeCompare(rightLabel);
     });
     return actions.map((action) => ({
       value: action,
       label: actionUiNameMap[action] ?? (actionLabelMap[action] ? t(actionLabelMap[action]) : formatAction(action)),
     }));
-  }, [actionMappingsData, actionUiNameMap, data?.logs]);
+  }, [actionMappingsData, actionUiNameMap, data?.logs, t]);
 
   const queryClient = useQueryClient();
 
