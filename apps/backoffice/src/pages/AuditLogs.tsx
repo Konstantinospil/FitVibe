@@ -52,11 +52,11 @@ const entityLabelMap: Record<string, string> = {
 };
 
 const fieldLabelMap: Record<string, string> = {
-  display_name: "Display name",
-  fitness_level: "Fitness level",
-  training_frequency: "Training frequency",
-  weight: "Weight",
-  alias: "Alias",
+  display_name: "audit.displayName",
+  fitness_level: "audit.fitnessLevel",
+  training_frequency: "audit.trainingFrequency",
+  weight: "audit.weight",
+  alias: "audit.alias",
 };
 
 const metadataLabelMap: Record<string, string> = {
