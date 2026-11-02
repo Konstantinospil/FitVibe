@@ -75,6 +75,8 @@ function fieldName(node) {
 
 function contextOf(node) {
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
+  // CSS custom properties are styling tokens, even under objects named `text`.
+  if (!ts.isJsxText(node) && typeof node.text === "string" && /^var\(--[a-z0-9-]+\)$/.test(node.text)) return { classification: "technical", reason: "css-custom-property" };
   if (ts.isImportDeclaration(node.parent) || ts.isExportDeclaration(node.parent) || ts.isExternalModuleReference(node.parent)) {
     return { classification: "technical", reason: "module-specifier" };
   }
