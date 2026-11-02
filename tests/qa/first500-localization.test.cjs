@@ -17,7 +17,7 @@ function embeddedCatalog(locale) {
     if (ts.isVariableDeclaration(node) && node.name.getText(ast) === "translations" &&
         node.initializer && ts.isObjectLiteralExpression(node.initializer)) {
       const property = node.initializer.properties.find(
-        (p) => ts.isPropertyAssignment(p) && p.name.getText(ast) === locale,
+        (p) => ts.isPropertyAssignment(p) && (ts.isStringLiteral(p.name) ? p.name.text : p.name.getText(ast)) === locale,
       );
       if (property && ts.isPropertyAssignment(property)) {
         result = JSON.parse(property.initializer.getText(ast));
