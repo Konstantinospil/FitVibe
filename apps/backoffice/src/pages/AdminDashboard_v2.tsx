@@ -24,11 +24,11 @@ const AdminDashboardV2: React.FC = () => {
       path: "/admin/reports",
       label: t("nav.reports"),
       icon: <AlertTriangle size={20} />,
-      description: "Moderate reported content and policy violations.",
+      description: t("nav.reportsDesc"),
     },
     {
       path: "/audit-logs",
-      label: "Audit Logs",
+      label: t("nav.audit"),
       icon: <ListChecks size={20} />,
       description: "Review system actions, incidents, and severity trends.",
     },
