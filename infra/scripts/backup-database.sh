@@ -45,7 +45,6 @@ case "$ENVIRONMENT" in
         DB_NAME="${PGDATABASE:-fitvibe}"
         DB_USER="${PGUSER:-fitvibe}"
         GPG_RECIPIENT="${GPG_RECIPIENT:-backups@fitvibe.app}"
-        S3_BUCKET="${S3_BUCKET:-s3://fitvibe-backups-prod/postgres}"
         ;;
     staging)
         DB_HOST="${PGHOST:-db.staging.fitvibe.app}"
@@ -53,7 +52,6 @@ case "$ENVIRONMENT" in
         DB_NAME="${PGDATABASE:-fitvibe}"
         DB_USER="${PGUSER:-fitvibe}"
         GPG_RECIPIENT="${GPG_RECIPIENT:-backups@fitvibe.app}"
-        S3_BUCKET="${S3_BUCKET:-s3://fitvibe-backups-staging/postgres}"
         ;;
     development)
         DB_HOST="${PGHOST:-localhost}"
@@ -61,7 +59,6 @@ case "$ENVIRONMENT" in
         DB_NAME="${PGDATABASE:-fitvibe}"
         DB_USER="${PGUSER:-fitvibe}"
         GPG_RECIPIENT="${GPG_RECIPIENT:-dev@fitvibe.app}"
-        S3_BUCKET="${S3_BUCKET:-}"  # No S3 for dev
         ;;
     *)
         error "Unknown environment: $ENVIRONMENT"
@@ -105,8 +102,7 @@ PGPASSWORD="$PGPASSWORD" pg_dump \
     --format=plain \
     --no-owner \
     --no-acl \
-    --verbose \
-    2>&1 | gzip > "$BACKUP_FILE"
+    --verbose | gzip > "$BACKUP_FILE"
 
 BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
 log "Backup created: $BACKUP_FILE ($BACKUP_SIZE)"
@@ -132,17 +128,8 @@ log "Generating checksum..."
 sha256sum "$ENCRYPTED_FILE" > "${ENCRYPTED_FILE}.sha256"
 log "Checksum saved: ${ENCRYPTED_FILE}.sha256"
 
-# Upload to S3 (production/staging only)
-if [ -n "$S3_BUCKET" ]; then
-    if command -v aws &> /dev/null; then
-        log "Uploading to S3: $S3_BUCKET"
-        aws s3 cp "$ENCRYPTED_FILE" "$S3_BUCKET/" --storage-class STANDARD_IA
-        aws s3 cp "${ENCRYPTED_FILE}.sha256" "$S3_BUCKET/"
-        log "Backup uploaded to S3"
-    else
-        warn "AWS CLI not found. Skipping S3 upload."
-    fi
-fi
+# Encrypted backups are stored locally. Off-host copies require a separately
+# configured and verified backup transfer; no cloud upload is assumed.
 
 # Create backup metadata
 cat > "${ENCRYPTED_FILE}.meta" <<EOF
@@ -157,7 +144,7 @@ cat > "${ENCRYPTED_FILE}.meta" <<EOF
 }
 EOF
 
-# Cleanup old backups (local only; S3 uses lifecycle policies)
+# Cleanup local backups; manage off-host retention separately
 log "Cleaning up backups older than $RETENTION_DAYS days..."
 find "$BACKUP_DIR" -name "fitvibe_${ENVIRONMENT}_*.sql.gz.gpg" -type f -mtime +$RETENTION_DAYS -delete
 find "$BACKUP_DIR" -name "fitvibe_${ENVIRONMENT}_*.sha256" -type f -mtime +$RETENTION_DAYS -delete

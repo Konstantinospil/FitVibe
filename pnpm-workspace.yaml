@@ -18,7 +18,6 @@ allowBuilds:
   msgpackr-extract: false
 
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
-# Regenerate lockfile after changing overrides to avoid stale transitive versions.
 overrides:
   'lighthouse': '13.5.0'
   'uuid': '14.0.3'
