@@ -41,9 +41,9 @@ function formatAction(action: string): string {
 }
 
 const actionLabelMap: Record<string, string> = {
-  "auth.login": "User login",
-  "auth.refresh": "Session refresh",
-  profile_update: "Profile updated",
+  "auth.login": "audit.userLogin",
+  "auth.refresh": "audit.sessionRefresh",
+  profile_update: "audit.profileUpdated",
 };
 
 const entityLabelMap: Record<string, string> = {
