@@ -100,6 +100,23 @@ test("AST audit keeps CSS custom-property values technical and navigation props 
   assert.equal(findings.find((x) => x.text === "/login").classification, "technical");
 });
 
+test("known typed audit protocol sentinels stay technical without hiding ordinary labels", () => {
+  const { analyzeSource } = require("./audit-ui-literals.cjs");
+  const source = [
+    'const severityOptions: AuditLogSeverity[] = ["info", "warning", "error", "critical"];',
+    'const [severity, setSeverity] = useState<AuditLogSeverity | "all">("all");',
+    'function formatMetadataValue(value: unknown) { if (value === null) return "null"; }',
+    'const visibleOptions = ["All", "Critical"];'
+  ].join("\n");
+  const matches = analyzeSource("sample.tsx", source);
+  for (const value of ["info", "warning", "error", "critical", "all", "null"]) {
+    assert.ok(matches.some((entry) => entry.text === value && entry.classification === "technical"),
+      value + " must remain a technical protocol value");
+  }
+  assert.ok(matches.some((entry) => entry.text === "All" && entry.classification !== "technical"));
+  assert.ok(matches.some((entry) => entry.text === "Critical" && entry.classification !== "technical"));
+});
+
 test("review log SHA-256 field is stable and valid", () => {
   const review = require("../../docs/qa/first500-verdicts.json");
   assert.equal(crypto.createHash("sha256").update("test").digest("hex").length, 64);
