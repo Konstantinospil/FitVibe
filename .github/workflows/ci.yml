@@ -1969,6 +1969,7 @@ jobs:
     timeout-minutes: 10
     needs:
       - architecture_hardcoding
+      - ui_literal_audit
       - quality
       - deployment_contract
       - backend_tests
@@ -2052,6 +2053,7 @@ jobs:
             fi
           done <<'EOF_RESULTS'
           architecture_hardcoding=${{ needs.architecture_hardcoding.result }}
+          ui_literal_audit=${{ needs.ui_literal_audit.result }}
           quality=${{ needs.quality.result }}
           deployment_contract=${{ needs.deployment_contract.result }}
           backend_tests=${{ needs.backend_tests.result }}
