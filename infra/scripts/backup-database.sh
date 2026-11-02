@@ -102,8 +102,7 @@ PGPASSWORD="$PGPASSWORD" pg_dump \
     --format=plain \
     --no-owner \
     --no-acl \
-    --verbose \
-    2>&1 | gzip > "$BACKUP_FILE"
+    --verbose | gzip > "$BACKUP_FILE"
 
 BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
 log "Backup created: $BACKUP_FILE ($BACKUP_SIZE)"
