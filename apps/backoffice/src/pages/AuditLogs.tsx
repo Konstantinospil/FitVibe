@@ -342,21 +342,21 @@ const AuditLogsPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        Audit Logs
+        {t("nav.audit")}
       </h1>
 
       <div style={{ marginBottom: "1.5rem", maxWidth: "360px" }}>
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          Search by Request ID
+          {t("audit.search")}
           <InputControl
             type="search"
             value={requestIdInput}
             onChange={(e) => {
               setRequestIdInput(e.target.value);
             }}
-            placeholder="Request ID"
+            placeholder={t("audit.requestId")}
           />
         </label>
       </div>
