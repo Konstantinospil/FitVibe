@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useUiText, translate } from "../i18n/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   auditLogsApi,
@@ -136,6 +137,7 @@ function buildSummary(log: AuditLogEntry, getActionLabel: (action: string) => st
 }
 
 const AuditLogsPage: React.FC = () => {
+  const t = useUiText();
   const colors = useThemeColors();
   const [page, setPage] = useState(0);
   const [severityFilter, setSeverityFilter] = useState<AuditLogSeverity | "all">("all");
