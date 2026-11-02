@@ -45,6 +45,19 @@ The Backoffice catalog is in `apps/backoffice/src/i18n/ui.ts` with matching loca
 
 Security-sensitive MFA validation, audit protocol codes, database records, routes and role values are untouched. Database-defined audit action names and unknown server-generated labels require further **data-contract** localization review: they were not among the 103 confirmed source literals.
 
+## Verified reconciliation (after the fixes)
+
+The artifact `ui-literals.json` from [CI run 41547950417](https://github.com/Konstantinospil/FitVibe/actions/runs/41547950417) was compared with the baseline artifact by the original stable finding IDs:
+
+- **103/103 L:** original hard-coded UI literals no longer found in source.
+- **56/56 F:** all surviving false-positive IDs classified `technical`.
+- **341/341 T:** all previously technical IDs remain `technical`.
+- **0/500 unresolved** in the original review scope.
+
+This is a **source-level** result, not a claim that every possible runtime state has been localized. A permanent CI regression test uses `first500-baseline-id-sets.json` to enforce the first two results on subsequent changes.
+
+The audit suite passes **21 tests** on [CI run 41549364393](https://github.com/Konstantinospil/FitVibe/actions/runs/41549364393). The broader lint, typecheck and Backoffice browser matrix must still be verified independently.
+
 ## Verification criteria
 
 1. `pnpm ui-localization:test` must pass.
