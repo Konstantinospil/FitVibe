@@ -620,7 +620,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Created
+                    {t("audit.created")}
                   </th>
                   <th
                     style={{
@@ -640,7 +640,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Entity
+                    {t("audit.entity")}
                   </th>
                   <th
                     style={{
@@ -650,7 +650,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Actor
+                    {t("audit.actor")}
                   </th>
                   <th
                     style={{
@@ -670,7 +670,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Outcome
+                    {t("audit.outcome")}
                   </th>
                   <th
                     style={{
@@ -680,7 +680,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Summary
+                    {t("audit.summary")}
                   </th>
                   <th
                     style={{
@@ -700,7 +700,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Actions
+                    {t("audit.actions")}
                   </th>
                 </tr>
               </thead>
@@ -762,7 +762,7 @@ const AuditLogsPage: React.FC = () => {
                       {log.resolvedAt ? (
                         <span style={{ color: colors.success }}>{t("audit.resolved")}</span>
                       ) : (
-                        <span style={{ color: colors.warning }}>Open</span>
+                        <span style={{ color: colors.warning }}>{t("audit.open")}</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem" }}>
@@ -778,7 +778,7 @@ const AuditLogsPage: React.FC = () => {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          View
+                          {t("audit.view")}
                         </Button>
                         <Button
                           type="button"
@@ -808,7 +808,7 @@ const AuditLogsPage: React.FC = () => {
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
               >
-                Previous
+                {t("audit.previous")}
               </Button>
               <span style={{ color: colors.text }}>Page {page + 1}</span>
               <Button
@@ -817,7 +817,7 @@ const AuditLogsPage: React.FC = () => {
                 onClick={() => setPage((p) => p + 1)}
                 disabled={data.logs.length < limit}
               >
-                Next
+                {t("audit.next")}
               </Button>
             </div>
           )}
@@ -889,7 +889,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Created
+                {t("audit.created")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {new Date(selectedLog.createdAt).toLocaleString()}
@@ -907,7 +907,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Entity
+                {t("audit.entity")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatLabel(selectedLog.entityType, entityLabelMap)}
@@ -916,7 +916,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Actor
+                {t("audit.actor")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.actorUsername || selectedLog.actorUserId || "-"}
@@ -940,7 +940,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Outcome
+                {t("audit.outcome")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatAction(selectedLog.outcome)}
@@ -966,7 +966,7 @@ const AuditLogsPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                Summary
+                {t("audit.summary")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {buildSummary(selectedLog, getActionLabel)}
