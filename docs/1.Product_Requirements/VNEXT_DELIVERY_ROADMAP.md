@@ -21,7 +21,7 @@
 
 #### Phase 18 — Secrets contract repair — #265
 
-Give Vault, AWS Secrets Manager and any retained environment fallback one predictable provider-independent contract.
+Provide a predictable secrets contract for optional Vault and environment-variable fallback; AWS Secrets Manager support was retired.
 
 Completion requires round-trip contract tests, explicit provider/fallback behavior and no secret disclosure.
 

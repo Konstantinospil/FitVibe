@@ -26,14 +26,21 @@ const INITIAL_VOLATILITY = 0.06;
  * the administrator has changed after first login.
  */
 export async function seed(knex: Knex): Promise<void> {
-  // Bootstrap credentials must never have a public, fixed production default.
-  const configuredPassword = process.env.ADMIN_PASSWORD;
-  if (!configuredPassword || configuredPassword.length < 16) {
-    throw new Error(
-      "ADMIN_PASSWORD must be configured with at least 16 characters before seeding the administrator",
-    );
+  // Subsequent deploys must not require or re-hash bootstrap credentials.
+  // Never infer compliance of a pre-existing administrator from this seed:
+  // the MFA and password-attestation guards handle legacy credentials.
+  const existingAdmin = await knex("users").where({ id: ADMIN_ID }).first<{ id: string }>("id");
+  let adminPassword: string | undefined;
+  if (!existingAdmin) {
+    // Fresh bootstrap still requires a strong, non-default credential.
+    const configuredPassword = process.env.ADMIN_PASSWORD;
+    if (!configuredPassword || configuredPassword.length < 16) {
+      throw new Error(
+        "ADMIN_PASSWORD must be configured with at least 16 characters before seeding the administrator",
+      );
+    }
+    adminPassword = await hashPassword(configuredPassword);
   }
-  const adminPassword = await hashPassword(configuredPassword);
   const now = new Date();
   const currentTerms = await knex("legal_document_versions")
     .where({ document_type: "terms" })
@@ -46,26 +53,28 @@ export async function seed(knex: Knex): Promise<void> {
   }
   const termsVersion = currentTerms.version;
 
-  await knex("users")
-    .insert([
-      {
-        id: ADMIN_ID,
-        display_name: "FitVibe Admin",
-        locale: "en-US",
-        preferred_lang: "en",
-        status: "active",
-        role_code: "admin",
-        password_hash: adminPassword,
-        admin_password_policy_verified_at: now,
-        terms_accepted: true,
-        terms_accepted_at: now,
-        terms_version: termsVersion,
-        created_at: now,
-        updated_at: now,
-      },
-    ])
-    .onConflict("id")
-    .ignore();
+  if (!existingAdmin) {
+    await knex("users")
+      .insert([
+        {
+          id: ADMIN_ID,
+          display_name: "FitVibe Admin",
+          locale: "en-US",
+          preferred_lang: "en",
+          status: "active",
+          role_code: "admin",
+          password_hash: adminPassword,
+          admin_password_policy_verified_at: now,
+          terms_accepted: true,
+          terms_accepted_at: now,
+          terms_version: termsVersion,
+          created_at: now,
+          updated_at: now,
+        },
+      ])
+      .onConflict("id")
+      .ignore();
+  }
 
   await knex("legal_document_acceptances")
     .insert({

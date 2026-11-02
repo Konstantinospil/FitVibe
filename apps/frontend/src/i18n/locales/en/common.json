@@ -606,6 +606,8 @@
       "disabled": "disabled",
       "enable": "Enable 2FA",
       "enableError": "Failed to enable 2FA. Please try again.",
+      "restartSetupNotice": "An earlier 2FA setup was not completed. Enter your password to restart setup.",
+      "restartSetup": "Restart 2FA setup",
       "scanQr": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):",
       "qrLoading": "Loading QR Code...",
       "qrAlt": "2FA QR Code",

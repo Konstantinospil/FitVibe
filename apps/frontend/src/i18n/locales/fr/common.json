@@ -701,6 +701,8 @@
       "disabled": "désactivée",
       "enable": "Activer la 2FA",
       "enableError": "Impossible d'activer la 2FA. Veuillez réessayer.",
+      "restartSetupNotice": "Une précédente configuration de l’authentification à deux facteurs n’a pas été terminée. Saisissez votre mot de passe pour recommencer.",
+      "restartSetup": "Recommencer la configuration 2FA",
       "scanQr": "Scannez ce QR code avec votre application d'authentification (Google Authenticator, Authy, etc.) :",
       "qrLoading": "Chargement du QR code...",
       "qrAlt": "QR code 2FA",
