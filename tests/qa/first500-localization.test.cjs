@@ -73,6 +73,35 @@ test("the 500 review verdicts match their documented baseline", () => {
   );
 });
 
+test("regression gate: the 103 localized literals stay removed and 56 false positives stay technical", () => {
+  const baseline = require("../../docs/qa/first500-baseline-id-sets.json");
+  const { scanRepository } = require("./audit-ui-literals.cjs");
+
+  function decodeIds(encoded, expectedCount) {
+    const bytes = Buffer.from(encoded, "base64");
+    assert.equal(bytes.length, expectedCount * 8);
+    const ids = [];
+    for (let offset = 0; offset < bytes.length; offset += 8) {
+      ids.push(bytes.subarray(offset, offset + 8).toString("hex"));
+    }
+    assert.equal(new Set(ids).size, expectedCount);
+    return ids;
+  }
+
+  const report = scanRepository(root);
+  assert.ok(report.filesScanned >= 150, "Scanner excluded an expected source tree");
+  const current = new Map(report.findings.map((finding) => [finding.id, finding]));
+  for (const id of decodeIds(baseline.localizedIds, baseline.localizedCount)) {
+    assert.ok(!current.has(id), "Previously localized literal reintroduced: " + id);
+  }
+  for (const id of decodeIds(baseline.falsePositiveIds, baseline.falsePositiveCount)) {
+    const finding = current.get(id);
+    if (finding) {
+      assert.equal(finding.classification, "technical", "False-positive classification regressed: " + id);
+    }
+  }
+});
+
 test("CSS custom properties and router destinations are technical literals", () => {
   const { analyzeSource } = require("./audit-ui-literals.cjs");
   const findings = analyzeSource(
