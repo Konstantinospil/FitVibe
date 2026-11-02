@@ -29,6 +29,13 @@ const Library: React.FC = () => {
   const [archiveTarget, setArchiveTarget] = useState<Exercise | null>(null);
   const [workoutExercise, setWorkoutExercise] = useState<Exercise | null | undefined>(undefined);
   const [archiving, setArchiving] = useState(false);
+  // SSR markup can be visible before its event handlers have hydrated. Expose
+  // readiness only after React has committed this interactive Library surface.
+  const [clientHydrated, setClientHydrated] = useState(false);
+
+  useEffect(() => {
+    setClientHydrated(true);
+  }, []);
 
   const tagList = useMemo(
     () =>
@@ -111,7 +118,12 @@ const Library: React.FC = () => {
   const hasNext = offset + data.length < total;
 
   return (
-    <main className="training-page" aria-labelledby="library-title" data-app-surface="library">
+    <main
+      className="training-page"
+      aria-labelledby="library-title"
+      data-app-surface="library"
+      data-client-hydrated={clientHydrated ? "true" : "false"}
+    >
       <div data-component="library-header">
         <div>
           <h1 id="library-title">{t("librarySurface.title")}</h1>

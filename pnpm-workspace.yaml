@@ -18,9 +18,8 @@ allowBuilds:
   msgpackr-extract: false
 
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
-# Lockfile regeneration for AWS SDK removal; preserve documented security overrides.
 overrides:
-  'lighthouse': '13.5.0'
+  'lighthouse': '13.6.0'
   'uuid': '14.0.3'
   'follow-redirects': '1.16.2'
   'fast-xml-parser': '>=5.5.6'
