@@ -267,8 +267,10 @@ export type LoginResponse =
     };
 
 export type RegisterResponse = {
-  user: UserResponse;
-  session: unknown;
+  user?: UserResponse;
+  session?: unknown;
+  message?: string;
+  passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
 };
 
 export interface RegistrationReferenceOption {
@@ -482,7 +484,8 @@ export type ResetPasswordRequest = {
 };
 
 export type ResetPasswordResponse = {
-  message: string;
+  message?: string;
+  passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
 };
 
 export async function resetPassword(payload: ResetPasswordRequest): Promise<ResetPasswordResponse> {
@@ -612,13 +615,31 @@ export async function get2FAStatus(): Promise<TwoFactorStatusResponse> {
   return res.data;
 }
 
+export async function getAdministratorPasswordPolicyStatus(): Promise<{
+  passwordChangeRequired: boolean;
+  minimumPasswordLength: number;
+}> {
+  const res = await apiClient.get<{
+    passwordChangeRequired: boolean;
+    minimumPasswordLength: number;
+  }>("/api/v1/auth/admin-password/status");
+  return res.data;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
 
-export async function changePassword(payload: ChangePasswordRequest): Promise<void> {
-  await apiClient.post("/api/v1/users/change-password", payload);
+export async function changePassword(
+  payload: ChangePasswordRequest,
+): Promise<{ passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE" } | undefined> {
+  const res = await apiClient.post<{
+    passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
+  }>("/api/v1/users/change-password", payload);
+  // Preserve the existing 204 No Content contract for callers; only 200
+  // advisory responses carry a body.
+  return res.data;
 }
 
 export type UserPreferences = SharedUserPreferences;

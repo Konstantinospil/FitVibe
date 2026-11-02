@@ -9,7 +9,7 @@
 
 ## Status
 
-FitVibe is under active development. The `main` branch is the production/release baseline and currently reports version **2.1.0**.
+FitVibe is under active development. The `main` branch is the production/release baseline and currently reports version **2.2.0**.
 
 This README describes the repository as it exists today. The product requirements under
 [`docs/1.Product_Requirements/`](docs/1.Product_Requirements/) define the intended product scope; open GitHub issues and roadmap items may therefore describe capabilities that are still being completed or verified.

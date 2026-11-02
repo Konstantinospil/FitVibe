@@ -1,7 +1,6 @@
 const { test, expect } = require("./fixtures.cjs");
 const { observeMutation } = require("./request-observer.cjs");
 const {
-  TEST_USER,
   preparePage,
   trackRequests,
   waitForApp,
@@ -15,11 +14,11 @@ test.describe("Authentication flows on active surfaces", () => {
     await preparePage(page);
   });
 
-  test("logs in through the real server and reaches Home", async ({ page }) => {
+  test("logs in through the real server and reaches Home", async ({ page, athleteAccount }) => {
     await page.goto("/login");
     await waitForApp(page);
-    await emailInput(page).fill(TEST_USER.email);
-    await passwordInput(page).fill(TEST_USER.password);
+    await emailInput(page).fill(athleteAccount.email);
+    await passwordInput(page).fill(athleteAccount.password);
 
     const csrfRequests = trackRequests(
       page,
@@ -85,11 +84,11 @@ test.describe("Authentication flows on active surfaces", () => {
     await expect(page.getByText(/locked/i)).toHaveCount(0);
   });
 
-  test("logs out through the real server and invalidates the session", async ({ page }) => {
+  test("logs out through the real server and invalidates the session", async ({ page, athleteAccount }) => {
     await page.goto("/login");
     await waitForApp(page);
-    await emailInput(page).fill(TEST_USER.email);
-    await passwordInput(page).fill(TEST_USER.password);
+    await emailInput(page).fill(athleteAccount.email);
+    await passwordInput(page).fill(athleteAccount.password);
     await page.getByRole("button", { name: /sign in/i }).click();
     await page.waitForURL((url) => url.pathname === "/");
     // Test ownership: #557. The seeded account may already have dismissed its

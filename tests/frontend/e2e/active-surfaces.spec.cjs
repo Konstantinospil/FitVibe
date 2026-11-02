@@ -2,8 +2,8 @@ const { test, expect } = require("./fixtures.cjs");
 const { preparePage, waitForApp } = require("./server-helpers.cjs");
 
 test.describe("Active application surfaces", () => {
-  test.beforeEach(async ({ page }) => {
-    await preparePage(page, { authenticated: true });
+  test.beforeEach(async ({ page, athleteAccount }) => {
+    await preparePage(page, { authenticated: true, account: athleteAccount });
   });
 
   test("authenticated Home renders the current production shell", async ({ page }) => {

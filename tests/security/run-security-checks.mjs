@@ -97,6 +97,14 @@ const nodePath =
 // SECURITY: Define commands statically (not from environment)
 const commands = [
   {
+    title: "Authentication policy exception expiry",
+    command: `${nodePath} tests/security/check-policy-exceptions.cjs`,
+  },
+  {
+    title: "Authentication policy exception validator regressions",
+    command: `${nodePath} --test tests/security/check-policy-exceptions.test.cjs`,
+  },
+  {
     title: "Dependency audit (pnpm)",
     command: `${pnpmCmd} audit --prod --audit-level=high`,
   },

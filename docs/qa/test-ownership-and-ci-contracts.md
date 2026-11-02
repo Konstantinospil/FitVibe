@@ -52,3 +52,18 @@ At implementation start on 2026-10-25, the existing discovery gate classified **
 The missing controls addressed by #556 were reviewable ownership/contract metadata, complete CI-job inventory, mutually exclusive ownership, workflow-drift validation and an executed negative ownership control.
 
 The feature baseline was green when this work started, so `known_failures` is intentionally empty. Historical failures and run links remain on #555/#556 and should only be promoted into the manifest when they are active and reproducible.
+
+
+## Deterministic onboarding fixture contract (#557)
+
+Frontend E2E tests use three explicit real-server onboarding states:
+
+- **fully onboarded** — a verified non-admin athlete account provisioned once per Playwright worker, with a real, persisted 2FA invitation decision and essential-only consent; each consuming test has its own browser context and restores only its independently verified session cookies;
+- **first login** — unique verified account per Playwright test, authenticated session, pending 2FA invitation, no browser consent;
+- **consent required** — authenticated account with 2FA onboarding resolved but no browser consent.
+
+The fixture contract is implemented in `tests/frontend/e2e/server-helpers.cjs` and exposed through `tests/frontend/e2e/fixtures.cjs`. Browser/session/consent cookies must not be cached in module-global mutable variables. A worker-scoped account is used only for ordinary non-destructive journeys; registration, first-login, cookie-consent and revocation journeys retain isolated state. The test UI authentication hint is initialized once per tab and must not be reset on every navigation after real login. Stateful first-login and locale-switch tests use unique accounts derived from the test identity so shard assignment or execution order cannot change their starting state.
+
+Onboarding transitions must be verified through supported application APIs and rendered UI. Tests must not use forced clicks, hidden-overlay removal, synthetic authenticated state, blind sleeps, or automatic bypasses. Localized onboarding selectors resolve the active translation rather than matching English-only labels.
+
+The authoritative onboarding journey remains `tests/frontend/e2e/onboarding-flow.spec.cjs`. Fixture-specific regressions live in `tests/frontend/e2e/onboarding-fixtures.spec.cjs`, including the required 2FA → consent sequencing and localized first-login state. Component regressions cover delayed status responses and failed invitation persistence. Playwright traces, screenshots, videos and browser diagnostics remain retained for genuine failures.

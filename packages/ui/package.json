@@ -12,7 +12,7 @@
     "lint": "eslint src --max-warnings=0"
   },
   "dependencies": {
-    "preact": "11.0.1",
+    "preact": "11.0.2",
     "react": "^19.3.1"
   }
 }

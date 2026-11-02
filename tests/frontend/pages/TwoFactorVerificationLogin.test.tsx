@@ -25,6 +25,7 @@ vi.mock("../../src/services/api", async () => {
   return {
     ...actual,
     verify2FALogin: vi.fn(),
+    getAdministratorPasswordPolicyStatus: vi.fn(),
   };
 });
 
@@ -528,4 +529,60 @@ describe("TwoFactorVerificationLogin", () => {
       { timeout: 5000 },
     );
   });
+  it("redirects a legacy administrator to mandatory password transition after MFA", async () => {
+    vi.mocked(api.verify2FALogin).mockResolvedValue({
+      user: { id: "admin-123", username: "admin", email: "admin@example.com", role: "admin" },
+      session: { id: "session123" },
+    });
+    vi.mocked(api.getAdministratorPasswordPolicyStatus).mockResolvedValue({
+      passwordChangeRequired: true,
+      minimumPasswordLength: 16,
+    });
+    renderWithProviders({ pendingSessionId: "session123", from: "/dashboard" });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "123456" } });
+    fireEvent.submit(screen.getByRole("textbox").closest("form") as HTMLFormElement);
+    await waitFor(() => {
+      expect(api.getAdministratorPasswordPolicyStatus).toHaveBeenCalledOnce();
+      expect(mockNavigate).toHaveBeenCalledWith("/admin/password-update", { replace: true });
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith("/dashboard", { replace: true });
+  });
+
+  it("allows a policy-compliant superadmin to reach the requested route after MFA", async () => {
+    vi.mocked(api.verify2FALogin).mockResolvedValue({
+      user: { id: "super-123", username: "super", email: "super@example.com", role: "superadmin" },
+      session: { id: "session123" },
+    });
+    vi.mocked(api.getAdministratorPasswordPolicyStatus).mockResolvedValue({
+      passwordChangeRequired: false,
+      minimumPasswordLength: 16,
+    });
+    renderWithProviders({ pendingSessionId: "session123", from: "/dashboard" });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "123456" } });
+    fireEvent.submit(screen.getByRole("textbox").closest("form") as HTMLFormElement);
+    await waitFor(() => {
+      expect(api.getAdministratorPasswordPolicyStatus).toHaveBeenCalledOnce();
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
+    });
+    expect(mockNavigate).not.toHaveBeenCalledWith("/admin/password-update", { replace: true });
+  });
+
+  it("defers policy-status outages to the server-enforced protected route gate", async () => {
+    vi.mocked(api.verify2FALogin).mockResolvedValue({
+      user: { id: "admin-123", username: "admin", email: "admin@example.com", role: "admin" },
+      session: { id: "session123" },
+    });
+    vi.mocked(api.getAdministratorPasswordPolicyStatus).mockRejectedValue(
+      new Error("temporary policy status failure"),
+    );
+    renderWithProviders({ pendingSessionId: "session123", from: "/dashboard" });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "123456" } });
+    fireEvent.submit(screen.getByRole("textbox").closest("form") as HTMLFormElement);
+    await waitFor(() => {
+      expect(api.getAdministratorPasswordPolicyStatus).toHaveBeenCalledOnce();
+      expect(mockNavigate).toHaveBeenCalledWith("/dashboard", { replace: true });
+    });
+  });
+
+
 });

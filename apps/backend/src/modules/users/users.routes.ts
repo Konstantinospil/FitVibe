@@ -23,6 +23,7 @@ import {
 } from "./users.controller.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { requireRole } from "../common/rbac.middleware.js";
+import { requireFreshAdminTotp } from "../admin/privileged-totp.middleware.js";
 import { rateLimit, rateLimitByUser } from "../common/rateLimiter.js";
 import { usersAvatarRouter } from "./users.avatar.routes.js";
 import { usersBodyProgressRouter } from "./users.body-progress.routes.js";
@@ -95,6 +96,7 @@ usersRouter.post(
   rateLimit("user_create"),
   requireAccessToken,
   requireRole("admin"),
+  asyncHandler(requireFreshAdminTotp),
   asyncHandler(adminCreateUser),
 );
 usersRouter.get(
@@ -139,6 +141,7 @@ usersRouter.patch(
   rateLimit("user_status"),
   requireAccessToken,
   requireRole("admin"),
+  asyncHandler(requireFreshAdminTotp),
   asyncHandler(adminChangeStatus),
 );
 usersRouter.post(

@@ -559,6 +559,29 @@
       "status": "active"
     },
     {
+      "name": "security-policy-exception-regressions",
+      "patterns": [
+        "^tests/security/check-policy-exceptions\\.test\\.cjs$"
+      ],
+      "owner": "Security / governance",
+      "ci_job_ids": [
+        "security"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/security/check-policy-exceptions.cjs"
+      ],
+      "fixture_dependencies": [
+        "synthetic exception metadata; no credentials or external services"
+      ],
+      "isolation_model": "node:test isolated in the mandatory security scan job",
+      "expected_artifacts": [
+        "CI security scan step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "ci-cd-contract-tests",
       "patterns": [
         "^tests/qa/ci-cd-contract\\.test\\.cjs$"

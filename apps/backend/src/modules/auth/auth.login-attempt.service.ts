@@ -1,10 +1,12 @@
 import { db } from "../../db/index.js";
+import { incrementAuthFailedLogin } from "../../observability/metrics.js";
 import {
   getFailedAttempt,
   recordFailedAttempt,
   resetFailedAttempts,
   isAccountLocked,
   getRemainingLockoutSeconds,
+  getMaxAccountAttempts,
   getFailedAttemptByIP,
   recordFailedAttemptByIP,
   isIPLocked,
@@ -80,6 +82,9 @@ export async function recordLoginFailure({
     const ip = await recordFailedAttemptByIP(ipAddress, identifier, trx);
     return { account, ip };
   });
+  // Count every failed credential check, including nonexistent accounts. The
+  // audit event below carries an actor only when an account was identified.
+  incrementAuthFailedLogin();
 
   if (isIPLocked(attempts.ip)) {
     await recordAuditEvent(actorUserId, "auth.login_blocked_ip", {
@@ -98,6 +103,20 @@ export async function recordLoginFailure({
       remainingSeconds: getRemainingLockoutSeconds(attempts.account),
       attemptCount: attempts.account.attempt_count,
       requestId,
+    });
+  }
+
+  // Count only new threshold crossings, not each subsequent request while
+  // already locked. Known accounts are aggregated privately in PostgreSQL;
+  // identities are never exposed to Prometheus time-series labels.
+  if (
+    actorUserId &&
+    isAccountLocked(attempts.account) &&
+    attempts.account.attempt_count === getMaxAccountAttempts()
+  ) {
+    await recordAuditEvent(actorUserId, "auth.login_lockout_started", {
+      requestId,
+      scope: "account",
     });
   }
 

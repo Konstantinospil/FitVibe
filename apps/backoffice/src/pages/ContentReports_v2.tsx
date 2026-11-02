@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AlertTriangle, EyeOff, Ban, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { FreshTotpDialog } from "../components/FreshTotpDialog";
 import {
   getFeedReports,
   moderateContent,
@@ -17,6 +18,10 @@ const ContentReportsV2: React.FC = () => {
   );
   const [reports, setReports] = useState<FeedReport[]>([]);
   const [loading, setLoading] = useState(false);
+  const [pendingModeration, setPendingModeration] = useState<{
+    reportId: string;
+    action: "hide" | "ban";
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,31 +56,51 @@ const ContentReportsV2: React.FC = () => {
     }
   };
 
-  const handleModerateContent = async (reportId: string, action: "hide" | "dismiss" | "ban") => {
-    const confirmed = window.confirm(`Are you sure you want to ${action} this content report?`);
-    if (!confirmed) {
-      return;
-    }
-
+  const performModeration = async (
+    reportId: string,
+    action: "hide" | "dismiss" | "ban",
+    totpCode?: string,
+  ) => {
     try {
-      const payload: ModerateContentRequest = { action };
+      const payload: ModerateContentRequest = { action, totpCode };
       await moderateContent(reportId, payload);
-
       toast.success(
         `Content ${action === "hide" ? "hidden" : action === "ban" ? "banned" : "dismissed"} successfully`,
       );
-
       const response = await getFeedReports({
         status: filterStatus === "all" ? undefined : filterStatus,
       });
       setReports(response.data);
-    } catch {
+      setPendingModeration(null);
+    } catch (error) {
       toast.error(`Failed to ${action} content. Please try again.`);
+      if (totpCode) {
+        throw error;
+      }
+    }
+  };
+
+  const handleModerateContent = (reportId: string, action: "hide" | "dismiss" | "ban") => {
+    if (action !== "dismiss") {
+      setPendingModeration({ reportId, action });
+      return;
+    }
+    if (window.confirm("Dismiss this content report?")) {
+      void performModeration(reportId, action);
     }
   };
 
   return (
     <div className="grid grid--gap-15">
+      {pendingModeration ? (
+        <FreshTotpDialog
+          actionLabel={`${pendingModeration.action} this content report`}
+          onCancel={() => setPendingModeration(null)}
+          onConfirm={(code) =>
+            performModeration(pendingModeration.reportId, pendingModeration.action, code)
+          }
+        />
+      ) : null}
       <Card>
         <CardHeader>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

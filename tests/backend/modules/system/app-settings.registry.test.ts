@@ -41,6 +41,8 @@ describe("governed application settings registry", () => {
     );
     expect(() => validateAppSetting("auth.password_min_length", 11)).toThrow();
     expect(() => validateAppSetting("auth.password_reset_ttl_minutes", 1)).toThrow();
+    expect(validateAppSetting("auth.password_reset_ttl_minutes", 15)).toBe(15);
+    expect(() => validateAppSetting("auth.password_reset_ttl_minutes", 16)).toThrow();
     expect(() => validateAppSetting("system.maintenance_message", "   ")).toThrow();
   });
 });

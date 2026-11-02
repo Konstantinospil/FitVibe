@@ -53,6 +53,9 @@ describe("Auth Controller", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTokensService.refreshTokenTtlForRole.mockImplementation((role) =>
+      role === "admin" || role === "superadmin" ? 8 * 60 * 60 : 604800,
+    );
 
     mockRequest = {
       user: { sub: userId, sid: sessionId, role: "athlete" },
@@ -316,6 +319,22 @@ describe("Auth Controller", () => {
     });
   });
 
+  // Test ownership: #557; cookie expiry must match JWT expiry, including MFA refresh.
+  it("uses the shorter administrator access-cookie TTL on 2FA login", async () => {
+    mockRequest.body = { pendingSessionId: "123e4567-e89b-12d3-a456-426614174000", code: "123456" };
+    mockAuthService.verify2FALogin.mockResolvedValue({
+      user: { id: userId, email: "admin@example.com", username: "admin", role: "admin", status: "active", created_at: new Date().toISOString() },
+      tokens: { accessToken: "admin-access", refreshToken: "admin-refresh", accessExpiresIn: 300 },
+      session: { id: sessionId, expiresAt: new Date(Date.now() + 100000).toISOString() },
+    });
+    await authController.verify2FALogin(mockRequest as Request, mockResponse as Response, mockNext);
+    expect(mockResponse.cookie).toHaveBeenCalledWith("access_token", "admin-access",
+      expect.objectContaining({ maxAge: 300_000 }));
+    expect(mockResponse.cookie).toHaveBeenCalledWith("refresh_token", "admin-refresh",
+      expect.objectContaining({ maxAge: 8 * 60 * 60 * 1000 }));
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
   describe("login", () => {
     it("should login successfully without 2FA", async () => {
       const loginData = {
@@ -572,7 +591,7 @@ describe("Auth Controller", () => {
       };
 
       mockRequest.body = payload;
-      mockAuthService.resetPassword.mockResolvedValue(undefined);
+      mockAuthService.resetPassword.mockResolvedValue({});
 
       await authController.resetPassword(
         mockRequest as Request,
@@ -585,10 +604,27 @@ describe("Auth Controller", () => {
         payload.newPassword,
       );
       expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
-      expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect(mockResponse.send).toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({});
       expect(mockNext).not.toHaveBeenCalled();
     });
+  });
+
+  it("returns a nonblocking advisory when a reset password was breached", async () => {
+    const payload = { token: "reset-token", newPassword: "UniqueFixturePassphraseForReset" };
+    mockRequest.body = payload;
+    mockAuthService.resetPassword.mockResolvedValue({ passwordWarning: "PASSWORD_BREACHED" });
+
+    await authController.resetPassword(
+      mockRequest as Request,
+      mockResponse as Response,
+      mockNext,
+    );
+
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({ passwordWarning: "PASSWORD_BREACHED" });
+    expect(mockResponse.clearCookie).toHaveBeenCalledTimes(2);
+    expect(mockNext).not.toHaveBeenCalled();
   });
 
   describe("listSessions", () => {

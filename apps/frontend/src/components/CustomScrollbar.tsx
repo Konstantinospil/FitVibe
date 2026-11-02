@@ -22,15 +22,43 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
   const [fraction, setFraction] = useState(0);
   const [overflow, setOverflow] = useState(false);
 
-  const synchronize = useCallback(() => {
+  const synchronizeFraction = useCallback(() => {
     const el = viewport.current;
     if (!el) {
       return;
     }
     const max = Math.max(0, el.scrollHeight - el.clientHeight);
-    setOverflow(max > 1);
     setFraction(max ? el.scrollTop / max : 0);
   }, []);
+
+  const synchronize = useCallback(() => {
+    const el = viewport.current;
+    if (!el) {
+      return;
+    }
+    const root = el.parentElement;
+    const hasReservedTrack = root?.dataset.scrollable === "true";
+
+    // Measure whether content overflows at the width it would have WITHOUT
+    // the track. Otherwise the track can cause extra wrapping and indefinitely
+    // sustain overflow that would disappear if the track were removed.
+    if (hasReservedTrack) {
+      root.dataset.measuringOverflow = "true";
+    }
+    let needsScrollbar: boolean;
+    try {
+      needsScrollbar = el.scrollHeight > el.clientHeight + 1;
+    } finally {
+      if (hasReservedTrack) {
+        delete root.dataset.measuringOverflow;
+      }
+    }
+
+    setOverflow(needsScrollbar);
+    // Thumb position uses the actual scrollable layout, after restoring the
+    // track. Scroll interactions only update position, not layout measurement.
+    synchronizeFraction();
+  }, [synchronizeFraction]);
 
   useEffect(() => {
     const el = viewport.current;
@@ -46,13 +74,18 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     return () => observer.disconnect();
   }, [synchronize]);
 
+  useEffect(() => {
+    // The track can change the actual scroll range after the overflow decision.
+    synchronizeFraction();
+  }, [overflow, synchronizeFraction]);
+
   const scrollTo = (next: number) => {
     const el = viewport.current;
     if (!el) {
       return;
     }
     el.scrollTop = Math.max(0, Math.min(1, next)) * Math.max(0, el.scrollHeight - el.clientHeight);
-    synchronize();
+    synchronizeFraction();
   };
 
   const travel = () =>
@@ -100,7 +133,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
     } else if (event.key in delta) {
       event.preventDefault();
       el.scrollTop += delta[event.key];
-      synchronize();
+      synchronizeFraction();
     }
   };
 
@@ -110,7 +143,7 @@ export const CustomScrollbar: React.FC<CustomScrollbarProps> = ({
         id={id}
         ref={viewport}
         className={`custom-scrollbar__viewport ${viewportClassName}`}
-        onScroll={synchronize}
+        onScroll={synchronizeFraction}
         tabIndex={0}
       >
         <div className="custom-scrollbar__inner">{children}</div>

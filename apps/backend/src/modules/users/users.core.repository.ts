@@ -19,6 +19,7 @@ export interface CreateUserRecordInput {
   status: UserStatus;
   roleCode: string;
   passwordHash: string;
+  adminPasswordPolicyVerifiedAt?: string | null;
 }
 
 export type UserRow = {
@@ -154,6 +155,7 @@ export async function createUserRecord(
     status: input.status,
     role_code: input.roleCode,
     password_hash: input.passwordHash,
+    admin_password_policy_verified_at: input.adminPasswordPolicyVerifiedAt ?? null,
     created_at: now,
     updated_at: now,
   });
