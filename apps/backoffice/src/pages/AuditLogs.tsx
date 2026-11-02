@@ -431,7 +431,9 @@ const AuditLogsPage: React.FC = () => {
                 gap: "0.5rem",
               }}
             >
-              {actionFilter.length > 0 ? t("audit.selected", { count: actionFilter.length }) : t("audit.all")}
+              {actionFilter.length > 0
+                ? t("audit.selected", { count: actionFilter.length })
+                : t("audit.all")}
             </summary>
             <div
               style={{
@@ -545,9 +547,7 @@ const AuditLogsPage: React.FC = () => {
       {isLoading ? (
         <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
-        <div style={{ color: colors.text, padding: "2rem" }}>
-          {t("audit.error")}
-        </div>
+        <div style={{ color: colors.text, padding: "2rem" }}>{t("audit.error")}</div>
       ) : !data || !data.logs || data.logs.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
           {t("audit.noLogs")}
@@ -1003,7 +1003,9 @@ const AuditLogsPage: React.FC = () => {
                 >
                   {getChangeList(selectedLog.metadata).length > 0 && (
                     <div style={{ marginBottom: "1rem" }}>
-                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>{t("audit.changes")}</div>
+                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>
+                        {t("audit.changes")}
+                      </div>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
                           <tr>
@@ -1054,7 +1056,9 @@ const AuditLogsPage: React.FC = () => {
                   {Object.entries(selectedLog.metadata).filter(([key]) => key !== "changes")
                     .length > 0 && (
                     <div>
-                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>{t("audit.context")}</div>
+                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>
+                        {t("audit.context")}
+                      </div>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <tbody>
                           {Object.entries(selectedLog.metadata)
