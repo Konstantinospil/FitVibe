@@ -22,7 +22,7 @@ const TECHNICAL_JSX_PROPS = new Set([
   "classname", "id", "key", "name", "type", "role", "value", "href", "src",
   "target", "rel", "method", "action", "autocomplete", "inputmode", "width",
   "height", "variant", "size", "color", "background", "style", "testid",
-  "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang",
+  "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang", "to", "path",
 ]);
 const TECHNICAL_OBJECT_KEYS = new Set([
   "id", "key", "type", "role", "status", "code", "path", "url", "route",
@@ -81,6 +81,8 @@ function contextOf(node) {
     return { classification: "technical", reason: "module-specifier" };
   }
   if (ts.isLiteralTypeNode(node.parent)) return { classification: "technical", reason: "type-literal" };
+  if (ts.isNewExpression(node.parent) && node.parent.expression.getText() === "Error") return { classification: "technical", reason: "internal-exception" };
+  if (ts.isCallExpression(node.parent) && /^(?:document\.getElementById|document\.querySelector|document\.querySelectorAll)$/.test(node.parent.expression.getText())) return { classification: "technical", reason: "dom-selector" };
   if (ts.isPropertyAssignment(node.parent) && node.parent.name === node) {
     return { classification: "technical", reason: "property-key" };
   }
