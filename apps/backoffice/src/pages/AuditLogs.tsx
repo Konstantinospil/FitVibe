@@ -47,8 +47,8 @@ const actionLabelMap: Record<string, string> = {
 };
 
 const entityLabelMap: Record<string, string> = {
-  auth: "Authentication",
-  users: "Users",
+  auth: "audit.authentication",
+  users: "audit.users",
 };
 
 const fieldLabelMap: Record<string, string> = {
