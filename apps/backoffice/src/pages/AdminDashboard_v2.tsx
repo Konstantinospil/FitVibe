@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useUiText } from "../i18n/ui";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import {
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 const AdminDashboardV2: React.FC = () => {
+  const t = useUiText();
   const location = useLocation();
   const role = useAuthStore((state) => state.user?.role);
   const [hoveredPath, setHoveredPath] = useState<string | null>(null);
