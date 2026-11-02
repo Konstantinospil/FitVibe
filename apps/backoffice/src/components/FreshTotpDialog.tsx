@@ -13,6 +13,7 @@ type Props = {
  * Native modal focus management avoids password or TOTP codes in URLs/storage.
  */
 export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
+  const t = useUiText();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [totpCode, setTotpCode] = useState("");
   const [pending, setPending] = useState(false);
@@ -67,7 +68,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
       }}
     >
       <form onSubmit={(event) => void submit(event)} className="grid grid--gap-md">
-        <h2 id="fresh-totp-title">Confirm administrator action</h2>
+        <h2 id="fresh-totp-title">{t("mfa.title")}</h2>
         <p id="fresh-totp-description">
           {actionLabel} requires a new code from your authenticator. A code can only be used once.
         </p>
