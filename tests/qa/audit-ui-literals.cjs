@@ -75,6 +75,18 @@ function fieldName(node) {
 
 function contextOf(node) {
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
+  // Technical comparison operands must not be treated as UI copy just because
+  // the whole comparison sits inside a visible JSX attribute.
+  const comparison = ancestor(node, (candidate) =>
+    ts.isBinaryExpression(candidate) &&
+    [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken,
+      ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken]
+      .includes(candidate.operatorToken.kind) &&
+    (candidate.left === node || candidate.right === node));
+  if (comparison) return { classification: "technical", reason: "comparison-literal" };
+  if (typeof node.text === "string" && /^-?\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|%|ch|vmin|vmax)$/.test(node.text)) {
+    return { classification: "technical", reason: "css-dimension" };
+  }
   // CSS custom properties are styling tokens, even under objects named `text`.
   if (!ts.isJsxText(node) && typeof node.text === "string" && /^var\(--[a-z0-9-]+\)$/.test(node.text)) return { classification: "technical", reason: "css-custom-property" };
   if (ts.isImportDeclaration(node.parent) || ts.isExportDeclaration(node.parent) || ts.isExternalModuleReference(node.parent)) {
@@ -120,6 +132,13 @@ function contextOf(node) {
       if (argIndex >= 2) return { classification: "ui", reason: "element-child" };
     }
     if (/^(?:require|import)$/.test(name)) return { classification: "technical", reason: "module-reference" };
+    if (name === "navigate" && call.arguments[0] === node) return { classification: "technical", reason: "navigation-target" };
+    if ((name === "document.documentElement.setAttribute" || name.endsWith(".setAttribute")) &&
+        call.arguments[0] === node) return { classification: "technical", reason: "dom-attribute-name" };
+    if (name.endsWith(".includes") && call.arguments.length > 0 &&
+        ancestor(call, (candidate) => ts.isIfStatement(candidate) || ts.isConditionalExpression(candidate))) {
+      return { classification: "technical", reason: "predicate-discriminator" };
+    }
     if (MESSAGE_CALLS.test(name) || MESSAGE_METHODS.test(name)) {
       return { classification: "ui", reason: `notification:${name}` };
     }
