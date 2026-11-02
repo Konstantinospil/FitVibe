@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "./ui/Button";
+import { useUiText } from "../i18n/ui";
 
 type Props = {
   actionLabel: string;
