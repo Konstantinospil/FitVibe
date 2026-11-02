@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from "./pages/Login";
-import { useUiText } from "./i18n/ui";
+import { useBackofficeLocale, useUiText } from "./i18n/ui";
 import TranslationsPage from "./pages/Translations";
 import LegalPublicationsPage from "./pages/LegalPublications";
 import MessagesPage from "./pages/Messages";
@@ -61,9 +61,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isInitializing: bool
 };
 
 const App: React.FC = () => {
+  const locale = useBackofficeLocale();
   const signIn = useAuthStore((state) => state.signIn);
   const theme = useThemeStore((state) => state.theme);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   // Apply theme on mount
   useEffect(() => {
