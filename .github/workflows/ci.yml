@@ -154,13 +154,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: AST scanner regression tests
-        run: pnpm ui-literals:test
+      - name: AST, backend-contract and runtime detector regression tests
+        run: pnpm ui-localization:test
 
       # Inventory mode: existing findings remain visible rather than being
       # silently excluded or blocking the creation of the remediation plan.
       - name: Generate complete UI literal inventory
         run: pnpm ui-literals:audit
+
+      - name: Generate backend and data-contract localization inventory
+        run: pnpm ui-data-contracts:audit
 
       - name: Upload complete UI literal audit
         if: always()
@@ -170,6 +173,8 @@ jobs:
           path: |
             tests/qa/reports/ui-literals.json
             tests/qa/reports/ui-literals.md
+            tests/qa/reports/ui-data-contracts.json
+            tests/qa/reports/ui-data-contracts.md
           if-no-files-found: error
           retention-days: 90
 
@@ -179,6 +184,7 @@ jobs:
           echo "## UI Literal AST Audit" >> "$GITHUB_STEP_SUMMARY"
           if [ -f tests/qa/reports/ui-literals.json ]; then
             node -e 'const r=require("./tests/qa/reports/ui-literals.json");console.log("Files: "+r.filesScanned+", direct UI: "+r.counts.ui+", review: "+r.counts.review+", technical: "+r.counts.technical)' >> "$GITHUB_STEP_SUMMARY"
+            node -e 'const r=require("./tests/qa/reports/ui-data-contracts.json");console.log("Server-contract findings: "+JSON.stringify(r.counts))' >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Audit did not produce a report." >> "$GITHUB_STEP_SUMMARY"
           fi
