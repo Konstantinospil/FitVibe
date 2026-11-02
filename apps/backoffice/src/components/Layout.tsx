@@ -35,7 +35,7 @@ const Layout: React.FC = () => {
     <div className="backoffice-shell">
       <aside className="backoffice-sidebar">
         <div className="backoffice-brand">
-          <img src={logo} alt="FitVibe Logo" className="backoffice-brand__logo" />
+          <img src={logo} alt={t("common.logoAlt")} className="backoffice-brand__logo" />
         </div>
 
         <div className="backoffice-navigation">
