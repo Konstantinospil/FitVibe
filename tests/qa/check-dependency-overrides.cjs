@@ -99,11 +99,12 @@ for (const file of manifests) {
 const secretsImplementation = fs.readFileSync(
   path.join(root, "apps/backend/src/services/secrets.service.ts"), "utf8"
 );
-if (/@aws-sdk\\/|SecretsManagerClient|GetSecretValueCommand|CreateSecretCommand|DescribeSecretCommand/.test(secretsImplementation)) {
+if (secretsImplementation.includes("@aws-sdk/") ||
+    /SecretsManagerClient|GetSecretValueCommand|CreateSecretCommand|DescribeSecretCommand/.test(secretsImplementation)) {
   errors.push("Secrets service must not import or implement the retired AWS Secrets Manager provider");
 }
 const backupScript = fs.readFileSync(path.join(root, "infra/scripts/backup-database.sh"), "utf8");
-if (/\\baws\\s+s3\\b|\\bS3_BUCKET=/.test(backupScript)) {
+if (/\baws\s+s3\b|\bS3_BUCKET=/.test(backupScript)) {
   errors.push("Backup script must not assume AWS S3 storage or silently skip remote upload");
 }
 if (fs.existsSync(path.join(root, "infra/kubernetes/storage-class-encrypted.yaml"))) {
