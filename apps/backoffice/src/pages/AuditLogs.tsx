@@ -47,8 +47,8 @@ const actionLabelMap: Record<string, string> = {
 };
 
 const entityLabelMap: Record<string, string> = {
-  auth: "Authentication",
-  users: "Users",
+  auth: "audit.authentication",
+  users: "audit.users",
 };
 
 const fieldLabelMap: Record<string, string> = {
@@ -60,11 +60,11 @@ const fieldLabelMap: Record<string, string> = {
 };
 
 const metadataLabelMap: Record<string, string> = {
-  ip: "IP Address",
-  requestId: "Request ID",
-  sessionId: "Session ID",
-  userAgent: "User agent",
-  previousTokenId: "Previous token ID",
+  ip: "audit.ip",
+  requestId: "audit.requestId",
+  sessionId: "audit.sessionId",
+  userAgent: "audit.userAgent",
+  previousTokenId: "audit.previousToken",
 };
 
 function formatMetadataValue(value: unknown): string {
@@ -83,12 +83,12 @@ function formatMetadataValue(value: unknown): string {
   try {
     return JSON.stringify(value);
   } catch {
-    return "[Unserializable]";
+    return translate("audit.unserializable");
   }
 }
 
 function formatLabel(value: string, map: Record<string, string>): string {
-  return map[value] ?? formatAction(value);
+  return map[value] ? translate(map[value]) : formatAction(value);
 }
 
 function getChangeList(metadata: Record<string, unknown> | null): Array<{
