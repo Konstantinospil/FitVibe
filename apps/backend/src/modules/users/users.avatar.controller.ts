@@ -116,7 +116,10 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       // The file is written before its database metadata. Avoid leaving an
       // orphan on disk if the database rejects the new avatar.
       await deleteStorageObject(fileMeta.storageKey).catch((cleanupError: unknown) => {
-        logger.error({ err: cleanupError, storageKey: fileMeta.storageKey }, "[avatar] cleanup failed");
+        logger.error(
+          { err: cleanupError, storageKey: fileMeta.storageKey },
+          "[avatar] cleanup failed",
+        );
       });
       throw error;
     }
