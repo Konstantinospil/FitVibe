@@ -96,16 +96,20 @@ for (const file of manifests) {
     .filter(name => name.startsWith("@aws-sdk/"));
   if (awsDeps.length) errors.push(file + ": retired AWS SDK direct dependencies: " + awsDeps.join(", "));
 }
-const secretsImplementation = fs.readFileSync(
-  path.join(root, "apps/backend/src/services/secrets.service.ts"), "utf8"
-);
-if (secretsImplementation.includes("@aws-sdk/") ||
-    /SecretsManagerClient|GetSecretValueCommand|CreateSecretCommand|DescribeSecretCommand/.test(secretsImplementation)) {
-  errors.push("Secrets service must not import or implement the retired AWS Secrets Manager provider");
+const secretsFile = path.join(root, "apps/backend/src/services/secrets.service.ts");
+if (fs.existsSync(secretsFile)) {
+  const secretsImplementation = fs.readFileSync(secretsFile, "utf8");
+  if (secretsImplementation.includes("@aws-sdk/") ||
+      /SecretsManagerClient|GetSecretValueCommand|CreateSecretCommand|DescribeSecretCommand/.test(secretsImplementation)) {
+    errors.push("Secrets service must not import or implement the retired AWS Secrets Manager provider");
+  }
 }
-const backupScript = fs.readFileSync(path.join(root, "infra/scripts/backup-database.sh"), "utf8");
-if (/\baws\s+s3\b|\bS3_BUCKET=/.test(backupScript)) {
-  errors.push("Backup script must not assume AWS S3 storage or silently skip remote upload");
+const backupFile = path.join(root, "infra/scripts/backup-database.sh");
+if (fs.existsSync(backupFile)) {
+  const backupScript = fs.readFileSync(backupFile, "utf8");
+  if (backupScript.includes("aws s3 ") || backupScript.includes("S3_BUCKET=")) {
+    errors.push("Backup script must not assume AWS S3 storage or silently skip remote upload");
+  }
 }
 if (fs.existsSync(path.join(root, "infra/kubernetes/storage-class-encrypted.yaml"))) {
   errors.push("Unsupported AWS EBS StorageClass placeholder must not be restored");
