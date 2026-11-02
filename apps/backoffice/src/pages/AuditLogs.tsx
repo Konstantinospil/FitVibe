@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useUiText, translate } from "../i18n/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -209,8 +209,13 @@ const AuditLogsPage: React.FC = () => {
     return map;
   }, [actionMappingsData]);
 
-  const getActionLabel = (action: string) =>
-    actionUiNameMap[action] ?? (actionLabelMap[action] ? t(actionLabelMap[action]) : formatAction(action));
+  const getActionLabel = useCallback(
+    (action: string) => {
+      const labelKey = actionLabelMap[action];
+      return actionUiNameMap[action] ?? (labelKey ? t(labelKey) : formatAction(action));
+    },
+    [actionUiNameMap, t],
+  );
 
   const actionOptions = useMemo(() => {
     const actionSet = new Set<string>();
@@ -225,15 +230,15 @@ const AuditLogsPage: React.FC = () => {
     }
     const actions = Array.from(actionSet);
     actions.sort((left, right) => {
-      const leftLabel = actionUiNameMap[left] ?? (actionLabelMap[left] ? t(actionLabelMap[left]) : formatAction(left));
-      const rightLabel = actionUiNameMap[right] ?? (actionLabelMap[right] ? t(actionLabelMap[right]) : formatAction(right));
+      const leftLabel = getActionLabel(left);
+      const rightLabel = getActionLabel(right);
       return leftLabel.localeCompare(rightLabel);
     });
     return actions.map((action) => ({
       value: action,
-      label: actionUiNameMap[action] ?? (actionLabelMap[action] ? t(actionLabelMap[action]) : formatAction(action)),
+      label: getActionLabel(action),
     }));
-  }, [actionMappingsData, actionUiNameMap, data?.logs, t]);
+  }, [actionMappingsData, data?.logs, getActionLabel]);
 
   const queryClient = useQueryClient();
 
