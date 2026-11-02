@@ -70,7 +70,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
       <form onSubmit={(event) => void submit(event)} className="grid grid--gap-md">
         <h2 id="fresh-totp-title">{t("mfa.title")}</h2>
         <p id="fresh-totp-description">
-          {actionLabel} requires a new code from your authenticator. A code can only be used once.
+          {t("mfa.description", { action: actionLabel })}
         </p>
         <label htmlFor="fresh-totp-input">Authenticator code</label>
         <input
