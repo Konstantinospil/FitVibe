@@ -150,6 +150,7 @@ find "$BACKUP_DIR" -name "fitvibe_${ENVIRONMENT}_*.sql.gz.gpg" -type f -mtime +$
 find "$BACKUP_DIR" -name "fitvibe_${ENVIRONMENT}_*.sha256" -type f -mtime +$RETENTION_DAYS -delete
 find "$BACKUP_DIR" -name "fitvibe_${ENVIRONMENT}_*.meta" -type f -mtime +$RETENTION_DAYS -delete
 
+warn "Backup is local only; copy the encrypted archive and checksum off-host and test restoration separately."
 log "Backup completed successfully: $ENCRYPTED_FILE"
 
 # Send notification (optional)
