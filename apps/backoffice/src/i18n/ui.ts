@@ -1,4 +1,7 @@
 import { useSyncExternalStore } from "react";
+import french from "./fr.json";
+import spanish from "./es.json";
+import greek from "./el.json";
 
 // Backoffice owns its localization independently of frontend bundle splitting.
 // Preserve stable technical identifiers; only user-visible text belongs here.
@@ -230,10 +233,13 @@ const translations: Record<string, Record<string, string>> = {
     "audit.noMetadata": "Keine Metadaten verfügbar.",
     "audit.outcomeSuccess": "Erfolgreich",
     "audit.outcomeFailure": "Fehlgeschlagen"
-  }
+  },
+  fr: french,
+  es: spanish,
+  el: greek
 };
 
-const supported = new Set(["en", "de"]);
+const supported = new Set(["en", "de", "fr", "es", "el"]);
 const languageEvent = "fitvibe-backoffice-language-changed";
 
 export function activeLanguage(): string {
