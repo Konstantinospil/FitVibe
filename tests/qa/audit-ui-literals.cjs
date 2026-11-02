@@ -84,7 +84,7 @@ function contextOf(node) {
       .includes(candidate.operatorToken.kind) &&
     (candidate.left === node || candidate.right === node));
   if (comparison) return { classification: "technical", reason: "comparison-literal" };
-  if (typeof node.text === "string" && /^-?\\d+(?:\\.\\d+)?(?:px|rem|em|vh|vw|%|ch|vmin|vmax)$/.test(node.text)) {
+  if (typeof node.text === "string" && /^-?\d+(?:\.\d+)?(?:px|rem|em|vh|vw|%|ch|vmin|vmax)$/.test(node.text)) {
     return { classification: "technical", reason: "css-dimension" };
   }
   // CSS custom properties are styling tokens, even under objects named `text`.
