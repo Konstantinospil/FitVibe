@@ -230,15 +230,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "@smithy/core",
-      "constraint": "^3.33.3",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "qs",
       "constraint": ">=6.16.1",
       "category": "transitive",

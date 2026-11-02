@@ -2,29 +2,21 @@
  * Secrets Management Service (I-12)
  *
  * Unified interface for loading secrets from:
- * - HashiCorp Vault (development/staging)
- * - AWS Secrets Manager (production)
+ * - HashiCorp Vault (optional)
  * - Environment variables (fallback)
  *
  * Per TDD Section 10.6 & 13.7, supports:
- * - Automatic rotation
- * - Version tracking
- * - Fail-safe fallback
+ * - Provider-selected Vault reads/writes
+ * - Environment fallback on reads
+ * - No cloud SDK required for local startup
  *
  * @see apps/docs/2*.Technical_Design_Document*.md Section 10.6 & 13.7
  */
 
-import {
-  SecretsManagerClient,
-  GetSecretValueCommand,
-  CreateSecretCommand,
-  UpdateSecretCommand,
-  DescribeSecretCommand,
-} from "@aws-sdk/client-secrets-manager";
 import { logger } from "../config/logger.js";
 import { createVaultClient, type VaultClient } from "./vault.client.js";
 
-export type SecretProvider = "vault" | "aws" | "env";
+export type SecretProvider = "vault" | "env";
 
 interface SecretConfig {
   provider: SecretProvider;
@@ -34,14 +26,9 @@ interface SecretConfig {
     token: string;
     namespace?: string;
   };
-  aws?: {
-    enabled: boolean;
-    region: string;
-  };
 }
 
 let vaultClient: VaultClient | null = null;
-let awsClient: SecretsManagerClient | null = null;
 let config: SecretConfig | null = null;
 
 const ENV_SECRET_ALIASES: Record<string, string> = {
@@ -64,27 +51,18 @@ function getEnvironmentSecret(key: string, field?: string): string | null {
   return value === undefined ? null : value;
 }
 
-function readStructuredField(serialized: string, field: string): string | null {
-  try {
-    const parsed = JSON.parse(serialized) as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return null;
-    }
-    const value = (parsed as Record<string, unknown>)[field];
-    return typeof value === "string" ? value : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Initialize secrets manager with configuration
  */
 export function initializeSecretsManager(secretConfig: SecretConfig): void {
+  if (secretConfig.provider !== "vault" && secretConfig.provider !== "env") {
+    throw new Error("Unsupported secrets provider");
+  }
   config = secretConfig;
+  vaultClient = null;
 
-  // Initialize Vault client
-  if (secretConfig.vault?.enabled) {
+  // Initialize Vault only when it is the selected provider.
+  if (secretConfig.provider === "vault" && secretConfig.vault?.enabled) {
     vaultClient = createVaultClient({
       endpoint: secretConfig.vault.addr,
       token: secretConfig.vault.token,
@@ -100,22 +78,7 @@ export function initializeSecretsManager(secretConfig: SecretConfig): void {
     );
   }
 
-  // Initialize AWS Secrets Manager client
-  if (secretConfig.aws?.enabled) {
-    awsClient = new SecretsManagerClient({
-      region: secretConfig.aws.region,
-    });
-
-    logger.info(
-      {
-        provider: "aws",
-        region: secretConfig.aws.region,
-      },
-      "[secrets] AWS Secrets Manager client initialized",
-    );
-  }
-
-  if (!secretConfig.vault?.enabled && !secretConfig.aws?.enabled) {
+  if (secretConfig.provider === "env" || !secretConfig.vault?.enabled) {
     logger.warn("[secrets] No secrets manager enabled - using environment variables only");
   }
 }
@@ -171,26 +134,6 @@ export async function getSecret(key: string, field?: string): Promise<string | n
         "[secrets] Vault read failed; trying environment fallback",
       );
     }
-  } else if (config.provider === "aws" && config.aws?.enabled && awsClient) {
-    try {
-      const command = new GetSecretValueCommand({ SecretId: key });
-      const result = await awsClient.send(command);
-      if (result.SecretString !== undefined) {
-        if (!field) {
-          return result.SecretString;
-        }
-        const value = readStructuredField(result.SecretString, field);
-        if (value !== null) {
-          return value;
-        }
-      }
-      logger.warn({ key, field }, "[secrets] Secret not found in AWS; trying environment fallback");
-    } catch (error) {
-      logger.error(
-        { err: error, key, field },
-        "[secrets] AWS Secrets Manager read failed; trying environment fallback",
-      );
-    }
   }
 
   return getEnvironmentSecret(key, field);
@@ -229,52 +172,6 @@ export async function writeSecret(
       return true;
     } catch (error) {
       logger.error({ err: error, key }, "[secrets] Vault write failed");
-      return false;
-    }
-  }
-
-  // Write to AWS Secrets Manager
-  if (config.provider === "aws" && config.aws?.enabled && awsClient) {
-    try {
-      const secretString = typeof value === "string" ? value : JSON.stringify(value);
-
-      // Check if secret already exists
-      try {
-        const describeCommand = new DescribeSecretCommand({ SecretId: key });
-        await awsClient.send(describeCommand);
-
-        // Secret exists - update it
-        const updateCommand = new UpdateSecretCommand({
-          SecretId: key,
-          SecretString: secretString,
-        });
-        await awsClient.send(updateCommand);
-
-        logger.info({ key }, "[secrets] Secret updated in AWS Secrets Manager");
-        return true;
-      } catch (describeError: unknown) {
-        // Secret doesn't exist or describe failed - try to create it
-        if (
-          describeError instanceof Error &&
-          (describeError.name === "ResourceNotFoundException" ||
-            describeError.message.includes("not found"))
-        ) {
-          // Create new secret
-          const createCommand = new CreateSecretCommand({
-            Name: key,
-            SecretString: secretString,
-          });
-          await awsClient.send(createCommand);
-
-          logger.info({ key }, "[secrets] Secret created in AWS Secrets Manager");
-          return true;
-        }
-
-        // Re-throw if it's a different error
-        throw describeError;
-      }
-    } catch (error) {
-      logger.error({ err: error, key }, "[secrets] AWS Secrets Manager write failed");
       return false;
     }
   }
@@ -354,17 +251,6 @@ export async function checkSecretsHealth(): Promise<boolean> {
       return true;
     } catch (error) {
       logger.error({ err: error }, "[secrets] Vault health check failed");
-      return false;
-    }
-  }
-
-  // Check AWS (try to list secrets)
-  if (config.aws?.enabled && awsClient) {
-    try {
-      // AWS doesn't have a dedicated health endpoint, so we just return true if initialized
-      return true;
-    } catch (error) {
-      logger.error({ err: error }, "[secrets] AWS Secrets Manager health check failed");
       return false;
     }
   }
