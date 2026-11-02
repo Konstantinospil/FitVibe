@@ -27,6 +27,15 @@ const AdminStatusHeader: React.FC = () => {
     refetchInterval: 30000,
   });
 
+  const backendDetails = data
+    ? [
+        `${t("common.db")} ${statusText(data.backend.dbOk, t)}`,
+        `${t("common.nginx")} ${statusText(data.backend.nginxOk, t)}`,
+        `${t("common.clamav")} ${statusText(data.backend.clamavOk, t)}`,
+        `${t("common.readOnly")} ${data.backend.readOnly ? t("common.yes") : t("common.no")}`,
+      ].join(" | ")
+    : "";
+
   if (isLoading) {
     return (
       <div style={{ padding: "1rem 0", color: "var(--color-text-secondary)" }}>
@@ -68,9 +77,7 @@ const AdminStatusHeader: React.FC = () => {
             <span className="font-weight-600">{t("common.backend")}</span>
           </div>
           <div className="text-08 text-secondary">
-            {t("common.db")} {statusText(data.backend.dbOk, t)} | {t("common.nginx")} {statusText(data.backend.nginxOk, t)} |
-            {t("common.clamav")} {statusText(data.backend.clamavOk, t)} | {t("common.readOnly")}{" "}
-            {data.backend.readOnly ? t("common.yes") : t("common.no")}
+            {backendDetails}
           </div>
         </div>
 
