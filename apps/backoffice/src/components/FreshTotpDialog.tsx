@@ -72,7 +72,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
         <p id="fresh-totp-description">
           {t("mfa.description", { action: actionLabel })}
         </p>
-        <label htmlFor="fresh-totp-input">Authenticator code</label>
+        <label htmlFor="fresh-totp-input">{t("mfa.code")}</label>
         <input
           id="fresh-totp-input"
           type="text"
@@ -87,7 +87,7 @@ export function FreshTotpDialog({ actionLabel, onConfirm, onCancel }: Props) {
           disabled={pending}
         />
         {error ? (
-          <p role="alert">The action could not be authorized. Check the code and try again.</p>
+          <p role="alert">{t("mfa.error")}</p>
         ) : null}
         <div className="flex flex--gap-sm">
           <Button type="button" variant="ghost" disabled={pending} onClick={onCancel}>
