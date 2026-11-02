@@ -449,7 +449,7 @@ const AuditLogsPage: React.FC = () => {
                 }}
               >
                 <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                  Select actions
+                  {t("audit.selectActions")}
                 </span>
                 <Button
                   type="button"
@@ -463,12 +463,12 @@ const AuditLogsPage: React.FC = () => {
                   }}
                   style={{ color: colors.textMuted, padding: 0, boxShadow: "none" }}
                 >
-                  Clear
+                  {t("audit.clear")}
                 </Button>
               </div>
               {actionOptions.length === 0 ? (
                 <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                  No actions available
+                  {t("audit.noActions")}
                 </div>
               ) : (
                 <div
@@ -509,7 +509,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          From
+          {t("audit.from")}
           <InputControl
             type="datetime-local"
             value={createdFrom}
@@ -523,7 +523,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          To
+          {t("audit.to")}
           <InputControl
             type="datetime-local"
             value={createdTo}
@@ -536,14 +536,14 @@ const AuditLogsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div style={{ color: colors.text }}>Loading...</div>
+        <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
         <div style={{ color: colors.text, padding: "2rem" }}>
           Error loading audit logs: {error instanceof Error ? error.message : String(error)}
         </div>
       ) : !data || !data.logs || data.logs.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
-          No audit logs found
+          {t("audit.noLogs")}
         </div>
       ) : (
         <>
@@ -569,7 +569,7 @@ const AuditLogsPage: React.FC = () => {
                 onClick={handleResolveSelected}
                 disabled={resolvableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending}
               >
-                Mark Selected Resolved
+                {t("audit.resolveSelected")}
               </Button>
               <Button
                 type="button"
@@ -579,7 +579,7 @@ const AuditLogsPage: React.FC = () => {
                 disabled={reopenableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending}
                 style={{ background: colors.surfaceMuted, color: colors.text }}
               >
-                Reopen Selected
+                {t("audit.reopenSelected")}
               </Button>
             </div>
           </div>
@@ -1008,12 +1008,12 @@ const AuditLogsPage: React.FC = () => {
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
                             >
-                              From
+                              {t("audit.from")}
                             </th>
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
                             >
-                              To
+                              {t("audit.to")}
                             </th>
                           </tr>
                         </thead>
