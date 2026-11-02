@@ -108,7 +108,14 @@ const translations: Record<string, Record<string, string>> = {
     "audit.info": "Info",
     "audit.warning": "Warning",
     "audit.errorSeverity": "Error",
-    "audit.critical": "Critical"
+    "audit.critical": "Critical",
+    "audit.metadata": "Metadata",
+    "audit.changes": "Changes",
+    "audit.field": "Field",
+    "audit.context": "Context",
+    "audit.noMetadata": "No metadata available.",
+    "audit.outcomeSuccess": "Success",
+    "audit.outcomeFailure": "Failure"
   },
   "de": {
     "common.loading": "Laden...",
@@ -215,7 +222,14 @@ const translations: Record<string, Record<string, string>> = {
     "audit.info": "Info",
     "audit.warning": "Warnung",
     "audit.errorSeverity": "Fehler",
-    "audit.critical": "Kritisch"
+    "audit.critical": "Kritisch",
+    "audit.metadata": "Metadaten",
+    "audit.changes": "Änderungen",
+    "audit.field": "Feld",
+    "audit.context": "Kontext",
+    "audit.noMetadata": "Keine Metadaten verfügbar.",
+    "audit.outcomeSuccess": "Erfolgreich",
+    "audit.outcomeFailure": "Fehlgeschlagen"
   }
 };
 
