@@ -104,13 +104,24 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
 
     const fileMeta = await saveUserAvatarFile(userId, processed, "image/png");
     const publicUrl = `/api/v1/users/avatar/${userId}`;
-    const { previousKey, record } = await saveUserAvatarMetadata(userId, {
-      storageKey: fileMeta.storageKey,
-      fileUrl: publicUrl,
-      mimeType: "image/png",
-      bytes: fileMeta.bytes,
-    });
+    let saved: Awaited<ReturnType<typeof saveUserAvatarMetadata>>;
+    try {
+      saved = await saveUserAvatarMetadata(userId, {
+        storageKey: fileMeta.storageKey,
+        fileUrl: publicUrl,
+        mimeType: "image/png",
+        bytes: fileMeta.bytes,
+      });
+    } catch (error) {
+      // The file is written before its database metadata. Avoid leaving an
+      // orphan on disk if the database rejects the new avatar.
+      await deleteStorageObject(fileMeta.storageKey).catch((cleanupError: unknown) => {
+        logger.error({ err: cleanupError, storageKey: fileMeta.storageKey }, "[avatar] cleanup failed");
+      });
+      throw error;
+    }
 
+    const { previousKey, record } = saved;
     if (previousKey) {
       await deleteStorageObject(previousKey).catch(() => undefined);
     }
