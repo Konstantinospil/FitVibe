@@ -63,8 +63,12 @@ export function translate(
   );
 }
 
+export function useBackofficeLocale(): BackofficeLocale {
+  return useSyncExternalStore(subscribe, activeLanguage, () => "en");
+}
+
 export function useUiText(): (key: string, values?: Record<string, string | number>) => string {
-  const language = useSyncExternalStore(subscribe, activeLanguage, () => "en");
+  const language = useBackofficeLocale();
   return useCallback(
     (key: string, values?: Record<string, string | number>) => translate(key, values, language),
     [language],
