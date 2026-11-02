@@ -169,7 +169,7 @@ function analyzeSource(file, source, displayPath = file) {
         const decision = contextOf(node);
         const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
         findings.push({ file: displayPath, line: pos.line + 1, column: pos.character + 1,
-          kind: ts.SyntaxKind[node.kind], text: value.slice(0, 500),
+          kind: ts.SyntaxKind[node.kind], text: value,
           classification: decision.classification, reason: decision.reason });
       }
       if (ts.isTemplateExpression(node)) {
@@ -194,13 +194,13 @@ function analyzeHtml(source, file) {
   const findings = [];
   for (const match of source.matchAll(/\b(?:title|placeholder|alt|aria-label|aria-description)\s*=\s*(["'])(.*?)\1/g)) {
     if (!match[2].trim()) continue;
-    findings.push({ file, ...lineColumn(source, match.index), kind: "HtmlAttribute", text: match[2].slice(0, 500), classification: "ui", reason: "html-attribute" });
+    findings.push({ file, ...lineColumn(source, match.index), kind: "HtmlAttribute", text: match[2], classification: "ui", reason: "html-attribute" });
   }
   const noScripts = source.replace(/<(?:script|style)[^>]*>[\s\S]*?<\/(?:script|style)>/gi, (text) => text.replace(/[^\n]/g, " "));
   for (const match of noScripts.matchAll(/>([^<>{}]+)</g)) {
     const value = match[1].replace(/\s+/g, " ").trim();
     if (!/\p{L}/u.test(value)) continue;
-    findings.push({ file, ...lineColumn(noScripts, match.index + 1), kind: "HtmlText", text: value.slice(0, 500), classification: "ui", reason: "html-text" });
+    findings.push({ file, ...lineColumn(noScripts, match.index + 1), kind: "HtmlText", text: value, classification: "ui", reason: "html-text" });
   }
   return findings;
 }
