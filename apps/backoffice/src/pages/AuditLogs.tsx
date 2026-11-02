@@ -123,15 +123,15 @@ function buildSummary(log: AuditLogEntry, getActionLabel: (action: string) => st
     const changes = getChangeList(log.metadata);
     if (changes.length) {
       const fields = changes.map((change) => formatLabel(change.field, fieldLabelMap)).join(", ");
-      return `Profile updated: ${fields}`;
+      return translate("audit.profileChanges", { fields });
     }
-    return "Profile updated";
+    return translate("audit.profileUpdated");
   }
   if (log.action === "auth.login") {
-    return "User signed in";
+    return translate("audit.signedIn");
   }
   if (log.action === "auth.refresh") {
-    return "Session refreshed";
+    return translate("audit.refreshed");
   }
   return getActionLabel(log.action);
 }
