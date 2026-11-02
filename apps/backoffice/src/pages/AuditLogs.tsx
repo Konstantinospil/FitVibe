@@ -376,7 +376,7 @@ const AuditLogsPage: React.FC = () => {
             <option value="all">{t("audit.all")}</option>
             {severityOptions.map((severity) => (
               <option key={severity} value={severity}>
-                {severity}
+                {t(`audit.${severity === "error" ? "errorSeverity" : severity}`)}
               </option>
             ))}
           </SelectControl>
@@ -747,7 +747,7 @@ const AuditLogsPage: React.FC = () => {
                       >
                         {severityOptions.map((severity) => (
                           <option key={severity} value={severity}>
-                            {severity}
+                            {t(`audit.${severity === "error" ? "errorSeverity" : severity}`)}
                           </option>
                         ))}
                       </SelectControl>
