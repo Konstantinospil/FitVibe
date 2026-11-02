@@ -869,13 +869,13 @@ const AuditLogsPage: React.FC = () => {
                   margin: 0,
                 }}
               >
-                Audit Log Details
+                {t("audit.details")}
               </h2>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                aria-label="Close audit log details"
+                aria-label={t("audit.closeDetails")}
                 onClick={handleCloseModal}
                 style={{
                   color: colors.text,
@@ -934,7 +934,7 @@ const AuditLogsPage: React.FC = () => {
                   fontWeight: "var(--font-weight-semibold)",
                 }}
               >
-                {selectedLog.severity.toUpperCase()}
+                {t(`audit.${selectedLog.severity === "error" ? "errorSeverity" : selectedLog.severity}`)}
               </div>
             </div>
 
@@ -954,7 +954,7 @@ const AuditLogsPage: React.FC = () => {
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.resolvedAt
                   ? new Date(selectedLog.resolvedAt).toLocaleString()
-                  : "Open"}
+                  : t("audit.open")}
               </div>
             </div>
 
@@ -981,7 +981,7 @@ const AuditLogsPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                Metadata
+                {t("audit.metadata")}
               </div>
               {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 ? (
                 <div
@@ -996,14 +996,14 @@ const AuditLogsPage: React.FC = () => {
                 >
                   {getChangeList(selectedLog.metadata).length > 0 && (
                     <div style={{ marginBottom: "1rem" }}>
-                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>Changes</div>
+                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>{t("audit.changes")}</div>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
                           <tr>
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
                             >
-                              Field
+                              {t("audit.field")}
                             </th>
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
@@ -1047,7 +1047,7 @@ const AuditLogsPage: React.FC = () => {
                   {Object.entries(selectedLog.metadata).filter(([key]) => key !== "changes")
                     .length > 0 && (
                     <div>
-                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>Context</div>
+                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>{t("audit.context")}</div>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <tbody>
                           {Object.entries(selectedLog.metadata)
@@ -1075,7 +1075,7 @@ const AuditLogsPage: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div style={{ color: colors.textMuted }}>No metadata available.</div>
+                <div style={{ color: colors.textMuted }}>{t("audit.noMetadata")}</div>
               )}
             </div>
 
@@ -1086,7 +1086,7 @@ const AuditLogsPage: React.FC = () => {
                 onClick={handleCloseModal}
                 style={{ color: colors.text, border: `1px solid ${colors.border}` }}
               >
-                Close
+                {t("common.close")}
               </Button>
             </div>
           </div>
