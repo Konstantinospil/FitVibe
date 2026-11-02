@@ -34,6 +34,14 @@ function reportOf(snapshot, locale) {
     browserLocale: locale, textCandidates: candidates.length, candidates };
 }
 
+const expectedAdminCopy = {
+  en: { dashboard: "Admin Dashboard", logout: "Logout", audit: "Audit Logs" },
+  de: { dashboard: "Administrationsübersicht", logout: "Abmelden", audit: "Audit-Protokolle" },
+  fr: { dashboard: "Tableau de bord administrateur", logout: "Déconnexion", audit: "Journaux d’audit" },
+  es: { dashboard: "Panel de administración", logout: "Cerrar sesión", audit: "Registros de auditoría" },
+  el: { dashboard: "Πίνακας διαχείρισης", logout: "Αποσύνδεση", audit: "Αρχεία καταγραφής ελέγχου" }
+};
+
 for (const locale of LOCALES) {
   test.describe("Backoffice localization audit " + locale, () => {
     test.use({ locale: locale + (locale === "en" ? "-US" : locale === "de" ? "-DE" : locale === "fr" ? "-FR" : locale === "es" ? "-ES" : "-GR") });
@@ -52,6 +60,12 @@ for (const locale of LOCALES) {
       await prepareAdmin(page);
       await page.goto("/translations");
       await expect(page.getByRole("heading", { name: /^translations$/i })).toBeVisible();
+      // These components were audited in the first 500 findings. Assert actual
+      // rendered localized UI rather than simply collecting English text.
+      const copy = expectedAdminCopy[locale];
+      await expect(page.getByRole("heading", { name: copy.dashboard, exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: copy.logout, exact: true })).toBeVisible();
+      await expect(page.getByText(copy.audit, { exact: true }).first()).toBeVisible();
       const result = reportOf(await capturePage(page), locale);
       console.log("Backoffice runtime locale " + locale + " translations: " + result.textCandidates + " visible text candidates; htmlLang=" + result.htmlLang);
       await testInfo.attach("backoffice-localization-" + locale + "-translations.json", {
