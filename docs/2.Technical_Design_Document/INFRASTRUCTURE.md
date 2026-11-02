@@ -1,5 +1,7 @@
 # FitVibe Infrastructure Deployment Guide
 
+**Status: Legacy cloud/Kubernetes design reference — NOT an active deployment runbook (2026-11-02).** The sections below describe an unimplemented AWS-based target and include provider-specific examples. FitVibe's operative deployment uses Docker Compose on a private Raspberry Pi; follow [`infra/docker/prod/README.md`](../../infra/docker/prod/README.md) and [`infra/docker/prod/compose.yml`](../../infra/docker/prod/compose.yml). AWS Secrets Manager integration, S3 backup upload and AWS EBS StorageClass provisioning have been removed. Do not execute the AWS CLI examples below as deployment instructions.
+
 This document provides comprehensive instructions for deploying FitVibe infrastructure across all environments.
 
 ## Table of Contents
