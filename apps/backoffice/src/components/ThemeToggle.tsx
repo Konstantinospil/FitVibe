@@ -7,6 +7,7 @@ import { useThemeColors } from "../hooks/useThemeColors";
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useThemeStore();
   const colors = useThemeColors();
+  const t = useUiText();
 
   return (
     <button
@@ -26,8 +27,8 @@ const ThemeToggle: React.FC = () => {
         transition: "background 150ms ease, color 150ms ease",
         gap: "0.5rem",
       }}
-      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-      title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-label={theme === "dark" ? t("theme.toLight") : t("theme.toDark")}
+      title={theme === "dark" ? t("theme.toLight") : t("theme.toDark")}
     >
       {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
     </button>
