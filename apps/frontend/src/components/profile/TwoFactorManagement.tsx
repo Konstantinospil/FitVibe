@@ -152,9 +152,7 @@ export const TwoFactorManagement: React.FC<Props> = ({
 
       {!enabled && restartRequired && (
         <>
-          <p role="status">
-            {t("settings.security.restartSetupNotice")}
-          </p>
+          <p role="status">{t("settings.security.restartSetupNotice")}</p>
           <label className="form-label">
             <span className="form-label-text">{t("auth.login.passwordLabel")}</span>
             <InputControl
