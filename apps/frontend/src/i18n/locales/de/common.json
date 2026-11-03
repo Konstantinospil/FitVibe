@@ -1219,5 +1219,17 @@
   "notifications": {
     "region": "Benachrichtigungen",
     "dismiss": "Benachrichtigung schließen"
+  },
+  "dashboardAnalytics": {
+    "streak": "Trainingsserie",
+    "sessions": "Abgeschlossene Einheiten",
+    "volume": "Gesamtvolumen",
+    "days": "{{count}} Tage",
+    "trend": "{{change}} gegenüber dem vorherigen Zeitraum",
+    "volumeTrend": "{{change}} Tsd. kg gegenüber dem vorherigen Zeitraum",
+    "volumeValue": "{{value}} Tsd. kg",
+    "zeroVolume": "0 kg",
+    "unknown": "Unbekannt",
+    "week": "Woche {{number}}"
   }
 }
