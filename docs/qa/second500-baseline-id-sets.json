@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "baseline": {
+    "runId": 41533808821,
+    "report": "ui-literals.json",
+    "findingIndices": "501 through 1000 inclusive",
+    "idsJoinedByNewlinesSha256": "9ea6a99d356cfd58c39ea5c930de6871ceaa74a0dba6fc813e75995459e2c772"
+  },
+  "codes": {
+    "T": "already technical",
+    "F": "original false-positive candidate; retain as technical",
+    "L": "confirmed user-facing copy; source literal must be removed"
+  },
+  "counts": {
+    "T": 362,
+    "F": 34,
+    "L": 104
+  },
+  "localizedIds": "JLuM0v4FCXQuFY8tTOB5KpPeRbNVW0HAObQzDrUg3QTTFdT1qVFAbWDvJwzpeUq5sheuWVTmTv87RXpFwAL7rVr3SaWVGgx65ohOVPHJ/pHixxdGwwtXLWHIQX04NydLsKkYVHs1U7JuZIziUZSkMpxJWd42sIrz5F53mwLWs/ojms8raMjrgFUmO1jQgsKkaBAi9ZwM3j+12AmtyW48xSTTO/zutlH8tD+RkUk65ACDQXRRFaGFdCO/a2TA21XC3adnxRMnMaDpZG6OKvqgsbNZKQBM4zA6cMEHZX6xzrKw1nSJayvBr5Dr6t0duwD4HauxWFaC4h/zudt+fCk4EEFFQd5uGti/mynERxPhFTswTGtyR/KDrrSKm0DFL+Q5GQk0V4MT75S9zOSgxSZqiUXGsgzcroziedNCuDkHBvQO8PNn1O0k0WfzGV7mCB8UvQAFM86CYlsnqg6Nv0rQ17C3U4egDIgGFVoh6WDYSPpj6XDFm8lqSpHLyfZvL/ku+eJiVannHlNa3k37iM2ltjmPGM5InFXHw2cojosm/I20bEZrLgAdIwY6q2OT+7GXxoPaKuTfQtCUnB+TXdhfju+qBqewX4jaoiyIK4IgnptJkXtZWMA6sLrtucwSLs+ibnyrIKGTENsrvLm/ZU131gaYBeyhAetfn/SUYCbF8jvCzvPyUiiL7Gv7MZC7Ix3OMR4vmB6ILkS2mzOAwAuq2C6yaFV53ViiSdeAjSPYvEuLK8nBEHBF2GpYkG6NDJlSKHevcgeGdodmlTkgoMN9fZ7a/sX0nwf5XVXBgn1B8tKpOumUdej2ZuMfLxzU3DRnjG4WaUIn0NW0SG6IU9LJLpvEc6Jmtzbhayt6OOTplu11ZfCmDPdYL6+CAx8VV4Wi2OROVvtEUmpUEamtCvsAThlJEAFW3pdWmcG4isW+RU8H/XUNZ3xKRJqS+6ze8Qo7oO9EFmnIYoKmTcFo/ynIPbyZEed/eCre6iawwLc5kGOj7xHPdHBDZb2awRvA6i0Q+SkPMaFu4y1Q+X2F3qA4UtQjlaqScjlm6zvCAh0GnOSQg0ANmODYBf0q5ukMyHEoEpuc/LtCyy0gpn03uOzK1w==",
+  "falsePositiveIds": "maxsrkCd3UqtowmckZeNbWKGbZsclD1D6KC0dkfDbfNP+I8PX4CABS2fOC438HSGfz3/HJm8SGmp2R56WrHLsu2G2MbmytKN1gY8Q21atfdCGoElFOBsUDTa0+/W+3R9lSEkg8uzUmL6bWBLEmCvdukMInAyVgomQfAnlhQ5IbN4/QU2DK5KuI5FZn4Kounqp0E2ywVVK0/sYoGCW2CGuVeCXdOP8RwFKB9Z98BeQL4iC9ftDGEt1ghUdGXtz6TPvmRC+kA0DjqdDFw3pKey09fKK6XPDv8VhlLf+Wu8v22361b2jPKPmD/FKtZv954S553jTViQQ6wwavpehCe4x5Vzn9r77hAfuOnMkMV3Bp8="
+}
