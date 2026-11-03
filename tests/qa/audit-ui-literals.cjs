@@ -23,6 +23,7 @@ const TECHNICAL_JSX_PROPS = new Set([
   "target", "rel", "method", "action", "autocomplete", "inputmode", "width",
   "height", "variant", "size", "color", "background", "style", "testid",
   "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang", "to", "path",
+  "align", "loading", "controlsize",
 ]);
 const TECHNICAL_OBJECT_KEYS = new Set([
   "id", "key", "type", "role", "status", "code", "path", "url", "route",
@@ -111,6 +112,24 @@ function contextOf(node) {
     return { classification: "technical", reason: "module-specifier" };
   }
   if (ts.isLiteralTypeNode(node.parent)) return { classification: "technical", reason: "type-literal" };
+  // Only recognized typed protocol unions qualify; ordinary strings remain candidates.
+  if (ts.isCallExpression(node.parent) && node.parent.expression.getText() === "useState" &&
+      node.parent.arguments[0] === node &&
+      node.parent.typeArguments?.some((type) =>
+        /\b(?:LegalDocumentType|LegalChangeClass|LegalUserAction)\b/.test(type.getText()))) {
+    return { classification: "technical", reason: "typed-legal-state" };
+  }
+  if (typedDeclaration?.name.getText() === "ACTIONS_BY_DOCUMENT" &&
+      /\bLegalUserAction\b/.test(typedDeclaration.type?.getText() || "")) {
+    return { classification: "technical", reason: "typed-legal-action-map" };
+  }
+  if (typeof node.text === "string" && /^mailto:/.test(node.text)) {
+    return { classification: "technical", reason: "mailto-uri-template" };
+  }
+  if (ts.isBinaryExpression(node.parent) && node.parent.operatorToken.kind === ts.SyntaxKind.InKeyword &&
+      node.parent.left === node) {
+    return { classification: "technical", reason: "object-property-test" };
+  }
   if (ts.isNewExpression(node.parent) && node.parent.expression.getText() === "Error") return { classification: "technical", reason: "internal-exception" };
   if (ts.isCallExpression(node.parent) && /^(?:document\.getElementById|document\.querySelector|document\.querySelectorAll)$/.test(node.parent.expression.getText())) return { classification: "technical", reason: "dom-selector" };
   if (ts.isPropertyAssignment(node.parent) && node.parent.name === node) {
