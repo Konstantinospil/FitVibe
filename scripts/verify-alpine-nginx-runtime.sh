@@ -35,4 +35,3 @@ check_package brotli-libs 1.2.1-r0
 check_package libexpat 2.10.0-r0
 check_package curl 8.23.0-r0
 check_package libcurl 8.23.0-r0
-nginx -t
