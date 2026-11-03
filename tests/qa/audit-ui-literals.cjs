@@ -361,7 +361,10 @@ function analyzeSource(file, source, displayPath = file) {
   function visit(node) {
     if (ts.isJsxText(node) || ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) {
       const value = literalText(node, sourceFile);
-      if (value && /\p{L}|\d/u.test(value)) {
+      const staticText = ts.isTemplateExpression(node)
+        ? value.replace(/\$\{expression\}/g, "")
+        : value;
+      if (value && /\p{L}|\d/u.test(staticText)) {
         const decision = contextOf(node);
         const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
         findings.push({ file: displayPath, line: pos.line + 1, column: pos.character + 1,
