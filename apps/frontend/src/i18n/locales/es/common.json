@@ -744,7 +744,9 @@
       "backupCodesHelp": "Guarda estos códigos en un lugar seguro. Podrás usarlos si pierdes tu dispositivo autenticador.",
       "revealBackupCodes": "Mostrar códigos de respaldo",
       "hideBackupCodes": "Ocultar códigos de respaldo",
-      "finishBackupCodes": "Listo"
+      "finishBackupCodes": "Listo",
+      "restartSetupNotice": "No se completó una configuración anterior de 2FA. Introduce tu contraseña para reiniciar la configuración.",
+      "restartSetup": "Reiniciar configuración de 2FA"
     },
     "account": {
       "title": "Zona de peligro",
@@ -1226,5 +1228,16 @@
   "legalDocument": {
     "effectiveDate": "Fecha de entrada en vigor:",
     "version": "Versión:"
+  },
+  "notifications": {
+    "region": "Notificaciones",
+    "close": "Cerrar notificación"
+  },
+  "theme": {
+    "toLight": "Cambiar al modo claro",
+    "toDark": "Cambiar al modo oscuro"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Tu Vibeform"
   }
 }
