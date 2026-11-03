@@ -25,6 +25,29 @@ const TECHNICAL_JSX_PROPS = new Set([
   "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang", "to", "path",
   "align", "loading", "controlsize",
 ]);
+const TECHNICAL_ARIA_PROPS = new Set([
+  "aria-hidden", "aria-live", "aria-haspopup", "aria-required", "aria-disabled",
+  "aria-current", "aria-pressed", "aria-busy", "aria-expanded", "aria-checked",
+  "aria-invalid", "aria-modal", "aria-orientation", "aria-autocomplete",
+  "aria-multiselectable", "aria-selected", "aria-relevant", "aria-atomic",
+]);
+const SVG_TAGS = new Set([
+  "svg", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon",
+  "linearGradient", "radialGradient", "stop", "clipPath", "mask", "pattern",
+  "defs", "g", "use", "symbol", "text", "tspan", "filter",
+]);
+const SVG_ATTRIBUTES = new Set([
+  "viewbox", "xmlns", "preserveaspectratio", "d", "points", "strokewidth",
+  "strokelinecap", "strokelinejoin", "strokedasharray", "stroke", "fill",
+  "fillrule", "fillopacity", "strokeopacity", "cx", "cy", "r", "rx", "ry",
+  "x", "y", "x1", "x2", "y1", "y2", "transform", "clippath", "vectoreffect",
+  "offset", "stopcolor", "gradientunits", "gradienttransform",
+]);
+const TECHNICAL_PROPS = new Set([
+  "tone", "kind", "format", "min", "max", "step", "form", "decoding",
+  "documenttype", "viewportclassname", "mainid", "source", "meta",
+]);
+
 const TECHNICAL_OBJECT_KEYS = new Set([
   "id", "key", "type", "role", "status", "code", "path", "url", "route",
   "method", "endpoint", "querykey", "username", "email", "language", "locale",
@@ -76,6 +99,16 @@ function fieldName(node) {
 
 function contextOf(node) {
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
+  if (typeof node.text === "string" &&
+      /^(?:data:image\/|https?:\/\/|#[0-9a-f]{3,8}$|url\(#[-\w]+\)$)/i.test(node.text)) {
+    return { classification: "technical", reason: "resource-or-color" };
+  }
+  // ICU/Intl formatting instructions and locale identifiers control formatting;
+  // the formatted output, not these option values, is user-facing.
+  const formatter = ancestor(node, (candidate) =>
+    (ts.isCallExpression(candidate) && /\.(?:toLocaleDateString|toLocaleTimeString|toLocaleString)$/.test(candidate.expression.getText())) ||
+    (ts.isNewExpression(candidate) && /^(?:Intl\.)?(?:DateTimeFormat|NumberFormat|RelativeTimeFormat|DisplayNames)$/.test(candidate.expression.getText())));
+  if (formatter) return { classification: "technical", reason: "intl-format-options" };
   // Technical comparison operands must not be treated as UI copy just because
   // the whole comparison sits inside a visible JSX attribute.
   const comparison = ancestor(node, (candidate) =>
@@ -215,6 +248,30 @@ function contextOf(node) {
     if (key === "onclick" && handler &&
         handler.arguments.some((argument) => argument === node)) {
       return { classification: "technical", reason: "moderation-action-code" };
+    }
+    if (TECHNICAL_ARIA_PROPS.has(key)) {
+      return { classification: "technical", reason: `aria-state:${key}` };
+    }
+    // SVG vector coordinates, paint tokens and path commands are not UI copy.
+    // Restrict this rule to native SVG tags, not custom React components.
+    const owner = attribute.parent;
+    if (ts.isJsxAttributes(owner)) {
+      const element = owner.parent;
+      const tagName = element.tagName?.getText();
+      if (tagName && SVG_TAGS.has(tagName) && SVG_ATTRIBUTES.has(key)) {
+        return { classification: "technical", reason: `svg-attribute:${key}` };
+      }
+    }
+    if (key.startsWith("on") && key.length > 2) {
+      const uiCall = ancestor(node, (candidate) =>
+        ts.isCallExpression(candidate) &&
+        (MESSAGE_CALLS.test(candidate.expression.getText()) ||
+         MESSAGE_METHODS.test(candidate.expression.getText())));
+      if (uiCall) return { classification: "ui", reason: "event-handler-notification" };
+      return { classification: "technical", reason: `event-handler-code:${key}` };
+    }
+    if (TECHNICAL_PROPS.has(key)) {
+      return { classification: "technical", reason: `jsx-technical-prop:${key}` };
     }
     if (key.startsWith("aria-") || UI_PROPS.has(key)) return { classification: "ui", reason: `jsx-attribute:${key}` };
     if (key.startsWith("data-") || TECHNICAL_JSX_PROPS.has(key)) return { classification: "technical", reason: `jsx-property:${key}` };
