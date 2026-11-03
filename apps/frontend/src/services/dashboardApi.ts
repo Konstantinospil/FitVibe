@@ -63,26 +63,36 @@ export async function getDashboardAnalytics(params: {
   const summaryMetrics: DashboardSummaryMetric[] = [
     {
       id: "streak",
-      label: i18n.t("dashboard.metrics.streak"),
-      value: i18n.t("dashboard.metrics.days", { count: summary.currentStreak ?? 0 }),
+      label: i18n.t("dashboardAnalytics.streak"),
+      value: i18n.t("dashboardAnalytics.days", { count: summary.currentStreak ?? 0 }),
       trend: summary.streakChange
-        ? i18n.t("dashboard.metrics.trend", { change: `${summary.streakChange > 0 ? "+" : ""}${summary.streakChange}` })
+        ? i18n.t("dashboardAnalytics.trend", {
+            change: `${summary.streakChange > 0 ? "+" : ""}${summary.streakChange}`,
+          })
         : "",
     },
     {
       id: "sessions",
-      label: i18n.t("dashboard.metrics.sessionsCompleted"),
+      label: i18n.t("dashboardAnalytics.sessions"),
       value: summary.totalSessions?.toString() || "0",
       trend: summary.sessionsChange
-        ? i18n.t("dashboard.metrics.trend", { change: `${summary.sessionsChange > 0 ? "+" : ""}${summary.sessionsChange}` })
+        ? i18n.t("dashboardAnalytics.trend", {
+            change: `${summary.sessionsChange > 0 ? "+" : ""}${summary.sessionsChange}`,
+          })
         : "",
     },
     {
       id: "volume",
-      label: i18n.t("dashboard.metrics.totalVolume"),
-      value: summary.totalVolume ? `${(summary.totalVolume / 1000).toFixed(1)}k kg` : "0 kg",
+      label: i18n.t("dashboardAnalytics.volume"),
+      value: summary.totalVolume
+        ? i18n.t("dashboardAnalytics.volumeValue", {
+            value: (summary.totalVolume / 1000).toFixed(1),
+          })
+        : i18n.t("dashboardAnalytics.zeroVolume"),
       trend: summary.volumeChange
-        ? i18n.t("dashboard.metrics.trendVolume", { change: `${summary.volumeChange > 0 ? "+" : ""}${summary.volumeChange.toFixed(0)}` })
+        ? i18n.t("dashboardAnalytics.volumeTrend", {
+            change: `${summary.volumeChange > 0 ? "+" : ""}${(summary.volumeChange / 1000).toFixed(1)}`,
+          })
         : "",
     },
   ];
@@ -90,16 +100,16 @@ export async function getDashboardAnalytics(params: {
   const personalRecords: DashboardPersonalRecord[] = (summary.personalRecords || [])
     .slice(0, 3)
     .map((pr) => ({
-      lift: pr.exerciseName || i18n.t("dashboard.metrics.unknown"),
+      lift: pr.exerciseName || i18n.t("dashboardAnalytics.unknown"),
       value: pr.value ? `${pr.value} ${pr.unit || "kg"}` : "-",
-      achieved: pr.achievedAt || i18n.t("dashboard.metrics.unknown"),
+      achieved: pr.achievedAt || i18n.t("dashboardAnalytics.unknown"),
       visibility: (pr.visibility as "public" | "link" | "private") || "private",
     }));
 
   const aggregates: DashboardAggregateRow[] = (trends || [])
     .slice(0, MAX_ANALYTIC_ROWS)
     .map((row, index: number) => ({
-      period: row.label || i18n.t("dashboard.metrics.week", { number: index + 1 }),
+      period: row.label || i18n.t("dashboardAnalytics.week", { number: index + 1 }),
       volume: row.volume,
       sessions: row.sessions,
     }));
