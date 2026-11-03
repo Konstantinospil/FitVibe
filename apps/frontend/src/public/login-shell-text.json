@@ -1,0 +1,42 @@
+{
+  "en": {
+    "show": "Show",
+    "hide": "Hide",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "missingFields": "Both email and password are required.",
+    "invalidCredentials": "We couldn't verify your credentials. Please try again."
+  },
+  "de": {
+    "show": "Anzeigen",
+    "hide": "Verbergen",
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
+    "missingFields": "E-Mail und Passwort sind erforderlich.",
+    "invalidCredentials": "Die Anmeldedaten konnten nicht bestätigt werden. Bitte versuchen Sie es erneut."
+  },
+  "fr": {
+    "show": "Afficher",
+    "hide": "Masquer",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe",
+    "missingFields": "L’adresse e-mail et le mot de passe sont obligatoires.",
+    "invalidCredentials": "Impossible de vérifier vos identifiants. Réessayez."
+  },
+  "es": {
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "missingFields": "Se requieren correo electrónico y contraseña.",
+    "invalidCredentials": "No se pudieron verificar las credenciales. Inténtalo de nuevo."
+  },
+  "el": {
+    "show": "Εμφάνιση",
+    "hide": "Απόκρυψη",
+    "showPassword": "Εμφάνιση κωδικού πρόσβασης",
+    "hidePassword": "Απόκρυψη κωδικού πρόσβασης",
+    "missingFields": "Απαιτούνται email και κωδικός πρόσβασης.",
+    "invalidCredentials": "Δεν ήταν δυνατή η επαλήθευση των στοιχείων σύνδεσης. Δοκιμάστε ξανά."
+  }
+}
