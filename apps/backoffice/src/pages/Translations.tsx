@@ -434,7 +434,7 @@ const TranslationsPage: React.FC = () => {
           }}
           style={{ width: "150px" }}
         >
-          <option value="">All Languages</option>
+          <option value="">{t("translations.allLanguages")}</option>
           {languages.map((lang) => (
             <option key={lang} value={lang}>
               {getLanguageLabel(lang)}
@@ -450,7 +450,7 @@ const TranslationsPage: React.FC = () => {
           }}
           style={{ width: "150px" }}
         >
-          <option value="">All Namespaces</option>
+          <option value="">{t("translations.allNamespaces")}</option>
           {namespaces.map((ns) => (
             <option key={ns} value={ns}>
               {ns}
@@ -674,7 +674,7 @@ const TranslationsPage: React.FC = () => {
       )}
 
       {isLoading ? (
-        <div style={{ color: "var(--color-text-primary)" }}>Loading...</div>
+        <div style={{ color: "var(--color-text-primary)" }}>{t("common.loading")}</div>
       ) : (
         <>
           <div
