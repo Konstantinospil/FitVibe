@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useUiText } from "../i18n/ui";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, InputControl, TextareaControl } from "@fitvibe/ui";
 import { messagesApi, type ContactMessage } from "../services/api";
@@ -7,6 +8,7 @@ import { useThemeColors } from "../hooks/useThemeColors";
 
 const MessagesPage: React.FC = () => {
   const colors = useThemeColors();
+  const t = useUiText();
   const [page, setPage] = useState(0);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
@@ -77,14 +79,14 @@ const MessagesPage: React.FC = () => {
     savedResponse?: string | null,
   ) => {
     // Construct mailto link with subject and body
-    const subject = topic ? `Re: ${topic}` : "Re: Contact Form Message";
+    const subject = t("messages.replySubject", { topic: topic || t("messages.contactSubject") });
     let body = "";
 
     // Include saved response if it exists, otherwise include original message context
     if (savedResponse) {
       body = encodeURIComponent(savedResponse);
     } else if (message) {
-      const bodyText = `--- Original Message ---\n\nFrom: ${email}\nTopic: ${topic || "N/A"}\n\n${message}`;
+      const bodyText = t("messages.originalBody", { email, topic: topic || t("messages.notAvailable"), message });
       body = encodeURIComponent(bodyText);
     }
 
@@ -149,7 +151,7 @@ const MessagesPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        User Messages
+        {t("messages.title")}
       </h1>
 
       <div style={{ marginBottom: "2rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
@@ -163,7 +165,7 @@ const MessagesPage: React.FC = () => {
             }}
             style={{ cursor: "pointer" }}
           />
-          Show unread only
+          {t("messages.unreadOnly")}
         </label>
         <label style={{ color: colors.text, display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <InputControl
@@ -175,21 +177,21 @@ const MessagesPage: React.FC = () => {
             }}
             style={{ cursor: "pointer" }}
           />
-          Show open only
+          {t("messages.openOnly")}
         </label>
       </div>
 
       {isLoading ? (
-        <div style={{ color: colors.text }}>Loading...</div>
+        <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
         <div style={{ color: "var(--vibe-explosivity)", padding: "2rem" }}>
-          Error loading messages: {error instanceof Error ? error.message : String(error)}
+          {t("messages.loadError")} {error instanceof Error ? error.message : String(error)}
         </div>
       ) : !data || !data.messages || data.messages.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
-          No messages found
-          {unreadOnly ? " (unread only)" : ""}
-          {openOnly ? " (open only)" : ""}
+          {t("messages.empty")}
+          {unreadOnly ? t("messages.unreadSuffix") : ""}
+          {openOnly ? t("messages.openSuffix") : ""}
         </div>
       ) : (
         <>
