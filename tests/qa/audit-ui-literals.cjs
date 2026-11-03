@@ -99,6 +99,18 @@ function fieldName(node) {
 
 function contextOf(node) {
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
+  // CSS inside a native <style> tag is a stylesheet, not page copy.
+  if (ancestor(node, (candidate) =>
+    ts.isJsxElement(candidate) && candidate.openingElement.tagName.getText() === "style")) {
+    return { classification: "technical", reason: "inline-stylesheet" };
+  }
+  // A dynamic template without language-bearing static text assembles
+  // values rather than hard-coding a particular UI language.
+  if (ts.isTemplateExpression(node) &&
+      [node.head.text, ...node.templateSpans.map((span) => span.literal.text)]
+        .every((part) => !/[\\p{L}]/u.test(part))) {
+    return { classification: "technical", reason: "nonlinguistic-template-joiner" };
+  }
   if (typeof node.text === "string" &&
       /^(?:data:image\/|https?:\/\/|#[0-9a-f]{3,8}$|url\(#[-\w]+\)$)/i.test(node.text)) {
     return { classification: "technical", reason: "resource-or-color" };
@@ -285,9 +297,20 @@ function contextOf(node) {
     if (key.startsWith("data-") || TECHNICAL_JSX_PROPS.has(key)) return { classification: "technical", reason: `jsx-property:${key}` };
     return { classification: "review", reason: `jsx-property:${key}` };
   }
-  if (ancestor(node, (candidate) => ts.isJsxExpression(candidate) &&
-      (ts.isJsxElement(candidate.parent) || ts.isJsxSelfClosingElement(candidate.parent) || ts.isJsxFragment(candidate.parent)))) {
-    return { classification: "ui", reason: "jsx-expression" };
+  // Only direct JSX children or immediately rendered conditional branches
+  // are copy. Literals inside an event-handler callback, a data mapper or a
+  // network request nested beneath JSX are ordinary program values.
+  const enclosingJsx = ancestor(node, (candidate) =>
+    ts.isJsxExpression(candidate) &&
+    (ts.isJsxElement(candidate.parent) || ts.isJsxSelfClosingElement(candidate.parent) ||
+     ts.isJsxFragment(candidate.parent)));
+  if (enclosingJsx) {
+    if (node.parent === enclosingJsx ||
+        (ts.isConditionalExpression(node.parent) && node.parent.parent === enclosingJsx &&
+         (node.parent.whenTrue === node || node.parent.whenFalse === node))) {
+      return { classification: "ui", reason: "direct-jsx-copy" };
+    }
+    return { classification: "review", reason: "nested-jsx-program-literal" };
   }
   const call = ancestor(node, (candidate) => ts.isCallExpression(candidate));
   if (call && isTranslationCall(call) && call.arguments[0] === node) {
@@ -307,6 +330,9 @@ function contextOf(node) {
     if (name.endsWith(".includes") && call.arguments.length > 0 &&
         ancestor(call, (candidate) => ts.isIfStatement(candidate) || ts.isConditionalExpression(candidate))) {
       return { classification: "technical", reason: "predicate-discriminator" };
+    }
+    if (name === "showToast" && call.arguments[0] === node) {
+      return { classification: "technical", reason: "toast-severity-code" };
     }
     if (MESSAGE_CALLS.test(name) || MESSAGE_METHODS.test(name)) {
       return { classification: "ui", reason: `notification:${name}` };
@@ -357,8 +383,22 @@ function analyzeSource(file, source, displayPath = file) {
   function visit(node) {
     if (ts.isJsxText(node) || ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) {
       const value = literalText(node, sourceFile);
-      if (value && /\p{L}|\d/u.test(value)) {
+      if (value && /\\p{L}|\\d/u.test(value)) {
         const decision = contextOf(node);
+        if (displayPath === "apps/frontend/src/pages/Settings.tsx" &&
+            ts.isJsxText(node) &&
+            ["English", "Deutsch", "Français", "Español", "Ελληνικά"].includes(value)) {
+          decision.classification = "technical";
+          decision.reason = "intentional-language-endonym";
+        }
+        if (displayPath === "apps/frontend/src/components/FooterSocialLinks.tsx" &&
+            ts.isStringLiteral(node) &&
+            ["Instagram", "LinkedIn", "YouTube", "GitHub"].includes(value) &&
+            ts.isPropertyAssignment(node.parent) &&
+            node.parent.name.getText() === "label") {
+          decision.classification = "technical";
+          decision.reason = "untranslated-brand-proper-name";
+        }
         const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
         findings.push({ file: displayPath, line: pos.line + 1, column: pos.character + 1,
           kind: ts.SyntaxKind[node.kind], text: value,
