@@ -136,7 +136,8 @@
     "impressumAriaLabel": "Προβολή Στοιχείων Εταιρείας",
     "contactAriaLabel": "Επικοινωνήστε μαζί μας",
     "expand": "Ανάπτυξη υποσέλιδου",
-    "collapse": "Σύμπτυξη υποσέλιδου"
+    "collapse": "Σύμπτυξη υποσέλιδου",
+    "socialMediaLabel": "Κοινωνικά δίκτυα"
   },
   "terms": {
     "eyebrow": "Νομικά",
@@ -1243,5 +1244,17 @@
     "zeroVolume": "0 kg",
     "unknown": "Άγνωστο",
     "week": "Εβδομάδα {{number}}"
+  },
+  "themeToggle": {
+    "switchToLight": "Εναλλαγή σε φωτεινή λειτουργία",
+    "switchToDark": "Εναλλαγή σε σκοτεινή λειτουργία"
+  },
+  "vibeBadge": {
+    "showIcon": "{{label}}: {{level}}. Εμφάνιση συμβόλου Vibe",
+    "showLevel": "{{label}}. Εμφάνιση επιπέδου"
+  },
+  "vibeformConstellation": {
+    "accessibleLabel": "Πίνακας Vibeform",
+    "athleteLabel": "Vibeform αθλητή"
   }
 }
