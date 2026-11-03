@@ -28,6 +28,22 @@ test("does not misidentify translation keys, imports or CSS classes", () => {
   assert.equal(find('<button title={t("save")}>Save</button>', "save")?.classification, "technical");
 });
 
+test("semantic ARIA values and SVG geometry are not translated", () => {
+  const source = '<><svg viewBox="0 0 60 40"><path d="M 0 0" strokeWidth="2" /></svg><span aria-hidden="true" aria-live="polite" aria-label="Notifications" /></>';
+  const results = analyzeSource("fixture.tsx", source);
+  for (const value of ["0 0 60 40", "M 0 0", "2", "true", "polite"]) {
+    assert.ok(results.some((item) => item.text === value && item.classification === "technical"), value);
+  }
+  assert.equal(results.find((item) => item.text === "Notifications").classification, "ui");
+});
+
+test("CSS colors and toast level enums are not UI prose", () => {
+  const results = analyzeSource("fixture.tsx", 'const c="#C8102E"; showToast("success", "Profile saved");');
+  assert.equal(results.find((item) => item.text === "#C8102E").classification, "technical");
+  assert.equal(results.find((item) => item.text === "success").classification, "technical");
+  assert.equal(results.find((item) => item.text === "Profile saved").classification, "ui");
+});
+
 test("never discards ambiguous literals", () => {
   assert.equal(find('const roleLabel = "Superadministrator"', "Superadministrator", ".ts")?.classification, "review");
 });
