@@ -251,7 +251,10 @@ const UsersPage: React.FC = () => {
     <div>
       {pendingUserAction ? (
         <FreshTotpDialog
-          actionLabel={t("users.actionForUser", { action: t(`users.action.${pendingUserAction.action}`), user: pendingUserAction.user.display_name || pendingUserAction.user.username })}
+          actionLabel={t("users.actionForUser", {
+            action: t(`users.action.${pendingUserAction.action}`),
+            user: pendingUserAction.user.display_name || pendingUserAction.user.username,
+          })}
           onCancel={() => {
             setPendingUserAction(null);
             setSelectedUser(null);
@@ -735,7 +738,9 @@ const UsersPage: React.FC = () => {
                 fontSize: "var(--type-section-title-size)",
               }}
             >
-              {t("users.changeRoleFor", { user: selectedUser.display_name || selectedUser.username })}
+              {t("users.changeRoleFor", {
+                  user: selectedUser.display_name || selectedUser.username,
+                })}
             </h2>
             <div style={{ marginBottom: "1.5rem" }}>
               <label
