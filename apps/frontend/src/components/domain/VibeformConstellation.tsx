@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { VibeformProfile } from "@fitvibe/types";
 import type { VibeKey } from "../../constants/vibes";
 import { VibeformRenderer } from "../../lib/vibeform";
@@ -35,16 +36,17 @@ export function VibeformConstellation({
   selectedVibe = null,
   onVibeSelect,
   className,
-  accessibleLabel = "Vibeform dashboard",
-  vibeformAccessibleLabel = "Athlete Vibeform",
+  accessibleLabel,
+  vibeformAccessibleLabel,
 }: VibeformConstellationProps) {
+  const { t } = useTranslation();
   const rootClassName = ["vibeform-constellation", className].filter(Boolean).join(" ");
 
   return (
     <div
       className={rootClassName}
       role="group"
-      aria-label={accessibleLabel}
+      aria-label={accessibleLabel ?? t("vibeformConstellation.accessibleLabel")}
       data-component="vibeform-constellation"
     >
       <svg
@@ -63,7 +65,7 @@ export function VibeformConstellation({
       <div className="vibeform-constellation__center">
         <VibeformRenderer
           profile={profile}
-          accessibleLabel={vibeformAccessibleLabel}
+          accessibleLabel={vibeformAccessibleLabel ?? t("vibeformConstellation.athleteLabel")}
           className="vibeform-constellation__renderer"
         />
       </div>
