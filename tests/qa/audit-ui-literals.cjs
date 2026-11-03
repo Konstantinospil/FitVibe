@@ -101,6 +101,29 @@ function contextOf(node) {
     return { classification: "technical", reason: "typed-status-option-values" };
   }
   const typedDeclaration = ancestor(node, (candidate) => ts.isVariableDeclaration(candidate));
+  // Internal translation-entry identity and ordering keys are not display copy.
+  if (ts.isTemplateExpression(node) && typedDeclaration &&
+      ["key", "aKey", "bKey"].includes(typedDeclaration.name.getText()) &&
+      typedDeclaration.initializer === node &&
+      (node.head.text === "" || node.head.text.includes("::"))) {
+    const expressions = node.templateSpans.map((span) => span.expression.getText());
+    if (expressions.length === 2 &&
+        expressions.every((part) => /(?:namespace|key_path)$/.test(part))) {
+      return { classification: "technical", reason: "translation-composite-key" };
+    }
+  }
+  // The role codes passed to the privileged admin API must remain untranslated.
+  if (typedDeclaration?.name.getText() === "nextRole" &&
+      ["admin", "superadmin"].includes(node.text) &&
+      ancestor(node, (candidate) => ts.isConditionalExpression(candidate))) {
+    return { classification: "technical", reason: "privileged-role-code" };
+  }
+  // The English fallback key is used for lookup, not as a visible language label.
+  if (node.text === "en" && ts.isCallExpression(node.parent) &&
+      /^(?:activeByLanguage|deletedByLanguage)\.(?:has|get)$/.test(node.parent.expression.getText()) &&
+      node.parent.arguments[0] === node) {
+    return { classification: "technical", reason: "language-fallback-code" };
+  }
   if (typedDeclaration && typedDeclaration.name.getText() === "severityOptions" &&
       typedDeclaration.type?.getText().includes("AuditLogSeverity") &&
       ts.isArrayLiteralExpression(typedDeclaration.initializer)) {
