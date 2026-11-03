@@ -12,7 +12,8 @@
     "calendar": "Ημερολόγιο",
     "library": "Βιβλιοθήκη",
     "dashboard": "Πίνακας",
-    "settings": "Ρυθμίσεις"
+    "settings": "Ρυθμίσεις",
+    "mainNavigation": "Κύρια πλοήγηση"
   },
   "language": {
     "label": "Γλώσσα",
@@ -24,7 +25,8 @@
     "select": "Επιλογή γλώσσας"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "Η ισορροπία δεν είναι κατάσταση"
   },
   "status": {
     "checking": "Έλεγχος διακομιστή…",
