@@ -96,6 +96,14 @@ function contextOf(node) {
       ts.isArrayLiteralExpression(typedDeclaration.initializer)) {
     return { classification: "technical", reason: "typed-severity-enum" };
   }
+  if (ts.isCallExpression(node.parent) && node.parent.expression.getText() === "useState" &&
+      node.parent.arguments[0] === node &&
+      node.parent.typeArguments?.some((type) =>
+        ts.isUnionTypeNode(type) && type.types.some((part) =>
+          ts.isLiteralTypeNode(part) && ts.isStringLiteral(part.literal) &&
+          part.literal.text === node.text))) {
+    return { classification: "technical", reason: "typed-filter-enum" };
+  }
   if (node.text === "all" && ts.isCallExpression(node.parent) &&
       node.parent.expression.getText() === "useState" && node.parent.arguments[0] === node &&
       node.parent.typeArguments?.some((type) => type.getText().includes('"all"'))) {
@@ -148,6 +156,12 @@ function contextOf(node) {
     const key = attribute.name.getText().toLowerCase();
     if (["aria-labelledby", "aria-describedby", "aria-controls", "aria-owns", "aria-activedescendant"].includes(key)) {
       return { classification: "technical", reason: `jsx-id-reference:${key}` };
+    }
+    const handler = ancestor(node, (candidate) =>
+      ts.isCallExpression(candidate) && candidate.expression.getText() === "handleModerateContent");
+    if (key === "onclick" && handler &&
+        handler.arguments.some((argument) => argument === node)) {
+      return { classification: "technical", reason: "moderation-action-code" };
     }
     if (key.startsWith("aria-") || UI_PROPS.has(key)) return { classification: "ui", reason: `jsx-attribute:${key}` };
     if (key.startsWith("data-") || TECHNICAL_JSX_PROPS.has(key)) return { classification: "technical", reason: `jsx-property:${key}` };
