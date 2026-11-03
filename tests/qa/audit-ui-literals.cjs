@@ -90,6 +90,16 @@ function contextOf(node) {
   }
   // Narrowly identify known wire-format enums and typed filter sentinels.
   // Do not blanket-ignore ordinary option arrays: those may contain UI labels.
+  // A known backend report-filter enum is not display copy even when mapped in JSX.
+  const statusArray = ancestor(node, (candidate) => ts.isArrayLiteralExpression(candidate));
+  if (statusArray && statusArray.elements.includes(node) &&
+      statusArray.elements.every((element) =>
+        ts.isStringLiteral(element) &&
+        ["all", "pending", "reviewed", "dismissed"].includes(element.text)) &&
+      ts.isAsExpression(statusArray.parent) &&
+      statusArray.parent.type.kind === ts.SyntaxKind.ConstKeyword) {
+    return { classification: "technical", reason: "typed-status-option-values" };
+  }
   const typedDeclaration = ancestor(node, (candidate) => ts.isVariableDeclaration(candidate));
   if (typedDeclaration && typedDeclaration.name.getText() === "severityOptions" &&
       typedDeclaration.type?.getText().includes("AuditLogSeverity") &&
@@ -138,10 +148,12 @@ function contextOf(node) {
     return { classification: "technical", reason: "legal-no-action-sentinel" };
   }
   if (typedDeclaration?.name.getText() === "mailtoLink" &&
-      typeof node.text === "string" && node.text.startsWith("&body=")) {
+      ((ts.isTemplateExpression(node) && node.head.text.startsWith("&body=")) ||
+       (typeof node.text === "string" && node.text.startsWith("&body=")))) {
     return { classification: "technical", reason: "mailto-query-fragment" };
   }
-  if (typeof node.text === "string" && /^mailto:/.test(node.text)) {
+  if ((ts.isTemplateExpression(node) && node.head.text.startsWith("mailto:")) ||
+      (typeof node.text === "string" && /^mailto:/.test(node.text))) {
     return { classification: "technical", reason: "mailto-uri-template" };
   }
   if (ts.isBinaryExpression(node.parent) && node.parent.operatorToken.kind === ts.SyntaxKind.InKeyword &&
