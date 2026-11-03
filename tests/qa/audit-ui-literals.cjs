@@ -75,6 +75,42 @@ function fieldName(node) {
 }
 
 function contextOf(node) {
+  // UI text is distinct from standardized ARIA token values and SVG geometry.
+  // These values determine browser behavior, not displayed language.
+  const containingAttribute = ancestor(node, (candidate) => ts.isJsxAttribute(candidate));
+  if (containingAttribute) {
+    const name = containingAttribute.name.getText().toLowerCase();
+    const ariaTokens = new Set([
+      "aria-hidden", "aria-expanded", "aria-pressed", "aria-current", "aria-disabled",
+      "aria-live", "aria-modal", "aria-orientation", "aria-haspopup", "aria-selected",
+      "aria-required", "aria-checked", "aria-busy", "aria-invalid",
+    ]);
+    const svgGeometry = new Set([
+      "viewbox", "xmlns", "preserveaspectratio", "vectoreffect", "fill", "stroke",
+      "strokewidth", "strokelinecap", "strokelinejoin", "points", "d", "transform",
+      "x", "y", "x1", "x2", "y1", "y2", "cx", "cy", "r", "rx", "ry",
+      "stopcolor", "stopopacity", "fillrule", "cliprule", "clippath",
+    ]);
+    const element = ancestor(containingAttribute, (candidate) =>
+      ts.isJsxOpeningElement(candidate) || ts.isJsxSelfClosingElement(candidate));
+    const svgTags = new Set([
+      "svg", "path", "circle", "rect", "line", "polyline", "polygon", "ellipse",
+      "defs", "g", "mask", "clipPath", "linearGradient", "radialGradient", "stop",
+    ]);
+    if (ariaTokens.has(name)) {
+      return { classification: "technical", reason: "aria-token" };
+    }
+    if (svgGeometry.has(name) && element && svgTags.has(element.tagName.getText())) {
+      return { classification: "technical", reason: "svg-geometry" };
+    }
+    if (name.startsWith("on") && name.length > 2) {
+      return { classification: "review", reason: "event-handler-literal" };
+    }
+  }
+  // Colors/hex constants are visual styling, not untranslated prose.
+  if (typeof node.text === "string" && /^#[0-9a-f]{3,8}$/i.test(node.text)) {
+    return { classification: "technical", reason: "hex-color" };
+  }
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
   // Technical comparison operands must not be treated as UI copy just because
   // the whole comparison sits inside a visible JSX attribute.
@@ -242,6 +278,11 @@ function contextOf(node) {
     if (name.endsWith(".includes") && call.arguments.length > 0 &&
         ancestor(call, (candidate) => ts.isIfStatement(candidate) || ts.isConditionalExpression(candidate))) {
       return { classification: "technical", reason: "predicate-discriminator" };
+    }
+    // showToast(type, text) uses a protocol enum in its first argument.
+    // Only the second argument is potentially user-visible.
+    if (name === "showToast" && call.arguments[0] === node) {
+      return { classification: "technical", reason: "toast-level" };
     }
     if (MESSAGE_CALLS.test(name) || MESSAGE_METHODS.test(name)) {
       return { classification: "ui", reason: `notification:${name}` };
