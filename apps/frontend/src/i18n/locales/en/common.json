@@ -12,7 +12,8 @@
     "calendar": "Calendar",
     "library": "Library",
     "dashboard": "Dashboard",
-    "settings": "Settings"
+    "settings": "Settings",
+    "main": "Main navigation"
   },
   "language": {
     "label": "Language",
@@ -24,7 +25,8 @@
     "select": "Select a language"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "Balance is not a state"
   },
   "status": {
     "checking": "Checking server…",
@@ -261,9 +263,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Email service unavailable"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"This password appeared in a known data breach. We strongly recommend changing it; your request was completed.","BREACH_CHECK_UNAVAILABLE":"Password breach verification was unavailable. Your request was completed, but we recommend using a unique password."},
+    "advisory": {
+      "PASSWORD_BREACHED": "This password appeared in a known data breach. We strongly recommend changing it; your request was completed.",
+      "BREACH_CHECK_UNAVAILABLE": "Password breach verification was unavailable. Your request was completed, but we recommend using a unique password."
+    },
     "meterLabel": "Password strength estimate",
-    "levels": {"veryWeak":"Very weak","weak":"Weak","fair":"Fair","strong":"Strong"},
+    "levels": {
+      "veryWeak": "Very weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "strong": "Strong"
+    },
     "serverChecks": "Final password approval requires server-side security checks.",
     "tooShort": "Use at least {{minimum}} characters.",
     "minimumMet": "Length requirement met. Consider a longer unique passphrase.",
@@ -314,7 +324,18 @@
     "fitnessTestTitle": "Fitness test",
     "fitnessTestDescription": "Fitness-test scoring is not defined yet. The research workflow remains separate from Dashboard.",
     "fitnessTestAction": "Fitness test information",
-    "fitnessTestPending": "Benchmark definition is pending the dedicated research issue."
+    "fitnessTestPending": "Benchmark definition is pending the dedicated research issue.",
+    "metrics": {
+      "streak": "Training streak",
+      "sessionsCompleted": "Sessions completed",
+      "totalVolume": "Total volume",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "trend": "{{change}} vs last period",
+      "trendVolume": "{{change}} kg vs last period",
+      "unknown": "Unknown",
+      "week": "Week {{number}}"
+    }
   },
   "progress": {
     "eyebrow": "Trends & insights",
@@ -630,7 +651,9 @@
       "backupCodesHelp": "Save these backup codes in a secure location. You can use them to access your account if you lose your authenticator device.",
       "revealBackupCodes": "Show backup codes",
       "hideBackupCodes": "Hide backup codes",
-      "finishBackupCodes": "Done"
+      "finishBackupCodes": "Done",
+      "restartSetupNotice": "An earlier 2FA setup was not completed. Enter your password to restart setup.",
+      "restartSetup": "Restart 2FA setup"
     },
     "account": {
       "title": "Danger Zone",
@@ -1203,5 +1226,29 @@
     "notNow": "Not now",
     "dismissError": "We could not save your choice. Please try again.",
     "requiredAdmin": "Two-factor authentication is required for administrator accounts. Complete setup to continue."
+  },
+  "legalDocument": {
+    "effectiveDate": "Effective date:",
+    "version": "Version:"
+  },
+  "notifications": {
+    "region": "Notifications",
+    "close": "Close notification"
+  },
+  "theme": {
+    "toLight": "Switch to light mode",
+    "toDark": "Switch to dark mode"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Your Vibeform"
+  },
+  "vibeBadge": {
+    "level": "level",
+    "showIcon": "{label}: {level}. Show vibe icon",
+    "showLevel": "{label}. Show level"
+  },
+  "seo": {
+    "title": "FitVibe – Plan, Log & Share Your Training",
+    "description": "Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration."
   }
 }

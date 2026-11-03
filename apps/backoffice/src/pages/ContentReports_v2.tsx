@@ -94,7 +94,9 @@ const ContentReportsV2: React.FC = () => {
     <div className="grid grid--gap-15">
       {pendingModeration ? (
         <FreshTotpDialog
-          actionLabel={t("reports.challenge", { action: t(`reports.action.${pendingModeration.action}`) })}
+          actionLabel={t("reports.challenge", {
+            action: t(`reports.action.${pendingModeration.action}`),
+          })}
           onCancel={() => setPendingModeration(null)}
           onConfirm={(code) =>
             performModeration(pendingModeration.reportId, pendingModeration.action, code)
@@ -109,9 +111,7 @@ const ContentReportsV2: React.FC = () => {
                 <AlertTriangle size={20} />
                 <CardTitle>{t("reports.title")}</CardTitle>
               </div>
-              <CardDescription>
-                {t("reports.description")}
-              </CardDescription>
+              <CardDescription>{t("reports.description")}</CardDescription>
             </div>
 
             <div className="flex flex--gap-sm">

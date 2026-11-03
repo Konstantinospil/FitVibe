@@ -12,7 +12,8 @@
     "calendar": "Kalender",
     "library": "Bibliothek",
     "dashboard": "Dashboard",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "main": "Hauptnavigation"
   },
   "language": {
     "label": "Sprache",
@@ -24,7 +25,8 @@
     "select": "Sprache auswählen"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "Balance ist kein Zustand"
   },
   "status": {
     "checking": "Backend wird geprüft...",
@@ -261,9 +263,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "E-Mail-Dienst nicht verfügbar"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"Dieses Passwort ist aus einem bekannten Datenleck bekannt. Wir empfehlen dringend, es zu ändern. Der Vorgang wurde abgeschlossen.","BREACH_CHECK_UNAVAILABLE":"Die Prüfung auf bekannte Datenlecks war nicht verfügbar. Der Vorgang wurde abgeschlossen. Bitte verwenden Sie ein einzigartiges Passwort."},
+    "advisory": {
+      "PASSWORD_BREACHED": "Dieses Passwort ist aus einem bekannten Datenleck bekannt. Wir empfehlen dringend, es zu ändern. Der Vorgang wurde abgeschlossen.",
+      "BREACH_CHECK_UNAVAILABLE": "Die Prüfung auf bekannte Datenlecks war nicht verfügbar. Der Vorgang wurde abgeschlossen. Bitte verwenden Sie ein einzigartiges Passwort."
+    },
     "meterLabel": "Geschätzte Passwortstärke",
-    "levels": {"veryWeak":"Sehr schwach","weak":"Schwach","fair":"Mittel","strong":"Stark"},
+    "levels": {
+      "veryWeak": "Sehr schwach",
+      "weak": "Schwach",
+      "fair": "Mittel",
+      "strong": "Stark"
+    },
     "serverChecks": "Die endgültige Passwortprüfung erfolgt auf dem Server.",
     "tooShort": "Bitte mindestens {{minimum}} Zeichen eingeben.",
     "minimumMet": "Mindestlänge erreicht. Eine längere, einzigartige Passphrase ist empfehlenswert.",
@@ -314,7 +324,18 @@
     "fitnessTestTitle": "Fitnesstest",
     "fitnessTestDescription": "Die Auswertung des Fitnesstests ist noch nicht definiert. Die dazugehörige Forschung bleibt vom Dashboard getrennt.",
     "fitnessTestAction": "Informationen zum Fitnesstest",
-    "fitnessTestPending": "Die Definition der Vergleichswerte wird im separaten Forschungsthema bearbeitet."
+    "fitnessTestPending": "Die Definition der Vergleichswerte wird im separaten Forschungsthema bearbeitet.",
+    "metrics": {
+      "streak": "Trainingsserie",
+      "sessionsCompleted": "Abgeschlossene Einheiten",
+      "totalVolume": "Gesamtvolumen",
+      "days_one": "{{count}} Tag",
+      "days_other": "{{count}} Tage",
+      "trend": "{{change}} gegenüber der Vorperiode",
+      "trendVolume": "{{change}} kg gegenüber der Vorperiode",
+      "unknown": "Unbekannt",
+      "week": "Woche {{number}}"
+    }
   },
   "progress": {
     "eyebrow": "Trends & Insights",
@@ -609,7 +630,9 @@
       "backupCodesHelp": "Bewahre diese Backup-Codes sicher auf. Du kannst sie nutzen, wenn du dein Authenticator-Gerät verlierst.",
       "revealBackupCodes": "Backup-Codes anzeigen",
       "hideBackupCodes": "Backup-Codes ausblenden",
-      "finishBackupCodes": "Fertig"
+      "finishBackupCodes": "Fertig",
+      "restartSetupNotice": "Eine frühere 2FA-Einrichtung wurde nicht abgeschlossen. Bitte geben Sie Ihr Passwort ein, um die Einrichtung erneut zu starten.",
+      "restartSetup": "2FA-Einrichtung neu starten"
     },
     "account": {
       "title": "Gefahrenzone",
@@ -1203,5 +1226,29 @@
     "notNow": "Jetzt nicht",
     "dismissError": "Ihre Auswahl konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
     "requiredAdmin": "Für Administratorkonten ist die Zwei-Faktor-Authentifizierung verpflichtend. Schließen Sie die Einrichtung ab, um fortzufahren."
+  },
+  "legalDocument": {
+    "effectiveDate": "Gültig ab:",
+    "version": "Version:"
+  },
+  "notifications": {
+    "region": "Benachrichtigungen",
+    "close": "Benachrichtigung schließen"
+  },
+  "theme": {
+    "toLight": "Zum hellen Modus wechseln",
+    "toDark": "Zum dunklen Modus wechseln"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Dein Vibeform"
+  },
+  "vibeBadge": {
+    "level": "Stufe",
+    "showIcon": "{label}: {level}. Vibe-Symbol anzeigen",
+    "showLevel": "{label}. Stufe anzeigen"
+  },
+  "seo": {
+    "title": "FitVibe – Training planen, dokumentieren und teilen",
+    "description": "Plane, dokumentiere und teile deine Trainingseinheiten. Verfolge deine Fortschritte in sechs Bereichen: Kraft, Beweglichkeit, Ausdauer, Explosivität, Intelligenz und Regeneration."
   }
 }

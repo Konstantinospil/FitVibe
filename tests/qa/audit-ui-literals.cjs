@@ -25,6 +25,29 @@ const TECHNICAL_JSX_PROPS = new Set([
   "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang", "to", "path",
   "align", "loading", "controlsize",
 ]);
+const TECHNICAL_ARIA_PROPS = new Set([
+  "aria-hidden", "aria-live", "aria-haspopup", "aria-required", "aria-disabled",
+  "aria-current", "aria-pressed", "aria-busy", "aria-expanded", "aria-checked",
+  "aria-invalid", "aria-modal", "aria-orientation", "aria-autocomplete",
+  "aria-multiselectable", "aria-selected", "aria-relevant", "aria-atomic",
+]);
+const SVG_TAGS = new Set([
+  "svg", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon",
+  "linearGradient", "radialGradient", "stop", "clipPath", "mask", "pattern",
+  "defs", "g", "use", "symbol", "text", "tspan", "filter",
+]);
+const SVG_ATTRIBUTES = new Set([
+  "viewbox", "xmlns", "preserveaspectratio", "d", "points", "strokewidth",
+  "strokelinecap", "strokelinejoin", "strokedasharray", "stroke", "fill",
+  "fillrule", "fillopacity", "strokeopacity", "cx", "cy", "r", "rx", "ry",
+  "x", "y", "x1", "x2", "y1", "y2", "transform", "clippath", "vectoreffect",
+  "offset", "stopcolor", "gradientunits", "gradienttransform",
+]);
+const TECHNICAL_PROPS = new Set([
+  "tone", "kind", "format", "min", "max", "step", "form", "decoding",
+  "documenttype", "viewportclassname", "mainid", "source", "meta",
+]);
+
 const TECHNICAL_OBJECT_KEYS = new Set([
   "id", "key", "type", "role", "status", "code", "path", "url", "route",
   "method", "endpoint", "querykey", "username", "email", "language", "locale",
@@ -76,6 +99,28 @@ function fieldName(node) {
 
 function contextOf(node) {
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
+  // CSS inside a native <style> tag is a stylesheet, not page copy.
+  if (ancestor(node, (candidate) =>
+    ts.isJsxElement(candidate) && candidate.openingElement.tagName.getText() === "style")) {
+    return { classification: "technical", reason: "inline-stylesheet" };
+  }
+  // A dynamic template without language-bearing static text assembles
+  // values rather than hard-coding a particular UI language.
+  if (ts.isTemplateExpression(node) &&
+      [node.head.text, ...node.templateSpans.map((span) => span.literal.text)]
+        .every((part) => !/[\p{L}]/u.test(part))) {
+    return { classification: "technical", reason: "nonlinguistic-template-joiner" };
+  }
+  if (typeof node.text === "string" &&
+      /^(?:data:image\/|https?:\/\/|#[0-9a-f]{3,8}$|url\(#[-\w]+\)$)/i.test(node.text)) {
+    return { classification: "technical", reason: "resource-or-color" };
+  }
+  // ICU/Intl formatting instructions and locale identifiers control formatting;
+  // the formatted output, not these option values, is user-facing.
+  const formatter = ancestor(node, (candidate) =>
+    (ts.isCallExpression(candidate) && /\.(?:toLocaleDateString|toLocaleTimeString|toLocaleString)$/.test(candidate.expression.getText())) ||
+    (ts.isNewExpression(candidate) && /^(?:Intl\.)?(?:DateTimeFormat|NumberFormat|RelativeTimeFormat|DisplayNames)$/.test(candidate.expression.getText())));
+  if (formatter) return { classification: "technical", reason: "intl-format-options" };
   // Technical comparison operands must not be treated as UI copy just because
   // the whole comparison sits inside a visible JSX attribute.
   const comparison = ancestor(node, (candidate) =>
@@ -202,7 +247,15 @@ function contextOf(node) {
   // Translation keys are never UI copy even when passed to a visible JSX property.
   const enclosingCall = ancestor(node, (candidate) => ts.isCallExpression(candidate));
   if (enclosingCall && isTranslationCall(enclosingCall)) {
-    return { classification: "technical", reason: "translation-key" };
+    const translationKey = enclosingCall.arguments[0];
+    if (translationKey === node) {
+      return { classification: "technical", reason: "translation-key" };
+    }
+    const property = ancestor(node, (candidate) => ts.isPropertyAssignment(candidate));
+    if (property && property.name.getText().replace(/["']/g, "") === "defaultValue") {
+      return { classification: "ui", reason: "hardcoded-translation-fallback" };
+    }
+    return { classification: "review", reason: "translation-interpolation-literal" };
   }
   const attribute = ancestor(node, (candidate) => ts.isJsxAttribute(candidate));
   if (attribute) {
@@ -216,16 +269,51 @@ function contextOf(node) {
         handler.arguments.some((argument) => argument === node)) {
       return { classification: "technical", reason: "moderation-action-code" };
     }
+    if (TECHNICAL_ARIA_PROPS.has(key)) {
+      return { classification: "technical", reason: `aria-state:${key}` };
+    }
+    // SVG vector coordinates, paint tokens and path commands are not UI copy.
+    // Restrict this rule to native SVG tags, not custom React components.
+    const owner = attribute.parent;
+    if (ts.isJsxAttributes(owner)) {
+      const element = owner.parent;
+      const tagName = element.tagName?.getText();
+      if (tagName && SVG_TAGS.has(tagName) && SVG_ATTRIBUTES.has(key)) {
+        return { classification: "technical", reason: `svg-attribute:${key}` };
+      }
+    }
+    if (key.startsWith("on") && key.length > 2) {
+      const uiCall = ancestor(node, (candidate) =>
+        ts.isCallExpression(candidate) &&
+        (MESSAGE_CALLS.test(candidate.expression.getText()) ||
+         MESSAGE_METHODS.test(candidate.expression.getText())));
+      if (uiCall) return { classification: "ui", reason: "event-handler-notification" };
+      return { classification: "technical", reason: `event-handler-code:${key}` };
+    }
+    if (TECHNICAL_PROPS.has(key)) {
+      return { classification: "technical", reason: `jsx-technical-prop:${key}` };
+    }
     if (key.startsWith("aria-") || UI_PROPS.has(key)) return { classification: "ui", reason: `jsx-attribute:${key}` };
     if (key.startsWith("data-") || TECHNICAL_JSX_PROPS.has(key)) return { classification: "technical", reason: `jsx-property:${key}` };
     return { classification: "review", reason: `jsx-property:${key}` };
   }
-  if (ancestor(node, (candidate) => ts.isJsxExpression(candidate) &&
-      (ts.isJsxElement(candidate.parent) || ts.isJsxSelfClosingElement(candidate.parent) || ts.isJsxFragment(candidate.parent)))) {
-    return { classification: "ui", reason: "jsx-expression" };
+  // Only direct JSX children or immediately rendered conditional branches
+  // are copy. Literals inside an event-handler callback, a data mapper or a
+  // network request nested beneath JSX are ordinary program values.
+  const enclosingJsx = ancestor(node, (candidate) =>
+    ts.isJsxExpression(candidate) &&
+    (ts.isJsxElement(candidate.parent) || ts.isJsxSelfClosingElement(candidate.parent) ||
+     ts.isJsxFragment(candidate.parent)));
+  if (enclosingJsx) {
+    if (node.parent === enclosingJsx ||
+        (ts.isConditionalExpression(node.parent) && node.parent.parent === enclosingJsx &&
+         (node.parent.whenTrue === node || node.parent.whenFalse === node))) {
+      return { classification: "ui", reason: "direct-jsx-copy" };
+    }
+    return { classification: "review", reason: "nested-jsx-program-literal" };
   }
   const call = ancestor(node, (candidate) => ts.isCallExpression(candidate));
-  if (call && isTranslationCall(call) && call.arguments.some((arg) => arg === node || node.pos >= arg.pos && node.end <= arg.end)) {
+  if (call && isTranslationCall(call) && call.arguments[0] === node) {
     return { classification: "technical", reason: "translation-key" };
   }
   if (call) {
@@ -242,6 +330,9 @@ function contextOf(node) {
     if (name.endsWith(".includes") && call.arguments.length > 0 &&
         ancestor(call, (candidate) => ts.isIfStatement(candidate) || ts.isConditionalExpression(candidate))) {
       return { classification: "technical", reason: "predicate-discriminator" };
+    }
+    if (name === "showToast" && call.arguments[0] === node) {
+      return { classification: "technical", reason: "toast-severity-code" };
     }
     if (MESSAGE_CALLS.test(name) || MESSAGE_METHODS.test(name)) {
       return { classification: "ui", reason: `notification:${name}` };
@@ -294,6 +385,20 @@ function analyzeSource(file, source, displayPath = file) {
       const value = literalText(node, sourceFile);
       if (value && /\p{L}|\d/u.test(value)) {
         const decision = contextOf(node);
+        if (displayPath === "apps/frontend/src/pages/Settings.tsx" &&
+            ts.isJsxText(node) &&
+            ["English", "Deutsch", "Français", "Español", "Ελληνικά"].includes(value)) {
+          decision.classification = "technical";
+          decision.reason = "intentional-language-endonym";
+        }
+        if (displayPath === "apps/frontend/src/components/FooterSocialLinks.tsx" &&
+            ts.isStringLiteral(node) &&
+            ["Instagram", "LinkedIn", "YouTube", "GitHub"].includes(value) &&
+            ts.isPropertyAssignment(node.parent) &&
+            node.parent.name.getText() === "label") {
+          decision.classification = "technical";
+          decision.reason = "untranslated-brand-proper-name";
+        }
         const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
         findings.push({ file: displayPath, line: pos.line + 1, column: pos.character + 1,
           kind: ts.SyntaxKind[node.kind], text: value,

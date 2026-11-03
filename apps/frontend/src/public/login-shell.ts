@@ -1,3 +1,5 @@
+import messages from "./login-shell-text.json";
+
 type LoginResponse =
   | {
       requires2FA: false;
@@ -12,6 +14,12 @@ type LoginResponse =
 const form = document.getElementById("login-form") as HTMLFormElement | null;
 const shell = document.getElementById("login-shell");
 const AUTH_STORAGE_KEY = "fitvibe:auth";
+
+const preferredLanguage =
+  window.localStorage.getItem("fitvibe:language")?.slice(0, 2).toLowerCase() ||
+  document.documentElement.lang.slice(0, 2).toLowerCase() ||
+  window.navigator.language.slice(0, 2).toLowerCase();
+const loginText = messages[preferredLanguage as keyof typeof messages] ?? messages.en;
 
 const loadSpa = async () => {
   await import("../main");
@@ -42,12 +50,12 @@ if (!form || !shell) {
   toggleButton?.addEventListener("click", () => {
     if (passwordInput.type === "password") {
       passwordInput.type = "text";
-      toggleButton.textContent = "Hide";
-      toggleButton.setAttribute("aria-label", "Hide password");
+      toggleButton.textContent = loginText.hide;
+      toggleButton.setAttribute("aria-label", loginText.hidePassword);
     } else {
       passwordInput.type = "password";
-      toggleButton.textContent = "Show";
-      toggleButton.setAttribute("aria-label", "Show password");
+      toggleButton.textContent = loginText.show;
+      toggleButton.setAttribute("aria-label", loginText.showPassword);
     }
     passwordInput.focus();
   });
@@ -55,7 +63,7 @@ if (!form || !shell) {
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     if (!emailInput.value || !passwordInput.value) {
-      setError("Both email and password are required.");
+      setError(loginText.missingFields);
       return;
     }
 
@@ -77,7 +85,7 @@ if (!form || !shell) {
       });
 
       if (!response.ok) {
-        throw new Error("We couldn't verify your credentials. Please try again.");
+        throw new Error(loginText.invalidCredentials);
       }
 
       const data = (await response.json()) as LoginResponse;
@@ -98,7 +106,7 @@ if (!form || !shell) {
       setError(
         error instanceof Error
           ? error.message
-          : "We couldn't verify your credentials. Please try again.",
+          : loginText.invalidCredentials,
       );
       submitButton?.removeAttribute("disabled");
       submitButton?.classList.remove("login-fallback__button--loading");

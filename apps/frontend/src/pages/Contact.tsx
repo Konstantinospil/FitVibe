@@ -32,22 +32,22 @@ const Contact: React.FC = () => {
     setError(null);
 
     if (!email.trim()) {
-      setError(t("contact.form.emailRequired", { defaultValue: "Email is required" }));
+      setError(t("contact.form.emailRequired"));
       return;
     }
     if (!topic.trim()) {
-      setError(t("contact.form.topicRequired", { defaultValue: "Topic is required" }));
+      setError(t("contact.form.topicRequired"));
       return;
     }
     if (!message.trim()) {
-      setError(t("contact.form.messageRequired", { defaultValue: "Message is required" }));
+      setError(t("contact.form.messageRequired"));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError(
-        t("contact.form.invalidEmail", { defaultValue: "Please enter a valid email address" }),
+        t("contact.form.invalidEmail"),
       );
       return;
     }
@@ -86,9 +86,7 @@ const Contact: React.FC = () => {
 
           if (response.data.success) {
             toast.success(
-              t("contact.form.success", {
-                defaultValue: "Your message has been sent successfully!",
-              }),
+              t("contact.form.success"),
             );
             if (!user?.email) {
               setEmail("");
@@ -115,9 +113,7 @@ const Contact: React.FC = () => {
       }
     } catch (err: unknown) {
       if (err && typeof err === "object" && "code" in err && err.code === "ERR_NETWORK") {
-        const networkError = t("contact.form.networkError", {
-          defaultValue: "Cannot connect to server. Please check your connection and try again.",
-        });
+        const networkError = t("contact.form.networkError");
         setError(networkError);
         toast.error(networkError);
         return;
@@ -133,13 +129,8 @@ const Contact: React.FC = () => {
 
       const messageValue =
         responseError?.code === "CSRF_TOKEN_INVALID"
-          ? t("contact.form.csrfError", {
-              defaultValue: "Security token error. Please refresh the page and try again.",
-            })
-          : responseError?.message ||
-            t("contact.form.error", {
-              defaultValue: "Failed to send message. Please try again.",
-            });
+          ? t("contact.form.csrfError")
+          : t("contact.form.error");
 
       setError(messageValue);
       toast.error(messageValue);
@@ -150,11 +141,9 @@ const Contact: React.FC = () => {
 
   return (
     <PageIntro
-      eyebrow={t("contact.eyebrow", { defaultValue: "Contact" })}
-      title={t("contact.title", { defaultValue: "Contact Us" })}
-      description={t("contact.description", {
-        defaultValue: "Get in touch with the FitVibe team.",
-      })}
+      eyebrow={t("contact.eyebrow")}
+      title={t("contact.title")}
+      description={t("contact.description")}
     >
       <FormStack
         ref={formRef}
@@ -163,7 +152,7 @@ const Contact: React.FC = () => {
         }}
       >
         <InputField
-          label={t("contact.form.emailLabel", { defaultValue: "Email" })}
+          label={t("contact.form.emailLabel")}
           name="email"
           type="email"
           value={email}
@@ -175,7 +164,7 @@ const Contact: React.FC = () => {
         />
 
         <InputField
-          label={t("contact.form.topicLabel", { defaultValue: "Topic" })}
+          label={t("contact.form.topicLabel")}
           name="topic"
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
@@ -186,7 +175,7 @@ const Contact: React.FC = () => {
         />
 
         <TextareaField
-          label={t("contact.form.messageLabel", { defaultValue: "Message" })}
+          label={t("contact.form.messageLabel")}
           name="message"
           value={message}
           onChange={(event) => setMessage(event.target.value)}
@@ -195,17 +184,15 @@ const Contact: React.FC = () => {
           rows={8}
           maxLength={5000}
           error={Boolean(error)}
-          helperText={`${message.length} / 5000 ${t("contact.form.characters", {
-            defaultValue: "characters",
-          })}`}
+          helperText={`${message.length} / 5000 ${t("contact.form.characters")}`}
         />
 
         {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
 
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
           {isSubmitting
-            ? t("contact.form.submitting", { defaultValue: "Sending..." })
-            : t("contact.form.submit", { defaultValue: "Send Message" })}
+            ? t("contact.form.submitting")
+            : t("contact.form.submit")}
         </Button>
       </FormStack>
     </PageIntro>

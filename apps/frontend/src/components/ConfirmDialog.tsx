@@ -2,6 +2,7 @@ import React from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@fitvibe/ui";
 import { Modal } from "./composites/Modal";
+import { useTranslation } from "react-i18next";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -18,12 +19,14 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   title,
   message,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   variant = "warning",
   onConfirm,
   onCancel,
-}) => (
+}) => {
+  const { t } = useTranslation();
+  return (
   <Modal
     open={isOpen}
     title={title}
@@ -32,10 +35,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     footer={
       <>
         <Button variant="secondary" onClick={onCancel}>
-          {cancelLabel}
+          {cancelLabel ?? t("common.cancel")}
         </Button>
         <Button variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
-          {confirmLabel}
+          {confirmLabel ?? t("common.confirm")}
         </Button>
       </>
     }
@@ -47,4 +50,5 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       <p data-slot="confirm-dialog-message">{message}</p>
     </div>
   </Modal>
-);
+  );
+};

@@ -12,7 +12,8 @@
     "calendar": "Calendrier",
     "library": "Bibliothèque",
     "dashboard": "Tableau de bord",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "main": "Navigation principale"
   },
   "language": {
     "label": "Langue",
@@ -24,7 +25,8 @@
     "select": "Choisir une langue"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "L’équilibre n’est pas un état"
   },
   "status": {
     "checking": "Vérification du serveur…",
@@ -261,9 +263,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Service e-mail indisponible"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"Ce mot de passe figure dans une fuite de données connue. Nous recommandons vivement de le modifier. L'opération est terminée.","BREACH_CHECK_UNAVAILABLE":"La vérification des fuites de mots de passe était indisponible. L'opération est terminée. Nous recommandons d'utiliser un mot de passe unique."},
+    "advisory": {
+      "PASSWORD_BREACHED": "Ce mot de passe figure dans une fuite de données connue. Nous recommandons vivement de le modifier. L'opération est terminée.",
+      "BREACH_CHECK_UNAVAILABLE": "La vérification des fuites de mots de passe était indisponible. L'opération est terminée. Nous recommandons d'utiliser un mot de passe unique."
+    },
     "meterLabel": "Estimation de la robustesse du mot de passe",
-    "levels": {"veryWeak":"Très faible","weak":"Faible","fair":"Moyenne","strong":"Forte"},
+    "levels": {
+      "veryWeak": "Très faible",
+      "weak": "Faible",
+      "fair": "Moyenne",
+      "strong": "Forte"
+    },
     "serverChecks": "La validation définitive nécessite des vérifications de sécurité côté serveur.",
     "tooShort": "Utilisez au moins {{minimum}} caractères.",
     "minimumMet": "Longueur minimale atteinte. Préférez une phrase unique plus longue.",
@@ -314,7 +324,18 @@
     "fitnessTestTitle": "Test de condition physique",
     "fitnessTestDescription": "La méthode d’évaluation du test n’est pas encore définie. Les travaux de recherche restent séparés du tableau de bord.",
     "fitnessTestAction": "Informations sur le test",
-    "fitnessTestPending": "La définition des valeurs de référence reste à traiter dans le sujet de recherche dédié."
+    "fitnessTestPending": "La définition des valeurs de référence reste à traiter dans le sujet de recherche dédié.",
+    "metrics": {
+      "streak": "Série d’entraînements",
+      "sessionsCompleted": "Séances terminées",
+      "totalVolume": "Volume total",
+      "days_one": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "trend": "{{change}} par rapport à la période précédente",
+      "trendVolume": "{{change}} kg par rapport à la période précédente",
+      "unknown": "Inconnu",
+      "week": "Semaine {{number}}"
+    }
   },
   "progress": {
     "eyebrow": "Tendances et analyses",
@@ -725,7 +746,9 @@
       "backupCodesHelp": "Conservez ces codes en lieu sûr. Vous pourrez les utiliser si vous perdez votre appareil d'authentification.",
       "revealBackupCodes": "Afficher les codes de secours",
       "hideBackupCodes": "Masquer les codes de secours",
-      "finishBackupCodes": "Terminé"
+      "finishBackupCodes": "Terminé",
+      "restartSetupNotice": "Une précédente configuration 2FA n’a pas été terminée. Saisissez votre mot de passe pour recommencer.",
+      "restartSetup": "Recommencer la configuration 2FA"
     },
     "account": {
       "title": "Zone de danger",
@@ -1203,5 +1226,29 @@
     "notNow": "Pas maintenant",
     "dismissError": "Nous n’avons pas pu enregistrer votre choix. Veuillez réessayer.",
     "requiredAdmin": "L’authentification à deux facteurs est obligatoire pour les comptes administrateur. Terminez la configuration pour continuer."
+  },
+  "legalDocument": {
+    "effectiveDate": "Date de prise d’effet :",
+    "version": "Version :"
+  },
+  "notifications": {
+    "region": "Notifications",
+    "close": "Fermer la notification"
+  },
+  "theme": {
+    "toLight": "Passer au thème clair",
+    "toDark": "Passer au thème sombre"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Votre Vibeform"
+  },
+  "vibeBadge": {
+    "level": "niveau",
+    "showIcon": "{label} : {level}. Afficher l’icône Vibe",
+    "showLevel": "{label}. Afficher le niveau"
+  },
+  "seo": {
+    "title": "FitVibe – Planifiez, suivez et partagez vos entraînements",
+    "description": "Planifiez, enregistrez et partagez vos entraînements. Suivez vos progrès dans six domaines : force, agilité, endurance, explosivité, intelligence et régénération."
   }
 }

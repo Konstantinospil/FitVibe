@@ -166,7 +166,13 @@ const SettingsPage: React.FC = () => {
                 {t("settings.readOnly")}
               </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
-                {t("settings.status", { value: isSystemConfigLoading ? t("common.loading") : isReadOnly ? t("settings.enabled") : t("settings.disabled") })}
+                {t("settings.status", {
+                  value: isSystemConfigLoading
+                    ? t("common.loading")
+                    : isReadOnly
+                      ? t("settings.enabled")
+                      : t("settings.disabled"),
+                })}
               </div>
             </div>
             <Button
@@ -194,7 +200,13 @@ const SettingsPage: React.FC = () => {
                 {t("settings.maintenance")}
               </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
-                {t("settings.status", { value: isSystemConfigLoading ? t("common.loading") : isMaintenance ? t("settings.enabled") : t("settings.disabled") })}
+                {t("settings.status", {
+                  value: isSystemConfigLoading
+                    ? t("common.loading")
+                    : isMaintenance
+                      ? t("settings.enabled")
+                      : t("settings.disabled"),
+                })}
               </div>
             </div>
             <Button
@@ -222,7 +234,15 @@ const SettingsPage: React.FC = () => {
                 {t("settings.clamav")}
               </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
-                {t("settings.status", { value: isOpsStatusLoading ? t("common.loading") : clamavEnabled ? t("settings.enabledHealth", { health: clamavHealth ? t("settings.ok") : t("settings.down") }) : t("settings.disabled") })}
+                {t("settings.status", {
+                  value: isOpsStatusLoading
+                    ? t("common.loading")
+                    : clamavEnabled
+                      ? t("settings.enabledHealth", {
+                          health: clamavHealth ? t("settings.ok") : t("settings.down"),
+                        })
+                      : t("settings.disabled"),
+                })}
               </div>
             </div>
             <Button

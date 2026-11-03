@@ -71,9 +71,7 @@ const PrivilegeManagementPage: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle>{t("privileges.title")}</CardTitle>
-          <CardDescription>
-            {t("privileges.description")}
-          </CardDescription>
+          <CardDescription>{t("privileges.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <label>
@@ -88,16 +86,16 @@ const PrivilegeManagementPage: React.FC = () => {
           <Button onClick={() => void activateSudo()} isLoading={loading} disabled={!password}>
             {t("privileges.reauthenticate")}
           </Button>
-          {sudoUntil ? <p>{t("privileges.sudoUntil", { time: new Date(sudoUntil).toLocaleTimeString() })}</p> : null}
+          {sudoUntil ? (
+            <p>{t("privileges.sudoUntil", { time: new Date(sudoUntil).toLocaleTimeString() })}</p>
+          ) : null}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>{t("privileges.administrators")}</CardTitle>
-          <CardDescription>
-            {t("privileges.adminDescription")}
-          </CardDescription>
+          <CardDescription>{t("privileges.adminDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           {users.map((user) => (
@@ -115,7 +113,8 @@ const PrivilegeManagementPage: React.FC = () => {
               <div>
                 <strong>{user.username ?? user.email ?? user.id}</strong>
                 <div>
-                  {t(`privileges.role.${user.role}`)} · {user.status} · {t("privileges.totp")} {user.totpVerified ? t("privileges.verified") : t("privileges.missing")}
+                  {t(`privileges.role.${user.role}`)} · {user.status} · {t("privileges.totp")}{" "}
+                  {user.totpVerified ? t("privileges.verified") : t("privileges.missing")}
                 </div>
               </div>
               <Button
@@ -133,9 +132,19 @@ const PrivilegeManagementPage: React.FC = () => {
       {selected ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t("privileges.confirm", { action: selected.role === "admin" ? t("privileges.promotion") : t("privileges.demotion") })}</CardTitle>
+            <CardTitle>{t("privileges.confirm", {
+              action:
+                selected.role === "admin" ? t("privileges.promotion") : t("privileges.demotion"),
+            })}</CardTitle>
             <CardDescription>
-              {t("privileges.roleChange", { user: selected.username ?? selected.email ?? selected.id, from: t(`privileges.role.${selected.role}`), to: selected.role === "admin" ? t("privileges.role.superadmin") : t("privileges.role.admin") })}
+              {t("privileges.roleChange", {
+                user: selected.username ?? selected.email ?? selected.id,
+                from: t(`privileges.role.${selected.role}`),
+                to:
+                  selected.role === "admin"
+                    ? t("privileges.role.superadmin")
+                    : t("privileges.role.admin"),
+              })}
             </CardDescription>
           </CardHeader>
           <CardContent>

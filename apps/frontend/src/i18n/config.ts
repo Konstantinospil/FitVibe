@@ -8,51 +8,8 @@ export const loadMinimalLoginTranslations = async () => {
   const enCookieModule = await import("./locales/en/cookie.json");
   const enAuth = enAuthModule.default as Record<string, unknown>;
 
-  // Create minimal common translations object with only what's needed for login
-  const minimalCommon = {
-    language: {
-      label: "Language",
-      english: "English",
-      german: "German",
-      spanish: "Spanish",
-      french: "French",
-      greek: "Greek",
-    },
-    loading: { app: "Loading app…" },
-    scrollbar: { pageLabel: "Page content", dialogLabel: "Dialog content" },
-    brand: {
-      logoAlt: "FitVibe",
-    },
-    verifyEmail: {
-      eyebrow: "Email verification",
-      titleVerifying: "Verifying your email…",
-      titleSuccess: "Email verified",
-      titleFailed: "Verification failed",
-      titleExpired: "Verification link expired",
-      descVerifying: "Please wait while we verify your email address.",
-      descSuccess: "Your email has been verified. Redirecting to login…",
-      descFailed: "We couldn't verify your email. The link may have expired or is invalid.",
-      descExpired: "Your verification link has expired. Please request a new verification email.",
-      noToken: "No verification token provided",
-      goToLogin: "Go to login",
-      backToRegister: "Back to register",
-      resendVerification: "Resend verification email",
-      resendEmailLabel: "Email address",
-      resendEmailPlaceholder: "your@email.com",
-      resendButton: "Send verification email",
-      resending: "Sending…",
-      resendSuccess: "Verification email sent! Please check your inbox.",
-      resendError: "Failed to send verification email. Please try again.",
-      retryAfter: "Please try again in {{seconds}} second(s).",
-    },
-    footer: {
-      terms: "Terms and Conditions",
-      privacy: "Privacy Policy",
-      navigationLabel: "Footer navigation",
-      termsAriaLabel: "View Terms and Conditions",
-      privacyAriaLabel: "View Privacy Policy",
-    },
-  };
+  const minimalCommonModule = await import("./locales/en/minimal-login-common.json");
+  const minimalCommon = minimalCommonModule.default;
 
   return mergeTranslations(mergeTranslations(minimalCommon, enAuth), {
     cookie: enCookieModule.default,
