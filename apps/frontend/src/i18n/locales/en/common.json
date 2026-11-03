@@ -12,7 +12,8 @@
     "calendar": "Calendar",
     "library": "Library",
     "dashboard": "Dashboard",
-    "settings": "Settings"
+    "settings": "Settings",
+    "mainNavigation": "Main navigation"
   },
   "language": {
     "label": "Language",
@@ -24,7 +25,8 @@
     "select": "Select a language"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "Balance is not a state"
   },
   "status": {
     "checking": "Checking server…",
