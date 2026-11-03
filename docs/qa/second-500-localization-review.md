@@ -45,3 +45,18 @@ pnpm test:backoffice
 ```
 
 Compare the new `ui-literals.json` with original baseline indices 501–1000 using stable IDs and the SHA-256 above. A localized literal must disappear under its original ID. A surviving false-positive ID must be technical; report any remaining review classifications explicitly rather than silently suppressing them.
+
+## Post-remediation reconciliation — CI 41589870651
+
+Original 500 source-record IDs were compared to the generated `ui-literals.json` artifact from [CI run 41589870651](https://github.com/Konstantinospil/FitVibe/actions/runs/41589870651).
+
+| Original classification | Absent | Survives as technical | Survives as UI/review |
+|---|---:|---:|---:|
+| Technical (362) | 0 | 362 | 0 |
+| UI (101) | 92 | 9 | 0 |
+| Review (37) | 7 | 30 | 0 |
+| **Total (500)** | **99** | **401** | **0** |
+
+All 24 AST, backend-contract, runtime-detector, and first/second batch localization unit tests passed. The independent CodeQL run also succeeded. Note that this CI configuration **skipped the general lint/typecheck, Backoffice E2E and remaining application jobs** on the branch push. Therefore, this confirms the audit, not the entire merge gate.
+
+The 9 original UI IDs still present as technical are protocol or duplicate-occurrence source literals. They are not treated as outstanding UI defects. This is verified by the AST's current classification rather than assuming every unchanged ID means the underlying user-facing label is still present.
