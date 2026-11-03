@@ -360,5 +360,6 @@
   "users.roleAdmin": "Διαχειριστής",
   "users.roleCoach": "Προπονητής",
   "users.roleAthlete": "Αθλητής",
-  "users.roleSupport": "Υποστήριξη"
+  "users.roleSupport": "Υποστήριξη",
+  "users.roleSuperadmin": "Υπερδιαχειριστής"
 }
