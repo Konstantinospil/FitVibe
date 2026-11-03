@@ -23,7 +23,6 @@ export type AppHeaderVariant = "standard" | "writing";
 type HeaderNavItem = {
   to: string;
   labelKey: string;
-  fallbackLabel: string;
   icon: LucideIcon;
 };
 
@@ -37,29 +36,25 @@ export type AppHeaderProps = {
 const DEFAULT_AVAILABLE_PATHS = ["/"] as const;
 
 const NAV_ITEMS: readonly HeaderNavItem[] = [
-  { to: "/", labelKey: "navigation.home", fallbackLabel: "Home", icon: Home },
+  { to: "/", labelKey: "navigation.home", icon: Home },
   {
     to: "/calendar",
     labelKey: "navigation.calendar",
-    fallbackLabel: "Calendar",
     icon: CalendarDays,
   },
   {
     to: "/library",
     labelKey: "navigation.library",
-    fallbackLabel: "Library",
     icon: Library,
   },
   {
     to: "/dashboard",
     labelKey: "navigation.dashboard",
-    fallbackLabel: "Dashboard",
     icon: LayoutDashboard,
   },
   {
     to: "/settings",
     labelKey: "navigation.settings",
-    fallbackLabel: "Settings",
     icon: Settings,
   },
 ];
@@ -80,15 +75,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
   const enabledPaths = useMemo(() => new Set(availablePaths), [availablePaths]);
 
-  const translateLabel = (key: string, fallback: string) => {
-    const translated = String(t(key));
-    return translated === key ? fallback : translated;
-  };
-
-  const translatedSlogan = String(t("brand.slogan"));
-  const brandSlogan =
-    slogan ?? (translatedSlogan === "brand.slogan" ? "Balance is not a state" : translatedSlogan);
-  const signOutLabel = translateLabel("navigation.signOut", "Logout");
+  const brandSlogan = slogan ?? t("brand.slogan");
+  const signOutLabel = t("navigation.signOut");
 
   const handleSignOut = async () => {
     if (isSigningOut) {
@@ -118,10 +106,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
         <nav
           className="app-header__navigation"
-          aria-label={translateLabel("navigation.home", "Main navigation")}
+          aria-label={t("navigation.mainNavigation")}
         >
           {NAV_ITEMS.map((item) => {
-            const label = translateLabel(item.labelKey, item.fallbackLabel);
+            const label = t(item.labelKey);
             const Icon = item.icon;
             const enabled = enabledPaths.has(item.to);
             const active = enabled && isActivePath(location.pathname, item.to);
