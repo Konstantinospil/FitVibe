@@ -1,3 +1,22 @@
+import english from "../i18n/locales/en/auth.json";
+import german from "../i18n/locales/de/auth.json";
+import french from "../i18n/locales/fr/auth.json";
+import spanish from "../i18n/locales/es/auth.json";
+import greek from "../i18n/locales/el/auth.json";
+
+const authCatalog = { en: english, de: german, fr: french, es: spanish, el: greek };
+
+function localizedAuth() {
+  let preference: string | null = null;
+  try {
+    preference = window.localStorage.getItem("fitvibe:language");
+  } catch {
+    // Storage may be unavailable in restricted browsing environments.
+  }
+  const code = (preference || navigator.language || "en").slice(0, 2).toLowerCase();
+  return authCatalog[code as keyof typeof authCatalog] ?? authCatalog.en;
+}
+
 type LoginResponse =
   | {
       requires2FA: false;
@@ -42,12 +61,12 @@ if (!form || !shell) {
   toggleButton?.addEventListener("click", () => {
     if (passwordInput.type === "password") {
       passwordInput.type = "text";
-      toggleButton.textContent = "Hide";
-      toggleButton.setAttribute("aria-label", "Hide password");
+      toggleButton.textContent = localizedAuth().auth.login.hidePasswordShort;
+      toggleButton.setAttribute("aria-label", localizedAuth().auth.hidePassword);
     } else {
       passwordInput.type = "password";
-      toggleButton.textContent = "Show";
-      toggleButton.setAttribute("aria-label", "Show password");
+      toggleButton.textContent = localizedAuth().auth.login.showPasswordShort;
+      toggleButton.setAttribute("aria-label", localizedAuth().auth.showPassword);
     }
     passwordInput.focus();
   });
@@ -55,7 +74,7 @@ if (!form || !shell) {
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     if (!emailInput.value || !passwordInput.value) {
-      setError("Both email and password are required.");
+      setError(localizedAuth().auth.register.fillAllFields);
       return;
     }
 
@@ -77,7 +96,7 @@ if (!form || !shell) {
       });
 
       if (!response.ok) {
-        throw new Error("We couldn't verify your credentials. Please try again.");
+        throw new Error(localizedAuth().auth.login.error);
       }
 
       const data = (await response.json()) as LoginResponse;
@@ -94,12 +113,8 @@ if (!form || !shell) {
         window.sessionStorage.setItem(AUTH_STORAGE_KEY, "1");
       }
       window.location.assign("/");
-    } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "We couldn't verify your credentials. Please try again.",
-      );
+    } catch {
+      setError(localizedAuth().auth.login.error);
       submitButton?.removeAttribute("disabled");
       submitButton?.classList.remove("login-fallback__button--loading");
     }
