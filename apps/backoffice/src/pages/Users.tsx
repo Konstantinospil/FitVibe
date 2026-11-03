@@ -6,10 +6,12 @@ import { useThemeColors } from "../hooks/useThemeColors";
 import { Button } from "../components/ui/Button";
 import { FreshTotpDialog } from "../components/FreshTotpDialog";
 import { InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
+import { useUiText } from "../i18n/ui";
 
 type UserFilter = "all" | "registered" | "unverified" | "blacklisted";
 
 const UsersPage: React.FC = () => {
+  const t = useUiText();
   const colors = useThemeColors();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<UserFilter>("all");
@@ -107,7 +109,7 @@ const UsersPage: React.FC = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       setErrorMessage(null);
-      alert("Verification email sent successfully");
+      alert(t("users.verifySent"));
     },
     onError: (error: unknown) => {
       const message = extractErrorMessage(error);
@@ -121,7 +123,7 @@ const UsersPage: React.FC = () => {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       setErrorMessage(null);
-      alert("Password reset email sent successfully");
+      alert(t("users.resetSent"));
     },
     onError: (error: unknown) => {
       const message = extractErrorMessage(error);
@@ -138,7 +140,7 @@ const UsersPage: React.FC = () => {
       setSelectedUser(null);
       setActionReason("");
       setErrorMessage(null);
-      alert("Avatar deleted successfully");
+      alert(t("users.avatarDeleted"));
       void refetch();
     },
     onError: (error: unknown) => {
@@ -156,7 +158,7 @@ const UsersPage: React.FC = () => {
       setSelectedUser(null);
       setActionReason("");
       setErrorMessage(null);
-      alert("Display name deleted successfully");
+      alert(t("users.displayDeleted"));
       void refetch();
     },
     onError: (error: unknown) => {
@@ -189,21 +191,21 @@ const UsersPage: React.FC = () => {
 
   const handleSendVerificationEmail = (user: User) => {
     const label = user.display_name || user.username;
-    if (confirm(`Send verification email to ${label}?`)) {
+    if (confirm(t("users.verifyConfirm", { user: label }))) {
       sendVerificationEmailMutation.mutate(user.id);
     }
   };
 
   const handleSendPasswordReset = (user: User) => {
     const label = user.display_name || user.username;
-    if (confirm(`Send password reset email to ${label}?`)) {
+    if (confirm(t("users.resetConfirm", { user: label }))) {
       sendPasswordResetMutation.mutate(user.id);
     }
   };
 
   const handleDeleteAvatar = (user: User) => {
     const label = user.display_name || user.username;
-    const reason = prompt(`Delete avatar for ${label}? Enter reason (optional):`);
+    const reason = prompt(t("users.avatarConfirm", { user: label }));
     if (reason !== null) {
       deleteAvatarMutation.mutate({ userId: user.id, reason: reason || undefined });
     }
@@ -211,7 +213,7 @@ const UsersPage: React.FC = () => {
 
   const handleDeleteDisplayName = (user: User) => {
     const label = user.display_name || user.username;
-    const reason = prompt(`Delete display name for ${label}? Enter reason (optional):`);
+    const reason = prompt(t("users.displayConfirm", { user: label }));
     if (reason !== null) {
       deleteDisplayNameMutation.mutate({ userId: user.id, reason: reason || undefined });
     }
@@ -235,13 +237,13 @@ const UsersPage: React.FC = () => {
   const formatStatus = (status: string) => {
     switch (status) {
       case "pending_verification":
-        return "Unverified";
+        return t("users.statusUnverified");
       case "active":
-        return "Active";
+        return t("users.statusActive");
       case "banned":
-        return "Banned";
+        return t("users.statusBanned");
       case "suspended":
-        return "Suspended";
+        return t("users.statusSuspended");
       default:
         return status;
     }
@@ -266,7 +268,10 @@ const UsersPage: React.FC = () => {
     <div>
       {pendingUserAction ? (
         <FreshTotpDialog
-          actionLabel={`${pendingUserAction.action} user ${pendingUserAction.user.display_name || pendingUserAction.user.username}`}
+          actionLabel={t("users.actionChallenge", {
+             action: t(`users.${pendingUserAction.action === "blacklist" ? "blacklist" : pendingUserAction.action === "unblacklist" ? "unblacklist" : "delete"}`),
+             user: pendingUserAction.user.display_name || pendingUserAction.user.username,
+           })}
           onCancel={() => {
             setPendingUserAction(null);
             setSelectedUser(null);
@@ -295,10 +300,10 @@ const UsersPage: React.FC = () => {
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {(
             [
-              ["all", "All Users"],
-              ["registered", "Registered (Active)"],
-              ["unverified", "Unverified"],
-              ["blacklisted", "Blacklisted"],
+              ["all", t("users.filterAll")],
+              ["registered", t("users.filterRegistered")],
+              ["unverified", t("users.filterUnverified")],
+              ["blacklisted", t("users.filterBlacklisted")],
             ] as const
           ).map(([value, label]) => (
             <Button
@@ -322,8 +327,8 @@ const UsersPage: React.FC = () => {
         {/* Search Input */}
         <InputControl
           type="search"
-          aria-label="Search users"
-          placeholder="Search users by username or email..."
+          aria-label={t("users.search")}
+          placeholder={t("users.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{ maxWidth: "500px" }}
@@ -348,7 +353,7 @@ const UsersPage: React.FC = () => {
             type="button"
             variant="ghost"
             size="sm"
-            aria-label="Dismiss error"
+            aria-label={t("users.dismissError")}
             onClick={() => setErrorMessage(null)}
             style={{ color: colors.text, padding: "0 0.5rem", boxShadow: "none" }}
           >
@@ -358,10 +363,10 @@ const UsersPage: React.FC = () => {
       )}
 
       {isLoading ? (
-        <div style={{ color: colors.text }}>Loading...</div>
+        <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
         <div style={{ color: "var(--color-danger-text)", padding: "2rem" }}>
-          Error loading users: {error instanceof Error ? error.message : String(error)}
+          {t("users.loadError")}
         </div>
       ) : (
         <>
@@ -384,9 +389,7 @@ const UsersPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                       width: "60px",
                     }}
-                  >
-                    Avatar
-                  </th>
+                  >{t("users.avatar")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -394,9 +397,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Username
-                  </th>
+                  >{t("users.username")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -404,9 +405,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Email
-                  </th>
+                  >{t("users.email")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -414,9 +413,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Status
-                  </th>
+                  >{t("users.status")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -424,9 +421,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Role
-                  </th>
+                  >{t("users.role")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -434,9 +429,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Created
-                  </th>
+                  >{t("users.created")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -444,9 +437,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Deactivated
-                  </th>
+                  >{t("users.deactivated")}</th>
                   <th
                     style={{
                       padding: "1rem",
@@ -454,9 +445,7 @@ const UsersPage: React.FC = () => {
                       color: colors.text,
                       borderBottom: `1px solid ${colors.border}`,
                     }}
-                  >
-                    Actions
-                  </th>
+                  >{t("users.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -563,7 +552,7 @@ const UsersPage: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
-                        {user.role_code || "N/A"}
+                        {user.role_code ? t(`users.role${user.role_code.charAt(0).toUpperCase() + user.role_code.slice(1)}`) : t("users.notAvailable")}
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
                         {user.created_at
@@ -575,10 +564,10 @@ const UsersPage: React.FC = () => {
                                 }
                                 return date.toLocaleDateString();
                               } catch {
-                                return user.created_at || "N/A";
+                                return user.created_at || t("users.notAvailable");
                               }
                             })()
-                          : "N/A"}
+                          : t("users.notAvailable")}
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
                         {user.deactivated_at
@@ -590,7 +579,7 @@ const UsersPage: React.FC = () => {
                                 }
                                 return date.toLocaleDateString();
                               } catch {
-                                return user.deactivated_at || "N/A";
+                                return user.deactivated_at || t("users.notAvailable");
                               }
                             })()
                           : "—"}
@@ -603,18 +592,14 @@ const UsersPage: React.FC = () => {
                               variant="primary"
                               size="sm"
                               onClick={() => handleAction(user, "blacklist")}
-                            >
-                              Blacklist
-                            </Button>
+                            >{t("users.blacklist")}</Button>
                           ) : (
                             <Button
                               type="button"
                               variant="secondary"
                               size="sm"
                               onClick={() => handleAction(user, "unblacklist")}
-                            >
-                              Unblacklist
-                            </Button>
+                            >{t("users.unblacklist")}</Button>
                           )}
                           <Button
                             type="button"
@@ -626,9 +611,7 @@ const UsersPage: React.FC = () => {
                               color: colors.text,
                               border: `1px solid ${colors.border}`,
                             }}
-                          >
-                            Change Role
-                          </Button>
+                          >{t("users.changeRole")}</Button>
                           <Button
                             type="button"
                             variant="secondary"
@@ -641,9 +624,7 @@ const UsersPage: React.FC = () => {
                               color: "var(--color-secondary-on)",
                               border: "1px solid var(--color-info-text)",
                             }}
-                          >
-                            Send Verification Email
-                          </Button>
+                          >{t("users.verifyEmail")}</Button>
                           <Button
                             type="button"
                             variant="secondary"
@@ -656,9 +637,7 @@ const UsersPage: React.FC = () => {
                               color: "var(--color-secondary-on)",
                               border: "1px solid var(--color-warning-text)",
                             }}
-                          >
-                            Reset Password
-                          </Button>
+                          >{t("users.resetPassword")}</Button>
                           <Button
                             type="button"
                             variant="primary"
@@ -666,9 +645,7 @@ const UsersPage: React.FC = () => {
                             onClick={() => handleDeleteAvatar(user)}
                             disabled={deleteAvatarMutation.isPending}
                             isLoading={deleteAvatarMutation.isPending}
-                          >
-                            Delete Avatar
-                          </Button>
+                          >{t("users.deleteAvatar")}</Button>
                           {showUsername && (
                             <Button
                               type="button"
@@ -677,18 +654,14 @@ const UsersPage: React.FC = () => {
                               onClick={() => handleDeleteDisplayName(user)}
                               disabled={deleteDisplayNameMutation.isPending}
                               isLoading={deleteDisplayNameMutation.isPending}
-                            >
-                              Delete Display Name
-                            </Button>
+                            >{t("users.deleteDisplay")}</Button>
                           )}
                           <Button
                             type="button"
                             variant="primary"
                             size="sm"
                             onClick={() => handleDelete(user)}
-                          >
-                            Delete
-                          </Button>
+                          >{t("users.delete")}</Button>
                         </div>
                       </td>
                     </tr>
@@ -699,9 +672,7 @@ const UsersPage: React.FC = () => {
           </div>
 
           {filteredUsers.length === 0 && (
-            <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
-              No users found
-            </div>
+            <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>{t("users.none")}</div>
           )}
         </>
       )}
@@ -746,7 +717,7 @@ const UsersPage: React.FC = () => {
                 fontSize: "var(--type-section-title-size)",
               }}
             >
-              Change Role for {selectedUser.display_name || selectedUser.username}
+              {t("users.changeRoleFor", { user: selectedUser.display_name || selectedUser.username })}
             </h2>
             <div style={{ marginBottom: "1.5rem" }}>
               <label
@@ -756,17 +727,15 @@ const UsersPage: React.FC = () => {
                   color: colors.text,
                   fontSize: "var(--type-supporting-size)",
                 }}
-              >
-                Select Role
-              </label>
+              >{t("users.selectRole")}</label>
               <SelectControl
-                aria-label="Select role"
+                aria-label={t("users.selectRole")}
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
               >
                 {availableRoles.map((role) => (
                   <option key={role} value={role}>
-                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                    {t(`users.role${role.charAt(0).toUpperCase() + role.slice(1)}`)}
                   </option>
                 ))}
               </SelectControl>
@@ -779,14 +748,12 @@ const UsersPage: React.FC = () => {
                   color: colors.text,
                   fontSize: "var(--type-supporting-size)",
                 }}
-              >
-                Reason (optional)
-              </label>
+              >{t("users.reasonOptional")}</label>
               <TextareaControl
-                aria-label="Reason for role change"
+                aria-label={t("users.reasonLabel")}
                 value={actionReason}
                 onChange={(e) => setActionReason(e.target.value)}
-                placeholder="Enter reason for role change..."
+                placeholder={t("users.reasonPlaceholder")}
                 rows={3}
               />
             </div>
@@ -801,9 +768,7 @@ const UsersPage: React.FC = () => {
                   setActionReason("");
                 }}
                 style={{ color: colors.text, border: `1px solid ${colors.border}` }}
-              >
-                Cancel
-              </Button>
+              >{t("common.cancel")}</Button>
               <Button
                 type="button"
                 variant="secondary"
@@ -811,9 +776,7 @@ const UsersPage: React.FC = () => {
                 disabled={changeRoleMutation.isPending || !selectedRole}
                 isLoading={changeRoleMutation.isPending}
                 style={{ background: colors.border, color: colors.text }}
-              >
-                Change Role
-              </Button>
+              >{t("users.changeRole")}</Button>
             </div>
           </div>
         </div>
