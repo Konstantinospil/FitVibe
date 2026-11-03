@@ -850,7 +850,8 @@
       "name": "ui-literal-ast-regressions",
       "patterns": [
         "^tests/qa/audit-ui-literals\\.test\\.cjs$",
-        "^tests/qa/audit-ui-contract-runtime\\.test\\.cjs$"
+        "^tests/qa/audit-ui-contract-runtime\\.test\\.cjs$",
+        "^tests/qa/first500-localization\\.test\\.cjs$"
       ],
       "owner": "Frontend / Backoffice / QA",
       "ci_job_ids": [
@@ -860,11 +861,14 @@
         "tests/qa/audit-ui-literals.cjs",
         "docs/qa/ui-literal-audit.md",
         "tests/qa/audit-ui-data-contracts.cjs",
-        "tests/qa/audit-ui-runtime.cjs"
+        "tests/qa/audit-ui-runtime.cjs",
+        "apps/backoffice/src/i18n/ui.ts",
+        "docs/qa/first500-verdicts.json"
       ],
       "fixture_dependencies": [
         "synthetic JSX, TypeScript, HTML and CSS sources parsed in memory",
-        "synthetic server contracts and browser DOM snapshots"
+        "synthetic server contracts and browser DOM snapshots",
+        "audited Backoffice locale catalogs (en, de, fr, es, el)"
       ],
       "isolation_model": "node:test; TypeScript AST in process; no browser or external service",
       "expected_artifacts": [

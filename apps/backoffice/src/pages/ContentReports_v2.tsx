@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useUiText } from "../i18n/ui";
 import { AlertTriangle, EyeOff, Ban, X } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -13,6 +14,7 @@ import { useToast } from "../hooks/useToast";
 
 const ContentReportsV2: React.FC = () => {
   const toast = useToast();
+  const t = useUiText();
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "reviewed" | "dismissed">(
     "pending",
   );
@@ -34,14 +36,14 @@ const ContentReportsV2: React.FC = () => {
         });
         setReports(response.data);
       } catch {
-        setError("Failed to load reports. Please try again.");
+        setError(t("reports.loadError"));
       } finally {
         setLoading(false);
       }
     };
 
     void loadReports();
-  }, [filterStatus]);
+  }, [filterStatus, t]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -64,16 +66,14 @@ const ContentReportsV2: React.FC = () => {
     try {
       const payload: ModerateContentRequest = { action, totpCode };
       await moderateContent(reportId, payload);
-      toast.success(
-        `Content ${action === "hide" ? "hidden" : action === "ban" ? "banned" : "dismissed"} successfully`,
-      );
+      toast.success(t(`reports.success.${action}`));
       const response = await getFeedReports({
         status: filterStatus === "all" ? undefined : filterStatus,
       });
       setReports(response.data);
       setPendingModeration(null);
     } catch (error) {
-      toast.error(`Failed to ${action} content. Please try again.`);
+      toast.error(t("reports.actionError", { action: t(`reports.action.${action}`) }));
       if (totpCode) {
         throw error;
       }
@@ -85,7 +85,7 @@ const ContentReportsV2: React.FC = () => {
       setPendingModeration({ reportId, action });
       return;
     }
-    if (window.confirm("Dismiss this content report?")) {
+    if (window.confirm(t("reports.dismissConfirm"))) {
       void performModeration(reportId, action);
     }
   };
@@ -94,7 +94,7 @@ const ContentReportsV2: React.FC = () => {
     <div className="grid grid--gap-15">
       {pendingModeration ? (
         <FreshTotpDialog
-          actionLabel={`${pendingModeration.action} this content report`}
+          actionLabel={t("reports.challenge", { action: t(`reports.action.${pendingModeration.action}`) })}
           onCancel={() => setPendingModeration(null)}
           onConfirm={(code) =>
             performModeration(pendingModeration.reportId, pendingModeration.action, code)
@@ -107,10 +107,10 @@ const ContentReportsV2: React.FC = () => {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <AlertTriangle size={20} />
-                <CardTitle>Content Reports Queue</CardTitle>
+                <CardTitle>{t("reports.title")}</CardTitle>
               </div>
               <CardDescription>
-                Review and moderate reported feed items and comments
+                {t("reports.description")}
               </CardDescription>
             </div>
 
@@ -135,7 +135,7 @@ const ContentReportsV2: React.FC = () => {
                     textTransform: "capitalize",
                   }}
                 >
-                  {status}
+                  {t(`reports.status.${status}`)}
                 </Button>
               ))}
             </div>
@@ -148,7 +148,7 @@ const ContentReportsV2: React.FC = () => {
             </div>
           )}
           {loading ? (
-            <div className="empty-state text-secondary">Loading reports...</div>
+            <div className="empty-state text-secondary">{t("reports.loading")}</div>
           ) : reports.length === 0 ? (
             <div className="empty-state">
               <AlertTriangle
@@ -157,12 +157,12 @@ const ContentReportsV2: React.FC = () => {
                 style={{ margin: "0 auto 1rem" }}
               />
               <h3 className="text-125" style={{ marginBottom: "0.5rem" }}>
-                No reports to review
+                {t("reports.emptyTitle")}
               </h3>
               <p className="text-secondary">
                 {filterStatus === "all"
-                  ? "There are currently no content reports."
-                  : `No reports with status: ${filterStatus}`}
+                  ? t("reports.emptyAll")
+                  : t("reports.emptyStatus", { status: t(`reports.status.${filterStatus}`) })}
               </p>
             </div>
           ) : (
@@ -204,14 +204,14 @@ const ContentReportsV2: React.FC = () => {
                             color: getStatusColor(report.status),
                           }}
                         >
-                          {report.status}
+                          {t(`reports.status.${report.status}`)}
                         </span>
                         <span className="text-secondary text-09">
-                          Reported by @{report.reporterUsername}
+                          {t("reports.reporter", { username: report.reporterUsername })}
                         </span>
                       </div>
                       <h4 style={{ margin: 0, fontSize: "var(--type-card-title-size)" }}>
-                        {report.contentPreview || "Reported content"}
+                        {report.contentPreview || t("reports.reportedContent")}
                       </h4>
                       <p className="text-secondary" style={{ margin: "0.25rem 0 0" }}>
                         {report.reason}
@@ -237,7 +237,9 @@ const ContentReportsV2: React.FC = () => {
                     }}
                   >
                     <div className="text-secondary text-09">
-                      {report.contentAuthor ? `Author: @${report.contentAuthor}` : "Author unknown"}
+                      {report.contentAuthor
+                        ? t("reports.author", { username: report.contentAuthor })
+                        : t("reports.authorUnknown")}
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                       <Button
@@ -246,7 +248,7 @@ const ContentReportsV2: React.FC = () => {
                         onClick={() => void handleModerateContent(report.id, "hide")}
                         leftIcon={<EyeOff size={16} />}
                       >
-                        Hide
+                        {t("reports.action.hide")}
                       </Button>
                       <Button
                         variant="ghost"
@@ -254,7 +256,7 @@ const ContentReportsV2: React.FC = () => {
                         onClick={() => void handleModerateContent(report.id, "dismiss")}
                         leftIcon={<X size={16} />}
                       >
-                        Dismiss
+                        {t("reports.action.dismiss")}
                       </Button>
                       <Button
                         variant="danger"
@@ -262,7 +264,7 @@ const ContentReportsV2: React.FC = () => {
                         onClick={() => void handleModerateContent(report.id, "ban")}
                         leftIcon={<Ban size={16} />}
                       >
-                        Ban
+                        {t("reports.action.ban")}
                       </Button>
                     </div>
                   </div>

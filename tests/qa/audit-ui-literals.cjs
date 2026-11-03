@@ -22,7 +22,8 @@ const TECHNICAL_JSX_PROPS = new Set([
   "classname", "id", "key", "name", "type", "role", "value", "href", "src",
   "target", "rel", "method", "action", "autocomplete", "inputmode", "width",
   "height", "variant", "size", "color", "background", "style", "testid",
-  "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang",
+  "data-testid", "tabindex", "htmlfor", "pattern", "accept", "as", "lang", "to", "path",
+  "align", "loading", "controlsize",
 ]);
 const TECHNICAL_OBJECT_KEYS = new Set([
   "id", "key", "type", "role", "status", "code", "path", "url", "route",
@@ -75,10 +76,123 @@ function fieldName(node) {
 
 function contextOf(node) {
   if (ts.isJsxText(node)) return { classification: "ui", reason: "jsx-text" };
+  // Technical comparison operands must not be treated as UI copy just because
+  // the whole comparison sits inside a visible JSX attribute.
+  const comparison = ancestor(node, (candidate) =>
+    ts.isBinaryExpression(candidate) &&
+    [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken,
+      ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken]
+      .includes(candidate.operatorToken.kind) &&
+    (candidate.left === node || candidate.right === node));
+  if (comparison) return { classification: "technical", reason: "comparison-literal" };
+  if (typeof node.text === "string" && /^-?\d+(?:\.\d+)?(?:px|rem|em|vh|vw|%|ch|vmin|vmax)$/.test(node.text)) {
+    return { classification: "technical", reason: "css-dimension" };
+  }
+  // Narrowly identify known wire-format enums and typed filter sentinels.
+  // Do not blanket-ignore ordinary option arrays: those may contain UI labels.
+  // A known backend report-filter enum is not display copy even when mapped in JSX.
+  const statusArray = ancestor(node, (candidate) => ts.isArrayLiteralExpression(candidate));
+  if (statusArray && statusArray.elements.includes(node) &&
+      statusArray.elements.every((element) =>
+        ts.isStringLiteral(element) &&
+        ["all", "pending", "reviewed", "dismissed"].includes(element.text)) &&
+      ts.isAsExpression(statusArray.parent) &&
+      statusArray.parent.type.getText() === "const") {
+    return { classification: "technical", reason: "typed-status-option-values" };
+  }
+  const typedDeclaration = ancestor(node, (candidate) => ts.isVariableDeclaration(candidate));
+  // Internal translation-entry identity and ordering keys are not display copy.
+  if (ts.isTemplateExpression(node) && typedDeclaration &&
+      ["key", "aKey", "bKey"].includes(typedDeclaration.name.getText()) &&
+      typedDeclaration.initializer === node &&
+      (node.head.text === "" || node.head.text.includes("::"))) {
+    const expressions = node.templateSpans.map((span) => span.expression.getText());
+    if (expressions.length === 2 &&
+        expressions.every((part) => /(?:namespace|key_path)$/.test(part))) {
+      return { classification: "technical", reason: "translation-composite-key" };
+    }
+  }
+  // The role codes passed to the privileged admin API must remain untranslated.
+  if (typedDeclaration?.name.getText() === "nextRole" &&
+      ["admin", "superadmin"].includes(node.text) &&
+      ancestor(node, (candidate) => ts.isConditionalExpression(candidate))) {
+    return { classification: "technical", reason: "privileged-role-code" };
+  }
+  // The English fallback key is used for lookup, not as a visible language label.
+  if (node.text === "en" && ts.isCallExpression(node.parent) &&
+      /^(?:activeByLanguage|deletedByLanguage)\.(?:has|get)$/.test(node.parent.expression.getText()) &&
+      node.parent.arguments[0] === node) {
+    return { classification: "technical", reason: "language-fallback-code" };
+  }
+  if (node.text === "en" && typedDeclaration?.name.getText() === "displayLanguage" &&
+      ts.isBinaryExpression(node.parent) &&
+      node.parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+      node.parent.right === node &&
+      ts.isCallExpression(node.parent.left) &&
+      node.parent.left.expression.getText() === "activeByLanguage.has") {
+    return { classification: "technical", reason: "language-fallback-code" };
+  }
+  if (typedDeclaration && typedDeclaration.name.getText() === "severityOptions" &&
+      typedDeclaration.type?.getText().includes("AuditLogSeverity") &&
+      ts.isArrayLiteralExpression(typedDeclaration.initializer)) {
+    return { classification: "technical", reason: "typed-severity-enum" };
+  }
+  if (ts.isCallExpression(node.parent) && node.parent.expression.getText() === "useState" &&
+      node.parent.arguments[0] === node &&
+      node.parent.typeArguments?.some((type) =>
+        ts.isUnionTypeNode(type) && type.types.some((part) =>
+          ts.isLiteralTypeNode(part) && ts.isStringLiteral(part.literal) &&
+          part.literal.text === node.text))) {
+    return { classification: "technical", reason: "typed-filter-enum" };
+  }
+  if (node.text === "all" && ts.isCallExpression(node.parent) &&
+      node.parent.expression.getText() === "useState" && node.parent.arguments[0] === node &&
+      node.parent.typeArguments?.some((type) => type.getText().includes('"all"'))) {
+    return { classification: "technical", reason: "typed-filter-sentinel" };
+  }
+  if (node.text === "null" && ts.isReturnStatement(node.parent) &&
+      ancestor(node, (candidate) =>
+        ts.isFunctionDeclaration(candidate) && candidate.name?.getText() === "formatMetadataValue")) {
+    return { classification: "technical", reason: "metadata-null-representation" };
+  }
+  // CSS custom properties are styling tokens, even under objects named `text`.
+  if (!ts.isJsxText(node) && typeof node.text === "string" && /^var\(--[a-z0-9-]+\)$/.test(node.text)) return { classification: "technical", reason: "css-custom-property" };
   if (ts.isImportDeclaration(node.parent) || ts.isExportDeclaration(node.parent) || ts.isExternalModuleReference(node.parent)) {
     return { classification: "technical", reason: "module-specifier" };
   }
   if (ts.isLiteralTypeNode(node.parent)) return { classification: "technical", reason: "type-literal" };
+  // Only recognized typed protocol unions qualify; ordinary strings remain candidates.
+  if (ts.isCallExpression(node.parent) && node.parent.expression.getText() === "useState" &&
+      node.parent.arguments[0] === node &&
+      node.parent.typeArguments?.some((type) =>
+        /\b(?:LegalDocumentType|LegalChangeClass|LegalUserAction)\b/.test(type.getText()))) {
+    return { classification: "technical", reason: "typed-legal-state" };
+  }
+  if (typedDeclaration?.name.getText() === "ACTIONS_BY_DOCUMENT" &&
+      /\bLegalUserAction\b/.test(typedDeclaration.type?.getText() || "")) {
+    return { classification: "technical", reason: "typed-legal-action-map" };
+  }
+  if (node.text === "none" &&
+      (typedDeclaration?.name.getText() === "allowedActions" ||
+       ancestor(node, (candidate) =>
+         ts.isCallExpression(candidate) && candidate.expression.getText() === "setUserAction"))) {
+    return { classification: "technical", reason: "legal-no-action-sentinel" };
+  }
+  if (typedDeclaration?.name.getText() === "mailtoLink" &&
+      ((ts.isTemplateExpression(node) && node.head.text.startsWith("&body=")) ||
+       (typeof node.text === "string" && node.text.startsWith("&body=")))) {
+    return { classification: "technical", reason: "mailto-query-fragment" };
+  }
+  if ((ts.isTemplateExpression(node) && node.head.text.startsWith("mailto:")) ||
+      (typeof node.text === "string" && /^mailto:/.test(node.text))) {
+    return { classification: "technical", reason: "mailto-uri-template" };
+  }
+  if (ts.isBinaryExpression(node.parent) && node.parent.operatorToken.kind === ts.SyntaxKind.InKeyword &&
+      node.parent.left === node) {
+    return { classification: "technical", reason: "object-property-test" };
+  }
+  if (ts.isNewExpression(node.parent) && node.parent.expression.getText() === "Error") return { classification: "technical", reason: "internal-exception" };
+  if (ts.isCallExpression(node.parent) && /^(?:document\.getElementById|document\.querySelector|document\.querySelectorAll)$/.test(node.parent.expression.getText())) return { classification: "technical", reason: "dom-selector" };
   if (ts.isPropertyAssignment(node.parent) && node.parent.name === node) {
     return { classification: "technical", reason: "property-key" };
   }
@@ -95,6 +209,12 @@ function contextOf(node) {
     const key = attribute.name.getText().toLowerCase();
     if (["aria-labelledby", "aria-describedby", "aria-controls", "aria-owns", "aria-activedescendant"].includes(key)) {
       return { classification: "technical", reason: `jsx-id-reference:${key}` };
+    }
+    const handler = ancestor(node, (candidate) =>
+      ts.isCallExpression(candidate) && candidate.expression.getText() === "handleModerateContent");
+    if (key === "onclick" && handler &&
+        handler.arguments.some((argument) => argument === node)) {
+      return { classification: "technical", reason: "moderation-action-code" };
     }
     if (key.startsWith("aria-") || UI_PROPS.has(key)) return { classification: "ui", reason: `jsx-attribute:${key}` };
     if (key.startsWith("data-") || TECHNICAL_JSX_PROPS.has(key)) return { classification: "technical", reason: `jsx-property:${key}` };
@@ -116,6 +236,13 @@ function contextOf(node) {
       if (argIndex >= 2) return { classification: "ui", reason: "element-child" };
     }
     if (/^(?:require|import)$/.test(name)) return { classification: "technical", reason: "module-reference" };
+    if (name === "navigate" && call.arguments[0] === node) return { classification: "technical", reason: "navigation-target" };
+    if ((name === "document.documentElement.setAttribute" || name.endsWith(".setAttribute")) &&
+        call.arguments[0] === node) return { classification: "technical", reason: "dom-attribute-name" };
+    if (name.endsWith(".includes") && call.arguments.length > 0 &&
+        ancestor(call, (candidate) => ts.isIfStatement(candidate) || ts.isConditionalExpression(candidate))) {
+      return { classification: "technical", reason: "predicate-discriminator" };
+    }
     if (MESSAGE_CALLS.test(name) || MESSAGE_METHODS.test(name)) {
       return { classification: "ui", reason: `notification:${name}` };
     }

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useUiText } from "../i18n/ui";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, InputControl, TextareaControl } from "@fitvibe/ui";
 import { messagesApi, type ContactMessage } from "../services/api";
@@ -7,6 +8,7 @@ import { useThemeColors } from "../hooks/useThemeColors";
 
 const MessagesPage: React.FC = () => {
   const colors = useThemeColors();
+  const t = useUiText();
   const [page, setPage] = useState(0);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [openOnly, setOpenOnly] = useState(false);
@@ -77,14 +79,14 @@ const MessagesPage: React.FC = () => {
     savedResponse?: string | null,
   ) => {
     // Construct mailto link with subject and body
-    const subject = topic ? `Re: ${topic}` : "Re: Contact Form Message";
+    const subject = t("messages.replySubject", { topic: topic || t("messages.contactSubject") });
     let body = "";
 
     // Include saved response if it exists, otherwise include original message context
     if (savedResponse) {
       body = encodeURIComponent(savedResponse);
     } else if (message) {
-      const bodyText = `--- Original Message ---\n\nFrom: ${email}\nTopic: ${topic || "N/A"}\n\n${message}`;
+      const bodyText = t("messages.originalBody", { email, topic: topic || t("messages.notAvailable"), message });
       body = encodeURIComponent(bodyText);
     }
 
@@ -149,7 +151,7 @@ const MessagesPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        User Messages
+        {t("messages.title")}
       </h1>
 
       <div style={{ marginBottom: "2rem", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
@@ -163,7 +165,7 @@ const MessagesPage: React.FC = () => {
             }}
             style={{ cursor: "pointer" }}
           />
-          Show unread only
+          {t("messages.unreadOnly")}
         </label>
         <label style={{ color: colors.text, display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <InputControl
@@ -175,21 +177,21 @@ const MessagesPage: React.FC = () => {
             }}
             style={{ cursor: "pointer" }}
           />
-          Show open only
+          {t("messages.openOnly")}
         </label>
       </div>
 
       {isLoading ? (
-        <div style={{ color: colors.text }}>Loading...</div>
+        <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
         <div style={{ color: "var(--vibe-explosivity)", padding: "2rem" }}>
-          Error loading messages: {error instanceof Error ? error.message : String(error)}
+          {t("messages.loadError")} {error instanceof Error ? error.message : String(error)}
         </div>
       ) : !data || !data.messages || data.messages.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
-          No messages found
-          {unreadOnly ? " (unread only)" : ""}
-          {openOnly ? " (open only)" : ""}
+          {t("messages.empty")}
+          {unreadOnly ? t("messages.unreadSuffix") : ""}
+          {openOnly ? t("messages.openSuffix") : ""}
         </div>
       ) : (
         <>
@@ -217,7 +219,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Email
+                    {t("login.email")}
                   </th>
                   <th
                     style={{
@@ -227,7 +229,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Topic
+                    {t("messages.topic")}
                   </th>
                   <th
                     style={{
@@ -237,7 +239,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Message
+                    {t("messages.message")}
                   </th>
                   <th
                     style={{
@@ -247,7 +249,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Received
+                    {t("messages.received")}
                   </th>
                   <th
                     style={{
@@ -257,7 +259,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Responded
+                    {t("messages.responded")}
                   </th>
                   <th
                     style={{
@@ -267,7 +269,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Status
+                    {t("messages.status")}
                   </th>
                   <th
                     style={{
@@ -277,7 +279,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Actions
+                    {t("messages.actions")}
                   </th>
                 </tr>
               </thead>
@@ -309,7 +311,7 @@ const MessagesPage: React.FC = () => {
                           whiteSpace: "nowrap",
                           textDecoration: "underline",
                         }}
-                        title="Click to view full message"
+                        title={t("messages.viewFull")}
                       >
                         {message.message}
                       </Button>
@@ -326,9 +328,9 @@ const MessagesPage: React.FC = () => {
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {message.readAt ? (
-                        <span style={{ color: "var(--color-text-muted)" }}>Read</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>{t("messages.read")}</span>
                       ) : (
-                        <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
+                        <span style={{ color: "var(--vibe-strength)" }}>{t("messages.unread")}</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem" }}>
@@ -353,7 +355,7 @@ const MessagesPage: React.FC = () => {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          View
+                          {t("messages.view")}
                         </Button>
                         {!message.respondedAt && (
                           <>
@@ -377,7 +379,7 @@ const MessagesPage: React.FC = () => {
                                 whiteSpace: "nowrap",
                               }}
                             >
-                              Reply
+                              {t("messages.reply")}
                             </Button>
                             <Button
                               onClick={() => handleMarkResponded(message.id)}
@@ -392,9 +394,9 @@ const MessagesPage: React.FC = () => {
                                 fontSize: "var(--type-supporting-size)",
                                 whiteSpace: "nowrap",
                               }}
-                              title="Mark as responded after sending reply"
+                              title={t("messages.markRespondedHint")}
                             >
-                              Mark Responded
+                              {t("messages.markResponded")}
                             </Button>
                           </>
                         )}
@@ -413,7 +415,7 @@ const MessagesPage: React.FC = () => {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            Mark Read
+                            {t("messages.markRead")}
                           </Button>
                         )}
                       </div>
@@ -438,9 +440,9 @@ const MessagesPage: React.FC = () => {
                   cursor: page === 0 ? "not-allowed" : "pointer",
                 }}
               >
-                Previous
+                {t("messages.previous")}
               </Button>
-              <span style={{ color: colors.text }}>Page {page + 1}</span>
+              <span style={{ color: colors.text }}>{t("messages.page", { number: page + 1 })}</span>
               <Button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={data.messages.length < limit}
@@ -453,7 +455,7 @@ const MessagesPage: React.FC = () => {
                   cursor: data.messages.length < limit ? "not-allowed" : "pointer",
                 }}
               >
-                Next
+                {t("messages.next")}
               </Button>
             </div>
           )}
@@ -506,7 +508,7 @@ const MessagesPage: React.FC = () => {
                   margin: 0,
                 }}
               >
-                Message Details
+                {t("messages.details")}
               </h2>
               <Button
                 onClick={handleCloseModal}
@@ -531,7 +533,7 @@ const MessagesPage: React.FC = () => {
                   marginBottom: "0.25rem",
                 }}
               >
-                From:
+                {t("messages.from")}
               </div>
               <div
                 style={{
@@ -552,7 +554,7 @@ const MessagesPage: React.FC = () => {
                   marginBottom: "0.25rem",
                 }}
               >
-                Topic:
+                {t("messages.topicLabel")}
               </div>
               <div
                 style={{
@@ -573,7 +575,7 @@ const MessagesPage: React.FC = () => {
                   marginBottom: "0.25rem",
                 }}
               >
-                Date:
+                {t("messages.date")}
               </div>
               <div
                 style={{
@@ -594,13 +596,13 @@ const MessagesPage: React.FC = () => {
                   marginBottom: "0.25rem",
                 }}
               >
-                Status:
+                {t("messages.statusLabel")}
               </div>
               <div style={{ marginBottom: "1rem" }}>
                 {selectedMessage.readAt ? (
-                  <span style={{ color: "var(--color-text-muted)" }}>Read</span>
+                  <span style={{ color: "var(--color-text-muted)" }}>{t("messages.read")}</span>
                 ) : (
-                  <span style={{ color: "var(--vibe-strength)" }}>Unread</span>
+                  <span style={{ color: "var(--vibe-strength)" }}>{t("messages.unread")}</span>
                 )}
               </div>
             </div>
@@ -613,7 +615,7 @@ const MessagesPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                Message:
+                {t("messages.messageLabel")}
               </div>
               <div
                 style={{
@@ -644,7 +646,7 @@ const MessagesPage: React.FC = () => {
                     marginBottom: "0.5rem",
                   }}
                 >
-                  Recorded Response (read-only):
+                  {t("messages.recordedResponse")}
                 </div>
                 <div
                   style={{
@@ -676,12 +678,12 @@ const MessagesPage: React.FC = () => {
                     marginBottom: "0.5rem",
                   }}
                 >
-                  Add Response:
+                  {t("messages.addResponse")}
                 </div>
                 <TextareaControl
                   value={responseText}
                   onChange={(e) => setResponseText(e.target.value)}
-                  placeholder="Enter your response to this message..."
+                  placeholder={t("messages.responsePlaceholder")}
                   rows={8}
                   style={{
                     width: "100%",
@@ -715,7 +717,7 @@ const MessagesPage: React.FC = () => {
                       fontSize: "var(--type-body-size)",
                     }}
                   >
-                    {saveResponseMutation.isPending ? "Saving..." : "Save & Send Email"}
+                    {saveResponseMutation.isPending ? t("messages.saving") : t("messages.saveSend")}
                   </Button>
                   <Button
                     onClick={() => handleSaveResponse(selectedMessage.id, false)}
@@ -736,7 +738,7 @@ const MessagesPage: React.FC = () => {
                       fontSize: "var(--type-body-size)",
                     }}
                   >
-                    {saveResponseMutation.isPending ? "Saving..." : "Save Only"}
+                    {saveResponseMutation.isPending ? t("messages.saving") : t("messages.saveOnly")}
                   </Button>
                   <Button
                     onClick={() => {
@@ -753,7 +755,7 @@ const MessagesPage: React.FC = () => {
                       fontSize: "var(--type-body-size)",
                     }}
                   >
-                    Cancel
+                    {t("messages.cancel")}
                   </Button>
                 </div>
               </div>
@@ -783,7 +785,7 @@ const MessagesPage: React.FC = () => {
                       fontSize: "var(--type-body-size)",
                     }}
                   >
-                    Reply via Email
+                    {t("messages.replyEmail")}
                   </Button>
                 </>
               )}
@@ -800,7 +802,7 @@ const MessagesPage: React.FC = () => {
                     fontSize: "var(--type-body-size)",
                   }}
                 >
-                  Record Response
+                  {t("messages.recordResponse")}
                 </Button>
               )}
               {selectedMessage.response && (
@@ -823,7 +825,7 @@ const MessagesPage: React.FC = () => {
                     fontSize: "var(--type-body-size)",
                   }}
                 >
-                  Send Email with Recorded Response
+                  {t("messages.sendRecorded")}
                 </Button>
               )}
               {!selectedMessage.readAt && (
@@ -843,7 +845,7 @@ const MessagesPage: React.FC = () => {
                     fontSize: "var(--type-body-size)",
                   }}
                 >
-                  Mark as Read
+                  {t("messages.markAsRead")}
                 </Button>
               )}
               <Button
@@ -858,7 +860,7 @@ const MessagesPage: React.FC = () => {
                   fontSize: "var(--type-body-size)",
                 }}
               >
-                Close
+                {t("messages.close")}
               </Button>
             </div>
           </div>

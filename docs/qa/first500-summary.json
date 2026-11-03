@@ -1,0 +1,12 @@
+{
+  "baselineRun": 41533808821,
+  "first": 1,
+  "last": 500,
+  "classification": {
+    "technical": 341,
+    "falsePositive": 56,
+    "userVisible": 103
+  },
+  "reference": "ui-literals.json",
+  "idSequenceSha256": "75531edac44999c5627f3f7c09bf887b62ea97028a648fa096da4830abbf1d39"
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useUiText } from "../i18n/ui";
 import { InputControl, TextareaControl } from "@fitvibe/ui";
 import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card";
@@ -7,6 +8,7 @@ import { useAuthStore } from "../store/auth.store";
 
 const PrivilegeManagementPage: React.FC = () => {
   const currentUser = useAuthStore((state) => state.user);
+  const t = useUiText();
   const [users, setUsers] = useState<PrivilegedAdmin[]>([]);
   const [password, setPassword] = useState("");
   const [sudoUntil, setSudoUntil] = useState<string | null>(null);
@@ -25,7 +27,7 @@ const PrivilegeManagementPage: React.FC = () => {
   }, []);
 
   if (currentUser?.role !== "superadmin") {
-    return <p>Superadmin privileges are required.</p>;
+    return <p>{t("privileges.required")}</p>;
   }
 
   const activateSudo = async () => {
@@ -35,9 +37,9 @@ const PrivilegeManagementPage: React.FC = () => {
       const result = await superadminApi.sudo(password);
       setSudoUntil(result.expiresAt);
       setPassword("");
-      setMessage("Sudo authorization active for 5 minutes.");
+      setMessage(t("privileges.sudoActive"));
     } catch {
-      setMessage("Sudo reauthentication failed.");
+      setMessage(t("privileges.sudoFailed"));
     } finally {
       setLoading(false);
     }
@@ -55,10 +57,10 @@ const PrivilegeManagementPage: React.FC = () => {
       setSelected(null);
       setReason("");
       setTotpCode("");
-      setMessage("Role change committed. The target user's sessions were revoked.");
+      setMessage(t("privileges.changed"));
       await refresh();
     } catch {
-      setMessage("Role change failed. Check sudo state, TOTP, prerequisites and justification.");
+      setMessage(t("privileges.changeFailed"));
     } finally {
       setLoading(false);
     }
@@ -68,15 +70,14 @@ const PrivilegeManagementPage: React.FC = () => {
     <div className="grid grid--gap-lg">
       <Card>
         <CardHeader>
-          <CardTitle>Superadmin privilege management</CardTitle>
+          <CardTitle>{t("privileges.title")}</CardTitle>
           <CardDescription>
-            Privileged role changes require a recent sudo password reauthentication and a fresh
-            authenticator TOTP for every committed change.
+            {t("privileges.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <label>
-            Sudo password
+            {t("privileges.sudoPassword")}
             <InputControl
               type="password"
               value={password}
@@ -85,18 +86,17 @@ const PrivilegeManagementPage: React.FC = () => {
             />
           </label>
           <Button onClick={() => void activateSudo()} isLoading={loading} disabled={!password}>
-            Reauthenticate
+            {t("privileges.reauthenticate")}
           </Button>
-          {sudoUntil ? <p>Sudo valid until {new Date(sudoUntil).toLocaleTimeString()}.</p> : null}
+          {sudoUntil ? <p>{t("privileges.sudoUntil", { time: new Date(sudoUntil).toLocaleTimeString() })}</p> : null}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Administrators</CardTitle>
+          <CardTitle>{t("privileges.administrators")}</CardTitle>
           <CardDescription>
-            Promotion requires an active admin with verified authenticator TOTP. The final
-            superadmin cannot be demoted.
+            {t("privileges.adminDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,7 +115,7 @@ const PrivilegeManagementPage: React.FC = () => {
               <div>
                 <strong>{user.username ?? user.email ?? user.id}</strong>
                 <div>
-                  {user.role} · {user.status} · TOTP {user.totpVerified ? "verified" : "missing"}
+                  {t(`privileges.role.${user.role}`)} · {user.status} · {t("privileges.totp")} {user.totpVerified ? t("privileges.verified") : t("privileges.missing")}
                 </div>
               </div>
               <Button
@@ -123,7 +123,7 @@ const PrivilegeManagementPage: React.FC = () => {
                 onClick={() => setSelected(user)}
                 disabled={user.id === currentUser.id && user.role === "superadmin"}
               >
-                {user.role === "admin" ? "Promote" : "Demote"}
+                {user.role === "admin" ? t("privileges.promote") : t("privileges.demote")}
               </Button>
             </div>
           ))}
@@ -133,15 +133,14 @@ const PrivilegeManagementPage: React.FC = () => {
       {selected ? (
         <Card>
           <CardHeader>
-            <CardTitle>Confirm {selected.role === "admin" ? "promotion" : "demotion"}</CardTitle>
+            <CardTitle>{t("privileges.confirm", { action: selected.role === "admin" ? t("privileges.promotion") : t("privileges.demotion") })}</CardTitle>
             <CardDescription>
-              {selected.username ?? selected.email ?? selected.id}: {selected.role} →{" "}
-              {selected.role === "admin" ? "superadmin" : "admin"}
+              {t("privileges.roleChange", { user: selected.username ?? selected.email ?? selected.id, from: t(`privileges.role.${selected.role}`), to: selected.role === "admin" ? t("privileges.role.superadmin") : t("privileges.role.admin") })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <label>
-              Justification
+              {t("privileges.justification")}
               <TextareaControl
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
@@ -149,7 +148,7 @@ const PrivilegeManagementPage: React.FC = () => {
               />
             </label>
             <label>
-              Fresh authenticator code
+              {t("privileges.freshCode")}
               <InputControl
                 value={totpCode}
                 onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -164,10 +163,10 @@ const PrivilegeManagementPage: React.FC = () => {
                 isLoading={loading}
                 disabled={!reason.trim() || totpCode.length !== 6}
               >
-                Commit role change
+                {t("privileges.commit")}
               </Button>
               <Button variant="ghost" onClick={() => setSelected(null)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
             </div>
           </CardContent>

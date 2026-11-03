@@ -1,4 +1,5 @@
 import React from "react";
+import { useUiText } from "../i18n/ui";
 import { useQuery } from "@tanstack/react-query";
 import { getOpsStatus, type OpsLightStatus } from "../services/api";
 
@@ -15,19 +16,30 @@ const dotStyle = (status: OpsLightStatus): React.CSSProperties => ({
   background: statusColors[status],
 });
 
-const statusText = (ok: boolean) => (ok ? "OK" : "Down");
+const statusText = (ok: boolean, t: ReturnType<typeof useUiText>) =>
+  ok ? t("common.ok") : t("common.down");
 
 const AdminStatusHeader: React.FC = () => {
+  const t = useUiText();
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-ops-status"],
     queryFn: getOpsStatus,
     refetchInterval: 30000,
   });
 
+  const backendDetails = data
+    ? [
+        `${t("common.db")} ${statusText(data.backend.dbOk, t)}`,
+        `${t("common.nginx")} ${statusText(data.backend.nginxOk, t)}`,
+        `${t("common.clamav")} ${statusText(data.backend.clamavOk, t)}`,
+        `${t("common.readOnly")} ${data.backend.readOnly ? t("common.yes") : t("common.no")}`,
+      ].join(" | ")
+    : "";
+
   if (isLoading) {
     return (
       <div style={{ padding: "1rem 0", color: "var(--color-text-secondary)" }}>
-        Loading system status...
+        {t("status.loading")}
       </div>
     );
   }
@@ -35,7 +47,7 @@ const AdminStatusHeader: React.FC = () => {
   if (!data || error) {
     return (
       <div className="alert alert--warning" style={{ marginBottom: "1rem" }}>
-        Unable to load system status.
+        {t("status.error")}
       </div>
     );
   }
@@ -62,31 +74,29 @@ const AdminStatusHeader: React.FC = () => {
         <div style={{ display: "grid", gap: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
             <span style={dotStyle(data.backend.status)} />
-            <span className="font-weight-600">Backend</span>
+            <span className="font-weight-600">{t("common.backend")}</span>
           </div>
           <div className="text-08 text-secondary">
-            DB: {statusText(data.backend.dbOk)} | NGINX: {statusText(data.backend.nginxOk)} |
-            ClamAV: {statusText(data.backend.clamavOk)} | Read-only:{" "}
-            {data.backend.readOnly ? "Yes" : "No"}
+            {backendDetails}
           </div>
         </div>
 
         <div style={{ display: "grid", gap: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
             <span style={dotStyle(data.frontend.status)} />
-            <span className="font-weight-600">Frontend (5173)</span>
+            <span className="font-weight-600">{t("common.frontend")}</span>
           </div>
           <div className="text-08 text-secondary">
-            Status: {data.frontend.ok ? "Running" : "Down"}
+            {t("common.status")} {data.frontend.ok ? t("common.running") : t("common.down")}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
           {[
-            { label: "Unresolved messages", value: data.counts.unresolvedMessages },
-            { label: "Violation reports", value: data.counts.violationReports },
-            { label: "Unresolved audit logs", value: data.counts.unresolvedAuditLogs },
-            { label: "Open issues", value: data.counts.openIssues },
+            { label: t("status.messages"), value: data.counts.unresolvedMessages },
+            { label: t("status.violations"), value: data.counts.violationReports },
+            { label: t("status.audit"), value: data.counts.unresolvedAuditLogs },
+            { label: t("status.issues"), value: data.counts.openIssues },
           ].map((item) => (
             <div
               key={item.label}

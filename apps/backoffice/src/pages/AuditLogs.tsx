@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useUiText, translate } from "../i18n/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   auditLogsApi,
@@ -40,30 +41,30 @@ function formatAction(action: string): string {
 }
 
 const actionLabelMap: Record<string, string> = {
-  "auth.login": "User login",
-  "auth.refresh": "Session refresh",
-  profile_update: "Profile updated",
+  "auth.login": "audit.userLogin",
+  "auth.refresh": "audit.sessionRefresh",
+  profile_update: "audit.profileUpdated",
 };
 
 const entityLabelMap: Record<string, string> = {
-  auth: "Authentication",
-  users: "Users",
+  auth: "audit.authentication",
+  users: "audit.users",
 };
 
 const fieldLabelMap: Record<string, string> = {
-  display_name: "Display name",
-  fitness_level: "Fitness level",
-  training_frequency: "Training frequency",
-  weight: "Weight",
-  alias: "Alias",
+  display_name: "audit.displayName",
+  fitness_level: "audit.fitnessLevel",
+  training_frequency: "audit.trainingFrequency",
+  weight: "audit.weight",
+  alias: "audit.alias",
 };
 
 const metadataLabelMap: Record<string, string> = {
-  ip: "IP Address",
-  requestId: "Request ID",
-  sessionId: "Session ID",
-  userAgent: "User agent",
-  previousTokenId: "Previous token ID",
+  ip: "audit.ip",
+  requestId: "audit.requestId",
+  sessionId: "audit.sessionId",
+  userAgent: "audit.userAgent",
+  previousTokenId: "audit.previousToken",
 };
 
 function formatMetadataValue(value: unknown): string {
@@ -82,12 +83,12 @@ function formatMetadataValue(value: unknown): string {
   try {
     return JSON.stringify(value);
   } catch {
-    return "[Unserializable]";
+    return translate("audit.unserializable");
   }
 }
 
 function formatLabel(value: string, map: Record<string, string>): string {
-  return map[value] ?? formatAction(value);
+  return map[value] ? translate(map[value]) : formatAction(value);
 }
 
 function getChangeList(metadata: Record<string, unknown> | null): Array<{
@@ -122,20 +123,23 @@ function buildSummary(log: AuditLogEntry, getActionLabel: (action: string) => st
     const changes = getChangeList(log.metadata);
     if (changes.length) {
       const fields = changes.map((change) => formatLabel(change.field, fieldLabelMap)).join(", ");
-      return `Profile updated: ${fields}`;
+      return translate("audit.profileChanges", { fields });
     }
-    return "Profile updated";
+    return translate("audit.profileUpdated");
   }
   if (log.action === "auth.login") {
-    return "User signed in";
+    return translate("audit.signedIn");
   }
   if (log.action === "auth.refresh") {
-    return "Session refreshed";
+    return translate("audit.refreshed");
   }
   return getActionLabel(log.action);
 }
 
 const AuditLogsPage: React.FC = () => {
+  const t = useUiText();
+  const severityLabel = (severity: AuditLogSeverity) =>
+    t(severity === "error" ? "audit.errorSeverity" : `audit.${severity}`);
   const colors = useThemeColors();
   const [page, setPage] = useState(0);
   const [severityFilter, setSeverityFilter] = useState<AuditLogSeverity | "all">("all");
@@ -207,8 +211,13 @@ const AuditLogsPage: React.FC = () => {
     return map;
   }, [actionMappingsData]);
 
-  const getActionLabel = (action: string) =>
-    actionUiNameMap[action] ?? actionLabelMap[action] ?? formatAction(action);
+  const getActionLabel = useCallback(
+    (action: string) => {
+      const labelKey = actionLabelMap[action];
+      return actionUiNameMap[action] ?? (labelKey ? t(labelKey) : formatAction(action));
+    },
+    [actionUiNameMap, t],
+  );
 
   const actionOptions = useMemo(() => {
     const actionSet = new Set<string>();
@@ -223,15 +232,15 @@ const AuditLogsPage: React.FC = () => {
     }
     const actions = Array.from(actionSet);
     actions.sort((left, right) => {
-      const leftLabel = actionUiNameMap[left] ?? actionLabelMap[left] ?? formatAction(left);
-      const rightLabel = actionUiNameMap[right] ?? actionLabelMap[right] ?? formatAction(right);
+      const leftLabel = getActionLabel(left);
+      const rightLabel = getActionLabel(right);
       return leftLabel.localeCompare(rightLabel);
     });
     return actions.map((action) => ({
       value: action,
-      label: actionUiNameMap[action] ?? actionLabelMap[action] ?? formatAction(action),
+      label: getActionLabel(action),
     }));
-  }, [actionMappingsData, actionUiNameMap, data?.logs]);
+  }, [actionMappingsData, data?.logs, getActionLabel]);
 
   const queryClient = useQueryClient();
 
@@ -340,21 +349,21 @@ const AuditLogsPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        Audit Logs
+        {t("nav.audit")}
       </h1>
 
       <div style={{ marginBottom: "1.5rem", maxWidth: "360px" }}>
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          Search by Request ID
+          {t("audit.search")}
           <InputControl
             type="search"
             value={requestIdInput}
             onChange={(e) => {
               setRequestIdInput(e.target.value);
             }}
-            placeholder="Request ID"
+            placeholder={t("audit.requestId")}
           />
         </label>
       </div>
@@ -363,7 +372,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          Severity
+          {t("audit.severity")}
           <SelectControl
             value={severityFilter}
             onChange={(e) => {
@@ -371,10 +380,10 @@ const AuditLogsPage: React.FC = () => {
               setPage(0);
             }}
           >
-            <option value="all">All</option>
+            <option value="all">{t("audit.all")}</option>
             {severityOptions.map((severity) => (
               <option key={severity} value={severity}>
-                {severity}
+                {severityLabel(severity)}
               </option>
             ))}
           </SelectControl>
@@ -383,7 +392,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          Resolved
+          {t("audit.resolved")}
           <SelectControl
             value={resolvedFilter}
             onChange={(e) => {
@@ -391,9 +400,9 @@ const AuditLogsPage: React.FC = () => {
               setPage(0);
             }}
           >
-            <option value="all">All</option>
-            <option value="resolved">Resolved</option>
-            <option value="unresolved">Unresolved</option>
+            <option value="all">{t("audit.all")}</option>
+            <option value="resolved">{t("audit.resolved")}</option>
+            <option value="unresolved">{t("audit.unresolved")}</option>
           </SelectControl>
         </label>
 
@@ -406,7 +415,7 @@ const AuditLogsPage: React.FC = () => {
             minWidth: "220px",
           }}
         >
-          <span>Action</span>
+          <span>{t("audit.action")}</span>
           <details style={{ position: "relative" }}>
             <summary
               style={{
@@ -422,7 +431,9 @@ const AuditLogsPage: React.FC = () => {
                 gap: "0.5rem",
               }}
             >
-              {actionFilter.length > 0 ? `${actionFilter.length} selected` : "All"}
+              {actionFilter.length > 0
+                ? t("audit.selected", { count: actionFilter.length })
+                : t("audit.all")}
             </summary>
             <div
               style={{
@@ -447,7 +458,7 @@ const AuditLogsPage: React.FC = () => {
                 }}
               >
                 <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                  Select actions
+                  {t("audit.selectActions")}
                 </span>
                 <Button
                   type="button"
@@ -461,12 +472,12 @@ const AuditLogsPage: React.FC = () => {
                   }}
                   style={{ color: colors.textMuted, padding: 0, boxShadow: "none" }}
                 >
-                  Clear
+                  {t("audit.clear")}
                 </Button>
               </div>
               {actionOptions.length === 0 ? (
                 <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                  No actions available
+                  {t("audit.noActions")}
                 </div>
               ) : (
                 <div
@@ -507,7 +518,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          From
+          {t("audit.from")}
           <InputControl
             type="datetime-local"
             value={createdFrom}
@@ -521,7 +532,7 @@ const AuditLogsPage: React.FC = () => {
         <label
           style={{ color: colors.text, display: "flex", flexDirection: "column", gap: "0.35rem" }}
         >
-          To
+          {t("audit.to")}
           <InputControl
             type="datetime-local"
             value={createdTo}
@@ -534,14 +545,12 @@ const AuditLogsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div style={{ color: colors.text }}>Loading...</div>
+        <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
-        <div style={{ color: colors.text, padding: "2rem" }}>
-          Error loading audit logs: {error instanceof Error ? error.message : String(error)}
-        </div>
+        <div style={{ color: colors.text, padding: "2rem" }}>{t("audit.error")}</div>
       ) : !data || !data.logs || data.logs.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
-          No audit logs found
+          {t("audit.noLogs")}
         </div>
       ) : (
         <>
@@ -556,8 +565,8 @@ const AuditLogsPage: React.FC = () => {
           >
             <span style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
               {selectedLogIds.size > 0
-                ? `${selectedLogIds.size} selected`
-                : "Select logs to resolve in bulk"}
+                ? t("audit.selected", { count: selectedLogIds.size })
+                : t("audit.selectBulk")}
             </span>
             <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
               <Button
@@ -567,7 +576,7 @@ const AuditLogsPage: React.FC = () => {
                 onClick={handleResolveSelected}
                 disabled={resolvableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending}
               >
-                Mark Selected Resolved
+                {t("audit.resolveSelected")}
               </Button>
               <Button
                 type="button"
@@ -577,7 +586,7 @@ const AuditLogsPage: React.FC = () => {
                 disabled={reopenableLogIds.length === 0 || bulkUpdateResolvedMutation.isPending}
                 style={{ background: colors.surfaceMuted, color: colors.text }}
               >
-                Reopen Selected
+                {t("audit.reopenSelected")}
               </Button>
             </div>
           </div>
@@ -607,7 +616,7 @@ const AuditLogsPage: React.FC = () => {
                       checked={allSelected}
                       onChange={handleToggleSelectAll}
                       disabled={currentLogIds.length === 0}
-                      aria-label="Select all logs on this page"
+                      aria-label={t("audit.selectAll")}
                     />
                   </th>
                   <th
@@ -618,7 +627,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Created
+                    {t("audit.created")}
                   </th>
                   <th
                     style={{
@@ -628,7 +637,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Action
+                    {t("audit.action")}
                   </th>
                   <th
                     style={{
@@ -638,7 +647,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Entity
+                    {t("audit.entity")}
                   </th>
                   <th
                     style={{
@@ -648,7 +657,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Actor
+                    {t("audit.actor")}
                   </th>
                   <th
                     style={{
@@ -658,7 +667,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Severity
+                    {t("audit.severity")}
                   </th>
                   <th
                     style={{
@@ -668,7 +677,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Outcome
+                    {t("audit.outcome")}
                   </th>
                   <th
                     style={{
@@ -678,7 +687,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Summary
+                    {t("audit.summary")}
                   </th>
                   <th
                     style={{
@@ -688,7 +697,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Resolved
+                    {t("audit.resolved")}
                   </th>
                   <th
                     style={{
@@ -698,7 +707,7 @@ const AuditLogsPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Actions
+                    {t("audit.actions")}
                   </th>
                 </tr>
               </thead>
@@ -711,7 +720,7 @@ const AuditLogsPage: React.FC = () => {
                         checked={selectedLogIds.has(log.id)}
                         onChange={() => handleToggleSelectLog(log.id)}
                         disabled={bulkUpdateResolvedMutation.isPending}
-                        aria-label={`Select log ${log.id}`}
+                        aria-label={t("audit.selectLog", { id: log.id })}
                       />
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
@@ -745,7 +754,7 @@ const AuditLogsPage: React.FC = () => {
                       >
                         {severityOptions.map((severity) => (
                           <option key={severity} value={severity}>
-                            {severity}
+                            {severityLabel(severity)}
                           </option>
                         ))}
                       </SelectControl>
@@ -758,9 +767,9 @@ const AuditLogsPage: React.FC = () => {
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {log.resolvedAt ? (
-                        <span style={{ color: colors.success }}>Resolved</span>
+                        <span style={{ color: colors.success }}>{t("audit.resolved")}</span>
                       ) : (
-                        <span style={{ color: colors.warning }}>Open</span>
+                        <span style={{ color: colors.warning }}>{t("audit.open")}</span>
                       )}
                     </td>
                     <td style={{ padding: "1rem" }}>
@@ -776,7 +785,7 @@ const AuditLogsPage: React.FC = () => {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          View
+                          {t("audit.view")}
                         </Button>
                         <Button
                           type="button"
@@ -788,7 +797,7 @@ const AuditLogsPage: React.FC = () => {
                           }
                           style={{ color: colors.text, whiteSpace: "nowrap" }}
                         >
-                          {log.resolvedAt ? "Reopen" : "Mark Resolved"}
+                          {log.resolvedAt ? t("audit.reopen") : t("audit.markResolved")}
                         </Button>
                       </div>
                     </td>
@@ -806,16 +815,16 @@ const AuditLogsPage: React.FC = () => {
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
               >
-                Previous
+                {t("audit.previous")}
               </Button>
-              <span style={{ color: colors.text }}>Page {page + 1}</span>
+              <span style={{ color: colors.text }}>{t("audit.page", { number: page + 1 })}</span>
               <Button
                 type="button"
                 variant="secondary"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={data.logs.length < limit}
               >
-                Next
+                {t("audit.next")}
               </Button>
             </div>
           )}
@@ -867,13 +876,13 @@ const AuditLogsPage: React.FC = () => {
                   margin: 0,
                 }}
               >
-                Audit Log Details
+                {t("audit.details")}
               </h2>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                aria-label="Close audit log details"
+                aria-label={t("audit.closeDetails")}
                 onClick={handleCloseModal}
                 style={{
                   color: colors.text,
@@ -887,7 +896,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Created
+                {t("audit.created")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {new Date(selectedLog.createdAt).toLocaleString()}
@@ -896,7 +905,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Action
+                {t("audit.action")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {getActionLabel(selectedLog.action)}
@@ -905,7 +914,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Entity
+                {t("audit.entity")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatLabel(selectedLog.entityType, entityLabelMap)}
@@ -914,7 +923,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Actor
+                {t("audit.actor")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.actorUsername || selectedLog.actorUserId || "-"}
@@ -923,7 +932,7 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Severity
+                {t("audit.severity")}
               </div>
               <div
                 style={{
@@ -932,13 +941,13 @@ const AuditLogsPage: React.FC = () => {
                   fontWeight: "var(--font-weight-semibold)",
                 }}
               >
-                {selectedLog.severity.toUpperCase()}
+                {severityLabel(selectedLog.severity)}
               </div>
             </div>
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Outcome
+                {t("audit.outcome")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {formatAction(selectedLog.outcome)}
@@ -947,12 +956,12 @@ const AuditLogsPage: React.FC = () => {
 
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ color: colors.textMuted, fontSize: "var(--type-supporting-size)" }}>
-                Resolved
+                {t("audit.resolved")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {selectedLog.resolvedAt
                   ? new Date(selectedLog.resolvedAt).toLocaleString()
-                  : "Open"}
+                  : t("audit.open")}
               </div>
             </div>
 
@@ -964,7 +973,7 @@ const AuditLogsPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                Summary
+                {t("audit.summary")}
               </div>
               <div style={{ color: colors.text, fontSize: "var(--type-body-size)" }}>
                 {buildSummary(selectedLog, getActionLabel)}
@@ -979,7 +988,7 @@ const AuditLogsPage: React.FC = () => {
                   marginBottom: "0.5rem",
                 }}
               >
-                Metadata
+                {t("audit.metadata")}
               </div>
               {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 ? (
                 <div
@@ -994,24 +1003,26 @@ const AuditLogsPage: React.FC = () => {
                 >
                   {getChangeList(selectedLog.metadata).length > 0 && (
                     <div style={{ marginBottom: "1rem" }}>
-                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>Changes</div>
+                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>
+                        {t("audit.changes")}
+                      </div>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <thead>
                           <tr>
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
                             >
-                              Field
+                              {t("audit.field")}
                             </th>
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
                             >
-                              From
+                              {t("audit.from")}
                             </th>
                             <th
                               style={{ textAlign: "left", padding: "0.5rem", color: colors.text }}
                             >
-                              To
+                              {t("audit.to")}
                             </th>
                           </tr>
                         </thead>
@@ -1045,7 +1056,9 @@ const AuditLogsPage: React.FC = () => {
                   {Object.entries(selectedLog.metadata).filter(([key]) => key !== "changes")
                     .length > 0 && (
                     <div>
-                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>Context</div>
+                      <div style={{ color: colors.textMuted, marginBottom: "0.5rem" }}>
+                        {t("audit.context")}
+                      </div>
                       <table style={{ width: "100%", borderCollapse: "collapse" }}>
                         <tbody>
                           {Object.entries(selectedLog.metadata)
@@ -1073,7 +1086,7 @@ const AuditLogsPage: React.FC = () => {
                   )}
                 </div>
               ) : (
-                <div style={{ color: colors.textMuted }}>No metadata available.</div>
+                <div style={{ color: colors.textMuted }}>{t("audit.noMetadata")}</div>
               )}
             </div>
 
@@ -1084,7 +1097,7 @@ const AuditLogsPage: React.FC = () => {
                 onClick={handleCloseModal}
                 style={{ color: colors.text, border: `1px solid ${colors.border}` }}
               >
-                Close
+                {t("common.close")}
               </Button>
             </div>
           </div>

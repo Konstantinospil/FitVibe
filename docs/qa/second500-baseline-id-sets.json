@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "baseline": {
+    "runId": 41533808821,
+    "report": "ui-literals.json",
+    "findingIndices": "501 through 1000 inclusive",
+    "idsJoinedByNewlinesSha256": "9ea6a99d356cfd58c39ea5c930de6871ceaa74a0dba6fc813e75995459e2c772"
+  },
+  "codes": {
+    "T": "already technical",
+    "F": "original false-positive candidate; retain as technical",
+    "L": "confirmed user-facing copy; source literal must be removed"
+  },
+  "counts": {
+    "T": 362,
+    "F": 39,
+    "L": 99
+  },
+  "localizedIds": "JLuM0v4FCXQuFY8tTOB5KpPeRbNVW0HAObQzDrUg3QTTFdT1qVFAbWDvJwzpeUq5sheuWVTmTv87RXpFwAL7rVr3SaWVGgx65ohOVPHJ/pHixxdGwwtXLWHIQX04NydLsKkYVHs1U7JuZIziUZSkMpxJWd42sIrz5F53mwLWs/ojms8raMjrgFUmO1jQgsKkaBAi9ZwM3j+12AmtyW48xSTTO/zutlH8tD+RkUk65ACDQXRRFaGFdCO/a2TA21XC3adnxRMnMaDpZG6OKvqgsbNZKQBM4zA6cMEHZX6xzrKw1nSJayvBr5Dr6t0duwD4HauxWFaC4h/zudt+fCk4EEFFQd5uGti/mynERxPhFTswTGtyR/KDrrSKm0DFL+Q5GQk0V4MT75S9zOSgxSZqiUXGsgzcroziedNCuDkHBvQO8PNn1O0k0RVaIelg2Ej6Y+lwxZvJakr54mJVqeceU1reTfuIzaW2OY8YzkicVcfDZyiOiyb8jbRsRmsuAB0jBjqrY5P7sZfGg9oq5N9C0JScH5Nd2F+O76oGp7BfiNqiLIgrgiCem0mRe1lYwDqwuu25zBIuz6JufKsgoZMQ2yu8ub9lTXfWBpgF7KEB61+f9JRgJsXyO8LO8/JSKIvsa/sxkLsjHc4xHi+YHoguRLabM4DAC6rYLrJoVXndWKJJ14CNI9i8S4srycEQcEXYaliQbo0MmVIod69yB4Z2h2aVOSCgw319ntr+xfSfB/ldVcGCfUHy0qk66ZR16PZm4x8vHNTcNGeMbhZpQifQ1bRIbohT0skum8Rzoma3NuFrK3o45OmW7XVl8KYM91gvr4IDHxVXhaLY5E5W+0RSalQRqa0K+wBOGUkQAVbel1aZwbiKxb5FTwf9dQ1nfEpEmpL7rN7xCjug70QWachigqZNwWj/Kcg9vJkR5394Kt7qJrDAtzmQY6PvEc90cENlvZrBG8DqLRD5KQ8xoW7jLVD5fYXeoDhS1COVqpJyOWbrO8ICHQac5JCDQA2Y4NgF/Srm6QzIcSgSm5z8u0LLLSCmfTe47MrX",
+  "falsePositiveIds": "maxsrkCd3UqtowmckZeNbWKGbZsclD1D6KC0dkfDbfNP+I8PX4CABS2fOC438HSGfz3/HJm8SGmp2R56WrHLsu2G2MbmytKN1gY8Q21atfdCGoElFOBsUDTa0+/W+3R9lSEkg8uzUmL6bWBLEmCvdukMInAyVgomQfAnlhQ5IbN4/QU2DK5KuI5FZn4Kounqp0E2ywVVK0/sYoGCW2CGuVeCXdOP8RwFKB9Z98BeQL4iC9ftDGEt1ghUdGXtz6TPvmRC+kA0DjqdDFw3pKey09fKK6XPDv8VhlLf+Wu8v22361b2jPKPmD/FKtZv954S553jTViQQ6wwavpehCe4x5Vzn9r77hAfuOnMkMV3Bp9n8xle5ggfFL0ABTPOgmJbJ6oOjb9K0Newt1OHoAyIBpHLyfZvL/ku"
+}
