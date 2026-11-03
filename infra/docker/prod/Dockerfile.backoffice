@@ -20,6 +20,9 @@ RUN pnpm --filter @fitvibe/backoffice run build
 
 FROM nginx:1.31-alpine AS runtime
 
+# Refresh Alpine OS packages in the shipped runtime image (not just the tag).
+RUN apk upgrade --no-cache
+
 COPY infra/docker/prod/backoffice.nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/apps/backoffice/dist /usr/share/nginx/html
 
