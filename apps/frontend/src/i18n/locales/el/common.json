@@ -1251,7 +1251,8 @@
   },
   "vibeBadge": {
     "showIcon": "{{label}}: {{level}}. Εμφάνιση συμβόλου Vibe",
-    "showLevel": "{{label}}. Εμφάνιση επιπέδου"
+    "showLevel": "{{label}}. Εμφάνιση επιπέδου",
+    "level": "επίπεδο"
   },
   "vibeformConstellation": {
     "accessibleLabel": "Πίνακας Vibeform",
