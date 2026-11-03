@@ -235,7 +235,15 @@ function contextOf(node) {
   // Translation keys are never UI copy even when passed to a visible JSX property.
   const enclosingCall = ancestor(node, (candidate) => ts.isCallExpression(candidate));
   if (enclosingCall && isTranslationCall(enclosingCall)) {
-    return { classification: "technical", reason: "translation-key" };
+    const translationKey = enclosingCall.arguments[0];
+    if (translationKey === node) {
+      return { classification: "technical", reason: "translation-key" };
+    }
+    const property = ancestor(node, (candidate) => ts.isPropertyAssignment(candidate));
+    if (property && property.name.getText().replace(/["']/g, "") === "defaultValue") {
+      return { classification: "ui", reason: "hardcoded-translation-fallback" };
+    }
+    return { classification: "review", reason: "translation-interpolation-literal" };
   }
   const attribute = ancestor(node, (candidate) => ts.isJsxAttribute(candidate));
   if (attribute) {
@@ -282,7 +290,7 @@ function contextOf(node) {
     return { classification: "ui", reason: "jsx-expression" };
   }
   const call = ancestor(node, (candidate) => ts.isCallExpression(candidate));
-  if (call && isTranslationCall(call) && call.arguments.some((arg) => arg === node || node.pos >= arg.pos && node.end <= arg.end)) {
+  if (call && isTranslationCall(call) && call.arguments[0] === node) {
     return { classification: "technical", reason: "translation-key" };
   }
   if (call) {
