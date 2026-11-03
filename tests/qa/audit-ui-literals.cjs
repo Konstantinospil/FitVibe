@@ -81,7 +81,7 @@ function contextOf(node) {
   // English directly. Keep the exception scoped to the bootstrap resource map.
   const embeddedResource = ancestor(node, (candidate) =>
     ts.isVariableDeclaration(candidate) && candidate.name.getText() === "minimalCommon");
-  if (embeddedResource && /[\\/]i18n[\\/]config\\.ts$/.test(node.getSourceFile().fileName)) {
+  if (embeddedResource && /[\/]i18n[\/]config\.ts$/.test(node.getSourceFile().fileName)) {
     return { classification: "technical", reason: "bootstrap-translation-resource" };
   }
   // Runtime formatting options are standardized Intl tokens, not labels.
@@ -89,7 +89,7 @@ function contextOf(node) {
     (ts.isCallExpression(candidate) && /(?:toLocaleString|toLocaleDateString|toLocaleTimeString|Intl\\.(?:DateTimeFormat|NumberFormat))$/.test(
       candidate.expression.getText(),
     )) || (ts.isNewExpression(candidate) &&
-      /^Intl\\.(?:DateTimeFormat|NumberFormat|DisplayNames)$/.test(candidate.expression.getText())));
+      /^Intl\.(?:DateTimeFormat|NumberFormat|DisplayNames)$/.test(candidate.expression.getText())));
   if (localizedFormatting && (node.pos >= localizedFormatting.arguments?.[0]?.pos ||
       node.parent?.kind === ts.SyntaxKind.PropertyAssignment)) {
     return { classification: "technical", reason: "intl-format-token" };
