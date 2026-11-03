@@ -27,6 +27,21 @@ const UsersPage: React.FC = () => {
   const user = useAuthStore((state) => state.user);
 
   const availableRoles = ["admin", "coach", "athlete", "support"];
+  const roleTranslationKeys: Record<string, string> = {
+    admin: "users.roleAdmin",
+    superadmin: "users.roleSuperadmin",
+    coach: "users.roleCoach",
+    athlete: "users.roleAthlete",
+    support: "users.roleSupport",
+  };
+  const formatRole = (role: string | null | undefined): string =>
+    role ? (roleTranslationKeys[role] ? t(roleTranslationKeys[role]) : role) : t("users.notAvailable");
+
+  const actionTranslationKeys = {
+    blacklist: "users.blacklist",
+    unblacklist: "users.unblacklist",
+    delete: "users.delete",
+  } as const;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["users", search, filter],
@@ -38,25 +53,9 @@ const UsersPage: React.FC = () => {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const extractErrorMessage = (error: unknown): string => {
-    if (error && typeof error === "object" && "response" in error) {
-      const axiosError = error as {
-        response?: { data?: { error?: { message?: string }; message?: string } };
-      };
-      return (
-        axiosError.response?.data?.error?.message ||
-        axiosError.response?.data?.message ||
-        (error instanceof Error ? error.message : "Unknown error")
-      );
-    }
-    if (error instanceof Error) {
-      return error.message;
-    }
-    if (typeof error === "string") {
-      return error;
-    }
-    return "Unknown error";
-  };
+  // The backend's raw error message can reveal internal details and may be English.
+  // Display a localized generic failure; server error codes can be mapped separately.
+  const extractErrorMessage = (_error: unknown): string => t("users.unknownError");
 
   const actionMutation = useMutation({
     mutationFn: ({
@@ -269,7 +268,7 @@ const UsersPage: React.FC = () => {
       {pendingUserAction ? (
         <FreshTotpDialog
           actionLabel={t("users.actionChallenge", {
-             action: t(`users.${pendingUserAction.action === "blacklist" ? "blacklist" : pendingUserAction.action === "unblacklist" ? "unblacklist" : "delete"}`),
+             action: t(actionTranslationKeys[pendingUserAction.action]),
              user: pendingUserAction.user.display_name || pendingUserAction.user.username,
            })}
           onCancel={() => {
@@ -292,7 +291,7 @@ const UsersPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        User Management
+        {t("users.title")}
       </h1>
 
       <div style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -552,7 +551,7 @@ const UsersPage: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
-                        {user.role_code ? t(`users.role${user.role_code.charAt(0).toUpperCase() + user.role_code.slice(1)}`) : t("users.notAvailable")}
+                        {formatRole(user.role_code)}
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
                         {user.created_at
@@ -735,7 +734,7 @@ const UsersPage: React.FC = () => {
               >
                 {availableRoles.map((role) => (
                   <option key={role} value={role}>
-                    {t(`users.role${role.charAt(0).toUpperCase() + role.slice(1)}`)}
+                    {formatRole(role)}
                   </option>
                 ))}
               </SelectControl>
