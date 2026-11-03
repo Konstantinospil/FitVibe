@@ -731,7 +731,9 @@
       "backupCodesHelp": "Conservez ces codes en lieu sûr. Vous pourrez les utiliser si vous perdez votre appareil d'authentification.",
       "revealBackupCodes": "Afficher les codes de secours",
       "hideBackupCodes": "Masquer les codes de secours",
-      "finishBackupCodes": "Terminé"
+      "finishBackupCodes": "Terminé",
+      "restartSetupNotice": "Une précédente configuration de l’authentification à deux facteurs n’a pas été terminée. Saisissez votre mot de passe pour recommencer.",
+      "restartSetup": "Recommencer la configuration 2FA"
     },
     "account": {
       "title": "Zone de danger",
