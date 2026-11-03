@@ -46,6 +46,20 @@ test("literal English translation defaultValue is detected, but a translation ke
   assert.equal(fallback?.reason, "hardcoded-translation-fallback");
 });
 
+
+test("nested JSX handler literals are not mistaken for displayed copy", () => {
+  const expression = '<div>{users.map(user => { const url = "/users/avatar/"; return <img src={url} alt={user.name} />; })}</div>';
+  const found = find(expression, "/users/avatar/");
+  assert.notEqual(found?.classification, "ui");
+  assert.equal(find('<p>{"Read more"}</p>', "Read more")?.classification, "ui");
+  assert.equal(find('<span>{ready ? "Ready" : "Working"}</span>', "Ready")?.classification, "ui");
+});
+
+test("nonlinguistic template joins are technical but actual text remains UI", () => {
+  assert.equal(find('<div aria-label={`\${date} — \${label}`} />', "${expression} — ${expression}")?.classification, "technical");
+  assert.equal(find('<div aria-label={`Welcome \${name}`} />', "Welcome ${expression}")?.classification, "ui");
+});
+
 test("never discards ambiguous literals", () => {
   assert.equal(find('const roleLabel = "Superadministrator"', "Superadministrator", ".ts")?.classification, "review");
 });
