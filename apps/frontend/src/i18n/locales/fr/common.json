@@ -1244,5 +1244,9 @@
     "level": "niveau",
     "showIcon": "{label} : {level}. Afficher l’icône Vibe",
     "showLevel": "{label}. Afficher le niveau"
+  },
+  "seo": {
+    "title": "FitVibe – Planifiez, suivez et partagez vos entraînements",
+    "description": "Planifiez, enregistrez et partagez vos entraînements. Suivez vos progrès dans six domaines : force, agilité, endurance, explosivité, intelligence et régénération."
   }
 }
