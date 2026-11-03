@@ -582,7 +582,7 @@ const UsersPage: React.FC = () => {
                                 }
                                 return date.toLocaleDateString(locale);
                               } catch {
-                                return user.deactivated_at || "N/A";
+                                return user.deactivated_at || t("users.notAvailable");
                               }
                             })()
                           : "—"}
