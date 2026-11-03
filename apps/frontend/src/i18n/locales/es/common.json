@@ -13,7 +13,8 @@
     "library": "Biblioteca",
     "dashboard": "Panel",
     "settings": "Ajustes",
-    "main": "Navegación principal"
+    "main": "Navegación principal",
+    "mainNavigation": "Navegación principal"
   },
   "language": {
     "label": "Idioma",
@@ -136,7 +137,8 @@
     "impressumAriaLabel": "Ver Aviso Legal",
     "contactAriaLabel": "Contáctanos",
     "expand": "Expandir pie de página",
-    "collapse": "Contraer pie de página"
+    "collapse": "Contraer pie de página",
+    "socialMediaLabel": "Redes sociales"
   },
   "terms": {
     "eyebrow": "Legal",
@@ -723,7 +725,7 @@
       "enable": "Activar 2FA",
       "enableError": "No se pudo activar 2FA. Inténtalo de nuevo.",
       "restartSetupNotice": "No se completó una configuración anterior de 2FA. Introduce tu contraseña para reiniciar la configuración.",
-      "restartSetup": "Reiniciar la configuración de 2FA",
+      "restartSetup": "Reiniciar configuración de 2FA",
       "scanQr": "Escanea este código QR con tu app autenticadora (Google Authenticator, Authy, etc.):",
       "qrLoading": "Cargando código QR...",
       "qrAlt": "Código QR de 2FA",
@@ -746,9 +748,7 @@
       "backupCodesHelp": "Guarda estos códigos en un lugar seguro. Podrás usarlos si pierdes tu dispositivo autenticador.",
       "revealBackupCodes": "Mostrar códigos de respaldo",
       "hideBackupCodes": "Ocultar códigos de respaldo",
-      "finishBackupCodes": "Listo",
-      "restartSetupNotice": "No se completó una configuración anterior de 2FA. Introduce tu contraseña para reiniciar la configuración.",
-      "restartSetup": "Reiniciar configuración de 2FA"
+      "finishBackupCodes": "Listo"
     },
     "account": {
       "title": "Zona de peligro",
@@ -1233,7 +1233,8 @@
   },
   "notifications": {
     "region": "Notificaciones",
-    "close": "Cerrar notificación"
+    "close": "Cerrar notificación",
+    "dismiss": "Cerrar notificación"
   },
   "theme": {
     "toLight": "Cambiar al modo claro",
@@ -1250,5 +1251,25 @@
   "seo": {
     "title": "FitVibe – Planifica, registra y comparte tus entrenamientos",
     "description": "Planifica, registra y comparte tus sesiones de entrenamiento. Sigue tu progreso en seis áreas: fuerza, agilidad, resistencia, explosividad, inteligencia y regeneración."
+  },
+  "dashboardAnalytics": {
+    "streak": "Racha de entrenamiento",
+    "sessions": "Sesiones completadas",
+    "volume": "Volumen total",
+    "days": "{{count}} días",
+    "trend": "{{change}} frente al período anterior",
+    "volumeTrend": "{{change}} miles de kg frente al período anterior",
+    "volumeValue": "{{value}} miles de kg",
+    "zeroVolume": "0 kg",
+    "unknown": "Desconocido",
+    "week": "Semana {{number}}"
+  },
+  "themeToggle": {
+    "switchToLight": "Cambiar al modo claro",
+    "switchToDark": "Cambiar al modo oscuro"
+  },
+  "vibeformConstellation": {
+    "accessibleLabel": "Panel Vibeform",
+    "athleteLabel": "Vibeform del deportista"
   }
 }

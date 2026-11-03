@@ -13,7 +13,8 @@
     "library": "Library",
     "dashboard": "Dashboard",
     "settings": "Settings",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "mainNavigation": "Main navigation"
   },
   "language": {
     "label": "Language",
@@ -136,7 +137,8 @@
     "impressumAriaLabel": "View Impressum",
     "contactAriaLabel": "Contact us",
     "expand": "Expand footer",
-    "collapse": "Collapse footer"
+    "collapse": "Collapse footer",
+    "socialMediaLabel": "Social media"
   },
   "terms": {
     "eyebrow": "Legal",
@@ -651,9 +653,7 @@
       "backupCodesHelp": "Save these backup codes in a secure location. You can use them to access your account if you lose your authenticator device.",
       "revealBackupCodes": "Show backup codes",
       "hideBackupCodes": "Hide backup codes",
-      "finishBackupCodes": "Done",
-      "restartSetupNotice": "An earlier 2FA setup was not completed. Enter your password to restart setup.",
-      "restartSetup": "Restart 2FA setup"
+      "finishBackupCodes": "Done"
     },
     "account": {
       "title": "Danger Zone",
@@ -1233,7 +1233,8 @@
   },
   "notifications": {
     "region": "Notifications",
-    "close": "Close notification"
+    "close": "Close notification",
+    "dismiss": "Close notification"
   },
   "theme": {
     "toLight": "Switch to light mode",
@@ -1250,5 +1251,25 @@
   "seo": {
     "title": "FitVibe – Plan, Log & Share Your Training",
     "description": "Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration."
+  },
+  "dashboardAnalytics": {
+    "streak": "Training streak",
+    "sessions": "Sessions completed",
+    "volume": "Total volume",
+    "days": "{{count}} days",
+    "trend": "{{change}} vs last period",
+    "volumeTrend": "{{change}}k kg vs last period",
+    "volumeValue": "{{value}}k kg",
+    "zeroVolume": "0 kg",
+    "unknown": "Unknown",
+    "week": "Week {{number}}"
+  },
+  "themeToggle": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  },
+  "vibeformConstellation": {
+    "accessibleLabel": "Vibeform dashboard",
+    "athleteLabel": "Athlete Vibeform"
   }
 }

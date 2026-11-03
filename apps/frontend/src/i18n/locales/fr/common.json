@@ -13,7 +13,8 @@
     "library": "Bibliothèque",
     "dashboard": "Tableau de bord",
     "settings": "Paramètres",
-    "main": "Navigation principale"
+    "main": "Navigation principale",
+    "mainNavigation": "Navigation principale"
   },
   "language": {
     "label": "Langue",
@@ -136,7 +137,8 @@
     "impressumAriaLabel": "Voir les Mentions légales",
     "contactAriaLabel": "Nous contacter",
     "expand": "Développer le pied de page",
-    "collapse": "Réduire le pied de page"
+    "collapse": "Réduire le pied de page",
+    "socialMediaLabel": "Réseaux sociaux"
   },
   "terms": {
     "eyebrow": "Légal",
@@ -722,7 +724,7 @@
       "disabled": "désactivée",
       "enable": "Activer la 2FA",
       "enableError": "Impossible d'activer la 2FA. Veuillez réessayer.",
-      "restartSetupNotice": "Une précédente configuration de l’authentification à deux facteurs n’a pas été terminée. Saisissez votre mot de passe pour recommencer.",
+      "restartSetupNotice": "Une précédente configuration 2FA n’a pas été terminée. Saisissez votre mot de passe pour recommencer.",
       "restartSetup": "Recommencer la configuration 2FA",
       "scanQr": "Scannez ce QR code avec votre application d'authentification (Google Authenticator, Authy, etc.) :",
       "qrLoading": "Chargement du QR code...",
@@ -746,9 +748,7 @@
       "backupCodesHelp": "Conservez ces codes en lieu sûr. Vous pourrez les utiliser si vous perdez votre appareil d'authentification.",
       "revealBackupCodes": "Afficher les codes de secours",
       "hideBackupCodes": "Masquer les codes de secours",
-      "finishBackupCodes": "Terminé",
-      "restartSetupNotice": "Une précédente configuration 2FA n’a pas été terminée. Saisissez votre mot de passe pour recommencer.",
-      "restartSetup": "Recommencer la configuration 2FA"
+      "finishBackupCodes": "Terminé"
     },
     "account": {
       "title": "Zone de danger",
@@ -1233,7 +1233,8 @@
   },
   "notifications": {
     "region": "Notifications",
-    "close": "Fermer la notification"
+    "close": "Fermer la notification",
+    "dismiss": "Fermer la notification"
   },
   "theme": {
     "toLight": "Passer au thème clair",
@@ -1250,5 +1251,25 @@
   "seo": {
     "title": "FitVibe – Planifiez, suivez et partagez vos entraînements",
     "description": "Planifiez, enregistrez et partagez vos entraînements. Suivez vos progrès dans six domaines : force, agilité, endurance, explosivité, intelligence et régénération."
+  },
+  "dashboardAnalytics": {
+    "streak": "Série d’entraînement",
+    "sessions": "Séances terminées",
+    "volume": "Volume total",
+    "days": "{{count}} jours",
+    "trend": "{{change}} par rapport à la période précédente",
+    "volumeTrend": "{{change}} milliers de kg par rapport à la période précédente",
+    "volumeValue": "{{value}} milliers de kg",
+    "zeroVolume": "0 kg",
+    "unknown": "Inconnu",
+    "week": "Semaine {{number}}"
+  },
+  "themeToggle": {
+    "switchToLight": "Passer au thème clair",
+    "switchToDark": "Passer au thème sombre"
+  },
+  "vibeformConstellation": {
+    "accessibleLabel": "Tableau de bord Vibeform",
+    "athleteLabel": "Vibeform de l’athlète"
   }
 }
