@@ -649,7 +649,9 @@
       "backupCodesHelp": "Save these backup codes in a secure location. You can use them to access your account if you lose your authenticator device.",
       "revealBackupCodes": "Show backup codes",
       "hideBackupCodes": "Hide backup codes",
-      "finishBackupCodes": "Done"
+      "finishBackupCodes": "Done",
+      "restartSetupNotice": "An earlier 2FA setup was not completed. Enter your password to restart setup.",
+      "restartSetup": "Restart 2FA setup"
     },
     "account": {
       "title": "Danger Zone",
@@ -1226,5 +1228,16 @@
   "legalDocument": {
     "effectiveDate": "Effective date:",
     "version": "Version:"
+  },
+  "notifications": {
+    "region": "Notifications",
+    "close": "Close notification"
+  },
+  "theme": {
+    "toLight": "Switch to light mode",
+    "toDark": "Switch to dark mode"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Your Vibeform"
   }
 }
