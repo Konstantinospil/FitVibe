@@ -12,7 +12,8 @@
     "calendar": "Calendario",
     "library": "Biblioteca",
     "dashboard": "Panel",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "main": "Navegación principal"
   },
   "language": {
     "label": "Idioma",
@@ -261,9 +262,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Servicio de correo electrónico no disponible"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"Esta contraseña aparece en una filtración conocida. Recomendamos encarecidamente cambiarla. La operación se ha completado.","BREACH_CHECK_UNAVAILABLE":"No se pudo verificar si la contraseña aparece en filtraciones. La operación se ha completado. Recomendamos utilizar una contraseña única."},
+    "advisory": {
+      "PASSWORD_BREACHED": "Esta contraseña aparece en una filtración conocida. Recomendamos encarecidamente cambiarla. La operación se ha completado.",
+      "BREACH_CHECK_UNAVAILABLE": "No se pudo verificar si la contraseña aparece en filtraciones. La operación se ha completado. Recomendamos utilizar una contraseña única."
+    },
     "meterLabel": "Estimación de seguridad de la contraseña",
-    "levels": {"veryWeak":"Muy débil","weak":"Débil","fair":"Aceptable","strong":"Fuerte"},
+    "levels": {
+      "veryWeak": "Muy débil",
+      "weak": "Débil",
+      "fair": "Aceptable",
+      "strong": "Fuerte"
+    },
     "serverChecks": "La aprobación definitiva requiere controles de seguridad en el servidor.",
     "tooShort": "Utiliza al menos {{minimum}} caracteres.",
     "minimumMet": "Se cumple la longitud mínima. Considera una frase única más larga.",
@@ -314,7 +323,18 @@
     "fitnessTestTitle": "Prueba de condición física",
     "fitnessTestDescription": "El método de puntuación de la prueba aún no está definido. La investigación correspondiente se mantiene separada del panel.",
     "fitnessTestAction": "Información de la prueba",
-    "fitnessTestPending": "La definición de los valores de referencia está pendiente en el tema de investigación específico."
+    "fitnessTestPending": "La definición de los valores de referencia está pendiente en el tema de investigación específico.",
+    "metrics": {
+      "streak": "Racha de entrenamiento",
+      "sessionsCompleted": "Sesiones completadas",
+      "totalVolume": "Volumen total",
+      "days_one": "{{count}} día",
+      "days_other": "{{count}} días",
+      "trend": "{{change}} respecto al período anterior",
+      "trendVolume": "{{change}} kg respecto al período anterior",
+      "unknown": "Desconocido",
+      "week": "Semana {{number}}"
+    }
   },
   "progress": {
     "eyebrow": "Tendencias e insights",
@@ -1201,5 +1221,9 @@
     "notNow": "Ahora no",
     "dismissError": "No se pudo guardar tu elección. Inténtalo de nuevo.",
     "requiredAdmin": "La autenticación de dos factores es obligatoria para las cuentas de administrador. Completa la configuración para continuar."
+  },
+  "legalDocument": {
+    "effectiveDate": "Fecha de entrada en vigor:",
+    "version": "Versión:"
   }
 }
