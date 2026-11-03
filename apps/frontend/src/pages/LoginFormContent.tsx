@@ -32,19 +32,15 @@ const LoginFormContent: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const showPasswordLabel = t("auth.login.showPassword", {
-    defaultValue: t("auth.showPassword", { defaultValue: "Show password" }),
-  });
-  const hidePasswordLabel = t("auth.login.hidePassword", {
-    defaultValue: t("auth.hidePassword", { defaultValue: "Hide password" }),
-  });
+  const showPasswordLabel = t("auth.showPassword");
+  const hidePasswordLabel = t("auth.hidePassword");
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     // Validate inputs
     if (!email.trim() || !password) {
-      setError(t("auth.login.fillAllFields") || "Please fill in all fields");
+      setError(t("auth.register.fillAllFields"));
       return;
     }
 
@@ -71,7 +67,7 @@ const LoginFormContent: React.FC = () => {
         signIn(response.user);
         void navigate(from, { replace: true });
       } else {
-        setError(t("auth.login.error") || "Login failed. Please try again.");
+        setError(t("auth.login.error"));
       }
     } catch (err: unknown) {
       logger.error("Login error", err instanceof Error ? err : new Error(String(err)), {
@@ -92,7 +88,6 @@ const LoginFormContent: React.FC = () => {
           };
         };
         const errorCode = axiosError.response?.data?.error?.code;
-        const errorMessage = axiosError.response?.data?.error?.message;
         if (errorCode === "TERMS_VERSION_OUTDATED") {
           void navigate("/terms-reacceptance", { replace: true });
           return;
@@ -104,22 +99,19 @@ const LoginFormContent: React.FC = () => {
           errorCode === "AUTH_IP_LOCKED";
 
         if (concealableAuthFailure) {
-          setError(t("auth.login.error") || "Login failed. Please try again.");
-        } else if (errorMessage) {
-          setError(errorMessage);
+          setError(t("auth.login.error"));
         } else if (errorCode) {
           const translatedError = t(`errors.${errorCode}`);
           setError(
             translatedError !== `errors.${errorCode}` ? translatedError : t("auth.login.error"),
           );
         } else {
-          setError(t("auth.login.error") || "Login failed. Please check your credentials.");
+          setError(t("auth.login.error"));
         }
       } else {
         // Network error or other issues
         setError(
-          t("auth.login.error") ||
-            "Unable to connect to server. Please check if the backend is running.",
+          t("auth.login.error"),
         );
       }
     } finally {
