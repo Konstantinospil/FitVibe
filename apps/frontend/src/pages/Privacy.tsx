@@ -50,7 +50,7 @@ const Privacy: React.FC = () => {
       setStatus(next.privacy);
     } catch {
       toast.error(
-        t("privacy.consent.acceptError", { defaultValue: "Could not save acknowledgement." }),
+        t("privacy.consent.acceptError"),
       );
     } finally {
       setIsWorking(false);
@@ -65,7 +65,7 @@ const Privacy: React.FC = () => {
       setStatus(next.privacy);
     } catch {
       toast.error(
-        t("privacy.consent.revokeError", { defaultValue: "Could not revoke acknowledgement." }),
+        t("privacy.consent.revokeError"),
       );
     } finally {
       setIsWorking(false);
@@ -75,11 +75,11 @@ const Privacy: React.FC = () => {
   const footerAction =
     isAuthenticated && status?.needsAcceptance ? (
       <Button variant="primary" onClick={() => void handleAcknowledge()} isLoading={isWorking}>
-        {t("privacy.consent.acknowledge", { defaultValue: "Acknowledge" })}
+        {t("privacy.consent.acknowledge")}
       </Button>
     ) : isAuthenticated && status && !status.needsAcceptance && status.acceptedVersion ? (
       <Button variant="danger" onClick={() => void handleRevoke()} isLoading={isWorking}>
-        {t("privacy.consent.revoke", { defaultValue: "Revoke acknowledgement" })}
+        {t("privacy.consent.revoke")}
       </Button>
     ) : undefined;
 
