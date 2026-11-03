@@ -1229,5 +1229,17 @@
   "notifications": {
     "region": "Ειδοποιήσεις",
     "dismiss": "Κλείσιμο ειδοποίησης"
+  },
+  "dashboardAnalytics": {
+    "streak": "Συνεχόμενες ημέρες προπόνησης",
+    "sessions": "Ολοκληρωμένες προπονήσεις",
+    "volume": "Συνολικός όγκος",
+    "days": "{{count}} ημέρες",
+    "trend": "{{change}} σε σχέση με την προηγούμενη περίοδο",
+    "volumeTrend": "{{change}} χιλιάδες kg σε σχέση με την προηγούμενη περίοδο",
+    "volumeValue": "{{value}} χιλιάδες kg",
+    "zeroVolume": "0 kg",
+    "unknown": "Άγνωστο",
+    "week": "Εβδομάδα {{number}}"
   }
 }
