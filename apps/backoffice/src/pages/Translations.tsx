@@ -1,4 +1,4 @@
-import { useBackofficeLocale } from "../i18n/ui";
+import { useBackofficeLocale, useUiText } from "../i18n/ui";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { translationsApi, type Translation } from "../services/api";
@@ -111,6 +111,7 @@ const TranslationsPage: React.FC = () => {
   }, [latestUpdateByNamespace, namespaces]);
 
   const locale = useBackofficeLocale();
+  const t = useUiText();
   const languageDisplayNames = useMemo(() => {
     if (typeof Intl !== "undefined" && "DisplayNames" in Intl) {
       return new Intl.DisplayNames([locale], { type: "language" });
@@ -355,7 +356,7 @@ const TranslationsPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        Translations
+        {t("translations.title")}
       </h1>
 
       <div
@@ -374,7 +375,7 @@ const TranslationsPage: React.FC = () => {
             marginBottom: "0.5rem",
           }}
         >
-          Latest namespace updates
+          {t("translations.latest")}
         </div>
         <div
           style={{
@@ -388,7 +389,7 @@ const TranslationsPage: React.FC = () => {
             <span key={ns} style={{ fontSize: "var(--type-body-size)" }}>
               {ns}:{" "}
               {latestUpdateByNamespace[ns]
-                ? new Date(latestUpdateByNamespace[ns]).toLocaleString("en-US", {
+                ? new Date(latestUpdateByNamespace[ns]).toLocaleString(locale, {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
@@ -404,8 +405,8 @@ const TranslationsPage: React.FC = () => {
       <div style={{ marginBottom: "2rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
         <InputControl
           type="search"
-          aria-label="Search translations"
-          placeholder="Search..."
+          aria-label={t("translations.search")}
+          placeholder={t("translations.searchPlaceholder")}
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -415,8 +416,8 @@ const TranslationsPage: React.FC = () => {
         />
         <InputControl
           type="search"
-          aria-label="Filter translations by key path"
-          placeholder="Filter by key path..."
+          aria-label={t("translations.keyFilter")}
+          placeholder={t("translations.keyPlaceholder")}
           value={keyPath}
           onChange={(e) => {
             setKeyPath(e.target.value);
@@ -425,7 +426,7 @@ const TranslationsPage: React.FC = () => {
           style={{ minWidth: "200px" }}
         />
         <SelectControl
-          aria-label="Filter by language"
+          aria-label={t("translations.filterLanguage")}
           value={language}
           onChange={(e) => {
             setLanguage(e.target.value);
@@ -441,7 +442,7 @@ const TranslationsPage: React.FC = () => {
           ))}
         </SelectControl>
         <SelectControl
-          aria-label="Filter by namespace"
+          aria-label={t("translations.filterNamespace")}
           value={namespace}
           onChange={(e) => {
             setNamespace(e.target.value);
@@ -474,10 +475,10 @@ const TranslationsPage: React.FC = () => {
             }}
             style={{ cursor: "pointer" }}
           />
-          Incomplete only
+          {t("translations.incomplete")}
         </label>
         <Button type="button" variant="primary" onClick={() => setShowCreate(true)}>
-          Create New
+          {t("translations.createNew")}
         </Button>
       </div>
 
@@ -492,7 +493,7 @@ const TranslationsPage: React.FC = () => {
           }}
         >
           <h3 style={{ color: "var(--color-text-primary)", marginBottom: "1rem" }}>
-            Create Translation
+            {t("translations.createTranslation")}
           </h3>
           <div
             style={{
@@ -510,7 +511,7 @@ const TranslationsPage: React.FC = () => {
                   color: "var(--color-text-primary)",
                 }}
               >
-                Namespace
+                {t("translations.namespace")}
               </label>
               <SelectControl
                 value={newTranslation.namespace}
@@ -534,7 +535,7 @@ const TranslationsPage: React.FC = () => {
                   color: "var(--color-text-primary)",
                 }}
               >
-                Language
+                {t("translations.language")}
               </label>
               <SelectControl
                 value={newTranslation.language}
@@ -557,11 +558,11 @@ const TranslationsPage: React.FC = () => {
                 color: "var(--color-text-primary)",
               }}
             >
-              Key Path
+              {t("translations.keyPath")}
             </label>
             <InputControl
               type="text"
-              placeholder="e.g., navigation.home or errors.notFound"
+              placeholder={t("translations.keyExample")}
               value={newTranslation.key_path}
               onChange={(e) => setNewTranslation({ ...newTranslation, key_path: e.target.value })}
             />
@@ -575,10 +576,10 @@ const TranslationsPage: React.FC = () => {
                 color: "var(--color-text-primary)",
               }}
             >
-              Value
+              {t("translations.value")}
             </label>
             <TextareaControl
-              placeholder="Translation value"
+              placeholder={t("translations.valuePlaceholder")}
               value={newTranslation.value}
               onChange={(e) => setNewTranslation({ ...newTranslation, value: e.target.value })}
               rows={3}
@@ -592,7 +593,7 @@ const TranslationsPage: React.FC = () => {
               disabled={createMutation.isPending}
               isLoading={createMutation.isPending}
             >
-              Create
+              {t("translations.create")}
             </Button>
             <Button
               type="button"
@@ -608,7 +609,7 @@ const TranslationsPage: React.FC = () => {
               }}
               style={{ border: "1px solid var(--color-border)" }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -625,7 +626,7 @@ const TranslationsPage: React.FC = () => {
           }}
         >
           <h3 style={{ color: "var(--color-text-primary)", marginBottom: "1rem" }}>
-            Editing: {editingKey.namespace}.{editingKey.key_path}
+            {t("translations.editingKey", { key: `${editingKey.namespace}.${editingKey.key_path}` })}
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {languages.map((lang) => (
@@ -644,7 +645,7 @@ const TranslationsPage: React.FC = () => {
                 <TextareaControl
                   value={editValues[lang] || ""}
                   onChange={(e) => setEditValues({ ...editValues, [lang]: e.target.value })}
-                  placeholder={`Translation for ${getLanguageLabel(lang)}...`}
+                  placeholder={t("translations.forLanguage", { language: getLanguageLabel(lang) })}
                   rows={2}
                 />
               </div>
@@ -657,7 +658,7 @@ const TranslationsPage: React.FC = () => {
                 disabled={bulkUpdateMutation.isPending}
                 isLoading={bulkUpdateMutation.isPending}
               >
-                Save All Languages
+                {t("translations.saveAll")}
               </Button>
               <Button
                 type="button"
@@ -665,7 +666,7 @@ const TranslationsPage: React.FC = () => {
                 onClick={handleCancelEdit}
                 style={{ border: "1px solid var(--color-border)" }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
             </div>
           </div>
@@ -697,7 +698,7 @@ const TranslationsPage: React.FC = () => {
                       width: "80px",
                     }}
                   >
-                    Status
+                    {t("translations.status")}
                   </th>
                   <th
                     style={{
@@ -708,7 +709,7 @@ const TranslationsPage: React.FC = () => {
                       width: "120px",
                     }}
                   >
-                    Namespace
+                    {t("translations.namespace")}
                   </th>
                   <th
                     style={{
@@ -719,7 +720,7 @@ const TranslationsPage: React.FC = () => {
                       minWidth: "150px",
                     }}
                   >
-                    Key Path
+                    {t("translations.keyPath")}
                   </th>
                   <th
                     style={{
@@ -730,7 +731,7 @@ const TranslationsPage: React.FC = () => {
                       minWidth: "200px",
                     }}
                   >
-                    Term
+                    {t("translations.term")}
                   </th>
                   <th
                     style={{
@@ -742,7 +743,7 @@ const TranslationsPage: React.FC = () => {
                       width: "160px",
                     }}
                   >
-                    Created At
+                    {t("translations.createdAt")}
                   </th>
                   <th
                     style={{
@@ -754,7 +755,7 @@ const TranslationsPage: React.FC = () => {
                       width: "160px",
                     }}
                   >
-                    Updated At
+                    {t("translations.updatedAt")}
                   </th>
                   <th
                     style={{
@@ -770,7 +771,7 @@ const TranslationsPage: React.FC = () => {
                       width: "150px",
                     }}
                   >
-                    Actions
+                    {t("translations.actions")}
                   </th>
                 </tr>
               </thead>
@@ -940,7 +941,7 @@ const TranslationsPage: React.FC = () => {
                                 fontSize: "var(--type-supporting-size)",
                               }}
                             >
-                              Editing...
+                              {t("translations.editing")}
                             </div>
                           ) : (
                             <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -958,7 +959,7 @@ const TranslationsPage: React.FC = () => {
                                 }}
                                 style={{ border: "1px solid var(--color-border)" }}
                               >
-                                Edit
+                                {t("translations.edit")}
                               </Button>
                             </div>
                           )}
@@ -1001,7 +1002,7 @@ const TranslationsPage: React.FC = () => {
                                   border: "1px solid var(--color-border)",
                                 }}
                               >
-                                {showArchivedForKey ? "Hide Archive" : "Archive"}
+                                {showArchivedForKey ? t("translations.hideArchive") : t("translations.archive")}
                               </Button>
                             </div>
                             <div
@@ -1053,7 +1054,7 @@ const TranslationsPage: React.FC = () => {
                                           whiteSpace: "pre-wrap",
                                         }}
                                       >
-                                        {value || "Missing"}
+                                        {value || t("translations.missing")}
                                       </div>
                                       {showDeleted && (
                                         <span
@@ -1065,7 +1066,7 @@ const TranslationsPage: React.FC = () => {
                                             padding: "0.1rem 0.35rem",
                                           }}
                                         >
-                                          Deleted
+                                          {t("translations.deleted")}
                                         </span>
                                       )}
                                     </div>
@@ -1091,10 +1092,10 @@ const TranslationsPage: React.FC = () => {
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
               >
-                Previous
+                {t("audit.previous")}
               </Button>
               <span style={{ color: "var(--color-text-primary)" }}>
-                Page {page + 1} of {Math.ceil(filteredTranslations.length / limit)}
+                {t("translations.pageOf", { page: page + 1, total: Math.ceil(filteredTranslations.length / limit) })}
               </span>
               <Button
                 type="button"
@@ -1102,7 +1103,7 @@ const TranslationsPage: React.FC = () => {
                 onClick={() => setPage((p) => p + 1)}
                 disabled={(page + 1) * limit >= filteredTranslations.length}
               >
-                Next
+                {t("audit.next")}
               </Button>
             </div>
           )}
