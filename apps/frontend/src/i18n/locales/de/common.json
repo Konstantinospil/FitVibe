@@ -1241,7 +1241,8 @@
   },
   "vibeBadge": {
     "showIcon": "{{label}}: {{level}}. Vibe-Symbol anzeigen",
-    "showLevel": "{{label}}. Level anzeigen"
+    "showLevel": "{{label}}. Level anzeigen",
+    "level": "Level"
   },
   "vibeformConstellation": {
     "accessibleLabel": "Vibeform-Übersicht",
