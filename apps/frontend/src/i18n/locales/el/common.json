@@ -25,7 +25,8 @@
     "select": "Επιλογή γλώσσας"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "Η ισορροπία δεν είναι μια κατάσταση"
   },
   "status": {
     "checking": "Έλεγχος διακομιστή…",
