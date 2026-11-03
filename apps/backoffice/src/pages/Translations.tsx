@@ -874,7 +874,7 @@ const TranslationsPage: React.FC = () => {
                                 marginTop: "0.25rem",
                               }}
                             >
-                              {displayLanguage ? getLanguageLabel(displayLanguage) : "No language"}
+                              {displayLanguage ? getLanguageLabel(displayLanguage) : t("translations.noLanguage")}
                             </div>
                           </button>
                         </td>
