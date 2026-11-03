@@ -548,7 +548,11 @@ const UsersPage: React.FC = () => {
                         </span>
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
-                        {user.role_code ? t(`users.role.${user.role_code}`) : t("users.notAvailable")}
+                        {user.role_code
+                          ? availableRoles.includes(user.role_code) || user.role_code === "superadmin"
+                            ? t(`users.role.${user.role_code}`)
+                            : user.role_code
+                          : t("users.notAvailable")}
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
                         {user.created_at
