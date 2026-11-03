@@ -1753,7 +1753,16 @@ jobs:
         run: |
           docker build -f infra/docker/prod/Dockerfile.backend -t fitvibe-backend:pre-main .
           docker build -f infra/docker/prod/Dockerfile.frontend -t fitvibe-frontend:pre-main .
+          docker build -f infra/docker/prod/Dockerfile.ingress -t fitvibe-ingress:pre-main .
           docker build -f infra/docker/prod/Dockerfile.backoffice -t fitvibe-backoffice:pre-main .
+
+      - name: Verify patched Alpine packages in Nginx runtime images
+        timeout-minutes: 3
+        run: |
+          for image in fitvibe-ingress:pre-main fitvibe-backoffice:pre-main; do
+            echo "Verifying $image"
+            docker run --rm -i --entrypoint sh "$image" -s < scripts/verify-alpine-nginx-runtime.sh
+          done
 
       - name: Assert backend runtime excludes Jest and deepmerge
         run: |
