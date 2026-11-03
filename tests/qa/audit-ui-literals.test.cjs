@@ -44,6 +44,13 @@ test("CSS colors and toast level enums are not UI prose", () => {
   assert.equal(results.find((item) => item.text === "Profile saved").classification, "ui");
 });
 
+test("interpolation-only templates do not become invented UI copy", () => {
+  const source = 'const id = `${user.id}-${session.id}`; const label = `Hello ${user.name}`;';
+  const findings = analyzeSource("fixture.ts", source);
+  assert.equal(findings.some((f) => f.text === "${expression}-${expression}"), false);
+  assert.equal(findings.some((f) => f.text === "Hello ${expression}"), true);
+});
+
 test("never discards ambiguous literals", () => {
   assert.equal(find('const roleLabel = "Superadministrator"', "Superadministrator", ".ts")?.classification, "review");
 });
