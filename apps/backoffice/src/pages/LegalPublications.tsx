@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useUiText } from "../i18n/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, InputControl, SelectControl } from "@fitvibe/ui";
 import {
@@ -16,6 +17,7 @@ const ACTIONS_BY_DOCUMENT: Record<LegalDocumentType, LegalUserAction[]> = {
 
 const LegalPublicationsPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const t = useUiText();
   const [documentType, setDocumentType] = useState<LegalDocumentType>("terms");
   const [changeClass, setChangeClass] = useState<Exclude<LegalChangeClass, "legacy">>("editorial");
   const [userAction, setUserAction] = useState<LegalUserAction>("none");
@@ -48,7 +50,7 @@ const LegalPublicationsPage: React.FC = () => {
           ? JSON.stringify((err as { response?: { data?: unknown } }).response?.data)
           : err instanceof Error
             ? err.message
-            : "Publication failed";
+            : t("legal.publicationFailed");
       setError(message);
     },
   });
@@ -70,32 +72,31 @@ const LegalPublicationsPage: React.FC = () => {
   return (
     <div className="grid grid--gap-lg">
       <div>
-        <h1>Legal Publications</h1>
+        <h1>{t("legal.title")}</h1>
         <p className="text-secondary">
-          Translation namespaces are the drafting source. Publishing freezes the current legal
-          namespace into immutable language snapshots.
+          {t("legal.description")}
         </p>
       </div>
 
       <section className="card">
         <div className="card-content grid grid--gap-md">
-          <h2>Publish current draft</h2>
+          <h2>{t("legal.publishDraft")}</h2>
 
           <label className="grid grid--gap-xs">
-            <span>Document</span>
+            <span>{t("legal.document")}</span>
             <SelectControl
               className="form-select"
               value={documentType}
               onChange={(event) => handleDocumentType(event.target.value as LegalDocumentType)}
             >
-              <option value="terms">Terms and Conditions</option>
-              <option value="privacy">Privacy Policy</option>
-              <option value="cookie">Cookie Policy</option>
+              <option value="terms">{t("legal.document.terms")}</option>
+              <option value="privacy">{t("legal.document.privacy")}</option>
+              <option value="cookie">{t("legal.document.cookie")}</option>
             </SelectControl>
           </label>
 
           <label className="grid grid--gap-xs">
-            <span>Change classification</span>
+            <span>{t("legal.changeClass")}</span>
             <SelectControl
               className="form-select"
               value={changeClass}
@@ -103,13 +104,13 @@ const LegalPublicationsPage: React.FC = () => {
                 handleChangeClass(event.target.value as Exclude<LegalChangeClass, "legacy">)
               }
             >
-              <option value="editorial">Editorial — existing user action remains valid</option>
-              <option value="material">Material — renewed user action is required</option>
+              <option value="editorial">{t("legal.class.editorialDescription")}</option>
+              <option value="material">{t("legal.class.materialDescription")}</option>
             </SelectControl>
           </label>
 
           <label className="grid grid--gap-xs">
-            <span>User effect</span>
+            <span>{t("legal.userEffect")}</span>
             <SelectControl
               className="form-select"
               value={userAction}
@@ -118,14 +119,14 @@ const LegalPublicationsPage: React.FC = () => {
             >
               {allowedActions.map((action) => (
                 <option key={action} value={action}>
-                  {action}
+                  {t(`legal.action.${action}`)}
                 </option>
               ))}
             </SelectControl>
           </label>
 
           <label className="grid grid--gap-xs">
-            <span>Effective from</span>
+            <span>{t("legal.effectiveFrom")}</span>
             <InputControl
               className="form-input"
               type="datetime-local"
@@ -133,7 +134,7 @@ const LegalPublicationsPage: React.FC = () => {
               onChange={(event) => setEffectiveAt(event.target.value)}
             />
             <span className="text-secondary text-08">
-              Leave empty to make the publication effective immediately.
+              {t("legal.immediateHelp")}
             </span>
           </label>
 
@@ -145,40 +146,40 @@ const LegalPublicationsPage: React.FC = () => {
             disabled={publishMutation.isPending}
             onClick={() => publishMutation.mutate()}
           >
-            {publishMutation.isPending ? "Publishing…" : "Publish immutable snapshot"}
+            {publishMutation.isPending ? t("legal.publishing") : t("legal.publishSnapshot")}
           </Button>
         </div>
       </section>
 
       <section className="card">
         <div className="card-content">
-          <h2>Publication history</h2>
+          <h2>{t("legal.history")}</h2>
           {isLoading ? (
-            <p>Loading…</p>
+            <p>{t("common.loading")}</p>
           ) : publications.length === 0 ? (
-            <p className="text-secondary">No publications found.</p>
+            <p className="text-secondary">{t("legal.empty")}</p>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr>
-                    <th align="left">Document</th>
-                    <th align="left">Version</th>
-                    <th align="left">Class</th>
-                    <th align="left">User effect</th>
-                    <th align="left">Effective</th>
-                    <th align="left">Languages</th>
+                    <th align="left">{t("legal.document")}</th>
+                    <th align="left">{t("legal.version")}</th>
+                    <th align="left">{t("legal.class")}</th>
+                    <th align="left">{t("legal.userEffect")}</th>
+                    <th align="left">{t("legal.effective")}</th>
+                    <th align="left">{t("legal.languages")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {publications.map((publication) => (
                     <tr key={publication.id}>
-                      <td>{publication.documentType}</td>
+                      <td>{t(`legal.document.${publication.documentType}`)}</td>
                       <td>{publication.version}</td>
-                      <td>{publication.changeClass}</td>
-                      <td>{publication.userAction}</td>
+                      <td>{t(`legal.class.${publication.changeClass}`)}</td>
+                      <td>{t(`legal.action.${publication.userAction}`)}</td>
                       <td>{new Date(publication.effectiveAt).toLocaleString()}</td>
-                      <td>{publication.languages.join(", ") || "legacy snapshot unavailable"}</td>
+                      <td>{publication.languages.join(", ") || t("legal.legacyMissing")}</td>
                     </tr>
                   ))}
                 </tbody>
