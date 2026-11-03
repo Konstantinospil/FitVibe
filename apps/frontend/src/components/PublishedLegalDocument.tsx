@@ -259,7 +259,7 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
   if (loading) {
     return (
       <LegalDocumentShell title={title}>
-        <p role="status">{t("common.loading", { defaultValue: "Loading..." })}</p>
+        <p role="status">{t("common.loading")}</p>
       </LegalDocumentShell>
     );
   }
@@ -267,7 +267,7 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
   if (loadFailed || !content) {
     return (
       <LegalDocumentShell title={title}>
-        <p role="alert">{t("common.error", { defaultValue: "Document unavailable." })}</p>
+        <p role="alert">{t("common.error")}</p>
       </LegalDocumentShell>
     );
   }
