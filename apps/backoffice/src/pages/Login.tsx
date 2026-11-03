@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useUiText } from "../i18n/ui";
 import { useNavigate } from "react-router-dom";
 import { Button, InputControl } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
@@ -18,6 +19,7 @@ const Login: React.FC = () => {
   const signIn = useAuthStore((state) => state.signIn);
   const theme = useThemeStore((state) => state.theme);
   const colors = useThemeColors();
+  const t = useUiText();
 
   const logo = useMemo<string>(() => {
     return theme === "dark" ? logoFullDark : logoFull;
@@ -41,11 +43,11 @@ const Login: React.FC = () => {
         });
         void navigate("/");
       } else {
-        setError("Access denied. Admin role required.");
+        setError(t("login.accessDenied"));
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } } };
-      setError(error.response?.data?.error?.message || "Login failed");
+      setError(error.response?.data?.error?.message || t("login.failed"));
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ const Login: React.FC = () => {
         }}
       >
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <img src={logo} alt="FitVibe Logo" style={{ height: "60px" }} loading="eager" />
+          <img src={logo} alt={t("common.logoAlt")} style={{ height: "60px" }} loading="eager" />
         </div>
         <h1
           style={{
@@ -86,7 +88,7 @@ const Login: React.FC = () => {
             textAlign: "center",
           }}
         >
-          FitVibe Backoffice
+          {t("login.title")}
         </h1>
         <form
           onSubmit={(e) => {
@@ -95,7 +97,7 @@ const Login: React.FC = () => {
         >
           <div style={{ marginBottom: "1rem" }}>
             <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
-              Email
+              {t("login.email")}
             </label>
             <InputControl
               type="email"
@@ -115,7 +117,7 @@ const Login: React.FC = () => {
           </div>
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
-              Password
+              {t("login.password")}
             </label>
             <InputControl
               type="password"
@@ -158,7 +160,7 @@ const Login: React.FC = () => {
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? t("login.loggingIn") : t("login.submit")}
           </Button>
         </form>
       </div>
