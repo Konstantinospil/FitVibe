@@ -12,10 +12,10 @@ export const Footer: React.FC = () => {
     <footer role="contentinfo" data-component="app-footer">
       <div data-slot="footer-container">
         <BrandLogo size="sm" />
-        <nav aria-label={t("footer.navigationLabel", { defaultValue: "Footer navigation" })}>
+        <nav aria-label={t("footer.navigationLabel")}>
           <div data-slot="footer-links">
             <TextLink as={NavLink} to="/contact">
-              {t("footer.contact", { defaultValue: "Contact" })}
+              {t("footer.contact")}
             </TextLink>
             <TextLink as={NavLink} to="/terms">
               {t("footer.terms")}
