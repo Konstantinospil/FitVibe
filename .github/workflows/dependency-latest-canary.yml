@@ -64,13 +64,20 @@ jobs:
         env:
           OVERRIDE_NAME: \${{ inputs.remove_override }}
         run: node scripts/dependencies/probe-override.mjs "$OVERRIDE_NAME" > dependency-canary-report/override-probe.json
-      - name: Upgrade all workspace dependencies
+      - name: Resolve dependency graph for selected canary mode
         id: upgrade
         continue-on-error: true
+        env:
+          OVERRIDE_NAME: ${{ inputs.remove_override }}
         run: |
-          pnpm -r --include-workspace-root update --latest > dependency-canary-report/upgrade.log 2>&1
-          node scripts/dependencies/restore-toolchain.mjs dependency-canary-report/toolchain.json
-          pnpm install --lockfile-only > dependency-canary-report/lockfile-refresh.log 2>&1
+          if [ -n "$OVERRIDE_NAME" ]; then
+            echo "Single override removal probe; NOT upgrading other dependencies" > dependency-canary-report/upgrade.log
+            pnpm install --lockfile-only > dependency-canary-report/lockfile-refresh.log 2>&1
+          else
+            pnpm -r --include-workspace-root update --latest > dependency-canary-report/upgrade.log 2>&1
+            node scripts/dependencies/restore-toolchain.mjs dependency-canary-report/toolchain.json
+            pnpm install --lockfile-only > dependency-canary-report/lockfile-refresh.log 2>&1
+          fi
       - name: Restore toolchain on failed upgrade
         if: steps.upgrade.outcome == 'failure'
         run: node scripts/dependencies/restore-toolchain.mjs dependency-canary-report/toolchain.json
@@ -123,6 +130,7 @@ jobs:
           {
             echo "# Latest dependency canary"
             echo "Baseline: feature"
+            echo "Mode: $([ -n "$OVERRIDE_NAME" ] && echo single-override-probe || echo all-latest-update)"
             echo "Upgrade: $UPGRADE"
             echo "Security: $SECURITY"
             echo "Static/build: $STATIC"
