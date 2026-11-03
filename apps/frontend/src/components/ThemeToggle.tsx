@@ -2,6 +2,7 @@ import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
 import { useThemeStore } from "../store/theme.store";
+import { useTranslation } from "react-i18next";
 
 export type ThemeToggleVariant = "default" | "header";
 
@@ -11,8 +12,9 @@ type ThemeToggleProps = {
 
 const ThemeToggle: React.FC<ThemeToggleProps> = ({ variant = "default" }) => {
   const { theme, toggleTheme } = useThemeStore();
+  const { t } = useTranslation();
   const isHeader = variant === "header";
-  const actionLabel = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  const actionLabel = theme === "dark" ? t("theme.toLight") : t("theme.toDark");
 
   if (isHeader) {
     return (
