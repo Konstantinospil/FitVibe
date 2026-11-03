@@ -46,3 +46,18 @@ pnpm test:backoffice
 `tests/qa/third500-localization.test.cjs` validates the original SHA and complete run-length verdicts, both ID sets, scanner coverage, translation references, and zero surviving original UI or review classifications. The tests for batches 1 and 2 remain active.
 
 **Merge gate:** validate the final branch SHA in CI, including lint/typecheck, browser behavior across all five languages and MFA/administrative flows. On a branch push, GitHub's audit workflow can succeed while general quality and browser jobs are skipped; do **not** interpret that as full approval.
+
+## Verified original-ID reconciliation — CI 41593970189
+
+The source literal inventory from [CI 41593970189](https://github.com/Konstantinospil/FitVibe/actions/runs/41593970189) has been compared with the **same original** `ui-literals.json` artifact from CI 41533808821, indexed by stable original IDs rather than current source line or report order:
+
+| Baseline indices | Original IDs absent | Current classification technical | Current UI/review |
+|---|---:|---:|---:|
+| 1–500 | 103 | 397 | 0 |
+| 501–1000 | 99 | 401 | 0 |
+| 1001–1500 | 103 | 397 | 0 |
+| **1–1500** | **305** | **1195** | **0** |
+
+Some IDs formerly attached to visible copy now resolve to a *different remaining technical occurrence* of the same literal (the audit's stable-ID algorithm counts repeated file/kind/text occurrences). Such IDs are permitted only when the surviving finding is classified `technical`. This report documents original inventory reconciliation, **not** the disappearance of every identical word from the source or the absence of unrelated findings beyond 1500.
+
+The CI audit job completed successfully, including the 1–1500 regression suite and both source/data-contract inventory steps. The standard quality and browser jobs are skipped for this branch-push mode and remain a separate merge prerequisite.
