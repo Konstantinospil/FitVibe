@@ -97,7 +97,7 @@ function contextOf(node) {
         ts.isStringLiteral(element) &&
         ["all", "pending", "reviewed", "dismissed"].includes(element.text)) &&
       ts.isAsExpression(statusArray.parent) &&
-      statusArray.parent.type.kind === ts.SyntaxKind.ConstKeyword) {
+      statusArray.parent.type.getText() === "const") {
     return { classification: "technical", reason: "typed-status-option-values" };
   }
   const typedDeclaration = ancestor(node, (candidate) => ts.isVariableDeclaration(candidate));
