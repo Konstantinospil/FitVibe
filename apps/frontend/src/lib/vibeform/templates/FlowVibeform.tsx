@@ -1,5 +1,6 @@
 import type { VibeformTemplateProps } from "./VibeformTemplate";
 import { toVibeformCssVariables } from "../css-variables";
+import { useTranslation } from "react-i18next";
 
 export function FlowVibeform({
   parameters,
@@ -7,6 +8,7 @@ export function FlowVibeform({
   style,
   ...svgProps
 }: VibeformTemplateProps) {
+  const { t } = useTranslation();
   const variables = toVibeformCssVariables(parameters);
   const { geometry, colors } = parameters;
 
@@ -14,7 +16,7 @@ export function FlowVibeform({
     <svg
       viewBox="0 0 240 320"
       role="img"
-      aria-label="Your Vibeform"
+      aria-label={t("dashboard.vibeformAccessibleLabel")}
       data-vibeform-template="flow"
       data-motion-enabled={motionEnabled}
       style={{ ...variables, ...style }}
