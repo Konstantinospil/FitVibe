@@ -1244,5 +1244,9 @@
     "level": "Stufe",
     "showIcon": "{label}: {level}. Vibe-Symbol anzeigen",
     "showLevel": "{label}. Stufe anzeigen"
+  },
+  "seo": {
+    "title": "FitVibe – Training planen, dokumentieren und teilen",
+    "description": "Plane, dokumentiere und teile deine Trainingseinheiten. Verfolge deine Fortschritte in sechs Bereichen: Kraft, Beweglichkeit, Ausdauer, Explosivität, Intelligenz und Regeneration."
   }
 }
