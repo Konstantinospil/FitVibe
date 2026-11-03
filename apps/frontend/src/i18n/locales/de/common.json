@@ -25,7 +25,8 @@
     "select": "Sprache auswählen"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "Balance ist kein Zustand"
   },
   "status": {
     "checking": "Backend wird geprüft...",
