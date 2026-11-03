@@ -1244,5 +1244,9 @@
     "level": "level",
     "showIcon": "{label}: {level}. Show vibe icon",
     "showLevel": "{label}. Show level"
+  },
+  "seo": {
+    "title": "FitVibe – Plan, Log & Share Your Training",
+    "description": "Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration."
   }
 }
