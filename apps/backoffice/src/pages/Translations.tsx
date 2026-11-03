@@ -1,3 +1,4 @@
+import { useBackofficeLocale } from "../i18n/ui";
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { translationsApi, type Translation } from "../services/api";
@@ -109,12 +110,13 @@ const TranslationsPage: React.FC = () => {
     return Object.keys(latestUpdateByNamespace);
   }, [latestUpdateByNamespace, namespaces]);
 
+  const locale = useBackofficeLocale();
   const languageDisplayNames = useMemo(() => {
     if (typeof Intl !== "undefined" && "DisplayNames" in Intl) {
-      return new Intl.DisplayNames(["en"], { type: "language" });
+      return new Intl.DisplayNames([locale], { type: "language" });
     }
     return null;
-  }, []);
+  }, [locale]);
 
   const getLanguageLabel = (code: string) => {
     const label = languageDisplayNames?.of(code);
