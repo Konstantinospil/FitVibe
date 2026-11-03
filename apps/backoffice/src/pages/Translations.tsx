@@ -626,7 +626,9 @@ const TranslationsPage: React.FC = () => {
           }}
         >
           <h3 style={{ color: "var(--color-text-primary)", marginBottom: "1rem" }}>
-            {t("translations.editingKey", { key: `${editingKey.namespace}.${editingKey.key_path}` })}
+            {t("translations.editingKey", {
+              key: `${editingKey.namespace}.${editingKey.key_path}`,
+            })}
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {languages.map((lang) => (
@@ -1002,7 +1004,9 @@ const TranslationsPage: React.FC = () => {
                                   border: "1px solid var(--color-border)",
                                 }}
                               >
-                                {showArchivedForKey ? t("translations.hideArchive") : t("translations.archive")}
+                                {showArchivedForKey
+                                  ? t("translations.hideArchive")
+                                  : t("translations.archive")}
                               </Button>
                             </div>
                             <div
@@ -1095,7 +1099,10 @@ const TranslationsPage: React.FC = () => {
                 {t("audit.previous")}
               </Button>
               <span style={{ color: "var(--color-text-primary)" }}>
-                {t("translations.pageOf", { page: page + 1, total: Math.ceil(filteredTranslations.length / limit) })}
+                {t("translations.pageOf", {
+                  page: page + 1,
+                  total: Math.ceil(filteredTranslations.length / limit),
+                })}
               </span>
               <Button
                 type="button"
