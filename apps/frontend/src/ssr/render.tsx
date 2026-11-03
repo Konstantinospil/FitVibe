@@ -279,12 +279,18 @@ export async function renderPage(url: string): Promise<string> {
   // Add Open Graph and Twitter Card meta tags for better SEO
   // These improve Lighthouse SEO score and social sharing
   const baseUrl = process.env.APP_URL || "https://fitvibe.app";
+  // SSR currently renders the canonical English document. Store social-card
+  // copy in locale resources to keep presentation text out of source templates.
+  const escapeMeta = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const ogTitle = escapeMeta(i18n.t("seo.title"));
+  const ogDescription = escapeMeta(i18n.t("seo.description"));
   const ogMetaTags = `
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${baseUrl}${url}" />
-    <meta property="og:title" content="FitVibe - Plan, Log & Share Your Training" />
-    <meta property="og:description" content="Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration." />
+    <meta property="og:title" content="${ogTitle}" />
+    <meta property="og:description" content="${ogDescription}" />
     <meta property="og:image" content="${baseUrl}/favicon.ico" />
     <meta property="og:site_name" content="FitVibe" />
     <meta property="og:locale" content="en_US" />
@@ -292,8 +298,8 @@ export async function renderPage(url: string): Promise<string> {
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="${baseUrl}${url}" />
-    <meta name="twitter:title" content="FitVibe - Plan, Log & Share Your Training" />
-    <meta name="twitter:description" content="Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration." />
+    <meta name="twitter:title" content="${ogTitle}" />
+    <meta name="twitter:description" content="${ogDescription}" />
     <meta name="twitter:image" content="${baseUrl}/favicon.ico" />
     
     <!-- Additional SEO meta tags -->
