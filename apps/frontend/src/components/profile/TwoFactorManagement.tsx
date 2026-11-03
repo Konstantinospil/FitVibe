@@ -79,7 +79,7 @@ export const TwoFactorManagement: React.FC<Props> = ({
     setBusy(true);
     setError(null);
     try {
-      const result = await restart2FASetup({ password, code: "" });
+      const result = await restart2FASetup({ password });
       setSetup(result);
       setBackupCodes(result.backupCodes);
       setRestartRequired(false);
@@ -153,10 +153,10 @@ export const TwoFactorManagement: React.FC<Props> = ({
       {!enabled && restartRequired && (
         <>
           <p role="status">
-            An earlier 2FA setup was not completed. Confirm your password to restart setup.
+            {t("settings.security.restartSetupNotice")}
           </p>
           <label className="form-label">
-            <span className="form-label-text">{t("settings.security.disablePasswordLabel")}</span>
+            <span className="form-label-text">{t("auth.login.passwordLabel")}</span>
             <InputControl
               type="password"
               autoComplete="current-password"
@@ -170,7 +170,7 @@ export const TwoFactorManagement: React.FC<Props> = ({
             isLoading={busy}
             onClick={() => void restartSetup()}
           >
-            Restart 2FA setup
+            {t("settings.security.restartSetup")}
           </Button>
           <Button type="button" disabled={busy} onClick={clearSensitiveState}>
             {t("common.cancel")}
