@@ -360,5 +360,6 @@
   "users.roleAdmin": "Administrator",
   "users.roleCoach": "Trainer",
   "users.roleAthlete": "Sportler",
-  "users.roleSupport": "Support"
+  "users.roleSupport": "Support",
+  "users.roleSuperadmin": "Superadministrator"
 }
