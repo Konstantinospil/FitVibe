@@ -136,7 +136,8 @@
     "impressumAriaLabel": "View Impressum",
     "contactAriaLabel": "Contact us",
     "expand": "Expand footer",
-    "collapse": "Collapse footer"
+    "collapse": "Collapse footer",
+    "socialMediaLabel": "Social media"
   },
   "terms": {
     "eyebrow": "Legal",
@@ -1233,5 +1234,17 @@
     "zeroVolume": "0 kg",
     "unknown": "Unknown",
     "week": "Week {{number}}"
+  },
+  "themeToggle": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  },
+  "vibeBadge": {
+    "showIcon": "{{label}}: {{level}}. Show vibe icon",
+    "showLevel": "{{label}}. Show level"
+  },
+  "vibeformConstellation": {
+    "accessibleLabel": "Vibeform dashboard",
+    "athleteLabel": "Athlete Vibeform"
   }
 }
