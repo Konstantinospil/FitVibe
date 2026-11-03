@@ -29,12 +29,12 @@ const LegalDocumentShell: React.FC<LegalDocumentShellProps> = ({
         <div className="legal-document-shell__metadata">
           {effectiveDate ? (
             <span>
-              <strong>Effective date:</strong> {effectiveDate}
+              <strong>{t("legalDocument.effectiveDate")}</strong> {effectiveDate}
             </span>
           ) : null}
           {version ? (
             <span className="legal-document-shell__version">
-              <strong>Version:</strong> {version}
+              <strong>{t("legalDocument.version")}</strong> {version}
             </span>
           ) : null}
         </div>
