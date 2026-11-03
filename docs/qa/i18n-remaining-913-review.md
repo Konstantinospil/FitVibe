@@ -70,6 +70,27 @@ technical values from display text:
 Regression cases for these distinctions are located in
 `tests/qa/audit-ui-literals.test.cjs`.
 
+## Per-finding baseline reconciliation
+
+The JSON ledger [`i18n-913-baseline-reconciliation.json`](./i18n-913-baseline-reconciliation.json)
+records **all 913 original candidate indices** in stable baseline order,
+anchored by a SHA-256 of the original finding IDs. The ledger uses
+run-length-encoded statuses, which can be expanded and matched to each
+original finding ID in the immutable workflow artifact.
+
+An initial comparison against run #41711310263 yielded:
+
+| Mechanical status | Count | Interpretation |
+|---|---:|---|
+| Removed from source / stable ID absent | 195 | Must verify whether corrected, relocated, or intentionally removed |
+| Reclassified technical | 262 | False-positive candidates no longer classified as UI/review |
+| Still UI/review or awaiting manual disposition | 456 | Not proof of 456 bugs; source inspection required |
+| **Total** | **913** | Audited scope |
+
+This ledger deliberately distinguishes **mechanical reconciliation** from
+confirmed remediation. A more recent audit after the subsequent code fixes
+is required before the user can consider all 913 resolved.
+
 ## Audited candidate count over time
 
 | Audit run | Likely UI | Review | Combined |
