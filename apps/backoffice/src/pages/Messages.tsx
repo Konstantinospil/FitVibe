@@ -86,7 +86,11 @@ const MessagesPage: React.FC = () => {
     if (savedResponse) {
       body = encodeURIComponent(savedResponse);
     } else if (message) {
-      const bodyText = t("messages.originalBody", { email, topic: topic || t("messages.notAvailable"), message });
+      const bodyText = t("messages.originalBody", {
+        email,
+        topic: topic || t("messages.notAvailable"),
+        message,
+      });
       body = encodeURIComponent(bodyText);
     }
 
