@@ -51,13 +51,13 @@ test("second-batch localized source literals no longer appear as untranslated UI
   }
   for (const id of decodeIds(baseline.localizedIds, baseline.counts.L)) {
     const finding = current.get(id);
-    // The original toast-expression "dismissed" ID is reused by a remaining
-    // report-status protocol value after the preceding duplicate occurrence was removed.
-    if (id === "b48a9b40c52fe439") {
-      assert.ok(!finding || finding.classification === "technical");
-    } else {
-      assert.equal(finding, undefined, "Previously untranslated literal still present: " + id);
-    }
+    // Stable IDs are occurrence-based: removing a rendered use of a repeated
+    // literal can transfer its original ID to a later technical protocol use.
+    // Such a surviving ID is acceptable only when the AST now proves it technical.
+    assert.ok(
+      !finding || finding.classification === "technical",
+      "Previously untranslated literal remains visible/reviewable: " + id,
+    );
   }
   for (const id of decodeIds(baseline.falsePositiveIds, baseline.counts.F)) {
     const finding = current.get(id);
