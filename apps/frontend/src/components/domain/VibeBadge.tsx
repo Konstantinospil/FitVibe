@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, type ButtonSize } from "@fitvibe/ui";
+import { useTranslation } from "react-i18next";
 import type { VibeKey } from "../../constants/vibes";
 import strengthIcon from "../../assets/icons/earth-strength.svg";
 import agilityIcon from "../../assets/icons/air-agility.svg";
@@ -32,10 +33,11 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
   size = "lg",
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   const [showLevel, setShowLevel] = useState(false);
   const canRevealLevel = level !== undefined && level !== null;
   const accessibleLevel =
-    typeof level === "string" || typeof level === "number" ? String(level) : "level";
+    typeof level === "string" || typeof level === "number" ? String(level) : t("vibeBadge.level");
 
   return (
     <Button
@@ -46,8 +48,8 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
       aria-label={
         canRevealLevel
           ? showLevel
-            ? `${label}: ${accessibleLevel}. Show vibe icon`
-            : `${label}. Show level`
+            ? t("vibeBadge.showIcon", { label, level: accessibleLevel })
+            : t("vibeBadge.showLevel", { label })
           : label
       }
       aria-pressed={canRevealLevel ? showLevel : undefined}
