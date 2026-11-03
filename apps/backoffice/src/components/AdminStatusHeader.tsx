@@ -76,9 +76,7 @@ const AdminStatusHeader: React.FC = () => {
             <span style={dotStyle(data.backend.status)} />
             <span className="font-weight-600">{t("common.backend")}</span>
           </div>
-          <div className="text-08 text-secondary">
-            {backendDetails}
-          </div>
+          <div className="text-08 text-secondary">{backendDetails}</div>
         </div>
 
         <div style={{ display: "grid", gap: "0.75rem" }}>
