@@ -7,11 +7,11 @@ This batch reviews **the next 500 ordered records (indices 501–1000 inclusive)
 | Baseline class | Count | Disposition |
 |---|---:|---|
 | Technical | 362 | Preserve protocol values, imports, styling tokens, selectors, and other nonvisual literals |
-| UI | 101 | Confirmed UI text except two embedded moderation action codes; 31 AuditLogs UI records had already been corrected by the preceding review |
+| UI | 101 | Confirmed UI text except seven technical filter/action values; 31 AuditLogs UI records had already been corrected by the preceding review |
 | Review | 37 | Five text/template records require localization; 32 are nonvisual technical values |
-| **Total** | **500** | **104 user-facing**, **34 original false-positive classifications**, **362 correctly technical** |
+| **Total** | **500** | **99 user-facing**, **39 original false-positive classifications**, **362 correctly technical** |
 
-The 104 confirmed user-facing records include 31 previously repaired AuditLogs entries. The two falsely flagged UI literals are `hide` and `ban` embedded as action identifiers in a toast expression, not independently translated labels. Original AST IDs must be compared rather than matching line numbers after source edits.
+The 99 confirmed user-facing records include 31 previously repaired AuditLogs entries. The seven falsely flagged UI literals are the `hide` and `ban` moderation discriminators, four status values (`all`, `pending`, `reviewed`, `dismissed`) in the filter option array, and an `all` filter comparison. Their *visible labels* are translated separately. Original AST IDs must be compared rather than matching line numbers after source edits.
 
 ## Files and decisions
 
