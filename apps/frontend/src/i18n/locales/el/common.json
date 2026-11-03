@@ -1249,5 +1249,10 @@
   },
   "vibeformAccessibility": {
     "yourVibeform": "Το Vibeform σας"
+  },
+  "vibeBadge": {
+    "level": "επίπεδο",
+    "showIcon": "{label}: {level}. Εμφάνιση εικονιδίου Vibe",
+    "showLevel": "{label}. Εμφάνιση επιπέδου"
   }
 }
