@@ -25,7 +25,8 @@
     "select": "Seleccionar un idioma"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "El equilibrio no es un estado"
   },
   "status": {
     "checking": "Verificando servidor…",
