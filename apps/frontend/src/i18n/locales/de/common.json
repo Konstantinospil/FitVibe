@@ -261,9 +261,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "E-Mail-Dienst nicht verfügbar"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"Dieses Passwort ist aus einem bekannten Datenleck bekannt. Wir empfehlen dringend, es zu ändern. Der Vorgang wurde abgeschlossen.","BREACH_CHECK_UNAVAILABLE":"Die Prüfung auf bekannte Datenlecks war nicht verfügbar. Der Vorgang wurde abgeschlossen. Bitte verwenden Sie ein einzigartiges Passwort."},
+    "advisory": {
+      "PASSWORD_BREACHED": "Dieses Passwort ist aus einem bekannten Datenleck bekannt. Wir empfehlen dringend, es zu ändern. Der Vorgang wurde abgeschlossen.",
+      "BREACH_CHECK_UNAVAILABLE": "Die Prüfung auf bekannte Datenlecks war nicht verfügbar. Der Vorgang wurde abgeschlossen. Bitte verwenden Sie ein einzigartiges Passwort."
+    },
     "meterLabel": "Geschätzte Passwortstärke",
-    "levels": {"veryWeak":"Sehr schwach","weak":"Schwach","fair":"Mittel","strong":"Stark"},
+    "levels": {
+      "veryWeak": "Sehr schwach",
+      "weak": "Schwach",
+      "fair": "Mittel",
+      "strong": "Stark"
+    },
     "serverChecks": "Die endgültige Passwortprüfung erfolgt auf dem Server.",
     "tooShort": "Bitte mindestens {{minimum}} Zeichen eingeben.",
     "minimumMet": "Mindestlänge erreicht. Eine längere, einzigartige Passphrase ist empfehlenswert.",
@@ -1201,5 +1209,13 @@
     "notNow": "Jetzt nicht",
     "dismissError": "Ihre Auswahl konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
     "requiredAdmin": "Für Administratorkonten ist die Zwei-Faktor-Authentifizierung verpflichtend. Schließen Sie die Einrichtung ab, um fortzufahren."
+  },
+  "legalDocument": {
+    "effectiveDate": "Gültig ab:",
+    "version": "Version:"
+  },
+  "notifications": {
+    "region": "Benachrichtigungen",
+    "dismiss": "Benachrichtigung schließen"
   }
 }
