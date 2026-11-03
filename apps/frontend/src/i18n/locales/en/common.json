@@ -1239,5 +1239,10 @@
   },
   "vibeformAccessibility": {
     "yourVibeform": "Your Vibeform"
+  },
+  "vibeBadge": {
+    "level": "level",
+    "showIcon": "{label}: {level}. Show vibe icon",
+    "showLevel": "{label}. Show level"
   }
 }
