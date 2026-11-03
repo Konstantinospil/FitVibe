@@ -73,9 +73,7 @@ const LegalPublicationsPage: React.FC = () => {
     <div className="grid grid--gap-lg">
       <div>
         <h1>{t("legal.title")}</h1>
-        <p className="text-secondary">
-          {t("legal.description")}
-        </p>
+        <p className="text-secondary">{t("legal.description")}</p>
       </div>
 
       <section className="card">
@@ -133,9 +131,7 @@ const LegalPublicationsPage: React.FC = () => {
               value={effectiveAt}
               onChange={(event) => setEffectiveAt(event.target.value)}
             />
-            <span className="text-secondary text-08">
-              {t("legal.immediateHelp")}
-            </span>
+            <span className="text-secondary text-08">{t("legal.immediateHelp")}</span>
           </label>
 
           {error ? <div className="alert alert--error">{error}</div> : null}
