@@ -47,16 +47,14 @@ const VerifyEmail: React.FC = () => {
           // Check for 410 Gone (expired token)
           if (statusCode === 410 || errorCode === "AUTH_TOKEN_EXPIRED") {
             setStatus("expired");
-            setErrorMessage(
-              axiosError.response?.data?.error?.message || t("errors.AUTH_TOKEN_EXPIRED"),
-            );
+            setErrorMessage(t("errors.AUTH_TOKEN_EXPIRED"));
           } else {
             setStatus("error");
-            setErrorMessage(axiosError.response?.data?.error?.message || "Verification failed");
+            setErrorMessage(t("verifyEmail.titleFailed"));
           }
         } else {
           setStatus("error");
-          setErrorMessage("Verification failed");
+          setErrorMessage(t("verifyEmail.titleFailed"));
         }
       }
     };
@@ -187,12 +185,11 @@ const VerifyEmail: React.FC = () => {
                         resetCountdown(retryAfterValue);
                       }
 
+                      const translatedError = errorCode ? t(`errors.${errorCode}`) : "";
                       const errorMsg =
-                        (errorCode
-                          ? t(`errors.${errorCode}`) ||
-                            axiosError.response?.data?.error?.message ||
-                            t("verifyEmail.resendError")
-                          : t("verifyEmail.resendError")) ?? "";
+                        errorCode && translatedError !== `errors.${errorCode}`
+                          ? translatedError
+                          : t("verifyEmail.resendError");
                       setResendError(errorMsg);
                     } else {
                       setResendError(t("verifyEmail.resendError"));
