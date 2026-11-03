@@ -1241,7 +1241,8 @@
   },
   "vibeBadge": {
     "showIcon": "{{label}} : {{level}}. Afficher l’icône Vibe",
-    "showLevel": "{{label}}. Afficher le niveau"
+    "showLevel": "{{label}}. Afficher le niveau",
+    "level": "niveau"
   },
   "vibeformConstellation": {
     "accessibleLabel": "Tableau de bord Vibeform",
