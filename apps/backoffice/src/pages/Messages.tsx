@@ -219,7 +219,7 @@ const MessagesPage: React.FC = () => {
                       borderBottom: `1px solid ${colors.border}`,
                     }}
                   >
-                    Email
+                    {t("login.email")}
                   </th>
                   <th
                     style={{
