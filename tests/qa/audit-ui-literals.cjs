@@ -131,6 +131,16 @@ function contextOf(node) {
       /\bLegalUserAction\b/.test(typedDeclaration.type?.getText() || "")) {
     return { classification: "technical", reason: "typed-legal-action-map" };
   }
+  if (node.text === "none" &&
+      (typedDeclaration?.name.getText() === "allowedActions" ||
+       ancestor(node, (candidate) =>
+         ts.isCallExpression(candidate) && candidate.expression.getText() === "setUserAction"))) {
+    return { classification: "technical", reason: "legal-no-action-sentinel" };
+  }
+  if (typedDeclaration?.name.getText() === "mailtoLink" &&
+      typeof node.text === "string" && node.text.startsWith("&body=")) {
+    return { classification: "technical", reason: "mailto-query-fragment" };
+  }
   if (typeof node.text === "string" && /^mailto:/.test(node.text)) {
     return { classification: "technical", reason: "mailto-uri-template" };
   }
