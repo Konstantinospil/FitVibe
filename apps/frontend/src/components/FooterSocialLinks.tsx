@@ -42,7 +42,7 @@ const FooterSocialLinks: React.FC = () => {
 
   return (
     <nav
-      aria-label={t("footer.socialMediaLabel", { defaultValue: "Social media" })}
+      aria-label={t("footer.socialMediaLabel")}
       data-component="footer-social-links"
     >
       {socialPlatforms().map(({ key, label, href, icon }) => (
