@@ -1244,5 +1244,9 @@
     "level": "nivel",
     "showIcon": "{label}: {level}. Mostrar icono Vibe",
     "showLevel": "{label}. Mostrar nivel"
+  },
+  "seo": {
+    "title": "FitVibe – Planifica, registra y comparte tus entrenamientos",
+    "description": "Planifica, registra y comparte tus sesiones de entrenamiento. Sigue tu progreso en seis áreas: fuerza, agilidad, resistencia, explosividad, inteligencia y regeneración."
   }
 }
