@@ -636,7 +636,9 @@
       "backupCodesHelp": "Save these backup codes in a secure location. You can use them to access your account if you lose your authenticator device.",
       "revealBackupCodes": "Show backup codes",
       "hideBackupCodes": "Hide backup codes",
-      "finishBackupCodes": "Done"
+      "finishBackupCodes": "Done",
+      "restartSetupNotice": "An earlier 2FA setup was not completed. Enter your password to restart setup.",
+      "restartSetup": "Restart 2FA setup"
     },
     "account": {
       "title": "Danger Zone",
