@@ -108,7 +108,7 @@ function contextOf(node) {
   // values rather than hard-coding a particular UI language.
   if (ts.isTemplateExpression(node) &&
       [node.head.text, ...node.templateSpans.map((span) => span.literal.text)]
-        .every((part) => !/[\\p{L}]/u.test(part))) {
+        .every((part) => !/[\p{L}]/u.test(part))) {
     return { classification: "technical", reason: "nonlinguistic-template-joiner" };
   }
   if (typeof node.text === "string" &&
@@ -383,7 +383,7 @@ function analyzeSource(file, source, displayPath = file) {
   function visit(node) {
     if (ts.isJsxText(node) || ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateExpression(node)) {
       const value = literalText(node, sourceFile);
-      if (value && /\\p{L}|\\d/u.test(value)) {
+      if (value && /\p{L}|\d/u.test(value)) {
         const decision = contextOf(node);
         if (displayPath === "apps/frontend/src/pages/Settings.tsx" &&
             ts.isJsxText(node) &&
