@@ -124,6 +124,14 @@ function contextOf(node) {
       node.parent.arguments[0] === node) {
     return { classification: "technical", reason: "language-fallback-code" };
   }
+  if (node.text === "en" && typedDeclaration?.name.getText() === "displayLanguage" &&
+      ts.isBinaryExpression(node.parent) &&
+      node.parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+      node.parent.right === node &&
+      ts.isCallExpression(node.parent.left) &&
+      node.parent.left.expression.getText() === "activeByLanguage.has") {
+    return { classification: "technical", reason: "language-fallback-code" };
+  }
   if (typedDeclaration && typedDeclaration.name.getText() === "severityOptions" &&
       typedDeclaration.type?.getText().includes("AuditLogSeverity") &&
       ts.isArrayLiteralExpression(typedDeclaration.initializer)) {
