@@ -731,7 +731,9 @@
       "backupCodesHelp": "Guarda estos códigos en un lugar seguro. Podrás usarlos si pierdes tu dispositivo autenticador.",
       "revealBackupCodes": "Mostrar códigos de respaldo",
       "hideBackupCodes": "Ocultar códigos de respaldo",
-      "finishBackupCodes": "Listo"
+      "finishBackupCodes": "Listo",
+      "restartSetupNotice": "No se completó una configuración anterior de 2FA. Introduce tu contraseña para reiniciar la configuración.",
+      "restartSetup": "Reiniciar la configuración de 2FA"
     },
     "account": {
       "title": "Zona de peligro",
