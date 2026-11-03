@@ -202,7 +202,7 @@ describe("TwoFactorManagement", () => {
     });
     fireEvent.click(restart);
     await waitFor(() =>
-      expect(api.restart2FASetup).toHaveBeenCalledWith({ password: "correct-password", code: "" }),
+      expect(api.restart2FASetup).toHaveBeenCalledWith({ password: "correct-password" }),
     );
     expect(await screen.findByAltText("settings.security.qrAlt")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("correct-password")).not.toBeInTheDocument();
