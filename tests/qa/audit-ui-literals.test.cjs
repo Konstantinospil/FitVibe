@@ -28,6 +28,24 @@ test("does not misidentify translation keys, imports or CSS classes", () => {
   assert.equal(find('<button title={t("save")}>Save</button>', "save")?.classification, "technical");
 });
 
+
+test("native SVG geometry and ARIA state are technical, accessible labels remain UI", () => {
+  assert.equal(find('<svg viewBox="0 0 100 100"><path d="M0 0 L1 1" /></svg>', "0 0 100 100")?.classification, "technical");
+  assert.equal(find('<svg><path d="M0 0 L1 1" /></svg>', "M0 0 L1 1")?.classification, "technical");
+  assert.equal(find('<div aria-hidden="true" />', "true")?.classification, "technical");
+  assert.equal(find('<div aria-live="polite" />', "polite")?.classification, "technical");
+  assert.equal(find('<button aria-label="Delete user">Delete</button>', "Delete user")?.classification, "ui");
+  assert.equal(find('<CustomWidget label="Review results" />', "Review results")?.classification, "ui");
+});
+
+test("literal English translation defaultValue is detected, but a translation key is technical", () => {
+  const source = 'const copy = t("auth.login.submit", { defaultValue: "Sign in now" });';
+  assert.equal(find(source, "auth.login.submit", ".ts")?.classification, "technical");
+  const fallback = find(source, "Sign in now", ".ts");
+  assert.equal(fallback?.classification, "ui");
+  assert.equal(fallback?.reason, "hardcoded-translation-fallback");
+});
+
 test("never discards ambiguous literals", () => {
   assert.equal(find('const roleLabel = "Superadministrator"', "Superadministrator", ".ts")?.classification, "review");
 });
