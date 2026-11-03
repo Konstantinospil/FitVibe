@@ -754,7 +754,9 @@
       "backupCodesHelp": "Αποθηκεύστε αυτούς τους κωδικούς σε ασφαλές σημείο. Μπορείτε να τους χρησιμοποιήσετε αν χάσετε τη συσκευή ελέγχου ταυτότητας.",
       "revealBackupCodes": "Εμφάνιση κωδικών ανάκτησης",
       "hideBackupCodes": "Απόκρυψη κωδικών ανάκτησης",
-      "finishBackupCodes": "Τέλος"
+      "finishBackupCodes": "Τέλος",
+      "restartSetupNotice": "Μια προηγούμενη ρύθμιση 2FA δεν ολοκληρώθηκε. Εισαγάγετε τον κωδικό πρόσβασής σας για επανεκκίνηση.",
+      "restartSetup": "Επανεκκίνηση ρύθμισης 2FA"
     },
     "account": {
       "title": "Ζώνη κινδύνου",
@@ -1236,5 +1238,16 @@
   "legalDocument": {
     "effectiveDate": "Ημερομηνία ισχύος:",
     "version": "Έκδοση:"
+  },
+  "notifications": {
+    "region": "Ειδοποιήσεις",
+    "close": "Κλείσιμο ειδοποίησης"
+  },
+  "theme": {
+    "toLight": "Εναλλαγή σε φωτεινή λειτουργία",
+    "toDark": "Εναλλαγή σε σκοτεινή λειτουργία"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Το Vibeform σας"
   }
 }
