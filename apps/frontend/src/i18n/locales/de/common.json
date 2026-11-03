@@ -628,7 +628,9 @@
       "backupCodesHelp": "Bewahre diese Backup-Codes sicher auf. Du kannst sie nutzen, wenn du dein Authenticator-Gerät verlierst.",
       "revealBackupCodes": "Backup-Codes anzeigen",
       "hideBackupCodes": "Backup-Codes ausblenden",
-      "finishBackupCodes": "Fertig"
+      "finishBackupCodes": "Fertig",
+      "restartSetupNotice": "Eine frühere 2FA-Einrichtung wurde nicht abgeschlossen. Bitte geben Sie Ihr Passwort ein, um die Einrichtung erneut zu starten.",
+      "restartSetup": "2FA-Einrichtung neu starten"
     },
     "account": {
       "title": "Gefahrenzone",
@@ -1226,5 +1228,16 @@
   "legalDocument": {
     "effectiveDate": "Gültig ab:",
     "version": "Version:"
+  },
+  "notifications": {
+    "region": "Benachrichtigungen",
+    "close": "Benachrichtigung schließen"
+  },
+  "theme": {
+    "toLight": "Zum hellen Modus wechseln",
+    "toDark": "Zum dunklen Modus wechseln"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Dein Vibeform"
   }
 }
