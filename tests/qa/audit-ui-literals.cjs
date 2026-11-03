@@ -77,6 +77,34 @@ function fieldName(node) {
 function contextOf(node) {
   // UI text is distinct from standardized ARIA token values and SVG geometry.
   // These values determine browser behavior, not displayed language.
+  // These are already localization resources, not application code rendering
+  // English directly. Keep the exception scoped to the bootstrap resource map.
+  const embeddedResource = ancestor(node, (candidate) =>
+    ts.isVariableDeclaration(candidate) && candidate.name.getText() === "minimalCommon");
+  if (embeddedResource && /[\\/]i18n[\\/]config\\.ts$/.test(node.getSourceFile().fileName)) {
+    return { classification: "technical", reason: "bootstrap-translation-resource" };
+  }
+  // Runtime formatting options are standardized Intl tokens, not labels.
+  const localizedFormatting = ancestor(node, (candidate) =>
+    (ts.isCallExpression(candidate) && /(?:toLocaleString|toLocaleDateString|toLocaleTimeString|Intl\\.(?:DateTimeFormat|NumberFormat))$/.test(
+      candidate.expression.getText(),
+    )) || (ts.isNewExpression(candidate) &&
+      /^Intl\\.(?:DateTimeFormat|NumberFormat|DisplayNames)$/.test(candidate.expression.getText())));
+  if (localizedFormatting && (node.pos >= localizedFormatting.arguments?.[0]?.pos ||
+      node.parent?.kind === ts.SyntaxKind.PropertyAssignment)) {
+    return { classification: "technical", reason: "intl-format-token" };
+  }
+  // Notification text has priority over its enclosing onClick/onSubmit attribute.
+  const notificationCall = ancestor(node, (candidate) => ts.isCallExpression(candidate) &&
+    (MESSAGE_CALLS.test(candidate.expression.getText()) || MESSAGE_METHODS.test(candidate.expression.getText())));
+  if (notificationCall) {
+    const index = notificationCall.arguments.findIndex((argument) =>
+      node.pos >= argument.pos && node.end <= argument.end);
+    if (notificationCall.expression.getText() === "showToast" && index === 0) {
+      return { classification: "technical", reason: "toast-level" };
+    }
+    if (index >= 0) return { classification: "ui", reason: "notification-text" };
+  }
   const containingAttribute = ancestor(node, (candidate) => ts.isJsxAttribute(candidate));
   if (containingAttribute) {
     const name = containingAttribute.name.getText().toLowerCase();
