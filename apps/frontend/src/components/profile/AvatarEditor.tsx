@@ -31,6 +31,10 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
     if (!file) {
       return;
     }
+    // A rejected new selection must never leave an older file uploadable.
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setIdempotencyKey(null);
     if (!ALLOWED_TYPES.has(file.type)) {
       setMessage(t("settings.profile.avatarInvalidType"));
       return;
@@ -59,12 +63,15 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
     setBusy(true);
     setMessage(null);
     try {
-      const uploaded = await uploadAvatar(selectedFile, idempotencyKey);
+      await uploadAvatar(selectedFile, idempotencyKey);
       setSelectedFile(null);
-      setPreviewUrl(uploaded.preview);
+      // Use the persisted profile URL, not an inline preview that can outlive a
+      // failed refresh or differ from the server's authoritative image.
+      setPreviewUrl(null);
       if (inputRef.current) {
         inputRef.current.value = "";
       }
+      setIdempotencyKey(null);
       await onChanged();
       setMessage(t("settings.profile.avatarUploadSuccess"));
     } catch {
