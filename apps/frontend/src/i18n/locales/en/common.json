@@ -12,7 +12,8 @@
     "calendar": "Calendar",
     "library": "Library",
     "dashboard": "Dashboard",
-    "settings": "Settings"
+    "settings": "Settings",
+    "main": "Main navigation"
   },
   "language": {
     "label": "Language",
@@ -261,9 +262,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Email service unavailable"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"This password appeared in a known data breach. We strongly recommend changing it; your request was completed.","BREACH_CHECK_UNAVAILABLE":"Password breach verification was unavailable. Your request was completed, but we recommend using a unique password."},
+    "advisory": {
+      "PASSWORD_BREACHED": "This password appeared in a known data breach. We strongly recommend changing it; your request was completed.",
+      "BREACH_CHECK_UNAVAILABLE": "Password breach verification was unavailable. Your request was completed, but we recommend using a unique password."
+    },
     "meterLabel": "Password strength estimate",
-    "levels": {"veryWeak":"Very weak","weak":"Weak","fair":"Fair","strong":"Strong"},
+    "levels": {
+      "veryWeak": "Very weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "strong": "Strong"
+    },
     "serverChecks": "Final password approval requires server-side security checks.",
     "tooShort": "Use at least {{minimum}} characters.",
     "minimumMet": "Length requirement met. Consider a longer unique passphrase.",
@@ -314,7 +323,18 @@
     "fitnessTestTitle": "Fitness test",
     "fitnessTestDescription": "Fitness-test scoring is not defined yet. The research workflow remains separate from Dashboard.",
     "fitnessTestAction": "Fitness test information",
-    "fitnessTestPending": "Benchmark definition is pending the dedicated research issue."
+    "fitnessTestPending": "Benchmark definition is pending the dedicated research issue.",
+    "metrics": {
+      "streak": "Training streak",
+      "sessionsCompleted": "Sessions completed",
+      "totalVolume": "Total volume",
+      "days_one": "{{count}} day",
+      "days_other": "{{count}} days",
+      "trend": "{{change}} vs last period",
+      "trendVolume": "{{change}} kg vs last period",
+      "unknown": "Unknown",
+      "week": "Week {{number}}"
+    }
   },
   "progress": {
     "eyebrow": "Trends & insights",
@@ -1201,5 +1221,9 @@
     "notNow": "Not now",
     "dismissError": "We could not save your choice. Please try again.",
     "requiredAdmin": "Two-factor authentication is required for administrator accounts. Complete setup to continue."
+  },
+  "legalDocument": {
+    "effectiveDate": "Effective date:",
+    "version": "Version:"
   }
 }
