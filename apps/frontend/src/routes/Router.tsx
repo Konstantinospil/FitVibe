@@ -10,23 +10,9 @@ import * as AuthContext from "../contexts/AuthContext.js";
 import { ErrorBoundary } from "../components/ErrorBoundary.js";
 import PublicRoutes from "./PublicRoutes.js";
 import CookieConsent from "../components/CookieConsent";
-import { useTranslation } from "react-i18next";
 import { FirstLoginTwoFactorPrompt } from "../components/FirstLoginTwoFactorPrompt";
+import { LoadingFallback } from "../components/LoadingFallback";
 const ProtectedRoutes = lazy(() => import("./ProtectedRoutes.js"));
-
-const LoadingFallback: React.FC = () => {
-  const { t } = useTranslation();
-  return (
-  <div
-    className="flex h-screen w-full items-center justify-center text-primary-500"
-    data-ssr-loading-fallback="true"
-    role="status"
-    aria-live="polite"
-  >
-    {t("loading.app")}
-  </div>
-  );
-};
 
 type AuthHook = () => { isAuthenticated: boolean };
 

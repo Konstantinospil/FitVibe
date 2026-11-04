@@ -2,8 +2,8 @@ import React, { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import PublicPageLayout from "../components/PublicPageLayout";
 import Login from "../pages/Login";
+import { LoadingFallback } from "../components/LoadingFallback";
 import { loadFullTranslations } from "../i18n/config";
-import { useTranslation } from "react-i18next";
 
 const TwoFactorVerificationLogin = lazy(() => import("../pages/TwoFactorVerificationLogin"));
 const Register = lazy(() => import("../pages/Register"));
@@ -20,20 +20,6 @@ const Privacy = lazy(() => import("../pages/Privacy"));
 const Cookie = lazy(() => import("../pages/Cookie"));
 const Contact = lazy(() => import("../pages/Contact"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
-
-const LoadingFallback: React.FC = () => {
-  const { t } = useTranslation();
-  return (
-  <div
-    className="flex h-screen w-full items-center justify-center text-primary-500"
-    data-ssr-loading-fallback="true"
-    role="status"
-    aria-live="polite"
-  >
-    {t("loading.app")}
-  </div>
-  );
-};
 
 const PublicRoutes: React.FC = () => (
   <Suspense fallback={<LoadingFallback />}>
