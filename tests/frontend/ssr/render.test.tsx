@@ -52,6 +52,12 @@ const mockI18n = {
   isInitialized: true,
   language: "en",
   changeLanguage: vi.fn(),
+  t: vi.fn((key: string) =>
+    ({
+      "seo.title": "FitVibe – Plan, Log & Share Your Training",
+      "seo.description": "Plan, log, and share your training sessions.",
+    })[key] ?? key,
+  ),
   on: vi.fn(),
 };
 
@@ -100,6 +106,10 @@ describe("SSR render", () => {
     expect(html).toContain("Rendered App");
     expect(html).toContain('id="fitvibe-react-query-state"');
     expect(html).not.toContain("window.__REACT_QUERY_STATE__");
+    expect(html).toContain('<meta property="og:title" content="FitVibe – Plan, Log &amp; Share Your Training" />');
+    expect(html).toContain('<meta name="twitter:description" content="Plan, log, and share your training sessions." />');
+    expect(mockI18n.t).toHaveBeenCalledWith("seo.title");
+    expect(mockI18n.t).toHaveBeenCalledWith("seo.description");
   });
 
   it("should render page for sessions route", async () => {
