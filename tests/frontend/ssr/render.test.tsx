@@ -56,7 +56,7 @@ const mockI18n = {
     ({
       "seo.title": "FitVibe – Plan, Log & Share Your Training",
       "seo.description": "Plan, log, and share your training sessions.",
-    })[key] ?? key,
+    })[key as "seo.title" | "seo.description"] ?? key,
   ),
   on: vi.fn(),
 };
