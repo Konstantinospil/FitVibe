@@ -1,8 +1,8 @@
 "use strict";
 
-// Every ordinary route is measured in its actual authentication state.
-// Conditional pages are tracked explicitly until a real token/gate fixture exists.
-// Do not replace conditional views with unauthenticated error screens.
+// Route inventory from frontend/src/routes/{PublicRoutes,ProtectedRoutes}.tsx.
+// Keep conditional states separate: measuring a missing-token/error page as if
+// it were the intended successful journey would give misleading evidence.
 const publicRoutes = [
   "/", "/login", "/register", "/forgot-password",
   "/terms", "/privacy", "/cookie", "/contact",
@@ -19,7 +19,6 @@ const conditionalRoutes = [
   { mode: "athlete", path: "/terms-reacceptance", fixture: "outdated accepted legal version" },
   { mode: "athlete", path: "/admin/password-update", fixture: "administrator password-policy gate" },
 ];
-
 const auditedRoutes = [
   ...publicRoutes.map((path) => ({ mode: "public", path })),
   ...athleteRoutes.map((path) => ({ mode: "athlete", path })),
