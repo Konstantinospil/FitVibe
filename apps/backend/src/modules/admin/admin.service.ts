@@ -3,6 +3,7 @@
  */
 
 import { HttpError } from "../../utils/http.js";
+import { assertAdminTargetManageable } from "./admin-user-guard.js";
 import { logAudit } from "../common/audit.util.js";
 import * as repo from "./admin.repository.js";
 import type {
@@ -67,38 +68,34 @@ export async function moderateReport(input: ModerateReportInput): Promise<void> 
       });
       break;
 
-    case "ban":
-      // Ban the content author
+    case "ban": {
+      // Resolve the actual feed item or comment owner by immutable user ID.
+      // Never resolve moderation targets by partial alias/email search.
+      const authorId = report.contentAuthorId;
+      if (!authorId) {
+        throw new HttpError(404, "REPORT_AUTHOR_NOT_FOUND", "Report author not found");
+      }
+      const author = await repo.getUserForAdmin(authorId);
+      if (!author) {
+        throw new HttpError(404, "USER_NOT_FOUND", "User not found");
+      }
+      assertAdminTargetManageable(adminId, authorId, author.roleCode);
+      await repo.updateUserStatus(authorId, "banned");
       if (report.feedItemId) {
-        const feedItem = await repo.getFeedReportById(reportId);
-        if (feedItem?.contentAuthor) {
-          // Get user ID from username
-          const users = await repo.searchUsers({ query: feedItem.contentAuthor, limit: 1 });
-          if (users.length > 0) {
-            await repo.updateUserStatus(users[0].id, "banned");
-          }
-        }
         await repo.hideFeedItem(report.feedItemId);
       } else if (report.commentId) {
-        const feedComment = await repo.getFeedReportById(reportId);
-        if (feedComment?.contentAuthor) {
-          // Get user ID from username
-          const users = await repo.searchUsers({ query: feedComment.contentAuthor, limit: 1 });
-          if (users.length > 0) {
-            await repo.updateUserStatus(users[0].id, "banned");
-          }
-        }
         await repo.hideComment(report.commentId);
       }
       await repo.updateReportStatus(reportId, "reviewed", adminId);
       await logAudit({
         action: "user_banned",
         entityType: "user",
-        entityId: report.contentAuthor ?? "unknown",
+        entityId: authorId,
         userId: adminId,
         metadata: { reportId, action: "ban", reason: report.reason },
       });
       break;
+    }
 
     default:
       throw new HttpError(400, "INVALID_ACTION", "Invalid moderation action");
@@ -124,19 +121,7 @@ export async function performUserAction(input: UserActionInput): Promise<void> {
     throw new HttpError(404, "USER_NOT_FOUND", "User not found");
   }
 
-  // Prevent admins from acting on themselves
-  if (userId === adminId) {
-    throw new HttpError(
-      400,
-      "CANNOT_MODIFY_SELF",
-      "Cannot perform this action on your own account",
-    );
-  }
-
-  // Prevent non-super-admins from modifying other admins
-  if (user.roleCode === "admin") {
-    throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
-  }
+  assertAdminTargetManageable(adminId, userId, user.roleCode);
 
   // Perform the action
   switch (action) {
