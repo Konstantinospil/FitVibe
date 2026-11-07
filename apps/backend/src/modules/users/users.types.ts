@@ -9,6 +9,11 @@ import type {
 
 export type UserStatus = SharedUserStatus;
 
+// General admin user creation must not grant privileged administrative roles.
+// Admin/superadmin assignments use the dedicated privileged role workflow.
+export const ADMIN_CREATABLE_ROLES = ["athlete", "coach", "support"] as const;
+export type AdminCreatableRole = (typeof ADMIN_CREATABLE_ROLES)[number];
+
 export const USER_STATUSES = [
   "pending_verification",
   "active",
@@ -101,7 +106,7 @@ export interface CreateUserDTO {
   displayName: string;
   email: string;
   password: string;
-  role: string;
+  role: AdminCreatableRole;
   locale?: string;
   preferredLang?: UserLanguage;
   status?: UserStatus;

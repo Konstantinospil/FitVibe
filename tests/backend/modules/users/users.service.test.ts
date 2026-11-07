@@ -144,6 +144,20 @@ describe("Users Service", () => {
       expect(mockUsersRepo.createUserRecord).toHaveBeenCalled();
     });
 
+    it.each(["admin", "superadmin", "user", "ADMIN", "superadmin "])(
+      "rejects forbidden role %s at the service boundary",
+      async (role) => {
+        const dto = { ...validUserDto, role: role as CreateUserDTO["role"] };
+
+        await expect(usersService.createUser("admin-123", dto)).rejects.toMatchObject({
+          status: 403,
+          code: "USER_ROLE_FORBIDDEN",
+        });
+        expect(mockUsersRepo.createUserRecord).not.toHaveBeenCalled();
+        expect(mockPasswordHashing.hashPassword).not.toHaveBeenCalled();
+      },
+    );
+
     it("should validate username format", async () => {
       const invalidUserDto = {
         ...validUserDto,

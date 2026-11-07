@@ -26,6 +26,7 @@ import {
 import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
 import { breachedPasswordChecker } from "../auth/breached-password.service.js";
 import { HttpError } from "../../utils/http.js";
+import { ADMIN_CREATABLE_ROLES } from "./users.types.js";
 import { insertAudit } from "../common/audit.util.js";
 import { primaryEmail, toUserDetail, toUserSafe } from "./users.mapping.js";
 import { ensureUsernameAvailable, ensureUsernameFormat } from "./users.username.js";
@@ -91,6 +92,13 @@ export async function createUser(
   }
   if (!roleCode) {
     throw new HttpError(422, "USER_ROLE_INVALID", "USER_ROLE_INVALID");
+  }
+  if (!ADMIN_CREATABLE_ROLES.some((allowedRole) => allowedRole === roleCode)) {
+    throw new HttpError(
+      403,
+      "USER_ROLE_FORBIDDEN",
+      "Privileged or unknown roles cannot be assigned through user creation",
+    );
   }
   if (!INITIAL_ALLOWED_STATUSES.includes(initialStatus)) {
     throw new HttpError(400, "USER_STATUS_INVALID", "Invalid initial status");

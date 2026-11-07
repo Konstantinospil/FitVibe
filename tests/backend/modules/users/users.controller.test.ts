@@ -115,7 +115,7 @@ describe("Users Controller", () => {
         displayName: "New User",
         email: "new@example.com",
         password: "SecurePassword123!",
-        role: "user",
+        role: "athlete",
       };
 
       const mockUser = {
@@ -140,7 +140,7 @@ describe("Users Controller", () => {
         displayName: "New User",
         email: "new@example.com",
         password: "SecurePassword123!",
-        role: "user",
+        role: "athlete",
       };
 
       const mockUser = {
@@ -172,7 +172,7 @@ describe("Users Controller", () => {
         displayName: "New User",
         email: "new@example.com",
         password: "SecurePassword123!",
-        role: "user",
+        role: "athlete",
       };
 
       const idempotencyKey = "idempotency-key-123";
@@ -195,6 +195,42 @@ describe("Users Controller", () => {
       expect(mockResponse.json).toHaveBeenCalledWith(mockReplayResponse);
       expect(mockUsersService.createUser).not.toHaveBeenCalled();
     });
+
+    it.each(["athlete", "coach", "support"] as const)(
+      "accepts supported non-privileged role %s",
+      (role) => {
+        expect(
+          usersController.CreateUserSchema.safeParse({
+            username: "newuser",
+            displayName: "New User",
+            email: "new@example.com",
+            password: "SecurePassword123!",
+            role,
+          }).success,
+        ).toBe(true);
+      },
+    );
+
+    it.each(["admin", "superadmin", "user", "ADMIN", " superadmin "])(
+      "rejects user creation with forbidden role %s",
+      async (role) => {
+        mockRequest.user = { sub: userId, role: "admin" };
+        mockRequest.body = {
+          username: "newuser",
+          displayName: "New User",
+          email: "new@example.com",
+          password: "SecurePassword123!",
+          role,
+        };
+        mockRequest.method = "POST";
+
+        await usersController.adminCreateUser(mockRequest as Request, mockResponse as Response);
+
+        expect(mockResponse.status).toHaveBeenCalledWith(400);
+        expect(mockUsersService.createUser).not.toHaveBeenCalled();
+        expect(mockIdempotencyService.resolveIdempotency).not.toHaveBeenCalled();
+      },
+    );
 
     it("should return 400 for invalid body", async () => {
       mockRequest.body = { username: "ab" }; // Too short
