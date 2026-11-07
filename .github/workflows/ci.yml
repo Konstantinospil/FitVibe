@@ -840,6 +840,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
+      - name: Verify Lighthouse worst-run assertion policy
+        run: pnpm run test:lhci:config
+
       - name: Build frontend (SSR)
         run: pnpm --filter @fitvibe/frontend run build:ssr
 
