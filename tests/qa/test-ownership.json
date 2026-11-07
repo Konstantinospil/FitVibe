@@ -456,6 +456,30 @@
   ],
   "suites": [
     {
+      "name": "lighthouse-route-coverage-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-route-coverage\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-routes.cjs",
+        "tests/perf/lighthouserc.ci.json"
+      ],
+      "fixture_dependencies": [
+        "Route declarations and Lighthouse audit target inventory"
+      ],
+      "isolation_model": "node:test static config and report-contract checks",
+      "expected_artifacts": [
+        "CI Lighthouse route-coverage contract step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-worst-run-config-regression",
       "patterns": [
         "^tests/perf/lighthouse-ci-config\\.test\\.cjs$"
