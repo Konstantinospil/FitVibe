@@ -527,7 +527,8 @@
     {
       "name": "dependency-governance-regressions",
       "patterns": [
-        "^tests/qa/dependency-governance\\.test\\.cjs$"
+        "^tests/qa/dependency-governance\\.test\\.cjs$",
+        "^tests/qa/dependency-canary\\.test\\.mjs$"
       ],
       "owner": "QA / dependency governance",
       "ci_job_ids": [
@@ -536,10 +537,12 @@
       "contract_sources": [
         "package.json",
         "pnpm-lock.yaml",
-        "tests/qa/check-dependency-overrides.cjs"
+        "tests/qa/check-dependency-overrides.cjs",
+        "scripts/dependencies/probe-override.mjs"
       ],
       "fixture_dependencies": [
-        "controlled package/lockfile fixtures created by the test"
+        "controlled package/lockfile fixtures created by the test",
+        "in-memory pnpm override and inventory fixtures for isolated canary checks"
       ],
       "isolation_model": "node:test filesystem fixtures; no external service",
       "expected_artifacts": [
@@ -851,7 +854,9 @@
       "patterns": [
         "^tests/qa/audit-ui-literals\\.test\\.cjs$",
         "^tests/qa/audit-ui-contract-runtime\\.test\\.cjs$",
-        "^tests/qa/first500-localization\\.test\\.cjs$"
+        "^tests/qa/first500-localization\\.test\\.cjs$",
+        "^tests/qa/second500-localization\\.test\\.cjs$",
+        "^tests/qa/third500-localization\\.test\\.cjs$"
       ],
       "owner": "Frontend / Backoffice / QA",
       "ci_job_ids": [
@@ -863,7 +868,9 @@
         "tests/qa/audit-ui-data-contracts.cjs",
         "tests/qa/audit-ui-runtime.cjs",
         "apps/backoffice/src/i18n/ui.ts",
-        "docs/qa/first500-verdicts.json"
+        "docs/qa/first500-verdicts.json",
+        "docs/qa/second500-baseline-id-sets.json",
+        "docs/qa/third500-verdicts.json"
       ],
       "fixture_dependencies": [
         "synthetic JSX, TypeScript, HTML and CSS sources parsed in memory",

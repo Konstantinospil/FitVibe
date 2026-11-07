@@ -221,7 +221,11 @@ jobs:
         run: pnpm install --frozen-lockfile --no-offline
 
       - name: Test dependency governance diagnostics
-        run: node --test tests/qa/dependency-governance.test.cjs tests/qa/report-override-impact.test.cjs
+        run: |
+          node --test \
+            tests/qa/dependency-canary.test.mjs \
+            tests/qa/dependency-governance.test.cjs \
+            tests/qa/report-override-impact.test.cjs
 
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
