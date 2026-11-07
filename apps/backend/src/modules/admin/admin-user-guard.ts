@@ -18,10 +18,6 @@ export function assertAdminTargetManageable(
   }
 
   if (targetRoleCode === "admin" || targetRoleCode === "superadmin") {
-    throw new HttpError(
-      403,
-      "CANNOT_MODIFY_ADMIN",
-      "Cannot modify another administrator account",
-    );
+    throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
   }
 }
