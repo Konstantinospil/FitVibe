@@ -61,3 +61,14 @@ test("failed pre-migration deployments can restore prior images", () => {
   assertRecoveryBoundary(cd);
   assert.throws(() => assertRecoveryBoundary(cd.replace("migration_started=1", "migration_started=0")));
 });
+
+
+test("Snyk scan reports remain downloadable on failures and skipped scans", () => {
+  const ci = read(".github/workflows/ci.yml");
+  const security = ci.slice(ci.indexOf("\\n  security:"), ci.indexOf("\\n  codeql_compatibility:"));
+  assert.match(security, /--all-projects --severity-threshold=low --json-file-output=security-reports\\/snyk-open-source\\.json/);
+  assert.match(security, /if: always\\(\\)[\\s\\S]*?name: snyk-security-/);
+  assert.match(security, /run: node --test tests\\/security\\/snyk-report\\.test\\.cjs/);
+  assert.match(security, /run: node scripts\\/security\\/summarize-snyk-reports\\.cjs/);
+  assert.match(security, /if-no-files-found: error/);
+});

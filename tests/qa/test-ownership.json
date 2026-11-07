@@ -258,7 +258,8 @@
         ".github/workflows/ci.yml"
       ],
       "expected_artifacts": [
-        "osv-report-${{ github.run_id }}"
+        "osv-report-${{ github.run_id }}",
+        "snyk-security-${{ github.run_id }}"
       ]
     },
     {
@@ -596,6 +597,29 @@
       "expected_artifacts": [
         "dependency-override-impact-${{ github.run_id }}",
         "CI step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "snyk-report-regressions",
+      "patterns": [
+        "^tests/security/snyk-report\\.test\\.cjs$"
+      ],
+      "owner": "Security / QA",
+      "ci_job_ids": [
+        "security"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "scripts/security/summarize-snyk-reports.cjs"
+      ],
+      "fixture_dependencies": [
+        "synthetic Snyk JSON/SARIF reports"
+      ],
+      "isolation_model": "node:test without external Snyk credentials",
+      "expected_artifacts": [
+        "snyk-security-${{ github.run_id }}"
       ],
       "severity": "blocking",
       "status": "active"

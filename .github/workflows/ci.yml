@@ -1308,7 +1308,10 @@ jobs:
           retention-days: 90
           if-no-files-found: ignore
 
-      - name: Snyk scan
+      - name: Prepare Snyk report directory
+        run: mkdir -p security-reports
+
+      - name: Snyk Open Source scan and export
         id: snyk
         if: env.SNYK_TOKEN != ''
         continue-on-error: true
@@ -1316,9 +1319,40 @@ jobs:
         uses: snyk/actions/node@11b673cfb4b0dc0d860a1323caa199d54950dcce
         with:
           command: test
-          args: --all-projects --severity-threshold=high
+          args: --all-projects --severity-threshold=low --json-file-output=security-reports/snyk-open-source.json --sarif-file-output=security-reports/snyk-open-source.sarif
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk Code scan and export (optional)
+        id: snyk_code
+        if: env.SNYK_TOKEN != '' && vars.SNYK_CODE_ENABLED == 'true'
+        continue-on-error: true
+        timeout-minutes: 10
+        uses: snyk/actions/node@11b673cfb4b0dc0d860a1323caa199d54950dcce
+        with:
+          command: code test
+          args: --severity-threshold=low --sarif-file-output=security-reports/snyk-code.sarif
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Verify Snyk report handling
+        run: node --test tests/security/snyk-report.test.cjs
+
+      - name: Summarize Snyk scans and report availability
+        if: always()
+        env:
+          SNYK_OPEN_SOURCE_OUTCOME: ${{ steps.snyk.outcome }}
+          SNYK_CODE_OUTCOME: ${{ steps.snyk_code.outcome }}
+        run: node scripts/security/summarize-snyk-reports.cjs
+
+      - name: Upload Snyk reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: snyk-security-${{ github.run_id }}
+          path: security-reports/
+          retention-days: 90
+          if-no-files-found: error
 
       - name: TruffleHog OSS scan
         id: trufflehog
@@ -1364,6 +1398,7 @@ jobs:
           STATIC_SECRETS: ${{ steps.static_secrets.outcome }}
           TRIVY: ${{ steps.trivy.outcome }}
           SNYK: ${{ steps.snyk.outcome }}
+          SNYK_CODE: ${{ steps.snyk_code.outcome }}
         run: |
           {
             echo "## Security Scan Summary"
@@ -1372,7 +1407,8 @@ jobs:
             echo "- TruffleHog: $TRUFFLEHOG"
             echo "- Static secret scan: $STATIC_SECRETS"
             echo "- Trivy: $TRIVY"
-            echo "- Snyk (advisory external service): ${SNYK:-skipped}"
+            echo "- Snyk Open Source (advisory): ${SNYK:-skipped}"
+            echo "- Snyk Code (optional advisory): ${SNYK_CODE:-skipped}"
           } >> "$GITHUB_STEP_SUMMARY"
 
           failed=0
