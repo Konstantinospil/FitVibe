@@ -821,6 +821,30 @@
       "status": "active"
     },
     {
+      "name": "visual-baseline-workflow-contract",
+      "patterns": [
+        "^tests/qa/visual-baseline-workflow\\.test\\.mjs$"
+      ],
+      "owner": "Frontend visual QA / CI",
+      "ci_job_ids": [
+        "quality"
+      ],
+      "contract_sources": [
+        ".github/workflows/refresh-visual-baselines.yml",
+        "tests/frontend/visual/scripts/baseline-contract.mjs",
+        "tests/frontend/visual/scripts/publish-baseline-pr.mjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Git status and GitHub API replies; no network"
+      ],
+      "isolation_model": "node:test in-memory contract mocks and mocked GitHub API responses",
+      "expected_artifacts": [
+        "Quality job workflow-contract assertion output"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "frontend-visual",
       "patterns": [
         "^tests/frontend/visual/.*\\.spec\\.ts$"
