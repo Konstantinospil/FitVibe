@@ -222,17 +222,19 @@ export async function changeStatus(
   actorUserId: string | null,
   userId: string,
   nextStatus: UserStatus,
+  options: { selfDeletion?: boolean } = {},
 ): Promise<UserDetail> {
   const user = await findUserById(userId);
   if (!user) {
     throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
   }
-  // The admin status endpoint cannot act on itself or privileged accounts.
-  // Voluntary deletion is a separate, password-verified flow for ordinary users.
-  if (actorUserId === null || actorUserId !== userId || nextStatus !== "pending_deletion") {
+  if (options.selfDeletion && actorUserId === userId && nextStatus === "pending_deletion") {
+    // The password-verified deletion flow may target the caller, but not an admin.
+    if (user.role_code === "admin" || user.role_code === "superadmin") {
+      throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
+    }
+  } else {
     assertAdminTargetManageable(actorUserId, userId, user.role_code);
-  } else if (user.role_code === "admin" || user.role_code === "superadmin") {
-    throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
   }
   if (user.status === nextStatus) {
     const full = await fetchUserWithContacts(userId);
@@ -286,7 +288,7 @@ export async function requestAccountDeletion(
   }
 
   if (user.status !== "pending_deletion") {
-    await changeStatus(userId, userId, "pending_deletion");
+    await changeStatus(userId, userId, "pending_deletion", { selfDeletion: true });
     await insertAudit({
       actorUserId: userId,
       entityType: "users",
