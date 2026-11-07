@@ -17,7 +17,7 @@ async function appendSummary(message) {
 }
 
 export async function publish({ files, testedSha, sourceBranch, runId, repository, request, loadFile }) {
-  if (!/^(feature|dev|main|fix\/[a-z0-9][a-z0-9._-]*)$/.test(sourceBranch)) {
+  if (!/^(feature|fix\/[a-z0-9][a-z0-9._-]*)$/.test(sourceBranch)) {
     throw new Error("Source branch is not allowed by FitVibe branch policy");
   }
   if (!/^[0-9]+$/.test(runId)) throw new Error("Invalid run identifier");
