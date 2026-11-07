@@ -332,9 +332,13 @@ const MessagesPage: React.FC = () => {
                     </td>
                     <td style={{ padding: "1rem", color: colors.text }}>
                       {message.readAt ? (
-                        <span style={{ color: "var(--color-text-muted)" }}>{t("messages.read")}</span>
+                        <span style={{ color: "var(--color-text-muted)" }}>
+                          {t("messages.read")}
+                        </span>
                       ) : (
-                        <span style={{ color: "var(--vibe-strength)" }}>{t("messages.unread")}</span>
+                        <span style={{ color: "var(--vibe-strength)" }}>
+                          {t("messages.unread")}
+                        </span>
                       )}
                     </td>
                     <td style={{ padding: "1rem" }}>

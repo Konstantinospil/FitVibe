@@ -552,7 +552,8 @@ const UsersPage: React.FC = () => {
                       </td>
                       <td style={{ padding: "1rem", color: colors.text }}>
                         {user.role_code
-                          ? availableRoles.includes(user.role_code) || user.role_code === "superadmin"
+                          ? availableRoles.includes(user.role_code) ||
+                            user.role_code === "superadmin"
                             ? t(`users.role.${user.role_code}`)
                             : user.role_code
                           : t("users.notAvailable")}
@@ -739,8 +740,8 @@ const UsersPage: React.FC = () => {
               }}
             >
               {t("users.changeRoleFor", {
-                  user: selectedUser.display_name || selectedUser.username,
-                })}
+                user: selectedUser.display_name || selectedUser.username,
+              })}
             </h2>
             <div style={{ marginBottom: "1.5rem" }}>
               <label
