@@ -1,22 +1,25 @@
-# Manually refresh reviewed visual baselines. Do not auto-update expected images.
+# Manually regenerate Linux screenshots and open a reviewable draft PR.
 name: Refresh Visual Linux Baselines
 
 on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Exact source branch containing reviewed UI
+        description: Feature or fix/* branch containing reviewed UI
         required: true
+        default: feature
         type: string
       refresh_scope:
-        description: Reviewed snapshot group
+        description: Active visual screenshot group
         required: true
         type: choice
-        default: reset-password
+        default: all
         options:
-          - reset-password
-          - password-strength
-          - approved-pages
+          - all
+          - auth
+          - legal
+          - home
+          - navbar
 
 concurrency:
   group: visual-baseline-refresh-${{ inputs.source_ref }}
@@ -24,25 +27,36 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
 
 jobs:
   refresh:
-    name: Refresh Visual Linux Baselines
+    name: Generate and verify Linux baselines
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     container:
-      image: mcr.microsoft.com/playwright:v1.64.0-jammy
+      image: mcr.microsoft.com/playwright:v1.64.1-jammy
       options: --ipc=host
-
     steps:
-      - name: Checkout selected source branch
+      - name: Validate source branch
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+        shell: bash
+        run: |
+          if [[ ! "$SOURCE_REF" =~ ^(feature|fix/[a-z0-9][a-z0-9._-]*)$ ]]; then
+            echo "::error::Branch is not allowed by the FitVibe branch policy"
+            exit 1
+          fi
+
+      - name: Checkout reviewed source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ inputs.source_ref || github.ref_name }}
+          ref: ${{ inputs.source_ref }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Trust workspace
-        shell: bash
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - name: Setup pnpm
@@ -56,10 +70,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
+      - name: Test baseline ownership contract
+        run: node --test tests/qa/visual-baseline-workflow.test.mjs
+
       - name: Build visual frontend
         run: pnpm --filter @fitvibe/frontend run build:visual
 
-      - name: Refresh changed Linux baselines against live preview
+      - name: Generate selected screenshots and verify complete visual suite
         working-directory: apps/frontend
         shell: bash
         env:
@@ -78,9 +95,7 @@ jobs:
               ready=1
               break
             fi
-            if ! kill -0 "$preview_pid" 2>/dev/null; then
-              break
-            fi
+            if ! kill -0 "$preview_pid" 2>/dev/null; then break; fi
             sleep 1
           done
           if [ "$ready" != 1 ]; then
@@ -88,180 +103,37 @@ jobs:
             exit 1
           fi
           cd "$GITHUB_WORKSPACE"
-          if [ "$REFRESH_SCOPE" = "reset-password" ]; then
-            # Run only the 8 light/dark viewport combinations for Reset Password.
-            # Eight reset-page snapshots are reviewed against CI #41210488048
-            # and refresh run #41217380110; both produced identical images.
-            pnpm exec playwright test tests/frontend/visual/pages/auth.spec.ts \
-              --grep "Auth Page Visual Tests reset password" \
-              --config tests/frontend/visual/config/playwright.config.ts \
-              --update-snapshots=changed
-          elif [ "$REFRESH_SCOPE" = "password-strength" ]; then
-            # #557: capture only the 16 meter states (2 flows x 2 strengths x 2 themes x 2 viewports).
-            # Existing page snapshots must not be overwritten by this scope.
-            pnpm exec playwright test tests/frontend/visual/pages/auth.spec.ts \
-              --grep "password strength states" \
-              --config tests/frontend/visual/config/playwright.config.ts \
-              --update-snapshots=missing
-          elif [ "$REFRESH_SCOPE" = "approved-pages" ]; then
-            pnpm exec playwright test tests/frontend/visual/pages/home.spec.ts \
-              tests/frontend/visual/pages/auth.spec.ts \
-              tests/frontend/visual/pages/legal.spec.ts \
-              tests/frontend/visual/components/navbar.spec.ts \
-              --config tests/frontend/visual/config/playwright.config.ts \
-              --update-snapshots=changed
-          else
-            echo "::error::Unsupported refresh scope: $REFRESH_SCOPE"
-            exit 1
-          fi
+          case "$REFRESH_SCOPE" in
+            all) ;;
+            auth) set -- tests/frontend/visual/pages/auth.spec.ts ;;
+            legal) set -- tests/frontend/visual/pages/legal.spec.ts ;;
+            home) set -- tests/frontend/visual/pages/home.spec.ts ;;
+            navbar) set -- tests/frontend/visual/components/navbar.spec.ts ;;
+            *) echo "::error::Unknown scope"; exit 1 ;;
+          esac
+          pnpm exec playwright test "$@" \
+            --config tests/frontend/visual/config/playwright.config.ts \
+            --update-snapshots=changed
+          # Re-run every active visual/structural test against the regenerated images.
+          pnpm test:visual:ci
+          # Fail before publishing any unexpected filesystem changes.
+          node tests/frontend/visual/scripts/validate-baseline-changes.mjs "$REFRESH_SCOPE"
 
-      - name: Commit refreshed Linux baselines via GitHub API
-        shell: bash
+      - name: Publish reviewed snapshots as draft PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SOURCE_REF: ${{ inputs.source_ref }}
           REFRESH_SCOPE: ${{ inputs.refresh_scope }}
-        run: |
-          node --input-type=module <<'NODE'
-          import { execFileSync } from "node:child_process";
-          import { createHash } from "node:crypto";
-          import { readFile } from "node:fs/promises";
+        run: node tests/frontend/visual/scripts/publish-baseline-pr.mjs
 
-          const repo = process.env.GITHUB_REPOSITORY;
-          const token = process.env.GH_TOKEN;
-          const branch = process.env.SOURCE_REF;
-          const scope = process.env.REFRESH_SCOPE;
-          const api = "https://api.github.com";
-          const snapshotDir = "tests/frontend/visual/pages/auth.spec.ts-snapshots";
-          // #557: these 8 reset page captures were manually reviewed and are
-          // byte-identical across CI #41210488048 and refresh #41217380110.
-          // Update this allowlist only after checking actual screenshots.
-          const approved = new Map([
-            ["reset-password-ui-dark-lg-linux.png", "d64d0a6dc0f4559341c973cf60dee282f8b5642e860f86adfe6cb2658d056ae6"],
-            ["reset-password-ui-dark-md-linux.png", "f28dec7955a5def12d9cb7019d79eac9d5f36ba6b0204fd73d3cf82b67af1ac9"],
-            ["reset-password-ui-dark-sm-linux.png", "c6a55144eb1f1df4313095b06b7138ea934ce204bc4ab3621ba2a1a307ee0f5e"],
-            ["reset-password-ui-dark-xs-linux.png", "0b58582521070b14b24bfbfdf7369f69776851bec9874d4ddc7729d27edbb623"],
-            ["reset-password-ui-light-lg-linux.png", "c001404c8f92f1a2c645b041a6d324e44cacd9ceb558faa2a1163807f940276b"],
-            ["reset-password-ui-light-md-linux.png", "933f34bb9373c1e47765d940e9b7add3fce488fa0bde7f4a74d41becac6a5ffd"],
-            ["reset-password-ui-light-sm-linux.png", "dd52300a2cc3ae351d1a793beec94e7743efcdc5ac36fc3a2027b1d4dadabf2f"],
-            ["reset-password-ui-light-xs-linux.png", "9e4cafe4036df65e1d53dfa0fd8ea5ae871bb4111f10fb134d7304f42cff4d62"],
-          ].map(([name, hash]) => [`${snapshotDir}/${name}`, hash]));
-          const headers = {
-            Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${token}`,
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Content-Type": "application/json",
-          };
-
-          const status = execFileSync(
-            "git",
-            ["status", "--porcelain", "--untracked-files=all", "--", "tests/frontend/visual"],
-            { encoding: "utf8" },
-          );
-
-          const changedPaths = [...new Set(
-            status.split("\n").filter(Boolean).map((line) => line.slice(3).trim()),
-          )];
-          const approvedGeneral = (path) =>
-            /^tests\/frontend\/visual\/(?:pages\/(?:home|auth|legal)|components\/navbar)\.spec\.ts-snapshots\/[^/]+-linux\.png$/.test(path);
-          const meterBaseline = (path) =>
-            /^tests\/frontend\/visual\/pages\/auth\.spec\.ts-snapshots\/(?:reset|register)-password-strength-(?:weak|strong)-ui-(?:light|dark)-(?:sm|lg)-linux\.png$/.test(path);
-          const permitted = (path) => scope === "reset-password"
-            ? approved.has(path)
-            : scope === "password-strength"
-              ? meterBaseline(path)
-              : scope === "approved-pages" && approvedGeneral(path);
-          const unexpected = changedPaths.filter((path) => !permitted(path));
-          if (unexpected.length) {
-            throw new Error(`Refusing unexpected changes: ${unexpected.join(", ")}`);
-          }
-          const files = changedPaths.filter(permitted);
-          if (scope === "reset-password") {
-            if (files.length !== approved.size) {
-              throw new Error(`Expected 8 reviewed screenshots, found ${files.length}: ${files.join(", ")}`);
-            }
-            for (const path of files) {
-              const actualHash = createHash("sha256").update(await readFile(path)).digest("hex");
-              if (actualHash !== approved.get(path)) {
-                throw new Error(`Regenerated image differs from approved CI capture: ${path}`);
-              }
-            }
-          } else if (scope === "password-strength") {
-            if (files.length !== 16) {
-              throw new Error(`Expected 16 password strength meter snapshots, found ${files.length}: ${files.join(", ")}`);
-            }
-          } else if (scope !== "approved-pages") {
-            throw new Error(`Unsupported scope: ${scope}`);
-          }
-
-          if (files.length === 0) {
-            console.log("No approved Linux visual baseline changes produced.");
-            process.exit(0);
-          }
-
-          console.log("Baseline files to commit:");
-          for (const file of files) console.log(`- ${file}`);
-
-          const request = async (path, options = {}) => {
-            const response = await fetch(`${api}/repos/${repo}${path}`, {
-              ...options,
-              headers: { ...headers, ...(options.headers || {}) },
-            });
-            if (!response.ok) {
-              throw new Error(`${options.method || "GET"} ${path}: ${response.status} ${await response.text()}`);
-            }
-            return response.json();
-          };
-
-          const ref = await request(`/git/ref/heads/${branch}`);
-          const headSha = ref.object.sha;
-          const testedSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
-          if (headSha !== testedSha) {
-            throw new Error(
-              `Source branch moved from tested commit ${testedSha} to ${headSha}; refusing to commit stale visual baselines.`,
-            );
-          }
-          const headCommit = await request(`/git/commits/${headSha}`);
-          const treeEntries = [];
-
-          for (const path of files) {
-            const content = (await readFile(path)).toString("base64");
-            const blob = await request("/git/blobs", {
-              method: "POST",
-              body: JSON.stringify({ content, encoding: "base64" }),
-            });
-            treeEntries.push({ path, mode: "100644", type: "blob", sha: blob.sha });
-          }
-
-          const tree = await request("/git/trees", {
-            method: "POST",
-            body: JSON.stringify({ base_tree: headCommit.tree.sha, tree: treeEntries }),
-          });
-
-          const commit = await request("/git/commits", {
-            method: "POST",
-            body: JSON.stringify({
-              message: `test(visual): refresh reviewed ${scope} Linux baselines (#557)`,
-              tree: tree.sha,
-              parents: [headSha],
-            }),
-          });
-
-          await request(`/git/refs/heads/${branch}`, {
-            method: "PATCH",
-            body: JSON.stringify({ sha: commit.sha, force: false }),
-          });
-
-          console.log(`Committed ${files.length} refreshed Linux baseline(s) in ${commit.sha}`);
-          NODE
-
-      - name: Upload refreshed visual artifacts
+      - name: Upload comparison artifacts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: refreshed-visual-baselines-${{ github.run_id }}
-          if-no-files-found: ignore
+          retention-days: 30
+          if-no-files-found: warn
           path: |
-            tests/frontend/visual/__screenshots__
-            playwright-report/visual
+            tests/frontend/visual/__screenshots__/
+            playwright-report/visual/
             test-results/visual-junit.xml
