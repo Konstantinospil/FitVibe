@@ -231,7 +231,11 @@ export async function changeStatus(
   if (options.selfDeletion && actorUserId === userId && nextStatus === "pending_deletion") {
     // The password-verified deletion flow may target the caller, but not an admin.
     if (user.role_code === "admin" || user.role_code === "superadmin") {
-      throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
+      throw new HttpError(
+        403,
+        "CANNOT_MODIFY_ADMIN",
+        "Cannot modify another administrator account",
+      );
     }
   } else {
     assertAdminTargetManageable(actorUserId, userId, user.role_code);
