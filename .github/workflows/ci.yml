@@ -2153,7 +2153,7 @@ jobs:
     # Pin the browser runtime and OS dependencies to the same Playwright version
     # as @playwright/test. Do not provision browsers/apt packages at runtime.
     container:
-      image: mcr.microsoft.com/playwright:v1.64.0-jammy
+      image: mcr.microsoft.com/playwright:v1.64.1-jammy
       options: --ipc=host
     steps:
       - name: Checkout
@@ -2295,7 +2295,7 @@ jobs:
     # Same Playwright Linux image used by `pnpm test:visual:linux` so font
     # rasterization matches the committed *-linux.png baselines.
     container:
-      image: mcr.microsoft.com/playwright:v1.64.0-jammy
+      image: mcr.microsoft.com/playwright:v1.64.1-jammy
       options: --ipc=host
     steps:
       - name: Checkout
