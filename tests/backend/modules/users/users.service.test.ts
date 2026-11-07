@@ -1095,6 +1095,44 @@ describe("Users Service", () => {
       expect(mockUsersRepo.setUserStatus).toHaveBeenCalled();
     });
 
+    it.each(["admin", "superadmin"])("rejects changes to %s accounts even when status is unchanged", async (roleCode) => {
+      mockUsersRepo.findUserById.mockResolvedValue({
+        id: userId,
+        status: "active",
+        role_code: roleCode,
+      } as UserRow);
+      await expect(usersService.changeStatus("other-admin", userId, "active"))
+        .rejects.toMatchObject({ status: 403, code: "CANNOT_MODIFY_ADMIN" });
+      await expect(usersService.changeStatus("other-admin", userId, "banned"))
+        .rejects.toMatchObject({ status: 403, code: "CANNOT_MODIFY_ADMIN" });
+      expect(mockUsersRepo.setUserStatus).not.toHaveBeenCalled();
+      expect(mockAuthRepo.revokeUserAuthStateAtomic).not.toHaveBeenCalled();
+    });
+
+    it("rejects admin status changes targeting the actor", async () => {
+      mockUsersRepo.findUserById.mockResolvedValue({
+        id: userId,
+        status: "active",
+        role_code: "athlete",
+      } as UserRow);
+      await expect(usersService.changeStatus(userId, userId, "suspended"))
+        .rejects.toMatchObject({ status: 400, code: "CANNOT_MODIFY_SELF" });
+      await expect(usersService.changeStatus(userId, userId, "pending_deletion"))
+        .rejects.toMatchObject({ status: 400, code: "CANNOT_MODIFY_SELF" });
+      expect(mockUsersRepo.setUserStatus).not.toHaveBeenCalled();
+    });
+
+    it.each(["admin", "superadmin"])("rejects privileged %s self-deletion even with verified-flow option", async (roleCode) => {
+      mockUsersRepo.findUserById.mockResolvedValue({
+        id: userId,
+        status: "active",
+        role_code: roleCode,
+      } as UserRow);
+      await expect(usersService.changeStatus(userId, userId, "pending_deletion", { selfDeletion: true }))
+        .rejects.toMatchObject({ status: 403, code: "CANNOT_MODIFY_ADMIN" });
+      expect(mockUsersRepo.setUserStatus).not.toHaveBeenCalled();
+    });
+
     it("should reject invalid status transition", async () => {
       mockUsersRepo.findUserById.mockResolvedValue({
         id: userId,
