@@ -1,5 +1,6 @@
 const { test, expect } = require("./fixtures.cjs");
 const { expectApiHttpError } = require("./browser-diagnostics.cjs");
+const { navigation } = require("../../../apps/frontend/src/i18n/locales/en/common.json");
 const {
   preparePage,
   waitForApp,
@@ -35,7 +36,9 @@ test("[E2E-SMOKE-002] authenticated shell shows Home after real login", async ({
   await page.waitForURL((url) => url.pathname === "/");
 
   await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: /home/i })).toBeVisible();
+  const mainNavigation = page.getByRole("navigation", { name: navigation.main, exact: true });
+  await expect(mainNavigation).toBeVisible();
+  await expect(mainNavigation.getByRole("link", { name: navigation.home, exact: true })).toBeVisible();
 });
 
 

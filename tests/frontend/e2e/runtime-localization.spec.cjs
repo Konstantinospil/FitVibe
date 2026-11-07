@@ -1,5 +1,5 @@
 const { test, expect } = require("./fixtures.cjs");
-const { preparePage, waitForApp } = require("./server-helpers.cjs");
+const { preparePage, waitForApp, getAccountLanguage, setAccountLanguage } = require("./server-helpers.cjs");
 const { LOCALES, messages, analyzeSnapshot, capturePage } = require("../../../tests/qa/audit-ui-runtime.cjs");
 const { scanRepository } = require("../../../tests/qa/audit-ui-literals.cjs");
 
@@ -47,18 +47,29 @@ for (const locale of LOCALES) {
 
   test("runtime localization inventory: authenticated pages [" + locale + "]", async ({ page, athleteAccount }, testInfo) => {
     await preparePage(page, { authenticated: true, account: athleteAccount });
-    await selectLanguage(page, locale);
-    const results = [];
-    for (const route of AUTHENTICATED_PAGES) {
-      const report = await inspect(page, locale, route);
-      results.push(report);
+    const originalLanguage = await getAccountLanguage(page);
+    try {
+      // ADR-031: the persisted account preference, not localStorage, is authoritative.
+      if (originalLanguage !== locale) {
+        await setAccountLanguage(page, locale);
+      }
+      await selectLanguage(page, locale);
+      const results = [];
+      for (const route of AUTHENTICATED_PAGES) {
+        const report = await inspect(page, locale, route);
+        results.push(report);
+      }
+      const totals = Object.fromEntries(["englishFallbacks","renderedSourceLiterals","unresolvedKeys"].map(k =>
+        [k, results.reduce((sum, item) => sum + item.counts[k], 0)]));
+      console.log("Runtime localization authenticated " + locale + ": " + JSON.stringify(totals));
+      await testInfo.attach("ui-localization-authenticated-" + locale + ".json", {
+        body: Buffer.from(JSON.stringify({ locale, scope: "authenticated", totals, results }, null, 2)),
+        contentType: "application/json"
+      });
+    } finally {
+      if (originalLanguage !== locale) {
+        await setAccountLanguage(page, originalLanguage);
+      }
     }
-    const totals = Object.fromEntries(["englishFallbacks","renderedSourceLiterals","unresolvedKeys"].map(k =>
-      [k, results.reduce((sum, item) => sum + item.counts[k], 0)]));
-    console.log("Runtime localization authenticated " + locale + ": " + JSON.stringify(totals));
-    await testInfo.attach("ui-localization-authenticated-" + locale + ".json", {
-      body: Buffer.from(JSON.stringify({ locale, scope: "authenticated", totals, results }, null, 2)),
-      contentType: "application/json"
-    });
   });
 }

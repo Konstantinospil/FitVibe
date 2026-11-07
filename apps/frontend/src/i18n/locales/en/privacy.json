@@ -2,6 +2,12 @@
   "eyebrow": "Legal",
   "title": "Privacy Policy",
   "description": "Learn how we collect, use, and protect your personal data.",
+  "consent": {
+    "acknowledge": "Acknowledge",
+    "revoke": "Revoke acknowledgement",
+    "acceptError": "Could not record the acknowledgement. Please try again.",
+    "revokeError": "Could not revoke the acknowledgement. Please try again."
+  },
   "effectiveDate": "Effective date",
   "effectiveDateValue": "26 October 2025",
   "intro1": "FitVibe helps athletes and active individuals plan training sessions, log workouts, and understand their progress. This Privacy Policy explains what personal data we collect when you use the Services, why we collect it, how we use and share it, and the rights available to you under the General Data Protection Regulation (\"GDPR\"), the UK GDPR, and other applicable data protection laws.",

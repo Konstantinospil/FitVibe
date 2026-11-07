@@ -455,6 +455,29 @@
   ],
   "suites": [
     {
+      "name": "lighthouse-worst-run-config-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-ci-config\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouserc.ci.json"
+      ],
+      "fixture_dependencies": [
+        "Lighthouse CI configuration and assertion policy"
+      ],
+      "isolation_model": "node:test static configuration inspection; no external service",
+      "expected_artifacts": [
+        "CI Lighthouse worst-run assertion policy step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "typography-contract-regressions",
       "patterns": [
         "^tests/qa/check-typography-contract\\.test\\.mjs$"

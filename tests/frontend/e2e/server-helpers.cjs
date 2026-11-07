@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 const AUTH_FLAG_KEY = "fitvibe:auth";
 const AUTH_HINT_INITIALIZED_KEY = "fitvibe:e2e:auth-hint-initialized";
+const CONSENT_STATUS_RECOVERY_WINDOW_MS = 75_000;
 const APPLICATION_BASE_URL =
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
@@ -118,8 +119,8 @@ async function retryRateLimitedMutation(operation, label) {
   }
 }
 
-async function getConsentStatusWithRateLimitBackoff(request, url) {
-  const deadline = Date.now() + 75_000;
+async function getConsentStatusWithRateLimitBackoff(request, url, onRateLimited) {
+  const deadline = Date.now() + CONSENT_STATUS_RECOVERY_WINDOW_MS;
   for (;;) {
     const response = await request.get(url);
     if (response.status() !== 429) return response;
@@ -128,6 +129,7 @@ async function getConsentStatusWithRateLimitBackoff(request, url) {
     if (!Number.isFinite(retryAfter) || retryAfter < 0) {
       throw new Error("Consent status was rate-limited without a valid Retry-After");
     }
+    onRateLimited?.();
     const delay = Math.max(1000, Math.ceil(retryAfter * 1000));
     if (Date.now() + delay > deadline) {
       throw new Error("Consent status remained rate-limited beyond the E2E recovery deadline");
@@ -301,6 +303,18 @@ async function assertConsentRequired(page) {
   if (result?.hasConsent) {
     throw new Error("Expected a consent-required browser state, but consent is already persisted");
   }
+}
+
+async function getAccountLanguage(page) {
+  const response = await page.context().request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
+  if (!response.ok()) {
+    throw new Error(`Unable to read account language: HTTP ${response.status()}`);
+  }
+  const { language } = await response.json();
+  if (!SUPPORTED_LOCALES.includes(language)) {
+    throw new Error("Account has an unsupported persisted language");
+  }
+  return language;
 }
 
 async function setAccountLanguage(page, locale) {
@@ -480,6 +494,7 @@ async function acceptRegisterLegal(page) {
 
 module.exports = {
   AUTH_FLAG_KEY,
+  CONSENT_STATUS_RECOVERY_WINDOW_MS,
   TEST_USER,
   preparePage,
   ensureEssentialCookieConsent,
@@ -498,6 +513,7 @@ module.exports = {
   getCookieConsentDialog,
   localeMessages,
   currentLocale,
+  getAccountLanguage,
   setAccountLanguage,
   assertConsentRequired,
   createFirstLoginAccount,
