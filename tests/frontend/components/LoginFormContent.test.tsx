@@ -328,7 +328,7 @@ describe("LoginFormContent", () => {
     );
   });
 
-  it("should handle error with error message", async () => {
+  it("conceals unrecognized server messages on login failure", async () => {
     vi.mocked(api.login).mockRejectedValue({
       response: {
         data: {
@@ -355,7 +355,8 @@ describe("LoginFormContent", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText("Custom error message")).toBeInTheDocument();
+        expect(screen.getByRole("alert")).toHaveTextContent("Login failed");
+        expect(screen.queryByText("Custom error message")).not.toBeInTheDocument();
       },
       { timeout: 5000 },
     );

@@ -52,11 +52,11 @@ const VerifyEmail: React.FC = () => {
             );
           } else {
             setStatus("error");
-            setErrorMessage(t("verifyEmail.titleFailed"));
+            setErrorMessage(t("verifyEmail.descFailed"));
           }
         } else {
           setStatus("error");
-          setErrorMessage(t("verifyEmail.titleFailed"));
+          setErrorMessage(t("verifyEmail.descFailed"));
         }
       }
     };

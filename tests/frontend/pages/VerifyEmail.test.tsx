@@ -54,6 +54,7 @@ void testI18n.use(initReactI18next).init({
         "verifyEmail.resendEmailLabel": "Email address",
         "verifyEmail.resendEmailPlaceholder": "your@email.com",
         "verifyEmail.resendButton": "Send verification email",
+        "verifyEmail.resendError": "Unable to resend verification email.",
         "errors.AUTH_TOKEN_EXPIRED": "Your verification link has expired. Please request a new one",
         "auth.register.fillAllFields": "Please fill in all fields",
       },
@@ -111,8 +112,9 @@ describe("VerifyEmail", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText("Verification Failed")).toBeInTheDocument();
-        expect(screen.getByText("Invalid token")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Verification Failed" })).toBeInTheDocument();
+        expect(screen.getByText("We couldn't verify your email")).toBeInTheDocument();
+        expect(screen.queryByText("Invalid token")).not.toBeInTheDocument();
       },
       { timeout: 5000 },
     );
@@ -142,7 +144,7 @@ describe("VerifyEmail", () => {
     await waitFor(
       () => {
         expect(screen.getByText("Verification Failed")).toBeInTheDocument();
-        expect(screen.getByText("Verification failed")).toBeInTheDocument();
+        expect(screen.getByText("We couldn't verify your email")).toBeInTheDocument();
       },
       { timeout: 5000 },
     );
@@ -219,7 +221,7 @@ describe("VerifyEmail", () => {
     await waitFor(
       () => {
         expect(screen.getByText("Verification Failed")).toBeInTheDocument();
-        expect(screen.getByText("Verification failed")).toBeInTheDocument();
+        expect(screen.getByText("We couldn't verify your email")).toBeInTheDocument();
       },
       { timeout: 5000 },
     );
@@ -237,13 +239,13 @@ describe("VerifyEmail", () => {
     await waitFor(
       () => {
         expect(screen.getByText("Verification Failed")).toBeInTheDocument();
-        expect(screen.getByText("Verification failed")).toBeInTheDocument();
+        expect(screen.getByText("We couldn't verify your email")).toBeInTheDocument();
       },
       { timeout: 5000 },
     );
   });
 
-  it("uses errorMessage in description when error occurs", async () => {
+  it("uses a localized description rather than a raw token error", async () => {
     vi.mocked(rawHttpClient.get).mockRejectedValue({
       response: {
         data: {
@@ -258,7 +260,8 @@ describe("VerifyEmail", () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText("Token expired")).toBeInTheDocument();
+        expect(screen.getByText("We couldn't verify your email")).toBeInTheDocument();
+        expect(screen.queryByText("Token expired")).not.toBeInTheDocument();
       },
       { timeout: 5000 },
     );
@@ -610,13 +613,13 @@ describe("VerifyEmail", () => {
     fireEvent.change(email, { target: { value: "person@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: /send verification email/i }));
 
-    expect(await screen.findByText("verifyEmail.resendError")).toBeInTheDocument();
+    expect(await screen.findByText("Unable to resend verification email.")).toBeInTheDocument();
     expect(resendVerificationEmail).toHaveBeenCalledWith({ email: "person@example.com" });
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /send verification email/i })).toBeEnabled();
   });
 
-  it("shows the server error when verification resend is rejected with an API error code", async () => {
+  it("uses a localized fallback when an API error code has no translation", async () => {
     vi.mocked(rawHttpClient.get).mockRejectedValue({ response: { status: 410 } });
     vi.mocked(resendVerificationEmail).mockRejectedValue({
       response: { data: { error: { code: "EMAIL_NOT_FOUND", message: "Email not found" } } },
@@ -627,7 +630,7 @@ describe("VerifyEmail", () => {
     fireEvent.change(email, { target: { value: "unknown@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: /send verification email/i }));
 
-    expect(await screen.findByText("errors.EMAIL_NOT_FOUND")).toBeInTheDocument();
+    expect(await screen.findByText("Unable to resend verification email.")).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
@@ -642,7 +645,7 @@ describe("VerifyEmail", () => {
     fireEvent.change(email, { target: { value: "person@example.com" } });
     const submit = screen.getByRole("button", { name: /send verification email/i });
     fireEvent.click(submit);
-    expect(await screen.findByText("verifyEmail.resendError")).toBeInTheDocument();
+    expect(await screen.findByText("Unable to resend verification email.")).toBeInTheDocument();
     fireEvent.click(submit);
 
     await waitFor(() => {

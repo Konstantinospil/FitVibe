@@ -1,3 +1,4 @@
+import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { VibeformProfile } from "@fitvibe/types";
 import { apiClient } from "../../../apps/frontend/src/services/api";
@@ -74,16 +75,15 @@ describe("Vibeform rendering boundary", () => {
   });
 
   it("renders the selected template with the profile preferences", () => {
-    const container = VibeformRenderer({ profile, accessibleLabel: "Athlete" });
-    const template = container.props.children;
-    const svg = template.type(template.props);
+    const { container } = render(<VibeformRenderer profile={profile} accessibleLabel="Athlete" />);
+    const boundary = container.querySelector("[data-vibeform-version]");
+    const svg = screen.getByRole("img", { name: "Athlete" });
 
-    expect(container.props["data-vibeform-version"]).toBe(1);
-    expect(svg.props["aria-label"]).toBe("Athlete");
-    expect(svg.props["data-vibeform-template"]).toBe("flow");
-    expect(svg.props["data-motion-enabled"]).toBe(false);
-    expect(svg.props.children[1].props.className).toBeUndefined();
-    expect(svg.props.children[0].props.children).toContain("prefers-reduced-motion");
+    expect(boundary).toHaveAttribute("data-vibeform-version", "1");
+    expect(svg).toHaveAttribute("data-vibeform-template", "flow");
+    expect(svg).toHaveAttribute("data-motion-enabled", "false");
+    expect(svg.querySelector("g")).not.toHaveClass("vibeform-pulse");
+    expect(svg.querySelector("style")).toHaveTextContent("prefers-reduced-motion");
   });
 
   it("enables the flow animation only when the profile opts into motion", () => {
@@ -92,12 +92,11 @@ describe("Vibeform rendering boundary", () => {
       preferences: { ...profile.preferences, motionEnabled: true },
     };
 
-    const container = VibeformRenderer({ profile: animatedProfile });
-    const template = container.props.children;
-    const svg = template.type(template.props);
+    const { container } = render(<VibeformRenderer profile={animatedProfile} />);
+    const svg = container.querySelector('[data-vibeform-template="flow"]');
 
-    expect(svg.props["data-motion-enabled"]).toBe(true);
-    expect(svg.props.children[1].props.className).toBe("vibeform-pulse");
+    expect(svg).toHaveAttribute("data-motion-enabled", "true");
+    expect(svg?.querySelector("g")).toHaveClass("vibeform-pulse");
   });
 
   it("falls back safely when a stale profile names an unavailable template", () => {
@@ -106,12 +105,10 @@ describe("Vibeform rendering boundary", () => {
       preferences: { ...profile.preferences, templateCode: "retired-template" },
     } as unknown as VibeformProfile;
 
-    const container = VibeformRenderer({ profile: staleProfile });
-    const template = container.props.children;
-    const svg = template.type(template.props);
+    const { container } = render(<VibeformRenderer profile={staleProfile} />);
 
-    expect(container.props["data-vibeform-template-fallback"]).toBe(true);
-    expect(svg.props["data-vibeform-template"]).toBe("flow");
+    expect(container.querySelector('[data-vibeform-template-fallback="true"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-vibeform-template="flow"]')).toBeInTheDocument();
   });
 
   it("clamps malformed API scores without interpreting another backend scale", () => {

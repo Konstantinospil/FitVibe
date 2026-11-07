@@ -30,7 +30,23 @@ vi.mock("../../src/components/PageIntro", () => ({
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,
+    t: (key: string, options?: { defaultValue?: string }) => {
+      const translations: Record<string, string> = {
+        "contact.form.emailLabel": "Email",
+        "contact.form.topicLabel": "Topic",
+        "contact.form.messageLabel": "Message",
+        "contact.form.submit": "Send Message",
+        "contact.form.emailRequired": "Email is required",
+        "contact.form.topicRequired": "Topic is required",
+        "contact.form.messageRequired": "Message is required",
+        "contact.form.invalidEmail": "Please enter a valid email address",
+        "contact.form.csrfError": "Security token error. Please refresh the page and try again.",
+        "contact.form.networkError": "Cannot connect to server. Please check your connection and try again.",
+        "contact.form.error": "Failed to send message. Please try again.",
+        "contact.form.success": "Your message has been sent successfully!",
+      };
+      return translations[key] ?? options?.defaultValue ?? key;
+    },
   }),
 }));
 
@@ -190,7 +206,7 @@ describe("Contact", () => {
     expect(toastError).toHaveBeenCalledWith(error.textContent);
   });
 
-  it("uses an API error message when one is supplied", async () => {
+  it("uses a localized error instead of untrusted API error text", async () => {
     vi.mocked(rawHttpClient.post).mockRejectedValue({
       response: { data: { error: { code: "CONTACT_REJECTED", message: "Try later" } } },
     });
@@ -199,8 +215,9 @@ describe("Contact", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Send Message" }));
 
-    expect(await screen.findByText("Try later")).toBeInTheDocument();
-    expect(toastError).toHaveBeenCalledWith("Try later");
+    expect(await screen.findByText("Failed to send message. Please try again.")).toBeInTheDocument();
+    expect(screen.queryByText("Try later")).not.toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith("Failed to send message. Please try again.");
   });
 
   it("falls back to the generic error for response and network failures", async () => {

@@ -73,7 +73,7 @@ vi.mock("node:fs", async (importOriginal) => {
     ...actual,
     readFileSync: vi.fn(
       () =>
-        '<html><body><div id="root"></div><script type="module" src="/src/bootstrap.ts"></script></body></html>',
+        '<html><head></head><body><div id="root"></div><script type="module" src="/src/bootstrap.ts"></script></body></html>',
     ),
     existsSync: vi.fn(() => false),
   };
