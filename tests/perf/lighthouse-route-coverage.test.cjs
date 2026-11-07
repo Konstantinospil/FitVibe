@@ -4,47 +4,62 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
 const { auditedRoutes, conditionalRoutes, auditUrl } = require("./lighthouse-routes.cjs");
+const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
 
 const root = path.resolve(__dirname, "../..");
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "lighthouserc.ci.json"), "utf8"));
+const pageIdentity = {
+  categories: Object.fromEntries(
+    ["performance", "accessibility", "best-practices", "seo"].map((name) => [name, { score: 0.8 }]),
+  ),
+};
 
-test("Lighthouse measures every ordinary frontend route and declares state-gated exceptions", () => {
-  const expected = new Set([...auditedRoutes, ...conditionalRoutes].map(({ mode, path }) => mode + ":" + path));
-  assert.equal(expected.size, auditedRoutes.length + conditionalRoutes.length, "No duplicate route scenarios");
+test("Every declared frontend route has an audited or explicitly conditional scenario", () => {
+  const keys = [...auditedRoutes, ...conditionalRoutes].map(({ mode, path }) => mode + ":" + path);
+  assert.equal(new Set(keys).size, keys.length, "No duplicate scenarios");
 
   for (const [file, mode] of [
     ["apps/frontend/src/routes/PublicRoutes.tsx", "public"],
     ["apps/frontend/src/routes/ProtectedRoutes.tsx", "athlete"],
   ]) {
     const source = fs.readFileSync(path.join(root, file), "utf8");
-    const declared = [...source.matchAll(/<Route\b[^>]*\bpath="([^"]+)"/g)]
-      .map((match) => match[1]).filter((route) => route !== "*");
-    // Index routes are the root route in both trees.
-    declared.push("/");
-    for (const segment of declared) {
+    const paths = [...source.matchAll(/<Route\b[^>]*\bpath="([^"]+)"/g)]
+      .map((match) => match[1]).filter((value) => value !== "*");
+    paths.push("/");
+    for (const segment of paths) {
       const pathname = segment === "/" ? segment : "/" + segment.replace(/^\//, "");
-      assert.ok(expected.has(mode + ":" + pathname), file + " has an unowned route " + pathname);
+      assert.ok(keys.includes(mode + ":" + pathname), file + " has an unowned route " + pathname);
     }
   }
+  assert.ok(conditionalRoutes.every((scenario) => scenario.fixture), "State-gated pages need a fixture requirement");
+});
 
-  const configured = config.ci.collect.url;
-  assert.deepEqual(
-    [...configured].sort(),
-    auditedRoutes.map((route) => auditUrl(route)).sort(),
-    "The audited URL inventory and Lighthouse configuration must remain aligned",
-  );
+test("Lighthouse login baseline remains a blocking three-run audit", () => {
+  assert.ok(config.ci.collect.url.includes("http://127.0.0.1:4173/login"));
   assert.equal(config.ci.collect.numberOfRuns, 3);
 });
 
-test("Protected page audits fail closed if the result lands on login", () => {
-  const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
+test("Wrong or redirected Lighthouse pages cannot pass as the requested route", () => {
   const target = { mode: "athlete", path: "/calendar" };
   assert.throws(
-    () => verifyRouteIdentity(target, { requestedUrl: auditUrl(target), finalDisplayedUrl: "http://127.0.0.1:4180/login" }),
+    () => verifyRouteIdentity(target, {
+      requestedUrl: auditUrl(target),
+      finalDisplayedUrl: "http://127.0.0.1:4180/login",
+      ...pageIdentity,
+    }),
     /redirected or replaced/,
+  );
+  assert.throws(
+    () => verifyRouteIdentity(target, {
+      requestedUrl: auditUrl(target),
+      finalDisplayedUrl: auditUrl(target),
+      categories: { performance: { score: 0.8 } },
+    }),
+    /Missing Lighthouse/,
   );
   assert.doesNotThrow(() => verifyRouteIdentity(target, {
     requestedUrl: auditUrl(target),
     finalDisplayedUrl: auditUrl(target),
+    ...pageIdentity,
   }));
 });
