@@ -27,6 +27,7 @@ import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
 import { breachedPasswordChecker } from "../auth/breached-password.service.js";
 import { HttpError } from "../../utils/http.js";
 import { ADMIN_CREATABLE_ROLES } from "./users.types.js";
+import { assertAdminTargetManageable } from "../admin/admin-user-guard.js";
 import { insertAudit } from "../common/audit.util.js";
 import { primaryEmail, toUserDetail, toUserSafe } from "./users.mapping.js";
 import { ensureUsernameAvailable, ensureUsernameFormat } from "./users.username.js";
@@ -225,6 +226,13 @@ export async function changeStatus(
   const user = await findUserById(userId);
   if (!user) {
     throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
+  }
+  // The admin status endpoint cannot act on itself or privileged accounts.
+  // Voluntary deletion is a separate, password-verified flow for ordinary users.
+  if (actorUserId === null || actorUserId !== userId || nextStatus !== "pending_deletion") {
+    assertAdminTargetManageable(actorUserId, userId, user.role_code);
+  } else if (user.role_code === "admin" || user.role_code === "superadmin") {
+    throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
   }
   if (user.status === nextStatus) {
     const full = await fetchUserWithContacts(userId);
