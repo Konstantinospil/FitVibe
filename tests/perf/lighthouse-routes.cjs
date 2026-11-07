@@ -19,6 +19,19 @@ const conditionalRoutes = [
   { mode: "athlete", path: "/terms-reacceptance", fixture: "outdated accepted legal version" },
   { mode: "athlete", path: "/admin/password-update", fixture: "administrator password-policy gate" },
 ];
+// Backoffice has an independent admin session and must not be represented by
+// the athlete fixture. These are tracked but not yet collected.
+const backofficeRoutes = [
+  { mode: "backoffice-public", path: "/login" },
+  { mode: "backoffice-admin", path: "/translations" },
+  { mode: "backoffice-admin", path: "/legal-publications" },
+  { mode: "backoffice-admin", path: "/messages" },
+  { mode: "backoffice-admin", path: "/audit-logs" },
+  { mode: "backoffice-admin", path: "/settings" },
+  { mode: "backoffice-admin", path: "/users" },
+  { mode: "backoffice-admin", path: "/admin/reports" },
+  { mode: "backoffice-superadmin", path: "/superadmin/privileges" },
+];
 const auditedRoutes = [
   ...publicRoutes.map((path) => ({ mode: "public", path })),
   ...athleteRoutes.map((path) => ({ mode: "athlete", path })),
@@ -30,4 +43,4 @@ function auditUrl(route, origin = "http://127.0.0.1:4180") {
   return url.toString();
 }
 
-module.exports = { publicRoutes, athleteRoutes, conditionalRoutes, auditedRoutes, auditUrl };
+module.exports = { publicRoutes, athleteRoutes, conditionalRoutes, backofficeRoutes, auditedRoutes, auditUrl };
