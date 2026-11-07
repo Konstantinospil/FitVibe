@@ -3,7 +3,7 @@
  * Capture visual baselines in Linux Chromium using the Playwright Docker image
  * (same image the CI visual job uses). Does not use docker compose.
  *
- * Requires Docker Desktop. Starts host `vite preview` if port 4173 is free.
+ * Requires Docker Desktop. Builds fresh and starts host `vite preview`; port 4173 must be free.
  * Extra argv is forwarded to Playwright (spec files, --project, …).
  * Compares Linux baselines by default. Pass --update to rewrite changed Linux baselines.
  */
@@ -44,40 +44,43 @@ const isPreviewUp = () =>
     socket.once("error", () => resolveUp(false));
   });
 
+if (await isPreviewUp()) {
+  console.error("Port 4173 is already occupied. Stop the old preview before running visual tests.");
+  process.exit(1);
+}
+
+console.log("Building visual frontend bundle and starting fresh vite preview…");
+run(pnpmCmd, ["--filter", "@fitvibe/frontend", "run", "build:visual"]);
+const preview = spawn(
+  pnpmCmd,
+  [
+    "exec",
+    "vite",
+    "preview",
+    "--host",
+    "0.0.0.0",
+    "--port",
+    "4173",
+    "--strictPort",
+    "--outDir",
+    "dist/client",
+  ],
+  {
+    cwd: frontendDir,
+    shell: process.platform === "win32",
+    stdio: "ignore",
+    env: process.env,
+  },
+);
+process.on("exit", () => preview.kill());
+for (let i = 0; i < 30; i += 1) {
+  await new Promise((r) => setTimeout(r, 1000));
+  if (await isPreviewUp()) break;
+  if (preview.exitCode !== null) break;
+}
 if (!(await isPreviewUp())) {
-  console.log("Building visual frontend bundle and starting vite preview…");
-  run(pnpmCmd, ["--filter", "@fitvibe/frontend", "run", "build:visual"]);
-  const preview = spawn(
-    pnpmCmd,
-    [
-      "exec",
-      "vite",
-      "preview",
-      "--host",
-      "0.0.0.0",
-      "--port",
-      "4173",
-      "--strictPort",
-      "--outDir",
-      "dist/client",
-    ],
-    {
-      cwd: frontendDir,
-      shell: process.platform === "win32",
-      stdio: "ignore",
-      detached: true,
-      env: process.env,
-    },
-  );
-  preview.unref();
-  for (let i = 0; i < 30; i += 1) {
-    await new Promise((r) => setTimeout(r, 1000));
-    if (await isPreviewUp()) break;
-  }
-  if (!(await isPreviewUp())) {
-    console.error("vite preview did not start on port 4173");
-    process.exit(1);
-  }
+  console.error("vite preview did not start on port 4173");
+  process.exit(1);
 }
 
 const cliArgs = process.argv.slice(2);
