@@ -135,9 +135,7 @@ const PrivilegeManagementPage: React.FC = () => {
             <CardTitle>
               {t("privileges.confirm", {
                 action:
-                  selected.role === "admin"
-                    ? t("privileges.promotion")
-                    : t("privileges.demotion"),
+                  selected.role === "admin" ? t("privileges.promotion") : t("privileges.demotion"),
               })}
             </CardTitle>
             <CardDescription>
