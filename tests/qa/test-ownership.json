@@ -456,6 +456,30 @@
   ],
   "suites": [
     {
+      "name": "lighthouse-authenticated-score-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-score-contract\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-score-contract.cjs",
+        "tests/perf/lighthouserc.ci.json"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Lighthouse report fixtures (no live service)"
+      ],
+      "isolation_model": "node:test deterministic per-route threshold assertions",
+      "expected_artifacts": [
+        "CI Lighthouse worst-score contract step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-route-coverage-regression",
       "patterns": [
         "^tests/perf/lighthouse-route-coverage\\.test\\.cjs$"
