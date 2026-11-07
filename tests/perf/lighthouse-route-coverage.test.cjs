@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { test } = require("node:test");
-const { auditedRoutes, conditionalRoutes, auditUrl } = require("./lighthouse-routes.cjs");
+const { auditedRoutes, conditionalRoutes, backofficeRoutes, auditUrl } = require("./lighthouse-routes.cjs");
 const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
 
 const root = path.resolve(__dirname, "../..");
@@ -32,6 +32,18 @@ test("Every declared frontend route has an audited or explicitly conditional sce
     }
   }
   assert.ok(conditionalRoutes.every((scenario) => scenario.fixture), "State-gated pages need a fixture requirement");
+});
+
+
+test("Every backoffice UI route is inventoried before expanding its Lighthouse environment", () => {
+  const source = fs.readFileSync(path.join(root, "apps/backoffice/src/App.tsx"), "utf8");
+  const declared = [...source.matchAll(/<Route\b[^>]*\bpath="([^"]+)"/g)]
+    .map((match) => match[1]).filter((value) => value !== "/");
+  const known = new Set(backofficeRoutes.map((route) => route.path));
+  for (const route of declared) {
+    assert.ok(known.has("/" + route.replace(/^\//, "")), "Backoffice route is missing from inventory: " + route);
+  }
+  assert.equal(known.size, backofficeRoutes.length, "No duplicate backoffice paths");
 });
 
 test("Lighthouse login baseline remains a blocking three-run audit", () => {
