@@ -58,6 +58,9 @@ export async function listFeedReports(query: ListReportsQuery): Promise<FeedRepo
       `),
     )
     .select(
+      db.raw(`COALESCE(fi.owner_id, fc.user_id) as "contentAuthorId"`),
+    )
+    .select(
       db.raw(`
         COALESCE(
           content_author_feed_profile.alias,
@@ -119,6 +122,9 @@ export async function getFeedReportById(reportId: string): Promise<FeedReport | 
           SUBSTRING(fc.body, 1, 200)
         ) as "contentPreview"
       `),
+    )
+    .select(
+      db.raw(`COALESCE(fi.owner_id, fc.user_id) as "contentAuthorId"`),
     )
     .select(
       db.raw(`
