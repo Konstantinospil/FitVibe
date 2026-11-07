@@ -35,11 +35,11 @@ function reportOf(snapshot, locale) {
 }
 
 const expectedAdminCopy = {
-  en: { dashboard: "Admin Dashboard", logout: "Logout", audit: "Audit Logs", search: "Search by Request ID", empty: "No audit logs found" },
-  de: { dashboard: "Administrationsübersicht", logout: "Abmelden", audit: "Audit-Protokolle", search: "Nach Anfrage-ID suchen", empty: "Keine Audit-Protokolle gefunden" },
-  fr: { dashboard: "Tableau de bord administrateur", logout: "Déconnexion", audit: "Journaux d’audit", search: "Rechercher par ID de requête", empty: "Aucun journal d’audit trouvé" },
-  es: { dashboard: "Panel de administración", logout: "Cerrar sesión", audit: "Registros de auditoría", search: "Buscar por ID de solicitud", empty: "No se encontraron registros de auditoría" },
-  el: { dashboard: "Πίνακας διαχείρισης", logout: "Αποσύνδεση", audit: "Αρχεία καταγραφής ελέγχου", search: "Αναζήτηση με αναγνωριστικό αιτήματος", empty: "Δεν βρέθηκαν αρχεία καταγραφής ελέγχου" }
+  en: { login: "FitVibe Backoffice", translations: "Translations", dashboard: "Admin Dashboard", logout: "Logout", audit: "Audit Logs", search: "Search by Request ID", empty: "No audit logs found" },
+  de: { login: "FitVibe-Verwaltung", translations: "Übersetzungen", dashboard: "Administrationsübersicht", logout: "Abmelden", audit: "Audit-Protokolle", search: "Nach Anfrage-ID suchen", empty: "Keine Audit-Protokolle gefunden" },
+  fr: { login: "Administration FitVibe", translations: "Traductions", dashboard: "Tableau de bord administrateur", logout: "Déconnexion", audit: "Journaux d’audit", search: "Rechercher par ID de requête", empty: "Aucun journal d’audit trouvé" },
+  es: { login: "Administración de FitVibe", translations: "Traducciones", dashboard: "Panel de administración", logout: "Cerrar sesión", audit: "Registros de auditoría", search: "Buscar por ID de solicitud", empty: "No se encontraron registros de auditoría" },
+  el: { login: "Διαχείριση FitVibe", translations: "Μεταφράσεις", dashboard: "Πίνακας διαχείρισης", logout: "Αποσύνδεση", audit: "Αρχεία καταγραφής ελέγχου", search: "Αναζήτηση με αναγνωριστικό αιτήματος", empty: "Δεν βρέθηκαν αρχεία καταγραφής ελέγχου" }
 };
 
 for (const locale of LOCALES) {
@@ -48,7 +48,8 @@ for (const locale of LOCALES) {
 
     test("records visible strings on login", async ({ page }, testInfo) => {
       await page.goto("/login");
-      await expect(page.getByRole("heading", { name: /fitvibe backoffice/i })).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      await expect(page.getByRole("heading", { name: expectedAdminCopy[locale].login, level: 1 })).toBeVisible();
       const result = reportOf(await capturePage(page), locale);
       console.log("Backoffice runtime locale " + locale + " login: " + result.textCandidates + " visible text candidates; htmlLang=" + result.htmlLang);
       await testInfo.attach("backoffice-localization-" + locale + "-login.json", {
@@ -74,11 +75,11 @@ for (const locale of LOCALES) {
     test("records visible strings on authenticated translations", async ({ page }, testInfo) => {
       await prepareAdmin(page);
       await page.goto("/translations");
-      await expect(page.getByRole("heading", { name: /^translations$/i })).toBeVisible();
       // These components were audited in the first 500 findings. Assert actual
       // rendered localized UI rather than simply collecting English text.
       const copy = expectedAdminCopy[locale];
       await expect(page.locator("html")).toHaveAttribute("lang", locale);
+      await expect(page.getByRole("heading", { name: copy.translations, level: 1 })).toBeVisible();
       await expect(page.getByRole("heading", { name: copy.dashboard, exact: true })).toBeVisible();
       await expect(page.getByRole("button", { name: copy.logout, exact: true })).toBeVisible();
       await expect(page.getByText(copy.audit, { exact: true }).first()).toBeVisible();
