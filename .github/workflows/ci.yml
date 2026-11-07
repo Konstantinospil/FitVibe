@@ -868,14 +868,19 @@ jobs:
           echo "SSR server did not start in time" >&2
           exit 1
 
-      - name: Run Lighthouse CI
+      - name: Run Lighthouse CI (public route inventory)
         id: lighthouse_check
-        timeout-minutes: 10
+        timeout-minutes: 15
         env:
           LHCI_PORT: "4173"
-        # Login-only CI audit. Performance floor is 0.6 because React hydration TBT
-        # dominates the category under simulated mobile; LCP/JS/a11y stay strict.
+        # The existing conservative budget remains in force for every public route.
+        # Separate authenticated-page coverage requires the real E2E browser session.
         run: pnpm exec lhci autorun --config=tests/perf/lighthouserc.ci.json --exit-on-error
+
+      - name: Verify Lighthouse audited pages (not redirects)
+        if: always()
+        timeout-minutes: 2
+        run: node tests/perf/verify-lighthouse-coverage.cjs
 
       - name: Upload Lighthouse artifacts
         if: always()
