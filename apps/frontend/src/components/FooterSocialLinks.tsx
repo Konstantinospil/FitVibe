@@ -41,10 +41,7 @@ const FooterSocialLinks: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <nav
-      aria-label={t("footer.socialMediaLabel")}
-      data-component="footer-social-links"
-    >
+    <nav aria-label={t("footer.socialMediaLabel")} data-component="footer-social-links">
       {socialPlatforms().map(({ key, label, href, icon }) => (
         <IconButton
           key={key}

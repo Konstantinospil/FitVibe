@@ -49,9 +49,7 @@ const Privacy: React.FC = () => {
       const next = await getLegalDocumentsStatus();
       setStatus(next.privacy);
     } catch {
-      toast.error(
-        t("privacy.consent.acceptError"),
-      );
+      toast.error(t("privacy.consent.acceptError"));
     } finally {
       setIsWorking(false);
     }
@@ -64,9 +62,7 @@ const Privacy: React.FC = () => {
       const next = await getLegalDocumentsStatus();
       setStatus(next.privacy);
     } catch {
-      toast.error(
-        t("privacy.consent.revokeError"),
-      );
+      toast.error(t("privacy.consent.revokeError"));
     } finally {
       setIsWorking(false);
     }

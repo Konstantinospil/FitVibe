@@ -104,10 +104,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           {variant === "writing" ? <span className="app-header__slogan">{brandSlogan}</span> : null}
         </div>
 
-        <nav
-          className="app-header__navigation"
-          aria-label={t("navigation.main")}
-        >
+        <nav className="app-header__navigation" aria-label={t("navigation.main")}>
           {NAV_ITEMS.map((item) => {
             const label = t(item.labelKey);
             const Icon = item.icon;

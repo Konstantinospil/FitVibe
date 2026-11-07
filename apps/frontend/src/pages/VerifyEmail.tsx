@@ -47,9 +47,7 @@ const VerifyEmail: React.FC = () => {
           // Check for 410 Gone (expired token)
           if (statusCode === 410 || errorCode === "AUTH_TOKEN_EXPIRED") {
             setStatus("expired");
-            setErrorMessage(
-              t("errors.AUTH_TOKEN_EXPIRED"),
-            );
+            setErrorMessage(t("errors.AUTH_TOKEN_EXPIRED"));
           } else {
             setStatus("error");
             setErrorMessage(t("verifyEmail.descFailed"));

@@ -44,9 +44,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
     setError(null);
 
     if (!pendingSessionId) {
-      setError(
-        t("auth.twoFactor.invalidSession"),
-      );
+      setError(t("auth.twoFactor.invalidSession"));
       setIsSubmitting(false);
       setTimeout(() => void navigate("/login", { replace: true }), 2000);
       return;
@@ -116,10 +114,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
   };
 
   return (
-    <AuthPageLayout
-      title={t("auth.twoFactor.title")}
-      description={t("auth.twoFactor.description")}
-    >
+    <AuthPageLayout title={t("auth.twoFactor.title")} description={t("auth.twoFactor.description")}>
       <FormStack
         ref={formRef}
         onSubmit={(e) => {
@@ -129,9 +124,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
         <FormFeedback tone="info">
           <span data-component="security-notice-content">
             <Shield aria-hidden="true" />
-            <span>
-              {t("auth.twoFactor.securityNotice")}
-            </span>
+            <span>{t("auth.twoFactor.securityNotice")}</span>
           </span>
         </FormFeedback>
 
@@ -156,9 +149,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
           isLoading={isSubmitting}
           disabled={isSubmitting || !isValidCode}
         >
-          {isSubmitting
-            ? t("auth.twoFactor.verifying")
-            : t("auth.twoFactor.verify")}
+          {isSubmitting ? t("auth.twoFactor.verifying") : t("auth.twoFactor.verify")}
         </Button>
 
         <TextLink as="button" type="button" onClick={handleBackToLogin}>

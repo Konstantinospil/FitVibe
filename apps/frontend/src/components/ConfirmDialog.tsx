@@ -27,28 +27,28 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   return (
-  <Modal
-    open={isOpen}
-    title={title}
-    onClose={onCancel}
-    width="sm"
-    footer={
-      <>
-        <Button variant="secondary" onClick={onCancel}>
-          {cancelLabel ?? t("common.cancel")}
-        </Button>
-        <Button variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
-          {confirmLabel ?? t("common.confirm")}
-        </Button>
-      </>
-    }
-  >
-    <div data-component="confirm-dialog" data-tone={variant}>
-      <span aria-hidden="true" data-slot="confirm-dialog-icon">
-        <AlertTriangle />
-      </span>
-      <p data-slot="confirm-dialog-message">{message}</p>
-    </div>
-  </Modal>
+    <Modal
+      open={isOpen}
+      title={title}
+      onClose={onCancel}
+      width="sm"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
+            {cancelLabel ?? t("common.cancel")}
+          </Button>
+          <Button variant={variant === "danger" ? "danger" : "primary"} onClick={onConfirm}>
+            {confirmLabel ?? t("common.confirm")}
+          </Button>
+        </>
+      }
+    >
+      <div data-component="confirm-dialog" data-tone={variant}>
+        <span aria-hidden="true" data-slot="confirm-dialog-icon">
+          <AlertTriangle />
+        </span>
+        <p data-slot="confirm-dialog-message">{message}</p>
+      </div>
+    </Modal>
   );
 };

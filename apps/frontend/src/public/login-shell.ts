@@ -103,11 +103,7 @@ if (!form || !shell) {
       }
       window.location.assign("/");
     } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : loginText.invalidCredentials,
-      );
+      setError(error instanceof Error ? error.message : loginText.invalidCredentials);
       submitButton?.removeAttribute("disabled");
       submitButton?.classList.remove("login-fallback__button--loading");
     }

@@ -46,9 +46,7 @@ const Contact: React.FC = () => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setError(
-        t("contact.form.invalidEmail"),
-      );
+      setError(t("contact.form.invalidEmail"));
       return;
     }
 
@@ -85,9 +83,7 @@ const Contact: React.FC = () => {
           );
 
           if (response.data.success) {
-            toast.success(
-              t("contact.form.success"),
-            );
+            toast.success(t("contact.form.success"));
             if (!user?.email) {
               setEmail("");
             }
@@ -190,9 +186,7 @@ const Contact: React.FC = () => {
         {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
 
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
-          {isSubmitting
-            ? t("contact.form.submitting")
-            : t("contact.form.submit")}
+          {isSubmitting ? t("contact.form.submitting") : t("contact.form.submit")}
         </Button>
       </FormStack>
     </PageIntro>

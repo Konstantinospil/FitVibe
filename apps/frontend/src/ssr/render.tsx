@@ -282,7 +282,11 @@ export async function renderPage(url: string): Promise<string> {
   // SSR currently renders the canonical English document. Store social-card
   // copy in locale resources to keep presentation text out of source templates.
   const escapeMeta = (value: string) =>
-    value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   const ogTitle = escapeMeta(i18n.t("seo.title"));
   const ogDescription = escapeMeta(i18n.t("seo.description"));
   const ogMetaTags = `
