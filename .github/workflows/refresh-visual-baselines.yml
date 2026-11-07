@@ -22,7 +22,7 @@ on:
           - navbar
 
 concurrency:
-  group: visual-baseline-refresh-${ inputs.source_ref }
+  group: visual-baseline-refresh-${{ inputs.source_ref }}
   cancel-in-progress: false
 
 permissions:
@@ -40,7 +40,7 @@ jobs:
     steps:
       - name: Validate source branch
         env:
-          SOURCE_REF: ${ inputs.source_ref }
+          SOURCE_REF: ${{ inputs.source_ref }}
         shell: bash
         run: |
           if [[ ! "$SOURCE_REF" =~ ^(feature|fix/[a-z0-9][a-z0-9._-]*)$ ]]; then
@@ -51,7 +51,7 @@ jobs:
       - name: Checkout reviewed source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${ inputs.source_ref }
+          ref: ${{ inputs.source_ref }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -82,7 +82,7 @@ jobs:
           APP_URL: http://127.0.0.1:4173
           DISABLE_WEBSERVER: "true"
           CI: "true"
-          REFRESH_SCOPE: ${ inputs.refresh_scope }
+          REFRESH_SCOPE: ${{ inputs.refresh_scope }}
         run: |
           set -euo pipefail
           pnpm exec vite preview --host 0.0.0.0 --port 4173 --strictPort --outDir dist/client >/tmp/fitvibe-preview.log 2>&1 &
@@ -120,16 +120,16 @@ jobs:
 
       - name: Publish reviewed snapshots as draft PR
         env:
-          GH_TOKEN: ${ secrets.GITHUB_TOKEN }
-          SOURCE_REF: ${ inputs.source_ref }
-          REFRESH_SCOPE: ${ inputs.refresh_scope }
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_REF: ${{ inputs.source_ref }}
+          REFRESH_SCOPE: ${{ inputs.refresh_scope }}
         run: node tests/frontend/visual/scripts/publish-baseline-pr.mjs
 
       - name: Upload comparison artifacts
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: refreshed-visual-baselines-${ github.run_id }
+          name: refreshed-visual-baselines-${{ github.run_id }}
           retention-days: 30
           if-no-files-found: warn
           path: |
