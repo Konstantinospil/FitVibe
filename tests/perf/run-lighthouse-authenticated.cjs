@@ -94,11 +94,7 @@ function installSessionBootstrap(browserEndpoint) {
         if (targetInfo.type === "page") {
           await send("Page.enable", {}, sessionId);
           await send("Page.addScriptToEvaluateOnNewDocument", {
-            source: String.raw`try {
-              if (location.origin === "http://127.0.0.1:4180") {
-                sessionStorage.setItem("fitvibe:auth", "1");
-              }
-            } catch { /* Storage is unavailable in some internal frames. */ }`,
+            source: `try {\n  if (location.origin === ${JSON.stringify(origin)}) {\n    sessionStorage.setItem("fitvibe:auth", "1");\n  }\n} catch { /* Storage is unavailable in some internal frames. */ }`,
           }, sessionId);
         }
       } catch (error) {
@@ -196,6 +192,7 @@ async function main() {
     "--disable-extensions",
     "--disable-gpu",
     "--remote-debugging-address=127.0.0.1",
+    "--remote-allow-origins=*",
     "--remote-debugging-port=" + port,
     "--user-data-dir=" + profile,
     "about:blank",
@@ -234,7 +231,7 @@ async function main() {
       auditResults.push(...reports);
       console.log("Authenticated Lighthouse completed " + pathName + " (" + runCount + " runs)");
     }
-    const failures = assertWorstRunBudgets(auditResults, athleteRoutes, origin, config.ci.assert.assertions);
+    const failures = assertWorstRunBudgets(auditResults, athleteRoutes, origin, config.ci.assert.assertions, runCount);
     fs.writeFileSync(path.join(auditDir, "summary.json"), JSON.stringify({
       auditedPaths: athleteRoutes,
       runsPerRoute: runCount,
@@ -246,7 +243,7 @@ async function main() {
     bootstrap?.close();
     await browser?.close().catch(() => undefined);
     chrome.kill("SIGTERM");
-    fs.rmSync(profile, { recursive: true, force: true });
+    try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* OS cleans isolated temp files */ }
   }
 }
 
