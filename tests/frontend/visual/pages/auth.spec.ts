@@ -11,6 +11,10 @@ test.describe("Auth Page Visual Tests", () => {
   test("login page", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/login", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
+    const themeToggle = page.locator('[data-component="public-header"] [data-control="theme-toggle"]');
+    await expect(themeToggle).toHaveAttribute("title", /Switch to (light|dark) mode/);
+    await expect(themeToggle).toHaveAttribute("aria-label", /Switch to (light|dark) mode/);
+    await expect(themeToggle).toHaveText("");
     await capturePageScreenshot(page, testInfo, "login", { waitFor: '[data-component="form-stack"]' });
   });
 

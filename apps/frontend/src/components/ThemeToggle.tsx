@@ -41,9 +41,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ variant = "default" }) => {
       data-control="theme-toggle"
       data-theme={theme}
       leftIcon={theme === "dark" ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}
-    >
-      {actionLabel}
-    </Button>
+    />
   );
 };
 

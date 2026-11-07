@@ -28,6 +28,16 @@
   border-left: 1px solid var(--color-border);
 }
 
+/* Keep the public theme control icon-only while retaining Button's semantic variant. */
+.public-header__utilities [data-control="theme-toggle"] {
+  width: var(--control-height-md);
+  padding-inline: var(--space-xs);
+}
+
+.public-header__utilities [data-control="theme-toggle"] [data-slot="content"] > span:empty {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .public-header__inner {
     min-height: 64px;
