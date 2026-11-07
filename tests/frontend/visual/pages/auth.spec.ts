@@ -18,6 +18,36 @@ test.describe("Auth Page Visual Tests", () => {
     await capturePageScreenshot(page, testInfo, "login", { waitFor: '[data-component="form-stack"]' });
   });
 
+  // #558 negative control: the same geometry assertion must reject a displaced
+  // main region on both a small and large viewport. No baseline is modified.
+  test("auth layout detects a displaced main region", async ({ page }, testInfo) => {
+    skipUnlessMatrix(testInfo, { themes: ["light"], viewports: ["xs", "lg"] });
+    await openPublicPage(page, testInfo, "/login", {
+      themes: ["light"],
+      viewports: ["xs", "lg"],
+    });
+    await assertVerticalAuthShell(page);
+
+    const main = page.locator('[data-slot="page-shell-main"]');
+    await main.evaluate((element) => {
+      (element as HTMLElement).style.transform = "translateY(100dvh)";
+    });
+
+    // Prove the mutation actually moved the main region beyond the footer.
+    const mainBox = await main.boundingBox();
+    const footerBox = await page
+      .locator('[data-component="page-shell-footer"]')
+      .boundingBox();
+    expect(mainBox && footerBox).toBeTruthy();
+    if (mainBox && footerBox) {
+      expect(mainBox.y).toBeGreaterThan(footerBox.y + footerBox.height);
+    }
+
+    await expect(assertVerticalAuthShell(page)).rejects.toThrow(
+      /toBeLessThanOrEqual/,
+    );
+  });
+
   test("forgot password", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/forgot-password", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
@@ -156,5 +186,26 @@ async function assertVerticalAuthShell(page: import("@playwright/test").Page) {
   if (top && center && bottom) {
     expect(top.y + top.height).toBeLessThanOrEqual(center.y + 2);
     expect(center.y + center.height).toBeLessThanOrEqual(bottom.y + 2);
+
+    // The collapsed footer's control must remain in the visible viewport and
+    // must not be obscured by the content region.
+    const viewport = page.viewportSize();
+    const toggleBox = await toggle.boundingBox();
+    expect(viewport && toggleBox).toBeTruthy();
+    if (viewport && toggleBox) {
+      expect(toggleBox.x).toBeGreaterThanOrEqual(0);
+      expect(toggleBox.y).toBeGreaterThanOrEqual(0);
+      expect(toggleBox.x + toggleBox.width).toBeLessThanOrEqual(viewport.width + 2);
+      expect(toggleBox.y + toggleBox.height).toBeLessThanOrEqual(viewport.height + 2);
+      const isHitTarget = await toggle.evaluate((button) => {
+        const bounds = button.getBoundingClientRect();
+        const target = document.elementFromPoint(
+          bounds.left + bounds.width / 2,
+          bounds.top + bounds.height / 2,
+        );
+        return target === button || button.contains(target);
+      });
+      expect(isHitTarget).toBe(true);
+    }
   }
 }
