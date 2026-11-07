@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Branch to refresh (feature by default)
+        description: Feature or fix/* branch containing reviewed UI
         required: true
         default: feature
         type: string
@@ -43,7 +43,7 @@ jobs:
           SOURCE_REF: ${ inputs.source_ref }
         shell: bash
         run: |
-          if [[ ! "$SOURCE_REF" =~ ^(feature|dev|main|fix/[a-z0-9][a-z0-9._-]*)$ ]]; then
+          if [[ ! "$SOURCE_REF" =~ ^(feature|fix/[a-z0-9][a-z0-9._-]*)$ ]]; then
             echo "::error::Branch is not allowed by the FitVibe branch policy"
             exit 1
           fi
