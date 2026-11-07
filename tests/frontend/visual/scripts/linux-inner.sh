@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-# Runs inside mcr.microsoft.com/playwright:v1.64.0-jammy (invoked by update-linux-baselines.mjs).
+# Isolated Linux Playwright runner for the repository visual suite.
 set -euo pipefail
 
-mkdir -p /tmp/run/tests/frontend
+mkdir -p /tmp/run/tests/frontend /tmp/run/tests/qa /tmp/run/design
 cp -a /work/tests/frontend/visual /tmp/run/tests/frontend/visual
+cp /work/tests/qa/assert-computed-typography.cjs /tmp/run/tests/qa/
+cp /work/design/typography.schema.json /tmp/run/design/
 cd /tmp/run
-printf '%s\n' '{"type":"module","devDependencies":{"@playwright/test":"1.64.0"}}' > package.json
-npm install --silent
+printf '%s\n' '{"type":"module","devDependencies":{"@playwright/test":"1.64.1"}}' > package.json
+npm install --silent --no-audit --no-fund
 npx playwright test --config tests/frontend/visual/config/playwright.config.ts \
-  ${UPDATE_SNAPSHOTS:+--update-snapshots="$UPDATE_SNAPSHOTS"} "$@"
-if [ "${UPDATE_SNAPSHOTS:-}" != "none" ]; then
+  --update-snapshots="${UPDATE_SNAPSHOTS:-none}" "$@"
+
+if [ "${UPDATE_SNAPSHOTS:-none}" != "none" ]; then
   python3 - <<'PY'
 from pathlib import Path
 import shutil
@@ -18,6 +21,5 @@ for src in root.rglob("*-linux.png"):
     dest = Path("/work") / src
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dest)
-    print(f"copied {src}")
 PY
 fi
