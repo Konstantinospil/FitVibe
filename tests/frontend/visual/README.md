@@ -33,23 +33,27 @@ pnpm test:visual
 pnpm test:visual:update
 ```
 
-### Updating Baselines in GitHub
+### Refreshing baselines in GitHub Actions
 
-A manual GitHub Actions workflow, **Update Visual Baselines**, provides the same operation without requiring local Docker:
+Use **Actions → Refresh Visual Linux Baselines → Run workflow**. The workflow must be present on `main` for GitHub to show the manual dispatch control. Select the branch that contains the refresh implementation, set `source_ref` to that same branch (normally `feature` after promotion), and choose a scope:
 
-1. Open **Actions → Update Visual Baselines → Run workflow**.
-2. Set `source_ref` to the branch containing the intentional UI changes (normally `dev` or a feature branch).
-3. Keep `target_branch` as `dev` for normal development.
-4. The workflow regenerates and verifies the Linux baselines, rejects changes outside `*-linux.png` snapshot paths, pushes a dedicated branch, and opens a **draft** PR.
-5. Review the changed baseline images in that PR.
-6. If the screenshots are correct, mark the PR **Ready for review**. This triggers the normal CI workflow.
-7. Merge only after CI passes and the visual changes have been explicitly approved.
+- `all` (default): every active visual specification, including structural tests.
+- `auth`, `legal`, `home`, or `navbar`: update snapshots owned by the corresponding specification; still verify **all** visual and structural tests.
 
-The updater workflow is intentionally installed on the repository default branch so that GitHub exposes the `workflow_dispatch` control. It may still generate baselines from another `source_ref`.
+The workflow uses the pinned Linux Playwright environment to regenerate changed snapshots, verifies the entire active VRT suite with `--update-snapshots=none`, and rejects every working-tree change outside an active selected spec's `*-linux.png` snapshots. A rerun with no changes succeeds without writing a commit. If snapshots changed, it checks that the source branch still points to the tested commit and opens a **draft PR** from an allowed `fix/visual-baselines-<run-id>` branch into the selected source branch. Nothing is automatically merged or committed to the source branch. Check the generated PNGs and report before approving.
 
-The comparison and update commands both run `mcr.microsoft.com/playwright:v1.64.0-jammy`, the same image as the `visual_regression` CI job. The update command rewrites `*-linux.png` files; commit them only after reviewing and approving the visual changes.
+The workflow uses `GITHUB_TOKEN` to create the PR. Repository settings must allow Actions to create PRs. **GitHub does not automatically trigger ordinary CI on PRs created with the default `GITHUB_TOKEN`**; a maintainer must ensure the review branch receives the required CI validation before merging (for example by a permitted human-triggered branch push). Do not infer green CI from a successful refresh job.
 
-**Important**: Baseline updates require design approval and should include before/after screenshots in the PR description.
+The same snapshot threshold (0.2% maximum differing pixels) is used for normal CI comparison and post-refresh verification. The standard CI `visual_regression` job remains advisory under issue #558 pending demonstrated stability.
+
+### Local Linux runner
+
+```bash
+pnpm test:visual         # Compare; no snapshot rewrites
+pnpm test:visual:update  # Regenerate changed Linux baselines
+```
+
+The local runner builds `build:visual` and uses a Linux Playwright container. Ensure port 4173 is free before invoking the command: the wrapper currently reuses a server already bound to that port. The isolated container receives the typography assertion and design schema used by the active visual suite. Review and commit intentional snapshot changes through the normal PR process.
 
 ## Test Structure
 
