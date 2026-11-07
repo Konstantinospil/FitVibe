@@ -76,6 +76,7 @@ test("publish validated baseline changes via isolated branch and draft PR", asyn
     "/git/commits": { sha: "commit1" },
     "/git/refs": {},
     "/pulls": { html_url: "https://github.com/Example/FitVibe/pull/123" },
+    "/actions/workflows/ci.yml/dispatches": {},
   };
   const result = await publish({
     ...publishArgs,
@@ -90,6 +91,9 @@ test("publish validated baseline changes via isolated branch and draft PR", asyn
   assert.equal(calls[5].body.ref, "refs/heads/fix/visual-baselines-12345");
   assert.equal(calls[6].body.base, "feature");
   assert.equal(calls[6].body.draft, true);
+  assert.equal(calls[7].path, "/actions/workflows/ci.yml/dispatches");
+  assert.equal(calls[7].body.ref, "fix/visual-baselines-12345");
+  assert.equal(result.ci, "dispatched");
 });
 
 test("publishing errors propagate without claiming success", async () => {
