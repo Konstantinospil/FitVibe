@@ -57,14 +57,17 @@ Every pull request should include:
    pnpm dev
    ```
 2. Apply code changes following the shared TypeScript configuration (`tsconfig.base.json`) and lint rules.
-3. Run local quality gates before submitting:
+3. Format changed files with the repository-pinned Prettier **before** linting; do not rely on the pre-commit hook when editing through an API or connector. For example, replace `<changed-file.ts>` with an actual changed path:
    ```bash
-   pnpm lint
-   pnpm test
+   pnpm exec prettier --write <changed-file.ts>
+   pnpm exec prettier --check <changed-file.ts>
+   pnpm lint:check
    pnpm typecheck
+   pnpm test
    ```
-4. Format changed files with your editor's Prettier integration or `pnpm lint --fix`.
-5. Update documentation, changelogs, or configuration affected by your change.
+4. Treat `prettier/prettier` failures as a missing formatting pass; rerun the installed formatter and then lint without `--fix`. Apply checks to all changed files, including documentation or configuration, and do not report success without executed checks.
+5. For backend changes, follow the [backend engineering skill](../.agents/skills/fitvibe-backend-engineering/SKILL.md), including its GitHub API editing workflow.
+6. Update documentation, changelogs, or configuration affected by your change.
 
 ---
 
