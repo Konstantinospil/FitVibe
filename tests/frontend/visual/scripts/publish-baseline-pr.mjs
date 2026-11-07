@@ -81,7 +81,11 @@ export async function publish({ files, testedSha, sourceBranch, runId, repositor
       ].join("\n"),
     }),
   });
-  return { status: "created", url: pr.html_url, commit: commit.sha, branch: head };
+  await request("/actions/workflows/ci.yml/dispatches", {
+    method: "POST",
+    body: JSON.stringify({ ref: head }),
+  });
+  return { status: "created", url: pr.html_url, commit: commit.sha, branch: head, ci: "dispatched" };
 }
 
 async function main() {
@@ -106,6 +110,7 @@ async function main() {
       },
     });
     if (!response.ok) throw new Error((options.method ?? "GET") + " " + path + ": HTTP " + response.status + " " + await response.text());
+    if (response.status === 204) return {};
     return response.json();
   };
   const result = await publish({
