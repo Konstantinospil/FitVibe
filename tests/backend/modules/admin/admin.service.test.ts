@@ -42,6 +42,7 @@ describe("Admin Service", () => {
           status: "pending",
           reportedAt: new Date().toISOString(),
           contentAuthor: "testuser",
+          contentAuthorId: "user-123",
         },
       ];
 
@@ -62,6 +63,7 @@ describe("Admin Service", () => {
       status: "pending",
       reportedAt: new Date().toISOString(),
       contentAuthor: "testuser",
+          contentAuthorId: "user-123",
     };
 
     it("should dismiss a report", async () => {
@@ -105,6 +107,7 @@ describe("Admin Service", () => {
         status: "pending",
         reportedAt: new Date().toISOString(),
         contentAuthor: "testuser",
+          contentAuthorId: "user-123",
       };
 
       const input: ModerateReportInput = {
@@ -133,26 +136,24 @@ describe("Admin Service", () => {
       const mockFeedItem = {
         ...mockReport,
         contentAuthor: "testuser",
+          contentAuthorId: "user-123",
       };
 
       mockAdminRepo.getFeedReportById.mockResolvedValue(mockFeedItem);
-      mockAdminRepo.searchUsers.mockResolvedValue([
-        {
-          id: "user-123",
-          username: "testuser",
-          displayName: "Test User",
-          email: "test@example.com",
-          status: "active",
-          role: "athlete",
-        },
-      ]);
+      mockAdminRepo.getUserForAdmin.mockResolvedValue({
+        id: "user-123",
+        username: "testuser",
+        roleCode: "athlete",
+        status: "active",
+      } as UserSearchResult);
       mockAdminRepo.updateUserStatus.mockResolvedValue(undefined);
       mockAdminRepo.hideFeedItem.mockResolvedValue(undefined);
       mockAdminRepo.updateReportStatus.mockResolvedValue(undefined);
 
       await adminService.moderateReport(input);
 
-      expect(mockAdminRepo.searchUsers).toHaveBeenCalledWith({ query: "testuser", limit: 1 });
+      expect(mockAdminRepo.searchUsers).not.toHaveBeenCalled();
+      expect(mockAdminRepo.getUserForAdmin).toHaveBeenCalledWith("user-123");
       expect(mockAdminRepo.updateUserStatus).toHaveBeenCalledWith("user-123", "banned");
       expect(mockAdminRepo.hideFeedItem).toHaveBeenCalledWith(feedItemId);
       expect(mockAdminRepo.updateReportStatus).toHaveBeenCalledWith(reportId, "reviewed", adminId);
@@ -167,6 +168,7 @@ describe("Admin Service", () => {
         status: "pending",
         reportedAt: new Date().toISOString(),
         contentAuthor: "testuser",
+          contentAuthorId: "user-123",
       };
 
       const input: ModerateReportInput = {
@@ -176,16 +178,12 @@ describe("Admin Service", () => {
       };
 
       mockAdminRepo.getFeedReportById.mockResolvedValue(commentReport);
-      mockAdminRepo.searchUsers.mockResolvedValue([
-        {
-          id: "user-123",
-          username: "testuser",
-          displayName: "Test User",
-          email: "test@example.com",
-          status: "active",
-          role: "athlete",
-        },
-      ]);
+      mockAdminRepo.getUserForAdmin.mockResolvedValue({
+        id: "user-123",
+        username: "testuser",
+        roleCode: "athlete",
+        status: "active",
+      } as UserSearchResult);
       mockAdminRepo.updateUserStatus.mockResolvedValue(undefined);
       mockAdminRepo.hideComment.mockResolvedValue(undefined);
       mockAdminRepo.updateReportStatus.mockResolvedValue(undefined);
@@ -194,6 +192,46 @@ describe("Admin Service", () => {
 
       expect(mockAdminRepo.hideComment).toHaveBeenCalledWith(commentId);
       expect(mockAdminRepo.updateReportStatus).toHaveBeenCalledWith(reportId, "reviewed", adminId);
+    });
+
+    it.each(["admin", "superadmin"])("does not ban a %s report author", async (roleCode) => {
+      mockAdminRepo.getFeedReportById.mockResolvedValue(mockReport);
+      mockAdminRepo.getUserForAdmin.mockResolvedValue({
+        id: "user-123",
+        roleCode,
+      } as UserSearchResult);
+
+      await expect(adminService.moderateReport({ reportId, action: "ban", adminId }))
+        .rejects.toMatchObject({ status: 403, code: "CANNOT_MODIFY_ADMIN" });
+      expect(mockAdminRepo.updateUserStatus).not.toHaveBeenCalled();
+      expect(mockAdminRepo.hideFeedItem).not.toHaveBeenCalled();
+      expect(mockAdminRepo.updateReportStatus).not.toHaveBeenCalled();
+    });
+
+    it("does not ban the moderator when they authored the report content", async () => {
+      mockAdminRepo.getFeedReportById.mockResolvedValue({
+        ...mockReport,
+        contentAuthorId: adminId,
+      });
+      mockAdminRepo.getUserForAdmin.mockResolvedValue({
+        id: adminId,
+        roleCode: "athlete",
+      } as UserSearchResult);
+
+      await expect(adminService.moderateReport({ reportId, action: "ban", adminId }))
+        .rejects.toMatchObject({ status: 400, code: "CANNOT_MODIFY_SELF" });
+      expect(mockAdminRepo.updateUserStatus).not.toHaveBeenCalled();
+    });
+
+    it("does not resolve an author through an ambiguous alias search", async () => {
+      mockAdminRepo.getFeedReportById.mockResolvedValue({
+        ...mockReport,
+        contentAuthorId: null,
+      });
+      await expect(adminService.moderateReport({ reportId, action: "ban", adminId }))
+        .rejects.toMatchObject({ status: 404, code: "REPORT_AUTHOR_NOT_FOUND" });
+      expect(mockAdminRepo.searchUsers).not.toHaveBeenCalled();
+      expect(mockAdminRepo.updateUserStatus).not.toHaveBeenCalled();
     });
 
     it("should throw error for invalid moderation action", async () => {
@@ -355,6 +393,22 @@ describe("Admin Service", () => {
       await expect(adminService.performUserAction(input)).rejects.toThrow(
         "Cannot modify another administrator account",
       );
+    });
+
+    it.each(["admin", "superadmin"])("rejects every management action against a %s", async (roleCode) => {
+      mockAdminRepo.getUserForAdmin.mockResolvedValue({
+        ...mockUser,
+        roleCode,
+      } as UserSearchResult);
+      for (const action of ["suspend", "ban", "activate", "delete"] as const) {
+        await expect(adminService.performUserAction({
+          userId: "user-123",
+          action,
+          adminId,
+        })).rejects.toMatchObject({ status: 403, code: "CANNOT_MODIFY_ADMIN" });
+      }
+      expect(mockAdminRepo.updateUserStatus).not.toHaveBeenCalled();
+      expect(mockAdminRepo.softDeleteUser).not.toHaveBeenCalled();
     });
 
     it("should ban user", async () => {
