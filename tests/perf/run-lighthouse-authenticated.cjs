@@ -16,6 +16,7 @@ const {
   ensureSeededOnboardingComplete,
   ensureEssentialCookieConsent,
   waitForApp,
+  AUTH_FLAG_KEY,
 } = require("../frontend/e2e/server-helpers.cjs");
 
 const origin = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4180";
@@ -94,7 +95,7 @@ function installSessionBootstrap(browserEndpoint) {
         if (targetInfo.type === "page") {
           await send("Page.enable", {}, sessionId);
           await send("Page.addScriptToEvaluateOnNewDocument", {
-            source: `try {\n  if (location.origin === ${JSON.stringify(origin)}) {\n    sessionStorage.setItem("fitvibe:auth", "1");\n  }\n} catch { /* Storage is unavailable in some internal frames. */ }`,
+            source: `try {\n  if (location.origin === ${JSON.stringify(origin)}) {\n    sessionStorage.setItem(${JSON.stringify(AUTH_FLAG_KEY)}, "1");\n  }\n} catch { /* Storage is unavailable in some internal frames. */ }`,
           }, sessionId);
         }
       } catch (error) {
@@ -147,7 +148,7 @@ async function prepareAthlete(browser) {
       throw new Error("Lighthouse athlete's server-side session was not verified");
     }
 
-    await page.addInitScript(() => sessionStorage.setItem("fitvibe:auth", "1"));
+    await page.addInitScript((key) => sessionStorage.setItem(key, "1"), AUTH_FLAG_KEY);
     for (const pathName of athleteRoutes) {
       const route = { mode: "athlete", path: pathName };
       await page.goto(auditUrl(route, origin), { waitUntil: "domcontentloaded" });
