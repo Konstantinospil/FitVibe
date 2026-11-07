@@ -227,6 +227,9 @@ jobs:
             tests/qa/dependency-governance.test.cjs \
             tests/qa/report-override-impact.test.cjs
 
+      - name: Verify visual baseline workflow contract
+        run: node --test tests/qa/visual-baseline-workflow.test.mjs
+
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
 
