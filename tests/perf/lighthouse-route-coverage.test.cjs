@@ -24,7 +24,7 @@ test("Every declared frontend route has an audited or explicitly conditional sce
   ]) {
     const source = fs.readFileSync(path.join(root, file), "utf8");
     const paths = [...source.matchAll(/<Route\b[^>]*\bpath="([^"]+)"/g)]
-      .map((match) => match[1]).filter((value) => value !== "*");
+      .map((match) => match[1]).filter((value) => value !== "*" && !(mode === "athlete" && value === "/login"));
     paths.push("/");
     for (const segment of paths) {
       const pathname = segment === "/" ? segment : "/" + segment.replace(/^\//, "");
@@ -35,7 +35,13 @@ test("Every declared frontend route has an audited or explicitly conditional sce
 });
 
 test("Lighthouse login baseline remains a blocking three-run audit", () => {
-  assert.ok(config.ci.collect.url.includes("http://127.0.0.1:4173/login"));
+  assert.deepEqual(
+    [...config.ci.collect.url].sort(),
+    [...new Set(require("./lighthouse-routes.cjs").publicRoutes)].map(
+      (route) => new URL(route, "http://127.0.0.1:4173").toString(),
+    ).sort(),
+    "Each ordinary public page must be audited; do not silently replace pages with login",
+  );
   assert.equal(config.ci.collect.numberOfRuns, 3);
 });
 
