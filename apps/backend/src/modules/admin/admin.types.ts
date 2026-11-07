@@ -18,6 +18,7 @@ export interface FeedReport {
   resolvedBy: string | null;
   contentPreview: string | null;
   contentAuthor: string | null;
+  contentAuthorId?: string | null;
 }
 
 export interface UserSearchResult {
