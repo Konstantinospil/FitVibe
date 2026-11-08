@@ -11,6 +11,8 @@ const { chromium } = require("@playwright/test");
 const { athleteRoutes, auditUrl } = require("./lighthouse-routes.cjs");
 const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
 const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
+const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
+const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
 const {
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
@@ -153,16 +155,15 @@ async function prepareAthlete(browser) {
       const route = { mode: "athlete", path: pathName };
       await page.goto(auditUrl(route, origin), { waitUntil: "domcontentloaded" });
       await waitForApp(page);
-      await page.locator("h1").first().waitFor({ state: "visible", timeout: 25000 });
+      await page.locator(getPageReadySelector(pathName)).waitFor({
+        state: "visible", timeout: 25000,
+      });
       const final = new URL(page.url());
       if (final.origin !== origin || final.pathname !== pathName) {
         throw new Error("E2E preflight did not render " + pathName + " (got " + page.url() + ")");
       }
-      if (pathName === "/" || ["/calendar", "/library", "/dashboard", "/settings"].includes(pathName)) {
-        const surface = pathName === "/" ? "home" : pathName.slice(1);
-        await page.locator('[data-app-surface="' + surface + '"]').waitFor({
-          state: "visible", timeout: 25000,
-        });
+      if (pathName === "/calendar") {
+        await page.getByRole("grid").waitFor({ state: "visible", timeout: 25000 });
       }
     }
     // Verify the session after real navigation, not only after registration.
@@ -176,79 +177,124 @@ async function prepareAthlete(browser) {
 }
 
 async function main() {
-  if (!process.env.PLAYWRIGHT_BASE_URL) {
-    throw new Error("PLAYWRIGHT_BASE_URL is mandatory to select the real E2E ingress");
-  }
-  if (new URL(origin).hostname !== "127.0.0.1") {
-    throw new Error("Authenticated Lighthouse may only run against isolated loopback ingress");
-  }
-  if (!Number.isInteger(runCount) || runCount < 3) throw new Error("Expected at least three Lighthouse runs");
-  const port = await findAvailablePort();
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "fitvibe-lighthouse-"));
-  const chrome = spawn(chromium.executablePath(), [
-    "--headless=new",
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-extensions",
-    "--disable-gpu",
-    "--remote-debugging-address=127.0.0.1",
-    "--remote-allow-origins=*",
-    "--remote-debugging-port=" + port,
-    "--user-data-dir=" + profile,
-    "about:blank",
-  ], { stdio: "ignore" });
+  // Even if browser provisioning or a later route fails, leave an explicit
+  // incomplete report rather than an empty upload directory.
+  fs.mkdirSync(auditDir, { recursive: true });
+  const results = [];
+  const technicalErrors = [];
+  let budgetErrors = [];
+  let chrome;
   let browser;
   let bootstrap;
+  let profile;
+
   try {
+    if (!process.env.PLAYWRIGHT_BASE_URL) {
+      throw new Error("PLAYWRIGHT_BASE_URL is mandatory to select the real E2E ingress");
+    }
+    if (new URL(origin).hostname !== "127.0.0.1") {
+      throw new Error("Authenticated Lighthouse may only run against isolated loopback ingress");
+    }
+    if (!Number.isInteger(runCount) || runCount < 3) {
+      throw new Error("Expected at least three Lighthouse runs");
+    }
+
+    const port = await findAvailablePort();
+    profile = fs.mkdtempSync(path.join(os.tmpdir(), "fitvibe-lighthouse-"));
+    chrome = spawn(chromium.executablePath(), [
+      "--headless=new",
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-extensions",
+      "--disable-gpu",
+      "--remote-debugging-address=127.0.0.1",
+      "--remote-allow-origins=*",
+      "--remote-debugging-port=" + port,
+      "--user-data-dir=" + profile,
+      "about:blank",
+    ], { stdio: "ignore" });
+
     const endpoint = await connectDebugger(port, chrome);
     browser = await chromium.connectOverCDP(endpoint);
     await prepareAthlete(browser);
     bootstrap = await installSessionBootstrap(endpoint);
     const { default: lighthouse } = await import("lighthouse");
-    fs.mkdirSync(auditDir, { recursive: true });
-    const auditResults = [];
+
     for (const pathName of athleteRoutes) {
       const route = { mode: "athlete", path: pathName };
-      const reports = [];
       for (let run = 1; run <= runCount; run += 1) {
         const url = auditUrl(route, origin);
-        const result = await lighthouse(url, {
-          port,
-          logLevel: "error",
-          disableStorageReset: true,
-          throttlingMethod: "simulate",
-          maxWaitForFcp: 30000,
-          maxWaitForLoad: 45000,
-        });
-        if (!result?.lhr) throw new Error("Lighthouse did not return a report for " + url);
-        verifyRouteIdentity(route, result.lhr, origin);
-        bootstrap.assertHealthy();
-        const filename = "lhr-" + (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
-          "-" + run + ".json";
-        fs.writeFileSync(path.join(auditDir, filename), JSON.stringify(result.lhr));
-        reports.push(result.lhr);
+        try {
+          const output = await lighthouse(url, {
+            port,
+            logLevel: "error",
+            disableStorageReset: true,
+            throttlingMethod: "simulate",
+            maxWaitForFcp: 30000,
+            maxWaitForLoad: 45000,
+          });
+          if (!output?.lhr) throw new Error("Lighthouse returned no report");
+          const report = output.lhr;
+          const filename = "lhr-" +
+            (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
+            "-" + run + ".json";
+          // Save the raw result first: even a redirect or runtime error can be
+          // diagnosed from its original Lighthouse evidence.
+          fs.writeFileSync(path.join(auditDir, filename), JSON.stringify(report));
+          let valid = false;
+          try {
+            verifyRouteIdentity(route, report, origin);
+            bootstrap.assertHealthy();
+            valid = true;
+          } catch (error) {
+            technicalErrors.push(pathName + " run " + run + ": " + error.message);
+          }
+          results.push({ path: pathName, report, valid });
+        } catch (error) {
+          technicalErrors.push(pathName + " run " + run + ": " + error.message);
+        }
       }
-      auditResults.push(...reports);
-      console.log("Authenticated Lighthouse completed " + pathName + " (" + runCount + " runs)");
+      console.log("Authenticated Lighthouse collected " +
+        results.filter((entry) => entry.path === pathName && entry.valid).length +
+        "/" + runCount + " valid runs for " + pathName);
     }
-    const failures = assertWorstRunBudgets(auditResults, athleteRoutes, origin, config.ci.assert.assertions, runCount);
-    fs.writeFileSync(path.join(auditDir, "summary.json"), JSON.stringify({
-      auditedPaths: athleteRoutes,
-      runsPerRoute: runCount,
-      failures,
-    }, null, 2));
-    if (failures.length) throw new Error("Authenticated Lighthouse budgets failed:\n" + failures.join("\n"));
-    console.log("Authenticated Lighthouse passed: " + athleteRoutes.length + " routes");
+  } catch (error) {
+    technicalErrors.push("Authenticated Lighthouse setup: " + error.message);
   } finally {
+    // A budget failure must not discard LHR files or prevent report creation.
+    // Evaluate only verified page identities, never redirected login screens.
+    const validReports = results.filter((entry) => entry.valid).map((entry) => entry.report);
+    budgetErrors = assertWorstRunBudgets(
+      validReports, athleteRoutes, origin, config.ci.assert.assertions, runCount,
+    );
+    const summary = writePerformanceReport(auditDir, {
+      label: "Authenticated athlete routes",
+      paths: athleteRoutes,
+      results,
+      expectedRuns: runCount,
+      technicalErrors,
+      budgetErrors,
+    });
+    console.log("Authenticated Lighthouse report: " + summary.measuredPages +
+      "/" + summary.expectedPages + " complete pages. See " + auditDir + "/summary.md");
+    if (technicalErrors.length) console.error(technicalErrors.join("\n"));
+    if (budgetErrors.length) console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
+    if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
     bootstrap?.close();
-    await browser?.close().catch(() => undefined);
-    chrome.kill("SIGTERM");
-    try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* OS cleans isolated temp files */ }
+    if (browser) await browser.close().catch(() => undefined);
+    chrome?.kill("SIGTERM");
+    if (profile) {
+      try {
+        fs.rmSync(profile, { recursive: true, force: true });
+      } catch {
+        // OS cleans isolated Chrome temporary profiles.
+      }
+    }
   }
 }
 
 main().catch((error) => {
-  console.error(error.message);
+  console.error(error);
   process.exitCode = 1;
 });

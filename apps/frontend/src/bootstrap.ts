@@ -8,6 +8,8 @@ const PUBLIC_ROUTES = new Set<string>([
   "/verify",
   "/terms",
   "/privacy",
+  "/cookie",
+  "/contact",
   "/terms-reacceptance",
 ]);
 const AUTH_STORAGE_KEY = "fitvibe:auth";

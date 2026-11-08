@@ -2692,7 +2692,7 @@ jobs:
           name: lighthouse-authenticated-${{ github.run_id }}
           path: tests/perf/lhci-output/authenticated
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Stop E2E runtime
         if: always()

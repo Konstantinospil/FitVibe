@@ -456,6 +456,23 @@
   ],
   "suites": [
     {
+      "name": "lighthouse-performance-report-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-performance-report\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": ["lighthouse"],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-performance-report.cjs"
+      ],
+      "fixture_dependencies": ["Synthetic Lighthouse report values"],
+      "isolation_model": "node:test filesystem-isolated report contract",
+      "expected_artifacts": ["Lighthouse CI contract test log"],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-authenticated-score-regression",
       "patterns": [
         "^tests/perf/lighthouse-score-contract\\.test\\.cjs$"

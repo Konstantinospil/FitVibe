@@ -81,3 +81,21 @@ test("Wrong or redirected Lighthouse pages cannot pass as the requested route", 
     ...pageIdentity,
   }));
 });
+
+test("Browser bootstrap allows every ordinary unauthenticated public audit route", () => {
+  const source = fs.readFileSync(path.join(root, "apps/frontend/src/bootstrap.ts"), "utf8");
+  const list = source.match(/const PUBLIC_ROUTES = new Set<string>\(\[([\s\S]*?)\]\)/);
+  assert.ok(list, "Expected the canonical bootstrap public route allow-list");
+  const allowed = new Set([...list[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]));
+  const { publicRoutes } = require("./lighthouse-routes.cjs");
+  for (const route of publicRoutes) {
+    assert.ok(allowed.has(route), "Bootstrap redirects declared public route to login: " + route);
+  }
+});
+
+test("Authenticated Calendar preflight uses the real Calendar surface marker", () => {
+  const selector = require("./lighthouse-page-readiness.cjs").getPageReadySelector("/calendar");
+  assert.equal(selector, "main.calendar-surface[aria-labelledby='calendar-title']");
+  const source = fs.readFileSync(path.join(root, "apps/frontend/src/pages/Calendar.tsx"), "utf8");
+  assert.match(source, /<main className="training-page calendar-surface" aria-labelledby="calendar-title">/);
+});
