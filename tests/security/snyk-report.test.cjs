@@ -34,7 +34,7 @@ test("Snyk Code reports findings and never calls an absent SARIF clean", () => {
   assert.equal(summarizeCode({ runs: [{ results: [] }] }, "success").status, "clean");
   assert.equal(summarizeCode(null, "success").status, "unavailable");
   assert.equal(summarizeCode({ runs: [{}] }, "failure").status, "unavailable");
-  assert.equal(summarizeCode(null, "skipped").status, "skipped").status, "skipped");
+  assert.equal(summarizeCode(null, "skipped").status, "skipped");
 });
 
 test("metadata artifact is always created without a token or reports", () => {

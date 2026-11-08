@@ -456,6 +456,31 @@
   ],
   "suites": [
     {
+      "name": "pre-commit-contract",
+      "patterns": [
+        "^tests/qa/pre-commit-contract\\.test\\.cjs$"
+      ],
+      "owner": "Developer tooling / QA",
+      "ci_job_ids": [
+        "quality"
+      ],
+      "contract_sources": [
+        ".husky/pre-commit",
+        ".lintstagedrc.js",
+        ".github/workflows/ci.yml"
+      ],
+      "fixture_dependencies": [
+        "isolated nested Git repository",
+        "repository-pinned ESLint, Prettier and lint-staged"
+      ],
+      "isolation_model": "node:test; disposable nested Git fixture; no mutation of the checkout index",
+      "expected_artifacts": [
+        "Quality Gates CI test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "ssr-diagnostics-regression",
       "patterns": [
         "^tests/perf/ssr-diagnostics\\.test\\.cjs$"

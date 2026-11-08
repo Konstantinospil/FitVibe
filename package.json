@@ -45,7 +45,7 @@
     "retention:run": "pnpm --filter @fitvibe/backend run db:retention",
     "secrets:rotate": "pnpm --filter @fitvibe/backend run db:rotate-secrets",
     "clean": "rimraf node_modules .turbo && pnpm install",
-    "prepare": "husky install",
+    "prepare": "husky",
     "fmt": "prettier \"**/*.{ts,tsx,js,jsx,cjs,mjs,json,md,yml,yaml}\" --write",
     "test:visual:update:linux": "node tests/frontend/visual/scripts/update-linux-baselines.mjs --update",
     "architecture:backend": "node tests/qa/check-architecture-hardcoding.mjs backend",

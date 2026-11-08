@@ -71,3 +71,25 @@ test("Snyk scan reports remain downloadable on failures and skipped scans", () =
   assert.ok(security.includes("run: node --test tests/security/snyk-report.test.cjs"));
   assert.ok(security.includes("run: node scripts/security/summarize-snyk-reports.cjs"));
 });
+
+function assertPinnedRetryingK6Installer(ci) {
+  const performance = ci.slice(ci.indexOf("\n  performance:"), ci.indexOf("\n  pre_main_amd64_smoke:"));
+  const install = performance.slice(performance.indexOf("      - name: Install k6"), performance.indexOf("      - name: Wait for PostgreSQL"));
+  assert.match(install, /K6_VERSION=2\.3\.0/);
+  assert.match(install, /K6_SHA256=[a-f0-9]{64}/);
+  assert.match(install, /--retry 8 --retry-all-errors --retry-delay 5/);
+  assert.match(install, /--connect-timeout 15 --max-time 120/);
+  assert.match(install, /sha256sum --check --status/);
+  assert.match(install, /k6 version/);
+  assert.doesNotMatch(install, /continue-on-error:/);
+  assert.match(performance, /run: k6 run --summary-export=tests\/perf\/k6-summary\.json tests\/perf\/k6-smoke\.js/);
+  assert.match(performance, /node tests\/perf\/assert-budgets\.cjs tests\/perf\/k6-summary\.json/);
+}
+
+test("k6 installation retries transient failures without bypassing integrity or performance gates", () => {
+  const ci = read(".github/workflows/ci.yml");
+  assertPinnedRetryingK6Installer(ci);
+  assert.throws(() => assertPinnedRetryingK6Installer(ci.replace("--retry-all-errors", "--retry-connrefused")));
+  assert.throws(() => assertPinnedRetryingK6Installer(ci.replace("sha256sum --check --status", "true")));
+  assert.throws(() => assertPinnedRetryingK6Installer(ci.replace("k6 run --summary-export", "echo k6 run --summary-export")));
+});
