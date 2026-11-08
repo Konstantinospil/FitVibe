@@ -171,6 +171,8 @@ async function verifyBrowserContentAndConsent(origin) {
     }
     return observations;
   } finally {
+    fs.mkdirSync(outputDir, { recursive: true });
+    fs.writeFileSync(path.join(outputDir, "content-readiness.json"), JSON.stringify(observations, null, 2) + "\n");
     await browser.close();
   }
 }
@@ -205,7 +207,7 @@ async function main() {
         " returned HTTP " + response.status);
     }
     const contentEvidence = await verifyBrowserContentAndConsent(origin);
-    fs.writeFileSync(path.join(outputDir, "content-readiness.json"), JSON.stringify(contentEvidence, null, 2) + "\\n");
+    fs.writeFileSync(path.join(outputDir, "content-readiness.json"), JSON.stringify(contentEvidence, null, 2) + "\n");
     const runtimeConfig = path.join(outputDir, "lighthouserc.runtime.json");
     fs.writeFileSync(runtimeConfig, JSON.stringify(config, null, 2) + "\n");
     fs.rmSync(collectionDir, { recursive: true, force: true });
