@@ -94,11 +94,13 @@ function validateMeasurement(report, {
     (item) => item.type === "node",
   );
   const lcpText = lcp?.nodeLabel?.trim() ?? "";
+  const lcpSelector = lcp?.selector ?? "";
+  const consentOverlayLcp = /(?:^|\\s|>)\\s*(?:div\\.)?cookie-consent-backdrop\\b|cookie-consent-dialog\\b/i.test(lcpSelector);
   if (/^(?:error|common\.error)$/i.test(lcpText)) {
     errors.push("LCP measures error instead of content");
   }
   if ((mode === "athlete" || scenario === "consented") &&
-      /choose which cookies you want to allow/i.test(lcpText)) {
+      (consentOverlayLcp || /choose which cookies you want to allow/i.test(lcpText))) {
     errors.push("LCP measures unexpected cookie consent overlay");
   }
 
@@ -112,7 +114,7 @@ function validateMeasurement(report, {
       errors.push("Audited page displayed loading/error fallback");
     }
   }
-  return { errors, apiRequests: api.length, lcpElement: lcpText || null };
+  return { errors, apiRequests: api.length, lcpElement: lcpText || null, lcpSelector: lcpSelector || null };
 }
 
 module.exports = { REQUIRED_PUBLIC_API, validateMeasurement, scriptTransfer, networkRequests };
