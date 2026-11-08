@@ -503,6 +503,29 @@
       "status": "active"
     },
     {
+      "name": "lighthouse-same-navigation-observation-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-observe-navigation\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-observe-navigation.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Playwright context and Lighthouse-target page events"
+      ],
+      "isolation_model": "node:test deterministic browser-target observation",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-measurement-validity-regression",
       "patterns": [
         "^tests/perf/lighthouse-measurement-validity\\.test\\.cjs$"
