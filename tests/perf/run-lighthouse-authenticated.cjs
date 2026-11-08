@@ -188,6 +188,8 @@ async function main() {
   let browser;
   let bootstrap;
   let profile;
+  let cachePage;
+  let cacheSession;
 
   try {
     if (!process.env.PLAYWRIGHT_BASE_URL) {
@@ -219,6 +221,12 @@ async function main() {
     const endpoint = await connectDebugger(port, chrome);
     browser = await chromium.connectOverCDP(endpoint);
     await prepareAthlete(browser);
+    // Preserve the server-verified HttpOnly session and consent cookies, but
+    // prevent cached application scripts from masquerading as a 0-byte audit.
+    const auditContext = browser.contexts()[0];
+    cachePage = await auditContext.newPage();
+    cacheSession = await auditContext.newCDPSession(cachePage);
+    await cacheSession.send("Network.enable");
     bootstrap = await installSessionBootstrap(endpoint);
     const { default: lighthouse } = await import("lighthouse");
 
@@ -227,6 +235,8 @@ async function main() {
       for (let run = 1; run <= runCount; run += 1) {
         const url = auditUrl(route, origin);
         try {
+          // Clear resource cache only. Do not clear cookies/storage or mock APIs.
+          await cacheSession.send("Network.clearBrowserCache");
           const output = await lighthouse(url, {
             port,
             logLevel: "error",
@@ -292,6 +302,8 @@ async function main() {
     if (budgetErrors.length) console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
     if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
     bootstrap?.close();
+    if (cacheSession) await cacheSession.detach().catch(() => undefined);
+    if (cachePage) await cachePage.close().catch(() => undefined);
     if (browser) await browser.close().catch(() => undefined);
     chrome?.kill("SIGTERM");
     if (profile) {
