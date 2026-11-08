@@ -526,6 +526,30 @@
       "status": "active"
     },
     {
+      "name": "lighthouse-real-public-scenario-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-public-scenarios\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-public-budgets.cjs",
+        "tests/perf/run-lighthouse-public-real.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic three-run first-visit and persisted-consent Lighthouse reports"
+      ],
+      "isolation_model": "node:test deterministic worst-of-three and coverage regression",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-measurement-validity-regression",
       "patterns": [
         "^tests/perf/lighthouse-measurement-validity\\.test\\.cjs$"
