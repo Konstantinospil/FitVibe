@@ -95,7 +95,8 @@ function validateMeasurement(report, {
   );
   const lcpText = lcp?.nodeLabel?.trim() ?? "";
   const lcpSelector = lcp?.selector ?? "";
-  const consentOverlayLcp = /(?:^|\\s|>)\\s*(?:div\\.)?cookie-consent-backdrop\\b|cookie-consent-dialog\\b/i.test(lcpSelector);
+  const consentOverlayLcp = lcpSelector.includes("cookie-consent-backdrop") ||
+    lcpSelector.includes("cookie-consent-dialog");
   if (/^(?:error|common\.error)$/i.test(lcpText)) {
     errors.push("LCP measures error instead of content");
   }
