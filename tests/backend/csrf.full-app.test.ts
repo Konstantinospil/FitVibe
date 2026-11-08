@@ -127,8 +127,7 @@ describe("Full FitVibe app CSRF enforcement with production-equivalent settings"
 
   it("applies CSRF checks to PATCH and DELETE before route lookup", async () => {
     for (const method of ["patch", "delete"] as const) {
-      const response = await request(app)
-        [method]("/api/v1/csrf-full-app-nonexistent")
+      const response = await request(app)[method]("/api/v1/csrf-full-app-nonexistent")
         .set("Origin", APP_ORIGIN)
         .set("Cookie", "fitvibe_access=sample-cookie")
         .send({});
