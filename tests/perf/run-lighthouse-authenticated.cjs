@@ -14,6 +14,7 @@ const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs")
 const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
+const { observeNavigation } = require("./lighthouse-observe-navigation.cjs");
 const {
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
@@ -177,6 +178,35 @@ async function prepareAthlete(browser) {
   }
 }
 
+async function verifyAuditedAthletePage(page, pathname) {
+  await waitForApp(page);
+  await page.locator(getPageReadySelector(pathname)).waitFor({
+    state: "visible", timeout: 25000,
+  });
+  if (pathname === "/calendar") {
+    await page.getByRole("grid").waitFor({ state: "visible", timeout: 25000 });
+  }
+  if (["/terms", "/privacy", "/cookie"].includes(pathname)) {
+    const content = page.locator(
+      '[data-component="legal-document-shell"] .section-text',
+    ).first();
+    await content.waitFor({ state: "visible", timeout: 25000 });
+    if (!(await content.textContent())?.trim()) {
+      throw new Error(pathname + ": published document contains no rendered body");
+    }
+  }
+  for (const selector of [
+    ".cookie-consent-backdrop:visible",
+    '[data-ssr-loading-fallback="true"]:visible',
+    '[data-component="legal-document-shell"] [role="status"]:visible',
+    '[data-component="legal-document-shell"] [role="alert"]:visible',
+  ]) {
+    if (await page.locator(selector).count()) {
+      throw new Error(pathname + ": unexpected overlay, loading or error " + selector);
+    }
+  }
+}
+
 async function main() {
   // Even if browser provisioning or a later route fails, leave an explicit
   // incomplete report rather than an empty upload directory.
@@ -237,14 +267,27 @@ async function main() {
         try {
           // Clear resource cache only. Do not clear cookies/storage or mock APIs.
           await cacheSession.send("Network.clearBrowserCache");
-          const output = await lighthouse(url, {
-            port,
-            logLevel: "error",
-            disableStorageReset: true,
-            throttlingMethod: "simulate",
-            maxWaitForFcp: 30000,
-            maxWaitForLoad: 45000,
-          });
+          const observer = observeNavigation(auditContext, url,
+            (page) => verifyAuditedAthletePage(page, pathName));
+          let output;
+          let observation;
+          let observationError;
+          try {
+            output = await lighthouse(url, {
+              port,
+              logLevel: "error",
+              disableStorageReset: true,
+              throttlingMethod: "simulate",
+              maxWaitForFcp: 30000,
+              maxWaitForLoad: 45000,
+            });
+          } finally {
+            try {
+              observation = await observer.finish();
+            } catch (error) {
+              observationError = error;
+            }
+          }
           if (!output?.lhr) throw new Error("Lighthouse returned no report");
           const report = output.lhr;
           const filename = "lhr-" +
@@ -259,10 +302,16 @@ async function main() {
             bootstrap.assertHealthy();
             // This is a report-only safeguard. The separate browser preflight
             // is NOT evidence from the Lighthouse navigation itself.
+            const readiness = observation && {
+              ...observation, pathname: pathName, scenario: "consented",
+            };
             const diagnostic = validateMeasurement(report, {
               mode: "athlete", pathname: pathName, origin, scenario: "consented",
-              requireReadiness: false,
+              readiness,
             });
+            if (observationError) {
+              diagnostic.errors.push(observationError.message);
+            }
             if (diagnostic.errors.length) {
               throw new Error(diagnostic.errors.join("; "));
             }
