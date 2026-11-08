@@ -10,6 +10,7 @@ const { spawn } = require("node:child_process");
 const { chromium } = require("@playwright/test");
 const { athleteRoutes, auditUrl } = require("./lighthouse-routes.cjs");
 const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
+const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs");
 const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
@@ -246,6 +247,15 @@ async function main() {
           try {
             verifyRouteIdentity(route, report, origin);
             bootstrap.assertHealthy();
+            // This is a report-only safeguard. The separate browser preflight
+            // is NOT evidence from the Lighthouse navigation itself.
+            const diagnostic = validateMeasurement(report, {
+              mode: "athlete", pathname: pathName, origin, scenario: "consented",
+              requireReadiness: false,
+            });
+            if (diagnostic.errors.length) {
+              throw new Error(diagnostic.errors.join("; "));
+            }
             valid = true;
           } catch (error) {
             technicalErrors.push(pathName + " run " + run + ": " + error.message);
