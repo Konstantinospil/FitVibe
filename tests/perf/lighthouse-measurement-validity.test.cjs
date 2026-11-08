@@ -128,3 +128,50 @@ test("missing network evidence, wrong page and missing category cannot silently 
   delete incomplete.categories.performance;
   assert.match(validateMeasurement(incomplete, options).errors.join("; "), /Missing numeric Lighthouse category performance/);
 });
+
+test("promotion requires 3 unique real Lighthouse runs per route and consent scenario", () => {
+  const { assertScenarioCoverage } = require("./lighthouse-measurement-validity.cjs");
+  const scenarios = ["first-visit", "consented"];
+  const records = publicRoutes.flatMap((pathname) => scenarios.flatMap((scenario) =>
+    [1, 2, 3].map((run) => ({
+      id: pathname + ":" + scenario + ":" + run,
+      pathname, scenario, valid: true, sameNavigationReady: true,
+    })),
+  ));
+  assert.equal(records.length, 48);
+  assert.deepEqual(assertScenarioCoverage(records, publicRoutes, scenarios, 3), []);
+
+  const singleScenario = records.filter((row) => row.scenario === "first-visit");
+  const missing = assertScenarioCoverage(singleScenario, publicRoutes, scenarios, 3).join("; ");
+  assert.match(missing, /consented: expected 3 runs, observed 0/);
+
+  const duplicate = records.map((record) => ({ ...record }));
+  duplicate[1].id = duplicate[0].id;
+  assert.match(assertScenarioCoverage(duplicate, publicRoutes, scenarios, 3).join("; "),
+    /duplicate Lighthouse run identity/);
+
+  const priorPreflight = records.map((record) => ({ ...record }));
+  priorPreflight[0].sameNavigationReady = false;
+  assert.match(assertScenarioCoverage(priorPreflight, publicRoutes, scenarios, 3).join("; "),
+    /Unvalidated same-navigation measurement/);
+
+  const hiddenFailure = records.map((record) => ({ ...record }));
+  hiddenFailure[0].valid = false;
+  assert.match(assertScenarioCoverage(hiddenFailure, publicRoutes, scenarios, 3).join("; "),
+    /Unvalidated same-navigation measurement/);
+
+  assert.match(assertScenarioCoverage(records, publicRoutes, scenarios, 2).join("; "),
+    /at least three/);
+});
+
+test("localized consent overlay is identified by its DOM selector, not English copy", () => {
+  const r = report("athlete", "/library", "consented");
+  r.audits["lcp-breakdown-insight"].details.items[0] = {
+    type: "node", nodeLabel: "Επιλέξτε προτιμήσεις",
+    selector: "div#root > div.cookie-consent-backdrop > section.cookie-consent-dialog > p",
+  };
+  assert.match(validateMeasurement(r, {
+    mode: "athlete", pathname: "/library", origin, scenario: "consented",
+    requireReadiness: false,
+  }).errors.join("; "), /unexpected cookie consent overlay/);
+});
