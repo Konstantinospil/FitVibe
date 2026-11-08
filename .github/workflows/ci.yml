@@ -2694,6 +2694,26 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
+      # Diagnostic only: public Lighthouse in the real production E2E runtime.
+      # Keep the independent blocking public Lighthouse gate and every budget
+      # unchanged until these new real-service measurements are validated.
+      - name: Diagnose public Lighthouse through real E2E ingress
+        if: matrix.shard == 1
+        timeout-minutes: 15
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_BASE_URL: http://127.0.0.1:4180
+        run: node tests/perf/run-lighthouse-public-real.cjs
+
+      - name: Upload real-backend public Lighthouse diagnostics
+        if: always() && matrix.shard == 1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: lighthouse-public-real-${{ github.run_id }}
+          path: tests/perf/lhci-output/public-real
+          retention-days: 30
+          if-no-files-found: error
+
       - name: Stop E2E runtime
         if: always()
         timeout-minutes: 2

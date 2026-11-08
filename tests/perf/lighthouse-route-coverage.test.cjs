@@ -99,3 +99,64 @@ test("Authenticated Calendar preflight uses the real Calendar surface marker", (
   const source = fs.readFileSync(path.join(root, "apps/frontend/src/pages/Calendar.tsx"), "utf8");
   assert.match(source, /<main className="training-page calendar-surface" aria-labelledby="calendar-title">/);
 });
+
+
+test("Real-backend public configuration preserves the canonical three-run budgets", () => {
+  const { publicConfigForOrigin } = require("./run-lighthouse-public-real.cjs");
+  const configured = publicConfigForOrigin("http://127.0.0.1:4180");
+  assert.equal(configured.ci.collect.numberOfRuns, config.ci.collect.numberOfRuns);
+  assert.deepEqual(configured.ci.assert.assertions, config.ci.assert.assertions);
+  assert.deepEqual(
+    configured.ci.collect.url,
+    require("./lighthouse-routes.cjs").publicRoutes.map(
+      (pathname) => new URL(pathname, "http://127.0.0.1:4180").toString(),
+    ),
+  );
+  assert.throws(() => publicConfigForOrigin("https://fitvibe.app"), /loopback/);
+});
+
+test("Real-backend public reports cannot pass with failed or missing API dependencies", () => {
+  const { assessPublicReport } = require("./run-lighthouse-public-real.cjs");
+  const origin = "http://127.0.0.1:4180";
+  const pathname = "/terms";
+  const requestedUrl = new URL(pathname, origin).toString();
+  const valid = {
+    requestedUrl,
+    finalDisplayedUrl: requestedUrl,
+    categories: pageIdentity.categories,
+    audits: {
+      "network-requests": {
+        details: { items: [{
+          url: new URL("/api/v1/legal/documents/terms?language=en", origin).toString(),
+          statusCode: 200,
+        }] },
+      },
+      "lcp-breakdown-insight": {
+        details: { items: [{ type: "node", nodeLabel: "Terms and Conditions" }] },
+      },
+    },
+  };
+  assert.deepEqual(assessPublicReport(valid, pathname, origin).errors, []);
+  const missing = {
+    ...valid,
+    audits: { ...valid.audits, "network-requests": { details: { items: [] } } },
+  };
+  assert.match(assessPublicReport(missing, pathname, origin).errors.join(" "), /missing successful backend/);
+  const failed = {
+    ...valid,
+    audits: { ...valid.audits, "network-requests": {
+      details: { items: [{
+        url: new URL("/api/v1/legal/documents/terms?language=en", origin).toString(),
+        statusCode: 404,
+      }] },
+    } },
+  };
+  assert.match(assessPublicReport(failed, pathname, origin).errors.join(" "), /backend 404/);
+  const wrongContent = {
+    ...valid,
+    audits: { ...valid.audits, "lcp-breakdown-insight": {
+      details: { items: [{ type: "node", nodeLabel: "Error" }] },
+    } },
+  };
+  assert.match(assessPublicReport(wrongContent, pathname, origin).errors.join(" "), /error instead of content/);
+});
