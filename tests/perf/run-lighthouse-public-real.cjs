@@ -9,6 +9,7 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
 const { verifyPublicContent } = require("./lighthouse-public-readiness.cjs");
+const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 
 const root = path.resolve(__dirname, "../..");
@@ -238,6 +239,10 @@ async function main() {
         continue;
       }
       const diagnostic = assessPublicReport(report, pathname, origin);
+      const measurement = validateMeasurement(report, {
+        mode: "public", pathname, origin, scenario: "first-visit", requireReadiness: false,
+      });
+      diagnostic.errors.push(...measurement.errors);
       observations.push({ path: pathname, file: filename, ...diagnostic });
       if (diagnostic.errors.length) {
         technicalErrors.push(...diagnostic.errors.map(
