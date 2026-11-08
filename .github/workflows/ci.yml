@@ -2694,12 +2694,12 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      # Diagnostic only: public Lighthouse in the real production E2E runtime.
-      # Keep the independent blocking public Lighthouse gate and every budget
-      # unchanged until these new real-service measurements are validated.
+      # Diagnostic only: 8 real public routes x 2 persisted consent scenarios
+      # x 3 worst-run measurements, checked in the Lighthouse-created tab.
+      # Preserve the existing blocking gate and budgets until proven by CI.
       - name: Diagnose public Lighthouse through real E2E ingress
         if: matrix.shard == 1
-        timeout-minutes: 15
+        timeout-minutes: 25
         continue-on-error: true
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:4180
