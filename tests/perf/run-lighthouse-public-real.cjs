@@ -12,7 +12,6 @@ const { validateMeasurement, assertScenarioCoverage } = require("./lighthouse-me
 const { assertPublicWorstBudgets } = require("./lighthouse-public-budgets.cjs");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
 const { verifyPublicContent } = require("./lighthouse-public-readiness.cjs");
-const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 
 const outputDir = path.resolve(__dirname, "lhci-output/public-real");
