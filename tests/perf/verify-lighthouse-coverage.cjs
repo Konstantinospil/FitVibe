@@ -2,6 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
+const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 
 const root = path.resolve(__dirname, "../..");
@@ -35,6 +36,13 @@ if (fs.existsSync(reportsDir)) {
         if (typeof lhr.categories?.[category]?.score !== "number") {
           throw new Error("Missing category " + category);
         }
+      }
+      const measurement = validateMeasurement(lhr, {
+        mode: "public", pathname: target.pathname, origin: target.origin,
+        scenario: "first-visit", requireReadiness: false,
+      });
+      if (measurement.errors.length) {
+        throw new Error(measurement.errors.join("; "));
       }
       valid = true;
       expected.set(requested, expected.get(requested) + 1);
