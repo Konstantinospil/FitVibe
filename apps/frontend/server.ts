@@ -47,6 +47,18 @@ const contentSecurityPolicyForHtml = (html: string) => {
     ),
   ];
 
+  // Hash the exact inline first-paint bootstrap instead of allowing arbitrary
+  // inline scripts. External application modules remain covered by 'self'.
+  const scriptHashes = [
+    ...new Set(
+      Array.from(html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi), (match) =>
+        match[1] ?? "",
+      )
+        .filter((source) => source.trim().length > 0)
+        .map(sha256Source),
+    ),
+  ];
+
   return [
     "default-src 'self'",
     "base-uri 'self'",
@@ -56,7 +68,7 @@ const contentSecurityPolicyForHtml = (html: string) => {
     "img-src 'self' data:",
     "font-src 'self' data:",
     "connect-src 'self'",
-    "script-src 'self'",
+    `script-src 'self'${scriptHashes.length ? ` ${scriptHashes.join(" ")}` : ""}`,
     "script-src-attr 'none'",
     `style-src 'self'${styleHashes.length ? ` ${styleHashes.join(" ")}` : ""}`,
     "style-src-attr 'unsafe-inline'",
