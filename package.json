@@ -26,7 +26,7 @@
     "test:coverage:gate": "node tests/qa/check-coverage.cjs",
     "perf:test": "node tests/perf/run-local-perf.mjs",
     "perf:lhci": "node tests/perf/run-lhci-local.mjs",
-    "test:lhci:config": "node --test tests/perf/lighthouse-ci-config.test.cjs tests/perf/lighthouse-measurement-validity.test.cjs tests/perf/lighthouse-observe-navigation.test.cjs tests/perf/lighthouse-route-coverage.test.cjs tests/perf/lighthouse-score-contract.test.cjs tests/perf/lighthouse-performance-report.test.cjs",
+    "test:lhci:config": "node --test tests/perf/lighthouse-ci-config.test.cjs tests/perf/lighthouse-measurement-validity.test.cjs tests/perf/lighthouse-observe-navigation.test.cjs tests/perf/lighthouse-public-scenarios.test.cjs tests/perf/lighthouse-route-coverage.test.cjs tests/perf/lighthouse-score-contract.test.cjs tests/perf/lighthouse-performance-report.test.cjs",
     "qa:summary": "node tests/qa/generate-summary.mjs",
     "i18n:check": "node tests/qa/check-i18n.cjs",
     "ui-literals:audit": "node tests/qa/audit-ui-literals.cjs --json tests/qa/reports/ui-literals.json --md tests/qa/reports/ui-literals.md",
