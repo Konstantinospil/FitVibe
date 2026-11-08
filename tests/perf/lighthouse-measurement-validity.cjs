@@ -118,4 +118,44 @@ function validateMeasurement(report, {
   return { errors, apiRequests: api.length, lcpElement: lcpText || null, lcpSelector: lcpSelector || null };
 }
 
-module.exports = { REQUIRED_PUBLIC_API, validateMeasurement, scriptTransfer, networkRequests };
+
+/**
+ * Gate candidate promotion: a page is covered only when every scenario has
+ * exactly the expected number of distinct valid, same-navigation measurements.
+ * A successful preflight, duplicated JSON file, or one scenario cannot fill a
+ * missing Lighthouse run.
+ */
+function assertScenarioCoverage(records, paths, scenarios, numberOfRuns = 3) {
+  const errors = [];
+  if (!Number.isInteger(numberOfRuns) || numberOfRuns < 3) {
+    errors.push("Expected at least three independently collected runs");
+  }
+  const expected = new Set(paths.flatMap((pathname) =>
+    scenarios.map((scenario) => pathname + ":" + scenario)));
+  const groups = new Map([...expected].map((key) => [key, []]));
+  const identities = new Set();
+  for (const record of records) {
+    const key = record.pathname + ":" + record.scenario;
+    if (!groups.has(key)) {
+      errors.push("Unexpected Lighthouse route/scenario: " + key);
+      continue;
+    }
+    if (!record.id || identities.has(record.id)) {
+      errors.push("Missing or duplicate Lighthouse run identity for " + key);
+    } else {
+      identities.add(record.id);
+    }
+    groups.get(key).push(record);
+    if (!record.valid || !record.sameNavigationReady) {
+      errors.push("Unvalidated same-navigation measurement: " + key);
+    }
+  }
+  for (const [key, runs] of groups) {
+    if (runs.length !== numberOfRuns) {
+      errors.push(key + ": expected " + numberOfRuns + " runs, observed " + runs.length);
+    }
+  }
+  return errors;
+}
+
+module.exports = { REQUIRED_PUBLIC_API, validateMeasurement, scriptTransfer, networkRequests, assertScenarioCoverage };
