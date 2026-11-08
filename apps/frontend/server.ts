@@ -51,7 +51,7 @@ const contentSecurityPolicyForHtml = (html: string) => {
   // inline scripts. External application modules remain covered by 'self'.
   const scriptHashes = [
     ...new Set(
-      Array.from(html.matchAll(/<script(?:\\s[^>]*)?>([\\s\\S]*?)<\\/script>/gi), (match) =>
+      Array.from(html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi), (match) =>
         match[1] ?? "",
       )
         .filter((source) => source.trim().length > 0)
