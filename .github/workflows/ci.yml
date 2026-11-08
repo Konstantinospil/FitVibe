@@ -1463,6 +1463,18 @@ jobs:
         uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           category: "/language:javascript"
+          output: codeql-sarif
+
+      # Retain the untruncated query evidence. GitHub's Code Scanning UI caps
+      # related locations per alert, whereas the exported SARIF is complete.
+      - name: Retain CodeQL SARIF for security triage
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: codeql-sarif-${{ github.run_id }}
+          path: codeql-sarif/
+          retention-days: 30
+          if-no-files-found: error
 
   zap_baseline:
     name: OWASP ZAP Baseline
