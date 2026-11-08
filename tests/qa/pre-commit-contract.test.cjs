@@ -104,7 +104,7 @@ test("pre-commit refuses lint, ownership and architecture failures without conti
 test("real lint-staged fixes staged TSX, preserves untracked files and blocks unfixable warnings", { timeout: 120_000 }, () => {
   // A nested Git repository prevents test staging from modifying the checkout index.
   // Root ESLint/Prettier configuration remains discoverable by walking upward.
-  const sandbox = fs.mkdtempSync(path.join(root, "tests/qa/precommit-fixture-"));
+  const sandbox = fs.mkdtempSync(path.join(root, "apps/frontend/src/precommit-fixture-"));
   try {
     git(sandbox, ["init", "-q"]);
     git(sandbox, ["config", "user.email", "precommit-fixture@example.invalid"]);
@@ -113,7 +113,7 @@ test("real lint-staged fixes staged TSX, preserves untracked files and blocks un
     git(sandbox, ["add", "package.json"]);
     git(sandbox, ["commit", "-qm", "fixture baseline"]);
 
-    const good = "formatted.test.tsx";
+    const good = "formatted.tsx";
     const untracked = "untracked.js";
     fs.writeFileSync(path.join(sandbox, good), 'export const Example=()=> <div>ready</div>\n');
     fs.writeFileSync(path.join(sandbox, untracked), "const  untracked=  true\n");
@@ -124,12 +124,12 @@ test("real lint-staged fixes staged TSX, preserves untracked files and blocks un
     assert.equal(fs.readFileSync(path.join(sandbox, untracked), "utf8"), "const  untracked=  true\n");
     assert.ok(git(sandbox, ["diff", "--cached", "--name-only"]).includes(good));
 
-    const invalid = "unfixable.test.tsx";
+    const invalid = "unfixable.tsx";
     fs.writeFileSync(path.join(sandbox, invalid), 'export const Invalid = () => { const unused = 1; return <div>invalid</div>; };\n');
     git(sandbox, ["add", invalid]);
     const failed = run("pnpm", ["exec", "lint-staged", "--cwd", sandbox, "--config", configPath, "--concurrent", "false"], root);
     assert.notEqual(failed.status, 0, `unfixable unused-variable warning was accepted:\n${failed.stdout}\n${failed.stderr}`);
-    assert.match(`${failed.stdout}\n${failed.stderr}`, /unused|warning|warnings|error/i);
+    assert.match(`${failed.stdout}\n${failed.stderr}`, /@typescript-eslint\/no-unused-vars/);
   } finally {
     fs.rmSync(sandbox, { recursive: true, force: true });
   }
