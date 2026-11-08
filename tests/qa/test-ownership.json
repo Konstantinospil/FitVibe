@@ -456,6 +456,30 @@
   ],
   "suites": [
     {
+      "name": "ssr-diagnostics-regression",
+      "patterns": [
+        "^tests/perf/ssr-diagnostics\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/run-ssr-diagnostics.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic SSR response and CI workflow contracts"
+      ],
+      "isolation_model": "node:test deterministic SSR response validation; real standalone SSR verified in CI",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log",
+        "lighthouse-report-${{ github.run_id }}"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-performance-report-regression",
       "patterns": [
         "^tests/perf/lighthouse-performance-report\\.test\\.cjs$"

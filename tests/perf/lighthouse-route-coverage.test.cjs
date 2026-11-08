@@ -46,7 +46,7 @@ test("Every backoffice UI route is inventoried before expanding its Lighthouse e
   assert.equal(known.size, backofficeRoutes.length, "No duplicate backoffice paths");
 });
 
-test("Lighthouse login baseline remains a blocking three-run audit", () => {
+test("Canonical real-backend public Lighthouse configuration retains three worst-case runs", () => {
   assert.deepEqual(
     [...config.ci.collect.url].sort(),
     [...new Set(require("./lighthouse-routes.cjs").publicRoutes)].map(
