@@ -8,7 +8,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
-const { verifyPublicContent, consentBannerRoutes } = require("./lighthouse-public-readiness.cjs");
+const { verifyPublicContent } = require("./lighthouse-public-readiness.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 
 const root = path.resolve(__dirname, "../..");
@@ -117,62 +117,67 @@ async function verifyBrowserContentAndConsent(origin) {
   const { chromium } = require("@playwright/test");
   const browser = await chromium.launch({ headless: true });
   const observations = [];
+  const context = await browser.newContext({ baseURL: origin });
+  const page = await context.newPage();
   try {
-    for (const pathname of publicRoutes) {
-      const context = await browser.newContext({ baseURL: origin });
-      const page = await context.newPage();
+    const statusUrl = new URL("/api/v1/consent/cookie-status", origin).toString();
+    const firstStatus = await context.request.get(statusUrl);
+    if (!firstStatus.ok() || (await firstStatus.json()).data?.hasConsent) {
+      throw new Error("First-visit browser identity already has persisted consent");
+    }
+
+    const navigateAndVerify = async (pathname, scenario) => {
       try {
-        const statusUrl = new URL("/api/v1/consent/cookie-status", origin).toString();
-        const firstStatus = await context.request.get(statusUrl);
-        if (!firstStatus.ok() || (await firstStatus.json()).data?.hasConsent) {
-          throw new Error(pathname + ": first-visit browser identity already has consent");
+        await page.goto(new URL(pathname, origin).toString(), { waitUntil: "domcontentloaded" });
+        await verifyPublicContent(page, pathname, scenario);
+        const final = new URL(page.url());
+        if (final.origin !== origin || final.pathname !== pathname) {
+          throw new Error(pathname + ": content preflight redirected to " + page.url());
         }
-
-        const navigateAndVerify = async (scenario) => {
-          await page.goto(new URL(pathname, origin).toString(), { waitUntil: "domcontentloaded" });
-          await verifyPublicContent(page, pathname, scenario);
-          const final = new URL(page.url());
-          if (final.origin !== origin || final.pathname !== pathname) {
-            throw new Error(pathname + ": content preflight redirected to " + page.url());
-          }
-          observations.push({ path: pathname, scenario, ready: true });
-        };
-
-        await navigateAndVerify("first-visit");
-        if (!consentBannerRoutes.has(pathname)) {
-          await page.goto(new URL("/login", origin).toString(), { waitUntil: "domcontentloaded" });
-          await verifyPublicContent(page, "/login", "first-visit");
-        }
-        await page.locator(".cookie-consent-actions button").first().click();
-        await page.locator(".cookie-consent-backdrop").waitFor({ state: "hidden", timeout: 30000 });
-        const persisted = await context.request.get(statusUrl);
-        if (!persisted.ok()) {
-          throw new Error(pathname + ": saved consent status returned HTTP " + persisted.status());
-        }
-        const state = (await persisted.json()).data;
-        if (!state?.hasConsent || state.consent?.essential !== true ||
-            state.consent?.preferences !== false || state.consent?.analytics !== false ||
-            state.consent?.marketing !== false) {
-          throw new Error(pathname + ": real essential-only consent was not persisted");
-        }
-        const identity = (await context.cookies(statusUrl)).filter(
-          (cookie) => cookie.name === "fitvibe_consent_client",
-        );
-        if (identity.length !== 1) {
-          throw new Error(pathname + ": backend did not issue exactly one consent identity cookie");
-        }
-        await navigateAndVerify("consented");
+        observations.push({ path: pathname, scenario, ready: true });
       } catch (error) {
-        observations.push({ path: pathname, ready: false, error: error.message });
+        observations.push({ path: pathname, scenario, ready: false, error: error.message });
         throw error;
-      } finally {
-        await context.close();
       }
+    };
+
+    // One anonymous browser identity across public routes; no consent is saved
+    // until every first-visit page has been checked.
+    for (const pathname of publicRoutes) {
+      await navigateAndVerify(pathname, "first-visit");
+    }
+
+    // Save the real consent exactly once through the existing application UI.
+    // Persisting once avoids 8 duplicate writes against the shared E2E backend.
+    await navigateAndVerify("/login", "first-visit");
+    await page.locator(".cookie-consent-actions button").first().click();
+    await page.locator(".cookie-consent-backdrop").waitFor({ state: "hidden", timeout: 30000 });
+
+    const persisted = await context.request.get(statusUrl);
+    if (!persisted.ok()) {
+      throw new Error("Saved consent status returned HTTP " + persisted.status());
+    }
+    const state = (await persisted.json()).data;
+    if (!state?.hasConsent || state.consent?.essential !== true ||
+        state.consent?.preferences !== false || state.consent?.analytics !== false ||
+        state.consent?.marketing !== false) {
+      throw new Error("Real essential-only consent was not persisted");
+    }
+    const identity = (await context.cookies(statusUrl)).filter(
+      (cookie) => cookie.name === "fitvibe_consent_client",
+    );
+    if (identity.length !== 1) {
+      throw new Error("Backend did not issue exactly one consent identity cookie");
+    }
+
+    for (const pathname of publicRoutes) {
+      await navigateAndVerify(pathname, "consented");
     }
     return observations;
   } finally {
     fs.mkdirSync(outputDir, { recursive: true });
     fs.writeFileSync(path.join(outputDir, "content-readiness.json"), JSON.stringify(observations, null, 2) + "\n");
+    await context.close();
     await browser.close();
   }
 }
