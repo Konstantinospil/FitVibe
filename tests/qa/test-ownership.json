@@ -505,7 +505,7 @@
     {
       "name": "lighthouse-measurement-validity-regression",
       "patterns": [
-        "^tests/perf/lighthouse-measurement-validity\\\\.test\\\\.cjs$"
+        "^tests/perf/lighthouse-measurement-validity\\.test\\.cjs$"
       ],
       "owner": "Frontend performance / QA",
       "ci_job_ids": [
