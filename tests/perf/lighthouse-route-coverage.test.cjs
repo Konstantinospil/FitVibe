@@ -160,3 +160,53 @@ test("Real-backend public reports cannot pass with failed or missing API depende
   };
   assert.match(assessPublicReport(wrongContent, pathname, origin).errors.join(" "), /error instead of content/);
 });
+
+test("Every public route has a rendered-content contract in both real consent scenarios", async () => {
+  const { publicRoutes } = require("./lighthouse-routes.cjs");
+  const { publicContent, verifyPublicContent, consentBannerRoutes } = require("./lighthouse-public-readiness.cjs");
+  assert.deepEqual(Object.keys(publicContent).sort(), [...publicRoutes].sort());
+
+  for (const scenario of ["first-visit", "consented"]) {
+    for (const pathname of publicRoutes) {
+      const selectors = [];
+      const page = {
+        locator(selector) {
+          selectors.push(selector);
+          return {
+            first() { return this; },
+            async waitFor() {},
+            async textContent() { return "Rendered, translated page content"; },
+            async count() { return 0; },
+          };
+        },
+      };
+      await verifyPublicContent(page, pathname, scenario);
+      assert.ok(selectors.includes(publicContent[pathname].landmark), pathname + ": heading checked");
+      assert.ok(selectors.includes(".cookie-consent-backdrop"), pathname + ": consent UI checked");
+      assert.equal(consentBannerRoutes.has(pathname),
+        ["/", "/login", "/register", "/forgot-password", "/contact"].includes(pathname));
+    }
+  }
+});
+
+test("Public route readiness rejects errors, fallback content and missing legal paragraphs", async () => {
+  const { verifyPublicContent } = require("./lighthouse-public-readiness.cjs");
+  function pageWith({ visibleError = false, emptyLegal = false } = {}) {
+    return {
+      locator(selector) {
+        return {
+          first() { return this; },
+          async waitFor() {},
+          async textContent() { return emptyLegal && selector.endsWith(".section-text") ? "" : "Real content"; },
+          async count() { return visibleError && selector === '[role="alert"]:visible' ? 1 : 0; },
+        };
+      },
+    };
+  }
+  await assert.rejects(verifyPublicContent(pageWith({ visibleError: true }), "/login", "consented"),
+    /fallback or visible error/);
+  await assert.rejects(verifyPublicContent(pageWith({ emptyLegal: true }), "/terms", "first-visit"),
+    /no published document body/);
+  await assert.rejects(verifyPublicContent(pageWith(), "/unknown", "first-visit"),
+    /Missing public page readiness contract/);
+});
