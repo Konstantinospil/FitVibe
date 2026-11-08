@@ -461,14 +461,20 @@
         "^tests/perf/lighthouse-performance-report\\.test\\.cjs$"
       ],
       "owner": "Frontend performance / QA",
-      "ci_job_ids": ["lighthouse"],
+      "ci_job_ids": [
+        "lighthouse"
+      ],
       "contract_sources": [
         ".github/workflows/ci.yml",
         "tests/perf/lighthouse-performance-report.cjs"
       ],
-      "fixture_dependencies": ["Synthetic Lighthouse report values"],
+      "fixture_dependencies": [
+        "Synthetic Lighthouse report values"
+      ],
       "isolation_model": "node:test filesystem-isolated report contract",
-      "expected_artifacts": ["Lighthouse CI contract test log"],
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
       "severity": "blocking",
       "status": "active"
     },
@@ -492,6 +498,29 @@
       "isolation_model": "node:test deterministic per-route threshold assertions",
       "expected_artifacts": [
         "CI Lighthouse worst-score contract step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-measurement-validity-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-measurement-validity\\\\.test\\\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-measurement-validity.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic real-backend Lighthouse reports including HTTP 404, HTTP 429 and cached JavaScript transfer"
+      ],
+      "isolation_model": "node:test deterministic measurement-validity negative controls",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
       ],
       "severity": "blocking",
       "status": "active"
