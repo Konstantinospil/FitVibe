@@ -230,6 +230,9 @@ jobs:
       - name: Verify visual baseline workflow contract
         run: node --test tests/qa/visual-baseline-workflow.test.mjs
 
+      - name: Verify staged-file formatting and pre-commit fail-closed behavior
+        run: node --test tests/qa/pre-commit-contract.test.cjs
+
       - name: Review dependency and override relevance (advisory)
         run: node tests/qa/report-dependency-relevance.cjs
 
