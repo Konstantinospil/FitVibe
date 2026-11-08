@@ -8,6 +8,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
+const { verifyPublicContent, consentBannerRoutes } = require("./lighthouse-public-readiness.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 
 const root = path.resolve(__dirname, "../..");
@@ -106,6 +107,74 @@ function assessPublicReport(report, pathname, origin) {
   return { errors, lcpElement, apiRequests: api.length };
 }
 
+
+/**
+ * Real browser preflight checks all public routes twice: fresh anonymous browser
+ * identity, then the same identity after consent is saved by the real UI/API.
+ * This does not substitute for three Lighthouse runs in each scenario.
+ */
+async function verifyBrowserContentAndConsent(origin) {
+  const { chromium } = require("@playwright/test");
+  const browser = await chromium.launch({ headless: true });
+  const observations = [];
+  try {
+    for (const pathname of publicRoutes) {
+      const context = await browser.newContext({ baseURL: origin });
+      const page = await context.newPage();
+      try {
+        const statusUrl = new URL("/api/v1/consent/cookie-status", origin).toString();
+        const firstStatus = await context.request.get(statusUrl);
+        if (!firstStatus.ok() || (await firstStatus.json()).data?.hasConsent) {
+          throw new Error(pathname + ": first-visit browser identity already has consent");
+        }
+
+        const navigateAndVerify = async (scenario) => {
+          await page.goto(new URL(pathname, origin).toString(), { waitUntil: "domcontentloaded" });
+          await verifyPublicContent(page, pathname, scenario);
+          const final = new URL(page.url());
+          if (final.origin !== origin || final.pathname !== pathname) {
+            throw new Error(pathname + ": content preflight redirected to " + page.url());
+          }
+          observations.push({ path: pathname, scenario, ready: true });
+        };
+
+        await navigateAndVerify("first-visit");
+        if (!consentBannerRoutes.has(pathname)) {
+          await page.goto(new URL("/login", origin).toString(), { waitUntil: "domcontentloaded" });
+          await verifyPublicContent(page, "/login", "first-visit");
+        }
+        await page.locator(".cookie-consent-actions button").first().click();
+        await page.locator(".cookie-consent-backdrop").waitFor({ state: "hidden", timeout: 30000 });
+        const persisted = await context.request.get(statusUrl);
+        if (!persisted.ok()) {
+          throw new Error(pathname + ": saved consent status returned HTTP " + persisted.status());
+        }
+        const state = (await persisted.json()).data;
+        if (!state?.hasConsent || state.consent?.essential !== true ||
+            state.consent?.preferences !== false || state.consent?.analytics !== false ||
+            state.consent?.marketing !== false) {
+          throw new Error(pathname + ": real essential-only consent was not persisted");
+        }
+        const identity = (await context.cookies(statusUrl)).filter(
+          (cookie) => cookie.name === "fitvibe_consent_client",
+        );
+        if (identity.length !== 1) {
+          throw new Error(pathname + ": backend did not issue exactly one consent identity cookie");
+        }
+        await navigateAndVerify("consented");
+      } catch (error) {
+        observations.push({ path: pathname, ready: false, error: error.message });
+        throw error;
+      } finally {
+        await context.close();
+      }
+    }
+    return observations;
+  } finally {
+    await browser.close();
+  }
+}
+
 async function main() {
   fs.mkdirSync(outputDir, { recursive: true });
   const results = [];
@@ -135,6 +204,8 @@ async function main() {
       if (!response.ok) throw new Error("Real backend preflight " + endpoint +
         " returned HTTP " + response.status);
     }
+    const contentEvidence = await verifyBrowserContentAndConsent(origin);
+    fs.writeFileSync(path.join(outputDir, "content-readiness.json"), JSON.stringify(contentEvidence, null, 2) + "\\n");
     const runtimeConfig = path.join(outputDir, "lighthouserc.runtime.json");
     fs.writeFileSync(runtimeConfig, JSON.stringify(config, null, 2) + "\n");
     fs.rmSync(collectionDir, { recursive: true, force: true });
@@ -219,4 +290,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { publicConfigForOrigin, assessPublicReport };
+module.exports = { publicConfigForOrigin, assessPublicReport, verifyBrowserContentAndConsent };
