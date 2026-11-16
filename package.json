@@ -92,6 +92,6 @@
     "lighthouse": "13.6.0"
   },
   "dependencies": {
-    "snyk": "^1.1308.3"
+    "snyk": "^1.1308.4"
   }
 }
