@@ -19,6 +19,7 @@ const {
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
   ensureEssentialCookieConsent,
+  getConsentStatusWithRateLimitBackoff,
   waitForApp,
   AUTH_FLAG_KEY,
 } = require("../frontend/e2e/server-helpers.cjs");
@@ -28,6 +29,18 @@ const auditDir = path.resolve(__dirname, "lhci-output/authenticated");
 const config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "lighthouserc.ci.json"), "utf8"));
 const runCount = config.ci.collect.numberOfRuns;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const MAX_CONSENT_RATE_LIMIT_RETRIES = 1;
+
+function consentStatusWasRateLimited(report) {
+  return (report.audits?.["network-requests"]?.details?.items ?? []).some((item) => {
+    if (item.statusCode !== 429) return false;
+    try {
+      return new URL(item.url).pathname === "/api/v1/consent/cookie-status";
+    } catch {
+      return false;
+    }
+  });
+}
 
 function findAvailablePort() {
   return new Promise((resolve, reject) => {
@@ -213,6 +226,7 @@ async function main() {
   fs.mkdirSync(auditDir, { recursive: true });
   const results = [];
   const technicalErrors = [];
+  const recoveryEvents = [];
   let budgetErrors = [];
   let chrome;
   let browser;
@@ -264,64 +278,91 @@ async function main() {
       const route = { mode: "athlete", path: pathName };
       for (let run = 1; run <= runCount; run += 1) {
         const url = auditUrl(route, origin);
-        try {
-          // Clear resource cache only. Do not clear cookies/storage or mock APIs.
-          await cacheSession.send("Network.clearBrowserCache");
-          const observer = observeNavigation(auditContext, url,
-            (page) => verifyAuditedAthletePage(page, pathName));
-          let output;
-          let observation;
-          let observationError;
+        for (let attempt = 1; attempt <= MAX_CONSENT_RATE_LIMIT_RETRIES + 1; attempt += 1) {
           try {
-            output = await lighthouse(url, {
-              port,
-              logLevel: "error",
-              disableStorageReset: true,
-              throttlingMethod: "simulate",
-              maxWaitForFcp: 30000,
-              maxWaitForLoad: 45000,
-            });
-          } finally {
+            // Clear resource cache only. Do not clear cookies/storage or mock APIs.
+            await cacheSession.send("Network.clearBrowserCache");
+            const observer = observeNavigation(auditContext, url,
+              (page) => verifyAuditedAthletePage(page, pathName));
+            let output;
+            let observation;
+            let observationError;
             try {
-              observation = await observer.finish();
+              output = await lighthouse(url, {
+                port,
+                logLevel: "error",
+                disableStorageReset: true,
+                throttlingMethod: "simulate",
+                maxWaitForFcp: 30000,
+                maxWaitForLoad: 45000,
+              });
+            } finally {
+              try {
+                observation = await observer.finish();
+              } catch (error) {
+                observationError = error;
+              }
+            }
+            if (!output?.lhr) throw new Error("Lighthouse returned no report");
+            const report = output.lhr;
+            const filename = "lhr-" +
+              (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
+              "-" + run + (attempt > 1 ? "-retry-" + attempt : "") + ".json";
+            // Every attempted Lighthouse navigation retains its original report,
+            // including a rate-limited attempt that is never counted as valid.
+            fs.writeFileSync(path.join(auditDir, filename), JSON.stringify(report));
+
+            let errorMessage;
+            try {
+              verifyRouteIdentity(route, report, origin);
+              bootstrap.assertHealthy();
+              const readiness = observation && {
+                ...observation, pathname: pathName, scenario: "consented",
+              };
+              const diagnostic = validateMeasurement(report, {
+                mode: "athlete", pathname: pathName, origin, scenario: "consented",
+                readiness,
+              });
+              if (observationError) diagnostic.errors.push(observationError.message);
+              if (diagnostic.errors.length) throw new Error(diagnostic.errors.join("; "));
             } catch (error) {
-              observationError = error;
+              errorMessage = error.message;
             }
-          }
-          if (!output?.lhr) throw new Error("Lighthouse returned no report");
-          const report = output.lhr;
-          const filename = "lhr-" +
-            (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
-            "-" + run + ".json";
-          // Save the raw result first: even a redirect or runtime error can be
-          // diagnosed from its original Lighthouse evidence.
-          fs.writeFileSync(path.join(auditDir, filename), JSON.stringify(report));
-          let valid = false;
-          try {
-            verifyRouteIdentity(route, report, origin);
-            bootstrap.assertHealthy();
-            // This is a report-only safeguard. The separate browser preflight
-            // is NOT evidence from the Lighthouse navigation itself.
-            const readiness = observation && {
-              ...observation, pathname: pathName, scenario: "consented",
-            };
-            const diagnostic = validateMeasurement(report, {
-              mode: "athlete", pathname: pathName, origin, scenario: "consented",
-              readiness,
-            });
-            if (observationError) {
-              diagnostic.errors.push(observationError.message);
+
+            if (!errorMessage) {
+              results.push({ path: pathName, report, valid: true });
+              break;
             }
-            if (diagnostic.errors.length) {
-              throw new Error(diagnostic.errors.join("; "));
+
+            if (attempt <= MAX_CONSENT_RATE_LIMIT_RETRIES &&
+                consentStatusWasRateLimited(report) &&
+                errorMessage.includes("Backend HTTP 429")) {
+              // Recover only a demonstrably invalid consent-status measurement.
+              // Existing real-API helper honors the server's Retry-After; never
+              // retry a valid but slow report to obtain a better Lighthouse score.
+              const event = { path: pathName, run, attempt, report: filename,
+                reason: "consent-status HTTP 429", diagnostic: errorMessage };
+              recoveryEvents.push(event);
+              console.warn("Authenticated Lighthouse consent rate-limit recovery: " +
+                pathName + " run " + run + " (attempt " + attempt + ")");
+              const status = await getConsentStatusWithRateLimitBackoff(
+                auditContext.request, origin + "/api/v1/consent/cookie-status",
+              );
+              if (!status.ok()) throw new Error("Consent recovery HTTP " + status.status());
+              const consent = (await status.json()).data;
+              if (!consent?.hasConsent || consent.consent?.essential !== true) {
+                throw new Error("Consent recovery lost verified essential consent");
+              }
+              continue;
             }
-            valid = true;
+
+            technicalErrors.push(pathName + " run " + run + ": " + errorMessage);
+            results.push({ path: pathName, report, valid: false });
+            break;
           } catch (error) {
             technicalErrors.push(pathName + " run " + run + ": " + error.message);
+            break;
           }
-          results.push({ path: pathName, report, valid });
-        } catch (error) {
-          technicalErrors.push(pathName + " run " + run + ": " + error.message);
         }
       }
       console.log("Authenticated Lighthouse collected " +
@@ -337,6 +378,10 @@ async function main() {
     budgetErrors = assertWorstRunBudgets(
       validReports, athleteRoutes, origin, config.ci.assert.assertions, runCount,
     );
+    // Diagnostic audit history is separate from the three valid runs and never
+    // changes the worst-of-three acceptance or the individual raw LHRs.
+    fs.writeFileSync(path.join(auditDir, "consent-recovery-events.json"),
+      JSON.stringify(recoveryEvents, null, 2));
     const summary = writePerformanceReport(auditDir, {
       label: "Authenticated athlete routes",
       paths: athleteRoutes,
