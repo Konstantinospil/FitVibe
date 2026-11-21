@@ -7,8 +7,9 @@
  * fail closed instead of producing a partial CSP allow-list.
  */
 export function inlineElementBodies(html: string, kind: "script" | "style"): string[] {
+  const htmlWhitespace = new Set([" ", "\t", "\n", "\r", "\f"]);
   const whitespace = (char: string | undefined) =>
-    char === " " || char === "\t" || char === "\n" || char === "\r" || char === "\f";
+    char !== undefined && htmlWhitespace.has(char);
   const boundary = (char: string | undefined) =>
     char === ">" || char === "/" || whitespace(char);
 
@@ -17,7 +18,9 @@ export function inlineElementBodies(html: string, kind: "script" | "style"): str
     for (let i = start; i < html.length; i += 1) {
       const char = html[i];
       if (quote) {
-        if (char === quote) quote = null;
+        if (char === quote) {
+          quote = null;
+        }
       } else if (char === '"' || char === "'") {
         quote = char;
       } else if (char === ">") {
@@ -33,21 +36,26 @@ export function inlineElementBodies(html: string, kind: "script" | "style"): str
 
   while (cursor < html.length) {
     const open = html.indexOf("<", cursor);
-    if (open === -1) break;
+    if (open === -1) {
+      break;
+    }
 
     if (html.startsWith("<!--", open)) {
       const end = html.indexOf("-->", open + 4);
-      if (end === -1) throw new Error("SSR HTML contains an unterminated comment");
+      if (end === -1) {
+        throw new Error("SSR HTML contains an unterminated comment");
+      }
       cursor = end + 3;
       continue;
     }
 
     const nameStart = open + 1;
-    const isTarget = lower.startsWith(kind, nameStart) &&
-      boundary(lower[nameStart + kind.length]);
+    const isTarget = lower.startsWith(kind, nameStart) && boundary(lower[nameStart + kind.length]);
     const end = tagEnd(nameStart);
     cursor = end + 1;
-    if (!isTarget) continue;
+    if (!isTarget) {
+      continue;
+    }
 
     const textStart = cursor;
     let close = lower.indexOf("</" + kind, cursor);
