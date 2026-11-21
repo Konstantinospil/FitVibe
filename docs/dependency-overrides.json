@@ -27,15 +27,6 @@
       "removalCriteria": "Remove only after the dependency graph selects >=1.16.2 without override and OSV, pnpm audit, CI and production image smoke pass."
     },
     {
-      "name": "fast-xml-parser",
-      "constraint": ">=5.5.6",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "ip-address",
       "constraint": "10.7.4",
       "category": "transitive",
