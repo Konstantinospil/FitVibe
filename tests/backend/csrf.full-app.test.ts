@@ -32,6 +32,7 @@ describe("Full FitVibe app CSRF enforcement with production-equivalent settings"
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const runtime = require("../../apps/backend/src/modules/system/app-settings.runtime.js") as {
       getRuntimeAppSetting: (key: string) => number;
+      isEffectiveReadOnly: () => boolean;
     };
     jest.spyOn(runtime, "getRuntimeAppSetting").mockImplementation((key: string) =>
       key.endsWith("_duration_seconds") ? 60 : 1000,
