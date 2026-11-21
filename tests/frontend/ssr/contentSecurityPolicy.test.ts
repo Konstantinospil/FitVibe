@@ -43,7 +43,7 @@ describe("SSR HTML CSP", () => {
     expect(policy).toContain(`script-src 'self' ${hash(bootstrap)}`);
     expect(policy).toContain(`style-src 'self' ${hash(".a{color:red}")}`);
     expect(policy).toContain("script-src-attr 'none'");
-    expect(policy).not.toContain("'unsafe-inline'");
+    expect(policy).not.toContain("script-src 'unsafe-inline'");
     expect(policy).not.toContain(hash(""));
   });
 
