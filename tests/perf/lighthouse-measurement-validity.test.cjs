@@ -175,3 +175,27 @@ test("localized consent overlay is identified by its DOM selector, not English c
     requireReadiness: false,
   }).errors.join("; "), /unexpected cookie consent overlay/);
 });
+
+test("consent recovery applies only to a real status 429 and only once", () => {
+  const { shouldRetryConsentRateLimit } = require("./lighthouse-consent-recovery.cjs");
+  const limited = report("athlete", "/library", "consented");
+  limited.audits["network-requests"].details.items.push({
+    url: new URL("/api/v1/consent/cookie-status", origin).toString(), statusCode: 429,
+  });
+  const error = "Backend HTTP 429 on /api/v1/consent/cookie-status; unexpected overlay";
+  assert.equal(shouldRetryConsentRateLimit(limited, error, 1), true);
+  assert.equal(shouldRetryConsentRateLimit(limited, error, 2), false);
+  assert.equal(shouldRetryConsentRateLimit(limited, "LCP budget exceeded", 1), false);
+  const otherEndpoint = report("athlete", "/library", "consented");
+  otherEndpoint.audits["network-requests"].details.items.push({
+    url: new URL("/api/v1/users/me", origin).toString(), statusCode: 429,
+  });
+  assert.equal(shouldRetryConsentRateLimit(otherEndpoint, error, 1), false);
+  assert.equal(shouldRetryConsentRateLimit(report("athlete", "/library"), error, 1), false);
+  assert.equal(shouldRetryConsentRateLimit(undefined, error, 1), false);
+  const unrelated = report("athlete", "/library", "consented");
+  unrelated.audits["network-requests"].details.items.push({
+    url: "not a URL", statusCode: 429,
+  });
+  assert.equal(shouldRetryConsentRateLimit(unrelated, error, 1), false);
+});
