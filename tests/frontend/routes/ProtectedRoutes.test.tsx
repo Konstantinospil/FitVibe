@@ -104,9 +104,7 @@ describe("ProtectedRoutes", () => {
   });
 
   it("loads the signed-in account language before displaying protected content", async () => {
-    const { getUserPreferences } = await import(
-      "../../../apps/frontend/src/services/api"
-    );
+    const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
     const { default: i18n, loadLanguageTranslations } =
       await import("../../../apps/frontend/src/i18n/config");
     let resolvePreferences!: (value: { language: "el"; measurementSystem: "metric" }) => void;
