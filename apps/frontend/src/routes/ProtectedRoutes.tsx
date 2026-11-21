@@ -58,10 +58,14 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
 
     void (async () => {
       try {
-        await ensurePrivateTranslationsLoaded();
+        // Both operations are independent. Start them together, but keep
+        // protected content gated until the authoritative language is ready.
+        const [, preferences] = await Promise.all([
+          ensurePrivateTranslationsLoaded(),
+          getUserPreferences(),
+        ]);
         // The account preference is authoritative after authentication (ADR-031).
         // The browser language remains a fallback if preferences cannot be fetched.
-        const preferences = await getUserPreferences();
         if (!active) {
           return;
         }
