@@ -15,6 +15,7 @@ const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
 const { observeNavigation } = require("./lighthouse-observe-navigation.cjs");
+const { shouldRetryConsentRateLimit } = require("./lighthouse-consent-recovery.cjs");
 const {
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
@@ -30,17 +31,6 @@ const config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "lighthouserc.
 const runCount = config.ci.collect.numberOfRuns;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const MAX_CONSENT_RATE_LIMIT_RETRIES = 1;
-
-function consentStatusWasRateLimited(report) {
-  return (report.audits?.["network-requests"]?.details?.items ?? []).some((item) => {
-    if (item.statusCode !== 429) return false;
-    try {
-      return new URL(item.url).pathname === "/api/v1/consent/cookie-status";
-    } catch {
-      return false;
-    }
-  });
-}
 
 function findAvailablePort() {
   return new Promise((resolve, reject) => {
@@ -334,9 +324,9 @@ async function main() {
               break;
             }
 
-            if (attempt <= MAX_CONSENT_RATE_LIMIT_RETRIES &&
-                consentStatusWasRateLimited(report) &&
-                errorMessage.includes("Backend HTTP 429")) {
+            if (shouldRetryConsentRateLimit(
+                  report, errorMessage, attempt, MAX_CONSENT_RATE_LIMIT_RETRIES,
+                )) {
               // Recover only a demonstrably invalid consent-status measurement.
               // Existing real-API helper honors the server's Retry-After; never
               // retry a valid but slow report to obtain a better Lighthouse score.
