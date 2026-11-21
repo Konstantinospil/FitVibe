@@ -9,8 +9,7 @@
 export function inlineElementBodies(html: string, kind: "script" | "style"): string[] {
   const htmlWhitespace = new Set([" ", "\t", "\n", "\r", "\f"]);
   const whitespace = (char: string | undefined) => char !== undefined && htmlWhitespace.has(char);
-  const boundary = (char: string | undefined) =>
-    char === ">" || char === "/" || whitespace(char);
+  const boundary = (char: string | undefined) => char === ">" || char === "/" || whitespace(char);
 
   const tagEnd = (start: number): number => {
     let quote: '"' | "'" | null = null;
