@@ -16,8 +16,9 @@ export function contentSecurityPolicyForHtml(
   html: string,
   canonicalThemeBootstrap: string,
 ): string {
-  const inlineScripts = inlineElementBodies(html, "script")
-    .filter((source) => source.trim().length > 0);
+  const inlineScripts = inlineElementBodies(html, "script").filter(
+    (source) => source.trim().length > 0,
+  );
   if (inlineScripts.length !== 1 || inlineScripts[0] !== canonicalThemeBootstrap) {
     throw new Error("SSR contains unexpected or missing inline JavaScript");
   }
