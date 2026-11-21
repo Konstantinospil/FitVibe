@@ -60,10 +60,17 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
       try {
         // Both operations are independent. Start them together, but keep
         // protected content gated until the authoritative language is ready.
-        const [, preferences] = await Promise.all([
+        const [translations, preferencesResult] = await Promise.allSettled([
           ensurePrivateTranslationsLoaded(),
           getUserPreferences(),
         ]);
+        if (translations.status === "rejected") {
+          throw translations.reason;
+        }
+        if (preferencesResult.status === "rejected") {
+          throw preferencesResult.reason;
+        }
+        const preferences = preferencesResult.value;
         // The account preference is authoritative after authentication (ADR-031).
         // The browser language remains a fallback if preferences cannot be fetched.
         if (!active) {
