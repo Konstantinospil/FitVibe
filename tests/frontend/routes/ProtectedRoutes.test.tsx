@@ -146,6 +146,29 @@ describe("ProtectedRoutes", () => {
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
   });
 
+  it("waits for private translations even when preferences fail early", async () => {
+    const { ensurePrivateTranslationsLoaded } =
+      await import("../../../apps/frontend/src/i18n/config");
+    const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
+
+    let resolveTranslations!: () => void;
+    vi.mocked(ensurePrivateTranslationsLoaded).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveTranslations = resolve;
+      }),
+    );
+    vi.mocked(getUserPreferences).mockRejectedValueOnce(new Error("Unavailable"));
+
+    renderRoute("/");
+    await waitFor(() => {
+      expect(getUserPreferences).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
+
+    resolveTranslations();
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+  });
+
   it("still renders private routes when account preferences cannot be loaded", async () => {
     const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
     const { default: i18n } = await import("../../../apps/frontend/src/i18n/config");
