@@ -156,20 +156,26 @@ async function prepareAthlete(browser) {
     }
 
     await page.addInitScript((key) => sessionStorage.setItem(key, "1"), AUTH_FLAG_KEY);
-    for (const pathName of athleteRoutes) {
-      const route = { mode: "athlete", path: pathName };
-      await page.goto(auditUrl(route, origin), { waitUntil: "domcontentloaded" });
-      await waitForApp(page);
-      await page.locator(getPageReadySelector(pathName)).waitFor({
-        state: "visible", timeout: 25000,
-      });
-      const final = new URL(page.url());
-      if (final.origin !== origin || final.pathname !== pathName) {
-        throw new Error("E2E preflight did not render " + pathName + " (got " + page.url() + ")");
-      }
-      if (pathName === "/calendar") {
-        await page.getByRole("grid").waitFor({ state: "visible", timeout: 25000 });
-      }
+    // One real protected page confirms the configured athlete session and
+    // persisted consent before auditing. Every Lighthouse route independently
+    // verifies its own identity, content and same-navigation readiness below.
+    // Avoid spending the shared consent-status per-IP quota on eight duplicate
+    // preflight navigations before the measured cold-cache runs begin.
+    const preflightPath = "/";
+    await page.goto(auditUrl({ mode: "athlete", path: preflightPath }, origin), {
+      waitUntil: "domcontentloaded",
+    });
+    await waitForApp(page);
+    await page.locator(getPageReadySelector(preflightPath)).waitFor({
+      state: "visible", timeout: 25000,
+    });
+    const final = new URL(page.url());
+    if (final.origin !== origin || final.pathname !== preflightPath) {
+      throw new Error("E2E preflight did not render authenticated Home (got " +
+        page.url() + ")");
+    }
+    if (await page.locator(".cookie-consent-backdrop:visible").count()) {
+      throw new Error("E2E preflight lost persisted cookie consent");
     }
     // Verify the session after real navigation, not only after registration.
     const verified = await context.request.get(origin + "/api/v1/users/me");
