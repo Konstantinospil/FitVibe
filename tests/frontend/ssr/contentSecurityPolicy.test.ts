@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { inlineElementBodies } from "../../src/ssr/inlineCsp.js";
-import { contentSecurityPolicyForHtml } from "../../src/ssr/contentSecurityPolicy.js";
+import { inlineElementBodies } from "../../../apps/frontend/src/ssr/inlineCsp";
+import { contentSecurityPolicyForHtml } from "../../../apps/frontend/src/ssr/contentSecurityPolicy";
 
 const bootstrap = "window.__fitvibeTheme = 'dark';";
 const hash = (source: string) =>
