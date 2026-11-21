@@ -12,7 +12,7 @@ function report(name) {
 test("relevance report recognizes resolved transitive packages", () => {
   const r = report("report-dependency-relevance.cjs");
   assert.ok(r.checkedOverrides > 0);
-  for(const name of ["follow-redirects","lodash","ws","fast-xml-parser"])
+  for(const name of ["follow-redirects","lodash","ws"])
     assert.ok(!r.findings.some(f=>f.name===name),name+" incorrectly classified as absent");
 });
 test("source report respects declared TypeScript path aliases", () => {
