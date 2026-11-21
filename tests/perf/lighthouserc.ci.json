@@ -2,7 +2,14 @@
   "ci": {
     "collect": {
       "url": [
-        "http://127.0.0.1:4173/login"
+        "http://127.0.0.1:4173/",
+        "http://127.0.0.1:4173/login",
+        "http://127.0.0.1:4173/register",
+        "http://127.0.0.1:4173/forgot-password",
+        "http://127.0.0.1:4173/terms",
+        "http://127.0.0.1:4173/privacy",
+        "http://127.0.0.1:4173/cookie",
+        "http://127.0.0.1:4173/contact"
       ],
       "numberOfRuns": 3,
       "chromeFlags": [

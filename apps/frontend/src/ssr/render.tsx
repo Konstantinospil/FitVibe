@@ -25,7 +25,21 @@ const root = resolve(__dirname, "../..");
  */
 function getHtmlTemplate(): string {
   const templatePath = resolve(root, "index.html");
-  return readFileSync(templatePath, "utf-8");
+  const template = readFileSync(templatePath, "utf-8");
+  // Preserve synchronous theme setup before first paint, but eliminate the
+  // render-blocking round trip for the external script on SSR responses.
+  // Vite copies the same canonical source into dist/client in production.
+  const themeScriptPath = resolve(
+    root,
+    process.env.NODE_ENV === "production"
+      ? "dist/client/theme-bootstrap.js"
+      : "public/theme-bootstrap.js",
+  );
+  const themeScript = readFileSync(themeScriptPath, "utf-8");
+  return template.replace(
+    '<script src="/theme-bootstrap.js"></script>',
+    `<script>${themeScript}</script>`,
+  );
 }
 
 function replaceRootContent(template: string, appHtml: string): string {

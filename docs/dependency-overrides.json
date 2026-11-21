@@ -91,12 +91,12 @@
     },
     {
       "name": "basic-ftp",
-      "constraint": "^6.2.1",
+      "constraint": "6.2.4",
       "category": "transitive",
-      "status": "unverified-necessity",
+      "status": "reviewed",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "OSV scan on PR #630 at c56595c (run 44935179817) found GHSA-5pm8-86m8-9m6r and GHSA-r4jh-29pc-gfqr affecting resolved basic-ftp 6.2.1. Both advisories are fixed by basic-ftp 6.2.4. Pin patched transitive dependency until parents resolve a fixed version naturally. Keep OSV blocking.",
+      "removalCriteria": "Remove when dependency parents resolve basic-ftp >=6.2.4 without an override and frozen install, OSV and relevant compatibility tests succeed."
     },
     {
       "name": "nanoid",
@@ -104,41 +104,6 @@
       "category": "transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "vite",
-      "constraint": "^8.2.2",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "vite",
-          "range": "^8.3.4",
-          "manifest": "apps/frontend/package.json"
-        },
-        {
-          "name": "vite",
-          "range": "^8.3.4",
-          "manifest": "apps/backoffice/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "vitest",
-      "constraint": "^5.0.1",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "vitest",
-          "range": "^5.0.5",
-          "manifest": "apps/frontend/package.json"
-        }
-      ],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
@@ -250,21 +215,6 @@
       "category": "transitive",
       "status": "unverified-necessity",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "turbo",
-      "constraint": ">=2.9.14",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "turbo",
-          "range": "^2.11.9",
-          "manifest": "package.json"
-        }
-      ],
       "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },

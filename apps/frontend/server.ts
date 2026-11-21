@@ -13,7 +13,8 @@ import express, {
 import compression from "compression";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { contentSecurityPolicyForHtml } from "./src/ssr/contentSecurityPolicy.js";
 import { isCacheableRoute, getCachedHtml, setCachedHtml } from "./src/ssr/cache.js";
 import { loadProductionRenderPage } from "./src/ssr/loadRenderPage.js";
 import { recordSSRMetric } from "./src/ssr/metrics.js";
@@ -35,36 +36,16 @@ const nonHtmlContentSecurityPolicy = [
   "frame-ancestors 'none'",
 ].join("; ");
 
-const sha256Source = (value: string) =>
-  `'sha256-${createHash("sha256").update(value, "utf8").digest("base64")}'`;
-
-const contentSecurityPolicyForHtml = (html: string) => {
-  const styleHashes = [
-    ...new Set(
-      Array.from(html.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/gi), (match) =>
-        sha256Source(match[1] ?? ""),
-      ),
-    ),
-  ];
-
-  return [
-    "default-src 'self'",
-    "base-uri 'self'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-    "form-action 'self'",
-    "img-src 'self' data:",
-    "font-src 'self' data:",
-    "connect-src 'self'",
-    "script-src 'self'",
-    "script-src-attr 'none'",
-    `style-src 'self'${styleHashes.length ? ` ${styleHashes.join(" ")}` : ""}`,
-    "style-src-attr 'unsafe-inline'",
-  ].join("; ");
-};
+// The SSR renderer inlines this exact first-paint bootstrap. Never hash an
+// arbitrary script found in the rendered HTML: that would grant execution
+// permission to unexpected markup.
+const canonicalThemeBootstrap = readFileSync(
+  resolve(root, isProduction ? "dist/client/theme-bootstrap.js" : "public/theme-bootstrap.js"),
+  "utf8",
+);
 
 const setHtmlContentSecurityPolicy = (res: Response, html: string) => {
-  res.setHeader("Content-Security-Policy", contentSecurityPolicyForHtml(html));
+  res.setHeader("Content-Security-Policy", contentSecurityPolicyForHtml(html, canonicalThemeBootstrap));
 };
 
 app.use((_req: Request, res: Response, next: NextFunction) => {
