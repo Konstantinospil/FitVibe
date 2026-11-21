@@ -108,41 +108,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "vite",
-      "constraint": "^8.2.2",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "vite",
-          "range": "^8.3.4",
-          "manifest": "apps/frontend/package.json"
-        },
-        {
-          "name": "vite",
-          "range": "^8.3.4",
-          "manifest": "apps/backoffice/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "vitest",
-      "constraint": "^5.0.1",
-      "category": "direct-and-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [
-        {
-          "name": "vitest",
-          "range": "^5.0.5",
-          "manifest": "apps/frontend/package.json"
-        }
-      ],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "chrome-launcher",
       "constraint": "^1.2.1",
       "category": "transitive",
