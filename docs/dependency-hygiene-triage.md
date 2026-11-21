@@ -34,3 +34,9 @@ At [CI run 40074011240](https://github.com/Konstantinospil/FitVibe/actions/runs/
 ## Rules for subsequent cleanup
 
 For each package: confirm manifest declaration, search source/scripts/config/CI, inspect `pnpm why -r`, document production use, remove only when verified, regenerate lockfile, rerun full CI, and record any test discovery/ownership changes. Never use `knip --fix` for automatic removal.
+
+## 2026-11-21 Dependabot otplib classification
+
+- `otplib` (standalone backend runtime dependency) is not imported by the active MFA service or identified tests; the active service uses `@otplib/preset-default` and its `authenticator` API. The standalone package therefore adds a second, unnecessary OTP distribution, especially under PR #621 which would introduce v13 alongside the v12 preset.
+- Removed the direct `otplib` declaration without changing the `@otplib/preset-default` v12 declaration. PR #621 should be closed as superseded rather than merged because its standalone v13 upgrade does not update the production MFA path.
+- Verify regenerated lockfile excludes unnecessary `otplib` snapshots, retain the preset and all MFA regression coverage, and confirm tests before declaring the cleanup verified.
