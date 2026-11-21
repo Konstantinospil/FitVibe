@@ -25,8 +25,10 @@ describe("Full FitVibe app CSRF enforcement with production-equivalent settings"
 
     jest.resetModules();
 
-    // Only the database-backed policy value is replaced; the actual Express
-    // application, middleware chain, CSRF verification and auth route are used.
+    // Keep governance in its normal ready, writable state without initializing
+    // database-backed settings. The real Express app, read-only middleware,
+    // CSRF middleware, and authentication route remain mounted. Only external
+    // runtime state is replaced so valid requests reach DTO validation.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const runtime = require("../../apps/backend/src/modules/system/app-settings.runtime.js") as {
       getRuntimeAppSetting: (key: string) => number;
@@ -34,6 +36,7 @@ describe("Full FitVibe app CSRF enforcement with production-equivalent settings"
     jest.spyOn(runtime, "getRuntimeAppSetting").mockImplementation((key: string) =>
       key.endsWith("_duration_seconds") ? 60 : 1000,
     );
+    jest.spyOn(runtime, "isEffectiveReadOnly").mockReturnValue(false);
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     app = require("../../apps/backend/src/app.js").default as Express;
