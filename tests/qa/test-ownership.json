@@ -481,6 +481,171 @@
       "status": "active"
     },
     {
+      "name": "ssr-diagnostics-regression",
+      "patterns": [
+        "^tests/perf/ssr-diagnostics\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/run-ssr-diagnostics.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic SSR response and CI workflow contracts"
+      ],
+      "isolation_model": "node:test deterministic SSR response validation; real standalone SSR verified in CI",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log",
+        "lighthouse-report-${{ github.run_id }}"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-performance-report-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-performance-report\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-performance-report.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Lighthouse report values"
+      ],
+      "isolation_model": "node:test filesystem-isolated report contract",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-authenticated-score-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-score-contract\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-score-contract.cjs",
+        "tests/perf/lighthouserc.ci.json"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Lighthouse report fixtures (no live service)"
+      ],
+      "isolation_model": "node:test deterministic per-route threshold assertions",
+      "expected_artifacts": [
+        "CI Lighthouse worst-score contract step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-same-navigation-observation-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-observe-navigation\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-observe-navigation.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Playwright context and Lighthouse-target page events"
+      ],
+      "isolation_model": "node:test deterministic browser-target observation",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-real-public-scenario-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-public-scenarios\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-public-budgets.cjs",
+        "tests/perf/run-lighthouse-public-real.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic three-run first-visit and persisted-consent Lighthouse reports"
+      ],
+      "isolation_model": "node:test deterministic worst-of-three and coverage regression",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-measurement-validity-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-measurement-validity\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-measurement-validity.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic real-backend Lighthouse reports including HTTP 404, HTTP 429 and cached JavaScript transfer"
+      ],
+      "isolation_model": "node:test deterministic measurement-validity negative controls",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-route-coverage-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-route-coverage\\.test\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-routes.cjs",
+        "tests/perf/lighthouserc.ci.json"
+      ],
+      "fixture_dependencies": [
+        "Route declarations and Lighthouse audit target inventory"
+      ],
+      "isolation_model": "node:test static config and report-contract checks",
+      "expected_artifacts": [
+        "CI Lighthouse route-coverage contract step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-worst-run-config-regression",
       "patterns": [
         "^tests/perf/lighthouse-ci-config\\.test\\.cjs$"
