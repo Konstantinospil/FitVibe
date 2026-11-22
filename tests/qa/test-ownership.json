@@ -552,6 +552,23 @@
       "status": "active"
     },
     {
+      "name": "chrome-cpu-profile-attribution-regression",
+      "patterns": [
+        "^tests/perf/chrome-cpu-profile\\\\.test\\\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": ["lighthouse"],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/chrome-cpu-profile.cjs"
+      ],
+      "fixture_dependencies": ["Synthetic Chrome DevTools CPU profiles"],
+      "isolation_model": "node:test deterministic per-function sampled time and privacy checks",
+      "expected_artifacts": ["Lighthouse CI contract test log"],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "chrome-critical-path-diagnostic-regression",
       "patterns": [
         "^tests/perf/chrome-critical-path\\.test\\.cjs$"
