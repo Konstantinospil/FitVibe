@@ -105,21 +105,41 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
 
   const dehydratedState = propDehydratedState ?? getDehydratedState();
 
+  // Keep the security guard inside its own initial-loading boundary. Lazy
+  // layouts/pages suspend below it so they cannot discard a settled guard.
+  // This is an isolated rendering experiment; all authorization checks remain
+  // in ProtectedRoute and must complete before its Outlet is rendered.
   const routesContent = (
     <Suspense fallback={fallback}>
       <Routes>
         <Route element={<ProtectedRoute />}>
-          <Route path="admin/password-update" element={<AdminPasswordUpdate />} />
-          <Route element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="calendar" element={<Calendar />} />
-            <Route path="library" element={<Library />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="cookie" element={<Cookie />} />
-            <Route path="terms-reacceptance" element={<TermsReacceptance />} />
+          <Route
+            path="admin/password-update"
+            element={
+              <Suspense fallback={fallback}>
+                <AdminPasswordUpdate />
+              </Suspense>
+            }
+          />
+          <Route
+            element={
+              <Suspense fallback={fallback}>
+                <MainLayout />
+              </Suspense>
+            }
+          >
+            <Route index element={<Suspense fallback={fallback}><Home /></Suspense>} />
+            <Route path="calendar" element={<Suspense fallback={fallback}><Calendar /></Suspense>} />
+            <Route path="library" element={<Suspense fallback={fallback}><Library /></Suspense>} />
+            <Route path="dashboard" element={<Suspense fallback={fallback}><Dashboard /></Suspense>} />
+            <Route path="settings" element={<Suspense fallback={fallback}><Settings /></Suspense>} />
+            <Route path="terms" element={<Suspense fallback={fallback}><Terms /></Suspense>} />
+            <Route path="privacy" element={<Suspense fallback={fallback}><Privacy /></Suspense>} />
+            <Route path="cookie" element={<Suspense fallback={fallback}><Cookie /></Suspense>} />
+            <Route
+              path="terms-reacceptance"
+              element={<Suspense fallback={fallback}><TermsReacceptance /></Suspense>}
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>
