@@ -25,6 +25,16 @@ function analyzeCpuProfile(profile, origin) {
     throw new Error("Missing or inconsistent CPU samples");
   }
   const nodeById = new Map(profile.nodes.map((node) => [node.id, node]));
+  // Chrome ProfileNode exposes child IDs; parent is not a CDP field.
+  const parentById = new Map();
+  for (const node of profile.nodes) {
+    for (const childId of node.children || []) {
+      if (!nodeById.has(childId) || parentById.has(childId)) {
+        throw new Error("Invalid CPU profile call tree");
+      }
+      parentById.set(childId, node.id);
+    }
+  }
   const inclusive = new Map();
   const own = new Map();
   const ownSampleCounts = new Map();
@@ -43,7 +53,7 @@ function analyzeCpuProfile(profile, origin) {
     while (nodeById.has(current) && !seen.has(current)) {
       seen.add(current);
       inclusive.set(current, (inclusive.get(current) || 0) + delta);
-      current = nodeById.get(current).parent;
+      current = parentById.get(current);
     }
   }
   const totals = new Map();
