@@ -136,6 +136,38 @@ async function timedNavigation({ context, origin, authFlag, route, kind }) {
   }
 }
 
+async function timedSpaTransition({ context, origin, authFlag }) {
+  const page = await context.newPage();
+  const session = await context.newCDPSession(page);
+  try {
+    await page.addInitScript((key) => sessionStorage.setItem(key, "1"), authFlag);
+    await page.goto(origin + "/dashboard", { waitUntil: "domcontentloaded" });
+    await page.locator(getPageReadySelector("/dashboard"))
+      .waitFor({ state: "visible", timeout: 30000 });
+    const start = Date.now();
+    const trace = await captureTrace(session, async () => {
+      // A real React Router link click, not history.pushState or a full reload.
+      await page.locator('a[href="/calendar"]').first().click();
+      await page.locator(getPageReadySelector("/calendar"))
+        .waitFor({ state: "visible", timeout: 30000 });
+      if (new URL(page.url()).pathname !== "/calendar") {
+        throw new Error("SPA transition did not reach Calendar");
+      }
+    });
+    const marks = await page.evaluate(() => performance.getEntriesByType("mark")
+      .filter((e) => e.name.startsWith("fitvibe:"))
+      .map((e) => ({ name: e.name, startTime: e.startTime })));
+    return summarizeTrace(trace, { route: "/dashboard→/calendar", kind: "spa",
+      cpuThrottle: 4, network: "unthrottled",
+      elapsedWallMs: Date.now() - start, appMarks: marks,
+      // Navigation LCP is not a metric of client-side route transitions.
+      observedLcpMs: null });
+  } finally {
+    await session.detach().catch(() => undefined);
+    await page.close().catch(() => undefined);
+  }
+}
+
 async function runChromeCriticalPathDiagnostics({ browser, origin, authFlag, outputDir }) {
   fs.mkdirSync(outputDir, { recursive: true });
   const reports = [];
@@ -152,6 +184,11 @@ async function runChromeCriticalPathDiagnostics({ browser, origin, authFlag, out
       }
     }
   }
+  try {
+    reports.push(await timedSpaTransition({ context: authenticated, origin, authFlag }));
+  } catch (error) {
+    errors.push({ route: "/dashboard→/calendar", kind: "spa", error: error.message });
+  }
   const publicContext = await browser.newContext();
   try {
     for (const kind of ["cold", "warm"]) {
@@ -167,7 +204,7 @@ async function runChromeCriticalPathDiagnostics({ browser, origin, authFlag, out
   }
   fs.writeFileSync(path.join(outputDir, "chrome-critical-path.json"),
     JSON.stringify({ version: 1, reports, errors }, null, 2));
-  console.log("Chrome critical-path diagnostics: " + reports.length + "/8 traces; " +
+  console.log("Chrome critical-path diagnostics: " + reports.length + "/9 traces; " +
     errors.length + " errors");
   // Diagnostic errors are reported and visible; they never mask or relax
   // the authoritative authenticated Lighthouse budget.
