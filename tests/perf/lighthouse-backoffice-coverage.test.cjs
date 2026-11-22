@@ -92,6 +92,10 @@ test("Anonymous login needs a real CSRF response and cannot reuse an admin sessi
 test("Content-readiness requires the correct rendered state, not merely a matching URL", async () => {
   const calls = [];
   const page = {
+    async waitForFunction(check, apiPath) {
+      assert.equal(apiPath, routeContracts["/translations"].api);
+      assert.equal(typeof check, "function");
+    },
     locator(selector) {
       calls.push(selector);
       return {
@@ -105,6 +109,7 @@ test("Content-readiness requires the correct rendered state, not merely a matchi
   await verifyBackofficeContent(page, "/translations");
   assert.ok(calls.includes("main.backoffice-main h1"));
   await assert.rejects(verifyBackofficeContent({
+    async waitForFunction() {},
     locator(selector) {
       return {
         first() { return this; },
