@@ -8,12 +8,12 @@ const origin = "http://127.0.0.1:4180";
 test("attribution includes application module locations, self time and inclusive time", () => {
   const profile = {
     nodes: [
-      { id: 1, callFrame: { functionName: "(root)", url: "", lineNumber: -1 } },
-      { id: 2, parent: 1, callFrame: {
+      { id: 1, children: [2], callFrame: { functionName: "(root)", url: "", lineNumber: -1 } },
+      { id: 2, children: [3], callFrame: {
         functionName: "renderCalendar", url: origin + "/assets/js/calendar-abc123.js",
         lineNumber: 20, columnNumber: 4,
       } },
-      { id: 3, parent: 2, callFrame: {
+      { id: 3, callFrame: {
         functionName: "calculateRows", url: origin + "/assets/js/calendar-abc123.js",
         lineNumber: 35, columnNumber: 8,
       } },
@@ -39,9 +39,9 @@ test("attribution includes application module locations, self time and inclusive
 test("excludes external URLs, source query tokens, raw stacks and sensitive function labels", () => {
   const profile = {
     nodes: [
-      { id: 1, callFrame: { functionName: "privateValue=secret",
+      { id: 1, children: [2], callFrame: { functionName: "privateValue=secret",
         url: "https://other.example/?token=secret", lineNumber: 1 } },
-      { id: 2, parent: 1, callFrame: { functionName: "mount",
+      { id: 2, callFrame: { functionName: "mount",
         url: origin + "/assets/js/index-abc.js?session=secret", lineNumber: 2 } },
     ],
     samples: [1, 2],
@@ -51,6 +51,16 @@ test("excludes external URLs, source query tokens, raw stacks and sensitive func
   assert.equal(safeSource(origin + "/private?session=secret", origin), "[non-app]");
   assert.equal(safeFunctionName("password=secret"), "[anonymous/unknown]");
   assert.doesNotMatch(JSON.stringify(result), /secret|session=|https:\/\/other\.example|privateValue/);
+});
+
+test("rejects invalid child edges in Chrome CPU call tree", () => {
+  assert.throws(() => analyzeCpuProfile({
+    nodes: [
+      { id: 1, children: [2], callFrame: {} },
+      { id: 3, callFrame: {} },
+    ],
+    samples: [1], timeDeltas: [1000],
+  }, origin), /Invalid CPU profile call tree/);
 });
 
 test("invalid or missing profiler samples cannot silently create a successful result", () => {
