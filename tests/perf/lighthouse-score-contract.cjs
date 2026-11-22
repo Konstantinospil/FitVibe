@@ -9,16 +9,16 @@ const scriptBytes = (lhr) => {
   return script?.transferSize ?? null;
 };
 
-function assertWorstRunBudgets(reports, paths, origin, assertions, numberOfRuns = 3) {
+function assertWorstRunBudgets(reports, paths, origin, assertions, numberOfRuns = 3, mode = "athlete") {
   const errors = [];
-  const expected = new Set(paths.map((path) => auditUrl({ mode: "athlete", path }, origin)));
+  const expected = new Set(paths.map((path) => auditUrl({ mode, path }, origin)));
   for (const report of reports) {
     if (!expected.has(report.requestedUrl)) {
       errors.push("Unexpected authenticated Lighthouse report for " + report.requestedUrl);
     }
   }
   for (const pathname of paths) {
-    const url = auditUrl({ mode: "athlete", path: pathname }, origin);
+    const url = auditUrl({ mode, path: pathname }, origin);
     const group = reports.filter((report) => report.requestedUrl === url);
     if (group.length !== numberOfRuns) {
       errors.push(pathname + ": expected " + numberOfRuns + " runs, got " + group.length);
