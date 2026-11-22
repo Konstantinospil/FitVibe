@@ -194,9 +194,11 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
             />
             <Route
               path="terms-reacceptance"
-              element={<Suspense fallback={fallback}>
+              element={
+                <Suspense fallback={fallback}>
                   <TermsReacceptance />
-                </Suspense>}
+                </Suspense>
+              }
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
