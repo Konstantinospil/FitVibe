@@ -554,7 +554,7 @@
     {
       "name": "chrome-cpu-profile-attribution-regression",
       "patterns": [
-        "^tests/perf/chrome-cpu-profile\\\\.test\\\\.cjs$"
+        "^tests/perf/chrome-cpu-profile\\.test\\.cjs$"
       ],
       "owner": "Frontend performance / QA",
       "ci_job_ids": ["lighthouse"],
