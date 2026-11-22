@@ -605,6 +605,30 @@
 @media (prefers-reduced-motion:reduce){[data-component="toast"]{animation:none}}
 
 
+/* Reserves the meter's rows before its lazily loaded estimator arrives: the
+   invisible sizer and the meter overlap in one grid cell, so the cell is as tall
+   as the taller of the two and fields below never move when the meter loads. */
+.password-strength-slot {
+  display: grid;
+}
+
+.password-strength-slot > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.password-strength-slot__sizer {
+  visibility: hidden;
+}
+
+.password-strength-slot__bar {
+  height: var(--space-xs);
+}
+
+.password-strength-slot__sizer [data-sizer-text]::before {
+  content: attr(data-sizer-text);
+}
+
 /* Shared password-strength meter: tokens and presentation belong in CSS. */
 [data-component="password-strength"] .password-strength-meter {
   display: flex;
