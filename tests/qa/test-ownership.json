@@ -557,14 +557,20 @@
         "^tests/perf/chrome-cpu-profile\\.test\\.cjs$"
       ],
       "owner": "Frontend performance / QA",
-      "ci_job_ids": ["lighthouse"],
+      "ci_job_ids": [
+        "lighthouse"
+      ],
       "contract_sources": [
         ".github/workflows/ci.yml",
         "tests/perf/chrome-cpu-profile.cjs"
       ],
-      "fixture_dependencies": ["Synthetic Chrome DevTools CPU profiles"],
+      "fixture_dependencies": [
+        "Synthetic Chrome DevTools CPU profiles"
+      ],
       "isolation_model": "node:test deterministic per-function sampled time and privacy checks",
-      "expected_artifacts": ["Lighthouse CI contract test log"],
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
       "severity": "blocking",
       "status": "active"
     },
@@ -681,6 +687,33 @@
       "isolation_model": "node:test static config and report-contract checks",
       "expected_artifacts": [
         "CI Lighthouse route-coverage contract step log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
+      "name": "lighthouse-backoffice-state-regression",
+      "patterns": [
+        "^tests/perf/lighthouse-backoffice-coverage\\.test\\.cjs$"
+      ],
+      "owner": "Backoffice / frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/lighthouse-backoffice-readiness.cjs",
+        "tests/perf/run-lighthouse-backoffice.cjs",
+        "tests/perf/lighthouse-routes.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic role-aware Lighthouse reports",
+        "Disposable E2E PostgreSQL and genuine administrator MFA for runtime audits"
+      ],
+      "isolation_model": "node:test negative controls; real backoffice audits only in disposable shard 1 after frontend suites",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log",
+        "lighthouse-backoffice-${{ github.run_id }}"
       ],
       "severity": "blocking",
       "status": "active"
