@@ -2485,8 +2485,8 @@ jobs:
       PORT: "4000"
       FRONTEND_URL: http://127.0.0.1:4180
       APP_BASE_URL: http://127.0.0.1:4180
-      ALLOWED_ORIGINS: http://127.0.0.1:4180
-      CSRF_ALLOWED_ORIGINS: http://127.0.0.1:4180
+      ALLOWED_ORIGINS: http://127.0.0.1:4180,http://127.0.0.1:4182
+      CSRF_ALLOWED_ORIGINS: http://127.0.0.1:4180,http://127.0.0.1:4182
       CSRF_ENABLED: "true"
       COOKIE_SECURE: "false"
       TRUST_PROXY: "true"
@@ -2712,10 +2712,64 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
+      # #614: independent backoffice origin and real MFA-protected browser audit.
+      # This runs only after the authoritative shard's regular E2E and athlete
+      # measurements; it uses the same disposable database, not production data.
+      - name: Start disposable backoffice Lighthouse ingress
+        if: always() && matrix.shard == 1
+        timeout-minutes: 8
+        run: |
+          pnpm --filter @fitvibe/backoffice run build
+          pnpm --filter @fitvibe/backoffice exec vite preview --host 127.0.0.1 --port 4174 --strictPort > /tmp/fitvibe-backoffice-preview.log 2>&1 &
+          echo $! > /tmp/fitvibe-backoffice-preview.pid
+          for i in {1..40}; do
+            if curl --fail --silent http://127.0.0.1:4174/login >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          curl --fail http://127.0.0.1:4174/login >/dev/null
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path("infra/docker/prod/nginx.conf").read_text()
+          source = source.replace("events {}", "pid /tmp/fitvibe-backoffice-nginx.pid;\nerror_log /tmp/fitvibe-backoffice-nginx-error.log;\n\nevents {}")
+          source = source.replace("server backend:4000;", "server 127.0.0.1:4000;")
+          source = source.replace("server frontend:4173;", "server 127.0.0.1:4174;")
+          source = source.replace("listen 80;", "listen 4182;")
+          Path("/tmp/fitvibe-backoffice-nginx.conf").write_text(source)
+          PY
+          sudo nginx -t -c /tmp/fitvibe-backoffice-nginx.conf
+          sudo nginx -c /tmp/fitvibe-backoffice-nginx.conf
+          curl -fsS http://127.0.0.1:4182/__ingress_health
+          curl -fsS http://127.0.0.1:4182/api/v1/csrf-token | grep -q 'csrfToken'
+
+      - name: Audit backoffice with real administrator and superadministrator MFA
+        if: always() && matrix.shard == 1
+        timeout-minutes: 20
+        env:
+          PLAYWRIGHT_BACKOFFICE_URL: http://127.0.0.1:4182
+          LIGHTHOUSE_STATEFUL_FIXTURES: "1"
+        run: node tests/perf/run-lighthouse-backoffice.cjs
+
+      - name: Upload backoffice Lighthouse evidence
+        if: always() && matrix.shard == 1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: lighthouse-backoffice-${{ github.run_id }}
+          path: tests/perf/lhci-output/backoffice
+          retention-days: 30
+          if-no-files-found: error
+
       - name: Stop E2E runtime
         if: always()
         timeout-minutes: 2
         run: |
+          if [ -f /tmp/fitvibe-backoffice-nginx.conf ]; then
+            sudo nginx -c /tmp/fitvibe-backoffice-nginx.conf -s stop 2>/dev/null || true
+          fi
+          if [ -f /tmp/fitvibe-backoffice-preview.pid ]; then
+            kill "$(cat /tmp/fitvibe-backoffice-preview.pid)" 2>/dev/null || true
+          fi
           docker logs fitvibe-e2e-frontend 2>/dev/null || true
           docker rm -f fitvibe-e2e-frontend 2>/dev/null || true
           if [ -f /tmp/fitvibe-e2e-backend.pid ]; then
