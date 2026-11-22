@@ -53,6 +53,37 @@ test("excludes external URLs, source query tokens, raw stacks and sensitive func
   assert.doesNotMatch(JSON.stringify(result), /secret|session=|https:\/\/other\.example|privateValue/);
 });
 
+test("normalizes negative Chrome sampling deltas without inflating self or inclusive time", () => {
+  const profile = {
+    nodes: [
+      { id: 1, children: [2], callFrame: { functionName: "(root)", url: "" } },
+      { id: 2, callFrame: { functionName: "calculateRows",
+        url: origin + "/assets/js/calendar-abc123.js", lineNumber: 5, columnNumber: 1 } },
+    ],
+    samples: [2, 2, 2, 2],
+    timeDeltas: [3000, -1000, 500, 2000],
+  };
+  const result = analyzeCpuProfile(profile, origin);
+  const calculated = result.topBySelfTime.find((row) => row.functionName === "calculateRows");
+  assert.equal(result.sampleCount, 4);
+  assert.equal(result.sampledDurationMs, 4.5);
+  assert.equal(calculated.selfTimeMs, 4.5);
+  assert.equal(calculated.inclusiveTimeMs, 4.5);
+  assert.equal(result.timingCorrections.count, 1);
+  assert.equal(result.timingCorrections.largestNegativeDeltaUs, 1000);
+});
+
+test("distinguishes unresolved CPU node IDs from invalid timing data", () => {
+  assert.throws(() => analyzeCpuProfile({
+    nodes: [{ id: 1, callFrame: {} }],
+    samples: [9], timeDeltas: [1000],
+  }, origin), /Invalid CPU sample node: unresolved sample ID/);
+  assert.throws(() => analyzeCpuProfile({
+    nodes: [{ id: 1, callFrame: {} }],
+    samples: [1], timeDeltas: [NaN],
+  }, origin), /Invalid CPU sample timing: nonfinite delta/);
+});
+
 test("rejects invalid child edges in Chrome CPU call tree", () => {
   assert.throws(() => analyzeCpuProfile({
     nodes: [
@@ -69,5 +100,5 @@ test("invalid or missing profiler samples cannot silently create a successful re
     /Missing or inconsistent CPU samples/);
   assert.throws(() => analyzeCpuProfile({
     nodes: [{ id: 1, callFrame: {} }], samples: [2], timeDeltas: [1000],
-  }, origin), /Invalid CPU sample timing or node/);
+  }, origin), /Invalid CPU sample node: unresolved sample ID/);
 });
