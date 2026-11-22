@@ -7,6 +7,7 @@
  */
 function observeNavigation(context, requestedUrl, verifyPage, collectDiagnostics) {
   const tasks = [];
+  const expectedOrigin = new URL(requestedUrl).origin;
   const watched = new Map();
   const seen = new Set();
   const apiResponses = new Map();
@@ -23,9 +24,15 @@ function observeNavigation(context, requestedUrl, verifyPage, collectDiagnostics
       if (page.url() !== requestedUrl) {
         throw new Error("Measured browser tab navigated away from " + requestedUrl);
       }
-      const diagnostics = collectDiagnostics
-        ? await collectDiagnostics(page, apiResponses.get(page) ?? [])
-        : undefined;
+      // Diagnostics must never invalidate an otherwise valid performance run.
+      let diagnostics;
+      if (collectDiagnostics) {
+        try {
+          diagnostics = await collectDiagnostics(page, apiResponses.get(page) ?? []);
+        } catch {
+          diagnostics = { diagnosticError: "Navigation timing unavailable" };
+        }
+      }
       return {
         requestedUrl, ready: true, observedUrl: page.url(),
         ...(diagnostics === undefined ? {} : { diagnostics }),
@@ -44,8 +51,7 @@ function observeNavigation(context, requestedUrl, verifyPage, collectDiagnostics
     const onResponse = (response) => {
       try {
         const url = new URL(response.url());
-        if (url.origin !== new URL(requestedUrl).origin ||
-            !url.pathname.startsWith("/api/v1/")) return;
+        if (url.origin !== expectedOrigin || !isSafeApiPath(url.pathname)) return;
         // Keep only paths and statuses: no queries, credentials, bodies or PII.
         responses.push({ path: url.pathname, status: response.status() });
       } catch {
@@ -81,6 +87,17 @@ function observeNavigation(context, requestedUrl, verifyPage, collectDiagnostics
  * This diagnostic does not create navigations or change Lighthouse throttling.
  * Missing entries stay null, not fabricated zero-duration observations.
  */
+// Never retain dynamic API path segments that can contain private identifiers.
+const SAFE_API_PATHS = new Set([
+  "/api/v1/auth/legal-documents/status",
+  "/api/v1/auth/admin-password/status",
+  "/api/v1/users/me/preferences",
+  "/api/v1/consent/cookie-status",
+]);
+function isSafeApiPath(pathname) {
+  return SAFE_API_PATHS.has(pathname);
+}
+
 async function collectNavigationDiagnostics(page, responses) {
   const timings = await page.evaluate(() => {
     const navigation = performance.getEntriesByType("navigation")[0];
@@ -92,7 +109,12 @@ async function collectNavigationDiagnostics(page, responses) {
       .filter((entry) => {
         try {
           const url = new URL(entry.name);
-          return url.origin === location.origin && url.pathname.startsWith("/api/v1/");
+          return url.origin === location.origin && [
+            "/api/v1/auth/legal-documents/status",
+            "/api/v1/auth/admin-password/status",
+            "/api/v1/users/me/preferences",
+            "/api/v1/consent/cookie-status",
+          ].includes(url.pathname);
         } catch {
           return false;
         }
@@ -116,4 +138,4 @@ async function collectNavigationDiagnostics(page, responses) {
   return { ...timings, apiResponses: responses };
 }
 
-module.exports = { observeNavigation, collectNavigationDiagnostics };
+module.exports = { observeNavigation, collectNavigationDiagnostics, isSafeApiPath };
