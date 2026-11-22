@@ -552,6 +552,29 @@
       "status": "active"
     },
     {
+      "name": "chrome-critical-path-diagnostic-regression",
+      "patterns": [
+        "^tests/perf/chrome-critical-path\\\\.test\\\\.cjs$"
+      ],
+      "owner": "Frontend performance / QA",
+      "ci_job_ids": [
+        "lighthouse"
+      ],
+      "contract_sources": [
+        ".github/workflows/ci.yml",
+        "tests/perf/chrome-critical-path.cjs"
+      ],
+      "fixture_dependencies": [
+        "Synthetic Chrome DevTools trace data"
+      ],
+      "isolation_model": "node:test deterministic trace sanitization and CPU event aggregation",
+      "expected_artifacts": [
+        "Lighthouse CI contract test log"
+      ],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "lighthouse-same-navigation-observation-regression",
       "patterns": [
         "^tests/perf/lighthouse-observe-navigation\\.test\\.cjs$"
