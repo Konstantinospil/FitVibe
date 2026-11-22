@@ -55,6 +55,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
 
   useEffect(() => {
     let active = true;
+    performance.mark("fitvibe:translations:start");
 
     void (async () => {
       try {
@@ -70,6 +71,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
         if (preferencesResult.status === "rejected") {
           throw preferencesResult.reason;
         }
+        performance.mark("fitvibe:translations:initial-settled");
         const preferences = preferencesResult.value;
         // The account preference is authoritative after authentication (ADR-031).
         // The browser language remains a fallback if preferences cannot be fetched.
@@ -81,10 +83,12 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
           return;
         }
         await i18n.changeLanguage(preferences.language);
+        performance.mark("fitvibe:translations:language-ready");
       } catch {
         // A preference read failure must not prevent access to protected routes.
       } finally {
         if (active) {
+          performance.mark("fitvibe:translations:gate-open");
           setTranslationsReady(true);
         }
       }
