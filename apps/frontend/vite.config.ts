@@ -39,10 +39,7 @@ export default defineConfig(() => {
         // Explicitly resolve testing libraries for setup files in tests/frontend/
         ...(isVitest
           ? {
-              "react/jsx-dev-runtime": pathResolve(
-                root,
-                "node_modules/react/jsx-dev-runtime.js",
-              ),
+              "react/jsx-dev-runtime": pathResolve(root, "node_modules/react/jsx-dev-runtime.js"),
               "react/jsx-runtime": pathResolve(root, "node_modules/react/jsx-runtime.js"),
               "react-dom": pathResolve(root, "node_modules/react-dom"),
               react: pathResolve(root, "node_modules/react"),
@@ -206,6 +203,28 @@ export default defineConfig(() => {
           // chunks caused circular initialization order failures in production.
           // Optimize chunk file names for better caching
           // For SSR, output to server directory structure
+          // Under the CI Lighthouse profile (HTTP/1.1, 6 connections, 150 ms
+          // RTT) every request costs roughly a round trip, and most pages
+          // loaded 13-16 shared chunks under 2 KB (icons, small components).
+          // Group only *small, shared* app/icon modules into one chunk.
+          // includeDependenciesRecursively: false keeps their dependencies
+          // (React, router, ...) where Rolldown put them, so module
+          // initialisation order is unchanged (issue 634).
+          ...(isSSR
+            ? {}
+            : {
+                codeSplitting: {
+                  includeDependenciesRecursively: false,
+                  groups: [
+                    {
+                      name: "shared-small",
+                      test: /[\\/](src[\\/](components|contexts|hooks|layouts)|node_modules[\\/].*lucide-react)[\\/]/,
+                      minShareCount: 2,
+                      maxModuleSize: 4096,
+                    },
+                  ],
+                },
+              }),
           chunkFileNames: isSSR ? "[name]-[hash].js" : "assets/js/[name]-[hash].js",
           entryFileNames: isSSR ? "[name]-[hash].js" : "assets/js/[name]-[hash].js",
           assetFileNames: isSSR
