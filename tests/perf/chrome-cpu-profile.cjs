@@ -39,20 +39,36 @@ function analyzeCpuProfile(profile, origin) {
   const own = new Map();
   const ownSampleCounts = new Map();
   let totalSampleUs = 0;
+  let rawElapsedUs = 0;
+  let clockCorrectionCount = 0;
+  let largestNegativeDeltaUs = 0;
   for (let i = 0; i < profile.samples.length; i += 1) {
     const delta = profile.timeDeltas[i];
     const id = profile.samples[i];
-    if (!Number.isFinite(delta) || delta < 0 || !nodeById.has(id)) {
-      throw new Error("Invalid CPU sample timing or node");
+    if (!Number.isFinite(delta)) {
+      throw new Error("Invalid CPU sample timing: nonfinite delta");
     }
-    totalSampleUs += delta;
-    own.set(id, (own.get(id) || 0) + delta);
+    if (!nodeById.has(id)) {
+      throw new Error("Invalid CPU sample node: unresolved sample ID");
+    }
+    // V8 sampling deltas can occasionally move the clock backwards.
+    // Account only for newly reached monotonic time; never charge negative
+    // elapsed time or artificially increase aggregate CPU estimates.
+    rawElapsedUs += delta;
+    const elapsedUs = Math.max(totalSampleUs, rawElapsedUs);
+    const effectiveDeltaUs = elapsedUs - totalSampleUs;
+    if (delta < 0) {
+      clockCorrectionCount += 1;
+      largestNegativeDeltaUs = Math.max(largestNegativeDeltaUs, -delta);
+    }
+    totalSampleUs = elapsedUs;
+    own.set(id, (own.get(id) || 0) + effectiveDeltaUs);
     ownSampleCounts.set(id, (ownSampleCounts.get(id) || 0) + 1);
     let current = id;
     const seen = new Set();
     while (nodeById.has(current) && !seen.has(current)) {
       seen.add(current);
-      inclusive.set(current, (inclusive.get(current) || 0) + delta);
+      inclusive.set(current, (inclusive.get(current) || 0) + effectiveDeltaUs);
       current = parentById.get(current);
     }
   }
@@ -82,6 +98,7 @@ function analyzeCpuProfile(profile, origin) {
     method: "Chrome DevTools Profiler sampling",
     sampleCount: profile.samples.length,
     sampledDurationMs: totalSampleUs / 1000,
+    timingCorrections: { count: clockCorrectionCount, largestNegativeDeltaUs },
     // No call stacks, full URLs, sample node IDs or source text persist.
     topBySelfTime: functions.slice(0, 60),
     topByInclusiveTime: byInclusiveTime.slice(0, 60),
