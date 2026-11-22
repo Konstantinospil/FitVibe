@@ -66,6 +66,17 @@ async function verifyBackofficeContent(page, pathname) {
   for (const selector of contract.fields ?? []) {
     await page.locator(selector).waitFor({ state: "visible", timeout: 30000 });
   }
+  // A heading can render before its data query. Require a completed network
+  // resource entry from this very navigation, and verify its HTTP status in
+  // the Lighthouse report. A setup-tab preflight cannot satisfy this check.
+  await page.waitForFunction((apiPath) =>
+    performance.getEntriesByType("resource").some((entry) => {
+      try {
+        return new URL(entry.name).pathname === apiPath;
+      } catch {
+        return false;
+      }
+    }), contract.api, { timeout: 30000 });
   for (const selector of [
     'main.backoffice-main [role="alert"]:visible',
     'main.backoffice-main [aria-busy="true"]:visible',
