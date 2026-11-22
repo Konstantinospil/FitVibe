@@ -27,6 +27,7 @@ function analyzeCpuProfile(profile, origin) {
   const nodeById = new Map(profile.nodes.map((node) => [node.id, node]));
   const inclusive = new Map();
   const own = new Map();
+  const ownSampleCounts = new Map();
   let totalSampleUs = 0;
   for (let i = 0; i < profile.samples.length; i += 1) {
     const delta = profile.timeDeltas[i];
@@ -36,6 +37,7 @@ function analyzeCpuProfile(profile, origin) {
     }
     totalSampleUs += delta;
     own.set(id, (own.get(id) || 0) + delta);
+    ownSampleCounts.set(id, (ownSampleCounts.get(id) || 0) + 1);
     let current = id;
     const seen = new Set();
     while (nodeById.has(current) && !seen.has(current)) {
@@ -58,7 +60,7 @@ function analyzeCpuProfile(profile, origin) {
       selfTimeMs: 0, inclusiveTimeMs: 0, samples: 0 };
     row.selfTimeMs += (own.get(node.id) || 0) / 1000;
     row.inclusiveTimeMs += (inclusive.get(node.id) || 0) / 1000;
-    row.samples += profile.samples.filter((id) => id === node.id).length;
+    row.samples += ownSampleCounts.get(node.id) || 0;
     totals.set(key, row);
   }
   const functions = [...totals.values()];
