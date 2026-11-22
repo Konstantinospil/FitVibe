@@ -57,6 +57,8 @@ Round trips dominate, bandwidth comes second, and CPU barely matters on authenti
 
 ## 5. Remaining known costs (not yet addressed)
 
+After H9a and H10 (CI #45075247857), authenticated worst-of-three LCP is 3,018–3,098 ms on 7 routes and 3,275 ms on `/`. Public real-backend routes pass.
+
 - **Request count and depth** (§3). Remaining candidates, each to be tested on its own (sub-2 KB shared chunks are addressed by H10): loading the i18n string chunks (`common`, `auth`, `terms`, `privacy`, `cookie`, `minimal-login-common`, 6 requests) with fewer requests or earlier; and the late `fontLoader`/`appFontLoader` requests before LCP.
 - After a reload `user` is `null` until sign-in, so every athlete also triggers the admin-password check. This is request hygiene, not an expected LCP win, given the H7 result.
 - Page data requests (step 6) start only after the guard opens.
