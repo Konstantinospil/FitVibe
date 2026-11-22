@@ -10,19 +10,12 @@ import { ensurePrivateTranslationsLoaded, minimalTranslationsReady } from "./i18
 // Theme store is small and needed immediately to prevent FOUC
 import { applyTheme, useThemeStore } from "./store/theme.store";
 import { useAuthStore } from "./store/auth.store";
-import { startSessionBootstrap } from "./lib/sessionBootstrap";
 
 // With a session, ProtectedRoutes will need the full bundle. Start it now, in
 // parallel with the login strings, instead of after the app mounts (issue 634).
 // This only downloads strings; ProtectedRoutes still gates on readiness.
-// The preferences and guard requests start here too, instead of one after the
-// other once the app has mounted. ProtectedRoute still makes every decision.
-{
-  const { isAuthenticated, user } = useAuthStore.getState();
-  if (isAuthenticated) {
-    void ensurePrivateTranslationsLoaded().catch(() => undefined);
-    startSessionBootstrap(isAuthenticated, user);
-  }
+if (useAuthStore.getState().isAuthenticated) {
+  void ensurePrivateTranslationsLoaded().catch(() => undefined);
 }
 
 const schedulePublicFonts = (): void => {

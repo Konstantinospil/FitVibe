@@ -6,11 +6,6 @@ import {
   getLegalDocumentsStatus,
   type LegalDocumentsStatus,
 } from "../services/api";
-import {
-  computeGuardKey,
-  takeBootstrapAdministratorPolicy,
-  takeBootstrapLegalStatus,
-} from "../lib/sessionBootstrap";
 
 const TERMS_GATE_ALLOWED_PATHS = new Set([
   "/terms-reacceptance",
@@ -54,7 +49,9 @@ const ProtectedRoute: React.FC = () => {
   const location = useLocation();
   const isAdministrator = user?.role === "admin" || user?.role === "superadmin";
   const roleMissing = !user;
-  const guardKey = computeGuardKey(isAuthenticated, user);
+  const guardKey = !isAuthenticated
+    ? "signed-out"
+    : `${user?.id ?? "unknown-user"}|${roleMissing ? "role-missing" : isAdministrator ? "admin" : "member"}`;
 
   const [legalResult, setLegalResult] = useState<Checked<LegalDocumentsStatus | "failed"> | null>(
     null,
@@ -75,10 +72,8 @@ const ProtectedRoute: React.FC = () => {
 
     // The persisted browser session may precede hydration of user.role.
     // Ask the server rather than assuming a missing client role is non-admin.
-    // main.tsx may already have requested both checks for this exact identity
-    // (issue 634). Each early result is single use and only matches guardKey.
     if (isAdministrator || roleMissing) {
-      void (takeBootstrapAdministratorPolicy(guardKey) ?? getAdministratorPasswordPolicyStatus())
+      void getAdministratorPasswordPolicyStatus()
         .then((status) => {
           if (!cancelled) {
             setPasswordResult({
@@ -108,7 +103,7 @@ const ProtectedRoute: React.FC = () => {
       setPasswordResult({ key: guardKey, value: { gate: "clear", minimumPasswordLength: null } });
     }
 
-    void (takeBootstrapLegalStatus(guardKey) ?? getLegalDocumentsStatus())
+    void getLegalDocumentsStatus()
       .then((status) => {
         if (!cancelled) {
           setLegalResult({ key: guardKey, value: status });

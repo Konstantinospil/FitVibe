@@ -1,49 +1,45 @@
 # Frontend authenticated startup path
 
 **Status:** current as of branch `fix/auth-bootstrap-634` (issue #634).
-**Scope:** what happens between an authenticated reload and the first protected page render, which parts are on the critical path, and the security invariants every optimisation must keep.
+**Scope:** what happens between an authenticated reload and the first protected page render, which parts measurably matter for the authenticated Lighthouse gate, and the security invariants every optimisation must keep.
 
-The authenticated Lighthouse gate (three valid runs per route, worst-of-three LCP ≤ 3,000 ms, simulated mobile profile with 4× CPU slowdown) measures this path. Each serial network round trip on it costs roughly one simulated RTT, so the design aim is that independent work starts together, as early as possible.
+The authenticated Lighthouse gate (three valid runs per route, worst-of-three LCP ≤ 3,000 ms, simulated mobile profile with 4× CPU slowdown) measures this path.
 
 ## 1. Sequence
 
-| Step | Where                        | Starts                                                                                                                                                                                                                                                                                     | Waits for                                              |
-| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| 1    | `bootstrap.ts` (HTML entry)  | `import("./main")`; with a session flag also `prefetchProtectedEntry(path)`, which downloads the `ProtectedRoutes` chunk and the current page chunk                                                                                                                                        | nothing                                                |
-| 2    | `main.tsx` module evaluation | login strings; with a session: the full translation bundle (`ensurePrivateTranslationsLoaded`) and `startSessionBootstrap()`, which sends `GET /users/me/preferences`, `GET /auth/legal-documents/status` and, if the role is unknown or administrative, `GET /auth/admin-password/status` | main chunk                                             |
-| 3    | `main.tsx` mount             | `hydrateRoot`/`createRoot`                                                                                                                                                                                                                                                                 | `minimalTranslationsReady`                             |
-| 4    | `ProtectedRoutes` effect     | adopts the early preferences request (or sends it) and applies the account language                                                                                                                                                                                                        | full translations **and** preferences, both settled    |
-| 5    | `ProtectedRoute` effect      | adopts the early legal/admin requests for its identity key (or sends them)                                                                                                                                                                                                                 | legal status and, when required, admin-password status |
-| 6    | Page                         | page component (chunk already prefetched); its own data queries                                                                                                                                                                                                                            | page chunk, page data                                  |
+| Step | Where                        | Starts                                                                                                                                              | Waits for                                              |
+| ---- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1    | `bootstrap.ts` (HTML entry)  | `import("./main")`; with a session flag also `prefetchProtectedEntry(path)`, which downloads the `ProtectedRoutes` chunk and the current page chunk | nothing                                                |
+| 2    | `main.tsx` module evaluation | login strings; with a session also the full translation bundle (`ensurePrivateTranslationsLoaded`)                                                  | main chunk                                             |
+| 3    | `main.tsx` mount             | `hydrateRoot`/`createRoot`                                                                                                                          | `minimalTranslationsReady`                             |
+| 4    | `ProtectedRoutes` effect     | `GET /users/me/preferences`, then applies the account language                                                                                      | full translations **and** preferences, both settled    |
+| 5    | `ProtectedRoute` effect      | `GET /auth/legal-documents/status` and, if the role is unknown or administrative, `GET /auth/admin-password/status`                                 | legal status and, when required, admin-password status |
+| 6    | Page                         | page component (chunk already prefetched); its own data queries                                                                                     | page chunk, page data                                  |
 
 `ProtectedRoute` and `MainLayout` are imported eagerly by `ProtectedRoutes`. Each page has its own Suspense boundary _below_ the guard, so a pending page chunk can never unmount a settled guard.
 
-Before #634, steps 1–6 discovered code one lazy boundary at a time (three serial login-string chunks → `ProtectedRoutes` → `ProtectedRoute` → `MainLayout` → page). After that, the API calls were still serial: preferences only started in step 4, and the guard checks only started in step 5, after preferences had settled.
+## 2. What the measurements show
 
-## 2. Early bootstrap requests (`src/lib/sessionBootstrap.ts`)
+| Change                                                                                        | Result on route-worst simulated LCP                                                                                                                                                                                                                                                                              | Decision               |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| Halve guard API calls (nested Suspense, #635 experiment B)                                    | no change (~4.05–4.07 s)                                                                                                                                                                                                                                                                                         | not an LCP fix         |
+| Collapse the serial chunk waterfall (#636)                                                    | ~4.1 s → ~3.4–3.6 s on all 8 routes                                                                                                                                                                                                                                                                              | **retained**           |
+| Start preferences and guard checks together at `main.tsx` evaluation (#637, commit `2297988`) | mean 3,526 → 3,532 ms; per-route Δ −89 … +136 ms, the same size as the drift seen on public routes that make none of these calls (CI [#45060720945](https://github.com/Konstantinospil/FitVibe/actions/runs/45060720945) vs [#45067153231](https://github.com/Konstantinospil/FitVibe/actions/runs/45067153231)) | **rejected, reverted** |
 
-The early requests change _when_ the guard's data is requested, not _how_ it is judged. Invariants:
+Conclusion so far: the authenticated API round trips (steps 4–5) are **not** what Lighthouse's simulated LCP is sensitive to; the code-discovery chain was. Public routes, which make none of these calls, sit at ~3.0–3.2 s on the same runner. That suggests the remaining shared floor is downloading and evaluating the main/vendor JavaScript and rendering it under 4× CPU slowdown. This is still a hypothesis (H9 in #634) and must be checked against Lighthouse's own bootup-time, main-thread and critical-request-chain audits before any change.
 
-1. **Session only.** Nothing starts without the session flag. The requests are ordinary GETs authorised by the HttpOnly session cookie. A 401 follows the usual refresh path in `httpApi.ts`.
-2. **Identity binding.** Guard results are stored with `computeGuardKey(isAuthenticated, user)` as it was when they were requested. The guard uses the same function, and only adopts a result whose key is identical; otherwise it fetches fresh.
-3. **Single use and bounded age.** Each result can be taken once and only within `SESSION_BOOTSTRAP_MAX_AGE_MS` (10 s) of being requested. Any later check, including StrictMode's development effect replay, fetches fresh.
-4. **Discarded on identity change.** `signIn` and `signOut` in `auth.store.ts` call `discardSessionBootstrap()`.
-5. **Failures still fail closed.** A rejected early request reaches the guard as a rejection, so a failed legal check still redirects ordinary routes to `/terms-reacceptance`, and a failed admin check still requires the password update (except `ADMIN_2FA_REQUIRED`).
-6. **No extra requests.** A successful hand-off replaces the request the consumer would have made. Rate-limit consumption per navigation is unchanged.
+## 3. Security invariants from #634
 
-Tests: `tests/frontend/lib/sessionBootstrap.test.ts` (module contract) and `tests/frontend/components/ProtectedRoute.bootstrap.test.tsx` (guard adoption, identity mismatch, fail-closed paths). Guard identity behaviour without early requests stays covered by `ProtectedRoute.identity.test.tsx`.
-
-## 3. Other startup invariants from #634
-
-- **Guard identity binding** (`ProtectedRoute.tsx`): the gate renders nothing until results for the current user id and role class arrive. One account's clearance never covers another.
+- **Guard identity binding** (`ProtectedRoute.tsx`): every guard result is stored with the identity key it was fetched for (user id + role class, or `unknown-user|role-missing` before the profile is known). The gate renders nothing until results for the current key arrive. One account's clearance never covers another.
+- **Fail closed:** a failed legal check sends ordinary routes to `/terms-reacceptance`; a failed admin check requires the password update (except `ADMIN_2FA_REQUIRED`).
 - **Query cache isolation** (`auth.store.ts`): the shared React Query cache is cleared on sign-out and when a different or unknown account signs in.
 - **Reserved layout space:** the Dashboard Vibeform box (240×320) and the password strength meter are reserved before their lazy content loads, to avoid CLS and moving click targets.
 - **Consent status on 429:** retried once, honouring `Retry-After` (≤ 10 s). Visitors who already chose are not re-prompted while the status is unavailable.
 
 ## 4. Remaining known costs (not yet addressed)
 
-- After a reload `user` is `null` until sign-in, so every athlete also triggers the admin-password check, and the identity key is `unknown-user|role-missing`. Hydrating the user would remove that request.
-- The main bundle and its shared vendor chunk must be downloaded and evaluated before step 2. Splitting them further has to be justified by Lighthouse's own bootup and critical-request audits, not by guesswork.
+- The main bundle and its shared vendor chunk must be downloaded and evaluated before step 2 (H9, next candidate; see section 2).
+- After a reload `user` is `null` until sign-in, so every athlete also triggers the admin-password check. This is request hygiene, not an expected LCP win, given the H7 result.
 - Page data requests (step 6) start only after the guard opens.
 
 Every change to this path follows the experiment contract in issue #634: one hypothesis per change, baseline and patch SHAs, the unchanged worst-of-three gate, TBT/CLS counter-metrics, and an explicit retain/revert decision.

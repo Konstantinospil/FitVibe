@@ -9,7 +9,6 @@ import {
 import { queryClient as defaultQueryClient } from "../lib/queryClient";
 import i18n, { ensurePrivateTranslationsLoaded, loadLanguageTranslations } from "../i18n/config";
 import { getUserPreferences } from "../services/api";
-import { takeBootstrapPreferences } from "../lib/sessionBootstrap";
 import { readDehydratedStateFromDocument } from "../ssr/dehydratedState";
 // The guard (~1 KB) and layout (~2 KB) are on every authenticated route.
 // Importing them eagerly removes two sequential chunk round trips from the
@@ -97,10 +96,9 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
       try {
         // Both operations are independent. Start them together, but keep
         // protected content gated until the authoritative language is ready.
-        // main.tsx usually started the preferences request already.
         const [translations, preferencesResult] = await Promise.allSettled([
           ensurePrivateTranslationsLoaded(),
-          takeBootstrapPreferences() ?? getUserPreferences(),
+          getUserPreferences(),
         ]);
         if (translations.status === "rejected") {
           throw translations.reason;
