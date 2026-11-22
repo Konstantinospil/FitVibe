@@ -6,9 +6,17 @@ import "./styles/components.css";
 import "./styles/surfaces.css";
 // Suppress console errors in production for Lighthouse compliance
 import "./utils/suppressConsole";
-import { minimalTranslationsReady } from "./i18n/config";
+import { ensurePrivateTranslationsLoaded, minimalTranslationsReady } from "./i18n/config";
 // Theme store is small and needed immediately to prevent FOUC
 import { applyTheme, useThemeStore } from "./store/theme.store";
+import { useAuthStore } from "./store/auth.store";
+
+// With a session, ProtectedRoutes will need the full bundle. Start it now, in
+// parallel with the login strings, instead of after the app mounts (issue 634).
+// This only downloads strings; ProtectedRoutes still gates on readiness.
+if (useAuthStore.getState().isAuthenticated) {
+  void ensurePrivateTranslationsLoaded().catch(() => undefined);
+}
 
 const schedulePublicFonts = (): void => {
   const load = (): void => {

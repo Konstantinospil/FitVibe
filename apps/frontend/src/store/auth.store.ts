@@ -1,6 +1,17 @@
 import { create } from "zustand";
 import { logout as apiLogout } from "../services/api";
+import { queryClient } from "../lib/queryClient";
 import { logger } from "../utils/logger";
+
+/**
+ * The browser QueryClient is shared by every account that uses this tab and
+ * its keys are not user-scoped (e.g. ["settings", "preferences"]). Without a
+ * clear, the next account in the same tab can read the previous account's
+ * cached data within its stale window (issue 634).
+ */
+const clearAccountCache = (): void => {
+  queryClient.clear();
+};
 
 /**
  * SECURITY FIX (CWE-922): Removed token storage from localStorage
@@ -55,9 +66,13 @@ const initialState = {
   user: null,
 };
 
-export const useAuthStore = create<AuthState>()((set) => ({
+export const useAuthStore = create<AuthState>()((set, get) => ({
   ...initialState,
   signIn: (user) => {
+    // Keep cached data only when the same, already-known account signs in again.
+    if (get().user?.id !== user.id) {
+      clearAccountCache();
+    }
     setAuthFlag(true);
     set({
       isAuthenticated: true,
@@ -74,6 +89,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       logger.apiError("Logout error", error, "/api/v1/auth/logout", "POST");
     }
     setAuthFlag(false);
+    clearAccountCache();
     set({ isAuthenticated: false, user: null });
   },
   updateUser: (user) =>

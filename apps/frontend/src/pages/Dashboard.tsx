@@ -58,14 +58,19 @@ const Dashboard: React.FC = () => {
 
       <div className="training-grid">
         <TrainingPanel title={t("dashboard.vibeformTitle")}>
-          {profileQuery.isLoading || !profile ? (
-            <div className="training-empty">{t("dashboard.loadingVibeform")}</div>
-          ) : (
-            <VibeformRenderer
-              profile={profile}
-              accessibleLabel={t("dashboard.vibeformAccessibleLabel")}
-            />
-          )}
+          {/* The frame reserves the Vibeform's final 240x320 box while the
+              profile loads, so the panels below do not jump (issue 634, CLS). */}
+          <div className="vibeform-frame" data-testid="vibeform-frame">
+            {profileQuery.isLoading || !profile ? (
+              <div className="training-empty">{t("dashboard.loadingVibeform")}</div>
+            ) : (
+              <VibeformRenderer
+                className="vibeform-frame__figure"
+                profile={profile}
+                accessibleLabel={t("dashboard.vibeformAccessibleLabel")}
+              />
+            )}
+          </div>
         </TrainingPanel>
 
         <TrainingPanel title={t("dashboard.vibesTitle")}>

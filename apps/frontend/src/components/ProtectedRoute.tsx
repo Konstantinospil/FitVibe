@@ -34,59 +34,54 @@ function authErrorCode(error: unknown): string | undefined {
   return structured.response?.data?.error?.code;
 }
 
+type PasswordGate = "checking" | "required" | "clear";
+
+/**
+ * Every guard result is stored with the identity it was fetched for. A result
+ * only counts while that identity is still current, so the render after a user
+ * or role change can never reuse the previous identity's legal or admin
+ * clearance; it fails closed (renders nothing) until fresh results arrive.
+ */
+type Checked<T> = { key: string; value: T };
+
 const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
-  const [legalStatus, setLegalStatus] = useState<LegalDocumentsStatus | null>(null);
-  const [statusFailed, setStatusFailed] = useState(false);
   const isAdministrator = user?.role === "admin" || user?.role === "superadmin";
   const roleMissing = !user;
-  const [passwordStatus, setPasswordStatus] = useState<{
-    gate: "checking" | "required" | "clear";
-    minimumPasswordLength: number | null;
-  }>({ gate: "checking", minimumPasswordLength: null });
+  const guardKey = !isAuthenticated
+    ? "signed-out"
+    : `${user?.id ?? "unknown-user"}|${roleMissing ? "role-missing" : isAdministrator ? "admin" : "member"}`;
 
-  // Diagnostic-only lifecycle markers distinguish a true remount from an
-  // effect rerun caused by authentication/role hydration. No user IDs are logged.
-  useEffect(() => {
-    performance.mark("fitvibe:guard:mount");
-    return () => {
-      performance.mark("fitvibe:guard:unmount");
-    };
-  }, []);
+  const [legalResult, setLegalResult] = useState<Checked<LegalDocumentsStatus | "failed"> | null>(
+    null,
+  );
+  const [passwordResult, setPasswordResult] = useState<Checked<{
+    gate: Exclude<PasswordGate, "checking">;
+    minimumPasswordLength: number | null;
+  }> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    performance.mark("fitvibe:guard:start");
-    performance.mark(
-      roleMissing
-        ? "fitvibe:guard:role-missing"
-        : isAdministrator
-          ? "fitvibe:guard:role-admin"
-          : "fitvibe:guard:role-nonadmin",
-    );
 
     if (!isAuthenticated) {
-      setPasswordStatus({ gate: "checking", minimumPasswordLength: null });
-      setLegalStatus(null);
-      setStatusFailed(false);
       return () => {
         cancelled = true;
-        performance.mark("fitvibe:guard:effect-cleanup");
       };
     }
 
-    setPasswordStatus({ gate: "checking", minimumPasswordLength: null });
     // The persisted browser session may precede hydration of user.role.
     // Ask the server rather than assuming a missing client role is non-admin.
     if (isAdministrator || roleMissing) {
       void getAdministratorPasswordPolicyStatus()
         .then((status) => {
           if (!cancelled) {
-            performance.mark("fitvibe:guard:admin-settled");
-            setPasswordStatus({
-              gate: status.passwordChangeRequired ? "required" : "clear",
-              minimumPasswordLength: status.minimumPasswordLength,
+            setPasswordResult({
+              key: guardKey,
+              value: {
+                gate: status.passwordChangeRequired ? "required" : "clear",
+                minimumPasswordLength: status.minimumPasswordLength,
+              },
             });
           }
         })
@@ -96,37 +91,44 @@ const ProtectedRoute: React.FC = () => {
           }
           // A password-only bootstrap login must still reach mandatory MFA
           // enrollment before credential attestation can be requested.
-          performance.mark("fitvibe:guard:admin-failed");
-          setPasswordStatus({
-            gate: authErrorCode(error) === "ADMIN_2FA_REQUIRED" ? "clear" : "required",
-            minimumPasswordLength: null,
+          setPasswordResult({
+            key: guardKey,
+            value: {
+              gate: authErrorCode(error) === "ADMIN_2FA_REQUIRED" ? "clear" : "required",
+              minimumPasswordLength: null,
+            },
           });
         });
     } else {
-      setPasswordStatus({ gate: "clear", minimumPasswordLength: null });
+      setPasswordResult({ key: guardKey, value: { gate: "clear", minimumPasswordLength: null } });
     }
 
-    setStatusFailed(false);
     void getLegalDocumentsStatus()
       .then((status) => {
         if (!cancelled) {
-          performance.mark("fitvibe:guard:legal-settled");
-          setLegalStatus(status);
+          setLegalResult({ key: guardKey, value: status });
         }
       })
       .catch(() => {
         if (!cancelled) {
-          performance.mark("fitvibe:guard:legal-failed");
-          setLegalStatus(null);
-          setStatusFailed(true);
+          setLegalResult({ key: guardKey, value: "failed" });
         }
       });
 
     return () => {
       cancelled = true;
-      performance.mark("fitvibe:guard:effect-cleanup");
     };
-  }, [isAuthenticated, isAdministrator, roleMissing, user?.id]);
+    // guardKey encodes the session identity (user id) and role class.
+  }, [guardKey, isAuthenticated, isAdministrator, roleMissing]);
+
+  const currentPassword = passwordResult?.key === guardKey ? passwordResult.value : null;
+  const passwordStatus = currentPassword ?? {
+    gate: "checking" as const,
+    minimumPasswordLength: null,
+  };
+  const currentLegal = legalResult?.key === guardKey ? legalResult.value : null;
+  const statusFailed = currentLegal === "failed";
+  const legalStatus = currentLegal === "failed" ? null : currentLegal;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;

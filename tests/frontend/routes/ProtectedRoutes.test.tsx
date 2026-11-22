@@ -70,7 +70,6 @@ vi.mock("../../../apps/frontend/src/pages/Settings", () => ({
   default: () => <div>Settings Page</div>,
 }));
 
-
 vi.mock("../../../apps/frontend/src/pages/AppSurfacePlaceholder", () => ({
   default: ({ title }: { title: string }) => <div>{title} Page</div>,
 }));
@@ -127,6 +126,9 @@ describe("ProtectedRoutes", () => {
     });
     expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
     expect(suspenseExperiment.guardUnmounts).not.toHaveBeenCalled();
+    // The pending page shows a content-area fallback inside the layout rather
+    // than replacing the layout (and guard) with a full-screen fallback.
+    expect(screen.getByTestId("main-layout")).toContainElement(screen.getByRole("status"));
 
     await act(async () => {
       suspenseExperiment.suspendHome = false;

@@ -468,6 +468,33 @@ const passwordInput = (page) => page.locator("form input[name='password']");
 const confirmPasswordInput = (page) => page.locator("form input[name='confirmPassword']");
 const displayNameInput = (page) => page.locator("form input[name='name']");
 
+// Describes the topmost element at a viewport point without user data:
+// tag, data-component/data-slot, role and class names only.
+async function describeElementAtPoint(page, { x, y }) {
+  return page
+    .evaluate(
+      ({ px, py }) => {
+        const el = document.elementFromPoint(px, py);
+        if (!el) return "none";
+        const parts = [el.tagName.toLowerCase()];
+        for (const attr of ["data-component", "data-slot", "role"]) {
+          const value = el.getAttribute(attr);
+          if (value) parts.push(`[${attr}=${value}]`);
+        }
+        if (typeof el.className === "string" && el.className.trim()) {
+          parts.push(`.${el.className.trim().split(/\s+/).slice(0, 3).join(".")}`);
+        }
+        const owner = el.closest("[data-component], [role=dialog], .cookie-consent-backdrop");
+        if (owner && owner !== el) {
+          parts.push(` in ${owner.tagName.toLowerCase()}${owner.className ? `.${String(owner.className).split(/\s+/)[0]}` : ""}`);
+        }
+        return parts.join("");
+      },
+      { px: x, py: y },
+    )
+    .catch((error) => `unavailable (${error.message})`);
+}
+
 async function acceptRegisterLegal(page) {
   const controls = page.locator("form [data-component='checkbox']");
   const checkboxes = page.getByRole("checkbox");
@@ -483,10 +510,26 @@ async function acceptRegisterLegal(page) {
       );
     }
 
-    await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    const point = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+    // Diagnostic only (#634): record what actually receives the click so an
+    // intermittent failure distinguishes an overlay, a layout shift and a
+    // non-toggling control. The assertion below is unchanged.
+    const hitBefore = await describeElementAtPoint(page, point);
+    await page.mouse.click(point.x, point.y);
     if (!(await checkboxes.nth(index).isChecked())) {
+      const boundsAfter = await visibleBox.boundingBox();
+      const hitAfter = await describeElementAtPoint(page, point);
+      const cookieOverlayVisible = await page
+        .locator(".cookie-consent-backdrop")
+        .isVisible()
+        .catch(() => "unknown");
+      const round = (box) =>
+        box ? [box.x, box.y, box.width, box.height].map(Math.round).join(",") : "none";
       throw new Error(
-        `Registration legal checkbox ${index + 1} did not toggle through its visible checkbox hit target.`,
+        `Registration legal checkbox ${index + 1} did not toggle through its visible checkbox hit target. ` +
+          `Diagnostics: element at click point before=${hitBefore} after=${hitAfter}; ` +
+          `box before=${round(bounds)} after=${round(boundsAfter)}; ` +
+          `cookie overlay visible=${cookieOverlayVisible}.`,
       );
     }
   }
