@@ -118,7 +118,45 @@ function assessBackofficeReport(report, pathname, origin, { hasSession }) {
   return errors;
 }
 
+
+/**
+ * Every declared backoffice state must have exactly three independent,
+ * validated Lighthouse navigations. Inventory alone never counts as coverage.
+ */
+function assertBackofficeAuditCoverage(records, routes, numberOfRuns = 3) {
+  const errors = [];
+  if (!Number.isInteger(numberOfRuns) || numberOfRuns < 3) {
+    errors.push("Backoffice coverage requires at least three independent runs");
+  }
+  const required = new Map(routes.map(({ mode, path }) =>
+    [mode + ":" + path, []]));
+  const identities = new Set();
+  for (const record of records) {
+    const key = record.scenario + ":" + record.pathname;
+    if (!required.has(key)) {
+      errors.push("Unregistered backoffice state: " + key);
+      continue;
+    }
+    required.get(key).push(record);
+    if (!record.id || identities.has(record.id)) {
+      errors.push("Duplicate or missing Lighthouse run identity for " + key);
+    } else {
+      identities.add(record.id);
+    }
+    if (!record.valid || record.sameNavigationReady !== true) {
+      errors.push("Missing validated same-navigation content for " + key);
+    }
+  }
+  for (const [key, measurements] of required) {
+    if (measurements.length !== numberOfRuns) {
+      errors.push(key + ": expected " + numberOfRuns + " runs, got " + measurements.length);
+    }
+  }
+  return errors;
+}
+
 assertBackofficeInventory();
 module.exports = {
   routeContracts, assertBackofficeInventory, verifyBackofficeContent, assessBackofficeReport,
+  assertBackofficeAuditCoverage,
 };
