@@ -9,6 +9,9 @@ vi.mock("../../src/main", () => ({
   default: vi.fn(),
 }));
 
+const { prefetchProtectedEntry } = vi.hoisted(() => ({ prefetchProtectedEntry: vi.fn() }));
+vi.mock("../../src/routes/protectedPageLoaders", () => ({ prefetchProtectedEntry }));
+
 const originalLocation = window.location;
 const originalSessionStorage = window.sessionStorage;
 
@@ -62,6 +65,27 @@ describe("bootstrap entrypoint", () => {
       value: originalSessionStorage,
     });
     document.body.innerHTML = "";
+  });
+
+  it("prefetches authenticated route code for the current page when a session exists (#634)", async () => {
+    prefetchProtectedEntry.mockClear();
+    setSessionFlag("1");
+    setWindowPath("/Dashboard/");
+
+    await importBootstrap();
+
+    expect(prefetchProtectedEntry).toHaveBeenCalledWith("/dashboard");
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("does not prefetch authenticated route code without a session (#634)", async () => {
+    prefetchProtectedEntry.mockClear();
+    setSessionFlag(undefined);
+    setWindowPath("/terms");
+
+    await importBootstrap();
+
+    expect(prefetchProtectedEntry).not.toHaveBeenCalled();
   });
 
   it("redirects unauthenticated users away from private routes", async () => {

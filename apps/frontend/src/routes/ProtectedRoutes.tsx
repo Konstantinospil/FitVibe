@@ -10,20 +10,38 @@ import { queryClient as defaultQueryClient } from "../lib/queryClient";
 import i18n, { ensurePrivateTranslationsLoaded, loadLanguageTranslations } from "../i18n/config";
 import { getUserPreferences } from "../services/api";
 import { readDehydratedStateFromDocument } from "../ssr/dehydratedState";
+// The guard (~1 KB) and layout (~2 KB) are on every authenticated route.
+// Importing them eagerly removes two sequential chunk round trips from the
+// critical path and means nothing above the guard can suspend, so a pending
+// page chunk can never discard a settled guard (#634).
+import ProtectedRoute from "../components/ProtectedRoute";
+import MainLayout from "../layouts/MainLayout";
+import {
+  loadAdminPasswordUpdate,
+  loadCalendar,
+  loadCookie,
+  loadDashboard,
+  loadHome,
+  loadLibrary,
+  loadPrivacy,
+  loadSettings,
+  loadTerms,
+  loadTermsReacceptance,
+} from "./protectedPageLoaders";
 
-const ProtectedRoute = lazy(() => import("../components/ProtectedRoute"));
-const MainLayout = lazy(() => import("../layouts/MainLayout"));
-const Home = lazy(() => import("../pages/Home"));
-const Calendar = lazy(() => import("../pages/Calendar"));
-const Library = lazy(() => import("../pages/Library"));
-const Dashboard = lazy(() => import("../pages/Dashboard"));
-const Settings = lazy(() => import("../pages/Settings"));
-const Terms = lazy(() => import("../pages/Terms"));
-const Privacy = lazy(() => import("../pages/Privacy"));
-const Cookie = lazy(() => import("../pages/Cookie"));
-const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));
-const AdminPasswordUpdate = lazy(() => import("../pages/AdminPasswordUpdate"));
+const Home = lazy(loadHome);
+const Calendar = lazy(loadCalendar);
+const Library = lazy(loadLibrary);
+const Dashboard = lazy(loadDashboard);
+const Settings = lazy(loadSettings);
+const Terms = lazy(loadTerms);
+const Privacy = lazy(loadPrivacy);
+const Cookie = lazy(loadCookie);
+const TermsReacceptance = lazy(loadTermsReacceptance);
+const AdminPasswordUpdate = lazy(loadAdminPasswordUpdate);
 
+// `data-ssr-loading-fallback` tells main.tsx that server HTML is incomplete and
+// must be mounted fresh rather than hydrated, for both fallbacks.
 const fallback = (
   <div
     className="flex h-screen w-full items-center justify-center text-primary-500"
@@ -33,6 +51,24 @@ const fallback = (
   >
     {i18n.t("loading.app")}
   </div>
+);
+
+// Page chunks usually arrive before the guard settles (bootstrap.ts prefetches
+// the current route), so this rarely shows. When it does, it fills only the
+// content area inside MainLayout instead of replacing the whole screen.
+const pageFallback = (
+  <div
+    className="flex min-h-[50vh] w-full items-center justify-center text-primary-500"
+    data-ssr-loading-fallback="true"
+    role="status"
+    aria-live="polite"
+  >
+    {i18n.t("loading.app")}
+  </div>
+);
+
+const page = (element: React.ReactElement) => (
+  <Suspense fallback={pageFallback}>{element}</Suspense>
 );
 
 type ProtectedRoutesProps = {
@@ -101,21 +137,23 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
 
   const dehydratedState = propDehydratedState ?? getDehydratedState();
 
+  // Every lazy element has its own boundary below ProtectedRoute/MainLayout.
+  // The outer boundary is only a safety net; nothing above the guard suspends.
   const routesContent = (
     <Suspense fallback={fallback}>
       <Routes>
         <Route element={<ProtectedRoute />}>
-          <Route path="admin/password-update" element={<AdminPasswordUpdate />} />
+          <Route path="admin/password-update" element={page(<AdminPasswordUpdate />)} />
           <Route element={<MainLayout />}>
-            <Route index element={<Home />} />
-            <Route path="calendar" element={<Calendar />} />
-            <Route path="library" element={<Library />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="terms" element={<Terms />} />
-            <Route path="privacy" element={<Privacy />} />
-            <Route path="cookie" element={<Cookie />} />
-            <Route path="terms-reacceptance" element={<TermsReacceptance />} />
+            <Route index element={page(<Home />)} />
+            <Route path="calendar" element={page(<Calendar />)} />
+            <Route path="library" element={page(<Library />)} />
+            <Route path="dashboard" element={page(<Dashboard />)} />
+            <Route path="settings" element={page(<Settings />)} />
+            <Route path="terms" element={page(<Terms />)} />
+            <Route path="privacy" element={page(<Privacy />)} />
+            <Route path="cookie" element={page(<Cookie />)} />
+            <Route path="terms-reacceptance" element={page(<TermsReacceptance />)} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

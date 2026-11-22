@@ -1,3 +1,5 @@
+import { prefetchProtectedEntry } from "./routes/protectedPageLoaders";
+
 const PUBLIC_ROUTES = new Set<string>([
   "/",
   "/login",
@@ -44,6 +46,12 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
     // Font loading is scheduled by main.tsx. Keeping it out of bootstrap avoids
     // duplicate idle callbacks/imports on the initial critical rendering path.
     void import("./main");
+    if (hasSessionFlag) {
+      // Download the authenticated route tree and the current page in parallel
+      // with main instead of discovering them one lazy boundary at a time.
+      // Code only: authorization still happens in ProtectedRoute (#634).
+      prefetchProtectedEntry(currentPath);
+    }
   }
 }
 
