@@ -554,7 +554,7 @@
     {
       "name": "chrome-critical-path-diagnostic-regression",
       "patterns": [
-        "^tests/perf/chrome-critical-path\\\\.test\\\\.cjs$"
+        "^tests/perf/chrome-critical-path\\.test\\.cjs$"
       ],
       "owner": "Frontend performance / QA",
       "ci_job_ids": [
