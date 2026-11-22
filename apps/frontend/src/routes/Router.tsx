@@ -13,7 +13,7 @@ import CookieConsent from "../components/CookieConsent";
 import { FirstLoginTwoFactorPrompt } from "../components/FirstLoginTwoFactorPrompt";
 import { LoadingFallback } from "../components/LoadingFallback";
 import { loadProtectedRoutes } from "./protectedPageLoaders.js";
-// Shares the in-flight chunk request started by bootstrap.ts (#634).
+// Shares the in-flight chunk request started by bootstrap.ts (issue 634).
 const ProtectedRoutes = lazy(loadProtectedRoutes);
 
 type AuthHook = () => { isAuthenticated: boolean };

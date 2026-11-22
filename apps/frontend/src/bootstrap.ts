@@ -49,7 +49,7 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
     if (hasSessionFlag) {
       // Download the authenticated route tree and the current page in parallel
       // with main instead of discovering them one lazy boundary at a time.
-      // Code only: authorization still happens in ProtectedRoute (#634).
+      // Code only: authorization still happens in ProtectedRoute (issue 634).
       prefetchProtectedEntry(currentPath);
     }
   }

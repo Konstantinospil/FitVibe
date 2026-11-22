@@ -13,7 +13,7 @@ import { readDehydratedStateFromDocument } from "../ssr/dehydratedState";
 // The guard (~1 KB) and layout (~2 KB) are on every authenticated route.
 // Importing them eagerly removes two sequential chunk round trips from the
 // critical path and means nothing above the guard can suspend, so a pending
-// page chunk can never discard a settled guard (#634).
+// page chunk can never discard a settled guard (issue 634).
 import ProtectedRoute from "../components/ProtectedRoute";
 import MainLayout from "../layouts/MainLayout";
 import {

@@ -7,7 +7,7 @@ import { logger } from "../utils/logger";
  * The browser QueryClient is shared by every account that uses this tab and
  * its keys are not user-scoped (e.g. ["settings", "preferences"]). Without a
  * clear, the next account in the same tab can read the previous account's
- * cached data within its stale window (#634).
+ * cached data within its stale window (issue 634).
  */
 const clearAccountCache = (): void => {
   queryClient.clear();

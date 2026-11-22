@@ -1,5 +1,5 @@
 /**
- * Shared dynamic-import loaders for the authenticated route tree (#634).
+ * Shared dynamic-import loaders for the authenticated route tree (issue 634).
  *
  * `React.lazy` and the early prefetch in `bootstrap.ts` must call the *same*
  * loader so the browser downloads each chunk once and `lazy` reuses the

@@ -5,7 +5,7 @@ import { initReactI18next } from "react-i18next";
 export const loadMinimalLoginTranslations = async () => {
   // Only load auth.json for login page - other translations loaded on-demand.
   // The three chunks are independent; fetching them together avoids two extra
-  // sequential round trips on every cold start (#634).
+  // sequential round trips on every cold start (issue 634).
   const [enAuthModule, enCookieModule, minimalCommonModule] = await Promise.all([
     import("./locales/en/auth.json"),
     import("./locales/en/cookie.json"),
