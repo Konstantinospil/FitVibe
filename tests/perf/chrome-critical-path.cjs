@@ -168,7 +168,7 @@ async function timedSpaTransition({ context, origin, authFlag }) {
     await page.locator(getPageReadySelector("/dashboard"))
       .waitFor({ state: "visible", timeout: 30000 });
     const start = Date.now();
-    const trace = await captureTrace(session, async () => {
+    const { trace, profile } = await captureTrace(session, async () => {
       // A real React Router link click, not history.pushState or a full reload.
       await page.locator('a[href="/calendar"]').first().click();
       await page.locator(getPageReadySelector("/calendar"))
