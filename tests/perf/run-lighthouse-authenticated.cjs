@@ -14,7 +14,7 @@ const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs")
 const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
-const { observeNavigation } = require("./lighthouse-observe-navigation.cjs");
+const { observeNavigation, collectNavigationDiagnostics } = require("./lighthouse-observe-navigation.cjs");
 const { shouldRetryConsentRateLimit } = require("./lighthouse-consent-recovery.cjs");
 const {
   createFirstLoginAccount,
@@ -223,6 +223,7 @@ async function main() {
   const results = [];
   const technicalErrors = [];
   const recoveryEvents = [];
+  const navigationDiagnostics = [];
   let budgetErrors = [];
   let chrome;
   let browser;
@@ -279,7 +280,8 @@ async function main() {
             // Clear resource cache only. Do not clear cookies/storage or mock APIs.
             await cacheSession.send("Network.clearBrowserCache");
             const observer = observeNavigation(auditContext, url,
-              (page) => verifyAuditedAthletePage(page, pathName));
+              (page) => verifyAuditedAthletePage(page, pathName),
+              collectNavigationDiagnostics);
             let output;
             let observation;
             let observationError;
@@ -301,6 +303,12 @@ async function main() {
             }
             if (!output?.lhr) throw new Error("Lighthouse returned no report");
             const report = output.lhr;
+            if (observation?.diagnostics) {
+              navigationDiagnostics.push({
+                path: pathName, run, attempt, diagnostics: observation.diagnostics,
+                lighthouseLcpMs: report.audits?.["largest-contentful-paint"]?.numericValue ?? null,
+              });
+            }
             const filename = "lhr-" +
               (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
               "-" + run + (attempt > 1 ? "-retry-" + attempt : "") + ".json";
@@ -376,6 +384,8 @@ async function main() {
     );
     // Diagnostic audit history is separate from the three valid runs and never
     // changes the worst-of-three acceptance or the individual raw LHRs.
+    fs.writeFileSync(path.join(auditDir, "navigation-diagnostics.json"),
+      JSON.stringify(navigationDiagnostics, null, 2));
     fs.writeFileSync(path.join(auditDir, "consent-recovery-events.json"),
       JSON.stringify(recoveryEvents, null, 2));
     const summary = writePerformanceReport(auditDir, {
