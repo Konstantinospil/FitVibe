@@ -42,7 +42,7 @@ function analyzeCpuProfile(profile, origin) {
   for (let i = 0; i < profile.samples.length; i += 1) {
     const delta = profile.timeDeltas[i];
     const id = profile.samples[i];
-    if (!Number.isFinite(delta) || delta <= 0 || !nodeById.has(id)) {
+    if (!Number.isFinite(delta) || delta < 0 || !nodeById.has(id)) {
       throw new Error("Invalid CPU sample timing or node");
     }
     totalSampleUs += delta;
@@ -56,6 +56,7 @@ function analyzeCpuProfile(profile, origin) {
       current = parentById.get(current);
     }
   }
+  if (totalSampleUs <= 0) throw new Error("No positive CPU sample time");
   const totals = new Map();
   for (const node of profile.nodes) {
     const frame = node.callFrame || {};
