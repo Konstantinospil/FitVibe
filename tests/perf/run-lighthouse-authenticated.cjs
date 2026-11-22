@@ -15,6 +15,7 @@ const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
 const { observeNavigation, collectNavigationDiagnostics } = require("./lighthouse-observe-navigation.cjs");
+const { runChromeCriticalPathDiagnostics } = require("./chrome-critical-path.cjs");
 const { shouldRetryConsentRateLimit } = require("./lighthouse-consent-recovery.cjs");
 const {
   createFirstLoginAccount,
@@ -372,6 +373,16 @@ async function main() {
       console.log("Authenticated Lighthouse collected " +
         results.filter((entry) => entry.path === pathName && entry.valid).length +
         "/" + runCount + " valid runs for " + pathName);
+    }
+    // Isolated diagnostic: executed only after the authoritative Lighthouse
+    // measurements. Never modifies the worst-of-three budget calculations.
+    try {
+      await runChromeCriticalPathDiagnostics({
+        browser, origin, authFlag: AUTH_FLAG_KEY,
+        outputDir: path.join(auditDir, "chrome-critical-path"),
+      });
+    } catch (error) {
+      console.warn("Nonblocking Chrome CPU diagnostic failed: " + error.message);
     }
   } catch (error) {
     technicalErrors.push("Authenticated Lighthouse setup: " + error.message);
