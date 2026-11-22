@@ -48,6 +48,7 @@ const ProtectedRoute: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
+    performance.mark("fitvibe:guard:start");
 
     if (!isAuthenticated) {
       setPasswordStatus({ gate: "checking", minimumPasswordLength: null });
@@ -65,6 +66,7 @@ const ProtectedRoute: React.FC = () => {
       void getAdministratorPasswordPolicyStatus()
         .then((status) => {
           if (!cancelled) {
+            performance.mark("fitvibe:guard:admin-settled");
             setPasswordStatus({
               gate: status.passwordChangeRequired ? "required" : "clear",
               minimumPasswordLength: status.minimumPasswordLength,
@@ -77,6 +79,7 @@ const ProtectedRoute: React.FC = () => {
           }
           // A password-only bootstrap login must still reach mandatory MFA
           // enrollment before credential attestation can be requested.
+          performance.mark("fitvibe:guard:admin-failed");
           setPasswordStatus({
             gate: authErrorCode(error) === "ADMIN_2FA_REQUIRED" ? "clear" : "required",
             minimumPasswordLength: null,
@@ -90,11 +93,13 @@ const ProtectedRoute: React.FC = () => {
     void getLegalDocumentsStatus()
       .then((status) => {
         if (!cancelled) {
+          performance.mark("fitvibe:guard:legal-settled");
           setLegalStatus(status);
         }
       })
       .catch(() => {
         if (!cancelled) {
+          performance.mark("fitvibe:guard:legal-failed");
           setLegalStatus(null);
           setStatusFailed(true);
         }
