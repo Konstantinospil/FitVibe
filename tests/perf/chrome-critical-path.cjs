@@ -5,6 +5,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
+const { analyzeCpuProfile } = require("./chrome-cpu-profile.cjs");
 
 const routes = ["/terms", "/dashboard", "/calendar"];
 const TRACE_CATEGORIES = "devtools.timeline,v8,blink.user_timing,loading";
@@ -49,26 +50,45 @@ function summarizeTrace(trace, navigation) {
 
 async function captureTrace(session, navigate) {
   await session.send("Emulation.setCPUThrottlingRate", { rate: 4 });
-  await session.send("Tracing.start", {
-    categories: TRACE_CATEGORIES,
-    transferMode: "ReturnAsStream",
-  });
+  await session.send("Profiler.enable");
+  await session.send("Profiler.setSamplingInterval", { interval: 1000 });
+  await session.send("Profiler.start");
+  let startedTracing = false;
+  let profile;
   let stream;
   let error;
   try {
+    await session.send("Tracing.start", {
+      categories: TRACE_CATEGORIES,
+      transferMode: "ReturnAsStream",
+    });
+    startedTracing = true;
     await navigate();
   } catch (cause) {
     error = cause;
   } finally {
-    const complete = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Chrome trace timeout")), 30000);
-      session.once("Tracing.tracingComplete", (result) => {
-        clearTimeout(timeout);
-        resolve(result);
-      });
-    });
-    await session.send("Tracing.end");
-    stream = (await complete).stream;
+    try {
+      const result = await session.send("Profiler.stop");
+      profile = result.profile;
+    } catch (cause) {
+      error ||= cause;
+    }
+    if (startedTracing) {
+      try {
+        const complete = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error("Chrome trace timeout")), 30000);
+          session.once("Tracing.tracingComplete", (result) => {
+            clearTimeout(timeout);
+            resolve(result);
+          });
+        });
+        await session.send("Tracing.end");
+        stream = (await complete).stream;
+      } catch (cause) {
+        error ||= cause;
+      }
+    }
+    await session.send("Profiler.disable").catch(() => undefined);
     await session.send("Emulation.setCPUThrottlingRate", { rate: 1 });
   }
   if (!stream) throw new Error("Chrome returned no tracing stream");
@@ -86,7 +106,7 @@ async function captureTrace(session, navigate) {
     await session.send("IO.close", { handle: stream }).catch(() => undefined);
   }
   if (error) throw error;
-  return JSON.parse(json);
+  return { trace: JSON.parse(json), profile };
 }
 
 async function installObservedLcp(page) {
@@ -109,7 +129,7 @@ async function timedNavigation({ context, origin, authFlag, route, kind }) {
     await session.send("Network.enable");
     if (kind === "cold") await session.send("Network.clearBrowserCache");
     const start = Date.now();
-    const trace = await captureTrace(session, async () => {
+    const { trace, profile } = await captureTrace(session, async () => {
       await page.goto(origin + route, { waitUntil: "domcontentloaded" });
       await page.locator(route === "/login" ? 'input[type="password"]' : getPageReadySelector(route))
         .first().waitFor({ state: "visible", timeout: 30000 });
@@ -128,8 +148,11 @@ async function timedNavigation({ context, origin, authFlag, route, kind }) {
         .filter((e) => e.name.startsWith("fitvibe:"))
         .map((e) => ({ name: e.name, startTime: e.startTime })),
     }));
-    return summarizeTrace(trace, { route, kind, cpuThrottle: 4, network: "unthrottled",
-      elapsedWallMs: Date.now() - start, ...timing });
+    return {
+      ...summarizeTrace(trace, { route, kind, cpuThrottle: 4, network: "unthrottled",
+        elapsedWallMs: Date.now() - start, ...timing }),
+      cpuProfile: analyzeCpuProfile(profile, origin),
+    };
   } finally {
     await session.detach().catch(() => undefined);
     await page.close().catch(() => undefined);
@@ -157,11 +180,14 @@ async function timedSpaTransition({ context, origin, authFlag }) {
     const marks = await page.evaluate(() => performance.getEntriesByType("mark")
       .filter((e) => e.name.startsWith("fitvibe:"))
       .map((e) => ({ name: e.name, startTime: e.startTime })));
-    return summarizeTrace(trace, { route: "/dashboard→/calendar", kind: "spa",
-      cpuThrottle: 4, network: "unthrottled",
-      elapsedWallMs: Date.now() - start, appMarks: marks,
-      // Navigation LCP is not a metric of client-side route transitions.
-      observedLcpMs: null });
+    return {
+      ...summarizeTrace(trace, { route: "/dashboard→/calendar", kind: "spa",
+        cpuThrottle: 4, network: "unthrottled",
+        elapsedWallMs: Date.now() - start, appMarks: marks,
+        // Navigation LCP is not a metric of client-side route transitions.
+        observedLcpMs: null }),
+      cpuProfile: analyzeCpuProfile(profile, origin),
+    };
   } finally {
     await session.detach().catch(() => undefined);
     await page.close().catch(() => undefined);
