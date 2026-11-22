@@ -1,4 +1,5 @@
 import { prefetchProtectedEntry } from "./routes/protectedPageLoaders";
+import { registerInlinedStylesheets } from "./ssr/registerInlinedStylesheets";
 
 const PUBLIC_ROUTES = new Set<string>([
   "/",
@@ -45,6 +46,11 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
   } else {
     // Font loading is scheduled by main.tsx. Keeping it out of bootstrap avoids
     // duplicate idle callbacks/imports on the initial critical rendering path.
+    // This module also runs on SSR pages (it shares a chunk with the page
+    // loaders that main imports), so this is the first CSS-bearing dynamic
+    // import on every page. Let Vite's preload helper see the CSS that SSR has
+    // already inlined, so it is not downloaded again (issue 634).
+    registerInlinedStylesheets();
     void import("./main");
     if (hasSessionFlag) {
       // Download the authenticated route tree and the current page in parallel
