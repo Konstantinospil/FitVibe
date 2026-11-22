@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter, Outlet } from "react-router-dom";
 import ProtectedRoutes from "../../../apps/frontend/src/routes/ProtectedRoutes";
@@ -8,6 +8,13 @@ import {
   DEHYDRATED_STATE_ELEMENT_ID,
   serializeDehydratedState,
 } from "../../../apps/frontend/src/ssr/dehydratedState";
+
+const suspenseExperiment = vi.hoisted(() => ({
+  guardMounts: vi.fn(),
+  guardUnmounts: vi.fn(),
+  suspendHome: false,
+  homePromise: Promise.resolve(),
+}));
 
 vi.mock("../../../apps/frontend/src/contexts/AuthContext");
 vi.mock("../../../apps/frontend/src/i18n/config", () => ({
@@ -21,7 +28,13 @@ vi.mock("../../../apps/frontend/src/services/api", () => ({
 }));
 
 vi.mock("../../../apps/frontend/src/components/ProtectedRoute", () => ({
-  default: () => <Outlet />,
+  default: () => {
+    React.useEffect(() => {
+      suspenseExperiment.guardMounts();
+      return () => suspenseExperiment.guardUnmounts();
+    }, []);
+    return <Outlet />;
+  },
 }));
 
 vi.mock("../../../apps/frontend/src/layouts/MainLayout", () => ({
@@ -33,7 +46,12 @@ vi.mock("../../../apps/frontend/src/layouts/MainLayout", () => ({
 }));
 
 vi.mock("../../../apps/frontend/src/pages/Home", () => ({
-  default: () => <div>Home Page</div>,
+  default: () => {
+    if (suspenseExperiment.suspendHome) {
+      throw suspenseExperiment.homePromise;
+    }
+    return <div>Home Page</div>;
+  },
 }));
 
 vi.mock("../../../apps/frontend/src/pages/Calendar", () => ({
@@ -72,6 +90,8 @@ vi.mock("../../../apps/frontend/src/pages/TermsReacceptance", () => ({
 describe("ProtectedRoutes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    suspenseExperiment.suspendHome = false;
+    suspenseExperiment.homePromise = Promise.resolve();
     vi.mocked(useAuth).mockReturnValue({
       user: { id: "user-1", username: "test", email: "test@example.com" },
       isLoading: false,
@@ -90,6 +110,31 @@ describe("ProtectedRoutes", () => {
   it("renders without crashing", () => {
     renderRoute("/");
     expect(document.body).toBeInTheDocument();
+  });
+
+  it("does not remount the authorization guard when a nested page suspends", async () => {
+    // Negative control for #634: with one shared outer Suspense boundary,
+    // the guard is discarded when a nested page first suspends.
+    let releaseHome!: () => void;
+    suspenseExperiment.homePromise = new Promise<void>((resolve) => {
+      releaseHome = resolve;
+    });
+    suspenseExperiment.suspendHome = true;
+
+    renderRoute("/");
+    await waitFor(() => {
+      expect(suspenseExperiment.guardMounts).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
+    expect(suspenseExperiment.guardUnmounts).not.toHaveBeenCalled();
+
+    await act(async () => {
+      suspenseExperiment.suspendHome = false;
+      releaseHome();
+    });
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+    expect(suspenseExperiment.guardMounts).toHaveBeenCalledTimes(1);
+    expect(suspenseExperiment.guardUnmounts).not.toHaveBeenCalled();
   });
 
   it("loads private translations on mount", async () => {
