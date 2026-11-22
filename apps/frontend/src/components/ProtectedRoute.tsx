@@ -46,9 +46,25 @@ const ProtectedRoute: React.FC = () => {
     minimumPasswordLength: number | null;
   }>({ gate: "checking", minimumPasswordLength: null });
 
+  // Diagnostic-only lifecycle markers distinguish a true remount from an
+  // effect rerun caused by authentication/role hydration. No user IDs are logged.
+  useEffect(() => {
+    performance.mark("fitvibe:guard:mount");
+    return () => {
+      performance.mark("fitvibe:guard:unmount");
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     performance.mark("fitvibe:guard:start");
+    performance.mark(
+      roleMissing
+        ? "fitvibe:guard:role-missing"
+        : isAdministrator
+          ? "fitvibe:guard:role-admin"
+          : "fitvibe:guard:role-nonadmin",
+    );
 
     if (!isAuthenticated) {
       setPasswordStatus({ gate: "checking", minimumPasswordLength: null });
@@ -56,6 +72,7 @@ const ProtectedRoute: React.FC = () => {
       setStatusFailed(false);
       return () => {
         cancelled = true;
+        performance.mark("fitvibe:guard:effect-cleanup");
       };
     }
 
@@ -107,6 +124,7 @@ const ProtectedRoute: React.FC = () => {
 
     return () => {
       cancelled = true;
+      performance.mark("fitvibe:guard:effect-cleanup");
     };
   }, [isAuthenticated, isAdministrator, roleMissing, user?.id]);
 
