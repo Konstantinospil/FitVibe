@@ -128,17 +128,17 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
               </Suspense>
             }
           >
-            <Route index element={<Suspense fallback={fallback}><Home /></Suspense>} />
-            <Route path="calendar" element={<Suspense fallback={fallback}><Calendar /></Suspense>} />
-            <Route path="library" element={<Suspense fallback={fallback}><Library /></Suspense>} />
-            <Route path="dashboard" element={<Suspense fallback={fallback}><Dashboard /></Suspense>} />
-            <Route path="settings" element={<Suspense fallback={fallback}><Settings /></Suspense>} />
-            <Route path="terms" element={<Suspense fallback={fallback}><Terms /></Suspense>} />
-            <Route path="privacy" element={<Suspense fallback={fallback}><Privacy /></Suspense>} />
-            <Route path="cookie" element={<Suspense fallback={fallback}><Cookie /></Suspense>} />
+            <Route index element={<Suspense fallback={fallback}>\n                  <Home />\n                </Suspense>} />
+            <Route path="calendar" element={<Suspense fallback={fallback}>\n                  <Calendar />\n                </Suspense>} />
+            <Route path="library" element={<Suspense fallback={fallback}>\n                  <Library />\n                </Suspense>} />
+            <Route path="dashboard" element={<Suspense fallback={fallback}>\n                  <Dashboard />\n                </Suspense>} />
+            <Route path="settings" element={<Suspense fallback={fallback}>\n                  <Settings />\n                </Suspense>} />
+            <Route path="terms" element={<Suspense fallback={fallback}>\n                  <Terms />\n                </Suspense>} />
+            <Route path="privacy" element={<Suspense fallback={fallback}>\n                  <Privacy />\n                </Suspense>} />
+            <Route path="cookie" element={<Suspense fallback={fallback}>\n                  <Cookie />\n                </Suspense>} />
             <Route
               path="terms-reacceptance"
-              element={<Suspense fallback={fallback}><TermsReacceptance /></Suspense>}
+              element={<Suspense fallback={fallback}>\n                  <TermsReacceptance />\n                </Suspense>}
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
