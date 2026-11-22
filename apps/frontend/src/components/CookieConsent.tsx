@@ -4,10 +4,20 @@ import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import {
+  shouldShowCookieBanner,
   useCookieConsent,
   type CookieConsentSource,
   type CookieConsentState,
 } from "../hooks/useCookieConsent";
+
+function choiceRecordedInThisBrowser(): boolean {
+  try {
+    return !shouldShowCookieBanner();
+  } catch {
+    // Storage can be unavailable (privacy modes); fall back to prompting.
+    return false;
+  }
+}
 import "./CookieConsent.css";
 
 export const REJECT_COOKIES: CookieConsentState = {
@@ -37,7 +47,7 @@ export function CookiePreferences({
   const { t } = useTranslation();
   const titleId = useId();
   const dialogRef = useRef<HTMLElement>(null);
-  const { consentStatus, isLoading, savePreferences } = useCookieConsent();
+  const { consentStatus, isLoading, statusUnavailable, savePreferences } = useCookieConsent();
   const [draft, setDraft] = useState<CookieConsentState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
@@ -50,7 +60,12 @@ export function CookiePreferences({
     analytics: current?.analytics ?? false,
     marketing: current?.marketing ?? false,
   };
-  const hidden = isLoading || (initial && hasConsent);
+  // When the server answer is unavailable (e.g. rate-limited), do not re-prompt
+  // someone who already recorded a choice in this browser. This only hides the
+  // prompt: optional integrations still start solely on confirmed consent.
+  // First-time visitors are still prompted on errors (issue 634).
+  const hidden =
+    isLoading || (initial && (hasConsent || (statusUnavailable && choiceRecordedInThisBrowser())));
 
   useEffect(() => {
     if (initial && !hidden) {
