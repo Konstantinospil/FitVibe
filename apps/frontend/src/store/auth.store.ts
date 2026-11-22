@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { logout as apiLogout } from "../services/api";
 import { queryClient } from "../lib/queryClient";
+import { discardSessionBootstrap } from "../lib/sessionBootstrap";
 import { logger } from "../utils/logger";
 
 /**
@@ -69,6 +70,8 @@ const initialState = {
 export const useAuthStore = create<AuthState>()((set, get) => ({
   ...initialState,
   signIn: (user) => {
+    // Early bootstrap requests belong to the session that existed at page load.
+    discardSessionBootstrap();
     // Keep cached data only when the same, already-known account signs in again.
     if (get().user?.id !== user.id) {
       clearAccountCache();
@@ -89,6 +92,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       logger.apiError("Logout error", error, "/api/v1/auth/logout", "POST");
     }
     setAuthFlag(false);
+    discardSessionBootstrap();
     clearAccountCache();
     set({ isAuthenticated: false, user: null });
   },
