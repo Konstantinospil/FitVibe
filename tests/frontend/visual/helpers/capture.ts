@@ -3,11 +3,7 @@ import { freezeTime } from "./fakeClock.js";
 import { getDynamicMasks } from "./mask.js";
 import { assertNoHorizontalOverflow } from "./responsive.js";
 import { assertStandardScrollbars } from "./scrollbarAudit.js";
-import {
-  gotoAuthenticated,
-  seedTheme,
-  setupAuthenticatedState,
-} from "./auth.js";
+import { gotoAuthenticated, seedTheme, setupAuthenticatedState } from "./auth.js";
 import { installDefaultMocks } from "./mockApi.js";
 import {
   getCurrentProject,
@@ -21,16 +17,18 @@ const pageAuth = new WeakMap<Page, boolean>();
 const pageNetworkFailures = new WeakMap<Page, string[]>();
 
 async function describeReadinessFailure(page: Page): Promise<string> {
-  const state = await page.evaluate(() => ({
-    path: window.location.pathname,
-    authSessionFlag: window.sessionStorage.getItem("fitvibe:auth") === "1",
-    bootShell: Boolean(document.querySelector("#login-shell")),
-    loadingFallback: Boolean(document.querySelector("[data-ssr-loading-fallback]")),
-    pageShellPresent: Boolean(document.querySelector('[data-component="page-shell"]')),
-    mainPresent: Boolean(document.querySelector('[data-slot="page-shell-main"]')),
-    displayedHeading: document.querySelector("h1")?.textContent?.trim() ?? null,
-    bodyText: document.body?.innerText.slice(0, 240) ?? null,
-  })).catch((error: unknown) => ({ inspectionError: String(error) }));
+  const state = await page
+    .evaluate(() => ({
+      path: window.location.pathname,
+      authSessionFlag: window.sessionStorage.getItem("fitvibe:auth") === "1",
+      bootShell: Boolean(document.querySelector("#login-shell")),
+      loadingFallback: Boolean(document.querySelector("[data-ssr-loading-fallback]")),
+      pageShellPresent: Boolean(document.querySelector('[data-component="page-shell"]')),
+      mainPresent: Boolean(document.querySelector('[data-slot="page-shell-main"]')),
+      displayedHeading: document.querySelector("h1")?.textContent?.trim() ?? null,
+      bodyText: document.body?.innerText.slice(0, 240) ?? null,
+    }))
+    .catch((error: unknown) => ({ inspectionError: String(error) }));
   return JSON.stringify({
     ...state,
     pageErrors: pageErrors.get(page) ?? [],
@@ -53,7 +51,9 @@ export async function prepareVisualPage(
   page.on("requestfailed", (request) => {
     const pathname = new URL(request.url()).pathname;
     if (pathname.startsWith("/api/")) {
-      apiFailures.push(`${request.method()} ${pathname}: ${request.failure()?.errorText ?? "request failed"}`);
+      apiFailures.push(
+        `${request.method()} ${pathname}: ${request.failure()?.errorText ?? "request failed"}`,
+      );
     }
   });
   page.on("response", (response) => {
@@ -118,35 +118,31 @@ async function waitForVisualAssets(page: Page): Promise<void> {
   await page.evaluate(async (loadHeadings: boolean) => {
     const root = document.documentElement;
 
-    const primaryFontUrl = (styleId: string, family: string): string => {
-      const css = document.getElementById(styleId)?.textContent;
-      if (!css) {
-        throw new Error(`Visual font stylesheet #${styleId} is missing`);
+    // The app registers faces with the CSS Font Loading API (#650) and records
+    // them on a <meta> marker; FontFace objects do not expose their src.
+    const primaryFontUrl = (markerId: string, family: string): string => {
+      const content = document.getElementById(markerId)?.getAttribute("content");
+      if (!content) {
+        throw new Error(`Visual font marker #${markerId} is missing`);
       }
-      const familyIndex = css.indexOf(`font-family: "${family}"`);
-      const blockStart = css.lastIndexOf("@font-face", familyIndex);
-      const blockEnd = css.indexOf("}", familyIndex);
-      if (familyIndex < 0 || blockStart < 0 || blockEnd < 0) {
-        throw new Error(`Visual font face for ${family} was not found in #${styleId}`);
-      }
-      const fontFaceBlock = css.slice(blockStart, blockEnd + 1);
-      const source = fontFaceBlock.match(/src:\\s*url\\("([^"]+)"\\)/)?.[1];
+      const faces = JSON.parse(content) as Array<{ family: string; url: string }>;
+      const source = faces.find((face) => face.family === family)?.url;
       if (!source) {
-        throw new Error(`Visual font source for ${family} was not found in #${styleId}`);
+        throw new Error(`Visual font source for ${family} was not found in #${markerId}`);
       }
       return new URL(source, document.baseURI).href;
     };
 
     const ensureVisualFont = async (
       alias: string,
-      styleId: string,
+      markerId: string,
       family: string,
       weight: string,
     ): Promise<void> => {
       if (document.fonts.check(`400 16px "${alias}"`)) {
         return;
       }
-      const source = primaryFontUrl(styleId, family);
+      const source = primaryFontUrl(markerId, family);
       const face = new FontFace(alias, `url("${source}") format("woff2-variations")`, {
         style: "normal",
         weight,
@@ -160,10 +156,7 @@ async function waitForVisualAssets(page: Page): Promise<void> {
     // load the exact same font files under deterministic aliases so screenshots
     // never race fallback-font layout against the final webfont layout.
     await ensureVisualFont("FitVibe Visual Inter", "async-fonts", "Inter", "100 900");
-    root.style.setProperty(
-      "--font-family-body",
-      '"FitVibe Visual Inter", system-ui, sans-serif',
-    );
+    root.style.setProperty("--font-family-body", '"FitVibe Visual Inter", system-ui, sans-serif');
     root.style.setProperty("--font-family-base", "var(--font-family-body)");
 
     if (loadHeadings) {
@@ -193,9 +186,15 @@ async function waitForVisualAssets(page: Page): Promise<void> {
         await Promise.race([
           task,
           new Promise<never>((_resolve, reject) => {
-            timer = setTimeout(() => reject(new Error(
-              `Visual asset readiness timed out: ${description}; font status=${document.fonts.status}`,
-            )), 10_000);
+            timer = setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    `Visual asset readiness timed out: ${description}; font status=${document.fonts.status}`,
+                  ),
+                ),
+              10_000,
+            );
           }),
         ]);
       } finally {
@@ -220,14 +219,22 @@ async function waitForVisualAssets(page: Page): Promise<void> {
       }
       const bounds = img.getBoundingClientRect();
       const style = getComputedStyle(img);
-      return bounds.width > 0 && bounds.height > 0 &&
-        bounds.bottom > 0 && bounds.top < innerHeight &&
-        bounds.right > 0 && bounds.left < innerWidth &&
-        style.display !== "none" && style.visibility !== "hidden";
+      return (
+        bounds.width > 0 &&
+        bounds.height > 0 &&
+        bounds.bottom > 0 &&
+        bounds.top < innerHeight &&
+        bounds.right > 0 &&
+        bounds.left < innerWidth &&
+        style.display !== "none" &&
+        style.visibility !== "hidden"
+      );
     });
-    await Promise.all(stableImages.map((img) =>
-      withDeadline(img.decode(), `visible image decode: ${img.currentSrc || img.src}`),
-    ));
+    await Promise.all(
+      stableImages.map((img) =>
+        withDeadline(img.decode(), `visible image decode: ${img.currentSrc || img.src}`),
+      ),
+    );
     await withDeadline(
       new Promise<void>((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(() => resolve()));

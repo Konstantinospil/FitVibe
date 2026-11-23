@@ -1,33 +1,79 @@
 /**
  * Font Loader tests
- * Tests asynchronous font loading functionality
+ * Faces are registered through the CSS Font Loading API (#650): an injected
+ * <style> is blocked by the production CSP, FontFace objects are not.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { loadAppFonts, loadFontsAsync, loadPublicFonts } from "../../src/utils/fontLoader.js";
+import {
+  APP_FONT_MARKER_ID,
+  PUBLIC_FONT_MARKER_ID,
+  PUBLIC_FONT_FACES,
+  loadAppFonts,
+  loadFontsAsync,
+  loadPublicFonts,
+} from "../../src/utils/fontLoader.js";
 import { APP_FONT_FACES } from "../../src/utils/appFontLoader.js";
 
+interface RecordedFace {
+  family: string;
+  source: string;
+  descriptors: FontFaceDescriptors;
+}
+
+class FakeFontFace {
+  constructor(
+    readonly family: string,
+    readonly source: string,
+    readonly descriptors: FontFaceDescriptors,
+  ) {}
+}
+
+const idleNow = () => {
+  // @ts-expect-error - requestIdleCallback may not exist in all environments
+  window.requestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
+    setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
+    return 1;
+  });
+};
+
 describe("fontLoader", () => {
+  let added: RecordedFace[];
   let originalRequestIdleCallback: typeof window.requestIdleCallback | undefined;
   let originalRequestAnimationFrame: typeof window.requestAnimationFrame;
+  let originalFonts: PropertyDescriptor | undefined;
+
+  const clearMarkers = () => {
+    document.getElementById(PUBLIC_FONT_MARKER_ID)?.remove();
+    document.getElementById(APP_FONT_MARKER_ID)?.remove();
+    document.body.classList.remove("fonts-loaded");
+  };
 
   beforeEach(() => {
     vi.useFakeTimers();
-    document.getElementById("async-fonts")?.remove();
-    document.getElementById("async-fonts-app")?.remove();
-    document.body.classList.remove("fonts-loaded");
-
+    clearMarkers();
+    added = [];
+    vi.stubGlobal("FontFace", FakeFontFace);
+    originalFonts = Object.getOwnPropertyDescriptor(document, "fonts");
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { add: vi.fn((face: RecordedFace) => added.push(face)) },
+    });
     originalRequestIdleCallback = window.requestIdleCallback;
     originalRequestAnimationFrame = window.requestAnimationFrame;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
-    document.getElementById("async-fonts")?.remove();
-    document.getElementById("async-fonts-app")?.remove();
-    document.body.classList.remove("fonts-loaded");
-
+    clearMarkers();
+    if (originalFonts) {
+      Object.defineProperty(document, "fonts", originalFonts);
+    } else {
+      // @ts-expect-error - remove the test stub when jsdom had no FontFaceSet
+      delete document.fonts;
+    }
     if (originalRequestIdleCallback) {
       window.requestIdleCallback = originalRequestIdleCallback;
     }
@@ -41,33 +87,33 @@ describe("fontLoader", () => {
 
     try {
       expect(() => loadFontsAsync()).not.toThrow();
-      expect(document.getElementById("async-fonts")).toBeNull();
+      expect(added).toHaveLength(0);
     } finally {
       global.window = originalWindow;
     }
   });
 
-  it("should use requestIdleCallback when available", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
+  it("should do nothing when the Font Loading API is unavailable", () => {
+    idleNow();
+    vi.stubGlobal("FontFace", undefined);
 
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
+    loadPublicFonts();
+    vi.advanceTimersByTime(1);
+
+    expect(added).toHaveLength(0);
+    expect(document.getElementById(PUBLIC_FONT_MARKER_ID)).toBeNull();
+  });
+
+  it("should use requestIdleCallback when available", () => {
+    idleNow();
 
     loadFontsAsync();
 
-    expect(mockRequestIdleCallback).toHaveBeenCalledWith(expect.any(Function), { timeout: 3000 });
-
+    expect(window.requestIdleCallback).toHaveBeenCalledWith(expect.any(Function), {
+      timeout: 3000,
+    });
     vi.advanceTimersByTime(1);
-
-    const styleElement = document.getElementById("async-fonts");
-    expect(styleElement).toBeInTheDocument();
-    expect(styleElement?.tagName).toBe("STYLE");
-    expect(styleElement?.textContent).toContain("@font-face");
-    expect(styleElement?.textContent).toContain('font-family: "Inter"');
-    expect(styleElement?.textContent).not.toContain("Roboto Flex");
+    expect(added.map((face) => face.family)).toEqual(["Inter", "Inter", "Inter"]);
   });
 
   it("should fallback to setTimeout when requestIdleCallback is not available", () => {
@@ -75,46 +121,67 @@ describe("fontLoader", () => {
     delete window.requestIdleCallback;
 
     loadFontsAsync();
+    vi.advanceTimersByTime(1999);
+    expect(added).toHaveLength(0);
 
-    // @ts-expect-error - requestIdleCallback may not exist
-    expect(window.requestIdleCallback).toBeUndefined();
-
-    vi.advanceTimersByTime(2000);
-
-    const styleElement = document.getElementById("async-fonts");
-    expect(styleElement).toBeInTheDocument();
-    expect(styleElement?.textContent).toContain("@font-face");
+    vi.advanceTimersByTime(1);
+    expect(added).toHaveLength(3);
   });
 
-  it("should not inject fonts if already loaded", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
+  it("should register faces with the Font Loading API instead of an inline <style>", () => {
+    idleNow();
 
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
+    loadPublicFonts();
+    vi.advanceTimersByTime(1);
+
+    expect(document.querySelector("style")).toBeNull();
+    for (const face of added) {
+      expect(face).toBeInstanceOf(FakeFontFace);
+      expect(face.source).toMatch(/^url\(".+\.woff2"\) format\("woff2-variations"\)$/);
+      expect(face.descriptors.unicodeRange).toBeTruthy();
+      expect(face.descriptors.weight).toBe("100 900");
+    }
+    expect(added.map((face) => face.descriptors.unicodeRange)).toEqual(
+      PUBLIC_FONT_FACES.map((face) => face.unicodeRange),
+    );
+  });
+
+  it("should register Inter only on public pages", () => {
+    idleNow();
+
+    loadPublicFonts();
+    vi.advanceTimersByTime(1);
+
+    expect(added.every((face) => face.family === "Inter")).toBe(true);
+    expect(added.some((face) => face.source.includes(".ttf"))).toBe(false);
+  });
+
+  it("should not register fonts twice", () => {
+    idleNow();
 
     loadFontsAsync();
     vi.advanceTimersByTime(1);
-
-    expect(document.getElementById("async-fonts")).toBeInTheDocument();
-
     loadFontsAsync();
     vi.advanceTimersByTime(1);
 
-    expect(document.querySelectorAll("#async-fonts")).toHaveLength(1);
+    expect(added).toHaveLength(3);
+    expect(document.querySelectorAll(`#${PUBLIC_FONT_MARKER_ID}`)).toHaveLength(1);
   });
 
-  it("should add fonts-loaded class to body after injection", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
+  it("should record the registered faces on a CSP-neutral <meta> marker", () => {
+    idleNow();
 
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
+    loadPublicFonts();
+    vi.advanceTimersByTime(1);
 
+    const marker = document.getElementById(PUBLIC_FONT_MARKER_ID);
+    expect(marker?.tagName).toBe("META");
+    expect(marker?.parentElement).toBe(document.head);
+    expect(JSON.parse(marker?.getAttribute("content") ?? "[]")).toEqual(PUBLIC_FONT_FACES);
+  });
+
+  it("should add fonts-loaded class to body after registration", () => {
+    idleNow();
     const mockRequestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
       setTimeout(callback, 0);
       return 1;
@@ -123,102 +190,44 @@ describe("fontLoader", () => {
 
     loadFontsAsync();
     vi.advanceTimersByTime(1);
-
     expect(mockRequestAnimationFrame).toHaveBeenCalled();
 
     vi.advanceTimersByTime(1);
-
     expect(document.body.classList.contains("fonts-loaded")).toBe(true);
   });
 
-  it("should inject subsetted Inter woff2 on public pages", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
-
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
-
-    loadPublicFonts();
-    vi.advanceTimersByTime(1);
-
-    const styleElement = document.getElementById("async-fonts");
-    expect(styleElement?.textContent).toContain('font-family: "Inter"');
-    expect(styleElement?.textContent).toContain("woff2");
-    expect(styleElement?.textContent).toContain("unicode-range");
-    expect(styleElement?.textContent).not.toContain(".ttf");
-    expect(styleElement?.textContent).not.toContain("Roboto Flex");
-  });
-
-  it("should inject Roboto Flex only via loadAppFonts", async () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
-
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
+  it("should register Roboto Flex only via loadAppFonts", async () => {
+    idleNow();
 
     loadAppFonts();
-    vi.advanceTimersByTime(1);
     await vi.runAllTimersAsync();
 
-    const styleElement = document.getElementById("async-fonts-app");
-    expect(styleElement).toBeInTheDocument();
-    expect(styleElement?.textContent).toContain('font-family: "Roboto Flex"');
-    expect(styleElement?.textContent).toContain("woff2");
-    expect(APP_FONT_FACES).toContain("Roboto Flex");
-  });
-
-  it("should inject style element into document head", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
-
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
-
-    loadFontsAsync();
-    vi.advanceTimersByTime(1);
-
-    const styleElement = document.getElementById("async-fonts");
-    expect(styleElement).toBeInTheDocument();
-    expect(styleElement?.parentElement).toBe(document.head);
+    expect(added.map((face) => face.family)).toEqual(["Roboto Flex", "Roboto Flex", "Roboto Flex"]);
+    expect(added.every((face) => face.descriptors.display === "swap")).toBe(true);
+    expect(added.every((face) => face.descriptors.weight === "100 1000")).toBe(true);
+    expect(document.getElementById(APP_FONT_MARKER_ID)?.tagName).toBe("META");
+    expect(APP_FONT_FACES.every((face) => face.family === "Roboto Flex")).toBe(true);
   });
 
   it("should handle requestIdleCallback timeout", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
+    // @ts-expect-error - requestIdleCallback may not exist in all environments
+    window.requestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
       setTimeout(() => callback({ didTimeout: true, timeRemaining: () => 0 }), 3000);
       return 1;
     });
 
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
-
     loadFontsAsync();
-
     vi.advanceTimersByTime(3000);
 
-    const styleElement = document.getElementById("async-fonts");
-    expect(styleElement).toBeInTheDocument();
+    expect(added).toHaveLength(3);
   });
 
   it("should use font-display optional so late Inter cannot become LCP", () => {
-    const mockRequestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
-      setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 16.67 }), 0);
-      return 1;
-    });
-
-    // @ts-expect-error - requestIdleCallback may not exist in all environments
-    window.requestIdleCallback = mockRequestIdleCallback;
+    idleNow();
 
     loadFontsAsync();
     vi.advanceTimersByTime(1);
 
-    const styleElement = document.getElementById("async-fonts");
-    expect(styleElement?.textContent).toContain("font-display: optional");
-    expect(styleElement?.textContent).not.toContain("font-display: swap");
+    expect(added.every((face) => face.descriptors.display === "optional")).toBe(true);
   });
 });
