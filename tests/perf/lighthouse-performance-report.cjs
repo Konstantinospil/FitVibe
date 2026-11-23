@@ -20,6 +20,24 @@ function scriptBytes(report) {
     : null;
 }
 
+// The element Lighthouse attributed LCP to in the slowest valid run, so the log
+// shows *what* the gate timed (page content, an overlay, a fallback...).
+function worstRunLcpElement(entries) {
+  let worstEntry = null;
+  for (const entry of entries) {
+    const value = entry.report?.audits?.["largest-contentful-paint"]?.numericValue;
+    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    const best = worstEntry?.report?.audits?.["largest-contentful-paint"]?.numericValue;
+    if (worstEntry === null || value > best) worstEntry = entry;
+  }
+  const node = worstEntry?.report?.audits?.["lcp-breakdown-insight"]?.details?.items?.find(
+    (item) => item.type === "node",
+  );
+  const label =
+    typeof node?.nodeLabel === "string" ? node.nodeLabel.trim().replace(/\s+/g, " ") : "";
+  return label ? label.slice(0, 60) : null;
+}
+
 function buildPerformanceSummary({
   label,
   paths,
@@ -45,6 +63,7 @@ function buildPerformanceSummary({
       worstScriptBytes: worst(valid, scriptBytes),
       // Every valid run's LCP, in collection order, so run-to-run spread is
       // visible in the job log without downloading the artifact.
+      worstLcpElement: worstRunLcpElement(valid),
       lcpRunsMs: valid
         .map(({ report }) => report.audits?.["largest-contentful-paint"]?.numericValue)
         .filter((value) => typeof value === "number" && Number.isFinite(value))
@@ -73,6 +92,7 @@ function markdownReport(summary) {
         display(page.worstPerformanceScore === null ? null : page.worstPerformanceScore * 100),
         display(page.worstLcpMs),
         page.lcpRunsMs.length ? page.lcpRunsMs.join(", ") : "—",
+        page.worstLcpElement === null ? "—" : page.worstLcpElement.replaceAll("|", "/"),
         display(page.worstTbtMs),
         display(page.worstCls, 3),
         display(page.worstScriptBytes === null ? null : page.worstScriptBytes / 1024),
@@ -89,8 +109,8 @@ function markdownReport(summary) {
       summary.expectedPages +
       " pages. Performance scores and numeric metrics are **worst of valid runs**.",
     "",
-    "| Route | Valid runs | Performance / 100 | LCP ms | LCP per run ms | TBT ms | CLS | JS transfer KiB | Collection |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+    "| Route | Valid runs | Performance / 100 | LCP ms | LCP per run ms | LCP element (worst run) | TBT ms | CLS | JS transfer KiB | Collection |",
+    "| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- |",
     ...rows,
     "",
     "Budget checks are separate from collection: a breached budget does not discard measured reports.",
