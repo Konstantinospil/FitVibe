@@ -6,7 +6,7 @@ describe("appFontLoader", () => {
     expect(APP_FONT_FACES).toHaveLength(3);
     for (const face of APP_FONT_FACES) {
       expect(face.family).toBe("Roboto Flex");
-      expect(face.display).toBe("swap");
+      expect(face.display).toBe("optional");
       expect(face.weight).toBe("100 1000");
       expect(face.url).toMatch(/\.woff2$/);
     }
