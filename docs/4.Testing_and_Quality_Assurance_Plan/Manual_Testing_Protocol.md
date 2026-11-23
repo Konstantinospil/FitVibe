@@ -603,13 +603,13 @@ Before starting manual testing, verify:
 
 **Test Cases:**
 
-| ID       | Test Case                   | Steps                                                | Expected Result                                               | Priority |
-| -------- | --------------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | -------- |
-| PERF-001 | Page load time              | 1. Measure initial page load<br>2. Check Lighthouse  | LCP < 2.5s, FID < 100ms                                       | P0       |
-| PERF-002 | API response time           | 1. Monitor network tab<br>2. Check API calls         | p95 < 600ms for analytics, < 400ms for feed, < 300ms for CRUD | P1       |
-| PERF-003 | Image optimization          | 1. Check image loading<br>2. Verify formats          | Images optimized (WebP/AVIF), lazy loading works              | P1       |
-| PERF-004 | Bundle size                 | 1. Check network tab<br>2. Verify bundle sizes       | Initial bundle < 500KB, total < 2MB                           | P1       |
-| PERF-005 | Infinite scroll performance | 1. Scroll feed extensively<br>2. Monitor performance | No memory leaks, smooth scrolling                             | P1       |
+| ID       | Test Case                   | Steps                                                                                                                                                 | Expected Result                                               | Priority |
+| -------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | -------- |
+| PERF-001 | Page load time              | 1. Measure initial page load<br>2. Check Lighthouse<br>3. Record INP in a DevTools Performance trace or Lighthouse timespan while clicking and typing | LCP < 2.5s, CLS < 0.1, INP < 200ms                            | P0       |
+| PERF-002 | API response time           | 1. Monitor network tab<br>2. Check API calls                                                                                                          | p95 < 600ms for analytics, < 400ms for feed, < 300ms for CRUD | P1       |
+| PERF-003 | Image optimization          | 1. Check image loading<br>2. Verify formats                                                                                                           | Images optimized (WebP/AVIF), lazy loading works              | P1       |
+| PERF-004 | Bundle size                 | 1. Check network tab<br>2. Verify bundle sizes                                                                                                        | Initial bundle < 500KB, total < 2MB                           | P1       |
+| PERF-005 | Infinite scroll performance | 1. Scroll feed extensively<br>2. Monitor performance                                                                                                  | No memory leaks, smooth scrolling                             | P1       |
 
 ---
 
