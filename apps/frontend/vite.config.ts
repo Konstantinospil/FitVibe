@@ -155,7 +155,6 @@ export default defineConfig(() => {
             "@tanstack/react-query",
             "axios-mock-adapter",
             "axios",
-            "recharts",
             // Regex patterns to catch all sub-packages
             /^@testing-library\//,
             /^vitest\//,
