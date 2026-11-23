@@ -5,6 +5,20 @@ import { fileURLToPath } from "node:url";
 import { configDefaults } from "vitest/config";
 import { resolve as pathResolve } from "node:path";
 
+// Font files are never inlined. Their @font-face rules use unicode-range, so the
+// browser fetches a subset only when text in that range is rendered. Inlined as
+// base64, a subset is downloaded with its script on every page instead: the
+// 11 KB Greek Roboto Flex subset was the last request before LCP on every
+// authenticated route in Lighthouse's simulation (issue 634, H13).
+export const INLINE_ASSET_LIMIT_BYTES = 16384;
+const FONT_FILE = /\.(woff2?|ttf|otf|eot)(\?.*)?$/i;
+export function shouldInlineAsset(filePath: string, content: Buffer): boolean | undefined {
+  if (FONT_FILE.test(filePath)) {
+    return false;
+  }
+  return content.length < INLINE_ASSET_LIMIT_BYTES;
+}
+
 export default defineConfig(() => {
   const isVitest = process.env.VITEST === "true";
   const isSSR = process.env.SSR === "true";
@@ -254,8 +268,8 @@ export default defineConfig(() => {
       },
       // Enable compression reporting for monitoring
       reportCompressedSize: true,
-      // Optimize asset inlining threshold - inline more small assets to reduce requests
-      assetsInlineLimit: 16384, // Inline assets smaller than 16KB to reduce HTTP requests
+      // Inline assets smaller than 16KB to reduce HTTP requests, except fonts.
+      assetsInlineLimit: shouldInlineAsset,
       // Enable CSS code splitting to load only necessary CSS per route, improving LCP
       cssCodeSplit: true,
       // Optimize for faster initial load by reducing initial bundle size
