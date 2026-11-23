@@ -36,7 +36,6 @@
     "react-i18next": "^17.1.9",
     "react-router": "^8.5.2",
     "react-router-dom": "^7.18.6",
-    "recharts": "^3.11.0",
     "tsx": "^4.23.15",
     "zustand": "^5.1.0",
     "@fitvibe/ui": "workspace:*"
