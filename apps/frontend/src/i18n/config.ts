@@ -159,6 +159,11 @@ const i18nReady = i18n.use(initReactI18next).init({
   // SSR-safe: disable React suspense for server-side rendering
   react: {
     useSuspense: false,
+    // String bundles are added after first render (addAppResourceBundle), e.g.
+    // the full English strings on public legal pages. Re-render translated
+    // components when that happens; by default react-i18next only re-renders
+    // on a language change, so headings like "terms.title" stayed as raw keys.
+    bindI18nStore: "added",
   },
 });
 
