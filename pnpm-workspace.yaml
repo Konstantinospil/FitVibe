@@ -12,7 +12,7 @@ allowBuilds:
   snyk: true
   esbuild: true
   # Jest 30.5 uses Parcel's native watcher in jest-haste-map.
-  "@parcel/watcher": true
+  '@parcel/watcher': true
   # Jest 30.5 uses the native-backed resolver via jest-resolve.
   unrs-resolver: true
   msgpackr-extract: false
@@ -20,35 +20,35 @@ allowBuilds:
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
 # Regenerate combined PR #594/#595 OpenTelemetry 3 dependency lockfile.
 overrides:
-  "lighthouse": "13.6.0"
-  "chrome-launcher": "^1.2.1"
-  "glob": "14.0.2"
-  "extract-zip": "link:packages/patched-extract-zip"
-  "esbuild": "^0.25.0"
-  "js-yaml": ">=4.3.1"
-  "qs": ">=6.16.1"
-  "@opentelemetry/core": ">=2.8.0"
-  "minimatch@3": ">=3.1.4"
-  "minimatch@5": ">=5.1.8"
-  "minimatch@9": "11.0.1"
-  "minimatch@10": "11.0.1"
-  "@eslint/config-array>minimatch": "11.0.1"
-  "@eslint/eslintrc>minimatch": "11.0.1"
-  "eslint-plugin-import>minimatch": "11.0.1"
-  "eslint-plugin-jsx-a11y>minimatch": "11.0.1"
-  "eslint-plugin-react>minimatch": "11.0.1"
-  "eslint>minimatch": "11.0.1"
-  "test-exclude>minimatch": "11.0.1"
-  "brace-expansion@1": "^1.1.12"
-  "brace-expansion@2": "^2.0.2"
-  "brace-expansion@5": ">=5.0.9"
-  "protobufjs": ">=7.6.1"
-  "@opentelemetry/exporter-prometheus": ">=0.217.0"
-  "@opentelemetry/propagator-jaeger": ">=2.9.0"
-  "ajv": "^6.14.0"
-  "@humanfs/node": ">=0.16.8"
-  "@jest/transform": "^30.5.2"
-  "expect": "^30.5.2"
-  "jest-message-util": "^30.5.1"
-  "@jest/types": "^30.5.1"
-  "jest-util": "^30.5.1"
+  'lighthouse': '13.6.0'
+  'chrome-launcher': '^1.2.1'
+  'glob': '14.0.2'
+  'extract-zip': 'link:packages/patched-extract-zip'
+  'esbuild': '^0.25.0'
+  'js-yaml': '>=4.3.1'
+  'qs': '>=6.16.1'
+  '@opentelemetry/core': '>=2.8.0'
+  'minimatch@3': '>=3.1.4'
+  'minimatch@5': '>=5.1.8'
+  'minimatch@9': '11.0.1'
+  'minimatch@10': '11.0.1'
+  '@eslint/config-array>minimatch': '11.0.1'
+  '@eslint/eslintrc>minimatch': '11.0.1'
+  'eslint-plugin-import>minimatch': '11.0.1'
+  'eslint-plugin-jsx-a11y>minimatch': '11.0.1'
+  'eslint-plugin-react>minimatch': '11.0.1'
+  'eslint>minimatch': '11.0.1'
+  'test-exclude>minimatch': '11.0.1'
+  'brace-expansion@1': '^1.1.12'
+  'brace-expansion@2': '^2.0.2'
+  'brace-expansion@5': '>=5.0.9'
+  'protobufjs': '>=7.6.1'
+  '@opentelemetry/exporter-prometheus': '>=0.217.0'
+  '@opentelemetry/propagator-jaeger': '>=2.9.0'
+  'ajv': '^6.14.0'
+  '@humanfs/node': '>=0.16.8'
+  '@jest/transform': '^30.5.2'
+  'expect': '^30.5.2'
+  'jest-message-util': '^30.5.1'
+  '@jest/types': '^30.5.1'
+  'jest-util': '^30.5.1'

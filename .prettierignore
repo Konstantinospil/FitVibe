@@ -1,0 +1,4 @@
+# The dependency-governance parsers (tests/qa/check-dependency-overrides.cjs,
+# tests/qa/report-override-impact.cjs) read single-quoted override keys; keep
+# Prettier from rewriting them to double quotes.
+pnpm-workspace.yaml
