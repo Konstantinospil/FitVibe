@@ -203,7 +203,7 @@ describe("fontLoader", () => {
     await vi.runAllTimersAsync();
 
     expect(added.map((face) => face.family)).toEqual(["Roboto Flex", "Roboto Flex", "Roboto Flex"]);
-    expect(added.every((face) => face.descriptors.display === "optional")).toBe(true);
+    expect(added.every((face) => face.descriptors.display === "swap")).toBe(true);
     expect(added.every((face) => face.descriptors.weight === "100 1000")).toBe(true);
     expect(document.getElementById(APP_FONT_MARKER_ID)?.tagName).toBe("META");
     expect(APP_FONT_FACES.every((face) => face.family === "Roboto Flex")).toBe(true);

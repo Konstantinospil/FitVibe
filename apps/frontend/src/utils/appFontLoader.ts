@@ -1,8 +1,5 @@
 /**
  * Authenticated-app heading font. Split from fontLoader so /login does not download Roboto Flex.
- * font-display: optional for the same reason as Inter: headings are the LCP
- * element on authenticated pages, and a late swap re-paints them and moves the
- * LCP timestamp to the font's arrival (+250-400 ms in CI once fonts loaded, issue 650).
  */
 
 import robotoLatin from "@fontsource-variable/roboto-flex/files/roboto-flex-latin-wght-normal.woff2?url";
@@ -20,7 +17,7 @@ const robotoFace = (url: string, unicodeRange: string): FontFaceDefinition => ({
   url,
   unicodeRange,
   weight: "100 1000",
-  display: "optional",
+  display: "swap",
 });
 
 export const APP_FONT_FACES: readonly FontFaceDefinition[] = [
