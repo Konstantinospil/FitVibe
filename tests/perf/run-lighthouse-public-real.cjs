@@ -8,16 +8,18 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { launchLighthouseChrome } = require("./lighthouse-chrome-runtime.cjs");
 const { observeNavigation } = require("./lighthouse-observe-navigation.cjs");
-const { validateMeasurement, assertScenarioCoverage } = require("./lighthouse-measurement-validity.cjs");
+const {
+  validateMeasurement,
+  assertScenarioCoverage,
+} = require("./lighthouse-measurement-validity.cjs");
 const { assertPublicWorstBudgets } = require("./lighthouse-public-budgets.cjs");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
 const { verifyPublicContent } = require("./lighthouse-public-readiness.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
+const { shouldRetryTraceFailure, traceFailureCode } = require("./lighthouse-trace-recovery.cjs");
 
 const outputDir = path.resolve(__dirname, "lhci-output/public-real");
-const canonical = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "lighthouserc.ci.json"), "utf8"),
-);
+const canonical = JSON.parse(fs.readFileSync(path.join(__dirname, "lighthouserc.ci.json"), "utf8"));
 
 const REQUIRED_API_PATHS = Object.freeze({
   "/": ["/api/v1/consent/cookie-status"],
@@ -39,8 +41,10 @@ function publicConfigForOrigin(origin) {
   if (JSON.stringify(source) !== JSON.stringify([...publicRoutes].sort())) {
     throw new Error("Canonical Lighthouse route inventory has drifted");
   }
-  if (!Number.isInteger(canonical.ci.collect.numberOfRuns) ||
-      canonical.ci.collect.numberOfRuns < 3) {
+  if (
+    !Number.isInteger(canonical.ci.collect.numberOfRuns) ||
+    canonical.ci.collect.numberOfRuns < 3
+  ) {
     throw new Error("Real-backend Lighthouse requires at least three runs");
   }
   return {
@@ -62,8 +66,11 @@ function assessPublicReport(report, pathname, origin) {
   if (report.requestedUrl !== expected) {
     errors.push("wrong requested URL: " + report.requestedUrl);
   }
-  if (!actual || new URL(actual).origin !== new URL(expected).origin ||
-      new URL(actual).pathname !== pathname) {
+  if (
+    !actual ||
+    new URL(actual).origin !== new URL(expected).origin ||
+    new URL(actual).pathname !== pathname
+  ) {
     errors.push("redirected or replaced by " + String(actual));
   }
   if (report.runtimeError) errors.push("Lighthouse runtime error: " + report.runtimeError.message);
@@ -77,23 +84,30 @@ function assessPublicReport(report, pathname, origin) {
   if (!Array.isArray(network)) {
     errors.push("missing network request evidence");
   }
-  const api = Array.isArray(network) ? network.filter((item) => {
-    try {
-      const url = new URL(item.url);
-      return url.origin === new URL(origin).origin && url.pathname.startsWith("/api/v1/");
-    } catch {
-      return false;
-    }
-  }) : [];
+  const api = Array.isArray(network)
+    ? network.filter((item) => {
+        try {
+          const url = new URL(item.url);
+          return url.origin === new URL(origin).origin && url.pathname.startsWith("/api/v1/");
+        } catch {
+          return false;
+        }
+      })
+    : [];
   for (const item of api) {
-    if (typeof item.statusCode !== "number" || item.statusCode < 200 ||
-        item.statusCode >= 400) {
+    if (typeof item.statusCode !== "number" || item.statusCode < 200 || item.statusCode >= 400) {
       errors.push("backend " + String(item.statusCode) + " on " + new URL(item.url).pathname);
     }
   }
   for (const required of REQUIRED_API_PATHS[pathname] ?? []) {
-    if (!api.some((item) => new URL(item.url).pathname === required &&
-                    item.statusCode >= 200 && item.statusCode < 400)) {
+    if (
+      !api.some(
+        (item) =>
+          new URL(item.url).pathname === required &&
+          item.statusCode >= 200 &&
+          item.statusCode < 400,
+      )
+    ) {
       errors.push("missing successful backend response for " + required);
     }
   }
@@ -101,13 +115,14 @@ function assessPublicReport(report, pathname, origin) {
     (item) => item.type === "node",
   );
   const lcpElement = node?.nodeLabel ?? null;
-  if (["/terms", "/privacy", "/cookie"].includes(pathname) &&
-      (lcpElement === "Error" || lcpElement === "common.error")) {
+  if (
+    ["/terms", "/privacy", "/cookie"].includes(pathname) &&
+    (lcpElement === "Error" || lcpElement === "common.error")
+  ) {
     errors.push("LCP measures legal-document error instead of content");
   }
   return { errors, lcpElement, apiRequests: api.length };
 }
-
 
 /**
  * Real browser preflight checks all public routes twice: fresh anonymous browser
@@ -159,9 +174,13 @@ async function verifyBrowserContentAndConsent(origin) {
       throw new Error("Saved consent status returned HTTP " + persisted.status());
     }
     const state = (await persisted.json()).data;
-    if (!state?.hasConsent || state.consent?.essential !== true ||
-        state.consent?.preferences !== false || state.consent?.analytics !== false ||
-        state.consent?.marketing !== false) {
+    if (
+      !state?.hasConsent ||
+      state.consent?.essential !== true ||
+      state.consent?.preferences !== false ||
+      state.consent?.analytics !== false ||
+      state.consent?.marketing !== false
+    ) {
       throw new Error("Real essential-only consent was not persisted");
     }
     const identity = (await context.cookies(statusUrl)).filter(
@@ -177,7 +196,10 @@ async function verifyBrowserContentAndConsent(origin) {
     return observations;
   } finally {
     fs.mkdirSync(outputDir, { recursive: true });
-    fs.writeFileSync(path.join(outputDir, "content-readiness.json"), JSON.stringify(observations, null, 2) + "\n");
+    fs.writeFileSync(
+      path.join(outputDir, "content-readiness.json"),
+      JSON.stringify(observations, null, 2) + "\n",
+    );
     await context.close();
     await browser.close();
   }
@@ -194,9 +216,13 @@ async function verifyCurrentConsent(context, origin, scenario) {
   const state = (await response.json()).data;
   if (scenario === "first-visit") {
     if (state?.hasConsent) throw new Error("Unexpected persisted consent on first visit");
-  } else if (!state?.hasConsent || state.consent?.essential !== true ||
-             state.consent?.preferences !== false || state.consent?.analytics !== false ||
-             state.consent?.marketing !== false) {
+  } else if (
+    !state?.hasConsent ||
+    state.consent?.essential !== true ||
+    state.consent?.preferences !== false ||
+    state.consent?.analytics !== false ||
+    state.consent?.marketing !== false
+  ) {
     throw new Error("Expected backend-persisted essential-only consent");
   }
   return state;
@@ -209,12 +235,13 @@ async function persistRealBrowserConsent(context, origin) {
     await verifyPublicContent(page, "/login", "first-visit");
     await page.locator(".cookie-consent-actions button").first().click();
     await page.locator(".cookie-consent-backdrop").waitFor({
-      state: "hidden", timeout: 30000,
+      state: "hidden",
+      timeout: 30000,
     });
     await verifyCurrentConsent(context, origin, "consented");
-    const consentCookies = (await context.cookies(
-      new URL("/api/v1/consent/cookie-status", origin).toString(),
-    )).filter((cookie) => cookie.name === "fitvibe_consent_client");
+    const consentCookies = (
+      await context.cookies(new URL("/api/v1/consent/cookie-status", origin).toString())
+    ).filter((cookie) => cookie.name === "fitvibe_consent_client");
     if (consentCookies.length !== 1) {
       throw new Error("Real backend did not persist one consent browser identity cookie");
     }
@@ -230,6 +257,7 @@ async function main() {
   const rows = [];
   const technicalErrors = [];
   const observations = [];
+  const traceRecoveries = [];
   let budgetErrors = [];
   let chrome;
   const originInput = process.env.PLAYWRIGHT_BASE_URL;
@@ -253,8 +281,8 @@ async function main() {
       const response = await fetch(new URL(endpoint, origin), {
         signal: AbortSignal.timeout(10000),
       });
-      if (!response.ok) throw new Error("Real backend preflight " + endpoint +
-        " returned HTTP " + response.status);
+      if (!response.ok)
+        throw new Error("Real backend preflight " + endpoint + " returned HTTP " + response.status);
     }
 
     chrome = await launchLighthouseChrome();
@@ -274,78 +302,155 @@ async function main() {
         for (let run = 1; run <= expectedRuns; run += 1) {
           const id = scenario + ":" + (pathname === "/" ? "home" : pathname.slice(1)) + ":" + run;
           const target = new URL(pathname, origin).toString();
-          let output;
-          let observed;
-          let observationError;
-          try {
-            await chrome.clearCache();
-            const observer = observeNavigation(chrome.context, target,
-              (page) => verifyPublicContent(page, pathname, scenario));
+          // A run whose Lighthouse trace was not recorded measured nothing; it
+          // may be collected once more (see lighthouse-trace-recovery.cjs).
+          for (let attempt = 1; ; attempt += 1) {
+            let output;
+            let observed;
+            let observationError;
             try {
-              output = await lighthouse(target, {
-                port: chrome.port,
-                logLevel: "error",
-                disableStorageReset: true,
-                throttlingMethod: config.ci.collect.settings.throttlingMethod,
-                maxWaitForFcp: config.ci.collect.settings.maxWaitForFcp,
-                maxWaitForLoad: config.ci.collect.settings.maxWaitForLoad,
+              await chrome.clearCache();
+              const observer = observeNavigation(chrome.context, target, (page) =>
+                verifyPublicContent(page, pathname, scenario),
+              );
+              try {
+                output = await lighthouse(target, {
+                  port: chrome.port,
+                  logLevel: "error",
+                  disableStorageReset: true,
+                  throttlingMethod: config.ci.collect.settings.throttlingMethod,
+                  maxWaitForFcp: config.ci.collect.settings.maxWaitForFcp,
+                  maxWaitForLoad: config.ci.collect.settings.maxWaitForLoad,
+                });
+              } finally {
+                try {
+                  observed = await observer.finish();
+                } catch (error) {
+                  observationError = error;
+                }
+              }
+              if (!output?.lhr) throw new Error("Lighthouse produced no report");
+              const report = output.lhr;
+              // Always write raw LHR before validating it so unexpected 429,
+              // error-content or redirects remain available for investigation.
+              const reportFile =
+                "lhr-" +
+                id.replaceAll(":", "-") +
+                (attempt > 1 ? "-retry-" + attempt : "") +
+                ".json";
+              fs.writeFileSync(path.join(scenarioDir, reportFile), JSON.stringify(report));
+              if (shouldRetryTraceFailure(report, attempt, traceRecoveries.length)) {
+                const event = {
+                  id,
+                  attempt,
+                  report: path.join(scenario, reportFile),
+                  code: traceFailureCode(report),
+                  message: report.runtimeError.message,
+                };
+                traceRecoveries.push(event);
+                console.warn(
+                  "Real-backend public Lighthouse trace recovery: " +
+                    id +
+                    " attempt " +
+                    attempt +
+                    " (" +
+                    event.code +
+                    ")",
+                );
+                continue;
+              }
+              const legacy = assessPublicReport(report, pathname, origin);
+              const readiness = observed && { ...observed, pathname, scenario };
+              const diagnostic = validateMeasurement(report, {
+                mode: "public",
+                pathname,
+                origin,
+                scenario,
+                readiness,
               });
-            } finally {
-              try { observed = await observer.finish(); }
-              catch (error) { observationError = error; }
+              const errors = [...legacy.errors, ...diagnostic.errors];
+              if (observationError) errors.push(observationError.message);
+              const valid = errors.length === 0;
+              rows.push({ path: pathname, scenario, report, valid });
+              observations.push({
+                id,
+                pathname,
+                scenario,
+                readiness,
+                valid,
+                errors,
+                apiRequests: diagnostic.apiRequests,
+                lcpElement: diagnostic.lcpElement,
+              });
+              if (!valid) technicalErrors.push(id + ": " + errors.join("; "));
+            } catch (error) {
+              technicalErrors.push(id + ": " + error.message);
+              observations.push({ id, pathname, scenario, valid: false, errors: [error.message] });
             }
-            if (!output?.lhr) throw new Error("Lighthouse produced no report");
-            const report = output.lhr;
-            // Always write raw LHR before validating it so unexpected 429,
-            // error-content or redirects remain available for investigation.
-            fs.writeFileSync(path.join(scenarioDir, "lhr-" + id.replaceAll(":", "-") + ".json"),
-              JSON.stringify(report));
-            const legacy = assessPublicReport(report, pathname, origin);
-            const readiness = observed && { ...observed, pathname, scenario };
-            const diagnostic = validateMeasurement(report, {
-              mode: "public", pathname, origin, scenario, readiness,
-            });
-            const errors = [...legacy.errors, ...diagnostic.errors];
-            if (observationError) errors.push(observationError.message);
-            const valid = errors.length === 0;
-            rows.push({ path: pathname, scenario, report, valid });
-            observations.push({ id, pathname, scenario, readiness, valid, errors,
-              apiRequests: diagnostic.apiRequests, lcpElement: diagnostic.lcpElement });
-            if (!valid) technicalErrors.push(id + ": " + errors.join("; "));
-          } catch (error) {
-            technicalErrors.push(id + ": " + error.message);
-            observations.push({ id, pathname, scenario, valid: false,
-              errors: [error.message] });
+            break;
           }
         }
-        console.log("Real-backend public Lighthouse " + scenario + " " + pathname +
-          ": " + rows.filter((row) => row.path === pathname &&
-            row.scenario === scenario && row.valid).length +
-          "/" + expectedRuns + " valid runs");
+        console.log(
+          "Real-backend public Lighthouse " +
+            scenario +
+            " " +
+            pathname +
+            ": " +
+            rows.filter((row) => row.path === pathname && row.scenario === scenario && row.valid)
+              .length +
+            "/" +
+            expectedRuns +
+            " valid runs",
+        );
       }
     }
 
     const records = observations.map((item) => ({
-      id: item.id, pathname: item.pathname, scenario: item.scenario,
-      valid: item.valid, sameNavigationReady: item.readiness?.ready === true,
+      id: item.id,
+      pathname: item.pathname,
+      scenario: item.scenario,
+      valid: item.valid,
+      sameNavigationReady: item.readiness?.ready === true,
     }));
     technicalErrors.push(...assertScenarioCoverage(records, publicRoutes, scenarios, expectedRuns));
-    budgetErrors = assertPublicWorstBudgets(rows, publicRoutes, scenarios,
-      config.ci.assert.assertions, expectedRuns);
+    budgetErrors = assertPublicWorstBudgets(
+      rows,
+      publicRoutes,
+      scenarios,
+      config.ci.assert.assertions,
+      expectedRuns,
+    );
   } catch (error) {
     technicalErrors.push("Real-backend public Lighthouse setup: " + error.message);
   } finally {
-    if (chrome) await chrome.close().catch((error) => {
-      technicalErrors.push("Lighthouse Chrome cleanup: " + error.message);
-    });
+    if (chrome)
+      await chrome.close().catch((error) => {
+        technicalErrors.push("Lighthouse Chrome cleanup: " + error.message);
+      });
 
-    fs.writeFileSync(path.join(outputDir, "observations.json"),
-      JSON.stringify(observations, null, 2) + "\n");
-    fs.writeFileSync(path.join(outputDir, "content-readiness.json"),
-      JSON.stringify(observations.map((item) => ({
-        id: item.id, pathname: item.pathname, scenario: item.scenario,
-        ...item.readiness, valid: item.valid, errors: item.errors,
-      })), null, 2) + "\n");
+    fs.writeFileSync(
+      path.join(outputDir, "observations.json"),
+      JSON.stringify(observations, null, 2) + "\n",
+    );
+    fs.writeFileSync(
+      path.join(outputDir, "trace-recoveries.json"),
+      JSON.stringify(traceRecoveries, null, 2) + "\n",
+    );
+    fs.writeFileSync(
+      path.join(outputDir, "content-readiness.json"),
+      JSON.stringify(
+        observations.map((item) => ({
+          id: item.id,
+          pathname: item.pathname,
+          scenario: item.scenario,
+          ...item.readiness,
+          valid: item.valid,
+          errors: item.errors,
+        })),
+        null,
+        2,
+      ) + "\n",
+    );
 
     const summaries = {};
     for (const scenario of scenarios) {
@@ -358,35 +463,57 @@ async function main() {
         budgetErrors: budgetErrors.filter((error) => error.startsWith(scenario + " ")),
       });
     }
-    const summary = { scenarios: summaries, expectedRunsPerScenario: expectedRuns,
+    const summary = {
+      scenarios: summaries,
+      expectedRunsPerScenario: expectedRuns,
       expectedMeasurements: publicRoutes.length * expectedRuns * scenarios.length,
       validMeasurements: rows.filter((row) => row.valid).length,
-      technicalErrors, budgetErrors,
+      technicalErrors,
+      budgetErrors,
     };
-    fs.writeFileSync(path.join(outputDir, "summary.json"),
-      JSON.stringify(summary, null, 2) + "\n");
-    fs.writeFileSync(path.join(outputDir, "summary.md"), [
-      "# Real-backend public Lighthouse — two consent scenarios",
-      "",
-      "Valid: " + summary.validMeasurements + "/" + summary.expectedMeasurements +
-        " independently measured runs. Cold resource cache per navigation.",
-      "Both scenarios use the same isolated browser and persist consent through the real UI/API.",
-      "Technical failures: " + technicalErrors.length + ". Budget breaches: " + budgetErrors.length + ".",
-      "",
-      "See first-visit/summary.md and consented/summary.md for independent worst-run budgets.",
-      "",
-      ...technicalErrors.map((error) => "- INVALID: " + error),
-      ...budgetErrors.map((error) => "- BUDGET: " + error),
-    ].join("\n") + "\n");
-    console.log("Real-backend public Lighthouse: " + summary.validMeasurements +
-      "/" + summary.expectedMeasurements + " valid scenario measurements");
+    fs.writeFileSync(path.join(outputDir, "summary.json"), JSON.stringify(summary, null, 2) + "\n");
+    fs.writeFileSync(
+      path.join(outputDir, "summary.md"),
+      [
+        "# Real-backend public Lighthouse — two consent scenarios",
+        "",
+        "Valid: " +
+          summary.validMeasurements +
+          "/" +
+          summary.expectedMeasurements +
+          " independently measured runs. Cold resource cache per navigation.",
+        "Both scenarios use the same isolated browser and persist consent through the real UI/API.",
+        "Technical failures: " +
+          technicalErrors.length +
+          ". Budget breaches: " +
+          budgetErrors.length +
+          ".",
+        "Trace-collection recoveries (runs re-collected because Lighthouse recorded no trace): " +
+          traceRecoveries.length +
+          ".",
+        "",
+        "See first-visit/summary.md and consented/summary.md for independent worst-run budgets.",
+        "",
+        ...technicalErrors.map((error) => "- INVALID: " + error),
+        ...budgetErrors.map((error) => "- BUDGET: " + error),
+      ].join("\n") + "\n",
+    );
+    console.log(
+      "Real-backend public Lighthouse: " +
+        summary.validMeasurements +
+        "/" +
+        summary.expectedMeasurements +
+        " valid scenario measurements; " +
+        traceRecoveries.length +
+        " trace-collection recoveries",
+    );
     if (technicalErrors.length) {
       console.error(technicalErrors.join("\n"));
       process.exitCode = 1;
     }
     // Remain diagnostic until this runner has validated CI evidence.
-    if (budgetErrors.length) console.warn("Canonical worst-run breaches:\n" +
-      budgetErrors.join("\n"));
+    if (budgetErrors.length)
+      console.warn("Canonical worst-run breaches:\n" + budgetErrors.join("\n"));
   }
 }
 
