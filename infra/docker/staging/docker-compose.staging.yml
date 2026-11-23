@@ -36,7 +36,7 @@ services:
       - "4173:4173"
 
   db:
-    image: postgres:18-alpine
+    image: postgres:19-alpine
     security_opt:
       - no-new-privileges:true
     user: "999:999" # postgres user
