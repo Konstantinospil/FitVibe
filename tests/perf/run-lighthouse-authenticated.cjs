@@ -14,9 +14,13 @@ const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs")
 const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
-const { observeNavigation, collectNavigationDiagnostics } = require("./lighthouse-observe-navigation.cjs");
+const {
+  observeNavigation,
+  collectNavigationDiagnostics,
+} = require("./lighthouse-observe-navigation.cjs");
 const { runChromeCriticalPathDiagnostics } = require("./chrome-critical-path.cjs");
 const { shouldRetryConsentRateLimit } = require("./lighthouse-consent-recovery.cjs");
+const { shouldRetryTraceFailure, traceFailureCode } = require("./lighthouse-trace-recovery.cjs");
 const {
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
@@ -74,11 +78,12 @@ function installSessionBootstrap(browserEndpoint) {
     let sequence = 0;
     let closed = false;
 
-    const send = (method, params = {}, sessionId) => new Promise((ok, fail) => {
-      const id = ++sequence;
-      pending.set(id, { ok, fail });
-      socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
-    });
+    const send = (method, params = {}, sessionId) =>
+      new Promise((ok, fail) => {
+        const id = ++sequence;
+        pending.set(id, { ok, fail });
+        socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
+      });
 
     socket.addEventListener("error", () => {
       if (!closed) errors.push("Chrome CDP socket failed");
@@ -102,9 +107,13 @@ function installSessionBootstrap(browserEndpoint) {
       try {
         if (targetInfo.type === "page") {
           await send("Page.enable", {}, sessionId);
-          await send("Page.addScriptToEvaluateOnNewDocument", {
-            source: `try {\n  if (location.origin === ${JSON.stringify(origin)}) {\n    sessionStorage.setItem(${JSON.stringify(AUTH_FLAG_KEY)}, "1");\n  }\n} catch { /* Storage is unavailable in some internal frames. */ }`,
-          }, sessionId);
+          await send(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {
+              source: `try {\n  if (location.origin === ${JSON.stringify(origin)}) {\n    sessionStorage.setItem(${JSON.stringify(AUTH_FLAG_KEY)}, "1");\n  }\n} catch { /* Storage is unavailable in some internal frames. */ }`,
+            },
+            sessionId,
+          );
         }
       } catch (error) {
         errors.push("Target bootstrap failed: " + error.message);
@@ -168,12 +177,12 @@ async function prepareAthlete(browser) {
     });
     await waitForApp(page);
     await page.locator(getPageReadySelector(preflightPath)).waitFor({
-      state: "visible", timeout: 25000,
+      state: "visible",
+      timeout: 25000,
     });
     const final = new URL(page.url());
     if (final.origin !== origin || final.pathname !== preflightPath) {
-      throw new Error("E2E preflight did not render authenticated Home (got " +
-        page.url() + ")");
+      throw new Error("E2E preflight did not render authenticated Home (got " + page.url() + ")");
     }
     if (await page.locator(".cookie-consent-backdrop:visible").count()) {
       throw new Error("E2E preflight lost persisted cookie consent");
@@ -191,15 +200,14 @@ async function prepareAthlete(browser) {
 async function verifyAuditedAthletePage(page, pathname) {
   await waitForApp(page);
   await page.locator(getPageReadySelector(pathname)).waitFor({
-    state: "visible", timeout: 25000,
+    state: "visible",
+    timeout: 25000,
   });
   if (pathname === "/calendar") {
     await page.getByRole("grid").waitFor({ state: "visible", timeout: 25000 });
   }
   if (["/terms", "/privacy", "/cookie"].includes(pathname)) {
-    const content = page.locator(
-      '[data-component="legal-document-shell"] .section-text',
-    ).first();
+    const content = page.locator('[data-component="legal-document-shell"] .section-text').first();
     await content.waitFor({ state: "visible", timeout: 25000 });
     if (!(await content.textContent())?.trim()) {
       throw new Error(pathname + ": published document contains no rendered body");
@@ -224,6 +232,7 @@ async function main() {
   const results = [];
   const technicalErrors = [];
   const recoveryEvents = [];
+  const traceRecoveries = [];
   const navigationDiagnostics = [];
   let budgetErrors = [];
   let chrome;
@@ -246,19 +255,23 @@ async function main() {
 
     const port = await findAvailablePort();
     profile = fs.mkdtempSync(path.join(os.tmpdir(), "fitvibe-lighthouse-"));
-    chrome = spawn(chromium.executablePath(), [
-      "--headless=new",
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-extensions",
-      "--disable-gpu",
-      "--remote-debugging-address=127.0.0.1",
-      "--remote-allow-origins=*",
-      "--remote-debugging-port=" + port,
-      "--user-data-dir=" + profile,
-      "about:blank",
-    ], { stdio: "ignore" });
+    chrome = spawn(
+      chromium.executablePath(),
+      [
+        "--headless=new",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-extensions",
+        "--disable-gpu",
+        "--remote-debugging-address=127.0.0.1",
+        "--remote-allow-origins=*",
+        "--remote-debugging-port=" + port,
+        "--user-data-dir=" + profile,
+        "about:blank",
+      ],
+      { stdio: "ignore" },
+    );
 
     const endpoint = await connectDebugger(port, chrome);
     browser = await chromium.connectOverCDP(endpoint);
@@ -280,9 +293,12 @@ async function main() {
           try {
             // Clear resource cache only. Do not clear cookies/storage or mock APIs.
             await cacheSession.send("Network.clearBrowserCache");
-            const observer = observeNavigation(auditContext, url,
+            const observer = observeNavigation(
+              auditContext,
+              url,
               (page) => verifyAuditedAthletePage(page, pathName),
-              collectNavigationDiagnostics);
+              collectNavigationDiagnostics,
+            );
             let output;
             let observation;
             let observationError;
@@ -306,26 +322,62 @@ async function main() {
             const report = output.lhr;
             if (observation?.diagnostics) {
               navigationDiagnostics.push({
-                path: pathName, run, attempt, diagnostics: observation.diagnostics,
+                path: pathName,
+                run,
+                attempt,
+                diagnostics: observation.diagnostics,
                 lighthouseLcpMs: report.audits?.["largest-contentful-paint"]?.numericValue ?? null,
               });
             }
-            const filename = "lhr-" +
+            const filename =
+              "lhr-" +
               (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
-              "-" + run + (attempt > 1 ? "-retry-" + attempt : "") + ".json";
+              "-" +
+              run +
+              (attempt > 1 ? "-retry-" + attempt : "") +
+              ".json";
             // Every attempted Lighthouse navigation retains its original report,
             // including a rate-limited attempt that is never counted as valid.
             fs.writeFileSync(path.join(auditDir, filename), JSON.stringify(report));
+            if (shouldRetryTraceFailure(report, attempt, traceRecoveries.length)) {
+              // Lighthouse recorded no trace, so this attempt measured nothing.
+              const event = {
+                path: pathName,
+                run,
+                attempt,
+                report: filename,
+                code: traceFailureCode(report),
+                message: report.runtimeError.message,
+              };
+              traceRecoveries.push(event);
+              console.warn(
+                "Authenticated Lighthouse trace recovery: " +
+                  pathName +
+                  " run " +
+                  run +
+                  " (attempt " +
+                  attempt +
+                  ", " +
+                  event.code +
+                  ")",
+              );
+              continue;
+            }
 
             let errorMessage;
             try {
               verifyRouteIdentity(route, report, origin);
               bootstrap.assertHealthy();
               const readiness = observation && {
-                ...observation, pathname: pathName, scenario: "consented",
+                ...observation,
+                pathname: pathName,
+                scenario: "consented",
               };
               const diagnostic = validateMeasurement(report, {
-                mode: "athlete", pathname: pathName, origin, scenario: "consented",
+                mode: "athlete",
+                pathname: pathName,
+                origin,
+                scenario: "consented",
                 readiness,
               });
               if (observationError) diagnostic.errors.push(observationError.message);
@@ -339,19 +391,38 @@ async function main() {
               break;
             }
 
-            if (shouldRetryConsentRateLimit(
-                  report, errorMessage, attempt, MAX_CONSENT_RATE_LIMIT_RETRIES,
-                )) {
+            if (
+              shouldRetryConsentRateLimit(
+                report,
+                errorMessage,
+                attempt,
+                MAX_CONSENT_RATE_LIMIT_RETRIES,
+              )
+            ) {
               // Recover only a demonstrably invalid consent-status measurement.
               // Existing real-API helper honors the server's Retry-After; never
               // retry a valid but slow report to obtain a better Lighthouse score.
-              const event = { path: pathName, run, attempt, report: filename,
-                reason: "consent-status HTTP 429", diagnostic: errorMessage };
+              const event = {
+                path: pathName,
+                run,
+                attempt,
+                report: filename,
+                reason: "consent-status HTTP 429",
+                diagnostic: errorMessage,
+              };
               recoveryEvents.push(event);
-              console.warn("Authenticated Lighthouse consent rate-limit recovery: " +
-                pathName + " run " + run + " (attempt " + attempt + ")");
+              console.warn(
+                "Authenticated Lighthouse consent rate-limit recovery: " +
+                  pathName +
+                  " run " +
+                  run +
+                  " (attempt " +
+                  attempt +
+                  ")",
+              );
               const status = await getConsentStatusWithRateLimitBackoff(
-                auditContext.request, origin + "/api/v1/consent/cookie-status",
+                auditContext.request,
+                origin + "/api/v1/consent/cookie-status",
               );
               if (!status.ok()) throw new Error("Consent recovery HTTP " + status.status());
               const consent = (await status.json()).data;
@@ -370,15 +441,22 @@ async function main() {
           }
         }
       }
-      console.log("Authenticated Lighthouse collected " +
-        results.filter((entry) => entry.path === pathName && entry.valid).length +
-        "/" + runCount + " valid runs for " + pathName);
+      console.log(
+        "Authenticated Lighthouse collected " +
+          results.filter((entry) => entry.path === pathName && entry.valid).length +
+          "/" +
+          runCount +
+          " valid runs for " +
+          pathName,
+      );
     }
     // Isolated diagnostic: executed only after the authoritative Lighthouse
     // measurements. Never modifies the worst-of-three budget calculations.
     try {
       await runChromeCriticalPathDiagnostics({
-        browser, origin, authFlag: AUTH_FLAG_KEY,
+        browser,
+        origin,
+        authFlag: AUTH_FLAG_KEY,
         outputDir: path.join(auditDir, "chrome-critical-path"),
       });
     } catch (error) {
@@ -391,14 +469,26 @@ async function main() {
     // Evaluate only verified page identities, never redirected login screens.
     const validReports = results.filter((entry) => entry.valid).map((entry) => entry.report);
     budgetErrors = assertWorstRunBudgets(
-      validReports, athleteRoutes, origin, config.ci.assert.assertions, runCount,
+      validReports,
+      athleteRoutes,
+      origin,
+      config.ci.assert.assertions,
+      runCount,
     );
     // Diagnostic audit history is separate from the three valid runs and never
     // changes the worst-of-three acceptance or the individual raw LHRs.
-    fs.writeFileSync(path.join(auditDir, "navigation-diagnostics.json"),
-      JSON.stringify(navigationDiagnostics, null, 2));
-    fs.writeFileSync(path.join(auditDir, "consent-recovery-events.json"),
-      JSON.stringify(recoveryEvents, null, 2));
+    fs.writeFileSync(
+      path.join(auditDir, "navigation-diagnostics.json"),
+      JSON.stringify(navigationDiagnostics, null, 2),
+    );
+    fs.writeFileSync(
+      path.join(auditDir, "trace-recoveries.json"),
+      JSON.stringify(traceRecoveries, null, 2) + "\n",
+    );
+    fs.writeFileSync(
+      path.join(auditDir, "consent-recovery-events.json"),
+      JSON.stringify(recoveryEvents, null, 2),
+    );
     const summary = writePerformanceReport(auditDir, {
       label: "Authenticated athlete routes",
       paths: athleteRoutes,
@@ -407,10 +497,18 @@ async function main() {
       technicalErrors,
       budgetErrors,
     });
-    console.log("Authenticated Lighthouse report: " + summary.measuredPages +
-      "/" + summary.expectedPages + " complete pages. See " + auditDir + "/summary.md");
+    console.log(
+      "Authenticated Lighthouse report: " +
+        summary.measuredPages +
+        "/" +
+        summary.expectedPages +
+        " complete pages. See " +
+        auditDir +
+        "/summary.md",
+    );
     if (technicalErrors.length) console.error(technicalErrors.join("\n"));
-    if (budgetErrors.length) console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
+    if (budgetErrors.length)
+      console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
     if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
     bootstrap?.close();
     if (cacheSession) await cacheSession.detach().catch(() => undefined);

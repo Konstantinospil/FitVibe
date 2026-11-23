@@ -78,6 +78,26 @@ describe("bootstrap entrypoint", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
+  it("registers SSR-inlined CSS before loading the app, so it is not downloaded again (#634)", async () => {
+    setSessionFlag(undefined);
+    setWindowPath("/terms");
+    const style = document.createElement("style");
+    style.dataset.href = "/assets/css/main-abc.css";
+    document.head.appendChild(style);
+
+    try {
+      await importBootstrap();
+
+      const link = document.head.querySelector<HTMLLinkElement>(
+        'link[rel="stylesheet"][href="/assets/css/main-abc.css"]',
+      );
+      expect(link).not.toBeNull();
+      expect(link?.hasAttribute("disabled")).toBe(true);
+    } finally {
+      document.head.innerHTML = "";
+    }
+  });
+
   it("does not prefetch authenticated route code without a session (#634)", async () => {
     prefetchProtectedEntry.mockClear();
     setSessionFlag(undefined);

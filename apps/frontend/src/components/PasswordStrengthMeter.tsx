@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { ZxcvbnFactory } from "@zxcvbn-ts/core";
 import { adjacencyGraphs, dictionary as commonDictionary } from "@zxcvbn-ts/language-common";
 import { dictionary as englishDictionary, translations } from "@zxcvbn-ts/language-en";
+import { PASSWORD_STRENGTH_LEVELS, passwordStrengthAdvice } from "./passwordStrengthText";
 
 // Reuse a deterministic, version-pinned local estimator; never submit passwords
 // to an external strength-scoring endpoint.
@@ -30,11 +31,8 @@ export default function PasswordStrengthMeter({
   }
 
   const score = estimatedStrength(password);
-  const level = ["", "veryWeak", "weak", "fair", "strong"][score];
-  const advice =
-    password.length < minimum
-      ? t("passwordStrength.tooShort", { minimum })
-      : t("passwordStrength.minimumMet");
+  const level = PASSWORD_STRENGTH_LEVELS[score - 1];
+  const advice = passwordStrengthAdvice(t, password, minimum);
 
   return (
     <div data-component="password-strength" className="grid grid--gap-xs">
