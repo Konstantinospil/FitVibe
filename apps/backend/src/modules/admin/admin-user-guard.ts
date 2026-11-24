@@ -1,4 +1,5 @@
 import { HttpError } from "../../utils/http.js";
+import { ADMIN_ASSIGNABLE_ROLES, type AdminAssignableRole } from "./admin.types.js";
 
 /**
  * Generic administrator actions must not change privileged accounts.
@@ -20,4 +21,8 @@ export function assertAdminTargetManageable(
   if (targetRoleCode === "admin" || targetRoleCode === "superadmin") {
     throw new HttpError(403, "CANNOT_MODIFY_ADMIN", "Cannot modify another administrator account");
   }
+}
+
+export function isAdminAssignableRole(role: unknown): role is AdminAssignableRole {
+  return typeof role === "string" && (ADMIN_ASSIGNABLE_ROLES as readonly string[]).includes(role);
 }

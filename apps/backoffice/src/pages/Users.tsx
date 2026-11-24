@@ -22,12 +22,18 @@ const UsersPage: React.FC = () => {
     user: User;
     action: "blacklist" | "unblacklist" | "delete";
   } | null>(null);
+  // Role and profile-moderation changes need a fresh administrator TOTP, like status changes.
+  const [pendingStepUp, setPendingStepUp] = useState<{
+    label: string;
+    run: (totpCode: string) => Promise<unknown>;
+  } | null>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
-  const availableRoles = ["admin", "coach", "athlete", "support"];
+  // Granting admin or superadmin is a superadmin workflow (Privilege management).
+  const availableRoles = ["athlete", "coach", "support"];
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["users", search, filter],
@@ -68,8 +74,8 @@ const UsersPage: React.FC = () => {
   });
 
   const changeRoleMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      usersApi.changeRole(userId, role, actionReason || undefined),
+    mutationFn: ({ userId, role, totpCode }: { userId: string; role: string; totpCode: string }) =>
+      usersApi.changeRole(userId, role, actionReason || undefined, totpCode),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedUser(null);
@@ -116,8 +122,15 @@ const UsersPage: React.FC = () => {
   });
 
   const deleteAvatarMutation = useMutation({
-    mutationFn: ({ userId, reason }: { userId: string; reason?: string }) =>
-      usersApi.deleteAvatar(userId, reason),
+    mutationFn: ({
+      userId,
+      reason,
+      totpCode,
+    }: {
+      userId: string;
+      reason?: string;
+      totpCode: string;
+    }) => usersApi.deleteAvatar(userId, reason, totpCode),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedUser(null);
@@ -134,8 +147,15 @@ const UsersPage: React.FC = () => {
   });
 
   const deleteDisplayNameMutation = useMutation({
-    mutationFn: ({ userId, reason }: { userId: string; reason?: string }) =>
-      usersApi.deleteDisplayName(userId, reason),
+    mutationFn: ({
+      userId,
+      reason,
+      totpCode,
+    }: {
+      userId: string;
+      reason?: string;
+      totpCode: string;
+    }) => usersApi.deleteDisplayName(userId, reason, totpCode),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       setSelectedUser(null);
@@ -156,15 +176,39 @@ const UsersPage: React.FC = () => {
     setPendingUserAction({ user, action });
   };
 
+  const userLabel = (target: User) => target.display_name || target.username;
+
+  const requestStepUp = (
+    target: User,
+    actionName: string,
+    run: (totpCode: string) => Promise<unknown>,
+  ) => {
+    setPendingStepUp({
+      label: t("users.actionForUser", { action: actionName, user: userLabel(target) }),
+      run: async (totpCode) => {
+        await run(totpCode);
+        setPendingStepUp(null);
+      },
+    });
+  };
+
   const handleChangeRole = (user: User) => {
     setSelectedUser(user);
-    setSelectedRole(user.role_code || "");
+    setSelectedRole(
+      user.role_code && availableRoles.includes(user.role_code)
+        ? user.role_code
+        : availableRoles[0],
+    );
     setShowRoleModal(true);
   };
 
   const handleConfirmRoleChange = () => {
     if (selectedUser && selectedRole) {
-      changeRoleMutation.mutate({ userId: selectedUser.id, role: selectedRole });
+      const target = selectedUser;
+      const role = selectedRole;
+      requestStepUp(target, t("users.changeRole"), (totpCode) =>
+        changeRoleMutation.mutateAsync({ userId: target.id, role, totpCode }),
+      );
     }
   };
 
@@ -190,7 +234,13 @@ const UsersPage: React.FC = () => {
     const label = user.display_name || user.username;
     const reason = prompt(t("users.prompt.avatar", { user: label }));
     if (reason !== null) {
-      deleteAvatarMutation.mutate({ userId: user.id, reason: reason || undefined });
+      requestStepUp(user, t("users.deleteAvatar"), (totpCode) =>
+        deleteAvatarMutation.mutateAsync({
+          userId: user.id,
+          reason: reason || undefined,
+          totpCode,
+        }),
+      );
     }
   };
 
@@ -198,7 +248,13 @@ const UsersPage: React.FC = () => {
     const label = user.display_name || user.username;
     const reason = prompt(t("users.prompt.displayName", { user: label }));
     if (reason !== null) {
-      deleteDisplayNameMutation.mutate({ userId: user.id, reason: reason || undefined });
+      requestStepUp(user, t("users.deleteDisplayName"), (totpCode) =>
+        deleteDisplayNameMutation.mutateAsync({
+          userId: user.id,
+          reason: reason || undefined,
+          totpCode,
+        }),
+      );
     }
   };
 
@@ -265,6 +321,15 @@ const UsersPage: React.FC = () => {
               action: pendingUserAction.action,
               totpCode,
             });
+          }}
+        />
+      ) : null}
+      {pendingStepUp ? (
+        <FreshTotpDialog
+          actionLabel={pendingStepUp.label}
+          onCancel={() => setPendingStepUp(null)}
+          onConfirm={async (totpCode) => {
+            await pendingStepUp.run(totpCode);
           }}
         />
       ) : null}

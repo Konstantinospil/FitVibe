@@ -47,7 +47,26 @@ describe("System Routes", () => {
           sources.emergencyOverride ||
           sources.activationSafety,
       );
-      expect(response.body.message === null || typeof response.body.message === "string").toBe(true);
+      expect(response.body.message === null || typeof response.body.message === "string").toBe(
+        true,
+      );
+    });
+  });
+
+  describe("GET /api/v1/system/config", () => {
+    it("is public and mirrors the governed read-only state", async () => {
+      const [config, status] = await Promise.all([
+        request(app).get("/api/v1/system/config"),
+        request(app).get("/api/v1/system/read-only/status"),
+      ]);
+
+      expect(config.status).toBe(200);
+      expect(typeof config.body.readOnlyMode).toBe("boolean");
+      expect(typeof config.body.maintenanceMode).toBe("boolean");
+      expect(config.body.features).toEqual({});
+      expect(typeof config.body.timestamp).toBe("string");
+      expect(config.body.readOnlyMode).toBe(status.body.readOnlyMode);
+      expect(config.body.maintenanceMode).toBe(status.body.sources.persistedMaintenance);
     });
   });
 

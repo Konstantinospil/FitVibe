@@ -9,7 +9,13 @@ import { requireRole } from "../common/rbac.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import { superadminRouter } from "./superadmin.routes.js";
 import {
+  changeUserRoleHandler,
+  deleteUserAvatarHandler,
+  deleteUserDisplayNameHandler,
+  getOpsStatusHandler,
   listReportsHandler,
+  sendPasswordResetHandler,
+  sendVerificationEmailHandler,
   moderateReportHandler,
   searchUsersHandler,
   listActionMappingsHandler,
@@ -24,6 +30,8 @@ adminRouter.use(requireRole("admin"));
 
 // Superadmin inherits normal admin capabilities; privileged operations remain separately gated.
 adminRouter.use("/superadmin", superadminRouter);
+
+adminRouter.get("/ops/status", rateLimit("admin_ops_status"), asyncHandler(getOpsStatusHandler));
 
 adminRouter.get("/reports", rateLimit("admin_reports_list"), asyncHandler(listReportsHandler));
 
@@ -50,6 +58,36 @@ adminRouter.post(
   "/users/:userId/action",
   rateLimit("admin_users_action"),
   asyncHandler(userActionHandler),
+);
+
+adminRouter.post(
+  "/users/:userId/role",
+  rateLimit("admin_users_role"),
+  asyncHandler(changeUserRoleHandler),
+);
+
+adminRouter.post(
+  "/users/:userId/send-verification-email",
+  rateLimit("admin_users_email"),
+  asyncHandler(sendVerificationEmailHandler),
+);
+
+adminRouter.post(
+  "/users/:userId/send-password-reset",
+  rateLimit("admin_users_email"),
+  asyncHandler(sendPasswordResetHandler),
+);
+
+adminRouter.delete(
+  "/users/:userId/avatar",
+  rateLimit("admin_users_moderate_profile"),
+  asyncHandler(deleteUserAvatarHandler),
+);
+
+adminRouter.delete(
+  "/users/:userId/display-name",
+  rateLimit("admin_users_moderate_profile"),
+  asyncHandler(deleteUserDisplayNameHandler),
 );
 
 adminRouter.post(

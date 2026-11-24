@@ -222,15 +222,6 @@ export interface SystemConfigResponse {
   timestamp: string;
 }
 
-export interface EnableReadOnlyRequest {
-  reason?: string;
-  estimatedDuration?: string;
-}
-
-export interface DisableReadOnlyRequest {
-  notes?: string;
-}
-
 export interface FeedReport {
   id: string;
   reporterUsername: string;
@@ -302,7 +293,6 @@ export interface OpsStatusResponse {
   backend: {
     status: OpsLightStatus;
     dbOk: boolean;
-    nginxOk: boolean;
     clamavOk: boolean;
     clamavEnabled: boolean;
     readOnly: boolean;
@@ -461,61 +451,21 @@ export async function getSystemConfig(): Promise<SystemConfigResponse> {
   return res.data;
 }
 
-export async function enableReadOnlyMode(
-  payload: EnableReadOnlyRequest,
-): Promise<{ success: boolean; message: string }> {
-  const res = await apiClient.post<{ success: boolean; message: string }>(
-    "/api/v1/system/read-only/enable",
-    payload,
+/**
+ * Maintenance (and with it the effective read-only state) is governed: only a
+ * superadmin with an active sudo re-authentication may change it.
+ */
+export async function enableMaintenanceMode(reason: string): Promise<{ success: boolean }> {
+  const res = await apiClient.post<{ success: boolean }>(
+    "/api/v1/system/settings/maintenance/enable",
+    { reason },
   );
   return res.data;
 }
 
-export async function disableReadOnlyMode(
-  payload: DisableReadOnlyRequest,
-): Promise<{ success: boolean; message: string }> {
-  const res = await apiClient.post<{ success: boolean; message: string }>(
-    "/api/v1/system/read-only/disable",
-    payload,
-  );
-  return res.data;
-}
-
-export async function enableMaintenanceMode(payload?: {
-  message?: string;
-}): Promise<{ success: boolean; maintenanceMode: boolean; message?: string }> {
-  const res = await apiClient.post<{
-    success: boolean;
-    maintenanceMode: boolean;
-    message?: string;
-  }>("/api/v1/system/maintenance/enable", payload ?? {});
-  return res.data;
-}
-
-export async function disableMaintenanceMode(): Promise<{
-  success: boolean;
-  maintenanceMode: boolean;
-  message?: string;
-}> {
-  const res = await apiClient.post<{
-    success: boolean;
-    maintenanceMode: boolean;
-    message?: string;
-  }>("/api/v1/system/maintenance/disable", {});
-  return res.data;
-}
-
-export async function enableClamav(): Promise<{ success: boolean; clamavEnabled: boolean }> {
-  const res = await apiClient.post<{ success: boolean; clamavEnabled: boolean }>(
-    "/api/v1/system/clamav/enable",
-    {},
-  );
-  return res.data;
-}
-
-export async function disableClamav(): Promise<{ success: boolean; clamavEnabled: boolean }> {
-  const res = await apiClient.post<{ success: boolean; clamavEnabled: boolean }>(
-    "/api/v1/system/clamav/disable",
+export async function disableMaintenanceMode(): Promise<{ success: boolean }> {
+  const res = await apiClient.post<{ success: boolean }>(
+    "/api/v1/system/settings/maintenance/disable",
     {},
   );
   return res.data;
@@ -771,8 +721,13 @@ export const usersApi = {
       totpCode,
     });
   },
-  changeRole: async (userId: string, role: string, reason?: string) => {
-    await apiClient.post(`/api/v1/admin/users/${userId}/role`, { role, reason });
+  changeRole: async (
+    userId: string,
+    role: string,
+    reason: string | undefined,
+    totpCode: string,
+  ) => {
+    await apiClient.post(`/api/v1/admin/users/${userId}/role`, { role, reason, totpCode });
   },
   sendVerificationEmail: async (userId: string) => {
     await apiClient.post(`/api/v1/admin/users/${userId}/send-verification-email`);
@@ -780,11 +735,15 @@ export const usersApi = {
   sendPasswordReset: async (userId: string) => {
     await apiClient.post(`/api/v1/admin/users/${userId}/send-password-reset`);
   },
-  deleteAvatar: async (userId: string, reason?: string) => {
-    await apiClient.delete(`/api/v1/admin/users/${userId}/avatar`, { data: { reason } });
+  deleteAvatar: async (userId: string, reason: string | undefined, totpCode: string) => {
+    await apiClient.delete(`/api/v1/admin/users/${userId}/avatar`, {
+      data: { reason, totpCode },
+    });
   },
-  deleteDisplayName: async (userId: string, reason?: string) => {
-    await apiClient.delete(`/api/v1/admin/users/${userId}/display-name`, { data: { reason } });
+  deleteDisplayName: async (userId: string, reason: string | undefined, totpCode: string) => {
+    await apiClient.delete(`/api/v1/admin/users/${userId}/display-name`, {
+      data: { reason, totpCode },
+    });
   },
 };
 
