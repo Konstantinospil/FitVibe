@@ -139,13 +139,14 @@ const App: React.FC = () => {
     };
   }, [signIn]);
 
-  const colors =
-    theme === "light"
-      ? { bg: "var(--color-on-color)", text: "var(--color-text-primary)" }
-      : { bg: "var(--color-text-primary)", text: "var(--color-on-color)" };
-
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--color-bg)",
+        color: "var(--color-text-primary)",
+      }}
+    >
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <Routes>

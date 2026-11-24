@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useId, useState, useMemo } from "react";
 import { useUiText } from "../i18n/ui";
 import { useNavigate } from "react-router-dom";
 import { Button, InputControl } from "@fitvibe/ui";
@@ -15,6 +15,8 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const emailId = useId();
+  const passwordId = useId();
   const navigate = useNavigate();
   const signIn = useAuthStore((state) => state.signIn);
   const theme = useThemeStore((state) => state.theme);
@@ -54,7 +56,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div
+    <main
       style={{
         display: "flex",
         flexDirection: "column",
@@ -96,11 +98,16 @@ const Login: React.FC = () => {
           }}
         >
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
+            <label
+              htmlFor={emailId}
+              style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}
+            >
               {t("login.email")}
             </label>
             <InputControl
+              id={emailId}
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -116,11 +123,16 @@ const Login: React.FC = () => {
             />
           </div>
           <div style={{ marginBottom: "1.5rem" }}>
-            <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
+            <label
+              htmlFor={passwordId}
+              style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}
+            >
               {t("login.password")}
             </label>
             <InputControl
+              id={passwordId}
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -137,6 +149,7 @@ const Login: React.FC = () => {
           </div>
           {error && (
             <div
+              role="alert"
               style={{
                 color: colors.error,
                 marginBottom: "1rem",
@@ -153,7 +166,7 @@ const Login: React.FC = () => {
               width: "100%",
               padding: "0.75rem",
               background: loading ? colors.border : colors.accent,
-              color: "var(--color-on-color)",
+              color: "var(--color-primary-on)",
               border: "none",
               borderRadius: "var(--radius-sm)",
               fontSize: "var(--type-body-size)",
@@ -164,7 +177,7 @@ const Login: React.FC = () => {
           </Button>
         </form>
       </div>
-    </div>
+    </main>
   );
 };
 
