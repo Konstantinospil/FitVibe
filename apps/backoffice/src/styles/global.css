@@ -1602,13 +1602,11 @@ body {
   min-height: 2.75rem;
 }
 
+/* The FitVibe mark at the athlete header size (--brand-mark-sm there). */
 .backoffice-brand__logo {
   display: block;
-  width: min(100%, 10rem);
-  height: auto;
-  max-height: 2.5rem;
-  object-fit: contain;
-  object-position: left center;
+  width: 2rem;
+  height: 2rem;
 }
 
 .backoffice-navigation {
@@ -1702,10 +1700,6 @@ body {
 
   .backoffice-brand {
     min-height: auto;
-  }
-
-  .backoffice-brand__logo {
-    width: min(8rem, 42vw);
   }
 
   .backoffice-navigation {

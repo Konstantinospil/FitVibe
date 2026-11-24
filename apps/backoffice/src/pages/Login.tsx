@@ -7,8 +7,9 @@ import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
 import ThemeToggle from "../components/ThemeToggle";
 import { authApi } from "../services/api";
-import logoFull from "../assets/logo_full.png";
-import logoFullDark from "../assets/logo_full_dark.png";
+// The FitVibe mark, the same files the athlete app serves (apps/frontend/public).
+import brandMarkLight from "../assets/fitvibe-mark-light.svg";
+import brandMarkDark from "../assets/fitvibe-mark-dark.svg";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -24,7 +25,7 @@ const Login: React.FC = () => {
   const t = useUiText();
 
   const logo = useMemo<string>(() => {
-    return theme === "dark" ? logoFullDark : logoFull;
+    return theme === "dark" ? brandMarkDark : brandMarkLight;
   }, [theme]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,7 +81,7 @@ const Login: React.FC = () => {
         }}
       >
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <img src={logo} alt={t("common.logoAlt")} style={{ height: "60px" }} loading="eager" />
+          <img src={logo} alt={t("common.logoAlt")} width={96} height={96} loading="eager" />
         </div>
         <h1
           style={{

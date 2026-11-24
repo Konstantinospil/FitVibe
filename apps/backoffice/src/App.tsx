@@ -81,20 +81,14 @@ const App: React.FC = () => {
 
     const restoreSession = async () => {
       try {
-        // Pre-fetch CSRF token first (with timeout)
-        try {
-          await Promise.race([
-            apiClient.get("/api/v1/csrf-token"),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000)),
-          ]);
-        } catch (error) {
-          // Ignore CSRF token errors - not critical for initial load
+        // Warm up the CSRF token alongside the session check, not before it:
+        // the session check is a GET, which never needs the token (mutations
+        // fetch their own), and waiting for it put a whole round trip in front
+        // of the first admin paint.
+        void apiClient.get("/api/v1/csrf-token").catch((error: unknown) => {
+          // Not critical for the initial load.
           console.warn("Failed to fetch CSRF token, continuing:", error);
-        }
-
-        if (cancelled) {
-          return;
-        }
+        });
 
         // Check if there's a valid session by calling /api/v1/users/me
         try {
