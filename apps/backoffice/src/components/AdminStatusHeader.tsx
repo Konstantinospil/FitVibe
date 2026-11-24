@@ -30,7 +30,6 @@ const AdminStatusHeader: React.FC = () => {
   const backendDetails = data
     ? [
         `${t("common.db")} ${statusText(data.backend.dbOk, t)}`,
-        `${t("common.nginx")} ${statusText(data.backend.nginxOk, t)}`,
         `${t("common.clamav")} ${statusText(data.backend.clamavOk, t)}`,
         `${t("common.readOnly")} ${data.backend.readOnly ? t("common.yes") : t("common.no")}`,
       ].join(" | ")

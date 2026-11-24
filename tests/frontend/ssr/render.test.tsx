@@ -52,11 +52,12 @@ const mockI18n = {
   isInitialized: true,
   language: "en",
   changeLanguage: vi.fn(),
-  t: vi.fn((key: string) =>
-    ({
-      "seo.title": "FitVibe – Plan, Log & Share Your Training",
-      "seo.description": "Plan, log, and share your training sessions.",
-    })[key as "seo.title" | "seo.description"] ?? key,
+  t: vi.fn(
+    (key: string) =>
+      ({
+        "seo.title": "FitVibe – Plan, Log & Share Your Training",
+        "seo.description": "Plan, log, and share your training sessions.",
+      })[key as "seo.title" | "seo.description"] ?? key,
   ),
   on: vi.fn(),
 };
@@ -106,8 +107,12 @@ describe("SSR render", () => {
     expect(html).toContain("Rendered App");
     expect(html).toContain('id="fitvibe-react-query-state"');
     expect(html).not.toContain("window.__REACT_QUERY_STATE__");
-    expect(html).toContain('<meta property="og:title" content="FitVibe – Plan, Log &amp; Share Your Training" />');
-    expect(html).toContain('<meta name="twitter:description" content="Plan, log, and share your training sessions." />');
+    expect(html).toContain(
+      '<meta property="og:title" content="FitVibe – Plan, Log &amp; Share Your Training" />',
+    );
+    expect(html).toContain(
+      '<meta name="twitter:description" content="Plan, log, and share your training sessions." />',
+    );
     expect(mockI18n.t).toHaveBeenCalledWith("seo.title");
     expect(mockI18n.t).toHaveBeenCalledWith("seo.description");
   });
@@ -218,10 +223,58 @@ describe("SSR render", () => {
 
     expect(html).toMatch(/src="\/assets\/js\/[^"]+\.js"/);
     expect(html).not.toContain("/assets/assets/");
+    // A manifest entry without static imports needs no hints.
     expect(html).not.toContain("modulepreload");
     if (html.includes("<style data-href=")) {
       expect(html).not.toMatch(/rel="stylesheet" href="\/assets\/css\//);
     }
+  });
+
+  it("hints the entry's imports beside the entry script and loads the session prefetch in <head>", async () => {
+    process.env.NODE_ENV = "production";
+    const fs = await import("node:fs");
+    vi.mocked(fs.existsSync).mockReset();
+    vi.mocked(fs.existsSync).mockReturnValue(true);
+    vi.mocked(fs.readFileSync).mockReset();
+    vi.mocked(fs.readFileSync).mockImplementation((path) => {
+      if (String(path).includes("manifest.json")) {
+        return JSON.stringify({
+          "src/main.tsx": {
+            file: "assets/js/main-abc123.js",
+            isEntry: true,
+            imports: ["_src-111.js", "_shared-222.js"],
+            dynamicImports: ["src/routes/ProtectedRoutes.tsx"],
+          },
+          "_src-111.js": { file: "assets/js/src-111.js", imports: ["_shared-222.js"] },
+          "_shared-222.js": { file: "assets/js/shared-222.js" },
+          "src/routes/ProtectedRoutes.tsx": { file: "assets/js/ProtectedRoutes-333.js" },
+          "src/utils/authenticatedPrefetch.ts": {
+            file: "assets/js/sessionPrefetch-444.js",
+            isEntry: true,
+          },
+        });
+      }
+      return '<html><head></head><body><div id="root"></div></body></html>';
+    });
+
+    const html = await renderPage("/login");
+    const head = html.slice(0, html.indexOf("</head>"));
+    const entry = html.indexOf('<script type="module" src="/assets/js/main-abc123.js"');
+
+    expect(head).not.toContain("modulepreload");
+    expect(entry).toBeGreaterThan(-1);
+    for (const href of ["/assets/js/src-111.js", "/assets/js/shared-222.js"]) {
+      const hint = html.indexOf(`<link rel="modulepreload" href="${href}" fetchpriority="low" />`);
+      expect(hint).toBeGreaterThan(html.indexOf("</head>"));
+      expect(hint).toBeLessThan(entry);
+    }
+    expect(html.match(/rel="modulepreload" href="\/assets\/js\/shared-222\.js"/g)).toHaveLength(1);
+    // Lazy route chunks stay lazy.
+    expect(html).not.toContain("ProtectedRoutes-333.js");
+    // The import-free session prefetch runs from <head>, async.
+    expect(head).toContain(
+      '<script type="module" async src="/assets/js/sessionPrefetch-444.js"></script>',
+    );
   });
 
   it("should handle manifest parse errors gracefully", async () => {
@@ -307,5 +360,4 @@ describe("SSR render", () => {
     expect(html).toContain('<div id="root"><div>Rendered App</div></div>');
     expect(html).not.toContain("Old shell");
   });
-
 });

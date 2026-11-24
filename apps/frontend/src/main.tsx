@@ -10,12 +10,19 @@ import { ensurePrivateTranslationsLoaded, minimalTranslationsReady } from "./i18
 // Theme store is small and needed immediately to prevent FOUC
 import { applyTheme, useThemeStore } from "./store/theme.store";
 import { useAuthStore } from "./store/auth.store";
+import {
+  clearAuthenticatedPrefetch,
+  startAuthenticatedPrefetch,
+} from "./utils/authenticatedPrefetch";
 
 // With a session, ProtectedRoutes will need the full bundle. Start it now, in
 // parallel with the login strings, instead of after the app mounts (issue 634).
 // This only downloads strings; ProtectedRoutes still gates on readiness.
 if (useAuthStore.getState().isAuthenticated) {
   void ensurePrivateTranslationsLoaded().catch(() => undefined);
+  // The preference and guard reads only need the session cookie. Start them
+  // now instead of after the protected-route chunk and its i18n dependencies.
+  startAuthenticatedPrefetch();
 }
 
 const schedulePublicFonts = (): void => {
@@ -39,7 +46,26 @@ const schedulePublicFonts = (): void => {
 if (typeof document !== "undefined") {
   const initialTheme = useThemeStore.getState().theme;
   applyTheme(initialTheme);
-  schedulePublicFonts();
+  // With a session, ProtectedRoutes registers every face once its content has
+  // painted. Starting them here would put the downloads before that paint,
+  // which is the LCP of authenticated pages.
+  if (useAuthStore.getState().isAuthenticated) {
+    useAuthStore.subscribe((state, previous) => {
+      if (
+        state.isAuthenticated !== previous.isAuthenticated ||
+        state.user?.id !== previous.user?.id
+      ) {
+        // Early reads belong to the session the page started with.
+        clearAuthenticatedPrefetch();
+      }
+      if (previous.isAuthenticated && !state.isAuthenticated) {
+        // A stale or ended session never reaches ProtectedRoutes; keep public fonts.
+        schedulePublicFonts();
+      }
+    });
+  } else {
+    schedulePublicFonts();
+  }
 }
 
 // Hydrate the server-rendered HTML

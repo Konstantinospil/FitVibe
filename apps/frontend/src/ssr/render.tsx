@@ -148,11 +148,25 @@ type ManifestChunk = {
 
 type ClientAssets = {
   scripts: string[];
+  /** Chunks the entry imports statically; the browser needs them before it can run. */
+  modulePreloads: string[];
+  /** Import-free modules that run from <head> (the session prefetch). */
+  headModules: string[];
   styles: string[];
 };
 
-const DEV_ASSETS: ClientAssets = { scripts: ["/src/main.tsx"], styles: [] };
-const FALLBACK_ASSETS: ClientAssets = { scripts: ["/assets/js/main.js"], styles: [] };
+const DEV_ASSETS: ClientAssets = {
+  scripts: ["/src/main.tsx"],
+  modulePreloads: [],
+  headModules: [],
+  styles: [],
+};
+const FALLBACK_ASSETS: ClientAssets = {
+  scripts: ["/assets/js/main.js"],
+  modulePreloads: [],
+  headModules: [],
+  styles: [],
+};
 
 function toPublicPath(file: string): string {
   return file.startsWith("/") ? file : `/${file}`;
@@ -198,12 +212,16 @@ function getClientAssets(): ClientAssets {
     }
 
     const styles: string[] = [];
+    const modulePreloads: string[] = [];
     const seen = new Set<string>();
     const visit = (chunk: ManifestChunk | undefined) => {
       if (!chunk?.file || seen.has(chunk.file)) {
         return;
       }
       seen.add(chunk.file);
+      if (chunk !== mainChunk && chunk.file.endsWith(".js")) {
+        modulePreloads.push(toPublicPath(chunk.file));
+      }
       if (chunk.css?.length) {
         styles.push(...chunk.css);
       }
@@ -213,8 +231,14 @@ function getClientAssets(): ClientAssets {
     };
     visit(mainChunk);
 
+    const sessionPrefetch = Object.entries(manifest).find(([key]) =>
+      key.replace(/\\/g, "/").endsWith("src/utils/authenticatedPrefetch.ts"),
+    )?.[1];
+
     return {
       scripts: [toPublicPath(mainChunk.file)],
+      modulePreloads,
+      headModules: sessionPrefetch?.file ? [toPublicPath(sessionPrefetch.file)] : [],
       styles: [...new Set(styles.map(toPublicPath))],
     };
   } catch {
@@ -281,11 +305,24 @@ export async function renderPage(url: string): Promise<string> {
   const dehydratedStateMarkup = `<template id="${DEHYDRATED_STATE_ELEMENT_ID}">${serializeDehydratedState(dehydratedState)}</template>`;
 
   const isProduction = process.env.NODE_ENV === "production";
-  const { scripts, styles } = getClientAssets();
-  // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
-  const hydrationScript = scripts
-    .map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`)
+  const { scripts, modulePreloads, headModules, styles } = getClientAssets();
+  // ~1 KB, async and import-free: it starts the signed-in API reads while the
+  // app bundle downloads, without blocking parsing or first paint.
+  const headModuleTags = headModules
+    .map((src) => `<script type="module" async src="${src}"></script>`)
     .join("");
+  // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
+  // Hints placed next to the entry script are discovered at the same moment as
+  // the entry itself, so they cannot compete with first paint any more than the
+  // entry does. Without them the browser only finds the entry's static imports
+  // (the 67 KB app chunk among them) after downloading and parsing the entry:
+  // one more round trip before any authenticated content can render.
+  const hydrationScript = [
+    ...modulePreloads.map(
+      (href) => `<link rel="modulepreload" href="${href}" fetchpriority="low" />`,
+    ),
+    ...scripts.map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`),
+  ].join("");
   const styleTags = styleTagsFor(styles, resolve(root, "dist/client"));
 
   const resourceHints = isProduction ? `\n    ${styleTags}\n  ` : styleTags;
@@ -327,7 +364,7 @@ export async function renderPage(url: string): Promise<string> {
   `;
 
   // Inject resource hints and SEO meta tags in head
-  html = html.replace("</head>", `${resourceHints}${ogMetaTags}</head>`);
+  html = html.replace("</head>", `${headModuleTags}${resourceHints}${ogMetaTags}</head>`);
   html = html.replace("</body>", `${dehydratedStateMarkup}${hydrationScript}</body>`);
 
   return html;

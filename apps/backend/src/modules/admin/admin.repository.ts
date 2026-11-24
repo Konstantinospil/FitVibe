@@ -185,6 +185,7 @@ export async function searchUsers(query: SearchUsersQuery): Promise<UserSearchRe
     .select(
       "u.id",
       "p.alias as username",
+      "u.display_name as displayName",
       "c.value as email",
       "u.role_code as roleCode",
       "u.status",
@@ -246,6 +247,28 @@ export async function updateUserStatus(userId: string, status: UserStatus): Prom
 }
 
 /**
+ * Update a user's role code
+ */
+export async function updateUserRole(userId: string, roleCode: string): Promise<void> {
+  await db("users").where("id", userId).update({ role_code: roleCode, updated_at: db.fn.now() });
+}
+
+/**
+ * Reset a user's display name to their public alias
+ */
+export async function resetUserDisplayNameToAlias(userId: string): Promise<void> {
+  await db("users")
+    .where("id", userId)
+    .update({
+      // Keep the current name if no profile row exists; display_name is NOT NULL.
+      display_name: db.raw(
+        "COALESCE((SELECT alias FROM profiles WHERE profiles.user_id = users.id), display_name)",
+      ),
+      updated_at: db.fn.now(),
+    });
+}
+
+/**
  * Soft delete a user account
  */
 export async function softDeleteUser(userId: string): Promise<void> {
@@ -269,6 +292,7 @@ export async function getUserForAdmin(userId: string): Promise<UserSearchResult 
     .select(
       "u.id",
       "p.alias as username",
+      "u.display_name as displayName",
       "c.value as email",
       "u.role_code as roleCode",
       "u.status",

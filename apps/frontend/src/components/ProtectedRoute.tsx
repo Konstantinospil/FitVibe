@@ -6,6 +6,7 @@ import {
   getLegalDocumentsStatus,
   type LegalDocumentsStatus,
 } from "../services/api";
+import { takePrefetched } from "../utils/authenticatedPrefetch";
 
 const TERMS_GATE_ALLOWED_PATHS = new Set([
   "/terms-reacceptance",
@@ -73,7 +74,7 @@ const ProtectedRoute: React.FC = () => {
     // The persisted browser session may precede hydration of user.role.
     // Ask the server rather than assuming a missing client role is non-admin.
     if (isAdministrator || roleMissing) {
-      void getAdministratorPasswordPolicyStatus()
+      void takePrefetched("adminPasswordStatus", getAdministratorPasswordPolicyStatus)
         .then((status) => {
           if (!cancelled) {
             setPasswordResult({
@@ -103,7 +104,7 @@ const ProtectedRoute: React.FC = () => {
       setPasswordResult({ key: guardKey, value: { gate: "clear", minimumPasswordLength: null } });
     }
 
-    void getLegalDocumentsStatus()
+    void takePrefetched("legalDocumentsStatus", getLegalDocumentsStatus)
       .then((status) => {
         if (!cancelled) {
           setLegalResult({ key: guardKey, value: status });

@@ -27,6 +27,11 @@ vi.mock("../../../apps/frontend/src/services/api", () => ({
   getUserPreferences: vi.fn().mockResolvedValue({ language: "de", measurementSystem: "metric" }),
 }));
 
+const fontLoaderMock = vi.hoisted(() => ({
+  loadPublicFonts: vi.fn(),
+  loadAppFonts: vi.fn(),
+}));
+vi.mock("../../../apps/frontend/src/utils/fontLoader", () => fontLoaderMock);
 vi.mock("../../../apps/frontend/src/components/ProtectedRoute", () => ({
   default: () => {
     React.useEffect(() => {
@@ -137,6 +142,31 @@ describe("ProtectedRoutes", () => {
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
     expect(suspenseExperiment.guardMounts).toHaveBeenCalledTimes(1);
     expect(suspenseExperiment.guardUnmounts).not.toHaveBeenCalled();
+  });
+
+  it("registers web fonts only after the protected content has rendered", async () => {
+    const { ensurePrivateTranslationsLoaded } =
+      await import("../../../apps/frontend/src/i18n/config");
+    let finishTranslations!: () => void;
+    vi.mocked(ensurePrivateTranslationsLoaded).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishTranslations = resolve;
+      }),
+    );
+
+    renderRoute("/");
+    // Downloads that start before that paint sit on the LCP critical path.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fontLoaderMock.loadPublicFonts).not.toHaveBeenCalled();
+    expect(fontLoaderMock.loadAppFonts).not.toHaveBeenCalled();
+
+    await act(async () => {
+      finishTranslations();
+    });
+    await waitFor(() => {
+      expect(fontLoaderMock.loadPublicFonts).toHaveBeenCalledTimes(1);
+      expect(fontLoaderMock.loadAppFonts).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("loads private translations on mount", async () => {

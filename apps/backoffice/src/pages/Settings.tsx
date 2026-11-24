@@ -4,14 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { InputControl } from "@fitvibe/ui";
 import {
   actionMappingsApi,
-  disableClamav,
   disableMaintenanceMode,
-  disableReadOnlyMode,
-  enableClamav,
   enableMaintenanceMode,
-  enableReadOnlyMode,
   getOpsStatus,
   getSystemConfig,
+  superadminApi,
   type ActionUiMapping,
 } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
@@ -22,6 +19,9 @@ const SettingsPage: React.FC = () => {
   const colors = useThemeColors();
   const t = useUiText();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isSuperadmin = useAuthStore((state) => state.user?.role === "superadmin");
+  const [maintenanceReason, setMaintenanceReason] = useState("");
+  const [sudoPassword, setSudoPassword] = useState("");
   const [search, setSearch] = useState("");
   const [editingAction, setEditingAction] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -56,38 +56,32 @@ const SettingsPage: React.FC = () => {
     },
   });
 
-  const readOnlyMutation = useMutation({
-    mutationFn: async (nextEnabled: boolean) =>
-      nextEnabled
-        ? enableReadOnlyMode({ reason: t("settings.readOnlyActivated") })
-        : disableReadOnlyMode({ notes: t("settings.readOnlyDeactivated") }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["system-config"] });
-      void queryClient.invalidateQueries({ queryKey: ["admin-ops-status"] });
-    },
-  });
-
+  // Maintenance is the governed control behind read-only mode (issue 305): superadmin only,
+  // behind a fresh password re-authentication (sudo). There is no separate read-only switch.
   const maintenanceMutation = useMutation({
-    mutationFn: async (nextEnabled: boolean) =>
-      nextEnabled
-        ? enableMaintenanceMode({ message: t("settings.maintenanceMessage") })
-        : disableMaintenanceMode(),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["system-config"] });
+    mutationFn: async (nextEnabled: boolean) => {
+      await superadminApi.sudo(sudoPassword);
+      return nextEnabled
+        ? enableMaintenanceMode(maintenanceReason.trim())
+        : disableMaintenanceMode();
     },
-  });
-
-  const clamavMutation = useMutation({
-    mutationFn: async (nextEnabled: boolean) => (nextEnabled ? enableClamav() : disableClamav()),
     onSuccess: () => {
+      setSudoPassword("");
+      setMaintenanceReason("");
+      void queryClient.invalidateQueries({ queryKey: ["system-config"] });
       void queryClient.invalidateQueries({ queryKey: ["admin-ops-status"] });
     },
+    onSettled: () => setSudoPassword(""),
   });
 
   const isReadOnly = systemConfig?.readOnlyMode ?? false;
   const isMaintenance = systemConfig?.maintenanceMode ?? false;
   const clamavEnabled = opsStatus?.backend.clamavEnabled ?? false;
   const clamavHealth = opsStatus?.backend.clamavOk ?? false;
+  const canSubmitMaintenance =
+    !!sudoPassword &&
+    (isMaintenance || !!maintenanceReason.trim()) &&
+    !maintenanceMutation.isPending;
 
   const filteredMappings = useMemo(() => {
     const mappings = data?.mappings ?? [];
@@ -175,15 +169,9 @@ const SettingsPage: React.FC = () => {
                 })}
               </div>
             </div>
-            <Button
-              variant={isReadOnly ? "danger" : "primary"}
-              size="sm"
-              isLoading={readOnlyMutation.isPending}
-              disabled={isSystemConfigLoading || readOnlyMutation.isPending}
-              onClick={() => readOnlyMutation.mutate(!isReadOnly)}
-            >
-              {isReadOnly ? t("settings.disableReadOnly") : t("settings.enableReadOnly")}
-            </Button>
+            <div style={{ color: colors.textSecondary, maxWidth: "28rem" }}>
+              {t("settings.readOnlyHint")}
+            </div>
           </div>
 
           <div
@@ -209,15 +197,56 @@ const SettingsPage: React.FC = () => {
                 })}
               </div>
             </div>
-            <Button
-              variant={isMaintenance ? "danger" : "primary"}
-              size="sm"
-              isLoading={maintenanceMutation.isPending}
-              disabled={isSystemConfigLoading || maintenanceMutation.isPending}
-              onClick={() => maintenanceMutation.mutate(!isMaintenance)}
-            >
-              {isMaintenance ? t("settings.disableMaintenance") : t("settings.enableMaintenance")}
-            </Button>
+            {isSuperadmin ? (
+              <form
+                style={{ display: "grid", gap: "0.5rem", minWidth: "16rem" }}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (canSubmitMaintenance) {
+                    maintenanceMutation.mutate(!isMaintenance);
+                  }
+                }}
+              >
+                {!isMaintenance ? (
+                  <InputControl
+                    type="text"
+                    aria-label={t("settings.maintenanceReason")}
+                    placeholder={t("settings.maintenanceReason")}
+                    value={maintenanceReason}
+                    onChange={(e) => setMaintenanceReason(e.target.value)}
+                    maxLength={500}
+                  />
+                ) : null}
+                <InputControl
+                  type="password"
+                  aria-label={t("privileges.sudoPassword")}
+                  placeholder={t("privileges.sudoPassword")}
+                  autoComplete="current-password"
+                  value={sudoPassword}
+                  onChange={(e) => setSudoPassword(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  variant={isMaintenance ? "danger" : "primary"}
+                  size="sm"
+                  isLoading={maintenanceMutation.isPending}
+                  disabled={isSystemConfigLoading || !canSubmitMaintenance}
+                >
+                  {isMaintenance
+                    ? t("settings.disableMaintenance")
+                    : t("settings.enableMaintenance")}
+                </Button>
+                {maintenanceMutation.isError ? (
+                  <div role="alert" style={{ color: colors.error }}>
+                    {t("settings.maintenanceFailed")}
+                  </div>
+                ) : null}
+              </form>
+            ) : (
+              <div style={{ color: colors.textSecondary, maxWidth: "28rem" }}>
+                {t("settings.maintenanceSuperadminOnly")}
+              </div>
+            )}
           </div>
 
           <div
@@ -245,15 +274,9 @@ const SettingsPage: React.FC = () => {
                 })}
               </div>
             </div>
-            <Button
-              variant={clamavEnabled ? "danger" : "primary"}
-              size="sm"
-              isLoading={clamavMutation.isPending}
-              disabled={isOpsStatusLoading || clamavMutation.isPending}
-              onClick={() => clamavMutation.mutate(!clamavEnabled)}
-            >
-              {clamavEnabled ? t("settings.disableClamav") : t("settings.enableClamav")}
-            </Button>
+            <div style={{ color: colors.textSecondary, maxWidth: "28rem" }}>
+              {t("settings.clamavHint")}
+            </div>
           </div>
         </div>
       </div>

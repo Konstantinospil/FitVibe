@@ -209,6 +209,17 @@ export default defineConfig(() => {
       chunkSizeWarningLimit: 250, // Reduce warning threshold to catch large chunks earlier
       // Improve loading performance with better chunking strategy
       rollupOptions: {
+        // The session prefetch is its own import-free entry, loaded async from
+        // <head> so its reads start before the app bundle has downloaded. The
+        // app imports the same chunk, so both share one module instance.
+        ...(isSSR
+          ? {}
+          : {
+              input: {
+                index: pathResolve(root, "index.html"),
+                sessionPrefetch: pathResolve(root, "src/utils/authenticatedPrefetch.ts"),
+              },
+            }),
         output: {
           // Optimize chunk splitting for better caching and loading
           // Let Rollup derive dependency chunks from the actual module graph.
