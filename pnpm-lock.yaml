@@ -163,38 +163,17 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  lighthouse: 13.6.0
   chrome-launcher: ^1.2.1
   glob: 14.0.2
-  extract-zip: link:packages/patched-extract-zip
   esbuild: ^0.25.0
   js-yaml: '>=4.3.1'
   qs: '>=6.16.1'
   '@opentelemetry/core': '>=2.8.0'
   minimatch@3: '>=3.1.4'
-  minimatch@5: '>=5.1.8'
-  minimatch@9: 11.0.1
   minimatch@10: 11.0.1
-  '@eslint/config-array>minimatch': 11.0.1
-  '@eslint/eslintrc>minimatch': 11.0.1
-  eslint-plugin-import>minimatch: 11.0.1
-  eslint-plugin-jsx-a11y>minimatch: 11.0.1
-  eslint-plugin-react>minimatch: 11.0.1
-  eslint>minimatch: 11.0.1
-  test-exclude>minimatch: 11.0.1
-  brace-expansion@1: ^1.1.12
-  brace-expansion@2: ^2.0.2
-  brace-expansion@5: '>=5.0.9'
   protobufjs: '>=7.6.1'
   '@opentelemetry/exporter-prometheus': '>=0.217.0'
-  '@opentelemetry/propagator-jaeger': '>=2.9.0'
-  ajv: ^6.14.0
-  '@humanfs/node': '>=0.16.8'
   '@jest/transform': ^30.5.2
-  expect: ^30.5.2
-  jest-message-util: ^30.5.1
-  '@jest/types': ^30.5.1
-  jest-util: ^30.5.1
 
 pnpmfileChecksum: sha256-aOXpvLBYA3mVXnxp4xFJYUemlS6+n06SqiSyAj1iEBc=
 
@@ -214,7 +193,7 @@ importers:
         version: 9.39.1
       '@lhci/cli':
         specifier: ^0.16.1
-        version: 0.16.1(@types/node@26.6.6)(ajv@6.15.0)(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
+        version: 0.16.1(@types/node@26.6.6)(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
       '@playwright/test':
         specifier: 1.65.1
         version: 1.65.1
@@ -268,7 +247,7 @@ importers:
         version: 3.2.2
       lighthouse:
         specifier: 13.6.0
-        version: 13.6.0(ajv@6.15.0)(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
+        version: 13.6.0(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
       lint-staged:
         specifier: ^17.6.1
         version: 17.6.1
@@ -3527,7 +3506,7 @@ packages:
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
     peerDependencies:
-      ajv: ^6.14.0
+      ajv: ^8.0.0
     peerDependenciesMeta:
       ajv:
         optional: true
@@ -7034,11 +7013,11 @@ packages:
     peerDependencies:
       '@babel/core': '>=7.0.0-beta.0 <9'
       '@jest/transform': ^30.5.2
-      '@jest/types': ^30.5.1
+      '@jest/types': ^29.0.0 || ^30.0.0
       babel-jest: ^29.0.0 || ^30.0.0
       esbuild: '*'
       jest: ^29.0.0 || ^30.0.0
-      jest-util: ^30.5.1
+      jest-util: ^29.0.0 || ^30.0.0
       typescript: '>=4.3 <7'
     peerDependenciesMeta:
       '@babel/core':
@@ -8328,16 +8307,16 @@ snapshots:
 
   '@js-sdsl/ordered-map@4.4.2': {}
 
-  '@lhci/cli@0.16.1(@types/node@26.6.6)(ajv@6.15.0)(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)':
+  '@lhci/cli@0.16.1(@types/node@26.6.6)(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)':
     dependencies:
-      '@lhci/utils': 0.16.1(ajv@6.15.0)(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
+      '@lhci/utils': 0.16.1(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
       chrome-launcher: 1.2.1(supports-color@8.1.1)
       compression: 1.8.2(supports-color@8.1.1)
       debug: 4.4.3(supports-color@8.1.1)
       express: 4.22.3(supports-color@8.1.1)
       inquirer: 8.2.7(@types/node@26.6.6)
       isomorphic-fetch: 3.0.0
-      lighthouse: 13.6.0(ajv@6.15.0)(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
+      lighthouse: 13.6.0(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
       lighthouse-logger: 1.2.0(supports-color@8.1.1)
       open: 8.4.2
       proxy-agent: 8.0.3(supports-color@8.1.1)
@@ -8356,12 +8335,12 @@ snapshots:
       - webpack
       - yauzl
 
-  '@lhci/utils@0.16.1(ajv@6.15.0)(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)':
+  '@lhci/utils@0.16.1(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)':
     dependencies:
       debug: 4.4.3(supports-color@8.1.1)
       isomorphic-fetch: 3.0.0
       js-yaml: 5.4.1
-      lighthouse: 13.6.0(ajv@6.15.0)(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
+      lighthouse: 13.6.0(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0)
       tree-kill: 1.2.2
     transitivePeerDependencies:
       - ajv
@@ -10323,9 +10302,7 @@ snapshots:
 
   agent-base@9.0.0: {}
 
-  ajv-formats@3.0.1(ajv@6.15.0):
-    optionalDependencies:
-      ajv: 6.15.0
+  ajv-formats@3.0.1: {}
 
   ajv@6.15.0:
     dependencies:
@@ -12769,11 +12746,11 @@ snapshots:
 
   lighthouse-stack-packs@1.12.3: {}
 
-  lighthouse@13.6.0(ajv@6.15.0)(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0):
+  lighthouse@13.6.0(proxy-agent@8.0.3(supports-color@8.1.1))(rollup@4.63.1)(supports-color@8.1.1)(yauzl@3.4.0):
     dependencies:
       '@paulirish/trace_engine': 0.0.67
       '@sentry/node': 11.10.0(rollup@4.63.1)
-      ajv-formats: 3.0.1(ajv@6.15.0)
+      ajv-formats: 3.0.1
       axe-core: 4.14.0
       chrome-launcher: 1.2.1(supports-color@8.1.1)
       configstore: 8.0.0
@@ -14337,7 +14314,7 @@ snapshots:
     dependencies:
       '@istanbuljs/schema': 0.1.6
       glob: 14.0.2
-      minimatch: 11.0.1
+      minimatch: 11.0.9
     optional: true
 
   test-exclude@7.0.2:

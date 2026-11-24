@@ -21,15 +21,6 @@
       "removalCriteria": "Remove once direct parents resolve glob >=14.0.2 without forced override and full CI passes."
     },
     {
-      "name": "extract-zip",
-      "constraint": "link:packages/patched-extract-zip",
-      "category": "local-patch",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Workspace-local patched package at packages/patched-extract-zip; .npmrc explicitly requires legacy deploy because of linked overrides.",
-      "removalCriteria": "Verify upstream extract-zip has replaced the local patch functionality; remove linked override only with deployment/build tests across both architectures."
-    },
-    {
       "name": "esbuild",
       "constraint": "^0.25.0",
       "category": "transitive",
@@ -75,51 +66,6 @@
       "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
     },
     {
-      "name": "minimatch@5",
-      "constraint": ">=5.1.8",
-      "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'minimatch@5'. Treat as a compatibility/security constraint until dependency parents are checked.",
-      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
-    },
-    {
-      "name": "minimatch@9",
-      "constraint": "11.0.1",
-      "category": "major-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 (OSV); major-scoped override replaces vulnerable v9 requests with v11. Compatibility must be verified in CI.",
-      "removalCriteria": "Remove once no vulnerable v9 requests remain and all affected consumers support v11."
-    },
-    {
-      "name": "brace-expansion@1",
-      "constraint": "^1.1.12",
-      "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'brace-expansion@1'. Treat as a compatibility/security constraint until dependency parents are checked.",
-      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
-    },
-    {
-      "name": "brace-expansion@2",
-      "constraint": "^2.0.2",
-      "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'brace-expansion@2'. Treat as a compatibility/security constraint until dependency parents are checked.",
-      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
-    },
-    {
-      "name": "brace-expansion@5",
-      "constraint": ">=5.0.9",
-      "category": "major-scoped-transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Major-scoped override; the suffix @<major> selects dependency requests, not a literal package named 'brace-expansion@5'. Treat as a compatibility/security constraint until dependency parents are checked.",
-      "removalCriteria": "Confirm all matching major-specific dependency requests and the newly resolved graph remain secure, then regenerate lockfile and pass full CI before removal."
-    },
-    {
       "name": "protobufjs",
       "constraint": ">=7.6.1",
       "category": "transitive",
@@ -138,33 +84,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "@opentelemetry/propagator-jaeger",
-      "constraint": ">=2.9.0",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "ajv",
-      "constraint": "^6.14.0",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "@humanfs/node",
-      "constraint": ">=0.16.8",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
       "name": "@jest/transform",
       "constraint": "^30.5.2",
       "category": "transitive",
@@ -174,57 +93,6 @@
       "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
     },
     {
-      "name": "expect",
-      "constraint": "^30.5.2",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "jest-message-util",
-      "constraint": "^30.5.1",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "@jest/types",
-      "constraint": "^30.5.1",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "jest-util",
-      "constraint": "^30.5.1",
-      "category": "transitive",
-      "status": "unverified-necessity",
-      "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
-    },
-    {
-      "name": "lighthouse",
-      "constraint": "13.6.0",
-      "category": "direct-and-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [
-        {
-          "name": "lighthouse",
-          "range": "13.6.0",
-          "manifest": "package.json"
-        }
-      ],
-      "reason": "@lhci/cli 0.15.1 and @lhci/utils 0.15.1 pin Lighthouse 12.6.1, which pulls puppeteer-core 24.31.0 and chromium-bidi 11.0.0 with vulnerable Zod 3.25.76. Keep Lighthouse CI runner and select Lighthouse 13.6.0 with Puppeteer 25 to eliminate vulnerable Zod 3 without a Zod major-version override. Revalidate 13.6.0 against Lighthouse thresholds, supported browsers and security scans.",
-      "removalCriteria": "Remove when a released Lighthouse CI dependency natively selects Lighthouse >=13.5.0 and security, Lighthouse thresholds, browsers and full CI remain green."
-    },
-    {
       "name": "minimatch@10",
       "constraint": "11.0.1",
       "category": "major-scoped-transitive",
@@ -232,69 +100,6 @@
       "directDeclarations": [],
       "reason": "GHSA-g3hv-75wg-m249 affects minimatch v10; redirect v10 range to patched v11.0.1 pending full compatibility tests.",
       "removalCriteria": "Remove once all v10 requesting parents select patched 11.0.1 without an override and CI passes."
-    },
-    {
-      "name": "@eslint/config-array>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through @eslint/config-array; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once @eslint/config-array selects minimatch >=11.0.1 without override and complete CI passes."
-    },
-    {
-      "name": "@eslint/eslintrc>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through @eslint/eslintrc; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once @eslint/eslintrc selects minimatch >=11.0.1 without override and complete CI passes."
-    },
-    {
-      "name": "eslint-plugin-import>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-import; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once eslint-plugin-import selects minimatch >=11.0.1 without override and complete CI passes."
-    },
-    {
-      "name": "eslint-plugin-jsx-a11y>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-jsx-a11y; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once eslint-plugin-jsx-a11y selects minimatch >=11.0.1 without override and complete CI passes."
-    },
-    {
-      "name": "eslint-plugin-react>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint-plugin-react; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once eslint-plugin-react selects minimatch >=11.0.1 without override and complete CI passes."
-    },
-    {
-      "name": "eslint>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through eslint; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once eslint selects minimatch >=11.0.1 without override and complete CI passes."
-    },
-    {
-      "name": "test-exclude>minimatch",
-      "constraint": "11.0.1",
-      "category": "parent-scoped-transitive",
-      "status": "requires-compatibility-review",
-      "directDeclarations": [],
-      "reason": "OSV GHSA-g3hv-75wg-m249 affects minimatch <11.0.1 resolved through test-exclude; this parent-scoped patch avoids unrelated legacy consumers. Full lint/test compatibility is required.",
-      "removalCriteria": "Remove once test-exclude selects minimatch >=11.0.1 without override and complete CI passes."
     }
   ]
 }

@@ -87,13 +87,15 @@ test("resolved dependency contract accepts a compatible direct dependency", () =
   assert.match(out,/satisfy supported manifest ranges/);
 }));
 
-test("Lighthouse upgrade is tracked without reinstating Zod or Jest overrides", () => {
+test("Lighthouse 13.6.0 comes from @lhci/cli natively, without Lighthouse, Zod or Jest overrides", () => {
   const workspace = fs.readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8");
   const manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   const inventory = JSON.parse(fs.readFileSync(path.join(root, "docs/dependency-overrides.json"), "utf8"));
+  const lock = fs.readFileSync(path.join(root, "pnpm-lock.yaml"), "utf8");
   assert.equal(manifest.devDependencies.lighthouse, "13.6.0");
-  assert.match(workspace, /^  'lighthouse': '13\.6\.0'$/m);
-  assert.doesNotMatch(workspace, /^  ['"]?(?:zod|chromium-bidi>zod|jest)['"]?:/m);
-  assert.ok(inventory.overrides.some(item => item.name === "lighthouse" && item.constraint === "13.6.0"));
-  assert.ok(!inventory.overrides.some(item => ["jest", "chromium-bidi>zod", "zod"].includes(item.name)));
+  // @lhci/cli 0.16.x pins lighthouse 13.6.0 itself, so the former override was a no-op.
+  assert.match(lock, /^  '?@lhci\/cli@0\.16\./m);
+  assert.doesNotMatch(lock, /^  '?lighthouse@(?!13\.6\.0)/m);
+  assert.doesNotMatch(workspace, /^  ['"]?(?:lighthouse|zod|chromium-bidi>zod|jest)['"]?:/m);
+  assert.ok(!inventory.overrides.some(item => ["lighthouse", "jest", "chromium-bidi>zod", "zod"].includes(item.name)));
 });
