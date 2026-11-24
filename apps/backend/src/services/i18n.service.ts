@@ -23,6 +23,15 @@ interface EmailTranslations {
     expiresIn: string;
     minutes: string;
   };
+  registrationAttempt: {
+    subject: string;
+    title: string;
+    message: string;
+    signInButton: string;
+    resetPrompt: string;
+    resetLink: string;
+    ignore: string;
+  };
 }
 
 const translations: Record<SupportedLanguage, EmailTranslations> = {
@@ -45,6 +54,16 @@ const translations: Record<SupportedLanguage, EmailTranslations> = {
       expiresIn: "This link will expire in",
       minutes: "minutes",
     },
+    registrationAttempt: {
+      subject: "Someone tried to register with your FitVibe email address",
+      title: "Registration attempt for your account",
+      message:
+        "Someone just tried to create a new FitVibe account with this email address. You already have an account, so no new account was created.",
+      signInButton: "Sign in",
+      resetPrompt: "Forgot your password?",
+      resetLink: "Reset your password",
+      ignore: "If this was not you, you can ignore this email. Your account has not been changed.",
+    },
   },
   de: {
     verification: {
@@ -64,6 +83,17 @@ const translations: Record<SupportedLanguage, EmailTranslations> = {
       orCopy: "Oder kopieren Sie diesen Link in Ihren Browser:",
       expiresIn: "Dieser Link läuft ab in",
       minutes: "Minuten",
+    },
+    registrationAttempt: {
+      subject: "Jemand hat versucht, sich mit Ihrer FitVibe-E-Mail-Adresse zu registrieren",
+      title: "Registrierungsversuch für Ihr Konto",
+      message:
+        "Jemand hat gerade versucht, mit dieser E-Mail-Adresse ein neues FitVibe-Konto zu erstellen. Sie haben bereits ein Konto, daher wurde kein neues Konto erstellt.",
+      signInButton: "Anmelden",
+      resetPrompt: "Passwort vergessen?",
+      resetLink: "Passwort zurücksetzen",
+      ignore:
+        "Wenn Sie das nicht waren, können Sie diese E-Mail ignorieren. Ihr Konto wurde nicht verändert.",
     },
   },
   es: {
@@ -85,6 +115,16 @@ const translations: Record<SupportedLanguage, EmailTranslations> = {
       expiresIn: "Este enlace expirará en",
       minutes: "minutos",
     },
+    registrationAttempt: {
+      subject: "Alguien intentó registrarse con tu correo de FitVibe",
+      title: "Intento de registro con tu cuenta",
+      message:
+        "Alguien acaba de intentar crear una nueva cuenta de FitVibe con esta dirección de correo. Ya tienes una cuenta, así que no se creó ninguna cuenta nueva.",
+      signInButton: "Iniciar sesión",
+      resetPrompt: "¿Olvidaste tu contraseña?",
+      resetLink: "Restablecer tu contraseña",
+      ignore: "Si no fuiste tú, puedes ignorar este correo. Tu cuenta no ha cambiado.",
+    },
   },
   fr: {
     verification: {
@@ -105,6 +145,17 @@ const translations: Record<SupportedLanguage, EmailTranslations> = {
       expiresIn: "Ce lien expirera dans",
       minutes: "minutes",
     },
+    registrationAttempt: {
+      subject: "Quelqu'un a tenté de s'inscrire avec votre adresse e-mail FitVibe",
+      title: "Tentative d'inscription avec votre compte",
+      message:
+        "Quelqu'un vient d'essayer de créer un nouveau compte FitVibe avec cette adresse e-mail. Vous avez déjà un compte, aucun nouveau compte n'a donc été créé.",
+      signInButton: "Se connecter",
+      resetPrompt: "Mot de passe oublié ?",
+      resetLink: "Réinitialiser votre mot de passe",
+      ignore:
+        "Si ce n'était pas vous, vous pouvez ignorer cet e-mail. Votre compte n'a pas été modifié.",
+    },
   },
   el: {
     verification: {
@@ -124,6 +175,17 @@ const translations: Record<SupportedLanguage, EmailTranslations> = {
       orCopy: "Ή αντιγράψτε και επικολλήστε αυτόν τον σύνδεσμο στον περιηγητή σας:",
       expiresIn: "Αυτός ο σύνδεσμος θα λήξει σε",
       minutes: "λεπτά",
+    },
+    registrationAttempt: {
+      subject: "Κάποιος προσπάθησε να εγγραφεί με το email σας στο FitVibe",
+      title: "Απόπειρα εγγραφής για τον λογαριασμό σας",
+      message:
+        "Κάποιος μόλις προσπάθησε να δημιουργήσει νέο λογαριασμό FitVibe με αυτή τη διεύθυνση email. Έχετε ήδη λογαριασμό, οπότε δεν δημιουργήθηκε νέος λογαριασμός.",
+      signInButton: "Σύνδεση",
+      resetPrompt: "Ξεχάσατε τον κωδικό σας;",
+      resetLink: "Επαναφορά κωδικού πρόσβασης",
+      ignore:
+        "Αν δεν ήσασταν εσείς, μπορείτε να αγνοήσετε αυτό το email. Ο λογαριασμός σας δεν άλλαξε.",
     },
   },
 };
@@ -213,4 +275,44 @@ export function generateResendVerificationEmailText(
 ): string {
   const t = getEmailTranslations(lang);
   return `${t.resend.title} ${t.resend.message} ${verificationUrl}\n\n${t.resend.expiresIn} ${expiresInMinutes} ${t.resend.minutes}.`;
+}
+
+/**
+ * Generate the notice sent to an existing account owner when someone tries to
+ * register with their email address. The registration response is identical to
+ * a new signup, so this email is the only signal and reaches only the owner.
+ */
+export function generateRegistrationAttemptEmailHtml(
+  loginUrl: string,
+  resetUrl: string,
+  lang?: string | null,
+): string {
+  const t = getEmailTranslations(lang);
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>${t.registrationAttempt.title}</h2>
+      <p>${t.registrationAttempt.message}</p>
+      <p>
+        <a href="${loginUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+          ${t.registrationAttempt.signInButton}
+        </a>
+      </p>
+      <p>${t.registrationAttempt.resetPrompt} <a href="${resetUrl}">${t.registrationAttempt.resetLink}</a></p>
+      <p style="color: #999; font-size: 12px; margin-top: 32px;">
+        ${t.registrationAttempt.ignore}
+      </p>
+    </div>
+  `;
+}
+
+/**
+ * Generate the plain-text variant of the existing-account registration notice
+ */
+export function generateRegistrationAttemptEmailText(
+  loginUrl: string,
+  resetUrl: string,
+  lang?: string | null,
+): string {
+  const t = getEmailTranslations(lang);
+  return `${t.registrationAttempt.title}\n\n${t.registrationAttempt.message}\n\n${t.registrationAttempt.signInButton}: ${loginUrl}\n${t.registrationAttempt.resetPrompt} ${resetUrl}\n\n${t.registrationAttempt.ignore}`;
 }

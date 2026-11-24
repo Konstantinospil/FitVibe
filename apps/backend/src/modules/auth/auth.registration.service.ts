@@ -11,6 +11,8 @@ import {
   generateVerificationEmailText,
   generateResendVerificationEmailHtml,
   generateResendVerificationEmailText,
+  generateRegistrationAttemptEmailHtml,
+  generateRegistrationAttemptEmailText,
   getEmailTranslations,
 } from "../../services/i18n.service.js";
 import { normalizeAuthTiming } from "./timing.utils.js";
@@ -56,6 +58,58 @@ function dateOfBirthFromAge(age?: number | null): string | undefined {
   return birthDate.toISOString().slice(0, 10);
 }
 
+const EMAIL_UNIQUE_CONSTRAINT = "idx_user_contacts_email_value";
+const ALIAS_UNIQUE_CONSTRAINT = "profiles_alias_unique";
+
+function usernameTaken(): HttpError {
+  return new HttpError(409, "USER_USERNAME_TAKEN", "USER_USERNAME_TAKEN");
+}
+
+/**
+ * Classify a PostgreSQL unique violation (23505) raised while creating the
+ * account. Returns null for any other error so it propagates unchanged.
+ */
+function registrationUniqueConflict(error: unknown): "email" | "alias" | null {
+  if (!error || typeof error !== "object") {
+    return null;
+  }
+  const { code, constraint } = error as { code?: unknown; constraint?: unknown };
+  if (code !== "23505") {
+    return null;
+  }
+  if (constraint === EMAIL_UNIQUE_CONSTRAINT) {
+    return "email";
+  }
+  if (constraint === ALIAS_UNIQUE_CONSTRAINT) {
+    return "alias";
+  }
+  return null;
+}
+
+/**
+ * Tell the owner of an existing account that someone tried to register with
+ * their address. Only active accounts are told: they are the ones who can act
+ * on "sign in or reset your password", matching the forgot-password flow.
+ */
+async function notifyExistingAccountOwner(
+  status: string,
+  email: string,
+  locale?: string | null,
+): Promise<void> {
+  if (status !== "active" || !env.email.enabled) {
+    return;
+  }
+  const loginUrl = `${env.frontendUrl}/login`;
+  const resetUrl = `${env.frontendUrl}/forgot-password`;
+  const t = getEmailTranslations(locale);
+  await mailerService.send({
+    to: email,
+    subject: t.registrationAttempt.subject,
+    html: generateRegistrationAttemptEmailHtml(loginUrl, resetUrl, locale),
+    text: generateRegistrationAttemptEmailText(loginUrl, resetUrl, locale),
+  });
+}
+
 export async function register(
   dto: RegisterDTO,
   preparedAvatar?: Buffer,
@@ -88,11 +142,25 @@ export async function register(
       });
     }
 
-    const existingByEmail = await findUserByEmail(email);
-    const existingByUsername = await findUserByUsername(alias);
+    // Every request-shape check runs before any existence lookup, so its outcome
+    // can never depend on whether the email is registered.
+    if (!dto.terms_accepted) {
+      throw new HttpError(400, "TERMS_ACCEPTANCE_REQUIRED", "TERMS_ACCEPTANCE_REQUIRED");
+    }
 
-    if (existingByEmail || existingByUsername) {
-      if (existingByEmail && existingByEmail.status === "pending_verification") {
+    // Hash on every path (new, existing, pending, conflict) so the expensive
+    // step cannot separate them by timing.
+    const password_hash = await hashPassword(dto.password);
+
+    // Aliases are public, so a taken alias may be reported. It is checked before
+    // and independently of the email, so the answer is the same for every email.
+    if (await findUserByUsername(alias)) {
+      throw usernameTaken();
+    }
+
+    const existingByEmail = await findUserByEmail(email);
+    if (existingByEmail) {
+      if (existingByEmail.status === "pending_verification") {
         const token = await issueAuthToken(
           existingByEmail.id,
           TOKEN_TYPES.EMAIL_VERIFICATION,
@@ -115,15 +183,13 @@ export async function register(
 
         return { verificationToken: token, user: toSafeUser(existingByEmail), passwordWarning };
       }
-      throw new HttpError(409, "AUTH_CONFLICT", "AUTH_CONFLICT");
-    }
-
-    if (!dto.terms_accepted) {
-      throw new HttpError(400, "TERMS_ACCEPTANCE_REQUIRED", "TERMS_ACCEPTANCE_REQUIRED");
+      // The email belongs to an existing account: answer exactly like a new
+      // signup and tell only the owner, through the mailbox they control.
+      await notifyExistingAccountOwner(existingByEmail.status, email, existingByEmail.locale);
+      return { passwordWarning };
     }
 
     const id = uuidv4();
-    const password_hash = await hashPassword(dto.password);
     const now = new Date().toISOString();
     const currentTerms = await getCurrentLegalPublication("terms");
 
@@ -158,6 +224,15 @@ export async function register(
       });
     } catch (error) {
       await cleanupRegistrationAvatar(persistedAvatar);
+      // A concurrent registration can pass the pre-checks and lose the insert
+      // race. The transaction has rolled back, so nothing partial remains.
+      const conflict = registrationUniqueConflict(error);
+      if (conflict === "email") {
+        return { passwordWarning };
+      }
+      if (conflict === "alias") {
+        throw usernameTaken();
+      }
       throw error;
     }
 

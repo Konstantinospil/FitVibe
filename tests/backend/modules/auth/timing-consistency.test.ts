@@ -11,6 +11,7 @@ import * as authService from "../../../../apps/backend/src/modules/auth/auth.ser
 import * as authRepo from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 import * as twofaService from "../../../../apps/backend/src/modules/auth/two-factor.service.js";
 import * as bruteforceRepo from "../../../../apps/backend/src/modules/auth/bruteforce.repository.js";
+import * as passwordHashing from "../../../../apps/backend/src/modules/auth/password-hashing.service.js";
 import type { AuthUserRecord } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 import type {
   LoginDTO,
@@ -22,7 +23,23 @@ jest.mock("../../../../apps/backend/src/modules/auth/auth.repository");
 jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js");
 jest.mock("../../../../apps/backend/src/modules/auth/bruteforce.repository.js");
 jest.mock("bcryptjs");
+jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js", () => {
+  const actual = jest.requireActual(
+    "../../../../apps/backend/src/modules/auth/password-hashing.service.js",
+  ) as typeof import("../../../../apps/backend/src/modules/auth/password-hashing.service.js");
+  return { ...actual, hashPassword: jest.fn(actual.hashPassword) };
+});
 jest.mock("../../../../apps/backend/src/services/mailer.service.js");
+// Registration dependencies outside the auth repository. Without them every
+// register() call fails before reaching the code paths being timed.
+jest.mock("../../../../apps/backend/src/modules/common/email-blacklist.repository.js", () => ({
+  isEmailBlacklisted: jest.fn().mockResolvedValue(false),
+}));
+jest.mock("../../../../apps/backend/src/modules/legal/legal.service.js", () => ({
+  ...(jest.requireActual("../../../../apps/backend/src/modules/legal/legal.service.js") as object),
+  getCurrentLegalPublication: jest.fn().mockResolvedValue({ id: "terms-1", version: "1.0.0" }),
+  acceptLegalDocumentVersion: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock("../../../../apps/backend/src/db/index.js", () => {
   const insert = jest.fn().mockResolvedValue(undefined);
   const dbMock = Object.assign(
@@ -266,6 +283,59 @@ describe("AC-1.12: Timing Consistency for User Enumeration Protection", () => {
 
       // Allow up to 15% variance to account for system load and timing variations
       expect(variance).toBeLessThanOrEqual(15);
+    });
+  });
+
+  describe("Register Timing for an Existing Verified Email (#653)", () => {
+    const registerDto: RegisterDTO = {
+      email: "taken@example.com",
+      username: "freshalias",
+      password: "ValidPassword123!",
+      terms_accepted: true,
+    };
+    // Slower than the 300 ms timing floor, so the floor cannot hide a path
+    // that skips hashing: only the hash itself can equalize the two paths.
+    const HASH_MS = 450;
+
+    beforeEach(() => {
+      jest.mocked(passwordHashing.hashPassword).mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, HASH_MS));
+        return "$argon2id$v=19$m=65536,t=3,p=1$c2FsdA$aGFzaA";
+      });
+      mockAuthRepo.findUserByUsername.mockResolvedValue(undefined);
+      mockAuthRepo.createUser.mockResolvedValue(mockUser);
+      mockAuthRepo.createAuthToken.mockResolvedValue([]);
+      mockAuthRepo.findUserById.mockResolvedValue({
+        ...mockUser,
+        id: "new-user-id",
+        status: "pending_verification",
+      });
+      mockAuthRepo.markAuthTokensConsumed.mockResolvedValue(1);
+      mockAuthRepo.countAuthTokensSince.mockResolvedValue(0);
+      mockAuthRepo.purgeAuthTokensOlderThan.mockResolvedValue(0);
+    });
+
+    afterEach(() => {
+      const actual = jest.requireActual(
+        "../../../../apps/backend/src/modules/auth/password-hashing.service.js",
+      ) as typeof passwordHashing;
+      jest.mocked(passwordHashing.hashPassword).mockImplementation(actual.hashPassword);
+    });
+
+    it("takes the same time as a new signup and resolves the same way", async () => {
+      mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
+      const newEmail = await measureTime(() => authService.register(registerDto));
+      const newEmailTime = await getAverageTiming(() => authService.register(registerDto), 5);
+
+      mockAuthRepo.findUserByEmail.mockResolvedValue({ ...mockUser, status: "active" });
+      const existingEmail = await measureTime(() => authService.register(registerDto));
+      const existingEmailTime = await getAverageTiming(() => authService.register(registerDto), 5);
+
+      // Neither path may fail: a thrown error is itself an enumeration signal.
+      expect(newEmail.result).not.toBeInstanceOf(Error);
+      expect(existingEmail.result).not.toBeInstanceOf(Error);
+      expect(existingEmailTime).toBeGreaterThanOrEqual(HASH_MS);
+      expect(calculateVariance(newEmailTime, existingEmailTime)).toBeLessThanOrEqual(15);
     });
   });
 

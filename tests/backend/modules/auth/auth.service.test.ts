@@ -81,11 +81,14 @@ jest.mock("../../../../apps/backend/src/services/i18n.service.js", () => ({
     verification: { subject: "Verify your email" },
     resend: { subject: "Resend verification" },
     passwordReset: { subject: "Reset password" },
+    registrationAttempt: { subject: "Registration attempt" },
   })),
   generateVerificationEmailHtml: jest.fn(() => "<html>verify</html>"),
   generateVerificationEmailText: jest.fn(() => "verify"),
   generateResendVerificationEmailHtml: jest.fn(() => "<html>resend</html>"),
   generateResendVerificationEmailText: jest.fn(() => "resend"),
+  generateRegistrationAttemptEmailHtml: jest.fn(() => "<html>attempt</html>"),
+  generateRegistrationAttemptEmailText: jest.fn(() => "attempt"),
 }));
 jest.mock("bcryptjs");
 jest.mock("../../../../apps/backend/src/modules/auth/password-hashing.service.js", () => ({
@@ -190,9 +193,7 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
     transaction: jest.Mock;
   };
 
-  db.transaction = jest.fn(async (callback: (trx: unknown) => Promise<unknown>) =>
-    callback(db),
-  );
+  db.transaction = jest.fn(async (callback: (trx: unknown) => Promise<unknown>) => callback(db));
 
   return { db };
 });
@@ -350,10 +351,11 @@ describe("Auth Service", () => {
       );
     });
 
-    it("should throw error when email already exists", async () => {
-      const existingUser: AuthUserRecord = {
+    describe("existing email (#653: no account enumeration)", () => {
+      const activeUser: AuthUserRecord = {
         id: userId,
         email,
+        primary_email: email,
         username: "otheruser",
         password_hash: "hash",
         email_verified: true,
@@ -362,17 +364,96 @@ describe("Auth Service", () => {
         terms_version: "1.0.0",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        locale: "de-DE",
       };
 
-      mockAuthRepo.findUserByEmail.mockResolvedValue(existingUser);
+      beforeEach(() => {
+        mockAuthRepo.findUserByUsername.mockResolvedValue(undefined);
+      });
 
-      await expect(authService.register(validRegisterDto)).rejects.toThrow(HttpError);
-      await expect(authService.register(validRegisterDto)).rejects.toThrow("AUTH_CONFLICT");
+      afterEach(() => {
+        mockEnv.email.enabled = false;
+      });
+
+      it("resolves like a new signup, without a token or account creation", async () => {
+        mockAuthRepo.findUserByEmail.mockResolvedValue(activeUser);
+
+        await expect(authService.register(validRegisterDto)).resolves.toEqual({
+          passwordWarning: undefined,
+        });
+        expect(mockAuthRepo.createUser).not.toHaveBeenCalled();
+        expect(mockAuthRepo.createAuthToken).not.toHaveBeenCalled();
+      });
+
+      it("still hashes the password so timing matches a new signup", async () => {
+        const { hashPassword } = jest.requireMock(
+          "../../../../apps/backend/src/modules/auth/password-hashing.service.js",
+        ) as { hashPassword: jest.Mock };
+        mockAuthRepo.findUserByEmail.mockResolvedValue(activeUser);
+
+        await authService.register(validRegisterDto);
+
+        expect(hashPassword).toHaveBeenCalledWith(password);
+      });
+
+      it("emails the existing owner a sign-in or reset notice in their locale", async () => {
+        const i18n = jest.requireMock("../../../../apps/backend/src/services/i18n.service.js") as {
+          generateRegistrationAttemptEmailHtml: jest.Mock;
+        };
+        mockEnv.email.enabled = true;
+        mockAuthRepo.findUserByEmail.mockResolvedValue(activeUser);
+
+        await authService.register(validRegisterDto);
+
+        expect(mockMailerService.mailerService.send).toHaveBeenCalledTimes(1);
+        expect(mockMailerService.mailerService.send).toHaveBeenCalledWith({
+          to: email,
+          subject: "Registration attempt",
+          html: "<html>attempt</html>",
+          text: "attempt",
+        });
+        expect(i18n.generateRegistrationAttemptEmailHtml).toHaveBeenCalledWith(
+          "http://localhost:3000/login",
+          "http://localhost:3000/forgot-password",
+          "de-DE",
+        );
+      });
+
+      it.each(["suspended", "banned", "pending_deletion"])(
+        "answers the same way but sends no notice when the account is %s",
+        async (status) => {
+          mockEnv.email.enabled = true;
+          mockAuthRepo.findUserByEmail.mockResolvedValue({
+            ...activeUser,
+            status,
+          } as AuthUserRecord);
+
+          await expect(authService.register(validRegisterDto)).resolves.toEqual({
+            passwordWarning: undefined,
+          });
+          expect(mockMailerService.mailerService.send).not.toHaveBeenCalled();
+        },
+      );
+
+      it("treats a lost email insert race as an existing email, not a 409 or 500", async () => {
+        mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
+        mockAuthRepo.createUser.mockRejectedValueOnce(
+          Object.assign(new Error("duplicate key value"), {
+            code: "23505",
+            constraint: "idx_user_contacts_email_value",
+          }),
+        );
+
+        await expect(authService.register(validRegisterDto)).resolves.toEqual({
+          passwordWarning: undefined,
+        });
+        expect(mockAuthRepo.createAuthToken).not.toHaveBeenCalled();
+      });
     });
 
-    it("should throw error when username already exists", async () => {
-      const existingUser: AuthUserRecord = {
-        id: userId,
+    describe("taken username", () => {
+      const aliasOwner: AuthUserRecord = {
+        id: "alias-owner",
         email: "other@example.com",
         username,
         password_hash: "hash",
@@ -384,11 +465,60 @@ describe("Auth Service", () => {
         updated_at: new Date().toISOString(),
       };
 
-      mockAuthRepo.findUserByEmail.mockResolvedValue(null);
-      mockAuthRepo.findUserByUsername.mockResolvedValue(existingUser);
+      it("rejects with USER_USERNAME_TAKEN before looking up the email", async () => {
+        mockAuthRepo.findUserByUsername.mockResolvedValue(aliasOwner);
 
-      await expect(authService.register(validRegisterDto)).rejects.toThrow(HttpError);
-      await expect(authService.register(validRegisterDto)).rejects.toThrow("AUTH_CONFLICT");
+        await expect(authService.register(validRegisterDto)).rejects.toMatchObject({
+          status: 409,
+          code: "USER_USERNAME_TAKEN",
+        });
+        expect(mockAuthRepo.findUserByEmail).not.toHaveBeenCalled();
+        expect(mockAuthRepo.createUser).not.toHaveBeenCalled();
+      });
+
+      it("gives the same answer whether or not the email is registered", async () => {
+        mockAuthRepo.findUserByUsername.mockResolvedValue(aliasOwner);
+
+        mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
+        const forNewEmail = await authService.register(validRegisterDto).catch((e) => e);
+        mockAuthRepo.findUserByEmail.mockResolvedValue({ ...aliasOwner, email } as AuthUserRecord);
+        const forExistingEmail = await authService.register(validRegisterDto).catch((e) => e);
+
+        expect(forNewEmail).toBeInstanceOf(HttpError);
+        expect(forExistingEmail).toMatchObject({
+          status: forNewEmail.status,
+          code: forNewEmail.code,
+          message: forNewEmail.message,
+        });
+      });
+
+      it("maps a lost alias insert race to USER_USERNAME_TAKEN", async () => {
+        mockAuthRepo.findUserByUsername.mockResolvedValue(undefined);
+        mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
+        mockAuthRepo.createUser.mockRejectedValueOnce(
+          Object.assign(new Error("duplicate key value"), {
+            code: "23505",
+            constraint: "profiles_alias_unique",
+          }),
+        );
+
+        await expect(authService.register(validRegisterDto)).rejects.toMatchObject({
+          status: 409,
+          code: "USER_USERNAME_TAKEN",
+        });
+      });
+
+      it("rethrows unrelated unique violations unchanged", async () => {
+        mockAuthRepo.findUserByUsername.mockResolvedValue(undefined);
+        mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
+        const unrelated = Object.assign(new Error("duplicate key value"), {
+          code: "23505",
+          constraint: "some_other_constraint",
+        });
+        mockAuthRepo.createUser.mockRejectedValueOnce(unrelated);
+
+        await expect(authService.register(validRegisterDto)).rejects.toBe(unrelated);
+      });
     });
 
     it("should resend verification for pending user", async () => {
@@ -411,6 +541,7 @@ describe("Auth Service", () => {
       const originalEnabled = mockEnv.email.enabled;
       mockEnv.email.enabled = true;
 
+      mockAuthRepo.findUserByUsername.mockResolvedValue(undefined);
       mockAuthRepo.findUserByEmail.mockResolvedValue(pendingUser);
       mockAuthRepo.createAuthToken.mockResolvedValue("verification-token");
 
@@ -426,7 +557,6 @@ describe("Auth Service", () => {
         terms_accepted: false,
       };
 
-      // Ensure no existing user to trigger the terms check
       mockAuthRepo.findUserByEmail.mockResolvedValue(null);
       mockAuthRepo.findUserByUsername.mockResolvedValue(null);
 
@@ -434,6 +564,14 @@ describe("Auth Service", () => {
       await expect(authService.register(dtoWithoutTerms)).rejects.toThrow(
         "TERMS_ACCEPTANCE_REQUIRED",
       );
+    });
+
+    it("rejects missing terms before any existence lookup, so it cannot reveal accounts", async () => {
+      await expect(
+        authService.register({ ...validRegisterDto, terms_accepted: false }),
+      ).rejects.toMatchObject({ status: 400, code: "TERMS_ACCEPTANCE_REQUIRED" });
+      expect(mockAuthRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(mockAuthRepo.findUserByUsername).not.toHaveBeenCalled();
     });
   });
 
@@ -519,7 +657,7 @@ describe("Auth Service", () => {
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockTwofaService.is2FAEnabled.mockResolvedValue(false);
       mockAuthRepo.createSessionWithRefresh.mockResolvedValue(undefined);
-      
+
       mockBruteforceRepo.getFailedAttempt.mockResolvedValue(null);
       mockBruteforceRepo.getFailedAttemptByIP.mockResolvedValue(null);
       mockBruteforceRepo.resetFailedAttempts.mockResolvedValue(undefined);
@@ -688,7 +826,6 @@ describe("Auth Service", () => {
       mockJwt.sign
         .mockReturnValueOnce("new_refresh_token" as never)
         .mockReturnValueOnce("new_access_token" as never);
-      
 
       const result = await authService.refresh(refreshToken);
 
