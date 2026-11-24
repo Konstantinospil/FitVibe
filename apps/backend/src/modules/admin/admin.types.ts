@@ -18,11 +18,13 @@ export interface FeedReport {
   resolvedBy: string | null;
   contentPreview: string | null;
   contentAuthor: string | null;
+  contentAuthorId?: string | null;
 }
 
 export interface UserSearchResult {
   id: string;
   username: string;
+  displayName?: string | null;
   email: string;
   roleCode: string;
   status: UserStatus;
@@ -44,6 +46,33 @@ export interface UserActionInput {
   adminId: string;
   reason?: string;
 }
+
+export type OpsLightStatus = "green" | "yellow" | "red";
+
+export interface AdminOpsStatus {
+  backend: {
+    status: OpsLightStatus;
+    dbOk: boolean;
+    clamavOk: boolean;
+    clamavEnabled: boolean;
+    readOnly: boolean;
+  };
+  frontend: {
+    status: OpsLightStatus;
+    ok: boolean;
+  };
+  counts: {
+    loggedInUsers: number;
+    unresolvedMessages: number;
+    violationReports: number;
+    unresolvedAuditLogs: number;
+    openIssues: number;
+  };
+}
+
+/** Roles a normal administrator may assign. Privileged roles use the superadmin workflow. */
+export const ADMIN_ASSIGNABLE_ROLES = ["athlete", "coach", "support"] as const;
+export type AdminAssignableRole = (typeof ADMIN_ASSIGNABLE_ROLES)[number];
 
 export interface ListReportsQuery {
   status?: "pending" | "reviewed" | "dismissed" | "all";

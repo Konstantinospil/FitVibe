@@ -2,6 +2,20 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { VibeBadge } from "../../src/components/domain/VibeBadge";
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { label?: string; level?: string }) => {
+      if (key === "vibeBadge.showLevel") {
+        return `${options?.label}. Show level`;
+      }
+      if (key === "vibeBadge.showIcon") {
+        return `${options?.label}: ${options?.level}. Show vibe icon`;
+      }
+      return key;
+    },
+  }),
+}));
+
 describe("VibeBadge", () => {
   it("exposes the vibe and delegates hover presentation to CSS", () => {
     render(<VibeBadge vibe="strength" label="Strength" level="12.4" />);

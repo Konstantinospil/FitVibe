@@ -8,6 +8,7 @@ import * as service from "./admin.service.js";
 import { db } from "../../db/index.js";
 import type { ListReportsQuery, SearchUsersQuery } from "./admin.types.js";
 import { assertFreshPrivilegedTotp } from "./superadmin.service.js";
+import { isAdminAssignableRole } from "./admin-user-guard.js";
 
 /**
  * List feed reports
@@ -34,7 +35,7 @@ export async function listReportsHandler(req: Request, res: Response): Promise<v
  */
 export async function moderateReportHandler(req: Request, res: Response): Promise<void> {
   const reportId = readRouteParam(req.params.reportId, "reportId");
-  const body = req.body as { action?: string; totpCode?: string };
+  const body = (req.body ?? {}) as { action?: string; totpCode?: string };
   const action = body.action;
 
   if (!req.user?.sub) {
@@ -100,7 +101,7 @@ export async function searchUsersHandler(req: Request, res: Response): Promise<v
  */
 export async function userActionHandler(req: Request, res: Response): Promise<void> {
   const userId = readRouteParam(req.params.userId, "userId");
-  const body = req.body as { action?: string; reason?: string; totpCode?: string };
+  const body = (req.body ?? {}) as { action?: string; reason?: string; totpCode?: string };
   const action = body.action;
   const reason = body.reason;
 
@@ -142,6 +143,112 @@ export async function userActionHandler(req: Request, res: Response): Promise<vo
   res.json({ success: true, message: `User ${pastTense} successfully` });
 }
 
+function requireAdminId(req: Request): string {
+  if (!req.user?.sub) {
+    throw new HttpError(401, "UNAUTHENTICATED", "User not authenticated");
+  }
+  return req.user.sub;
+}
+
+function readOptionalReason(body: { reason?: unknown }): string | undefined {
+  if (body.reason === undefined || body.reason === null) {
+    return undefined;
+  }
+  if (typeof body.reason !== "string" || body.reason.length > 500) {
+    throw new HttpError(400, "INVALID_REASON", "Reason must be a string of at most 500 characters");
+  }
+  return body.reason.trim() || undefined;
+}
+
+/** Permission- and content-changing actions need a fresh, single-use administrator TOTP. */
+async function requireFreshTotp(adminId: string, totpCode: unknown): Promise<void> {
+  if (typeof totpCode !== "string" || !/^\d{6}$/.test(totpCode)) {
+    throw new HttpError(403, "ADMIN_STEP_UP_REQUIRED", "Fresh administrator TOTP required");
+  }
+  await assertFreshPrivilegedTotp(adminId, totpCode);
+}
+
+/**
+ * Operational status for the backoffice header
+ * GET /api/v1/admin/ops/status
+ */
+export async function getOpsStatusHandler(_req: Request, res: Response): Promise<void> {
+  res.json(await service.getOpsStatus());
+}
+
+/**
+ * Change a non-privileged user's role
+ * POST /api/v1/admin/users/:userId/role
+ */
+export async function changeUserRoleHandler(req: Request, res: Response): Promise<void> {
+  const userId = readRouteParam(req.params.userId, "userId");
+  const adminId = requireAdminId(req);
+  const body = (req.body ?? {}) as { role?: unknown; reason?: unknown; totpCode?: unknown };
+
+  if (!isAdminAssignableRole(body.role)) {
+    throw new HttpError(
+      400,
+      "INVALID_ROLE",
+      "Invalid role. Must be 'athlete', 'coach' or 'support'; privileged roles are managed by a superadmin",
+    );
+  }
+  const reason = readOptionalReason(body);
+  await requireFreshTotp(adminId, body.totpCode);
+
+  await service.changeUserRole(userId, body.role, adminId, reason);
+  res.json({ success: true, message: `User role changed to ${body.role} successfully` });
+}
+
+/**
+ * Re-send the verification email
+ * POST /api/v1/admin/users/:userId/send-verification-email
+ */
+export async function sendVerificationEmailHandler(req: Request, res: Response): Promise<void> {
+  const userId = readRouteParam(req.params.userId, "userId");
+  await service.sendVerificationEmail(userId, requireAdminId(req));
+  res.json({ success: true, message: "Verification email sent successfully" });
+}
+
+/**
+ * Send a password reset email
+ * POST /api/v1/admin/users/:userId/send-password-reset
+ */
+export async function sendPasswordResetHandler(req: Request, res: Response): Promise<void> {
+  const userId = readRouteParam(req.params.userId, "userId");
+  await service.sendPasswordResetEmail(userId, requireAdminId(req));
+  res.json({ success: true, message: "Password reset email sent successfully" });
+}
+
+/**
+ * Remove a user's avatar
+ * DELETE /api/v1/admin/users/:userId/avatar
+ */
+export async function deleteUserAvatarHandler(req: Request, res: Response): Promise<void> {
+  const userId = readRouteParam(req.params.userId, "userId");
+  const adminId = requireAdminId(req);
+  const body = (req.body ?? {}) as { reason?: unknown; totpCode?: unknown };
+  const reason = readOptionalReason(body);
+  await requireFreshTotp(adminId, body.totpCode);
+
+  await service.deleteUserAvatar(userId, adminId, reason);
+  res.json({ success: true, message: "User avatar deleted successfully" });
+}
+
+/**
+ * Reset a user's display name to their alias
+ * DELETE /api/v1/admin/users/:userId/display-name
+ */
+export async function deleteUserDisplayNameHandler(req: Request, res: Response): Promise<void> {
+  const userId = readRouteParam(req.params.userId, "userId");
+  const adminId = requireAdminId(req);
+  const body = (req.body ?? {}) as { reason?: unknown; totpCode?: unknown };
+  const reason = readOptionalReason(body);
+  await requireFreshTotp(adminId, body.totpCode);
+
+  await service.deleteUserDisplayName(userId, adminId, reason);
+  res.json({ success: true, message: "User display name deleted successfully" });
+}
+
 /** GET /api/v1/admin/action-mappings */
 export async function listActionMappingsHandler(_req: Request, res: Response): Promise<void> {
   const rows = await db("audit_log as al")
@@ -154,7 +261,7 @@ export async function listActionMappingsHandler(_req: Request, res: Response): P
 
 /** POST /api/v1/admin/action-mappings */
 export async function upsertActionMappingHandler(req: Request, res: Response): Promise<void> {
-  const { action, uiName } = req.body as { action?: unknown; uiName?: unknown };
+  const { action, uiName } = (req.body ?? {}) as { action?: unknown; uiName?: unknown };
   if (
     typeof action !== "string" ||
     !action.trim() ||

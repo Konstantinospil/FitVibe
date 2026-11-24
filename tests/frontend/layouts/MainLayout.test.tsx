@@ -43,6 +43,8 @@ vi.mock("react-i18next", () => ({
         "language.french": "French",
         "language.spanish": "Spanish",
         "language.greek": "Greek",
+        "theme.toLight": "Switch to light theme",
+        "theme.toDark": "Switch to dark theme",
       };
       return translations[key] || key;
     },

@@ -76,6 +76,26 @@ describe("Dashboard", () => {
     expect(screen.getByText("First badge")).toBeInTheDocument();
   });
 
+  it("keeps loading text and the Vibeform in the same reserved frame (#634 CLS)", async () => {
+    let resolveProfile!: (value: typeof profile) => void;
+    vi.mocked(vibeApi.getMyVibeformProfile).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveProfile = resolve;
+      }),
+    );
+    renderDashboard();
+
+    const frame = screen.getByTestId("vibeform-frame");
+    expect(frame).toHaveClass("vibeform-frame");
+    expect(frame).toContainElement(screen.getByText("dashboard.loadingVibeform"));
+
+    resolveProfile(profile);
+    expect(await screen.findByText("vibeform:flow")).toBeInTheDocument();
+    // Same element, so the box reserved during loading is the one the figure fills.
+    expect(screen.getByTestId("vibeform-frame")).toBe(frame);
+    expect(frame).toContainElement(screen.getByText("vibeform:flow"));
+  });
+
   it("selects Vibes without changing persisted preferences", async () => {
     renderDashboard();
     await screen.findByText("vibeform:flow");

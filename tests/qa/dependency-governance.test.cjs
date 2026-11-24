@@ -12,7 +12,7 @@ function report(name) {
 test("relevance report recognizes resolved transitive packages", () => {
   const r = report("report-dependency-relevance.cjs");
   assert.ok(r.checkedOverrides > 0);
-  for(const name of ["follow-redirects","lodash","ws","fast-xml-parser"])
+  for(const name of ["follow-redirects","lodash","ws"])
     assert.ok(!r.findings.some(f=>f.name===name),name+" incorrectly classified as absent");
 });
 test("source report respects declared TypeScript path aliases", () => {
@@ -91,9 +91,9 @@ test("Lighthouse upgrade is tracked without reinstating Zod or Jest overrides", 
   const workspace = fs.readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8");
   const manifest = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   const inventory = JSON.parse(fs.readFileSync(path.join(root, "docs/dependency-overrides.json"), "utf8"));
-  assert.equal(manifest.devDependencies.lighthouse, "13.5.0");
-  assert.match(workspace, /^  'lighthouse': '13\.5\.0'$/m);
+  assert.equal(manifest.devDependencies.lighthouse, "13.6.0");
+  assert.match(workspace, /^  'lighthouse': '13\.6\.0'$/m);
   assert.doesNotMatch(workspace, /^  ['"]?(?:zod|chromium-bidi>zod|jest)['"]?:/m);
-  assert.ok(inventory.overrides.some(item => item.name === "lighthouse" && item.constraint === "13.5.0"));
+  assert.ok(inventory.overrides.some(item => item.name === "lighthouse" && item.constraint === "13.6.0"));
   assert.ok(!inventory.overrides.some(item => ["jest", "chromium-bidi>zod", "zod"].includes(item.name)));
 });

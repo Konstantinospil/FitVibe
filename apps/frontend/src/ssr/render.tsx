@@ -25,7 +25,21 @@ const root = resolve(__dirname, "../..");
  */
 function getHtmlTemplate(): string {
   const templatePath = resolve(root, "index.html");
-  return readFileSync(templatePath, "utf-8");
+  const template = readFileSync(templatePath, "utf-8");
+  // Preserve synchronous theme setup before first paint, but eliminate the
+  // render-blocking round trip for the external script on SSR responses.
+  // Vite copies the same canonical source into dist/client in production.
+  const themeScriptPath = resolve(
+    root,
+    process.env.NODE_ENV === "production"
+      ? "dist/client/theme-bootstrap.js"
+      : "public/theme-bootstrap.js",
+  );
+  const themeScript = readFileSync(themeScriptPath, "utf-8");
+  return template.replace(
+    '<script src="/theme-bootstrap.js"></script>',
+    `<script>${themeScript}</script>`,
+  );
 }
 
 function replaceRootContent(template: string, appHtml: string): string {
@@ -134,11 +148,25 @@ type ManifestChunk = {
 
 type ClientAssets = {
   scripts: string[];
+  /** Chunks the entry imports statically; the browser needs them before it can run. */
+  modulePreloads: string[];
+  /** Import-free modules that run from <head> (the session prefetch). */
+  headModules: string[];
   styles: string[];
 };
 
-const DEV_ASSETS: ClientAssets = { scripts: ["/src/main.tsx"], styles: [] };
-const FALLBACK_ASSETS: ClientAssets = { scripts: ["/assets/js/main.js"], styles: [] };
+const DEV_ASSETS: ClientAssets = {
+  scripts: ["/src/main.tsx"],
+  modulePreloads: [],
+  headModules: [],
+  styles: [],
+};
+const FALLBACK_ASSETS: ClientAssets = {
+  scripts: ["/assets/js/main.js"],
+  modulePreloads: [],
+  headModules: [],
+  styles: [],
+};
 
 function toPublicPath(file: string): string {
   return file.startsWith("/") ? file : `/${file}`;
@@ -184,12 +212,16 @@ function getClientAssets(): ClientAssets {
     }
 
     const styles: string[] = [];
+    const modulePreloads: string[] = [];
     const seen = new Set<string>();
     const visit = (chunk: ManifestChunk | undefined) => {
       if (!chunk?.file || seen.has(chunk.file)) {
         return;
       }
       seen.add(chunk.file);
+      if (chunk !== mainChunk && chunk.file.endsWith(".js")) {
+        modulePreloads.push(toPublicPath(chunk.file));
+      }
       if (chunk.css?.length) {
         styles.push(...chunk.css);
       }
@@ -199,8 +231,14 @@ function getClientAssets(): ClientAssets {
     };
     visit(mainChunk);
 
+    const sessionPrefetch = Object.entries(manifest).find(([key]) =>
+      key.replace(/\\/g, "/").endsWith("src/utils/authenticatedPrefetch.ts"),
+    )?.[1];
+
     return {
       scripts: [toPublicPath(mainChunk.file)],
+      modulePreloads,
+      headModules: sessionPrefetch?.file ? [toPublicPath(sessionPrefetch.file)] : [],
       styles: [...new Set(styles.map(toPublicPath))],
     };
   } catch {
@@ -267,11 +305,24 @@ export async function renderPage(url: string): Promise<string> {
   const dehydratedStateMarkup = `<template id="${DEHYDRATED_STATE_ELEMENT_ID}">${serializeDehydratedState(dehydratedState)}</template>`;
 
   const isProduction = process.env.NODE_ENV === "production";
-  const { scripts, styles } = getClientAssets();
-  // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
-  const hydrationScript = scripts
-    .map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`)
+  const { scripts, modulePreloads, headModules, styles } = getClientAssets();
+  // ~1 KB, async and import-free: it starts the signed-in API reads while the
+  // app bundle downloads, without blocking parsing or first paint.
+  const headModuleTags = headModules
+    .map((src) => `<script type="module" async src="${src}"></script>`)
     .join("");
+  // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
+  // Hints placed next to the entry script are discovered at the same moment as
+  // the entry itself, so they cannot compete with first paint any more than the
+  // entry does. Without them the browser only finds the entry's static imports
+  // (the 67 KB app chunk among them) after downloading and parsing the entry:
+  // one more round trip before any authenticated content can render.
+  const hydrationScript = [
+    ...modulePreloads.map(
+      (href) => `<link rel="modulepreload" href="${href}" fetchpriority="low" />`,
+    ),
+    ...scripts.map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`),
+  ].join("");
   const styleTags = styleTagsFor(styles, resolve(root, "dist/client"));
 
   const resourceHints = isProduction ? `\n    ${styleTags}\n  ` : styleTags;
@@ -279,12 +330,22 @@ export async function renderPage(url: string): Promise<string> {
   // Add Open Graph and Twitter Card meta tags for better SEO
   // These improve Lighthouse SEO score and social sharing
   const baseUrl = process.env.APP_URL || "https://fitvibe.app";
+  // SSR currently renders the canonical English document. Store social-card
+  // copy in locale resources to keep presentation text out of source templates.
+  const escapeMeta = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  const ogTitle = escapeMeta(i18n.t("seo.title"));
+  const ogDescription = escapeMeta(i18n.t("seo.description"));
   const ogMetaTags = `
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${baseUrl}${url}" />
-    <meta property="og:title" content="FitVibe - Plan, Log & Share Your Training" />
-    <meta property="og:description" content="Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration." />
+    <meta property="og:title" content="${ogTitle}" />
+    <meta property="og:description" content="${ogDescription}" />
     <meta property="og:image" content="${baseUrl}/favicon.ico" />
     <meta property="og:site_name" content="FitVibe" />
     <meta property="og:locale" content="en_US" />
@@ -292,8 +353,8 @@ export async function renderPage(url: string): Promise<string> {
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="${baseUrl}${url}" />
-    <meta name="twitter:title" content="FitVibe - Plan, Log & Share Your Training" />
-    <meta name="twitter:description" content="Plan, log, and share your training sessions. Track progress across six elemental vibes: Strength, Agility, Endurance, Explosivity, Intelligence, and Regeneration." />
+    <meta name="twitter:title" content="${ogTitle}" />
+    <meta name="twitter:description" content="${ogDescription}" />
     <meta name="twitter:image" content="${baseUrl}/favicon.ico" />
     
     <!-- Additional SEO meta tags -->
@@ -303,7 +364,7 @@ export async function renderPage(url: string): Promise<string> {
   `;
 
   // Inject resource hints and SEO meta tags in head
-  html = html.replace("</head>", `${resourceHints}${ogMetaTags}</head>`);
+  html = html.replace("</head>", `${headModuleTags}${resourceHints}${ogMetaTags}</head>`);
   html = html.replace("</body>", `${dehydratedStateMarkup}${hydrationScript}</body>`);
 
   return html;

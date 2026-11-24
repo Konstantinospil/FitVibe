@@ -28,6 +28,16 @@
   border-left: 1px solid var(--color-border);
 }
 
+/* Keep the public theme control icon-only while retaining Button's semantic variant. */
+.public-header__utilities [data-control="theme-toggle"] {
+  width: var(--control-height-md);
+  padding-inline: var(--space-xs);
+}
+
+.public-header__utilities [data-control="theme-toggle"] [data-slot="content"] > span:empty {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .public-header__inner {
     min-height: 64px;
@@ -483,6 +493,23 @@
   color: var(--color-danger-text);
 }
 
+/* Reserves the Vibeform SVG's box (viewBox 240x320) before the profile loads
+   so the loading text and the rendered figure occupy the same space. */
+.vibeform-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 240 / 320;
+}
+
+.vibeform-frame__figure,
+.vibeform-frame__figure > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .training-error {
   background: var(--surface-danger-subtle);
   border: 1px solid var(--border-danger-subtle);
@@ -577,6 +604,30 @@
 @keyframes toast-slide-in{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @media (prefers-reduced-motion:reduce){[data-component="toast"]{animation:none}}
 
+
+/* Reserves the meter's rows before its lazily loaded estimator arrives: the
+   invisible sizer and the meter overlap in one grid cell, so the cell is as tall
+   as the taller of the two and fields below never move when the meter loads. */
+.password-strength-slot {
+  display: grid;
+}
+
+.password-strength-slot > * {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.password-strength-slot__sizer {
+  visibility: hidden;
+}
+
+.password-strength-slot__bar {
+  height: var(--space-xs);
+}
+
+.password-strength-slot__sizer [data-sizer-text]::before {
+  content: attr(data-sizer-text);
+}
 
 /* Shared password-strength meter: tokens and presentation belong in CSS. */
 [data-component="password-strength"] .password-strength-meter {

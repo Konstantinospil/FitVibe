@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useCallback } from "react";
 import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type ToastType = "success" | "error" | "warning" | "info";
 
@@ -74,12 +75,13 @@ const ToastContainer: React.FC<{
   toasts: Toast[];
   onRemove: (id: string) => void;
 }> = ({ toasts, onRemove }) => {
+  const { t } = useTranslation();
   if (toasts.length === 0) {
     return null;
   }
 
   return (
-    <div data-component="toast-container" role="region" aria-label="Notifications">
+    <div data-component="toast-container" role="region" aria-label={t("notifications.region")}>
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
@@ -91,6 +93,7 @@ const ToastItem: React.FC<{
   toast: Toast;
   onRemove: (id: string) => void;
 }> = ({ toast, onRemove }) => {
+  const { t } = useTranslation();
   const Icon = iconByType[toast.type];
 
   return (
@@ -101,7 +104,7 @@ const ToastItem: React.FC<{
         type="button"
         data-slot="toast-close"
         onClick={() => onRemove(toast.id)}
-        aria-label="Close notification"
+        aria-label={t("notifications.close")}
       >
         <X aria-hidden={true} />
       </button>

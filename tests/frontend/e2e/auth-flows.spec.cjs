@@ -22,16 +22,14 @@ test.describe("Authentication flows on active surfaces", () => {
 
     const csrfRequests = trackRequests(
       page,
-      (request) =>
-        request.url().includes("/api/v1/csrf-token") && request.method() === "GET",
+      (request) => request.url().includes("/api/v1/csrf-token") && request.method() === "GET",
     );
     const loginMutation = observeMutation(page, "POST", "/api/v1/auth/login");
 
     const [loginResponse] = await Promise.all([
       page.waitForResponse(
         (response) =>
-          response.url().includes("/api/v1/auth/login") &&
-          response.request().method() === "POST",
+          response.url().includes("/api/v1/auth/login") && response.request().method() === "POST",
       ),
       page.getByRole("button", { name: /sign in/i }).click(),
     ]);
@@ -47,9 +45,9 @@ test.describe("Authentication flows on active surfaces", () => {
     await page.waitForURL((url) => url.pathname === "/");
     await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
 
-    const meResponse = await page.context().request.get(
-      `${new URL(page.url()).origin}/api/v1/users/me`,
-    );
+    const meResponse = await page
+      .context()
+      .request.get(`${new URL(page.url()).origin}/api/v1/users/me`);
     expect(meResponse.status()).toBe(200);
   });
 
@@ -64,8 +62,7 @@ test.describe("Authentication flows on active surfaces", () => {
     const [loginResponse] = await Promise.all([
       page.waitForResponse(
         (response) =>
-          response.url().includes("/api/v1/auth/login") &&
-          response.request().method() === "POST",
+          response.url().includes("/api/v1/auth/login") && response.request().method() === "POST",
       ),
       page.getByRole("button", { name: /sign in/i }).click(),
     ]);
@@ -84,7 +81,10 @@ test.describe("Authentication flows on active surfaces", () => {
     await expect(page.getByText(/locked/i)).toHaveCount(0);
   });
 
-  test("logs out through the real server and invalidates the session", async ({ page, athleteAccount }) => {
+  test("logs out through the real server and invalidates the session", async ({
+    page,
+    athleteAccount,
+  }) => {
     await page.goto("/login");
     await waitForApp(page);
     await emailInput(page).fill(athleteAccount.email);
@@ -94,9 +94,9 @@ test.describe("Authentication flows on active surfaces", () => {
     // Test ownership: #557. The seeded account may already have dismissed its
     // one-time invitation in another real-server journey; assert its persisted
     // state and only dismiss if it is genuinely pending.
-    const statusResponse = await page.context().request.get(
-      `${new URL(page.url()).origin}/api/v1/auth/2fa/status`,
-    );
+    const statusResponse = await page
+      .context()
+      .request.get(`${new URL(page.url()).origin}/api/v1/auth/2fa/status`);
     expect(statusResponse.ok()).toBeTruthy();
     const mfaStatus = await statusResponse.json();
     if (!mfaStatus.enabled && !mfaStatus.invitationDismissed) {
@@ -108,8 +108,7 @@ test.describe("Authentication flows on active surfaces", () => {
     const logoutMutation = observeMutation(page, "POST", "/api/v1/auth/logout");
     const logoutResponsePromise = page.waitForResponse(
       (response) =>
-        response.url().includes("/api/v1/auth/logout") &&
-        response.request().method() === "POST",
+        response.url().includes("/api/v1/auth/logout") && response.request().method() === "POST",
     );
 
     await page.getByRole("button", { name: /sign out|navigation\.signOut/i }).click();
@@ -120,17 +119,19 @@ test.describe("Authentication flows on active surfaces", () => {
     logoutMutation.stop();
     await expect(page).toHaveURL(/\/login$/);
 
-    const meResponse = await page.context().request.get(
-      `${new URL(page.url()).origin}/api/v1/users/me`,
-    );
+    const meResponse = await page
+      .context()
+      .request.get(`${new URL(page.url()).origin}/api/v1/users/me`);
     expect(meResponse.status()).toBe(401);
   });
-  test("renders legal publications from real backend without application labels", async ({ page }) => {
+  test("renders legal publications from real backend without application labels", async ({
+    page,
+  }) => {
     await page.goto("/terms");
     await waitForApp(page);
-    const response = await page.context().request.get(
-      `${new URL(page.url()).origin}/api/v1/legal/documents/terms?language=en`,
-    );
+    const response = await page
+      .context()
+      .request.get(`${new URL(page.url()).origin}/api/v1/legal/documents/terms?language=en`);
     expect(response.status()).toBe(200);
     const publication = await response.json();
     expect(publication).toMatchObject({
@@ -143,7 +144,9 @@ test.describe("Authentication flows on active surfaces", () => {
       expect(publication.legacyWithoutSnapshot).toBe(true);
     } else {
       expect(publication.content).toEqual(expect.any(Object));
-      expect(Object.keys(publication.content).some((key) => /^section\\d+$|^intro$/i.test(key))).toBe(true);
+      expect(
+        Object.keys(publication.content).some((key) => /^section\\d+$|^intro$/i.test(key)),
+      ).toBe(true);
     }
     const shell = page.locator('[data-component="legal-document-shell"]');
     await expect(shell).toBeVisible();
@@ -152,7 +155,15 @@ test.describe("Authentication flows on active surfaces", () => {
     await expect(shell.locator(".custom-scrollbar__viewport")).toHaveCSS("overflow-y", "auto");
   });
 
-  test("loads production font families and keeps login chrome vertically ordered", async ({ page }) => {
+  test("loads production font families and keeps login chrome vertically ordered", async ({
+    page,
+  }) => {
+    // #650: the production CSP blocked the font loader's injected <style>, so no
+    // face was registered and document.fonts.status was trivially "loaded".
+    const cspViolations = [];
+    page.on("console", (message) => {
+      if (/Content Security Policy/i.test(message.text())) cspViolations.push(message.text());
+    });
     await page.goto("/login");
     await waitForApp(page);
     const shell = page.locator('[data-component="page-shell"]');
@@ -169,7 +180,12 @@ test.describe("Authentication flows on active surfaces", () => {
           const form = document.querySelector('form input[name="email"]')?.closest("form");
           const names = [];
           for (let node = form; node && names.length < 12; node = node.parentElement) {
-            names.push({ tag: node.tagName, id: node.id, component: node.getAttribute("data-component"), className: typeof node.className === "string" ? node.className : null });
+            names.push({
+              tag: node.tagName,
+              id: node.id,
+              component: node.getAttribute("data-component"),
+              className: typeof node.className === "string" ? node.className : null,
+            });
           }
           return names;
         })(),
@@ -189,7 +205,9 @@ test.describe("Authentication flows on active surfaces", () => {
         middleEnd: main.getBoundingClientRect().bottom,
         bottom: footer.getBoundingClientRect().top,
         font: getComputedStyle(main).fontFamily,
-        token: getComputedStyle(document.documentElement).getPropertyValue("--font-family-body").trim(),
+        token: getComputedStyle(document.documentElement)
+          .getPropertyValue("--font-family-body")
+          .trim(),
         fontStatus: document.fonts.status,
       };
     });
@@ -199,6 +217,24 @@ test.describe("Authentication flows on active surfaces", () => {
     expect(geometry.token).toBeTruthy();
     await page.evaluate(() => document.fonts.ready);
     expect(await page.evaluate(() => document.fonts.status)).toBe("loaded");
+    // Fonts are registered at idle time; the latin Inter subset must actually load.
+    await page.waitForFunction(
+      () => [...document.fonts].some((face) => face.family === "Inter" && face.status === "loaded"),
+      undefined,
+      { timeout: 10_000 },
+    );
+    const interFaces = await page.evaluate(() =>
+      [...document.fonts]
+        .filter((face) => face.family === "Inter")
+        .map((face) => ({ status: face.status, unicodeRange: face.unicodeRange })),
+    );
+    expect(interFaces).toHaveLength(3);
+    // unicode-range: English login loads the latin subset, never the Greek one.
+    const statusFor = (prefix) =>
+      interFaces.find((face) => face.unicodeRange.startsWith(prefix))?.status;
+    expect(statusFor("U+0-FF")).toBe("loaded");
+    expect(statusFor("U+370-377")).not.toBe("loaded");
+    expect(geometry.font).toContain("Inter");
+    expect(cspViolations).toEqual([]);
   });
-
 });

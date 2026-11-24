@@ -6,6 +6,20 @@ import {
   type VibeformConstellationLabels,
 } from "../../../apps/frontend/src/components/domain/VibeformConstellation";
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { label?: string; level?: string }) => {
+      if (key === "vibeBadge.showLevel") {
+        return `${options?.label}. Show level`;
+      }
+      if (key === "vibeBadge.showIcon") {
+        return `${options?.label}: ${options?.level}. Show vibe icon`;
+      }
+      return key;
+    },
+  }),
+}));
+
 const profile: VibeformProfile = {
   preferences: {
     templateCode: "flow",

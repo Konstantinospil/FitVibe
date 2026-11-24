@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from "react";
+import { useTranslation } from "react-i18next";
 import type { VibeformProfile } from "@fitvibe/types";
 import { calculateVibeformParameters } from "../manipulation";
 import { adaptVibeformProfile } from "../normalization-adapter";
@@ -11,9 +12,10 @@ export interface VibeformRendererProps extends HTMLAttributes<HTMLDivElement> {
 
 export function VibeformRenderer({
   profile,
-  accessibleLabel = "Your Vibeform",
+  accessibleLabel,
   ...containerProps
 }: VibeformRendererProps) {
+  const { t } = useTranslation();
   const input = adaptVibeformProfile(profile);
   const parameters = calculateVibeformParameters(input);
   const requestedTemplate = profile.preferences.templateCode as string;
@@ -28,7 +30,7 @@ export function VibeformRenderer({
       <FlowVibeform
         parameters={parameters}
         motionEnabled={profile.preferences.motionEnabled}
-        aria-label={accessibleLabel}
+        aria-label={accessibleLabel ?? t("dashboard.vibeformAccessibleLabel")}
       />
     </div>
   );

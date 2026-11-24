@@ -57,14 +57,21 @@ Every pull request should include:
    pnpm dev
    ```
 2. Apply code changes following the shared TypeScript configuration (`tsconfig.base.json`) and lint rules.
-3. Run local quality gates before submitting:
+3. Stage only the intended files (`git add <paths>`). Husky v9 runs `pnpm exec lint-staged --concurrent false` before committing: staged TS/TSX receives Prettier then ESLint autofix (zero warnings), and staged JS/config/documentation receives Prettier. The hook also runs the existing secret scan, test discovery/ownership and architecture checks. It stops on any failure and never stages untracked files.
+4. For manual verification, run the same staged-file check after staging. For files not staged yet, format explicitly. CI is intentionally **read-only** and does not run autofix:
    ```bash
-   pnpm lint
-   pnpm test
+   pnpm exec lint-staged --concurrent false
+   pnpm exec prettier --write <changed-file.ts>
+   pnpm exec prettier --check <changed-file.ts>
+   pnpm lint:check
+   node tests/qa/assert-test-discovery.cjs
+   pnpm architecture:check
    pnpm typecheck
+   pnpm test
    ```
-4. Format changed files with your editor's Prettier integration or `pnpm lint --fix`.
-5. Update documentation, changelogs, or configuration affected by your change.
+   API/connector edits bypass local Git hooks; run the corresponding checks explicitly before opening a PR. Do not report a check as passing unless it was executed.
+5. For backend changes, follow the [backend engineering skill](../.agents/skills/fitvibe-backend-engineering/SKILL.md), including its GitHub API editing workflow.
+6. Update documentation, changelogs, or configuration affected by your change.
 
 ---
 

@@ -196,3 +196,48 @@ Stage C accepted.
 - [ ] Forward-merge the one `feature`-only commit without losing changes, then verify full required CI on **merged feature**, not only the fix branch.
 
 **Closure verdict:** Engineering CI is green at the above fix-head SHA, but operational acceptance and external security findings remain unresolved. **Keep #557 open and PR #588 unmerged.**
+
+## 2026-11-02 — Released main verification and CD incident
+
+**Release evidence supersedes the older fix-branch-only integration checkpoint above.**
+`feature` was merged into `dev` by PR #589, and `dev` was merged into
+`main` by PR #590 as **v2.2.0**, commit
+[`e450c82`](https://github.com/Konstantinospil/FitVibe/commit/e450c82bf75e0d84d3e1dc9696fd9ca822cc2eb6).
+These branch merges do **not** constitute final operational acceptance.
+
+- [Main CI #41367578706](https://github.com/Konstantinospil/FitVibe/actions/runs/41367578706) **passed**. Includes all four Playwright shards,
+  backend integration, branch coverage, security-scans job, accessibility,
+  architecture and release-governance jobs. VRT remained **advisory**.
+- [Main CodeQL #41367578816](https://github.com/Konstantinospil/FitVibe/actions/runs/41367578816) **passed**.
+- [CD #41369774191](https://github.com/Konstantinospil/FitVibe/actions/runs/41369774191) **failed after applying two database migrations**.
+  The production-safe `005_users` seed rejected absent/short `ADMIN_PASSWORD`
+  before testing whether the fixed bootstrap administrator already existed.
+  Containers were recreated and migrations ran; **successful deployment,
+  database restoration, and application health are not established**.
+  The CD log reports recovery state on the host under
+  `/srv/stacks/fitvibe/deploy-recovery/20261102T005623Z-e450c82bf75e0d84d3e1dc9696fd9ca822cc2eb6`.
+  This path is not a PostgreSQL backup guarantee.
+- [PR #591](https://github.com/Konstantinospil/FitVibe/pull/591) proposes
+  conditional bootstrap: only new administrators require a 16+ character
+  bootstrap secret and hashing; existing accounts are not rehashed, overwritten,
+  or silently attested. Unit tests cover repeat seeding and the fresh-bootstrap
+  rejection. **Do not claim this is deployed or CI-approved until the PR
+  checks pass and it is merged.**
+- Avoid rerunning the failed deployment or downgrading to bcrypt-only code:
+  assess database migration state, secure backup, and compatibility first.
+
+### Remaining owner/environment evidence
+
+Snyk's earlier `error` status and GitGuardian test-fixture findings require
+external dashboard disposition; neither can be dismissed from source context
+alone. The actual PostgreSQL restore/compatible rollback drill, full
+administrator enrollment and recovery walkthrough, live TLS/proxy/cookie/CSRF
+inspection, Prometheus scrape/retention/Alertmanager delivery, service-account
+inventory, lockout threshold **N**, sensitive-action approval, and quarterly
+governance ownership are **still open**.
+
+The historical 2026-10-26 50-clause matrix needs a per-clause reassessment
+against v2.2.0: stale `Gap` labels must not be presented as current findings,
+nor marked `Implemented` without current source and test evidence. Keep
+#557 and DRIFT-093 open until all mandatory and conditionally applicable
+clauses have explicit dispositions.

@@ -43,6 +43,8 @@ describe("ThemeToggle", () => {
     const button = Array.from(buttons).find((btn) => container.contains(btn)) || buttons[0];
     expect(button).toHaveAttribute("aria-label", "Switch to light mode");
     expect(button).toHaveAttribute("title", "Switch to light mode");
+    expect(button).toHaveTextContent(/^$/);
+    expect(button.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
   });
 
   it("should expose the switch-to-dark action when theme is light", () => {
@@ -57,6 +59,8 @@ describe("ThemeToggle", () => {
     const button = Array.from(buttons).find((btn) => container.contains(btn)) || buttons[0];
     expect(button).toHaveAttribute("aria-label", "Switch to dark mode");
     expect(button).toHaveAttribute("title", "Switch to dark mode");
+    expect(button).toHaveTextContent(/^$/);
+    expect(button.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
   });
 
   it("should call toggleTheme when clicked", () => {

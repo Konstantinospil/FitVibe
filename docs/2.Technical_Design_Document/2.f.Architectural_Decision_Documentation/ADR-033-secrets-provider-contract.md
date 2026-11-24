@@ -1,23 +1,23 @@
 # ADR-033: Secrets provider contract
 
-- **Status:** Accepted
+- **Status:** Accepted (amended 2026-11-02)
 - **Date:** 2026-09-26
 - **Issue:** #265
 
 ## Context
 
-FitVibe supports Vault, AWS Secrets Manager, and environment variables. The previous service did not expose one stable application contract: Vault wrapped string writes in an object, AWS stored strings raw but attempted to parse every read as JSON, and the documented environment fallback was not implemented by `getSecret()`.
+FitVibe's active private deployment uses local environment variables and mounted key files. HashiCorp Vault is optional. The previously retained AWS Secrets Manager adapter was not selected by application startup and added an unnecessary startup dependency on a cloud SDK. The cloud adapter and its associated runtime package have been retired.
 
 ## Decision
 
-1. `SecretConfig.provider` selects the authoritative external provider. Enabling multiple clients does not create an implicit Vault-to-AWS failover chain.
-2. Plain string secrets round-trip as the same string through every retained external provider.
-3. Structured secrets are stored as provider-native object data in Vault and JSON text in AWS. An unfielded read returns their JSON representation; a fielded read returns only string-valued fields.
-4. Reads fall back to environment variables only when the authoritative provider is unavailable, missing the requested secret, or cannot supply the requested field.
-5. Known runtime secrets retain their established environment names (`JWT_PRIVATE_KEY`, `JWT_PUBLIC_KEY`, `DATABASE_URL`). Other secrets may use the deterministic `FITVIBE_SECRET_<KEY>[_<FIELD>]` form, with non-alphanumeric characters normalized to underscores.
-6. Writes never fall back to environment variables and never switch providers. Failure to write to the authoritative provider is reported as failure.
-7. Secret values must never be logged.
+1. `SecretConfig.provider` supports `"vault"` and `"env"` only. Unsupported providers are rejected explicitly.
+2. Vault is the only optional external secrets provider. Vault stores structured object values and wraps string writes as `{ value }`; reads return the stored string or structured JSON.
+3. A Vault read can fall back to environment variables if the requested secret or field is missing or Vault is unavailable.
+4. Known runtime secrets use `JWT_PRIVATE_KEY`, `JWT_PUBLIC_KEY`, and `DATABASE_URL`. Generic secrets may use normalized `FITVIBE_SECRET_<KEY>[_<FIELD>]` variables.
+5. Writes must not silently switch providers or write to environment variables. Environment-only mode is read-only. A failed Vault write returns failure.
+6. Secret values must never be logged. Startup must not require a remote secrets service or its SDK when Vault is disabled.
+7. Production JWT signing keys must be persistent: use protected environment configuration or mounted key files. Changing the secrets provider does not replace backup, rotation, or access-control obligations.
 
 ## Consequences
 
-Provider behavior is predictable and can be covered by provider-independent contract tests. Environment fallback remains useful for runtime recovery/configuration without silently copying or mutating secrets. Explicit provider selection prevents an outage or configuration error from reading a different provider unexpectedly.
+The runtime has no AWS cloud service dependency. Local Docker Compose and private deployments operate from environment variables and mounted files, while an explicitly selected Vault deployment can still read and write secrets. Unselected cloud-provider clients cannot break backend startup.

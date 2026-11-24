@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useId, useState, useMemo } from "react";
+import { useUiText } from "../i18n/ui";
 import { useNavigate } from "react-router-dom";
 import { Button, InputControl } from "@fitvibe/ui";
 import { useAuthStore } from "../store/auth.store";
@@ -6,21 +7,25 @@ import { useThemeStore } from "../store/theme.store";
 import { useThemeColors } from "../hooks/useThemeColors";
 import ThemeToggle from "../components/ThemeToggle";
 import { authApi } from "../services/api";
-import logoFull from "../assets/logo_full.png";
-import logoFullDark from "../assets/logo_full_dark.png";
+// The FitVibe mark, the same files the athlete app serves (apps/frontend/public).
+import brandMarkLight from "../assets/fitvibe-mark-light.svg";
+import brandMarkDark from "../assets/fitvibe-mark-dark.svg";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const emailId = useId();
+  const passwordId = useId();
   const navigate = useNavigate();
   const signIn = useAuthStore((state) => state.signIn);
   const theme = useThemeStore((state) => state.theme);
   const colors = useThemeColors();
+  const t = useUiText();
 
   const logo = useMemo<string>(() => {
-    return theme === "dark" ? logoFullDark : logoFull;
+    return theme === "dark" ? brandMarkDark : brandMarkLight;
   }, [theme]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,18 +46,18 @@ const Login: React.FC = () => {
         });
         void navigate("/");
       } else {
-        setError("Access denied. Admin role required.");
+        setError(t("login.accessDenied"));
       }
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: { message?: string } } } };
-      setError(error.response?.data?.error?.message || "Login failed");
+      setError(error.response?.data?.error?.message || t("login.failed"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
+    <main
       style={{
         display: "flex",
         flexDirection: "column",
@@ -76,7 +81,7 @@ const Login: React.FC = () => {
         }}
       >
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-          <img src={logo} alt="FitVibe Logo" style={{ height: "60px" }} loading="eager" />
+          <img src={logo} alt={t("common.logoAlt")} width={96} height={96} loading="eager" />
         </div>
         <h1
           style={{
@@ -86,7 +91,7 @@ const Login: React.FC = () => {
             textAlign: "center",
           }}
         >
-          FitVibe Backoffice
+          {t("login.title")}
         </h1>
         <form
           onSubmit={(e) => {
@@ -94,11 +99,16 @@ const Login: React.FC = () => {
           }}
         >
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
-              Email
+            <label
+              htmlFor={emailId}
+              style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}
+            >
+              {t("login.email")}
             </label>
             <InputControl
+              id={emailId}
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -114,11 +124,16 @@ const Login: React.FC = () => {
             />
           </div>
           <div style={{ marginBottom: "1.5rem" }}>
-            <label style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}>
-              Password
+            <label
+              htmlFor={passwordId}
+              style={{ display: "block", color: colors.text, marginBottom: "0.5rem" }}
+            >
+              {t("login.password")}
             </label>
             <InputControl
+              id={passwordId}
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -135,6 +150,7 @@ const Login: React.FC = () => {
           </div>
           {error && (
             <div
+              role="alert"
               style={{
                 color: colors.error,
                 marginBottom: "1rem",
@@ -151,18 +167,18 @@ const Login: React.FC = () => {
               width: "100%",
               padding: "0.75rem",
               background: loading ? colors.border : colors.accent,
-              color: "var(--color-on-color)",
+              color: "var(--color-primary-on)",
               border: "none",
               borderRadius: "var(--radius-sm)",
               fontSize: "var(--type-body-size)",
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? t("login.loggingIn") : t("login.submit")}
           </Button>
         </form>
       </div>
-    </div>
+    </main>
   );
 };
 

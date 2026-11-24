@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 const AUTH_FLAG_KEY = "fitvibe:auth";
 const AUTH_HINT_INITIALIZED_KEY = "fitvibe:e2e:auth-hint-initialized";
+const CONSENT_STATUS_RECOVERY_WINDOW_MS = 75_000;
 const APPLICATION_BASE_URL =
   process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
@@ -118,8 +119,8 @@ async function retryRateLimitedMutation(operation, label) {
   }
 }
 
-async function getConsentStatusWithRateLimitBackoff(request, url) {
-  const deadline = Date.now() + 75_000;
+async function getConsentStatusWithRateLimitBackoff(request, url, onRateLimited) {
+  const deadline = Date.now() + CONSENT_STATUS_RECOVERY_WINDOW_MS;
   for (;;) {
     const response = await request.get(url);
     if (response.status() !== 429) return response;
@@ -128,6 +129,7 @@ async function getConsentStatusWithRateLimitBackoff(request, url) {
     if (!Number.isFinite(retryAfter) || retryAfter < 0) {
       throw new Error("Consent status was rate-limited without a valid Retry-After");
     }
+    onRateLimited?.();
     const delay = Math.max(1000, Math.ceil(retryAfter * 1000));
     if (Date.now() + delay > deadline) {
       throw new Error("Consent status remained rate-limited beyond the E2E recovery deadline");
@@ -303,6 +305,18 @@ async function assertConsentRequired(page) {
   }
 }
 
+async function getAccountLanguage(page) {
+  const response = await page.context().request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
+  if (!response.ok()) {
+    throw new Error(`Unable to read account language: HTTP ${response.status()}`);
+  }
+  const { language } = await response.json();
+  if (!SUPPORTED_LOCALES.includes(language)) {
+    throw new Error("Account has an unsupported persisted language");
+  }
+  return language;
+}
+
 async function setAccountLanguage(page, locale) {
   const language = normalizeLocale(locale);
   const request = page.context().request;
@@ -454,6 +468,33 @@ const passwordInput = (page) => page.locator("form input[name='password']");
 const confirmPasswordInput = (page) => page.locator("form input[name='confirmPassword']");
 const displayNameInput = (page) => page.locator("form input[name='name']");
 
+// Describes the topmost element at a viewport point without user data:
+// tag, data-component/data-slot, role and class names only.
+async function describeElementAtPoint(page, { x, y }) {
+  return page
+    .evaluate(
+      ({ px, py }) => {
+        const el = document.elementFromPoint(px, py);
+        if (!el) return "none";
+        const parts = [el.tagName.toLowerCase()];
+        for (const attr of ["data-component", "data-slot", "role"]) {
+          const value = el.getAttribute(attr);
+          if (value) parts.push(`[${attr}=${value}]`);
+        }
+        if (typeof el.className === "string" && el.className.trim()) {
+          parts.push(`.${el.className.trim().split(/\s+/).slice(0, 3).join(".")}`);
+        }
+        const owner = el.closest("[data-component], [role=dialog], .cookie-consent-backdrop");
+        if (owner && owner !== el) {
+          parts.push(` in ${owner.tagName.toLowerCase()}${owner.className ? `.${String(owner.className).split(/\s+/)[0]}` : ""}`);
+        }
+        return parts.join("");
+      },
+      { px: x, py: y },
+    )
+    .catch((error) => `unavailable (${error.message})`);
+}
+
 async function acceptRegisterLegal(page) {
   const controls = page.locator("form [data-component='checkbox']");
   const checkboxes = page.getByRole("checkbox");
@@ -469,10 +510,26 @@ async function acceptRegisterLegal(page) {
       );
     }
 
-    await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    const point = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+    // Diagnostic only (#634): record what actually receives the click so an
+    // intermittent failure distinguishes an overlay, a layout shift and a
+    // non-toggling control. The assertion below is unchanged.
+    const hitBefore = await describeElementAtPoint(page, point);
+    await page.mouse.click(point.x, point.y);
     if (!(await checkboxes.nth(index).isChecked())) {
+      const boundsAfter = await visibleBox.boundingBox();
+      const hitAfter = await describeElementAtPoint(page, point);
+      const cookieOverlayVisible = await page
+        .locator(".cookie-consent-backdrop")
+        .isVisible()
+        .catch(() => "unknown");
+      const round = (box) =>
+        box ? [box.x, box.y, box.width, box.height].map(Math.round).join(",") : "none";
       throw new Error(
-        `Registration legal checkbox ${index + 1} did not toggle through its visible checkbox hit target.`,
+        `Registration legal checkbox ${index + 1} did not toggle through its visible checkbox hit target. ` +
+          `Diagnostics: element at click point before=${hitBefore} after=${hitAfter}; ` +
+          `box before=${round(bounds)} after=${round(boundsAfter)}; ` +
+          `cookie overlay visible=${cookieOverlayVisible}.`,
       );
     }
   }
@@ -480,6 +537,7 @@ async function acceptRegisterLegal(page) {
 
 module.exports = {
   AUTH_FLAG_KEY,
+  CONSENT_STATUS_RECOVERY_WINDOW_MS,
   TEST_USER,
   preparePage,
   ensureEssentialCookieConsent,
@@ -498,6 +556,7 @@ module.exports = {
   getCookieConsentDialog,
   localeMessages,
   currentLocale,
+  getAccountLanguage,
   setAccountLanguage,
   assertConsentRequired,
   createFirstLoginAccount,

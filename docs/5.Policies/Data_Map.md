@@ -13,13 +13,13 @@
 | Communications & notifications | `notifications` (planned), email provider logs                                                  | Legitimate interests / consent               | Notifications 90d rolling, provider logs 30d                        |
 | Security & compliance          | `audit_log`, `idempotency_keys`, `user_tombstones`                                              | Legitimate interests / legal obligation      | Audit log 180d, idempotency keys 24h, tombstones until backup purge |
 | Observability                  | Metrics/log pipelines (Prometheus, Loki)                                                        | Legitimate interests                         | Metrics 14d, logs 30d with PII redaction                            |
-| Backups                        | Encrypted snapshots (AWS RDS + S3)                                                              | Legal obligation                             | 14d rolling, purge accelerated for DSR                              |
+| Backups                        | Manual PostgreSQL dumps; encryption and off-host replication not yet verified                                                              | Legal obligation                             | 14d rolling, purge accelerated for DSR                              |
 
 ## Data residency
 
-- Primary region: `eu-central-1` (Frankfurt).
-- Backups replicated to `eu-west-1`.
-- Media assets stored in S3 with regional replication and customer-managed keys.
+- Active deployment is a self-hosted Raspberry Pi in Germany, not a cloud region.
+- The current installation has a manually verified-readable PostgreSQL dump. Automated encryption, off-host replication and a full restore test remain outstanding.
+- Media assets are stored in a persistent Docker volume, with no cloud replication.
 
 ## DSR pipeline
 

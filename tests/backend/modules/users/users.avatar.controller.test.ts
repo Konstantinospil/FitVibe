@@ -185,6 +185,32 @@ describe("Users Avatar Controller", () => {
       );
     });
 
+    it("removes the new file if avatar metadata cannot be saved", async () => {
+      const dbError = new Error("Database unavailable");
+      mockAvatarRepo.saveUserAvatarMetadata.mockRejectedValueOnce(dbError);
+      mockMediaStorage.deleteStorageObject.mockResolvedValue();
+
+      await expect(
+        avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response),
+      ).rejects.toThrow("Database unavailable");
+
+      expect(mockMediaStorage.saveUserAvatarFile).toHaveBeenCalledTimes(1);
+      expect(mockMediaStorage.deleteStorageObject).toHaveBeenCalledWith("storage-key-123");
+      expect(mockAudit.insertAudit).not.toHaveBeenCalledWith(
+        expect.objectContaining({ action: "avatar_upload" }),
+      );
+    });
+
+    it("preserves the original database failure if new-file cleanup also fails", async () => {
+      mockAvatarRepo.saveUserAvatarMetadata.mockRejectedValueOnce(new Error("Database unavailable"));
+      mockMediaStorage.deleteStorageObject.mockRejectedValueOnce(new Error("Disk unavailable"));
+
+      await expect(
+        avatarController.uploadAvatarHandler(mockRequest as Request, mockResponse as Response),
+      ).rejects.toThrow("Database unavailable");
+      expect(mockMediaStorage.deleteStorageObject).toHaveBeenCalledWith("storage-key-123");
+    });
+
     it("should delete previous avatar when replacing", async () => {
       const previousKey = "previous-storage-key";
       mockAvatarRepo.saveUserAvatarMetadata.mockResolvedValue({

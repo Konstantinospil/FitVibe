@@ -26,6 +26,8 @@ import {
 import { assertPasswordPolicy } from "../auth/passwordPolicy.js";
 import { breachedPasswordChecker } from "../auth/breached-password.service.js";
 import { HttpError } from "../../utils/http.js";
+import { ADMIN_CREATABLE_ROLES } from "./users.types.js";
+import { assertAdminTargetManageable } from "../admin/admin-user-guard.js";
 import { insertAudit } from "../common/audit.util.js";
 import { primaryEmail, toUserDetail, toUserSafe } from "./users.mapping.js";
 import { ensureUsernameAvailable, ensureUsernameFormat } from "./users.username.js";
@@ -91,6 +93,13 @@ export async function createUser(
   }
   if (!roleCode) {
     throw new HttpError(422, "USER_ROLE_INVALID", "USER_ROLE_INVALID");
+  }
+  if (!ADMIN_CREATABLE_ROLES.some((allowedRole) => allowedRole === roleCode)) {
+    throw new HttpError(
+      403,
+      "USER_ROLE_FORBIDDEN",
+      "Privileged or unknown roles cannot be assigned through user creation",
+    );
   }
   if (!INITIAL_ALLOWED_STATUSES.includes(initialStatus)) {
     throw new HttpError(400, "USER_STATUS_INVALID", "Invalid initial status");
@@ -213,10 +222,23 @@ export async function changeStatus(
   actorUserId: string | null,
   userId: string,
   nextStatus: UserStatus,
+  options: { selfDeletion?: boolean } = {},
 ): Promise<UserDetail> {
   const user = await findUserById(userId);
   if (!user) {
     throw new HttpError(404, "USER_NOT_FOUND", "USER_NOT_FOUND");
+  }
+  if (options.selfDeletion && actorUserId === userId && nextStatus === "pending_deletion") {
+    // The password-verified deletion flow may target the caller, but not an admin.
+    if (user.role_code === "admin" || user.role_code === "superadmin") {
+      throw new HttpError(
+        403,
+        "CANNOT_MODIFY_ADMIN",
+        "Cannot modify another administrator account",
+      );
+    }
+  } else {
+    assertAdminTargetManageable(actorUserId, userId, user.role_code);
   }
   if (user.status === nextStatus) {
     const full = await fetchUserWithContacts(userId);
@@ -270,7 +292,7 @@ export async function requestAccountDeletion(
   }
 
   if (user.status !== "pending_deletion") {
-    await changeStatus(userId, userId, "pending_deletion");
+    await changeStatus(userId, userId, "pending_deletion", { selfDeletion: true });
     await insertAudit({
       actorUserId: userId,
       entityType: "users",

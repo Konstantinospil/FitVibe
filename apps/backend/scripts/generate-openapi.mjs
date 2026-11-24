@@ -636,7 +636,8 @@ const schemas = {
       displayName: { type: "string", minLength: 1, maxLength: 120 },
       email: { type: "string", format: "email", maxLength: 254 },
       password: { type: "string", minLength: 12, maxLength: 128 },
-      role: { type: "string", minLength: 1, maxLength: 50 },
+      // Keep in sync with users.types.ts ADMIN_CREATABLE_ROLES; OpenAPI contract tests enforce this.
+      role: { type: "string", enum: ["athlete", "coach", "support"] },
       locale: { type: "string", maxLength: 10 },
       preferredLang: { type: "string", enum: ["en", "de", "fr", "es", "el"] },
       status: { type: "string", enum: ["pending_verification", "active", "suspended"] },

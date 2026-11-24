@@ -22,7 +22,7 @@ export const Modal: React.FC<ModalProps> = ({
   description,
   children,
   footer,
-  closeLabel = "Close",
+  closeLabel,
   onClose,
   closeOnBackdrop = true,
   width = "md",
@@ -91,7 +91,7 @@ export const Modal: React.FC<ModalProps> = ({
           {onClose ? (
             <IconButton
               icon={<X aria-hidden="true" />}
-              label={closeLabel}
+              label={closeLabel ?? t("common.close")}
               size="md"
               onClick={onClose}
             />

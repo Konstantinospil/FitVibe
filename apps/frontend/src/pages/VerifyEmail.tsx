@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
 import { Button, InputControl } from "@fitvibe/ui";
@@ -11,7 +11,12 @@ const VerifyEmail: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<"verifying" | "success" | "error" | "expired">("verifying");
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  // Translation key, resolved at render time so the verification effect does not
+  // depend on `t` (which changes whenever i18n string bundles are added).
+  const [errorMessageKey, setErrorMessageKey] = useState<string>("");
+  // The verification token is single-use: never send the same token twice, even
+  // if the effect re-runs (re-render, StrictMode, router updates).
+  const verifiedTokenRef = useRef<string | null>(null);
   const [resendEmail, setResendEmail] = useState<string>("");
   const [resendError, setResendError] = useState<string>("");
   const [isResending, setIsResending] = useState<boolean>(false);
@@ -24,9 +29,13 @@ const VerifyEmail: React.FC = () => {
 
     if (!token) {
       setStatus("error");
-      setErrorMessage(t("verifyEmail.noToken"));
+      setErrorMessageKey("verifyEmail.noToken");
       return;
     }
+    if (verifiedTokenRef.current === token) {
+      return;
+    }
+    verifiedTokenRef.current = token;
 
     const verifyEmail = async () => {
       try {
@@ -47,22 +56,20 @@ const VerifyEmail: React.FC = () => {
           // Check for 410 Gone (expired token)
           if (statusCode === 410 || errorCode === "AUTH_TOKEN_EXPIRED") {
             setStatus("expired");
-            setErrorMessage(
-              axiosError.response?.data?.error?.message || t("errors.AUTH_TOKEN_EXPIRED"),
-            );
+            setErrorMessageKey("errors.AUTH_TOKEN_EXPIRED");
           } else {
             setStatus("error");
-            setErrorMessage(axiosError.response?.data?.error?.message || "Verification failed");
+            setErrorMessageKey("verifyEmail.descFailed");
           }
         } else {
           setStatus("error");
-          setErrorMessage("Verification failed");
+          setErrorMessageKey("verifyEmail.descFailed");
         }
       }
     };
 
     void verifyEmail();
-  }, [searchParams, navigate, t]);
+  }, [searchParams, navigate]);
 
   return (
     <PageIntro
@@ -83,7 +90,7 @@ const VerifyEmail: React.FC = () => {
             ? t("verifyEmail.descSuccess")
             : status === "expired"
               ? t("verifyEmail.descExpired")
-              : errorMessage || t("verifyEmail.descFailed")
+              : t(errorMessageKey || "verifyEmail.descFailed")
       }
     >
       {status === "verifying" && (
@@ -187,12 +194,11 @@ const VerifyEmail: React.FC = () => {
                         resetCountdown(retryAfterValue);
                       }
 
+                      const translatedError = errorCode ? t(`errors.${errorCode}`) : "";
                       const errorMsg =
-                        (errorCode
-                          ? t(`errors.${errorCode}`) ||
-                            axiosError.response?.data?.error?.message ||
-                            t("verifyEmail.resendError")
-                          : t("verifyEmail.resendError")) ?? "";
+                        translatedError && translatedError !== `errors.${errorCode}`
+                          ? translatedError
+                          : t("verifyEmail.resendError");
                       setResendError(errorMsg);
                     } else {
                       setResendError(t("verifyEmail.resendError"));

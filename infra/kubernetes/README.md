@@ -171,7 +171,7 @@ The `postgres-deployment.yaml` is suitable for:
 - Staging/testing
 - Local Kubernetes clusters
 
-**Note**: Data persistence uses PersistentVolumes. Ensure your cluster has a storage class configured.
+**Note**: Data persistence uses PersistentVolumes. Ensure your cluster has a verified encrypted StorageClass suited to the real cluster. An obsolete AWS EBS StorageClass placeholder was removed.
 
 ## Monitoring and Observability
 

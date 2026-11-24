@@ -12,7 +12,9 @@
     "calendar": "Calendario",
     "library": "Biblioteca",
     "dashboard": "Panel",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "main": "Navegación principal",
+    "mainNavigation": "Navegación principal"
   },
   "language": {
     "label": "Idioma",
@@ -24,7 +26,8 @@
     "select": "Seleccionar un idioma"
   },
   "brand": {
-    "logoAlt": "FitVibe"
+    "logoAlt": "FitVibe",
+    "slogan": "El equilibrio no es un estado"
   },
   "status": {
     "checking": "Verificando servidor…",
@@ -134,7 +137,8 @@
     "impressumAriaLabel": "Ver Aviso Legal",
     "contactAriaLabel": "Contáctanos",
     "expand": "Expandir pie de página",
-    "collapse": "Contraer pie de página"
+    "collapse": "Contraer pie de página",
+    "socialMediaLabel": "Redes sociales"
   },
   "terms": {
     "eyebrow": "Legal",
@@ -261,9 +265,17 @@
     "EMAIL_SERVICE_UNAVAILABLE": "Servicio de correo electrónico no disponible"
   },
   "passwordStrength": {
-    "advisory": {"PASSWORD_BREACHED":"Esta contraseña aparece en una filtración conocida. Recomendamos encarecidamente cambiarla. La operación se ha completado.","BREACH_CHECK_UNAVAILABLE":"No se pudo verificar si la contraseña aparece en filtraciones. La operación se ha completado. Recomendamos utilizar una contraseña única."},
+    "advisory": {
+      "PASSWORD_BREACHED": "Esta contraseña aparece en una filtración conocida. Recomendamos encarecidamente cambiarla. La operación se ha completado.",
+      "BREACH_CHECK_UNAVAILABLE": "No se pudo verificar si la contraseña aparece en filtraciones. La operación se ha completado. Recomendamos utilizar una contraseña única."
+    },
     "meterLabel": "Estimación de seguridad de la contraseña",
-    "levels": {"veryWeak":"Muy débil","weak":"Débil","fair":"Aceptable","strong":"Fuerte"},
+    "levels": {
+      "veryWeak": "Muy débil",
+      "weak": "Débil",
+      "fair": "Aceptable",
+      "strong": "Fuerte"
+    },
     "serverChecks": "La aprobación definitiva requiere controles de seguridad en el servidor.",
     "tooShort": "Utiliza al menos {{minimum}} caracteres.",
     "minimumMet": "Se cumple la longitud mínima. Considera una frase única más larga.",
@@ -314,7 +326,18 @@
     "fitnessTestTitle": "Prueba de condición física",
     "fitnessTestDescription": "El método de puntuación de la prueba aún no está definido. La investigación correspondiente se mantiene separada del panel.",
     "fitnessTestAction": "Información de la prueba",
-    "fitnessTestPending": "La definición de los valores de referencia está pendiente en el tema de investigación específico."
+    "fitnessTestPending": "La definición de los valores de referencia está pendiente en el tema de investigación específico.",
+    "metrics": {
+      "streak": "Racha de entrenamiento",
+      "sessionsCompleted": "Sesiones completadas",
+      "totalVolume": "Volumen total",
+      "days_one": "{{count}} día",
+      "days_other": "{{count}} días",
+      "trend": "{{change}} respecto al período anterior",
+      "trendVolume": "{{change}} kg respecto al período anterior",
+      "unknown": "Desconocido",
+      "week": "Semana {{number}}"
+    }
   },
   "progress": {
     "eyebrow": "Tendencias e insights",
@@ -701,6 +724,8 @@
       "disabled": "desactivada",
       "enable": "Activar 2FA",
       "enableError": "No se pudo activar 2FA. Inténtalo de nuevo.",
+      "restartSetupNotice": "No se completó una configuración anterior de 2FA. Introduce tu contraseña para reiniciar la configuración.",
+      "restartSetup": "Reiniciar configuración de 2FA",
       "scanQr": "Escanea este código QR con tu app autenticadora (Google Authenticator, Authy, etc.):",
       "qrLoading": "Cargando código QR...",
       "qrAlt": "Código QR de 2FA",
@@ -1201,5 +1226,50 @@
     "notNow": "Ahora no",
     "dismissError": "No se pudo guardar tu elección. Inténtalo de nuevo.",
     "requiredAdmin": "La autenticación de dos factores es obligatoria para las cuentas de administrador. Completa la configuración para continuar."
+  },
+  "legalDocument": {
+    "effectiveDate": "Fecha de entrada en vigor:",
+    "version": "Versión:"
+  },
+  "notifications": {
+    "region": "Notificaciones",
+    "close": "Cerrar notificación",
+    "dismiss": "Cerrar notificación"
+  },
+  "theme": {
+    "toLight": "Cambiar al modo claro",
+    "toDark": "Cambiar al modo oscuro"
+  },
+  "vibeformAccessibility": {
+    "yourVibeform": "Tu Vibeform"
+  },
+  "vibeBadge": {
+    "level": "nivel",
+    "showIcon": "{label}: {level}. Mostrar icono Vibe",
+    "showLevel": "{label}. Mostrar nivel"
+  },
+  "seo": {
+    "title": "FitVibe – Planifica, registra y comparte tus entrenamientos",
+    "description": "Planifica, registra y comparte tus sesiones de entrenamiento. Sigue tu progreso en seis áreas: fuerza, agilidad, resistencia, explosividad, inteligencia y regeneración."
+  },
+  "dashboardAnalytics": {
+    "streak": "Racha de entrenamiento",
+    "sessions": "Sesiones completadas",
+    "volume": "Volumen total",
+    "days": "{{count}} días",
+    "trend": "{{change}} frente al período anterior",
+    "volumeTrend": "{{change}} miles de kg frente al período anterior",
+    "volumeValue": "{{value}} miles de kg",
+    "zeroVolume": "0 kg",
+    "unknown": "Desconocido",
+    "week": "Semana {{number}}"
+  },
+  "themeToggle": {
+    "switchToLight": "Cambiar al modo claro",
+    "switchToDark": "Cambiar al modo oscuro"
+  },
+  "vibeformConstellation": {
+    "accessibleLabel": "Panel Vibeform",
+    "athleteLabel": "Vibeform del deportista"
   }
 }

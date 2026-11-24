@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ensureLegalTranslationsLoaded } from "../i18n/config";
 import { getPublishedLegalDocument, type PublishedLegalDocumentContent } from "../services/api";
 import LegalDocumentShell from "./LegalDocumentShell";
+import { takePrefetchedLegalDocument } from "../utils/authenticatedPrefetch";
 
 type LegalDocumentType = "terms" | "privacy" | "cookie";
 
@@ -214,7 +215,9 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
       setLoading(true);
       setLoadFailed(false);
       try {
-        const current = await getPublishedLegalDocument(documentType, language);
+        const current = await takePrefetchedLegalDocument(documentType, language, () =>
+          getPublishedLegalDocument(documentType, language),
+        );
         if (cancelled) {
           return;
         }
@@ -259,7 +262,7 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
   if (loading) {
     return (
       <LegalDocumentShell title={title}>
-        <p role="status">{t("common.loading", { defaultValue: "Loading..." })}</p>
+        <p role="status">{t("common.loading")}</p>
       </LegalDocumentShell>
     );
   }
@@ -267,7 +270,7 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
   if (loadFailed || !content) {
     return (
       <LegalDocumentShell title={title}>
-        <p role="alert">{t("common.error", { defaultValue: "Document unavailable." })}</p>
+        <p role="alert">{t("common.error")}</p>
       </LegalDocumentShell>
     );
   }

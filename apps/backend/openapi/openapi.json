@@ -1374,8 +1374,11 @@
           },
           "role": {
             "type": "string",
-            "minLength": 1,
-            "maxLength": 50
+            "enum": [
+              "athlete",
+              "coach",
+              "support"
+            ]
           },
           "locale": {
             "type": "string",

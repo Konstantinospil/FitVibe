@@ -1,5 +1,7 @@
 # Database Encryption Setup Guide
 
+**Current deployment notice (2026-11-02):** The cloud-provider and AWS EBS examples below are historical design references, not installed infrastructure. The `infra/kubernetes/storage-class-encrypted.yaml` placeholder was removed. FitVibe currently uses local PostgreSQL in Docker Compose; encryption at rest depends on the Raspberry Pi host and disk configuration and must be verified separately. Do not interpret the examples below as evidence that volume encryption is enabled.
+
 This guide explains how to configure database encryption (in transit and at rest) for FitVibe.
 
 ## Overview

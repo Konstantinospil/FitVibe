@@ -48,7 +48,7 @@ The system shall provide comprehensive logging:
 - **Prometheus Metrics**: Metrics exposed in Prometheus format
 - **HTTP Metrics**: Request duration, status codes, throughput
 - **Database Metrics**: Query duration, connection pool usage
-- **Frontend Metrics**: LCP, FID, CLS (Core Web Vitals)
+- **Frontend Metrics**: LCP, INP, CLS (Core Web Vitals)
 - **Business Metrics**: User registrations, session completions, points awarded
 - **Metric Cardinality**: Bounded cardinality to prevent explosion
 

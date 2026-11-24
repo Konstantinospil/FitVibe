@@ -1,22 +1,25 @@
 import React, { useMemo } from "react";
+import { useUiText } from "../i18n/ui";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { useThemeStore } from "../store/theme.store";
 import ThemeToggle from "./ThemeToggle";
 import { authApi } from "../services/api";
-import logoFull from "../assets/logo_full.png";
-import logoFullDark from "../assets/logo_full_dark.png";
+// The FitVibe mark, the same files the athlete app serves (apps/frontend/public).
+import brandMarkLight from "../assets/fitvibe-mark-light.svg";
+import brandMarkDark from "../assets/fitvibe-mark-dark.svg";
 import AdminDashboardV2 from "../pages/AdminDashboard_v2";
 import AdminStatusHeader from "./AdminStatusHeader";
 
 const Layout: React.FC = () => {
+  const t = useUiText();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
   const theme = useThemeStore((state) => state.theme);
 
   const logo = useMemo(() => {
-    return theme === "dark" ? logoFullDark : logoFull;
+    return theme === "dark" ? brandMarkDark : brandMarkLight;
   }, [theme]);
 
   const handleLogout = async () => {
@@ -33,7 +36,13 @@ const Layout: React.FC = () => {
     <div className="backoffice-shell">
       <aside className="backoffice-sidebar">
         <div className="backoffice-brand">
-          <img src={logo} alt="FitVibe Logo" className="backoffice-brand__logo" />
+          <img
+            src={logo}
+            alt={t("common.logoAlt")}
+            className="backoffice-brand__logo"
+            width={32}
+            height={32}
+          />
         </div>
 
         <div className="backoffice-navigation">
@@ -42,7 +51,7 @@ const Layout: React.FC = () => {
 
         <div className="backoffice-account">
           <div className="backoffice-account__identity">
-            Logged in as: {user?.displayName || user?.username}
+            {t("common.loggedInAs")} {user?.displayName || user?.username}
           </div>
           <ThemeToggle />
           <button
@@ -50,7 +59,7 @@ const Layout: React.FC = () => {
             className="backoffice-account__logout"
             type="button"
           >
-            Logout
+            {t("common.logout")}
           </button>
         </div>
       </aside>

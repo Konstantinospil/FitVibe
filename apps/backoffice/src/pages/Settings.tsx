@@ -1,16 +1,14 @@
 import React, { useMemo, useState } from "react";
+import { useUiText } from "../i18n/ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { InputControl } from "@fitvibe/ui";
 import {
   actionMappingsApi,
-  disableClamav,
   disableMaintenanceMode,
-  disableReadOnlyMode,
-  enableClamav,
   enableMaintenanceMode,
-  enableReadOnlyMode,
   getOpsStatus,
   getSystemConfig,
+  superadminApi,
   type ActionUiMapping,
 } from "../services/api";
 import { useAuthStore } from "../store/auth.store";
@@ -19,7 +17,11 @@ import { Button } from "../components/ui/Button";
 
 const SettingsPage: React.FC = () => {
   const colors = useThemeColors();
+  const t = useUiText();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isSuperadmin = useAuthStore((state) => state.user?.role === "superadmin");
+  const [maintenanceReason, setMaintenanceReason] = useState("");
+  const [sudoPassword, setSudoPassword] = useState("");
   const [search, setSearch] = useState("");
   const [editingAction, setEditingAction] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -54,38 +56,32 @@ const SettingsPage: React.FC = () => {
     },
   });
 
-  const readOnlyMutation = useMutation({
-    mutationFn: async (nextEnabled: boolean) =>
-      nextEnabled
-        ? enableReadOnlyMode({ reason: "Activated from backoffice" })
-        : disableReadOnlyMode({ notes: "Deactivated from backoffice" }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["system-config"] });
-      void queryClient.invalidateQueries({ queryKey: ["admin-ops-status"] });
-    },
-  });
-
+  // Maintenance is the governed control behind read-only mode (issue 305): superadmin only,
+  // behind a fresh password re-authentication (sudo). There is no separate read-only switch.
   const maintenanceMutation = useMutation({
-    mutationFn: async (nextEnabled: boolean) =>
-      nextEnabled
-        ? enableMaintenanceMode({ message: "FitVibe is currently down for maintenance." })
-        : disableMaintenanceMode(),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["system-config"] });
+    mutationFn: async (nextEnabled: boolean) => {
+      await superadminApi.sudo(sudoPassword);
+      return nextEnabled
+        ? enableMaintenanceMode(maintenanceReason.trim())
+        : disableMaintenanceMode();
     },
-  });
-
-  const clamavMutation = useMutation({
-    mutationFn: async (nextEnabled: boolean) => (nextEnabled ? enableClamav() : disableClamav()),
     onSuccess: () => {
+      setSudoPassword("");
+      setMaintenanceReason("");
+      void queryClient.invalidateQueries({ queryKey: ["system-config"] });
       void queryClient.invalidateQueries({ queryKey: ["admin-ops-status"] });
     },
+    onSettled: () => setSudoPassword(""),
   });
 
   const isReadOnly = systemConfig?.readOnlyMode ?? false;
   const isMaintenance = systemConfig?.maintenanceMode ?? false;
   const clamavEnabled = opsStatus?.backend.clamavEnabled ?? false;
   const clamavHealth = opsStatus?.backend.clamavOk ?? false;
+  const canSubmitMaintenance =
+    !!sudoPassword &&
+    (isMaintenance || !!maintenanceReason.trim()) &&
+    !maintenanceMutation.isPending;
 
   const filteredMappings = useMemo(() => {
     const mappings = data?.mappings ?? [];
@@ -127,7 +123,7 @@ const SettingsPage: React.FC = () => {
           fontSize: "var(--type-page-title-size)",
         }}
       >
-        Settings
+        {t("settings.title")}
       </h1>
 
       <div style={{ marginBottom: "2rem" }}>
@@ -138,7 +134,7 @@ const SettingsPage: React.FC = () => {
             fontSize: "var(--type-section-title-size)",
           }}
         >
-          System Controls
+          {t("settings.systemControls")}
         </h2>
         <div
           style={{
@@ -161,21 +157,21 @@ const SettingsPage: React.FC = () => {
           >
             <div>
               <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>
-                Read-only mode
+                {t("settings.readOnly")}
               </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
-                Status: {isSystemConfigLoading ? "Loading..." : isReadOnly ? "Enabled" : "Disabled"}
+                {t("settings.status", {
+                  value: isSystemConfigLoading
+                    ? t("common.loading")
+                    : isReadOnly
+                      ? t("settings.enabled")
+                      : t("settings.disabled"),
+                })}
               </div>
             </div>
-            <Button
-              variant={isReadOnly ? "danger" : "primary"}
-              size="sm"
-              isLoading={readOnlyMutation.isPending}
-              disabled={isSystemConfigLoading || readOnlyMutation.isPending}
-              onClick={() => readOnlyMutation.mutate(!isReadOnly)}
-            >
-              {isReadOnly ? "Disable Read-only" : "Enable Read-only"}
-            </Button>
+            <div style={{ color: colors.textSecondary, maxWidth: "28rem" }}>
+              {t("settings.readOnlyHint")}
+            </div>
           </div>
 
           <div
@@ -189,22 +185,68 @@ const SettingsPage: React.FC = () => {
           >
             <div>
               <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>
-                Maintenance mode
+                {t("settings.maintenance")}
               </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
-                Status:{" "}
-                {isSystemConfigLoading ? "Loading..." : isMaintenance ? "Enabled" : "Disabled"}
+                {t("settings.status", {
+                  value: isSystemConfigLoading
+                    ? t("common.loading")
+                    : isMaintenance
+                      ? t("settings.enabled")
+                      : t("settings.disabled"),
+                })}
               </div>
             </div>
-            <Button
-              variant={isMaintenance ? "danger" : "primary"}
-              size="sm"
-              isLoading={maintenanceMutation.isPending}
-              disabled={isSystemConfigLoading || maintenanceMutation.isPending}
-              onClick={() => maintenanceMutation.mutate(!isMaintenance)}
-            >
-              {isMaintenance ? "Disable Maintenance" : "Enable Maintenance"}
-            </Button>
+            {isSuperadmin ? (
+              <form
+                style={{ display: "grid", gap: "0.5rem", minWidth: "16rem" }}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (canSubmitMaintenance) {
+                    maintenanceMutation.mutate(!isMaintenance);
+                  }
+                }}
+              >
+                {!isMaintenance ? (
+                  <InputControl
+                    type="text"
+                    aria-label={t("settings.maintenanceReason")}
+                    placeholder={t("settings.maintenanceReason")}
+                    value={maintenanceReason}
+                    onChange={(e) => setMaintenanceReason(e.target.value)}
+                    maxLength={500}
+                  />
+                ) : null}
+                <InputControl
+                  type="password"
+                  aria-label={t("privileges.sudoPassword")}
+                  placeholder={t("privileges.sudoPassword")}
+                  autoComplete="current-password"
+                  value={sudoPassword}
+                  onChange={(e) => setSudoPassword(e.target.value)}
+                />
+                <Button
+                  type="submit"
+                  variant={isMaintenance ? "danger" : "primary"}
+                  size="sm"
+                  isLoading={maintenanceMutation.isPending}
+                  disabled={isSystemConfigLoading || !canSubmitMaintenance}
+                >
+                  {isMaintenance
+                    ? t("settings.disableMaintenance")
+                    : t("settings.enableMaintenance")}
+                </Button>
+                {maintenanceMutation.isError ? (
+                  <div role="alert" style={{ color: colors.error }}>
+                    {t("settings.maintenanceFailed")}
+                  </div>
+                ) : null}
+              </form>
+            ) : (
+              <div style={{ color: colors.textSecondary, maxWidth: "28rem" }}>
+                {t("settings.maintenanceSuperadminOnly")}
+              </div>
+            )}
           </div>
 
           <div
@@ -218,26 +260,23 @@ const SettingsPage: React.FC = () => {
           >
             <div>
               <div style={{ color: colors.text, fontWeight: "var(--font-weight-semibold)" }}>
-                ClamAV scanning
+                {t("settings.clamav")}
               </div>
               <div style={{ color: colors.textSecondary, marginTop: "0.25rem" }}>
-                Status:{" "}
-                {isOpsStatusLoading
-                  ? "Loading..."
-                  : clamavEnabled
-                    ? `Enabled (${clamavHealth ? "OK" : "Down"})`
-                    : "Disabled"}
+                {t("settings.status", {
+                  value: isOpsStatusLoading
+                    ? t("common.loading")
+                    : clamavEnabled
+                      ? t("settings.enabledHealth", {
+                          health: clamavHealth ? t("settings.ok") : t("settings.down"),
+                        })
+                      : t("settings.disabled"),
+                })}
               </div>
             </div>
-            <Button
-              variant={clamavEnabled ? "danger" : "primary"}
-              size="sm"
-              isLoading={clamavMutation.isPending}
-              disabled={isOpsStatusLoading || clamavMutation.isPending}
-              onClick={() => clamavMutation.mutate(!clamavEnabled)}
-            >
-              {clamavEnabled ? "Disable ClamAV" : "Enable ClamAV"}
-            </Button>
+            <div style={{ color: colors.textSecondary, maxWidth: "28rem" }}>
+              {t("settings.clamavHint")}
+            </div>
           </div>
         </div>
       </div>
@@ -250,11 +289,11 @@ const SettingsPage: React.FC = () => {
             fontSize: "var(--type-section-title-size)",
           }}
         >
-          Action Labels
+          {t("settings.actionLabels")}
         </h2>
         <InputControl
           type="text"
-          placeholder="Search actions..."
+          placeholder={t("settings.searchActions")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
@@ -270,14 +309,14 @@ const SettingsPage: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div style={{ color: colors.text }}>Loading...</div>
+        <div style={{ color: colors.text }}>{t("common.loading")}</div>
       ) : error ? (
         <div style={{ color: colors.error, padding: "2rem" }}>
-          Error loading action mappings: {error instanceof Error ? error.message : String(error)}
+          {t("settings.mappingLoadError")} {error instanceof Error ? error.message : String(error)}
         </div>
       ) : filteredMappings.length === 0 ? (
         <div style={{ color: colors.text, textAlign: "center", padding: "2rem" }}>
-          No action mappings found
+          {t("settings.noMappings")}
         </div>
       ) : (
         <div
@@ -299,7 +338,7 @@ const SettingsPage: React.FC = () => {
                     borderBottom: `1px solid ${colors.border}`,
                   }}
                 >
-                  Action
+                  {t("settings.action")}
                 </th>
                 <th
                   style={{
@@ -309,7 +348,7 @@ const SettingsPage: React.FC = () => {
                     borderBottom: `1px solid ${colors.border}`,
                   }}
                 >
-                  UI Name
+                  {t("settings.uiName")}
                 </th>
               </tr>
             </thead>
@@ -347,7 +386,7 @@ const SettingsPage: React.FC = () => {
                               cursor: "pointer",
                             }}
                           >
-                            Save
+                            {t("settings.save")}
                           </Button>
                           <Button
                             onClick={handleCancel}
@@ -360,7 +399,7 @@ const SettingsPage: React.FC = () => {
                               cursor: "pointer",
                             }}
                           >
-                            Cancel
+                            {t("common.cancel")}
                           </Button>
                         </div>
                       ) : (
@@ -379,7 +418,7 @@ const SettingsPage: React.FC = () => {
                               cursor: "pointer",
                             }}
                           >
-                            Edit
+                            {t("settings.edit")}
                           </Button>
                         </div>
                       )}

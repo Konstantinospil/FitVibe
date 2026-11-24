@@ -1,35 +1,83 @@
 @import "../../../../packages/ui/src/typography.css";
 
-/* Inter Variable Font - supports weights 100-900 */
-/* Using font-display: optional to improve LCP - if font isn't ready quickly, use fallback permanently */
+/*
+ * Web fonts: woff2 weight-axis subsets, the same files the athlete app uses.
+ * unicode-range means the browser downloads a subset only when the page has text in
+ * it, so an English page fetches Inter latin (~48 KB) and, for headings, Roboto Flex
+ * latin (~34 KB). The previous full variable TTFs (~3.4 MB) made Lighthouse's
+ * simulated LCP 7-15 s even though font-display: optional never blocked paint.
+ */
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
   font-display: optional;
-  src: url("../../../frontend/public/fonts/Inter/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-
-/* Inter Variable Font Italic - supports weights 100-900 */
-/* Lazy load italic variant - only load when needed */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: optional;
+  src: url("@fontsource-variable/inter/files/inter-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: optional;
+  src: url("@fontsource-variable/inter/files/inter-greek-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
 @font-face {
   font-family: "Inter";
   font-style: italic;
   font-weight: 100 900;
   font-display: optional;
-  src: url("../../../frontend/public/fonts/Inter/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-italic.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-
-/* Roboto Flex Variable Font - supports weights 100-900, variable width and optical size */
-/* Lazy load heading font - only used for h1-h6 elements */
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: optional;
+  src: url("@fontsource-variable/inter/files/inter-latin-ext-wght-italic.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: optional;
+  src: url("@fontsource-variable/inter/files/inter-greek-wght-italic.woff2") format("woff2-variations");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
 @font-face {
   font-family: "Roboto Flex";
   font-style: normal;
-  font-weight: 100 900;
-  font-stretch: 75% 100%;
+  font-weight: 100 1000;
   font-display: optional;
-  src: url("../../../frontend/public/fonts/Roboto_Flex/RobotoFlex-VariableFont_GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght.ttf")
-    format("truetype");
+  src: url("@fontsource-variable/roboto-flex/files/roboto-flex-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Roboto Flex";
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: optional;
+  src: url("@fontsource-variable/roboto-flex/files/roboto-flex-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Roboto Flex";
+  font-style: normal;
+  font-weight: 100 1000;
+  font-display: optional;
+  src: url("@fontsource-variable/roboto-flex/files/roboto-flex-greek-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
 }
 
 :root {
@@ -1554,13 +1602,11 @@ body {
   min-height: 2.75rem;
 }
 
+/* The FitVibe mark at the athlete header size (--brand-mark-sm there). */
 .backoffice-brand__logo {
   display: block;
-  width: min(100%, 10rem);
-  height: auto;
-  max-height: 2.5rem;
-  object-fit: contain;
-  object-position: left center;
+  width: 2rem;
+  height: 2rem;
 }
 
 .backoffice-navigation {
@@ -1654,10 +1700,6 @@ body {
 
   .backoffice-brand {
     min-height: auto;
-  }
-
-  .backoffice-brand__logo {
-    width: min(8rem, 42vw);
   }
 
   .backoffice-navigation {

@@ -11,18 +11,10 @@ import { ErrorBoundary } from "../components/ErrorBoundary.js";
 import PublicRoutes from "./PublicRoutes.js";
 import CookieConsent from "../components/CookieConsent";
 import { FirstLoginTwoFactorPrompt } from "../components/FirstLoginTwoFactorPrompt";
-const ProtectedRoutes = lazy(() => import("./ProtectedRoutes.js"));
-
-const loadingFallback = (
-  <div
-    className="flex h-screen w-full items-center justify-center text-primary-500"
-    data-ssr-loading-fallback="true"
-    role="status"
-    aria-live="polite"
-  >
-    Loading...
-  </div>
-);
+import { LoadingFallback } from "../components/LoadingFallback";
+import { loadProtectedRoutes } from "./protectedPageLoaders.js";
+// Shares the in-flight chunk request started by bootstrap.ts (issue 634).
+const ProtectedRoutes = lazy(loadProtectedRoutes);
 
 type AuthHook = () => { isAuthenticated: boolean };
 
@@ -82,7 +74,7 @@ export const Router: React.FC<RouterProps> = ({
   const routerContent = (
     <ErrorBoundary>
       <AuthContext.AuthProvider>
-        <Suspense fallback={loadingFallback}>
+        <Suspense fallback={<LoadingFallback />}>
           <RouterContent queryClient={queryClient} dehydratedState={dehydratedState} />
         </Suspense>
         <OnboardingOverlays />

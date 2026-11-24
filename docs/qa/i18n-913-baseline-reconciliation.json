@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "auditWorkflowRun": 41594129548,
+    "artifact": "ui-literal-audit-41594129548/ui-literals.json",
+    "scope": "original 913 UI and review findings in report order",
+    "originalFindingIdsSha256": "2f9a0a9c651ff18b0ba05de487e72c935ebbb78336174ae09763245138629521"
+  },
+  "comparedTo": {
+    "auditWorkflowRun": 41711310263,
+    "artifact": "ui-literal-audit-41711310263/ui-literals.json"
+  },
+  "codes": {
+    "R": "original occurrence absent by stable ID (translated, relocated, or source edited; not necessarily a verified fix)",
+    "T": "original occurrence now classified technical (potential false positive resolved)",
+    "U": "still classified UI/review or needs review; does not imply a confirmed bug"
+  },
+  "counts": {
+    "R": 195,
+    "T": 262,
+    "U": 456
+  },
+  "dispositionByOriginalFindingIndexRLE": "U33 R2 T6 R31 U2 T6 R1 T5 R10 U5 R6 U1 R10 U1 R1 U1 R1 U1 R1 U1 R14 U5 T5 U1 R3 T1 R1 T1 R16 U32 R1 U2 R1 U2 R1 U2 R1 U2 R1 U2 R1 T1 R3 T2 U3 T2 U1 T10 U3 T3 R1 U3 T2 U2 T12 U5 T2 U1 T1 U6 T3 U1 T7 R2 U1 T1 U9 T1 U1 T1 U1 T1 R2 T5 U7 R2 U1 T5 U11 T1 U1 T1 U1 T1 U1 T1 U1 T52 U19 T1 R2 T2 U4 T2 U3 T2 U1 R2 T3 U21 T2 U6 R2 T4 U12 R2 U13 R35 U19 T3 U1 R1 U4 T1 R1 U1 T15 U7 T3 U7 T6 U2 T1 U1 T5 U2 T3 U7 T2 U2 T2 U4 T1 U3 R5 T4 U4 T4 U1 T2 U1 T2 U2 T3 U13 T1 U5 T4 R7 T2 R6 U5 R1 U1 R1 T38 U8 R2 U1 R3 U4 R1 U3 T2 R1 T1 R1 U7 R8 U1 R1 T1 U65 T1 U43",
+  "comment": "Mechanical reconciliation, not a claim of 913 completed human reviews. Retain unresolved records pending inspection and regression validation."
+}

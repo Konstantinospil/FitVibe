@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "baseline": {
+    "runId": 41533808821,
+    "report": "ui-literals.json",
+    "findingIndices": "1001 through 1500 inclusive",
+    "idsJoinedByNewlinesSha256": "2d80a617d17784090b469bb6388041805bdfc2d59a5334989f393c6dd096d942"
+  },
+  "codes": {
+    "T": "technical literal correctly classified",
+    "F": "false positive: technical literal originally flagged for review",
+    "L": "confirmed user-facing text including two administrative audit reasons"
+  },
+  "statusRunLengths": "T3 L1 T3 L1 T3 L1 T3 L1 T3 L1 T3 L1 T16 L1 T5 L1 T1 L1 T11 L1 T6 L1 T7 L2 T7 L1 T9 L2 T5 L1 T18 L1 T9 L1 T6 L1 T6 L1 T6 L1 T2 L1 T1 L1 T4 L1 T15 L1 T15 L2 T18 L2 T7 L2 T6 L1 T9 L1 T5 L1 T6 L1 T6 L1 T6 L1 T7 L3 T1 F2 L2 T1 L3 T2 L4 T6 L3 T3 F1 L12 T5 L1 T1 L1 T12 L2 T2 L1 T4 L1 T3 L1 T11 L1 T1 L4 T3 L2 T6 L1 T1 L4 T3 L2 T6 L1 T1 L6 T3 L2 T3 L1 T1 L1 T5 L1 T1 L1 T2 L1 T9 L1 T3 L1 T16 L1 T5 L1 T7 L1 T11 F2 T1 F6 T8",
+  "counts": {
+    "T": 384,
+    "F": 11,
+    "L": 105
+  },
+  "localizedIds": "NAHi9dZPE7CqJCA6RwdYLLvLRdvR1GszvQxDQlfbcMMoaNFf0QUfbv8vWCYyIxsuZPCK4fQ4yD1k9NLx6jzmt+uiz7ZM3c/UH6AhhkYGMZCeYura+pvJCXEKtctLW6NMPbDQH+o6KIhqD/pbEP48A/1qF5HvDzN7dfIVH6EhZ8YQxB2mh81UXAee58hUdjtq/CrKTHvBXns0wXvSF2Hh/FHGcv27smU5gFDQnEGNu7aTbzYAzWHI0bm6zbAgoFgaYfdzgYgXAiYNE0/XqRQ/7olWMpiUVWxvapRL1X8YEmyyovaovyzSoQigUMvY/jXWb4Rk4hHzSw69YYQI2NNU7kL89bRlBnv6VO12eZojSokDwqI++VJj4f807SVuHsKTW71DEV4a6i3O1RuGNBr3gqcKdQq6c/psnE4BJ2ZJ79conydyln8j5gdocLlH84u9qT8pa1rhTfIkhHTOUppNURfYXm6p/EZDYUACSDw0+FuSKuqfezLS8BTGVniLijxx4m6X+jOafqTrQJ7la3hnKWNuL0WtIVvjt/CoUg1/t6EfJSzHH8o0eiLaKpeXyz/MQGXeGj30tDkT4jWdtmzUgbSUtUj/hWATKNYMdPnRmDMwd2kpUqMclzy5LAcltzjNtbYddaEadBre4M0C7RUZnQWpJITpLDq2W7RUkNgmBO7c9fBv1UOX9HW/tWebmjqQbbjYT2E7K8wjj4iS3dKJ99pHJhPxsiCCgXp7XLUI6bWyhYQdXGbAsCKAHNtmIeSMVh/de4hLLubtlNQ8pZnjY2T5/oB/4H06h0xfqBl9RAchSttxneYhXrsGgMiOu6VFIuh3qUBfxCeiXL+W1Pzsi5OwKjNZOUvWzZpLlj/E9zo09hiTcZLg2+3pE1bz8/Yo27zOaq8c1nsRfLBTqeV6qjRv9bVc+Q8Yl/jMMYsvZ+YtBCjkm0MuEBLdkA1Kg1hXQGriqMzBChHpXNmfuKd0rJEsatG3A/uFldG8WvXFE7xKArIiRfpFTsSQgzi1/IJ7mD+8aUS9KR4sdlkd8tF4iNErRpBenu9Lj5m4oPychO9q0CR/zycA/TvtmITNPe/WR/C6Jw31pYfz/xiUmkyIjTxnbYjGr2pB",
+  "falsePositiveIds": "X7hzbCgSe1bJNey1MIm3yc3LoRCpGaNeoAF0YPjJDf1atnzuokqpHiLxjcFWEuGEZ+eYNnWJqGPHiYfL3TXKt+t9OF5L/z5BPaIiesYwn9dGeuiZgKaKrg=="
+}

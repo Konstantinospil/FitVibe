@@ -7,6 +7,8 @@ const {
   createFirstLoginAccount,
   ensureSeededOnboardingComplete,
   ensureEssentialCookieConsent,
+  getConsentStatusWithRateLimitBackoff,
+  CONSENT_STATUS_RECOVERY_WINDOW_MS,
 } = require("./server-helpers.cjs");
 
 const test = base.extend({
@@ -31,6 +33,27 @@ const test = base.extend({
   }, { scope: "worker" }],
   page: async ({ page }, use, testInfo) => {
     const diagnostics = watchBrowser(page);
+    // Keep the real backend policy active. Forward the browser's consent-status
+    // request through the existing Retry-After-aware E2E helper instead of
+    // returning synthetic consent or ignoring unexpected HTTP errors.
+    let extendedForRateLimit = false;
+    await page.route("**/api/v1/consent/cookie-status", async (route) => {
+      if (route.request().method() !== "GET") {
+        await route.continue();
+        return;
+      }
+      const response = await getConsentStatusWithRateLimitBackoff(
+        page.context().request,
+        route.request().url(),
+        () => {
+          if (!extendedForRateLimit) {
+            testInfo.setTimeout(testInfo.timeout + CONSENT_STATUS_RECOVERY_WINDOW_MS);
+            extendedForRateLimit = true;
+          }
+        },
+      );
+      await route.fulfill({ response });
+    });
     try {
       await use(page);
     } finally {

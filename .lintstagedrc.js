@@ -1,3 +1,6 @@
+// ESLint's repository configuration owns TS/TSX formatting via the Prettier rule.
+// JavaScript and documentation files are formatted with Prettier directly;
+// ESLint explicitly ignores JS/CJS/MJS in eslint.config.js.
 function chunk(items, size) {
   const groups = [];
   for (let i = 0; i < items.length; i += size) {
@@ -6,31 +9,27 @@ function chunk(items, size) {
   return groups;
 }
 
+function quote(value) {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function commands(filenames, tools, size, eligible = () => true) {
+  const filtered = filenames.filter(
+    (file) => !/(?:^|[\\/])(?:dist|node_modules)[\\/]/.test(file) && eligible(file),
+  );
+  return chunk(filtered, size).flatMap((files) =>
+    tools.map((tool) => `${tool} ${files.map(quote).join(" ")}`),
+  );
+}
+
 export default {
-  "*.{ts,tsx,js,jsx,cjs,mjs}": (filenames) => {
-    // Filter out dist files and node_modules
-    const filtered = filenames.filter(
-      (f) =>
-        !f.includes("/dist/") &&
-        !f.includes("\\dist\\") &&
-        !f.includes("node_modules") &&
-        !f.endsWith(".cjs") &&
-        !f.endsWith(".mjs"),
-    );
-    if (filtered.length === 0) return [];
-    return chunk(filtered, 30).flatMap((group) => {
-      const quoted = group.map((f) => `"${f}"`).join(" ");
-      return [`eslint --fix --no-warn-ignored ${quoted}`, `prettier --write ${quoted}`];
-    });
-  },
-  "*.{json,md,yml,yaml}": (filenames) => {
-    const filtered = filenames.filter(
-      (f) => !f.endsWith("pnpm-lock.yaml") && !f.endsWith("package-lock.json"),
-    );
-    if (filtered.length === 0) return [];
-    return chunk(filtered, 40).map((group) => {
-      const quoted = group.map((f) => `"${f}"`).join(" ");
-      return `prettier --write ${quoted}`;
-    });
-  },
+  "*.{ts,tsx}": (files) => commands(files, ["prettier --write", "eslint --fix --max-warnings=0"], 30),
+  "*.{js,jsx,cjs,mjs}": (files) => commands(files, ["prettier --write"], 30),
+  "*.{json,md,yml,yaml}": (files) =>
+    commands(
+      files,
+      ["prettier --write"],
+      40,
+      (file) => !/(?:^|[\\/])(?:pnpm-lock\.yaml|package-lock\.json)$/.test(file),
+    ),
 };

@@ -10,6 +10,7 @@ vi.mock("react-i18next", () => ({
       const translations: Record<string, string> = {
         "footer.brand": "FitVibe",
         "footer.navigationLabel": "Footer navigation",
+        "footer.socialMediaLabel": "Social media",
         "footer.contact": "Contact",
         "footer.terms": "Terms and Conditions",
         "footer.privacy": "Privacy Policy",

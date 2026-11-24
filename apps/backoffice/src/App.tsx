@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from "./pages/Login";
+import { useBackofficeLocale, useUiText } from "./i18n/ui";
 import TranslationsPage from "./pages/Translations";
 import LegalPublicationsPage from "./pages/LegalPublications";
 import MessagesPage from "./pages/Messages";
@@ -30,6 +31,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isInitializing: bool
 }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
+  const t = useUiText();
 
   // Show loading state while initializing to prevent premature redirects
   if (isInitializing) {
@@ -42,7 +44,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isInitializing: bool
           minHeight: "100vh",
         }}
       >
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }
@@ -59,9 +61,14 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; isInitializing: bool
 };
 
 const App: React.FC = () => {
+  const locale = useBackofficeLocale();
   const signIn = useAuthStore((state) => state.signIn);
   const theme = useThemeStore((state) => state.theme);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+  }, [locale]);
 
   // Apply theme on mount
   useEffect(() => {
@@ -74,20 +81,14 @@ const App: React.FC = () => {
 
     const restoreSession = async () => {
       try {
-        // Pre-fetch CSRF token first (with timeout)
-        try {
-          await Promise.race([
-            apiClient.get("/api/v1/csrf-token"),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 5000)),
-          ]);
-        } catch (error) {
-          // Ignore CSRF token errors - not critical for initial load
+        // Warm up the CSRF token alongside the session check, not before it:
+        // the session check is a GET, which never needs the token (mutations
+        // fetch their own), and waiting for it put a whole round trip in front
+        // of the first admin paint.
+        void apiClient.get("/api/v1/csrf-token").catch((error: unknown) => {
+          // Not critical for the initial load.
           console.warn("Failed to fetch CSRF token, continuing:", error);
-        }
-
-        if (cancelled) {
-          return;
-        }
+        });
 
         // Check if there's a valid session by calling /api/v1/users/me
         try {
@@ -132,13 +133,14 @@ const App: React.FC = () => {
     };
   }, [signIn]);
 
-  const colors =
-    theme === "light"
-      ? { bg: "var(--color-on-color)", text: "var(--color-text-primary)" }
-      : { bg: "var(--color-text-primary)", text: "var(--color-on-color)" };
-
   return (
-    <div style={{ minHeight: "100vh", background: colors.bg, color: colors.text }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--color-bg)",
+        color: "var(--color-text-primary)",
+      }}
+    >
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <Routes>

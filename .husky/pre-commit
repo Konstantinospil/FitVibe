@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+set -eu
 
-# Run lint-staged (formats and lints staged files)
-pnpm lint-staged --concurrent 1
+# lint-staged changes only the staged files, and stops on unfixable lint errors.
+pnpm exec lint-staged --concurrent false
 
-# Run secret scan on staged files
-echo "🔍 Scanning for secrets..."
+# Preserve existing security and repository-wide invariant gates locally.
 node tests/security/secret-scan.cjs
-
+node tests/qa/assert-test-discovery.cjs
+pnpm architecture:check

@@ -194,15 +194,15 @@ describe("TwoFactorManagement", () => {
     vi.mocked(api.restart2FASetup).mockResolvedValueOnce(setupResponse);
     render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
     fireEvent.click(screen.getByRole("button", { name: "settings.security.enable" }));
-    const restart = await screen.findByRole("button", { name: "Restart 2FA setup" });
+    const restart = await screen.findByRole("button", { name: "settings.security.restartSetup" });
     expect(restart).toBeDisabled();
     expect(api.restart2FASetup).not.toHaveBeenCalled();
-    fireEvent.change(screen.getByLabelText("settings.security.disablePasswordLabel"), {
+    fireEvent.change(screen.getByLabelText("auth.login.passwordLabel"), {
       target: { value: "correct-password" },
     });
     fireEvent.click(restart);
     await waitFor(() =>
-      expect(api.restart2FASetup).toHaveBeenCalledWith({ password: "correct-password", code: "" }),
+      expect(api.restart2FASetup).toHaveBeenCalledWith({ password: "correct-password" }),
     );
     expect(await screen.findByAltText("settings.security.qrAlt")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("correct-password")).not.toBeInTheDocument();
@@ -217,10 +217,10 @@ describe("TwoFactorManagement", () => {
     vi.mocked(api.restart2FASetup).mockRejectedValueOnce(new Error("Unauthorized"));
     render(<TwoFactorManagement enabled={false} onStatusChanged={onStatusChanged} />);
     fireEvent.click(screen.getByRole("button", { name: "settings.security.enable" }));
-    fireEvent.change(await screen.findByLabelText("settings.security.disablePasswordLabel"), {
+    fireEvent.change(await screen.findByLabelText("auth.login.passwordLabel"), {
       target: { value: "wrong-password" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Restart 2FA setup" }));
+    fireEvent.click(screen.getByRole("button", { name: "settings.security.restartSetup" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("settings.security.enableError");
     expect(screen.queryByAltText("settings.security.qrAlt")).not.toBeInTheDocument();
     expect(onStatusChanged).not.toHaveBeenCalled();

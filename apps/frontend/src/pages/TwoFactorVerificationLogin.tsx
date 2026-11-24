@@ -44,9 +44,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
     setError(null);
 
     if (!pendingSessionId) {
-      setError(
-        t("auth.twoFactor.invalidSession") || "Invalid session. Please try logging in again.",
-      );
+      setError(t("auth.twoFactor.invalidSession"));
       setIsSubmitting(false);
       setTimeout(() => void navigate("/login", { replace: true }), 2000);
       return;
@@ -86,15 +84,15 @@ const TwoFactorVerificationLogin: React.FC = () => {
         }
 
         if (errorCode === "AUTH_INVALID_2FA_CODE") {
-          setError(t("auth.twoFactor.invalidCode") || "Invalid 2FA code. Please try again.");
+          setError(t("auth.twoFactor.invalidCode"));
         } else if (errorCode === "AUTH_2FA_SESSION_EXPIRED") {
-          setError(t("auth.twoFactor.sessionExpired") || "Session expired. Please log in again.");
+          setError(t("auth.twoFactor.sessionExpired"));
           setTimeout(() => void navigate("/login", { replace: true }), 2000);
         } else {
-          setError(t("auth.twoFactor.error") || "Verification failed. Please try again.");
+          setError(t("auth.twoFactor.error"));
         }
       } else {
-        setError(t("auth.twoFactor.error") || "Verification failed. Please try again.");
+        setError(t("auth.twoFactor.error"));
       }
     } finally {
       setIsSubmitting(false);
@@ -116,13 +114,7 @@ const TwoFactorVerificationLogin: React.FC = () => {
   };
 
   return (
-    <AuthPageLayout
-      title={t("auth.twoFactor.title") || "Enter Your Code"}
-      description={
-        t("auth.twoFactor.description") ||
-        "Enter the 6-digit code from your authenticator app or use a backup code."
-      }
-    >
+    <AuthPageLayout title={t("auth.twoFactor.title")} description={t("auth.twoFactor.description")}>
       <FormStack
         ref={formRef}
         onSubmit={(e) => {
@@ -132,16 +124,13 @@ const TwoFactorVerificationLogin: React.FC = () => {
         <FormFeedback tone="info">
           <span data-component="security-notice-content">
             <Shield aria-hidden="true" />
-            <span>
-              {t("auth.twoFactor.securityNotice") ||
-                "This extra step ensures it's really you signing in"}
-            </span>
+            <span>{t("auth.twoFactor.securityNotice")}</span>
           </span>
         </FormFeedback>
 
         <CodeField
-          label={t("auth.twoFactor.codeLabel") || "Authentication Code"}
-          helperText={t("auth.twoFactor.codeHint") || "6-digit code or backup code"}
+          label={t("auth.twoFactor.codeLabel")}
+          helperText={t("auth.twoFactor.codeHint")}
           error={error ?? undefined}
           name="code"
           inputMode="text"
@@ -160,13 +149,11 @@ const TwoFactorVerificationLogin: React.FC = () => {
           isLoading={isSubmitting}
           disabled={isSubmitting || !isValidCode}
         >
-          {isSubmitting
-            ? t("auth.twoFactor.verifying") || "Verifying..."
-            : t("auth.twoFactor.verify") || "Verify and Continue"}
+          {isSubmitting ? t("auth.twoFactor.verifying") : t("auth.twoFactor.verify")}
         </Button>
 
         <TextLink as="button" type="button" onClick={handleBackToLogin}>
-          {t("auth.twoFactor.backToLogin") || "Back to login"}
+          {t("auth.twoFactor.backToLogin")}
         </TextLink>
       </FormStack>
     </AuthPageLayout>

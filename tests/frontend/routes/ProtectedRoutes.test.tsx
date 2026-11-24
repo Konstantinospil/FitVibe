@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter, Outlet } from "react-router-dom";
 import ProtectedRoutes from "../../../apps/frontend/src/routes/ProtectedRoutes";
@@ -8,6 +8,13 @@ import {
   DEHYDRATED_STATE_ELEMENT_ID,
   serializeDehydratedState,
 } from "../../../apps/frontend/src/ssr/dehydratedState";
+
+const suspenseExperiment = vi.hoisted(() => ({
+  guardMounts: vi.fn(),
+  guardUnmounts: vi.fn(),
+  suspendHome: false,
+  homePromise: Promise.resolve(),
+}));
 
 vi.mock("../../../apps/frontend/src/contexts/AuthContext");
 vi.mock("../../../apps/frontend/src/i18n/config", () => ({
@@ -20,8 +27,19 @@ vi.mock("../../../apps/frontend/src/services/api", () => ({
   getUserPreferences: vi.fn().mockResolvedValue({ language: "de", measurementSystem: "metric" }),
 }));
 
+const fontLoaderMock = vi.hoisted(() => ({
+  loadPublicFonts: vi.fn(),
+  loadAppFonts: vi.fn(),
+}));
+vi.mock("../../../apps/frontend/src/utils/fontLoader", () => fontLoaderMock);
 vi.mock("../../../apps/frontend/src/components/ProtectedRoute", () => ({
-  default: () => <Outlet />,
+  default: () => {
+    React.useEffect(() => {
+      suspenseExperiment.guardMounts();
+      return () => suspenseExperiment.guardUnmounts();
+    }, []);
+    return <Outlet />;
+  },
 }));
 
 vi.mock("../../../apps/frontend/src/layouts/MainLayout", () => ({
@@ -33,7 +51,12 @@ vi.mock("../../../apps/frontend/src/layouts/MainLayout", () => ({
 }));
 
 vi.mock("../../../apps/frontend/src/pages/Home", () => ({
-  default: () => <div>Home Page</div>,
+  default: () => {
+    if (suspenseExperiment.suspendHome) {
+      throw suspenseExperiment.homePromise;
+    }
+    return <div>Home Page</div>;
+  },
 }));
 
 vi.mock("../../../apps/frontend/src/pages/Calendar", () => ({
@@ -51,7 +74,6 @@ vi.mock("../../../apps/frontend/src/pages/Dashboard", () => ({
 vi.mock("../../../apps/frontend/src/pages/Settings", () => ({
   default: () => <div>Settings Page</div>,
 }));
-
 
 vi.mock("../../../apps/frontend/src/pages/AppSurfacePlaceholder", () => ({
   default: ({ title }: { title: string }) => <div>{title} Page</div>,
@@ -72,6 +94,8 @@ vi.mock("../../../apps/frontend/src/pages/TermsReacceptance", () => ({
 describe("ProtectedRoutes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    suspenseExperiment.suspendHome = false;
+    suspenseExperiment.homePromise = Promise.resolve();
     vi.mocked(useAuth).mockReturnValue({
       user: { id: "user-1", username: "test", email: "test@example.com" },
       isLoading: false,
@@ -90,6 +114,59 @@ describe("ProtectedRoutes", () => {
   it("renders without crashing", () => {
     renderRoute("/");
     expect(document.body).toBeInTheDocument();
+  });
+
+  it("does not remount the authorization guard when a nested page suspends", async () => {
+    // Negative control for #634: with one shared outer Suspense boundary,
+    // the guard is discarded when a nested page first suspends.
+    let releaseHome!: () => void;
+    suspenseExperiment.homePromise = new Promise<void>((resolve) => {
+      releaseHome = resolve;
+    });
+    suspenseExperiment.suspendHome = true;
+
+    renderRoute("/");
+    await waitFor(() => {
+      expect(suspenseExperiment.guardMounts).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
+    expect(suspenseExperiment.guardUnmounts).not.toHaveBeenCalled();
+    // The pending page shows a content-area fallback inside the layout rather
+    // than replacing the layout (and guard) with a full-screen fallback.
+    expect(screen.getByTestId("main-layout")).toContainElement(screen.getByRole("status"));
+
+    await act(async () => {
+      suspenseExperiment.suspendHome = false;
+      releaseHome();
+    });
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+    expect(suspenseExperiment.guardMounts).toHaveBeenCalledTimes(1);
+    expect(suspenseExperiment.guardUnmounts).not.toHaveBeenCalled();
+  });
+
+  it("registers web fonts only after the protected content has rendered", async () => {
+    const { ensurePrivateTranslationsLoaded } =
+      await import("../../../apps/frontend/src/i18n/config");
+    let finishTranslations!: () => void;
+    vi.mocked(ensurePrivateTranslationsLoaded).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishTranslations = resolve;
+      }),
+    );
+
+    renderRoute("/");
+    // Downloads that start before that paint sit on the LCP critical path.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fontLoaderMock.loadPublicFonts).not.toHaveBeenCalled();
+    expect(fontLoaderMock.loadAppFonts).not.toHaveBeenCalled();
+
+    await act(async () => {
+      finishTranslations();
+    });
+    await waitFor(() => {
+      expect(fontLoaderMock.loadPublicFonts).toHaveBeenCalledTimes(1);
+      expect(fontLoaderMock.loadAppFonts).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("loads private translations on mount", async () => {
@@ -122,6 +199,50 @@ describe("ProtectedRoutes", () => {
       expect(loadLanguageTranslations).toHaveBeenCalledWith("el");
       expect(i18n.changeLanguage).toHaveBeenCalledWith("el");
     });
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+  });
+
+  it("starts preferences retrieval without waiting for private translation loading", async () => {
+    const { ensurePrivateTranslationsLoaded } =
+      await import("../../../apps/frontend/src/i18n/config");
+    const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
+
+    let resolveTranslations!: () => void;
+    vi.mocked(ensurePrivateTranslationsLoaded).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveTranslations = resolve;
+      }),
+    );
+
+    renderRoute("/");
+    // Regression: the previous sequential awaits blocked this request entirely.
+    expect(getUserPreferences).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
+
+    resolveTranslations();
+    expect(await screen.findByText("Home Page")).toBeInTheDocument();
+  });
+
+  it("waits for private translations even when preferences fail early", async () => {
+    const { ensurePrivateTranslationsLoaded } =
+      await import("../../../apps/frontend/src/i18n/config");
+    const { getUserPreferences } = await import("../../../apps/frontend/src/services/api");
+
+    let resolveTranslations!: () => void;
+    vi.mocked(ensurePrivateTranslationsLoaded).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveTranslations = resolve;
+      }),
+    );
+    vi.mocked(getUserPreferences).mockRejectedValueOnce(new Error("Unavailable"));
+
+    renderRoute("/");
+    await waitFor(() => {
+      expect(getUserPreferences).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByText("Home Page")).not.toBeInTheDocument();
+
+    resolveTranslations();
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
   });
 

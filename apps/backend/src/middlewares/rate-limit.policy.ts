@@ -11,12 +11,16 @@ export interface RateLimitPolicy {
 }
 
 const ROUTE_RATE_LIMIT_POLICIES = {
+  admin_ops_status: { points: 60, duration: 60 },
   admin_reports_list: { points: 60, duration: 60 },
   admin_reports_moderate: { points: 30, duration: 60 },
   admin_users_action: { points: 30, duration: 60 },
   admin_users_activate: { points: 30, duration: 60 },
   admin_users_ban: { points: 30, duration: 60 },
   admin_users_delete: { points: 30, duration: 60 },
+  admin_users_email: { points: 30, duration: 60 },
+  admin_users_moderate_profile: { points: 30, duration: 60 },
+  admin_users_role: { points: 30, duration: 60 },
   admin_users_search: { points: 60, duration: 60 },
   admin_users_suspend: { points: 30, duration: 60 },
   auth_2fa_login: { points: 10, duration: 60 },

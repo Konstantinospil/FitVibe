@@ -1,0 +1,531 @@
+#!/usr/bin/env node
+"use strict";
+// Authenticated Lighthouse audits run inside the already-provisioned real E2E
+// stack. They do not start, mock or reset the backend or its database.
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const net = require("node:net");
+const { spawn } = require("node:child_process");
+const { chromium } = require("@playwright/test");
+const { athleteRoutes, auditUrl } = require("./lighthouse-routes.cjs");
+const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
+const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs");
+const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
+const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
+const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
+const {
+  observeNavigation,
+  collectNavigationDiagnostics,
+} = require("./lighthouse-observe-navigation.cjs");
+const { runChromeCriticalPathDiagnostics } = require("./chrome-critical-path.cjs");
+const { shouldRetryConsentRateLimit } = require("./lighthouse-consent-recovery.cjs");
+const { shouldRetryTraceFailure, traceFailureCode } = require("./lighthouse-trace-recovery.cjs");
+const {
+  createFirstLoginAccount,
+  ensureSeededOnboardingComplete,
+  ensureEssentialCookieConsent,
+  getConsentStatusWithRateLimitBackoff,
+  waitForApp,
+  AUTH_FLAG_KEY,
+} = require("../frontend/e2e/server-helpers.cjs");
+
+const origin = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4180";
+const auditDir = path.resolve(__dirname, "lhci-output/authenticated");
+const config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "lighthouserc.ci.json"), "utf8"));
+const runCount = config.ci.collect.numberOfRuns;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const MAX_CONSENT_RATE_LIMIT_RETRIES = 1;
+
+function findAvailablePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      server.close(() => resolve(address.port));
+    });
+  });
+}
+
+async function connectDebugger(port, chrome) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (chrome.exitCode !== null) throw new Error("Chrome exited before its debugger was ready");
+    try {
+      const response = await fetch("http://127.0.0.1:" + port + "/json/version");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.webSocketDebuggerUrl) return data.webSocketDebuggerUrl;
+      }
+    } catch {
+      // Chrome is not listening yet.
+    }
+    await delay(500);
+  }
+  throw new Error("Chrome CDP endpoint did not become ready");
+}
+
+function installSessionBootstrap(browserEndpoint) {
+  // Lighthouse creates a new tab for a navigation audit. FitVibe legitimately
+  // requires both its HttpOnly login cookie AND a tab-scoped sessionStorage
+  // hint. Setting the hint on the Playwright setup tab would not transfer.
+  // Pause each newly created target before navigation, install the hint, then
+  // resume it. No fake API response, token or server-side authorization bypass.
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(browserEndpoint);
+    const pending = new Map();
+    const errors = [];
+    let sequence = 0;
+    let closed = false;
+
+    const send = (method, params = {}, sessionId) =>
+      new Promise((ok, fail) => {
+        const id = ++sequence;
+        pending.set(id, { ok, fail });
+        socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
+      });
+
+    socket.addEventListener("error", () => {
+      if (!closed) errors.push("Chrome CDP socket failed");
+    });
+    socket.addEventListener("close", () => {
+      closed = true;
+      for (const entry of pending.values()) entry.fail(new Error("CDP socket closed"));
+      pending.clear();
+    });
+    socket.addEventListener("message", async (event) => {
+      const message = JSON.parse(event.data.toString());
+      if (message.id && pending.has(message.id)) {
+        const entry = pending.get(message.id);
+        pending.delete(message.id);
+        if (message.error) entry.fail(new Error(message.error.message));
+        else entry.ok(message.result);
+        return;
+      }
+      if (message.method !== "Target.attachedToTarget") return;
+      const { sessionId, targetInfo } = message.params;
+      try {
+        if (targetInfo.type === "page") {
+          await send("Page.enable", {}, sessionId);
+          await send(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {
+              source: `try {\n  if (location.origin === ${JSON.stringify(origin)}) {\n    sessionStorage.setItem(${JSON.stringify(AUTH_FLAG_KEY)}, "1");\n  }\n} catch { /* Storage is unavailable in some internal frames. */ }`,
+            },
+            sessionId,
+          );
+        }
+      } catch (error) {
+        errors.push("Target bootstrap failed: " + error.message);
+      } finally {
+        try {
+          await send("Runtime.runIfWaitingForDebugger", {}, sessionId);
+        } catch (error) {
+          errors.push("Unable to resume browser target: " + error.message);
+        }
+      }
+    });
+    socket.addEventListener("open", async () => {
+      try {
+        await send("Target.setAutoAttach", {
+          autoAttach: true,
+          waitForDebuggerOnStart: true,
+          flatten: true,
+        });
+        resolve({
+          assertHealthy: () => {
+            if (errors.length) throw new Error(errors.join("\n"));
+          },
+          close: () => {
+            closed = true;
+            socket.close();
+          },
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+async function prepareAthlete(browser) {
+  const context = browser.contexts()[0];
+  if (!context) throw new Error("Browser does not expose the default session context");
+  const page = await context.newPage();
+  try {
+    const athlete = await createFirstLoginAccount(page, {
+      testId: "lighthouse-authenticated-pages",
+      retry: 0,
+      repeatEachIndex: 0,
+    });
+    await ensureSeededOnboardingComplete(page);
+    await ensureEssentialCookieConsent(page);
+    const me = await context.request.get(origin + "/api/v1/users/me");
+    if (!me.ok() || (await me.json()).primaryEmail !== athlete.email) {
+      throw new Error("Lighthouse athlete's server-side session was not verified");
+    }
+
+    await page.addInitScript((key) => sessionStorage.setItem(key, "1"), AUTH_FLAG_KEY);
+    // One real protected page confirms the configured athlete session and
+    // persisted consent before auditing. Every Lighthouse route independently
+    // verifies its own identity, content and same-navigation readiness below.
+    // Avoid spending the shared consent-status per-IP quota on eight duplicate
+    // preflight navigations before the measured cold-cache runs begin.
+    const preflightPath = "/";
+    await page.goto(auditUrl({ mode: "athlete", path: preflightPath }, origin), {
+      waitUntil: "domcontentloaded",
+    });
+    await waitForApp(page);
+    await page.locator(getPageReadySelector(preflightPath)).waitFor({
+      state: "visible",
+      timeout: 25000,
+    });
+    const final = new URL(page.url());
+    if (final.origin !== origin || final.pathname !== preflightPath) {
+      throw new Error("E2E preflight did not render authenticated Home (got " + page.url() + ")");
+    }
+    if (await page.locator(".cookie-consent-backdrop:visible").count()) {
+      throw new Error("E2E preflight lost persisted cookie consent");
+    }
+    // Verify the session after real navigation, not only after registration.
+    const verified = await context.request.get(origin + "/api/v1/users/me");
+    if (!verified.ok() || (await verified.json()).primaryEmail !== athlete.email) {
+      throw new Error("Authenticated Lighthouse preflight lost its real backend session");
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function verifyAuditedAthletePage(page, pathname) {
+  await waitForApp(page);
+  await page.locator(getPageReadySelector(pathname)).waitFor({
+    state: "visible",
+    timeout: 25000,
+  });
+  if (pathname === "/calendar") {
+    await page.getByRole("grid").waitFor({ state: "visible", timeout: 25000 });
+  }
+  if (["/terms", "/privacy", "/cookie"].includes(pathname)) {
+    const content = page.locator('[data-component="legal-document-shell"] .section-text').first();
+    await content.waitFor({ state: "visible", timeout: 25000 });
+    if (!(await content.textContent())?.trim()) {
+      throw new Error(pathname + ": published document contains no rendered body");
+    }
+  }
+  for (const selector of [
+    ".cookie-consent-backdrop:visible",
+    '[data-ssr-loading-fallback="true"]:visible',
+    '[data-component="legal-document-shell"] [role="status"]:visible',
+    '[data-component="legal-document-shell"] [role="alert"]:visible',
+  ]) {
+    if (await page.locator(selector).count()) {
+      throw new Error(pathname + ": unexpected overlay, loading or error " + selector);
+    }
+  }
+}
+
+async function main() {
+  // Even if browser provisioning or a later route fails, leave an explicit
+  // incomplete report rather than an empty upload directory.
+  fs.mkdirSync(auditDir, { recursive: true });
+  const results = [];
+  const technicalErrors = [];
+  const recoveryEvents = [];
+  const traceRecoveries = [];
+  const navigationDiagnostics = [];
+  let budgetErrors = [];
+  let chrome;
+  let browser;
+  let bootstrap;
+  let profile;
+  let cachePage;
+  let cacheSession;
+
+  try {
+    if (!process.env.PLAYWRIGHT_BASE_URL) {
+      throw new Error("PLAYWRIGHT_BASE_URL is mandatory to select the real E2E ingress");
+    }
+    if (new URL(origin).hostname !== "127.0.0.1") {
+      throw new Error("Authenticated Lighthouse may only run against isolated loopback ingress");
+    }
+    if (!Number.isInteger(runCount) || runCount < 3) {
+      throw new Error("Expected at least three Lighthouse runs");
+    }
+
+    const port = await findAvailablePort();
+    profile = fs.mkdtempSync(path.join(os.tmpdir(), "fitvibe-lighthouse-"));
+    chrome = spawn(
+      chromium.executablePath(),
+      [
+        "--headless=new",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-extensions",
+        "--disable-gpu",
+        "--remote-debugging-address=127.0.0.1",
+        "--remote-allow-origins=*",
+        "--remote-debugging-port=" + port,
+        "--user-data-dir=" + profile,
+        "about:blank",
+      ],
+      { stdio: "ignore" },
+    );
+
+    const endpoint = await connectDebugger(port, chrome);
+    browser = await chromium.connectOverCDP(endpoint);
+    await prepareAthlete(browser);
+    // Preserve the server-verified HttpOnly session and consent cookies, but
+    // prevent cached application scripts from masquerading as a 0-byte audit.
+    const auditContext = browser.contexts()[0];
+    cachePage = await auditContext.newPage();
+    cacheSession = await auditContext.newCDPSession(cachePage);
+    await cacheSession.send("Network.enable");
+    bootstrap = await installSessionBootstrap(endpoint);
+    const { default: lighthouse } = await import("lighthouse");
+
+    for (const pathName of athleteRoutes) {
+      const route = { mode: "athlete", path: pathName };
+      for (let run = 1; run <= runCount; run += 1) {
+        const url = auditUrl(route, origin);
+        for (let attempt = 1; attempt <= MAX_CONSENT_RATE_LIMIT_RETRIES + 1; attempt += 1) {
+          try {
+            // Clear resource cache only. Do not clear cookies/storage or mock APIs.
+            await cacheSession.send("Network.clearBrowserCache");
+            const observer = observeNavigation(
+              auditContext,
+              url,
+              (page) => verifyAuditedAthletePage(page, pathName),
+              collectNavigationDiagnostics,
+            );
+            let output;
+            let observation;
+            let observationError;
+            try {
+              output = await lighthouse(url, {
+                port,
+                logLevel: "error",
+                disableStorageReset: true,
+                throttlingMethod: "simulate",
+                maxWaitForFcp: 30000,
+                maxWaitForLoad: 45000,
+              });
+            } finally {
+              try {
+                observation = await observer.finish();
+              } catch (error) {
+                observationError = error;
+              }
+            }
+            if (!output?.lhr) throw new Error("Lighthouse returned no report");
+            const report = output.lhr;
+            if (observation?.diagnostics) {
+              navigationDiagnostics.push({
+                path: pathName,
+                run,
+                attempt,
+                diagnostics: observation.diagnostics,
+                lighthouseLcpMs: report.audits?.["largest-contentful-paint"]?.numericValue ?? null,
+              });
+            }
+            const filename =
+              "lhr-" +
+              (pathName === "/" ? "home" : pathName.slice(1).replaceAll("/", "-")) +
+              "-" +
+              run +
+              (attempt > 1 ? "-retry-" + attempt : "") +
+              ".json";
+            // Every attempted Lighthouse navigation retains its original report,
+            // including a rate-limited attempt that is never counted as valid.
+            fs.writeFileSync(path.join(auditDir, filename), JSON.stringify(report));
+            if (shouldRetryTraceFailure(report, attempt, traceRecoveries.length)) {
+              // Lighthouse recorded no trace, so this attempt measured nothing.
+              const event = {
+                path: pathName,
+                run,
+                attempt,
+                report: filename,
+                code: traceFailureCode(report),
+                message: report.runtimeError.message,
+              };
+              traceRecoveries.push(event);
+              console.warn(
+                "Authenticated Lighthouse trace recovery: " +
+                  pathName +
+                  " run " +
+                  run +
+                  " (attempt " +
+                  attempt +
+                  ", " +
+                  event.code +
+                  ")",
+              );
+              continue;
+            }
+
+            let errorMessage;
+            try {
+              verifyRouteIdentity(route, report, origin);
+              bootstrap.assertHealthy();
+              const readiness = observation && {
+                ...observation,
+                pathname: pathName,
+                scenario: "consented",
+              };
+              const diagnostic = validateMeasurement(report, {
+                mode: "athlete",
+                pathname: pathName,
+                origin,
+                scenario: "consented",
+                readiness,
+              });
+              if (observationError) diagnostic.errors.push(observationError.message);
+              if (diagnostic.errors.length) throw new Error(diagnostic.errors.join("; "));
+            } catch (error) {
+              errorMessage = error.message;
+            }
+
+            if (!errorMessage) {
+              results.push({ path: pathName, report, valid: true });
+              break;
+            }
+
+            if (
+              shouldRetryConsentRateLimit(
+                report,
+                errorMessage,
+                attempt,
+                MAX_CONSENT_RATE_LIMIT_RETRIES,
+              )
+            ) {
+              // Recover only a demonstrably invalid consent-status measurement.
+              // Existing real-API helper honors the server's Retry-After; never
+              // retry a valid but slow report to obtain a better Lighthouse score.
+              const event = {
+                path: pathName,
+                run,
+                attempt,
+                report: filename,
+                reason: "consent-status HTTP 429",
+                diagnostic: errorMessage,
+              };
+              recoveryEvents.push(event);
+              console.warn(
+                "Authenticated Lighthouse consent rate-limit recovery: " +
+                  pathName +
+                  " run " +
+                  run +
+                  " (attempt " +
+                  attempt +
+                  ")",
+              );
+              const status = await getConsentStatusWithRateLimitBackoff(
+                auditContext.request,
+                origin + "/api/v1/consent/cookie-status",
+              );
+              if (!status.ok()) throw new Error("Consent recovery HTTP " + status.status());
+              const consent = (await status.json()).data;
+              if (!consent?.hasConsent || consent.consent?.essential !== true) {
+                throw new Error("Consent recovery lost verified essential consent");
+              }
+              continue;
+            }
+
+            technicalErrors.push(pathName + " run " + run + ": " + errorMessage);
+            results.push({ path: pathName, report, valid: false });
+            break;
+          } catch (error) {
+            technicalErrors.push(pathName + " run " + run + ": " + error.message);
+            break;
+          }
+        }
+      }
+      console.log(
+        "Authenticated Lighthouse collected " +
+          results.filter((entry) => entry.path === pathName && entry.valid).length +
+          "/" +
+          runCount +
+          " valid runs for " +
+          pathName,
+      );
+    }
+    // Isolated diagnostic: executed only after the authoritative Lighthouse
+    // measurements. Never modifies the worst-of-three budget calculations.
+    try {
+      await runChromeCriticalPathDiagnostics({
+        browser,
+        origin,
+        authFlag: AUTH_FLAG_KEY,
+        outputDir: path.join(auditDir, "chrome-critical-path"),
+      });
+    } catch (error) {
+      console.warn("Nonblocking Chrome CPU diagnostic failed: " + error.message);
+    }
+  } catch (error) {
+    technicalErrors.push("Authenticated Lighthouse setup: " + error.message);
+  } finally {
+    // A budget failure must not discard LHR files or prevent report creation.
+    // Evaluate only verified page identities, never redirected login screens.
+    const validReports = results.filter((entry) => entry.valid).map((entry) => entry.report);
+    budgetErrors = assertWorstRunBudgets(
+      validReports,
+      athleteRoutes,
+      origin,
+      config.ci.assert.assertions,
+      runCount,
+    );
+    // Diagnostic audit history is separate from the three valid runs and never
+    // changes the worst-of-three acceptance or the individual raw LHRs.
+    fs.writeFileSync(
+      path.join(auditDir, "navigation-diagnostics.json"),
+      JSON.stringify(navigationDiagnostics, null, 2),
+    );
+    fs.writeFileSync(
+      path.join(auditDir, "trace-recoveries.json"),
+      JSON.stringify(traceRecoveries, null, 2) + "\n",
+    );
+    fs.writeFileSync(
+      path.join(auditDir, "consent-recovery-events.json"),
+      JSON.stringify(recoveryEvents, null, 2),
+    );
+    const summary = writePerformanceReport(auditDir, {
+      label: "Authenticated athlete routes",
+      paths: athleteRoutes,
+      results,
+      expectedRuns: runCount,
+      technicalErrors,
+      budgetErrors,
+    });
+    console.log(
+      "Authenticated Lighthouse report: " +
+        summary.measuredPages +
+        "/" +
+        summary.expectedPages +
+        " complete pages. See " +
+        auditDir +
+        "/summary.md",
+    );
+    if (technicalErrors.length) console.error(technicalErrors.join("\n"));
+    if (budgetErrors.length)
+      console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
+    if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
+    bootstrap?.close();
+    if (cacheSession) await cacheSession.detach().catch(() => undefined);
+    if (cachePage) await cachePage.close().catch(() => undefined);
+    if (browser) await browser.close().catch(() => undefined);
+    chrome?.kill("SIGTERM");
+    if (profile) {
+      try {
+        fs.rmSync(profile, { recursive: true, force: true });
+      } catch {
+        // OS cleans isolated Chrome temporary profiles.
+      }
+    }
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

@@ -1,22 +1,11 @@
+import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import { ZxcvbnFactory } from "@zxcvbn-ts/core";
-import { adjacencyGraphs, dictionary as commonDictionary } from "@zxcvbn-ts/language-common";
-import { dictionary as englishDictionary, translations } from "@zxcvbn-ts/language-en";
+import { PASSWORD_STRENGTH_LEVELS, passwordStrengthAdvice } from "./passwordStrengthText";
 
-// Reuse a deterministic, version-pinned local estimator; never submit passwords
-// to an external strength-scoring endpoint.
-const estimator = new ZxcvbnFactory({
-  dictionary: { ...commonDictionary, ...englishDictionary },
-  graphs: adjacencyGraphs,
-  translations,
-});
+// The estimator's dictionaries are large. Load them only after the user enters
+// a password; empty fields never need strength scoring during initial paint.
+const PasswordStrengthMeter = lazy(() => import("./PasswordStrengthMeter"));
 
-function estimatedStrength(password: string): number {
-  // The UI shows four filled levels. zxcvbn-ts provides a 0–4 score.
-  return Math.max(1, estimator.check(password).score);
-}
-
-/** Visual guidance only; breached-password, history and policy checks stay server-side. */
 export function PasswordStrengthFeedback({
   password,
   minimum = 12,
@@ -29,38 +18,28 @@ export function PasswordStrengthFeedback({
     return null;
   }
 
-  const score = estimatedStrength(password);
-  const level = ["", "veryWeak", "weak", "fair", "strong"][score];
-  const advice =
-    password.length < minimum
-      ? t("passwordStrength.tooShort", { minimum })
-      : t("passwordStrength.minimumMet");
+  const advice = passwordStrengthAdvice(t, password, minimum);
+  const longestLevel = PASSWORD_STRENGTH_LEVELS.map((level) =>
+    t(`passwordStrength.levels.${level}`),
+  ).reduce((longest, label) => (label.length > longest.length ? label : longest));
 
+  // The meter and an invisible copy of its rows share one grid cell. The copy
+  // renders in the same commit as the keystroke, so the space is reserved
+  // before the estimator chunk loads; when the meter arrives it fills that
+  // space instead of pushing the fields below it down (issue 634: the shift
+  // moved the registration legal checkboxes by 88 px mid-click). Using the
+  // longest level label means level changes while typing cannot grow it either.
+  // The copy's text is CSS-generated, aria-hidden and invisible.
   return (
-    <div data-component="password-strength" className="grid grid--gap-xs">
-      <div
-        role="meter"
-        aria-label={t("passwordStrength.meterLabel")}
-        aria-valuemin={0}
-        aria-valuemax={4}
-        aria-valuenow={score}
-        aria-valuetext={t(`passwordStrength.levels.${level}`)}
-        data-score={score}
-        className="password-strength-meter"
-      >
-        {[1, 2, 3, 4].map((segment) => (
-          <span
-            key={segment}
-            aria-hidden="true"
-            data-active={segment <= score ? "true" : "false"}
-            className="password-strength-segment"
-          />
-        ))}
+    <div className="password-strength-slot" data-testid="password-strength-slot">
+      <div aria-hidden="true" className="password-strength-slot__sizer grid grid--gap-xs">
+        <div className="password-strength-slot__bar" />
+        <p className="text-sm" data-sizer-text={`${longestLevel} — ${advice}`} />
+        <p className="text-sm" data-sizer-text={t("passwordStrength.serverChecks")} />
       </div>
-      <p className="text-sm text-secondary" role="status" aria-live="polite">
-        {t(`passwordStrength.levels.${level}`)} — {advice}
-      </p>
-      <p className="text-sm text-muted">{t("passwordStrength.serverChecks")}</p>
+      <Suspense fallback={null}>
+        <PasswordStrengthMeter password={password} minimum={minimum} />
+      </Suspense>
     </div>
   );
 }

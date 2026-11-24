@@ -37,9 +37,8 @@ kubectl apply -f namespace.yaml
 echo "✓ Namespace created"
 echo ""
 
-echo "💾 Step 2: Creating storage class..."
-kubectl apply -f storage-class-encrypted.yaml
-echo "✓ Storage class created"
+echo "💾 Step 2: Checking cluster storage..."
+echo "AWS-specific storage-class placeholder removed. Configure an independently verified encrypted StorageClass for the actual cluster."
 echo ""
 
 echo "🔐 Step 3: Checking secrets..."

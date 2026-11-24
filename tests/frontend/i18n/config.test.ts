@@ -597,3 +597,18 @@ describe("i18n config", () => {
     });
   });
 });
+
+describe("privacy consent localization contract", () => {
+  it.each(["en", "de", "fr", "es", "el"] as const)(
+    "loads every acknowledgement action and error message for %s",
+    async (language) => {
+      await loadLanguageTranslations(language);
+      const bundle = i18n.getResourceBundle(language, "translation") as {
+        privacy?: { consent?: Record<string, string> };
+      };
+      for (const key of ["acknowledge", "revoke", "acceptError", "revokeError"]) {
+        expect(bundle.privacy?.consent?.[key]?.trim().length).toBeGreaterThan(0);
+      }
+    },
+  );
+});

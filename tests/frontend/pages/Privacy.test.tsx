@@ -162,4 +162,29 @@ describe("Privacy page", () => {
       expect(acceptPrivacyPolicy).toHaveBeenCalledWith({ privacy_policy_accepted: true });
     });
   });
+
+  it("revokes a persisted privacy acknowledgement and displays the reacceptance action", async () => {
+    authState.isAuthenticated = true;
+    const accepted = {
+      accepted: true,
+      acceptedAt: "2026-09-25T11:00:00.000Z",
+      acceptedVersion: "2026-09-25.1",
+      currentVersion: "2026-09-25.1",
+      requiredVersion: "2026-09-25.1",
+      requiredAction: "acknowledge",
+      needsAcceptance: false,
+    };
+    getLegalDocumentsStatus
+      .mockResolvedValueOnce({ privacy: accepted })
+      .mockResolvedValueOnce({
+        privacy: { ...accepted, accepted: false, acceptedVersion: null, needsAcceptance: true },
+      });
+
+    renderPrivacy();
+    fireEvent.click(await screen.findByRole("button", { name: "Revoke acknowledgement" }));
+
+    await waitFor(() => expect(revokePrivacyPolicy).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("button", { name: "Acknowledge" })).toBeInTheDocument();
+  });
+
 });

@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
+import { ADMIN_CREATABLE_ROLES } from "./users.types.js";
 import {
   getMe,
   listAll,
@@ -138,7 +139,7 @@ const createUserSchema = z.object({
   displayName: z.string().min(1).max(120),
   email: z.string().email().max(254),
   password: passwordPolicy,
-  role: z.string().min(1).max(50),
+  role: z.enum(ADMIN_CREATABLE_ROLES),
   locale: z.string().max(10).optional(),
   preferredLang: z.enum(["en", "de", "fr", "es", "el"]).optional(),
   status: z.enum(["pending_verification", "active", "suspended"]).optional(),

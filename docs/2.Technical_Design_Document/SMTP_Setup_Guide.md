@@ -222,7 +222,7 @@ NODE_TLS_REJECT_UNAUTHORIZED=0  # Only for development!
 **Solution**:
 
 1. **Short-term**: Check spam folder, mark as "Not Spam"
-2. **Long-term**: Use a dedicated email service (SendGrid, Mailgun, AWS SES)
+2. **Long-term**: Use a dedicated email service (SendGrid or Mailgun)
 3. Add SPF record to your domain (if using custom domain)
 4. Set up DKIM signing
 
@@ -279,18 +279,6 @@ SMTP_PASS=your-mailgun-smtp-password
 ```
 
 **Free Tier**: 5,000 emails/month for 3 months
-
-### AWS SES (Amazon Simple Email Service)
-
-```bash
-SMTP_HOST=email-smtp.us-east-1.amazonaws.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-ses-smtp-username
-SMTP_PASS=your-ses-smtp-password
-```
-
-**Pricing**: $0.10 per 1,000 emails (extremely cheap at scale)
 
 ### Mailtrap (Development/Testing Only)
 
@@ -372,7 +360,6 @@ Use instead:
 
 - ✅ SendGrid
 - ✅ Mailgun
-- ✅ AWS SES
 - ✅ Postmark
 
 ### 2. Set Up Email Queue

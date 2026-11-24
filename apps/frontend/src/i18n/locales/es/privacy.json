@@ -2,6 +2,12 @@
   "eyebrow": "Legal",
   "title": "Política de privacidad",
   "description": "Aprenda cómo recopilamos, usamos y protegemos sus datos personales.",
+  "consent": {
+    "acknowledge": "Confirmar",
+    "revoke": "Revocar confirmación",
+    "acceptError": "No se pudo registrar la confirmación. Inténtalo de nuevo.",
+    "revokeError": "No se pudo revocar la confirmación. Inténtalo de nuevo."
+  },
   "effectiveDate": "Fecha de vigencia",
   "effectiveDateValue": "26 de octubre de 2025",
   "intro1": "FitVibe ayuda a atletas y personas activas a planificar sesiones de entrenamiento, registrar entrenamientos y comprender su progreso. Esta Política de privacidad explica qué datos personales recopilamos cuando utilizas los Servicios, por qué los recopilamos, cómo los usamos y compartimos y qué derechos te corresponden en virtud del Reglamento General de Protección de Datos (\"RGPD\"), el UK GDPR y otras leyes aplicables de protección de datos.",

@@ -2,6 +2,12 @@
   "eyebrow": "Rechtliches",
   "title": "Datenschutzerklärung",
   "description": "Erfahren Sie, wie wir Ihre personenbezogenen Daten erheben, verwenden und schützen.",
+  "consent": {
+    "acknowledge": "Bestätigen",
+    "revoke": "Bestätigung widerrufen",
+    "acceptError": "Die Bestätigung konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "revokeError": "Die Bestätigung konnte nicht widerrufen werden. Bitte versuchen Sie es erneut."
+  },
   "effectiveDate": "Gültigkeitsdatum",
   "effectiveDateValue": "26. Oktober 2025",
   "intro1": "FitVibe unterstützt Athleten und aktive Personen dabei, Trainingseinheiten zu planen, Workouts zu protokollieren und ihren Fortschritt nachzuvollziehen. Diese Datenschutzerklärung erläutert, welche personenbezogenen Daten wir bei der Nutzung der Dienste erheben, warum wir sie erheben, wie wir sie verwenden und weitergeben und welche Rechte Ihnen nach der Datenschutz-Grundverordnung (\"DSGVO\"), der UK GDPR und anderen anwendbaren Datenschutzgesetzen zustehen.",

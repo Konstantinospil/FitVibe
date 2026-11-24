@@ -1,5 +1,8 @@
 FROM nginx:1.31-alpine
 
+# Refresh Alpine OS packages in the shipped runtime image (not just the tag).
+RUN apk upgrade --no-cache
+
 COPY infra/docker/prod/nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80

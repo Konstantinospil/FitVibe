@@ -30,7 +30,13 @@ vi.mock("react-i18next", () => ({
         namespace === "translation" ? i18nState.bundle : undefined,
       ),
     },
-    t: (_key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? _key,
+    t: (key: string, options?: { defaultValue?: string }) => {
+      const messages: Record<string, string> = {
+        "common.loading": "Loading...",
+        "common.error": "Document unavailable.",
+      };
+      return messages[key] ?? options?.defaultValue ?? key;
+    },
   }),
 }));
 

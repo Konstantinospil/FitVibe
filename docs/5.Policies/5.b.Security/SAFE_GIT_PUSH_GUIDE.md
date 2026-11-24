@@ -22,9 +22,8 @@ Your repository is **already well-protected**:
    - Dependency vulnerability checks
 
 4. **Secrets Management** - Uses:
-   - HashiCorp Vault (development/staging)
-   - AWS Secrets Manager (production)
-   - Environment variables (fallback)
+   - HashiCorp Vault (optional)
+   - Protected environment variables and mounted key files (current deployment)
 
 ## 🔒 Before Pushing Checklist
 
@@ -151,7 +150,7 @@ The secret scanner checks for:
 2. **Use `.env.example`** - Document required environment variables
 3. **Rotate secrets regularly** - Especially if accidentally exposed
 4. **Review diffs before committing** - `git diff` shows what you're committing
-5. **Use secrets manager in production** - Vault or AWS Secrets Manager
+5. **Protect production secrets** - Use restricted environment configuration or mounted key files; Vault remains optional
 6. **Keep dependencies updated** - Run `pnpm audit` regularly
 
 ## 🆘 Getting Help

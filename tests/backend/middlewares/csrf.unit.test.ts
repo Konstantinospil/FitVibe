@@ -49,25 +49,44 @@ describe("csrf middleware internals", () => {
     expect(bodySchema.parse(payload).csrfToken).toEqual(expect.any(String));
   });
 
-  it("accepts tokens from headers and body", async () => {
+  it("validates header and body tokens for browser requests, rejecting invalid tokens", async () => {
     const { csrfProtection, csrfTokenRoute } =
       await import("../../../apps/backend/src/middlewares/csrf.js");
     const { req, res } = buildReqRes();
 
     csrfTokenRoute(req, res);
     const token = (res.json as jest.Mock).mock.calls[0][0].csrfToken as string;
+    const secret = (res.cookie as jest.Mock).mock.calls[0][1] as string;
 
     req.method = "POST";
-    req.headers = { "x-csrf-token": token };
+    req.cookies = { "fitvibe-csrf": secret };
+    req.headers = { origin: "http://localhost:5173", "x-csrf-token": token };
 
     csrfProtection(req, res, next);
     expect(next).toHaveBeenCalledWith();
 
     next.mockClear();
-    req.headers = {};
+    req.headers = { origin: "http://localhost:5173", "x-csrf-token": "invalid-token" };
+    csrfProtection(req, res, next);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 403, code: "CSRF_TOKEN_INVALID" }),
+    );
+
+    next.mockClear();
+    req.headers = { origin: "http://localhost:5173" };
     req.body = { _csrf: token };
     csrfProtection(req, res, next);
     expect(next).toHaveBeenCalledWith();
+
+    next.mockClear();
+    const { req: unrelatedReq, res: unrelatedRes } = buildReqRes();
+    unrelatedReq.method = "POST";
+    unrelatedReq.cookies = { "fitvibe-csrf": "unrelated-secret" };
+    unrelatedReq.headers = { origin: "http://localhost:5173", "x-csrf-token": token };
+    csrfProtection(unrelatedReq, unrelatedRes, next);
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 403, code: "CSRF_TOKEN_INVALID" }),
+    );
   });
 
   it("bypasses validation for safe methods", async () => {

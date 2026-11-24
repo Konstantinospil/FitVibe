@@ -45,6 +45,7 @@ The documentation hub serves as the authoritative reference for:
 - [`2d.Technical_Design_Document_APIDesign.md`](2.Technical_Design_Document/2d.Technical_Design_Document_APIDesign.md) - API design and contracts
 - [`2e.Technical_Design_Document_misc.md`](2.Technical_Design_Document/2e.Technical_Design_Document_misc.md) - Miscellaneous technical details
 - [`CODING_STYLE_GUIDE.md`](2.Technical_Design_Document/CODING_STYLE_GUIDE.md) - **Coding style guide for React and Express**
+- [`FRONTEND_AUTHENTICATED_STARTUP.md`](2.Technical_Design_Document/FRONTEND_AUTHENTICATED_STARTUP.md) - Authenticated startup path, measured results and security invariants (#634)
 
 **Supporting Materials:**
 
