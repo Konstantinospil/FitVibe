@@ -26,7 +26,9 @@ coupled Docker/browser versions, and open a PR against feature.
 ## Controlled override removal
 
 Never remove all overrides simultaneously. Security constraints, compatibility
-exceptions and local patched-extract-zip carry distinct risks.
+exceptions and local link: patches carry distinct risks. A batch removal is
+acceptable only when every entry has its own before/after evidence, as in
+docs/dependency-override-second-pass.md.
 
 On manual dispatch, supply remove_override with exactly one inventory name.
 The isolated probe verifies and removes one workspace entry without rewriting

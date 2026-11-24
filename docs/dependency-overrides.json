@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "policy": "All overrides must have inventory entries; existing entries remain pending evidence-based review. This inventory is not a claim that each pin is necessary.",
+  "policy": "All overrides must have inventory entries. Every remaining entry was re-verified on 2026-11-24 against with/without-override resolutions (docs/dependency-override-second-pass.md); this inventory is still not a claim that each pin is permanent.",
   "overrides": [
     {
       "name": "chrome-launcher",
       "constraint": "^1.2.1",
       "category": "transitive",
-      "status": "unverified-necessity",
+      "status": "requires-compatibility-review",
       "directDeclarations": [],
-      "reason": "Historical constraint; originating issue/advisory has not yet been verified.",
-      "removalCriteria": "Verify dependency parents and compatibility, regenerate lockfile, and pass full CI."
+      "reason": "Not a security pin (removal audits clean). Without it @lhci/cli 0.16.1 resolves its declared chrome-launcher ^0.13.4, which pulls rimraf@3; rimraf@3 expects the glob 7 callback API but the glob override forces glob 14.0.2 onto it. The override keeps @lhci/cli on chrome-launcher 1.x, but also holds lighthouse 13.6.0 at 1.2.1, below its declared ^1.2.2.",
+      "removalCriteria": "Remove once @lhci/cli declares chrome-launcher >=1.2.2, or replace with a parent-scoped '@lhci/cli>chrome-launcher' rule so lighthouse resolves its own range; verify `lhci collect` in CI."
     },
     {
       "name": "glob",
@@ -17,7 +17,7 @@
       "category": "transitive",
       "status": "security-patch-required",
       "directDeclarations": [],
-      "reason": "GHSA-3g3m-2fjr-6pw4 affects glob 9 through 14.0.1; v14.0.2 fixes abort handling. Explicit override is provisional pending CI compatibility and graph review.",
+      "reason": "GHSA-3g3m-2fjr-6pw4 affects glob 9 through 14.0.1; v14.0.2 fixes abort handling. Re-verified 2026-11-24: without the override the graph resolves vulnerable glob 13.0.7 (@jest/reporters, jest-config, jest-runtime, @sentry/bundler-plugins ask ^13.0.6) and 10.5.0 (rimraf 5 ^10.3.7, test-exclude 7 ^10.4.1). Note: the exact pin is below the ^14.0.3 that rimraf 6.1.4 declares.",
       "removalCriteria": "Remove once direct parents resolve glob >=14.0.2 without forced override and full CI passes."
     },
     {
@@ -26,7 +26,7 @@
       "category": "major-scoped-transitive",
       "status": "requires-compatibility-review",
       "directDeclarations": [],
-      "reason": "GHSA-g3hv-75wg-m249 affects minimatch v10; redirect v10 range to patched v11.0.1 pending full compatibility tests.",
+      "reason": "GHSA-g3hv-75wg-m249 affects minimatch >=7.0.0 <11.0.1. Re-verified 2026-11-24: without the override, ^10.2.2 requests from @typescript-eslint/typescript-estree 8.69-8.72, readdir-glob 3.0.0 and test-exclude 7.0.2 resolve vulnerable minimatch 10.2.6.",
       "removalCriteria": "Remove once all v10 requesting parents select patched 11.0.1 without an override and CI passes."
     }
   ]

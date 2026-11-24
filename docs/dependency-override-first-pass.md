@@ -2,12 +2,12 @@
 
 Evidence: `pnpm-lock.yaml`, `pnpm-workspace.yaml`, and workspace manifests on `feature`. Review is **advisory**. No no-override dependency resolution has been performed.
 
-| Override | Direct manifests | Current lockfile resolution | Finding | Decision |
-| --- | --- | --- | --- | --- |
-| `vite: ^8.2.2` | frontend/backoffice `^8.3.4` | 8.3.4 | Direct declarations have a stricter minimum, but transitive consumers and forced specifiers remain. | Retain pending isolated comparison |
-| `vitest: ^5.0.1` | frontend `^5.0.5` | 5.0.5 | Direct declaration exceeds override minimum; transitive consumers remain. | Retain pending isolated comparison |
-| `jest: ^30.5.2` | backend `^30.5.2` | 30.5.2 | Direct declaration matches override; cannot infer transitive behavior. | Retain pending isolated comparison |
-| `axios: >=1.16.0` | frontend `^1.15.0`; backoffice `^1.13.5` | 1.20.0 | Override raises the minimum beyond declared direct ranges. Distinct reconciliation needed. | Retain pending isolated comparison |
+| Override          | Direct manifests                         | Current lockfile resolution | Finding                                                                                             | Decision                           |
+| ----------------- | ---------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `vite: ^8.2.2`    | frontend/backoffice `^8.3.4`             | 8.3.4                       | Direct declarations have a stricter minimum, but transitive consumers and forced specifiers remain. | Retain pending isolated comparison |
+| `vitest: ^5.0.1`  | frontend `^5.0.5`                        | 5.0.5                       | Direct declaration exceeds override minimum; transitive consumers remain.                           | Retain pending isolated comparison |
+| `jest: ^30.5.2`   | backend `^30.5.2`                        | 30.5.2                      | Direct declaration matches override; cannot infer transitive behavior.                              | Retain pending isolated comparison |
+| `axios: >=1.16.0` | frontend `^1.15.0`; backoffice `^1.13.5` | 1.20.0                      | Override raises the minimum beyond declared direct ranges. Distinct reconciliation needed.          | Retain pending isolated comparison |
 
 ## Verification protocol
 
@@ -18,3 +18,5 @@ Evidence: `pnpm-lock.yaml`, `pnpm-workspace.yaml`, and workspace manifests on `f
 5. Record exact before/after versions and test run links before classifying the override as redundant or removing it.
 
 Current result: **zero overrides demonstrated safe to remove**. Reports from CI describe the existing resolution only. The first artifact omitted resolvedVersions because package metadata parsing returned no entries; the report generator now falls back to snapshot versions.
+
+> **Superseded** by the [second pass (24 November 2026)](dependency-override-second-pass.md), which compared with/without-override resolutions for every entry and removed 29 of 32 overrides.

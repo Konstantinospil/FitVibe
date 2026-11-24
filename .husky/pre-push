@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Prod high-severity audit + secret scan. A second full-tree `pnpm audit`
-# cannot pass while extract-zip (via @lhci/cli → puppeteer) has no patched release.
+# Prod high-severity audit + secret scan.
 echo "🔒 Running security checks before push..."
 pnpm security:scan
