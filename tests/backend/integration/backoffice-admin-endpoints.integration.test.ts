@@ -3,6 +3,7 @@
  * ops status, public system config and the user admin actions, against a real database.
  */
 
+import { randomUUID } from "node:crypto";
 import { describe, it, expect, beforeAll, beforeEach } from "@jest/globals";
 import request from "supertest";
 import bcrypt from "bcryptjs";
@@ -20,8 +21,9 @@ import {
 } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
 
-const PASSWORD = "SecureP@ssw0rd123!";
-const NEXT_PASSWORD = "Moonlit Cedar River Lantern 2026!";
+// Generated per run so no credential-shaped literal is committed.
+const PASSWORD = `Fv-${randomUUID()}-Aa1!`;
+const NEXT_PASSWORD = `Fv-${randomUUID()}-Bb2!`;
 
 /** A distinct single-use code inside the accepted ±1 step window. */
 function totpAt(secret: string, stepOffset: -1 | 0 | 1): string {
