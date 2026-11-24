@@ -148,11 +148,17 @@ type ManifestChunk = {
 
 type ClientAssets = {
   scripts: string[];
+  /** Chunks the entry imports statically; the browser needs them before it can run. */
+  modulePreloads: string[];
   styles: string[];
 };
 
-const DEV_ASSETS: ClientAssets = { scripts: ["/src/main.tsx"], styles: [] };
-const FALLBACK_ASSETS: ClientAssets = { scripts: ["/assets/js/main.js"], styles: [] };
+const DEV_ASSETS: ClientAssets = { scripts: ["/src/main.tsx"], modulePreloads: [], styles: [] };
+const FALLBACK_ASSETS: ClientAssets = {
+  scripts: ["/assets/js/main.js"],
+  modulePreloads: [],
+  styles: [],
+};
 
 function toPublicPath(file: string): string {
   return file.startsWith("/") ? file : `/${file}`;
@@ -198,12 +204,16 @@ function getClientAssets(): ClientAssets {
     }
 
     const styles: string[] = [];
+    const modulePreloads: string[] = [];
     const seen = new Set<string>();
     const visit = (chunk: ManifestChunk | undefined) => {
       if (!chunk?.file || seen.has(chunk.file)) {
         return;
       }
       seen.add(chunk.file);
+      if (chunk !== mainChunk && chunk.file.endsWith(".js")) {
+        modulePreloads.push(toPublicPath(chunk.file));
+      }
       if (chunk.css?.length) {
         styles.push(...chunk.css);
       }
@@ -215,6 +225,7 @@ function getClientAssets(): ClientAssets {
 
     return {
       scripts: [toPublicPath(mainChunk.file)],
+      modulePreloads,
       styles: [...new Set(styles.map(toPublicPath))],
     };
   } catch {
@@ -281,11 +292,19 @@ export async function renderPage(url: string): Promise<string> {
   const dehydratedStateMarkup = `<template id="${DEHYDRATED_STATE_ELEMENT_ID}">${serializeDehydratedState(dehydratedState)}</template>`;
 
   const isProduction = process.env.NODE_ENV === "production";
-  const { scripts, styles } = getClientAssets();
+  const { scripts, modulePreloads, styles } = getClientAssets();
   // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
-  const hydrationScript = scripts
-    .map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`)
-    .join("");
+  // Hints placed next to the entry script are discovered at the same moment as
+  // the entry itself, so they cannot compete with first paint any more than the
+  // entry does. Without them the browser only finds the entry's static imports
+  // (the 67 KB app chunk among them) after downloading and parsing the entry:
+  // one more round trip before any authenticated content can render.
+  const hydrationScript = [
+    ...modulePreloads.map(
+      (href) => `<link rel="modulepreload" href="${href}" fetchpriority="low" />`,
+    ),
+    ...scripts.map((src) => `<script type="module" src="${src}" fetchpriority="low"></script>`),
+  ].join("");
   const styleTags = styleTagsFor(styles, resolve(root, "dist/client"));
 
   const resourceHints = isProduction ? `\n    ${styleTags}\n  ` : styleTags;

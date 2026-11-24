@@ -9,6 +9,7 @@ import {
 import { queryClient as defaultQueryClient } from "../lib/queryClient";
 import i18n, { ensurePrivateTranslationsLoaded, loadLanguageTranslations } from "../i18n/config";
 import { getUserPreferences } from "../services/api";
+import { takePrefetched } from "../utils/authenticatedPrefetch";
 import { readDehydratedStateFromDocument } from "../ssr/dehydratedState";
 // The guard (~1 KB) and layout (~2 KB) are on every authenticated route.
 // Importing them eagerly removes two sequential chunk round trips from the
@@ -98,7 +99,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
         // protected content gated until the authoritative language is ready.
         const [translations, preferencesResult] = await Promise.allSettled([
           ensurePrivateTranslationsLoaded(),
-          getUserPreferences(),
+          takePrefetched("preferences", getUserPreferences),
         ]);
         if (translations.status === "rejected") {
           throw translations.reason;
@@ -126,14 +127,29 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
       }
     })();
 
-    void import("../utils/fontLoader").then(({ loadAppFonts }) => {
-      loadAppFonts();
-    });
-
     return () => {
       active = false;
     };
   }, []);
+
+  // Authenticated pages re-render their content in the signed-in layout, and
+  // that paint is their LCP. Font downloads that start earlier sit on the LCP
+  // critical path even though font-display never blocks it, so register the
+  // faces after the content has painted (two frames after the commit).
+  useEffect(() => {
+    if (!translationsReady) {
+      return;
+    }
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        void import("../utils/fontLoader").then(({ loadPublicFonts, loadAppFonts }) => {
+          loadPublicFonts();
+          loadAppFonts();
+        });
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [translationsReady]);
 
   const dehydratedState = propDehydratedState ?? getDehydratedState();
 
