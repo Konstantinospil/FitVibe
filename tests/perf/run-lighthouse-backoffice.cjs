@@ -16,7 +16,9 @@ const { observeNavigation } = require("./lighthouse-observe-navigation.cjs");
 const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const {
-  routeContracts, verifyBackofficeContent, assessBackofficeReport,
+  routeContracts,
+  verifyBackofficeContent,
+  assessBackofficeReport,
   assertBackofficeAuditCoverage,
 } = require("./lighthouse-backoffice-readiness.cjs");
 
@@ -32,10 +34,15 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 function assertDisposableRuntime() {
   const database = new URL(process.env.DATABASE_URL || "postgres://invalid/invalid");
   const address = new URL(origin);
-  if (process.env.LIGHTHOUSE_STATEFUL_FIXTURES !== "1" ||
-      process.env.CI !== "true" || process.env.NODE_ENV !== "development" ||
-      address.hostname !== "127.0.0.1" || address.port !== "4182" ||
-      database.hostname !== "127.0.0.1" || database.pathname !== "/fitvibe_e2e") {
+  if (
+    process.env.LIGHTHOUSE_STATEFUL_FIXTURES !== "1" ||
+    process.env.CI !== "true" ||
+    process.env.NODE_ENV !== "development" ||
+    address.hostname !== "127.0.0.1" ||
+    address.port !== "4182" ||
+    database.hostname !== "127.0.0.1" ||
+    database.pathname !== "/fitvibe_e2e"
+  ) {
     throw new Error("Backoffice Lighthouse requires the dedicated disposable CI E2E runtime");
   }
   if (!Number.isInteger(numberOfRuns) || numberOfRuns < 3) {
@@ -73,7 +80,8 @@ async function waitForDebugger(port, child) {
 
 async function csrf(request) {
   const response = await request.get(origin + "/api/v1/csrf-token");
-  if (!response.ok()) throw new Error("Unable to retrieve real CSRF token: HTTP " + response.status());
+  if (!response.ok())
+    throw new Error("Unable to retrieve real CSRF token: HTTP " + response.status());
   const token = (await response.json()).csrfToken;
   if (!token) throw new Error("Real backend did not return a CSRF token");
   return token;
@@ -81,7 +89,8 @@ async function csrf(request) {
 
 async function post(request, route, data) {
   const response = await request.post(origin + route, {
-    data, headers: { Origin: origin, "X-CSRF-Token": await csrf(request) },
+    data,
+    headers: { Origin: origin, "X-CSRF-Token": await csrf(request) },
   });
   if (!response.ok()) throw new Error(route + " failed with HTTP " + response.status());
   return response.json().catch(() => ({}));
@@ -89,7 +98,8 @@ async function post(request, route, data) {
 
 async function confirmRole(request, role) {
   const response = await request.get(origin + "/api/v1/users/me");
-  if (!response.ok()) throw new Error("Privileged browser session not accepted: HTTP " + response.status());
+  if (!response.ok())
+    throw new Error("Privileged browser session not accepted: HTTP " + response.status());
   const identity = await response.json();
   if (identity.role !== role || identity.primaryEmail !== "admin@fitvibe.local") {
     throw new Error("Privileged session has an unexpected persisted user or role");
@@ -98,7 +108,8 @@ async function confirmRole(request, role) {
 
 async function enrollAdministrator(request) {
   const first = await post(request, "/api/v1/auth/login", {
-    email: "admin@fitvibe.local", password: process.env.ADMIN_PASSWORD,
+    email: "admin@fitvibe.local",
+    password: process.env.ADMIN_PASSWORD,
   });
   if (first.requires2FA !== false || first.user?.role !== "admin") {
     throw new Error("Expected the disposable seeded admin without MFA enrollment");
@@ -123,13 +134,15 @@ async function enrollAdministrator(request) {
 
 async function signInWithMfa(request, expectedRole, backupCode) {
   const login = await post(request, "/api/v1/auth/login", {
-    email: "admin@fitvibe.local", password: process.env.ADMIN_PASSWORD,
+    email: "admin@fitvibe.local",
+    password: process.env.ADMIN_PASSWORD,
   });
   if (!login.requires2FA || !login.pendingSessionId) {
     throw new Error("Privileged login did not require the real MFA challenge");
   }
   const verified = await post(request, "/api/v1/auth/login/verify-2fa", {
-    pendingSessionId: login.pendingSessionId, code: backupCode,
+    pendingSessionId: login.pendingSessionId,
+    code: backupCode,
   });
   if (verified.user?.role !== expectedRole) throw new Error("MFA result has the wrong role");
   await confirmRole(request, expectedRole);
@@ -149,7 +162,9 @@ async function promoteDisposableAdmin() {
   });
   let output = "";
   for (const stream of [child.stdout, child.stderr]) {
-    stream.on("data", (bytes) => { output += bytes.toString().slice(0, 4000); });
+    stream.on("data", (bytes) => {
+      output += bytes.toString().slice(0, 4000);
+    });
   }
   const status = await new Promise((resolve, reject) => {
     child.on("error", reject);
@@ -185,14 +200,23 @@ async function main() {
     assertDisposableRuntime();
     const port = await availablePort();
     profile = fs.mkdtempSync(path.join(os.tmpdir(), "fitvibe-backoffice-lighthouse-"));
-    chrome = spawn(chromium.executablePath(), [
-      "--headless=new", "--no-sandbox", "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage", "--disable-extensions", "--disable-gpu",
-      "--remote-debugging-address=127.0.0.1",
-      "--remote-allow-origins=*",
-      "--remote-debugging-port=" + port,
-      "--user-data-dir=" + profile, "about:blank",
-    ], { stdio: "ignore" });
+    chrome = spawn(
+      chromium.executablePath(),
+      [
+        "--headless=new",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-extensions",
+        "--disable-gpu",
+        "--remote-debugging-address=127.0.0.1",
+        "--remote-allow-origins=*",
+        "--remote-debugging-port=" + port,
+        "--user-data-dir=" + profile,
+        "about:blank",
+      ],
+      { stdio: "ignore" },
+    );
     browser = await chromium.connectOverCDP(await waitForDebugger(port, chrome));
     const context = browser.contexts()[0];
     if (!context) throw new Error("No default Chrome session context");
@@ -211,13 +235,17 @@ async function main() {
         try {
           await cacheSession.send("Network.clearBrowserCache");
           observer = observeNavigation(context, requested, (page) =>
-            checkActualPage(page, route.path));
+            checkActualPage(page, route.path),
+          );
           let observation;
           let observationError;
           try {
             const measured = await lighthouse(requested, {
-              port, logLevel: "error", disableStorageReset: true,
-              throttlingMethod: "simulate", maxWaitForFcp: 30000,
+              port,
+              logLevel: "error",
+              disableStorageReset: true,
+              throttlingMethod: "simulate",
+              maxWaitForFcp: 30000,
               maxWaitForLoad: 45000,
             });
             report = measured?.lhr;
@@ -229,8 +257,13 @@ async function main() {
             }
           }
           if (!report) throw new Error("Lighthouse did not return an LHR");
-          const file = route.mode + "-" + route.path.replaceAll("/", "-").replace(/^-+/, "") +
-            "-" + run + ".json";
+          const file =
+            route.mode +
+            "-" +
+            route.path.replaceAll("/", "-").replace(/^-+/, "") +
+            "-" +
+            run +
+            ".json";
           fs.writeFileSync(path.join(outputDir, file), JSON.stringify(report));
           verifyRouteIdentity(route, report, origin);
           if (observationError || !observation?.ready) {
@@ -247,19 +280,37 @@ async function main() {
           valid = true;
         } catch (error) {
           // Do not include query strings, credentials, session IDs, or tokens in logs.
-          technicalErrors.push(route.mode + " " + route.path + " run " + run +
-            ": " + String(error.message).replace(/https?:\/\/[^\s]+/g, "[redacted URL]"));
+          technicalErrors.push(
+            route.mode +
+              " " +
+              route.path +
+              " run " +
+              run +
+              ": " +
+              String(error.message).replace(/https?:\/\/[^\s]+/g, "[redacted URL]"),
+          );
         }
         measurements.push({ path: route.mode + ":" + route.path, report, valid });
         coverage.push({
           id: route.mode + ":" + route.path + ":" + run,
-          pathname: route.path, scenario: route.mode, valid, sameNavigationReady,
+          pathname: route.path,
+          scenario: route.mode,
+          valid,
+          sameNavigationReady,
         });
       }
-      console.log("Backoffice Lighthouse collected " +
-        coverage.filter((item) => item.pathname === route.path &&
-          item.scenario === route.mode && item.valid).length +
-        "/" + numberOfRuns + " valid runs for " + route.mode + " " + route.path);
+      console.log(
+        "Backoffice Lighthouse collected " +
+          coverage.filter(
+            (item) => item.pathname === route.path && item.scenario === route.mode && item.valid,
+          ).length +
+          "/" +
+          numberOfRuns +
+          " valid runs for " +
+          route.mode +
+          " " +
+          route.path,
+      );
     };
 
     await audit(backofficeRoutes[0]); // anonymous login first
@@ -274,53 +325,100 @@ async function main() {
     if (oldSession.ok()) throw new Error("Promotion did not revoke the administrator session");
     await signInWithMfa(context.request, "superadmin", backupCodes[1]);
     currentRole = "superadmin";
-    for (const route of backofficeRoutes.filter((item) =>
-      item.mode === "backoffice-superadmin")) {
+    for (const route of backofficeRoutes.filter((item) => item.mode === "backoffice-superadmin")) {
       await audit(route);
     }
   } catch (error) {
     phaseError = error;
-    technicalErrors.push("Backoffice Lighthouse setup/state transition: " +
-      String(error.message).replace(/https?:\/\/[^\s]+/g, "[redacted URL]"));
+    technicalErrors.push(
+      "Backoffice Lighthouse setup/state transition: " +
+        String(error.message).replace(/https?:\/\/[^\s]+/g, "[redacted URL]"),
+    );
   } finally {
     const coverageErrors = assertBackofficeAuditCoverage(coverage, backofficeRoutes, numberOfRuns);
     technicalErrors.push(...coverageErrors);
     for (const mode of ["backoffice-public", "backoffice-admin", "backoffice-superadmin"]) {
-      const paths = backofficeRoutes.filter((route) => route.mode === mode)
+      const paths = backofficeRoutes
+        .filter((route) => route.mode === mode)
         .map((route) => route.path);
-      const reports = measurements.filter((item) => item.valid && item.report &&
-        item.path.startsWith(mode + ":")).map((item) => item.report);
+      const reports = measurements
+        .filter((item) => item.valid && item.report && item.path.startsWith(mode + ":"))
+        .map((item) => item.report);
       // Reuse canonical pessimistic CI budgets. The mode argument changes only
       // route identity, not the thresholds or worst-of-three aggregation.
-      budgetErrors.push(...assertWorstRunBudgets(
-        reports, paths, origin, config.ci.assert.assertions, numberOfRuns, mode,
-      ));
+      budgetErrors.push(
+        ...assertWorstRunBudgets(
+          reports,
+          paths,
+          origin,
+          config.ci.assert.assertions,
+          numberOfRuns,
+          mode,
+        ),
+      );
     }
     const summary = writePerformanceReport(outputDir, {
       label: "Backoffice (real admin and superadmin)",
       paths: backofficeRoutes.map((route) => route.mode + ":" + route.path),
       results: measurements,
       expectedRuns: numberOfRuns,
-      technicalErrors, budgetErrors,
+      technicalErrors,
+      budgetErrors,
     });
-    fs.writeFileSync(path.join(outputDir, "coverage.json"), JSON.stringify({
-      branch: process.env.GITHUB_SHA || null,
-      expected: backofficeRoutes.map((route) => ({
-        mode: route.mode, path: route.path,
-      })),
-      measurements: coverage,
-      complete: !phaseError && !coverageErrors.length,
-    }, null, 2));
-    console.log("Backoffice Lighthouse: " + summary.measuredPages +
-      "/" + summary.expectedPages + " complete pages");
+    fs.writeFileSync(
+      path.join(outputDir, "coverage.json"),
+      JSON.stringify(
+        {
+          branch: process.env.GITHUB_SHA || null,
+          expected: backofficeRoutes.map((route) => ({
+            mode: route.mode,
+            path: route.path,
+          })),
+          measurements: coverage,
+          complete: !phaseError && !coverageErrors.length,
+        },
+        null,
+        2,
+      ),
+    );
+    console.log(
+      "Backoffice Lighthouse: " +
+        summary.measuredPages +
+        "/" +
+        summary.expectedPages +
+        " complete pages",
+    );
     if (technicalErrors.length) console.error(technicalErrors.join("\n"));
-    if (budgetErrors.length) console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
+    if (budgetErrors.length)
+      console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
     if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
     if (cacheSession) await cacheSession.detach().catch(() => undefined);
     if (cachePage) await cachePage.close().catch(() => undefined);
     if (browser) await browser.close().catch(() => undefined);
-    chrome?.kill("SIGTERM");
-    if (profile) fs.rmSync(profile, { recursive: true, force: true });
+    await stopChromeAndRemoveProfile(chrome, profile);
+  }
+}
+
+/**
+ * Chrome keeps writing to its profile for a moment after SIGTERM; deleting the directory
+ * straight away raced it (ENOTEMPTY) and failed the step after every page had measured.
+ * Wait for exit, retry the removal, and never let temp-dir cleanup change the result.
+ */
+async function stopChromeAndRemoveProfile(chrome, profile) {
+  if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
+    const exited = new Promise((resolve) => chrome.once("exit", resolve));
+    chrome.kill("SIGTERM");
+    const timer = setTimeout(() => chrome.kill("SIGKILL"), 5000);
+    await exited;
+    clearTimeout(timer);
+  }
+  if (!profile) return;
+  try {
+    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch (error) {
+    console.warn(
+      "Backoffice Lighthouse: could not remove Chrome profile " + profile + ": " + error.message,
+    );
   }
 }
 
@@ -331,4 +429,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { assertDisposableRuntime };
+module.exports = { assertDisposableRuntime, stopChromeAndRemoveProfile };
