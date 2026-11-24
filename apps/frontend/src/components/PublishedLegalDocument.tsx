@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ensureLegalTranslationsLoaded } from "../i18n/config";
 import { getPublishedLegalDocument, type PublishedLegalDocumentContent } from "../services/api";
 import LegalDocumentShell from "./LegalDocumentShell";
+import { takePrefetchedLegalDocument } from "../utils/authenticatedPrefetch";
 
 type LegalDocumentType = "terms" | "privacy" | "cookie";
 
@@ -214,7 +215,9 @@ export const PublishedLegalDocument: React.FC<PublishedLegalDocumentProps> = ({
       setLoading(true);
       setLoadFailed(false);
       try {
-        const current = await getPublishedLegalDocument(documentType, language);
+        const current = await takePrefetchedLegalDocument(documentType, language, () =>
+          getPublishedLegalDocument(documentType, language),
+        );
         if (cancelled) {
           return;
         }

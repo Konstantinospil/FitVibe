@@ -150,13 +150,21 @@ type ClientAssets = {
   scripts: string[];
   /** Chunks the entry imports statically; the browser needs them before it can run. */
   modulePreloads: string[];
+  /** Import-free modules that run from <head> (the session prefetch). */
+  headModules: string[];
   styles: string[];
 };
 
-const DEV_ASSETS: ClientAssets = { scripts: ["/src/main.tsx"], modulePreloads: [], styles: [] };
+const DEV_ASSETS: ClientAssets = {
+  scripts: ["/src/main.tsx"],
+  modulePreloads: [],
+  headModules: [],
+  styles: [],
+};
 const FALLBACK_ASSETS: ClientAssets = {
   scripts: ["/assets/js/main.js"],
   modulePreloads: [],
+  headModules: [],
   styles: [],
 };
 
@@ -223,9 +231,14 @@ function getClientAssets(): ClientAssets {
     };
     visit(mainChunk);
 
+    const sessionPrefetch = Object.entries(manifest).find(([key]) =>
+      key.replace(/\\/g, "/").endsWith("src/utils/authenticatedPrefetch.ts"),
+    )?.[1];
+
     return {
       scripts: [toPublicPath(mainChunk.file)],
       modulePreloads,
+      headModules: sessionPrefetch?.file ? [toPublicPath(sessionPrefetch.file)] : [],
       styles: [...new Set(styles.map(toPublicPath))],
     };
   } catch {
@@ -292,7 +305,12 @@ export async function renderPage(url: string): Promise<string> {
   const dehydratedStateMarkup = `<template id="${DEHYDRATED_STATE_ELEMENT_ID}">${serializeDehydratedState(dehydratedState)}</template>`;
 
   const isProduction = process.env.NODE_ENV === "production";
-  const { scripts, modulePreloads, styles } = getClientAssets();
+  const { scripts, modulePreloads, headModules, styles } = getClientAssets();
+  // ~1 KB, async and import-free: it starts the signed-in API reads while the
+  // app bundle downloads, without blocking parsing or first paint.
+  const headModuleTags = headModules
+    .map((src) => `<script type="module" async src="${src}"></script>`)
+    .join("");
   // Do not modulepreload JS in <head> — that contends with first paint on Slow 4G.
   // Hints placed next to the entry script are discovered at the same moment as
   // the entry itself, so they cannot compete with first paint any more than the
@@ -346,7 +364,7 @@ export async function renderPage(url: string): Promise<string> {
   `;
 
   // Inject resource hints and SEO meta tags in head
-  html = html.replace("</head>", `${resourceHints}${ogMetaTags}</head>`);
+  html = html.replace("</head>", `${headModuleTags}${resourceHints}${ogMetaTags}</head>`);
   html = html.replace("</body>", `${dehydratedStateMarkup}${hydrationScript}</body>`);
 
   return html;

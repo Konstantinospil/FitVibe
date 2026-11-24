@@ -230,7 +230,7 @@ describe("SSR render", () => {
     }
   });
 
-  it("hints the entry's static imports next to the entry script, never in <head>", async () => {
+  it("hints the entry's imports beside the entry script and loads the session prefetch in <head>", async () => {
     process.env.NODE_ENV = "production";
     const fs = await import("node:fs");
     vi.mocked(fs.existsSync).mockReset();
@@ -248,6 +248,10 @@ describe("SSR render", () => {
           "_src-111.js": { file: "assets/js/src-111.js", imports: ["_shared-222.js"] },
           "_shared-222.js": { file: "assets/js/shared-222.js" },
           "src/routes/ProtectedRoutes.tsx": { file: "assets/js/ProtectedRoutes-333.js" },
+          "src/utils/authenticatedPrefetch.ts": {
+            file: "assets/js/sessionPrefetch-444.js",
+            isEntry: true,
+          },
         });
       }
       return '<html><head></head><body><div id="root"></div></body></html>';
@@ -267,6 +271,10 @@ describe("SSR render", () => {
     expect(html.match(/rel="modulepreload" href="\/assets\/js\/shared-222\.js"/g)).toHaveLength(1);
     // Lazy route chunks stay lazy.
     expect(html).not.toContain("ProtectedRoutes-333.js");
+    // The import-free session prefetch runs from <head>, async.
+    expect(head).toContain(
+      '<script type="module" async src="/assets/js/sessionPrefetch-444.js"></script>',
+    );
   });
 
   it("should handle manifest parse errors gracefully", async () => {
