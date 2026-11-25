@@ -1,272 +1,91 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  Avatar,
-  Button,
-  Checkbox,
-  InputField,
-  PasswordField,
-  SelectField,
-  TextLink,
-} from "@fitvibe/ui";
+import { Button, InputField, TextLink } from "@fitvibe/ui";
 import AuthPageLayout from "../components/AuthPageLayout";
-import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
-import {
-  getRegistrationOptions,
-  register as registerAccount,
-  resendVerificationEmail,
-  type RegistrationOptions,
-} from "../services/api";
+import { startRegistration } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
-import { useCountdown } from "../hooks/useCountdown";
 
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-function dateYearsAgo(years: number): string {
-  const today = new Date();
-  return new Date(Date.UTC(today.getUTCFullYear() - years, today.getUTCMonth(), today.getUTCDate()))
-    .toISOString()
-    .slice(0, 10);
-}
-
+/**
+ * Step 1 of email-first registration (ADR-039): only the address. The answer
+ * is the same for every address; the next step arrives by email, which says
+ * either how to finish creating the account or that one already exists.
+ */
 const Register: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const formRef = useRef<HTMLFormElement>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
   useRequiredFieldValidation(formRef, t);
 
-  const [name, setName] = useState("");
-  const [weight, setWeight] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [gender, setGender] = useState("");
-  const [activityIntensity, setActivityIntensity] = useState("");
-  const [registrationOptions, setRegistrationOptions] = useState<RegistrationOptions | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [passwordWarning, setPasswordWarning] = useState<string | null>(null);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendSuccess, setResendSuccess] = useState(false);
-  const [resendError, setResendError] = useState<string | null>(null);
-  const [retryAfter, setRetryAfter] = useState<number | null>(null);
-  const [countdown, , resetCountdown] = useCountdown(0);
+  const [resendSent, setResendSent] = useState(false);
 
   useEffect(() => {
-    const state = location.state as { email?: string; resendVerification?: boolean } | null;
+    const state = location.state as { email?: string } | null;
     if (state?.email) {
       setEmail(state.email);
     }
   }, [location.state]);
 
-  useEffect(() => {
-    if (email && !username) {
-      setUsername(email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_"));
-    }
-  }, [email, username]);
+  const send = async (address: string) => {
+    await startRegistration({ email: address, locale: i18n.language || undefined });
+  };
 
-  useEffect(() => {
-    let active = true;
-    void getRegistrationOptions()
-      .then((options) => {
-        if (active) {
-          setRegistrationOptions(options);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setError(t("auth.register.optionsLoadError"));
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [t]);
-
-  const handleAvatarSelection = (file: File | undefined) => {
-    if (!file) {
-      return;
+  const describeError = (err: unknown): string => {
+    if (err && typeof err === "object" && "response" in err) {
+      const code = (err as { response?: { data?: { error?: { code?: string } } } }).response?.data
+        ?.error?.code;
+      if (code) {
+        return t(`errors.${code}`);
+      }
     }
-    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
-      setError(t("auth.register.avatarInvalidType"));
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      setError(t("auth.register.avatarTooLarge"));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarPreview(typeof reader.result === "string" ? reader.result : null);
-    };
-    reader.readAsDataURL(file);
-    setAvatarFile(file);
-    setError(null);
+    return t("auth.register.error");
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-
-    if (
-      !name.trim() ||
-      !weight.trim() ||
-      !dateOfBirth ||
-      !gender ||
-      !activityIntensity ||
-      !email.trim() ||
-      !password ||
-      !confirmPassword
-    ) {
+    const address = email.trim();
+    if (!address) {
       setError(t("auth.register.fillAllFields"));
       return;
     }
 
-    if (!registrationOptions) {
-      setError(t("auth.register.optionsLoadError"));
-      return;
-    }
-
-    const numericWeight = Number(weight);
-    if (
-      !Number.isFinite(numericWeight) ||
-      numericWeight < registrationOptions.weight.minKg ||
-      numericWeight > registrationOptions.weight.maxKg
-    ) {
-      setError(
-        t("auth.register.weightInvalidConfigured", {
-          min: registrationOptions.weight.minKg,
-          max: registrationOptions.weight.maxKg,
-        }),
-      );
-      return;
-    }
-
-    if (dateOfBirth > dateYearsAgo(13) || dateOfBirth < dateYearsAgo(120)) {
-      setError(t("auth.register.dateOfBirthInvalid"));
-      return;
-    }
-
-    if (!termsAccepted || !privacyAccepted) {
-      setError(t("auth.register.termsRequired"));
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError(t("auth.register.passwordMismatch"));
-      return;
-    }
-
-    // Passwords are evaluated as passphrases, not by mandatory character classes.
-    if (password.length < 12 || password.length > 128) {
-      setError(t("validation.passwordMinLength"));
-      return;
-    }
-
-    if (username) {
-      if (username.length < 3 || username.length > 50 || !/^[a-zA-Z0-9_.-]+$/.test(username)) {
-        setError(t("errors.USER_USERNAME_INVALID"));
-        return;
-      }
-    }
-
     setIsSubmitting(true);
-
     try {
-      const finalUsername = username.trim() || email.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "_");
-
-      const registrationPayload = {
-        email: email.trim(),
-        password,
-        username: finalUsername,
-        terms_accepted: true,
-        profile: {
-          display_name: name.trim(),
-          weight_kg: numericWeight,
-          date_of_birth: dateOfBirth,
-          sex: gender,
-          fitness_level: activityIntensity,
-        },
-      };
-
-      const response = avatarFile
-        ? await registerAccount(registrationPayload, avatarFile)
-        : await registerAccount(registrationPayload);
-      setPasswordWarning(response?.passwordWarning ?? null);
-      setSuccess(true);
+      await send(address);
+      setSubmittedEmail(address);
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as {
-          response?: { data?: { error?: { code?: string; message?: string } } };
-        };
-        const errorCode = axiosError.response?.data?.error?.code;
-        const errorMessage = axiosError.response?.data?.error?.message;
-        setError(errorCode ? t(`errors.${errorCode}`) : errorMessage || t("auth.register.error"));
-      } else {
-        setError(t("auth.register.error"));
-      }
+      setError(describeError(err));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleResend = async () => {
+    if (!submittedEmail) {
+      return;
+    }
     setIsResending(true);
-    setResendError(null);
-    setResendSuccess(false);
-
+    setError(null);
+    setResendSent(false);
     try {
-      await resendVerificationEmail({ email });
-      setResendSuccess(true);
+      await send(submittedEmail);
+      setResendSent(true);
     } catch (err: unknown) {
-      if (err && typeof err === "object" && "response" in err) {
-        const axiosError = err as {
-          response?: {
-            data?: { error?: { code?: string; message?: string; retryAfter?: number } };
-            headers?: { "retry-after"?: string };
-          };
-        };
-        const errorCode = axiosError.response?.data?.error?.code;
-        const retryAfterValue =
-          axiosError.response?.data?.error?.retryAfter ||
-          (axiosError.response?.headers?.["retry-after"]
-            ? parseInt(axiosError.response.headers["retry-after"], 10)
-            : null);
-
-        if (errorCode === "RATE_LIMITED" && retryAfterValue) {
-          setRetryAfter(retryAfterValue);
-          resetCountdown(retryAfterValue);
-        }
-
-        const errorMessage =
-          (errorCode
-            ? t(`errors.${errorCode}`) ||
-              axiosError.response?.data?.error?.message ||
-              t("verifyEmail.resendError")
-            : t("verifyEmail.resendError")) ?? "";
-        setResendError(errorMessage || null);
-      } else {
-        setResendError(t("verifyEmail.resendError"));
-      }
+      setError(describeError(err));
     } finally {
       setIsResending(false);
     }
   };
 
-  if (success) {
+  if (submittedEmail) {
     return (
       <AuthPageLayout
         title={t("auth.register.successTitle")}
@@ -280,17 +99,12 @@ const Register: React.FC = () => {
             </TextLink>
           }
         >
-          {t("auth.register.checkEmail", { email })}
+          {t("auth.register.checkEmail", { email: submittedEmail })}
         </StatusPanel>
-        {passwordWarning ? (
-          <FormFeedback tone="warning">
-            {t(`passwordStrength.advisory.${passwordWarning}`)}
-          </FormFeedback>
-        ) : null}
 
         <FormStack as="div">
-          {resendSuccess ? (
-            <FormFeedback tone="success">{t("verifyEmail.resendSuccess")}</FormFeedback>
+          {resendSent ? (
+            <FormFeedback tone="success">{t("auth.register.resendSuccess")}</FormFeedback>
           ) : (
             <Button
               type="button"
@@ -303,15 +117,7 @@ const Register: React.FC = () => {
               {t("auth.register.didntReceiveEmail")} {t("auth.register.resendEmail")}
             </Button>
           )}
-
-          {resendError ? (
-            <FormFeedback tone="danger">
-              {resendError}
-              {retryAfter !== null && countdown > 0
-                ? ` ${t("verifyEmail.retryAfter", { seconds: countdown })}`
-                : ""}
-            </FormFeedback>
-          ) : null}
+          {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
         </FormStack>
       </AuthPageLayout>
     );
@@ -326,110 +132,6 @@ const Register: React.FC = () => {
         }}
       >
         <InputField
-          label={t("auth.register.nameLabel")}
-          name="name"
-          type="text"
-          placeholder={t("auth.placeholders.name")}
-          required
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          autoComplete="name"
-          disabled={isSubmitting}
-        />
-
-        <div className="grid grid--gap-sm">
-          <div className="flex flex--align-center flex--gap-md flex--wrap">
-            <Avatar
-              name={name.trim() || username.trim() || t("auth.register.avatarFallback")}
-              src={avatarPreview ?? undefined}
-              format={avatarPreview ? "photo" : "initials"}
-              size="lg"
-              status="unknown"
-            />
-            <div className="grid grid--gap-xs">
-              <span className="form-label-text">{t("auth.register.photoLabel")}</span>
-              <span className="text-sm text-muted">{t("auth.register.photoHelp")}</span>
-            </div>
-          </div>
-          <input
-            ref={avatarInputRef}
-            className="sr-only"
-            name="avatar"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            aria-label={t("auth.register.photoSelect")}
-            disabled={isSubmitting}
-            onChange={(event) => handleAvatarSelection(event.target.files?.[0])}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => avatarInputRef.current?.click()}
-            disabled={isSubmitting}
-          >
-            {avatarFile ? t("auth.register.photoChange") : t("auth.register.photoSelect")}
-          </Button>
-        </div>
-
-        <InputField
-          label={t("auth.register.weightLabel")}
-          name="weight"
-          type="number"
-          min={registrationOptions?.weight.minKg}
-          max={registrationOptions?.weight.maxKg}
-          step="0.1"
-          required
-          value={weight}
-          onChange={(event) => setWeight(event.target.value)}
-          disabled={isSubmitting}
-        />
-
-        <InputField
-          label={t("auth.register.dateOfBirthLabel")}
-          name="dateOfBirth"
-          type="date"
-          min={dateYearsAgo(120)}
-          max={dateYearsAgo(13)}
-          required
-          value={dateOfBirth}
-          onChange={(event) => setDateOfBirth(event.target.value)}
-          disabled={isSubmitting}
-        />
-
-        <SelectField
-          label={t("auth.register.genderLabel")}
-          name="gender"
-          required
-          value={gender}
-          onChange={(event) => setGender(event.target.value)}
-          disabled={isSubmitting}
-        >
-          <option value="">{t("auth.register.selectPlaceholder")}</option>
-          {registrationOptions?.genders.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.description}
-            </option>
-          ))}
-        </SelectField>
-
-        <SelectField
-          label={t("auth.register.activityIntensityLabel")}
-          helperText={t("auth.register.activityIntensityHelp")}
-          name="activityIntensity"
-          required
-          value={activityIntensity}
-          onChange={(event) => setActivityIntensity(event.target.value)}
-          disabled={isSubmitting}
-        >
-          <option value="">{t("auth.register.selectPlaceholder")}</option>
-          {registrationOptions?.fitnessLevels.map((option) => (
-            <option key={option.code} value={option.code}>
-              {option.description}
-            </option>
-          ))}
-        </SelectField>
-
-        <InputField
           label={t("auth.register.emailLabel")}
           name="email"
           type="email"
@@ -441,96 +143,10 @@ const Register: React.FC = () => {
           disabled={isSubmitting}
         />
 
-        <InputField
-          id="register-username"
-          label={t("auth.register.usernameLabel")}
-          helperText={t("auth.register.usernameHelp")}
-          name="username"
-          type="text"
-          placeholder={t("auth.placeholders.username")}
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          autoComplete="username"
-          disabled={isSubmitting}
-          minLength={3}
-          maxLength={50}
-          pattern="[a-zA-Z0-9_.-]+"
-        />
-
-        <PasswordField
-          id="register-password"
-          label={t("auth.register.passwordLabel")}
-          name="password"
-          placeholder={t("auth.placeholders.password")}
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete="new-password"
-          disabled={isSubmitting}
-          showPasswordLabel={t("auth.showPassword")}
-          hidePasswordLabel={t("auth.hidePassword")}
-        />
-        <PasswordStrengthFeedback password={password} />
-
-        <PasswordField
-          id="register-confirm-password"
-          label={t("auth.register.confirmPasswordLabel")}
-          name="confirmPassword"
-          placeholder={t("auth.placeholders.confirmPassword")}
-          required
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          autoComplete="new-password"
-          disabled={isSubmitting}
-          showPasswordLabel={t("auth.showPassword")}
-          hidePasswordLabel={t("auth.hidePassword")}
-        />
-
-        <Checkbox
-          checked={termsAccepted}
-          onChange={(event) => setTermsAccepted(event.target.checked)}
-          disabled={isSubmitting}
-          error={error && !termsAccepted ? t("auth.register.termsRequired") : undefined}
-          label={
-            <span>
-              {t("auth.register.acceptTerms")}{" "}
-              <TextLink
-                as={NavLink}
-                to="/terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(event) => event.stopPropagation()}
-              >
-                {t("auth.register.termsLink")}
-              </TextLink>
-            </span>
-          }
-        />
-
-        <Checkbox
-          checked={privacyAccepted}
-          onChange={(event) => setPrivacyAccepted(event.target.checked)}
-          disabled={isSubmitting}
-          label={
-            <span>
-              {t("auth.register.acceptTerms")}{" "}
-              <TextLink
-                as={NavLink}
-                to="/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(event) => event.stopPropagation()}
-              >
-                {t("auth.register.privacyLink")}
-              </TextLink>
-            </span>
-          }
-        />
-
         {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
 
         <Button type="submit" fullWidth isLoading={isSubmitting} disabled={isSubmitting}>
-          {isSubmitting ? t("auth.register.submitting") : t("auth.register.submit")}
+          {isSubmitting ? t("auth.register.startSubmitting") : t("auth.register.startSubmit")}
         </Button>
 
         <p data-component="auth-supporting-prompt">

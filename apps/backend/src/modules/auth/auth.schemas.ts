@@ -45,9 +45,30 @@ const registerProfileSchema = z
     },
   );
 
-export const RegisterSchema = z
+// One-time link token: 32 random bytes, base64url (43 characters).
+const registrationTokenSchema = z
+  .string()
+  .min(20)
+  .max(128)
+  .regex(/^[A-Za-z0-9_-]+$/, "AUTH_INVALID_TOKEN");
+
+/** Step 1 of email-first registration (ADR-039): the address only. */
+export const StartRegistrationSchema = z.object({
+  email: z.string().trim().email().max(254),
+  locale: z
+    .string()
+    .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$/)
+    .optional(),
+});
+
+export const RegistrationIntentSchema = z.object({
+  token: registrationTokenSchema,
+});
+
+/** Step 2: everything else, for the holder of the emailed link. */
+export const CompleteRegistrationSchema = z
   .object({
-    email: z.string().email(),
+    token: registrationTokenSchema,
     alias: aliasSchema.optional(),
     username: aliasSchema.optional(),
     password: passwordPolicy,

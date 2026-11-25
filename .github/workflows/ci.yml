@@ -1972,7 +1972,6 @@ jobs:
           docker rm -f pre-main-backend pre-main-frontend pre-main-backoffice 2>/dev/null || true
           docker network rm pre-main-fitvibe 2>/dev/null || true
 
-
   pre_main_arm64_build:
     name: Pre-main arm64 Production Build
     runs-on: ubuntu-24.04-arm
@@ -2188,6 +2187,8 @@ jobs:
       REDIS_PORT: "6379"
       CLAMAV_ENABLED: "false"
       EMAIL_ENABLED: "false"
+      # Test mailbox for email-first registration links (ADR-039); refused in production.
+      EMAIL_CAPTURE_ENABLED: "true"
     # Pin the browser runtime and OS dependencies to the same Playwright version
     # as @playwright/test. Do not provision browsers/apt packages at runtime.
     container:
@@ -2496,6 +2497,8 @@ jobs:
       REDIS_PORT: "6379"
       CLAMAV_ENABLED: "false"
       EMAIL_ENABLED: "false"
+      # Test mailbox for email-first registration links (ADR-039); refused in production.
+      EMAIL_CAPTURE_ENABLED: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -3713,4 +3716,3 @@ jobs:
           artifacts: "artifacts/sbom-ingress.spdx.json,artifacts/sbom-backend.spdx.json,artifacts/sbom-frontend.spdx.json,artifacts/sbom-backoffice.spdx.json,artifacts/image-digests.txt,artifacts/artifacts/openapi/openapi.json"
           artifactErrorsFailBuild: true
           token: ${{ secrets.GITHUB_TOKEN }}
-

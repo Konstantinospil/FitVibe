@@ -226,6 +226,16 @@ To use Redis:
 2. Set `REDIS_ENABLED=true` in backend environment
 3. Configure `REDIS_HOST` and `REDIS_PORT` if different from defaults
 
+### Email and the test mailbox (sign-up)
+
+Registration is email-first (ADR-039): `/register` asks only for an address, and the link to finish creating the account is sent by email. Without SMTP, enable the in-memory test mailbox:
+
+1. Set `EMAIL_CAPTURE_ENABLED=true` in the backend environment (refused when `NODE_ENV=production`).
+2. Submit the address on `/register`.
+3. Open `http://localhost:4000/api/v1/dev/mail?to=<address>` and follow the `/register/complete?token=…` link in the newest message.
+
+`DELETE /api/v1/dev/mail` clears the mailbox. Captured mail lives in backend memory and is lost on restart.
+
 ### ClamAV (Optional)
 
 ClamAV is only needed if you want antivirus scanning. It's disabled by default.

@@ -12,6 +12,7 @@ async function main(): Promise<void> {
       purgedAuthTokens: summary.purgedAuthTokens,
       purgedRefreshTokens: summary.purgedRefreshTokens,
       purgedUnverifiedAccounts: summary.purgedUnverifiedAccounts,
+      purgedRegistrationIntents: summary.purgedRegistrationIntents,
       processedDsrRequests: summary.processedDsrRequests,
     },
     "[retention] sweep completed",

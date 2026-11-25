@@ -1,4 +1,6 @@
-import { register } from "../../../../apps/backend/src/modules/auth/auth.service.js";
+// Since ADR-039 the verification-token policy applies to accounts an
+// administrator created; their owners use the resend endpoint.
+import { resendVerificationEmail } from "../../../../apps/backend/src/modules/auth/auth.service.js";
 import type { AuthUserRecord } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 import type * as AuthRepositoryModule from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 
@@ -83,15 +85,7 @@ describe("Q-10 email verification policies", () => {
     try {
       mockCountAuthTokensSince.mockResolvedValue(2); // within resend window
 
-      const result = await register({
-        email: pendingUser.primary_email ?? "",
-        username: pendingUser.username,
-        password: "StrongPassw0rd!",
-        terms_accepted: true,
-      });
-
-      expect(result.user?.id).toBe(pendingUser.id);
-      expect(result.verificationToken).toEqual(expect.any(String));
+      await resendVerificationEmail(pendingUser.primary_email ?? "");
 
       expect(mockCountAuthTokensSince).toHaveBeenCalledWith(
         pendingUser.id,
@@ -122,14 +116,7 @@ describe("Q-10 email verification policies", () => {
     try {
       mockCountAuthTokensSince.mockResolvedValue(3);
 
-      await expect(
-        register({
-          email: pendingUser.primary_email ?? "",
-          username: pendingUser.username,
-          password: "StrongPassw0rd!",
-          terms_accepted: true,
-        }),
-      ).rejects.toMatchObject({
+      await expect(resendVerificationEmail(pendingUser.primary_email ?? "")).rejects.toMatchObject({
         status: 429,
         code: "AUTH_TOO_MANY_REQUESTS",
       });

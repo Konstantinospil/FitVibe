@@ -125,52 +125,37 @@ describe("Auth Controller", () => {
     });
   });
 
-  describe("register", () => {
-    it("should register a new user successfully without idempotency", async () => {
-      const registerData = {
-        email: "test@example.com",
-        username: "testuser",
-        password: "SecureP@ssw0rd123",
-        terms_accepted: true,
-      };
+  describe("register (ADR-039 step 1)", () => {
+    const startData = { email: "test@example.com", locale: "en" };
 
-      mockRequest.body = registerData;
+    it("queues the request and answers with the same message for every address", async () => {
+      mockRequest.body = startData;
       (mockRequest.get as jest.Mock).mockReturnValue(undefined); // No idempotency key
-      mockAuthService.register.mockResolvedValue({
-        verificationToken: "verification-token",
-        user: {
-          id: userId,
-          email: registerData.email,
-          username: registerData.username,
-          role: "athlete",
-          status: "pending_verification",
-          created_at: new Date().toISOString(),
-        },
-      });
+      mockAuthService.startRegistration.mockResolvedValue(undefined);
 
       await authController.register(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockAuthService.register).toHaveBeenCalledWith(registerData);
+      expect(mockAuthService.startRegistration).toHaveBeenCalledWith(startData);
       expect(mockResponse.status).toHaveBeenCalledWith(202);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: "If the email is valid, a verification link will be sent shortly.",
-          debugVerificationToken: "verification-token",
-          verificationUrl: expect.stringContaining("/verify?token=verification-token"),
-        }),
-      );
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: authController.REGISTRATION_STARTED_MESSAGE,
+      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it("should handle idempotency replay", async () => {
-      const registerData = {
-        email: "test@example.com",
-        username: "testuser",
-        password: "SecureP@ssw0rd123",
-        terms_accepted: true,
-      };
+    it("never puts a token or link in the response, in any environment", async () => {
+      mockRequest.body = startData;
+      (mockRequest.get as jest.Mock).mockReturnValue(undefined);
+      mockAuthService.startRegistration.mockResolvedValue(undefined);
 
-      mockRequest.body = registerData;
+      await authController.register(mockRequest as Request, mockResponse as Response, mockNext);
+
+      const [[body]] = (mockResponse.json as jest.Mock).mock.calls;
+      expect(Object.keys(body as object)).toEqual(["message"]);
+    });
+
+    it("should handle idempotency replay", async () => {
+      mockRequest.body = startData;
       (mockRequest.get as jest.Mock).mockReturnValue("idempotency-key");
       mockIdempotencyService.resolveIdempotency.mockResolvedValue({
         type: "replay",
@@ -183,58 +168,140 @@ describe("Auth Controller", () => {
       expect(mockResponse.set).toHaveBeenCalledWith("Idempotency-Key", "idempotency-key");
       expect(mockResponse.set).toHaveBeenCalledWith("Idempotent-Replayed", "true");
       expect(mockResponse.status).toHaveBeenCalledWith(202);
-      expect(mockAuthService.register).not.toHaveBeenCalled();
+      expect(mockAuthService.startRegistration).not.toHaveBeenCalled();
       expect(mockNext).not.toHaveBeenCalled();
     });
 
     it("should handle idempotency new request", async () => {
-      const registerData = {
-        email: "test@example.com",
-        username: "testuser",
-        password: "SecureP@ssw0rd123",
-        terms_accepted: true,
-      };
-
-      mockRequest.body = registerData;
+      mockRequest.body = startData;
       (mockRequest.get as jest.Mock).mockReturnValue("idempotency-key");
       mockIdempotencyService.resolveIdempotency.mockResolvedValue({
         type: "new",
         recordId: "record-123",
       });
-      mockAuthService.register.mockResolvedValue({
-        verificationToken: "verification-token",
-        user: {
-          id: userId,
-          email: registerData.email,
-          username: registerData.username,
-          role: "athlete",
-          status: "pending_verification",
-          created_at: new Date().toISOString(),
-        },
-      });
+      mockAuthService.startRegistration.mockResolvedValue(undefined);
       mockIdempotencyService.persistIdempotencyResult.mockResolvedValue(undefined);
 
       await authController.register(mockRequest as Request, mockResponse as Response, mockNext);
 
-      expect(mockAuthService.register).toHaveBeenCalled();
+      expect(mockAuthService.startRegistration).toHaveBeenCalled();
       expect(mockIdempotencyService.persistIdempotencyResult).toHaveBeenCalled();
       expect(mockResponse.set).toHaveBeenCalledWith("Idempotency-Key", "idempotency-key");
       expect(mockNext).not.toHaveBeenCalled();
     });
 
-    it("should handle errors", async () => {
-      const registerData = {
-        email: "test@example.com",
-        username: "testuser",
-        password: "SecureP@ssw0rd123",
-        terms_accepted: true,
-      };
-
-      mockRequest.body = registerData;
-      const error = new HttpError(400, "VALIDATION_ERROR", "Invalid email");
-      mockAuthService.register.mockRejectedValue(error);
+    it("passes a malformed address to the error handler without queueing", async () => {
+      mockRequest.body = { email: "not-an-email" };
 
       await authController.register(mockRequest as Request, mockResponse as Response, mockNext);
+
+      expect(mockNext).toHaveBeenCalled();
+      expect(mockAuthService.startRegistration).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("registrationIntent", () => {
+    const token = "a".repeat(43);
+
+    it("returns the address the link belongs to", async () => {
+      mockRequest.body = { token };
+      mockAuthService.getRegistrationIntent.mockResolvedValue({
+        email: "test@example.com",
+        expiresAt: "2026-11-25T12:00:00.000Z",
+      });
+
+      await authController.registrationIntent(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockAuthService.getRegistrationIntent).toHaveBeenCalledWith(token);
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        email: "test@example.com",
+        expiresAt: "2026-11-25T12:00:00.000Z",
+      });
+    });
+
+    it("passes link errors to the error handler", async () => {
+      mockRequest.body = { token };
+      const error = new HttpError(410, "AUTH_TOKEN_EXPIRED", "AUTH_TOKEN_EXPIRED");
+      mockAuthService.getRegistrationIntent.mockRejectedValue(error);
+
+      await authController.registrationIntent(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockNext).toHaveBeenCalledWith(error);
+    });
+  });
+
+  describe("completeRegistration (ADR-039 step 2)", () => {
+    const completeData = {
+      token: "a".repeat(43),
+      username: "testuser",
+      password: "SecureP@ssw0rd123",
+      terms_accepted: true,
+    };
+    const createdUser = {
+      id: userId,
+      email: "test@example.com",
+      username: "testuser",
+      role: "athlete",
+      status: "active" as const,
+      created_at: new Date().toISOString(),
+    };
+
+    it("creates the account and answers 201 with the user", async () => {
+      mockRequest.body = completeData;
+      (mockRequest.get as jest.Mock).mockReturnValue(undefined);
+      mockAuthService.completeRegistration.mockResolvedValue({ user: createdUser });
+
+      await authController.completeRegistration(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockAuthService.completeRegistration).toHaveBeenCalledWith(completeData);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith({ user: createdUser });
+    });
+
+    it("includes an advisory password warning when there is one", async () => {
+      mockRequest.body = completeData;
+      (mockRequest.get as jest.Mock).mockReturnValue(undefined);
+      mockAuthService.completeRegistration.mockResolvedValue({
+        user: createdUser,
+        passwordWarning: "PASSWORD_BREACHED",
+      });
+
+      await authController.completeRegistration(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
+
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        user: createdUser,
+        passwordWarning: "PASSWORD_BREACHED",
+      });
+    });
+
+    it("should handle errors", async () => {
+      mockRequest.body = completeData;
+      (mockRequest.get as jest.Mock).mockReturnValue(undefined);
+      const error = new HttpError(409, "USER_USERNAME_TAKEN", "USER_USERNAME_TAKEN");
+      mockAuthService.completeRegistration.mockRejectedValue(error);
+
+      await authController.completeRegistration(
+        mockRequest as Request,
+        mockResponse as Response,
+        mockNext,
+      );
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
@@ -323,15 +390,28 @@ describe("Auth Controller", () => {
   it("uses the shorter administrator access-cookie TTL on 2FA login", async () => {
     mockRequest.body = { pendingSessionId: "123e4567-e89b-12d3-a456-426614174000", code: "123456" };
     mockAuthService.verify2FALogin.mockResolvedValue({
-      user: { id: userId, email: "admin@example.com", username: "admin", role: "admin", status: "active", created_at: new Date().toISOString() },
+      user: {
+        id: userId,
+        email: "admin@example.com",
+        username: "admin",
+        role: "admin",
+        status: "active",
+        created_at: new Date().toISOString(),
+      },
       tokens: { accessToken: "admin-access", refreshToken: "admin-refresh", accessExpiresIn: 300 },
       session: { id: sessionId, expiresAt: new Date(Date.now() + 100000).toISOString() },
     });
     await authController.verify2FALogin(mockRequest as Request, mockResponse as Response, mockNext);
-    expect(mockResponse.cookie).toHaveBeenCalledWith("access_token", "admin-access",
-      expect.objectContaining({ maxAge: 300_000 }));
-    expect(mockResponse.cookie).toHaveBeenCalledWith("refresh_token", "admin-refresh",
-      expect.objectContaining({ maxAge: 8 * 60 * 60 * 1000 }));
+    expect(mockResponse.cookie).toHaveBeenCalledWith(
+      "access_token",
+      "admin-access",
+      expect.objectContaining({ maxAge: 300_000 }),
+    );
+    expect(mockResponse.cookie).toHaveBeenCalledWith(
+      "refresh_token",
+      "admin-refresh",
+      expect.objectContaining({ maxAge: 8 * 60 * 60 * 1000 }),
+    );
     expect(mockNext).not.toHaveBeenCalled();
   });
 
@@ -615,11 +695,7 @@ describe("Auth Controller", () => {
     mockRequest.body = payload;
     mockAuthService.resetPassword.mockResolvedValue({ passwordWarning: "PASSWORD_BREACHED" });
 
-    await authController.resetPassword(
-      mockRequest as Request,
-      mockResponse as Response,
-      mockNext,
-    );
+    await authController.resetPassword(mockRequest as Request, mockResponse as Response, mockNext);
 
     expect(mockResponse.status).toHaveBeenCalledWith(200);
     expect(mockResponse.json).toHaveBeenCalledWith({ passwordWarning: "PASSWORD_BREACHED" });

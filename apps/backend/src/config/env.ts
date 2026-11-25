@@ -52,6 +52,8 @@ const EnvSchema = z.object({
   VAULT_NAMESPACE: z.string().optional(),
   JWT_KEY_ROTATION_DAYS: z.coerce.number().default(90),
   EMAIL_ENABLED: z.string().optional(),
+  // Non-production only: keep outgoing mail in memory for tests (ADR-039).
+  EMAIL_CAPTURE_ENABLED: z.string().optional(),
   SMTP_HOST: z.string().default("smtp.gmail.com"),
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_SECURE: z.string().optional(),
@@ -193,6 +195,13 @@ const csrfAllowedOrigins = (() => {
   return configured.length ? configured : allowedOrigins;
 })();
 
+const emailCaptureEnabled = parseBoolean(raw.EMAIL_CAPTURE_ENABLED, false);
+if (emailCaptureEnabled && raw.NODE_ENV === "production") {
+  // Captured mail holds one-time registration and reset links; it must never
+  // be readable on a production server.
+  throw new Error("EMAIL_CAPTURE_ENABLED must not be set when NODE_ENV=production");
+}
+
 export const env = {
   NODE_ENV: raw.NODE_ENV,
   isProduction: raw.NODE_ENV === "production",
@@ -252,6 +261,7 @@ export const env = {
   },
   email: {
     enabled: parseBoolean(raw.EMAIL_ENABLED, false),
+    captureEnabled: emailCaptureEnabled,
     smtp: {
       host: raw.SMTP_HOST,
       port: raw.SMTP_PORT,

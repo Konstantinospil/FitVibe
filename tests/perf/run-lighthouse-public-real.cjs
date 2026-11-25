@@ -24,7 +24,8 @@ const canonical = JSON.parse(fs.readFileSync(path.join(__dirname, "lighthouserc.
 const REQUIRED_API_PATHS = Object.freeze({
   "/": ["/api/v1/consent/cookie-status"],
   "/login": ["/api/v1/consent/cookie-status"],
-  "/register": ["/api/v1/auth/register/options"],
+  // Email-first registration (ADR-039): step 1 is an email-only form.
+  "/register": ["/api/v1/consent/cookie-status"],
   "/forgot-password": ["/api/v1/consent/cookie-status"],
   "/terms": ["/api/v1/legal/documents/terms"],
   "/privacy": ["/api/v1/legal/documents/privacy"],

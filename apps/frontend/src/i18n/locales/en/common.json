@@ -197,6 +197,7 @@
     "AUTH_SESSION_NOT_FOUND": "Session not found",
     "UNAUTHENTICATED": "Missing authentication context",
     "USER_USERNAME_TAKEN": "Username already in use",
+    "AUTH_EMAIL_ALREADY_REGISTERED": "An account already exists for this address. Sign in or reset your password.",
     "USER_USERNAME_INVALID": "Username must be 3–50 characters and may include letters, numbers, dots, underscores, and dashes",
     "USER_STATUS_INVALID": "Cannot transition status",
     "USER_DISPLAY_NAME_REQUIRED": "Display name is required",

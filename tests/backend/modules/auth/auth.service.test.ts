@@ -16,7 +16,6 @@ import {
 } from "../../../../apps/backend/src/modules/legal/legal.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
 import type {
-  RegisterDTO,
   LoginDTO,
   UserSafe,
   TokenPair,
@@ -190,9 +189,7 @@ jest.mock("../../../../apps/backend/src/db/connection.js", () => {
     transaction: jest.Mock;
   };
 
-  db.transaction = jest.fn(async (callback: (trx: unknown) => Promise<unknown>) =>
-    callback(db),
-  );
+  db.transaction = jest.fn(async (callback: (trx: unknown) => Promise<unknown>) => callback(db));
 
   return { db };
 });
@@ -270,172 +267,8 @@ describe("Auth Service", () => {
     });
   });
 
-  describe("register", () => {
-    const validRegisterDto: RegisterDTO = {
-      email,
-      username,
-      password,
-      terms_accepted: true,
-    };
-
-    it("rejects an authoritative blacklisted email before account creation", async () => {
-      mockEmailBlacklist.isEmailBlacklisted.mockResolvedValue(true);
-
-      await expect(authService.register(validRegisterDto)).rejects.toMatchObject({
-        code: "AUTH_EMAIL_BLOCKED",
-        status: 403,
-      });
-      expect(mockAuthRepo.createUser).not.toHaveBeenCalled();
-    });
-
-    it("should register a new user successfully", async () => {
-      const mockUser: AuthUserRecord = {
-        id: userId,
-        email,
-        primary_email: email,
-        username,
-        password_hash: "hashed_password",
-        email_verified: false,
-        status: "pending_verification",
-        role_code: "athlete",
-        terms_accepted: true,
-        terms_version: "1.0.0",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      mockAuthRepo.findUserByEmail.mockResolvedValue(null);
-      mockAuthRepo.findUserByUsername.mockResolvedValue(null);
-      mockBcrypt.hash.mockResolvedValue("hashed_password" as never);
-      mockAuthRepo.createUser.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthToken.mockResolvedValue("verification-token");
-      mockAuthRepo.findUserById.mockResolvedValue(mockUser);
-
-      const result = await authService.register(validRegisterDto);
-
-      expect(result.user.email).toBe(email);
-      expect(result.user.username).toBe(username);
-      expect(mockAuthRepo.createUser).toHaveBeenCalled();
-    });
-
-    it("should pass registration profile data to the atomic user create", async () => {
-      const profileDto: RegisterDTO = {
-        ...validRegisterDto,
-        profile: {
-          display_name: "Test Athlete",
-          sex: "prefer_not_to_say",
-          weight_kg: 82.5,
-          fitness_level: "advanced",
-          date_of_birth: "1994-05-12",
-        },
-      };
-      mockAuthRepo.findUserByEmail.mockResolvedValue(null);
-      mockAuthRepo.findUserByUsername.mockResolvedValue(null);
-      mockBcrypt.hash.mockResolvedValue("hashed_password" as never);
-      mockAuthRepo.createUser.mockResolvedValue(undefined);
-      mockAuthRepo.createAuthToken.mockResolvedValue("verification-token");
-      mockAuthRepo.findUserById.mockResolvedValue(undefined);
-
-      await authService.register(profileDto);
-
-      expect(mockAuthRepo.createUser).toHaveBeenCalledWith(
-        expect.objectContaining({
-          display_name: "Test Athlete",
-          gender_code: "prefer_not_to_say",
-          weight_kg: 82.5,
-          fitness_level_code: "advanced",
-          date_of_birth: "1994-05-12",
-        }),
-        expect.anything(),
-      );
-    });
-
-    it("should throw error when email already exists", async () => {
-      const existingUser: AuthUserRecord = {
-        id: userId,
-        email,
-        username: "otheruser",
-        password_hash: "hash",
-        email_verified: true,
-        status: "active",
-        terms_accepted: true,
-        terms_version: "1.0.0",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      mockAuthRepo.findUserByEmail.mockResolvedValue(existingUser);
-
-      await expect(authService.register(validRegisterDto)).rejects.toThrow(HttpError);
-      await expect(authService.register(validRegisterDto)).rejects.toThrow("AUTH_CONFLICT");
-    });
-
-    it("should throw error when username already exists", async () => {
-      const existingUser: AuthUserRecord = {
-        id: userId,
-        email: "other@example.com",
-        username,
-        password_hash: "hash",
-        email_verified: true,
-        status: "active",
-        terms_accepted: true,
-        terms_version: "1.0.0",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      mockAuthRepo.findUserByEmail.mockResolvedValue(null);
-      mockAuthRepo.findUserByUsername.mockResolvedValue(existingUser);
-
-      await expect(authService.register(validRegisterDto)).rejects.toThrow(HttpError);
-      await expect(authService.register(validRegisterDto)).rejects.toThrow("AUTH_CONFLICT");
-    });
-
-    it("should resend verification for pending user", async () => {
-      const pendingUser: AuthUserRecord = {
-        id: userId,
-        email,
-        primary_email: email,
-        username,
-        password_hash: "hash",
-        email_verified: false,
-        status: "pending_verification",
-        terms_accepted: true,
-        terms_version: "1.0.0",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        locale: "en",
-      };
-
-      // Temporarily enable email for this test
-      const originalEnabled = mockEnv.email.enabled;
-      mockEnv.email.enabled = true;
-
-      mockAuthRepo.findUserByEmail.mockResolvedValue(pendingUser);
-      mockAuthRepo.createAuthToken.mockResolvedValue("verification-token");
-
-      await expect(authService.register(validRegisterDto)).resolves.toBeDefined();
-      expect(mockMailerService.mailerService.send).toHaveBeenCalled();
-
-      mockEnv.email.enabled = originalEnabled;
-    });
-
-    it("should throw error when terms not accepted", async () => {
-      const dtoWithoutTerms: RegisterDTO = {
-        ...validRegisterDto,
-        terms_accepted: false,
-      };
-
-      // Ensure no existing user to trigger the terms check
-      mockAuthRepo.findUserByEmail.mockResolvedValue(null);
-      mockAuthRepo.findUserByUsername.mockResolvedValue(null);
-
-      await expect(authService.register(dtoWithoutTerms)).rejects.toThrow(HttpError);
-      await expect(authService.register(dtoWithoutTerms)).rejects.toThrow(
-        "TERMS_ACCEPTANCE_REQUIRED",
-      );
-    });
-  });
+  // Self-service registration (ADR-039) is covered in
+  // auth.registration.email-first.test.ts and the email-first integration suite.
 
   describe("verifyEmail", () => {
     it("should verify email successfully", async () => {
@@ -519,7 +352,7 @@ describe("Auth Service", () => {
       mockBcrypt.compare.mockResolvedValue(true as never);
       mockTwofaService.is2FAEnabled.mockResolvedValue(false);
       mockAuthRepo.createSessionWithRefresh.mockResolvedValue(undefined);
-      
+
       mockBruteforceRepo.getFailedAttempt.mockResolvedValue(null);
       mockBruteforceRepo.getFailedAttemptByIP.mockResolvedValue(null);
       mockBruteforceRepo.resetFailedAttempts.mockResolvedValue(undefined);
@@ -688,7 +521,6 @@ describe("Auth Service", () => {
       mockJwt.sign
         .mockReturnValueOnce("new_refresh_token" as never)
         .mockReturnValueOnce("new_access_token" as never);
-      
 
       const result = await authService.refresh(refreshToken);
 

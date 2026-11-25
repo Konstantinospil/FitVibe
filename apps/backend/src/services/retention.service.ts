@@ -2,12 +2,14 @@ import type { Knex } from "knex";
 
 import { db } from "../db/connection.js";
 import { processDueAccountDeletions } from "../modules/users/dsr.service.js";
+import { purgeExpiredRegistrationIntents } from "../modules/auth/auth.registration-intent.repository.js";
 
 export interface RetentionSummary {
   purgedIdempotencyKeys: number;
   purgedAuthTokens: number;
   purgedRefreshTokens: number;
   purgedUnverifiedAccounts: number;
+  purgedRegistrationIntents: number;
   processedDsrRequests: number;
 }
 
@@ -60,6 +62,7 @@ export async function runRetentionSweep(now: Date = new Date()): Promise<Retenti
   const purgedAuthTokens = await purgeExpiredAuthTokens(now);
   const purgedRefreshTokens = await purgeExpiredRefreshTokens(now);
   const purgedUnverifiedAccounts = await purgeUnverifiedAccounts(now);
+  const purgedRegistrationIntents = await purgeExpiredRegistrationIntents(now);
   const processedDsrRequests = await processDueAccountDeletions(now);
 
   return {
@@ -67,6 +70,7 @@ export async function runRetentionSweep(now: Date = new Date()): Promise<Retenti
     purgedAuthTokens,
     purgedRefreshTokens,
     purgedUnverifiedAccounts,
+    purgedRegistrationIntents,
     processedDsrRequests,
   };
 }
