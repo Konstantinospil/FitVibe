@@ -77,10 +77,18 @@ describe("errorReporter (ADR-040)", () => {
     });
   });
 
-  it("ignores failed resource loads and opaque cross-origin script errors", async () => {
+  it("ignores failed resource loads, opaque cross-origin script errors and ResizeObserver notices", async () => {
     installErrorReporting();
     window.dispatchEvent(new Event("error"));
     window.dispatchEvent(new ErrorEvent("error", { message: "Script error." }));
+    window.dispatchEvent(
+      new ErrorEvent("error", {
+        message: "ResizeObserver loop completed with undelivered notifications.",
+      }),
+    );
+    window.dispatchEvent(
+      new ErrorEvent("error", { message: "ResizeObserver loop limit exceeded" }),
+    );
     reportClientError("error", "real one");
     await flush();
 

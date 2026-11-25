@@ -23,6 +23,17 @@ const EMAIL_PATTERN = /[^\s@/'"<>()]+@[^\s@/'"<>()]+\.[a-z]{2,}/gi;
 // password reset, verification links).
 const URL_QUERY_OR_FRAGMENT = /[?#][^\s'"<>()]*/g;
 
+// Browser noise that is not an application error:
+// - "Script error." is all a browser exposes for cross-origin scripts.
+// - The ResizeObserver notice means layout settled over more than one frame;
+//   it is harmless, never printed to the console, and fired constantly by
+//   responsive layouts (seen on most routes in E2E).
+const IGNORED_MESSAGES = new Set([
+  "Script error.",
+  "ResizeObserver loop completed with undelivered notifications.",
+  "ResizeObserver loop limit exceeded",
+]);
+
 let installed = false;
 let reportsSent = 0;
 const reported = new Set<string>();
@@ -64,8 +75,7 @@ export function reportClientError(
     return;
   }
   const message = sanitize(rawMessage.trim(), LIMITS.message);
-  // "Script error." is all a browser exposes for cross-origin scripts.
-  if (!message || message === "Script error.") {
+  if (!message || IGNORED_MESSAGES.has(message)) {
     return;
   }
   const key = `${kind}|${message}`;
