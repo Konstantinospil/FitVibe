@@ -32,7 +32,7 @@ Browsers report errors to FitVibe's own backend, and the backend writes them to 
 ### Client: `apps/frontend/src/utils/errorReporter.ts`
 
 - Installed from `main.tsx` in production builds only. SSR, unit tests and development builds send nothing.
-- Reports `window` `error` events (not failed resource loads or opaque cross-origin `Script error.`), `unhandledrejection` events, and `logger.error` calls. For logger calls it sends the message and the `Error` only, never the context object.
+- Reports `window` `error` events (not failed resource loads, opaque cross-origin `Script error.`, or the harmless `ResizeObserver loop …` notice), `unhandledrejection` events, and `logger.error` calls. For logger calls it sends the message and the `Error` only, never the context object.
 - Sends only `location.pathname`, never the query or fragment, and applies the same token/email stripping as the server.
 - Sends each distinct error once per page load, and at most 10 reports per page.
 - Has no static imports. The HTTP client is loaded on the first report, so pages without errors pay nothing. A failed report is dropped silently, so reporting can never loop.
