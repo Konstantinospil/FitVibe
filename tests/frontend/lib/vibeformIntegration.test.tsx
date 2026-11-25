@@ -10,6 +10,7 @@ import {
   updateMyVibeformPreferences,
   VibeformRenderer,
 } from "../../../apps/frontend/src/lib/vibeform";
+import flowVibeformCss from "../../../apps/frontend/src/lib/vibeform/templates/FlowVibeform.css?raw";
 
 const profile: VibeformProfile = {
   preferences: {
@@ -83,7 +84,16 @@ describe("Vibeform rendering boundary", () => {
     expect(svg).toHaveAttribute("data-vibeform-template", "flow");
     expect(svg).toHaveAttribute("data-motion-enabled", "false");
     expect(svg.querySelector("g")).not.toHaveClass("vibeform-pulse");
-    expect(svg.querySelector("style")).toHaveTextContent("prefers-reduced-motion");
+    // The production CSP blocks inline <style>; the animation CSS must ship
+    // as a same-origin stylesheet instead (issue 663).
+    expect(svg.querySelector("style")).toBeNull();
+  });
+
+  it("keeps the flow animation in a stylesheet that honours reduced motion", () => {
+    expect(flowVibeformCss).toContain("@keyframes vibeform-pulse");
+    expect(flowVibeformCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[^}]*\.vibeform-pulse\s*\{\s*animation: none;/,
+    );
   });
 
   it("enables the flow animation only when the profile opts into motion", () => {

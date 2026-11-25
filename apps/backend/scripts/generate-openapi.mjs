@@ -385,6 +385,21 @@ const paths = {
       },
     },
   },
+  "/client-errors": {
+    post: {
+      summary: "Report a browser error (ADR-040)",
+      description:
+        "Public, CSRF-protected and rate-limited. Reports carry no identity; the server strips query strings, fragments and email addresses before logging.",
+      tags: ["System"],
+      requestBody: jsonContent("#/components/schemas/ClientErrorReportRequest"),
+      responses: {
+        204: { description: "Report recorded" },
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        403: jsonContent("#/components/schemas/ErrorResponse"),
+        429: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
   "/health": {
     get: {
       summary: "Liveness probe",
@@ -547,6 +562,18 @@ const schemas = {
       },
     },
     required: ["genders", "fitnessLevels", "weight"],
+    additionalProperties: false,
+  },
+  ClientErrorReportRequest: {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["error", "unhandledrejection", "logger"] },
+      message: { type: "string", minLength: 1, maxLength: 1000 },
+      stack: { type: "string", maxLength: 4000 },
+      source: { type: "string", maxLength: 500 },
+      route: { type: "string", pattern: "^/", maxLength: 200 },
+    },
+    required: ["kind", "message", "route"],
     additionalProperties: false,
   },
   StartRegistrationRequest: {

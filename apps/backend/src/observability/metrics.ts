@@ -85,6 +85,13 @@ const pointsAwardedCounter = new client.Counter({
   labelNames: ["rule"],
 });
 
+// Browser error reports (ADR-040). One bounded label: the report kind.
+const clientErrorReportsCounter = new client.Counter({
+  name: "frontend_client_errors_total",
+  help: "Errors reported by browsers, grouped by kind",
+  labelNames: ["kind"],
+});
+
 register.registerMetric(httpRequestDuration);
 register.registerMetric(httpRequestsTotal);
 register.registerMetric(refreshReuseCounter);
@@ -96,6 +103,7 @@ register.registerMetric(mfaEventCounter);
 register.registerMetric(accountsOverLockoutThreshold);
 register.registerMetric(accountLockoutMonitorConfigured);
 register.registerMetric(pointsAwardedCounter);
+register.registerMetric(clientErrorReportsCounter);
 
 function resolveRouteLabel(req: Request): string {
   const maybeRoute: unknown = req.route;
@@ -192,6 +200,10 @@ export function incrementAuthMfaEvent(
   event: "enrolled" | "disabled" | "login_failed" | "login_success" | "blocked",
 ): void {
   mfaEventCounter.inc({ event });
+}
+
+export function incrementClientErrorReport(kind: "error" | "unhandledrejection" | "logger"): void {
+  clientErrorReportsCounter.inc({ kind });
 }
 
 export function incrementPointsAwarded(rule: string, amount: number) {

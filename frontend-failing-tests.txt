@@ -1,5 +1,4 @@
 FAIL  ../../tests/frontend/pages/TermsReacceptance.test.tsx [ ../../tests/frontend/pages/TermsReacceptance.test.tsx ]
-FAIL  ../../tests/frontend/utils/suppressConsole.test.ts [ ../../tests/frontend/utils/suppressConsole.test.ts ]
 FAIL  ../../tests/frontend/pages/admin/UserManagement.test.tsx [ ../../tests/frontend/pages/admin/UserManagement.test.tsx ]
 FAIL  ../../tests/frontend/accessibility/LanguageSwitcher.accessibility.test.tsx > LanguageSwitcher Accessibility > ARIA attributes > should update aria-checked when language changes
 FAIL  ../../tests/frontend/accessibility/LanguageSwitcher.accessibility.test.tsx > LanguageSwitcher Accessibility > Keyboard navigation > should close dropdown after selection

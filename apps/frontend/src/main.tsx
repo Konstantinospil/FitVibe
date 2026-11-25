@@ -4,8 +4,7 @@ import App from "./App";
 import "./styles/global.css";
 import "./styles/components.css";
 import "./styles/surfaces.css";
-// Suppress console errors in production for Lighthouse compliance
-import "./utils/suppressConsole";
+import { installErrorReporting } from "./utils/errorReporter";
 import { ensurePrivateTranslationsLoaded, minimalTranslationsReady } from "./i18n/config";
 // Theme store is small and needed immediately to prevent FOUC
 import { applyTheme, useThemeStore } from "./store/theme.store";
@@ -14,6 +13,12 @@ import {
   clearAuthenticatedPrefetch,
   startAuthenticatedPrefetch,
 } from "./utils/authenticatedPrefetch";
+
+// Report uncaught errors to FitVibe's own backend (ADR-040). Installed before
+// any app code runs; the HTTP client loads only when an error is reported.
+if (import.meta.env.PROD) {
+  installErrorReporting();
+}
 
 // With a session, ProtectedRoutes will need the full bundle. Start it now, in
 // parallel with the login strings, instead of after the app mounts (issue 634).

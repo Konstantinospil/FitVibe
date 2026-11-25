@@ -44,6 +44,7 @@ import {
   incrementAuthLoginSuccess,
   incrementAuthPasswordReset,
   incrementAuthMfaEvent,
+  incrementClientErrorReport,
   stopMetricsCollection,
 } from "../../../apps/backend/src/observability/metrics.js";
 
@@ -192,6 +193,17 @@ describe("Metrics", () => {
       incrementAuthMfaEvent("login_failed");
       expect(mockCounterInstance.inc).toHaveBeenCalledWith({ event: "enrolled" });
       expect(mockCounterInstance.inc).toHaveBeenCalledWith({ event: "login_failed" });
+    });
+  });
+
+  describe("Browser error reports (ADR-040)", () => {
+    it("labels client error reports only by their bounded kind", () => {
+      incrementClientErrorReport("error");
+      incrementClientErrorReport("unhandledrejection");
+      incrementClientErrorReport("logger");
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ kind: "error" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ kind: "unhandledrejection" });
+      expect(mockCounterInstance.inc).toHaveBeenCalledWith({ kind: "logger" });
     });
   });
 
