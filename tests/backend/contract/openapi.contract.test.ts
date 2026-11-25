@@ -1,6 +1,8 @@
 import { z, type ZodTypeAny } from "zod";
 import {
-  RegisterSchema,
+  StartRegistrationSchema,
+  RegistrationIntentSchema,
+  CompleteRegistrationSchema,
   LoginSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
@@ -24,7 +26,9 @@ type SchemaMapEntry = {
 };
 
 const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
-  { name: "RegisterRequest", schema: RegisterSchema },
+  { name: "StartRegistrationRequest", schema: StartRegistrationSchema },
+  { name: "RegistrationIntentRequest", schema: RegistrationIntentSchema },
+  { name: "CompleteRegistrationRequest", schema: CompleteRegistrationSchema },
   { name: "LoginRequest", schema: LoginSchema },
   { name: "ForgotPasswordRequest", schema: ForgotPasswordSchema },
   { name: "ResetPasswordRequest", schema: ResetPasswordSchema },
@@ -110,8 +114,7 @@ describe("OpenAPI contract alignment", () => {
 
   it("keeps calculated Vibeform fields read-only on the preference update operation", () => {
     const operation = (openApiSpec as any).paths?.["/vibeforms/me/preferences"]?.put;
-    const requestReference =
-      operation?.requestBody?.content?.["application/json"]?.schema?.$ref;
+    const requestReference = operation?.requestBody?.content?.["application/json"]?.schema?.$ref;
     const requestSchema = (openApiSpec as any).components.schemas.UpdateVibeformPreferencesRequest;
 
     expect(requestReference).toBe("#/components/schemas/UpdateVibeformPreferencesRequest");

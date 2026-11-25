@@ -1,4 +1,10 @@
-export { register, resendVerificationEmail, verifyEmail } from "./auth.registration.service.js";
+export {
+  startRegistration,
+  getRegistrationIntent,
+  completeRegistration,
+  resendVerificationEmail,
+  verifyEmail,
+} from "./auth.registration.service.js";
 export { login } from "./auth.login.service.js";
 export { verify2FALogin } from "./auth.2fa-login.service.js";
 export { refresh, logout } from "./auth.refresh.service.js";

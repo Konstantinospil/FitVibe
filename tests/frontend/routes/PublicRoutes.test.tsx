@@ -17,6 +17,10 @@ vi.mock("../../src/pages/Register", () => ({
   default: () => <div data-testid="register-page">Register Page</div>,
 }));
 
+vi.mock("../../src/pages/CompleteRegistration", () => ({
+  default: () => <div data-testid="complete-registration-page">Complete Registration Page</div>,
+}));
+
 vi.mock("../../src/pages/VerifyEmail", () => ({
   default: () => <div data-testid="verify-email-page">Verify Email Page</div>,
 }));
@@ -102,6 +106,16 @@ describe("PublicRoutes", () => {
 
     await screen.findByTestId("register-page");
     expect(screen.getByTestId("register-page")).toBeInTheDocument();
+  });
+
+  it("should render CompleteRegistration page at /register/complete", async () => {
+    render(
+      <MemoryRouter initialEntries={["/register/complete?token=abc"]}>
+        <PublicRoutes />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId("complete-registration-page")).toBeInTheDocument();
   });
 
   it("should render VerifyEmail page at /verify", async () => {

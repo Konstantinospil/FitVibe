@@ -7,6 +7,11 @@ export interface QueueJob {
   attemptCount?: number;
   lastError?: string;
   enqueuedAt?: Date;
+  /**
+   * The payload holds personal data (for example an email address). It is
+   * never logged, and durable queues drop the job as soon as it completes.
+   */
+  sensitive?: boolean;
 }
 
 export interface DeadLetterJob extends QueueJob {
@@ -16,6 +21,14 @@ export interface DeadLetterJob extends QueueJob {
 }
 
 type JobHandler = (job: QueueJob) => Promise<void>;
+
+/** Log-safe view of a job: sensitive payloads are replaced by their keys. */
+export function describeJob(job: QueueJob): Record<string, unknown> {
+  if (!job.sensitive) {
+    return { ...job };
+  }
+  return { ...job, payload: { redactedKeys: Object.keys(job.payload) } };
+}
 
 const MAX_RETRY_ATTEMPTS = 3;
 const BASE_RETRY_DELAY_MS = 2000; // 2 seconds
@@ -42,7 +55,7 @@ export class QueueService {
   private registerDefaultHandlers(): void {
     for (const jobName of SHARED_JOB_TYPES) {
       this.registerHandler(jobName, async (job) => {
-        logger.debug({ job }, "[queue] Processing shared job");
+        logger.debug({ job: describeJob(job) }, "[queue] Processing shared job");
         await executeSharedJob(jobName, job.payload);
       });
     }
@@ -66,7 +79,10 @@ export class QueueService {
     };
 
     this.queue.push(enrichedJob);
-    logger.debug({ job: enrichedJob, queueLength: this.queue.length }, "[queue] Job enqueued");
+    logger.debug(
+      { job: describeJob(enrichedJob), queueLength: this.queue.length },
+      "[queue] Job enqueued",
+    );
 
     // Trigger processing asynchronously (non-blocking)
     setImmediate(() => {
@@ -129,7 +145,7 @@ export class QueueService {
         job: deadLetterJob.name,
         totalAttempts: deadLetterJob.totalAttempts,
         error: deadLetterJob.finalError,
-        payload: deadLetterJob.payload,
+        payload: describeJob(deadLetterJob).payload,
       },
       "[queue] Job moved to dead-letter queue after max retries",
     );
@@ -158,7 +174,7 @@ export class QueueService {
 
         const handler = this.handlers.get(job.name);
         if (!handler) {
-          logger.warn({ job }, "[queue] No handler registered for job type");
+          logger.warn({ job: describeJob(job) }, "[queue] No handler registered for job type");
           continue;
         }
 

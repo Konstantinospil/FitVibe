@@ -27,6 +27,7 @@ import {
   ensureUsernameColumnExists,
 } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
+import { obtainRegistrationLinkToken, registerThroughEmail } from "../../setup/emailed-links.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { seed as seedLegalPublications } from "../../../apps/backend/src/db/seeds/005_legal_publications.js";
@@ -64,39 +65,24 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
     await truncateAll();
   });
 
-  it("should complete full flow: register → verify → login → create session", async () => {
-    // Step 1: Register a new user via API
-    const registerResponse = await request(app).post("/api/v1/auth/register").send({
+  it("should complete full flow: register (email-first) → login → create session", async () => {
+    // Steps 1-2 (ADR-039): start with the address, finish with the emailed link.
+    const registerResponse = await registerThroughEmail(app, {
       email: "testuser@example.com",
       username: "testuser",
       password: "SecureP@ssw0rd123!",
-      terms_accepted: true,
     });
 
-    expect(registerResponse.status).toBe(202);
-    expect(registerResponse.body).toHaveProperty("message");
-    expect(registerResponse.body).toHaveProperty("debugVerificationToken");
+    expect(registerResponse.status).toBe(201);
+    expect(registerResponse.body.user.status).toBe("active");
 
-    const verificationToken = registerResponse.body.debugVerificationToken;
-    expect(verificationToken).toBeTruthy();
-
-    // Get user ID from database since registration response doesn't include user object
-    // primary_email is a computed field from user_contacts, so we need to join or use findUserByEmail
     const { findUserByEmail } =
       await import("../../../apps/backend/src/modules/auth/auth.repository.js");
     const user = await findUserByEmail("testuser@example.com");
     expect(user).toBeDefined();
-    expect(user?.status).toBe("pending_verification");
+    expect(user?.status).toBe("active");
     const userId = user?.id;
     expect(userId).toBeDefined();
-
-    // Step 2: Verify email via API (GET /verify with token query parameter)
-    const verifyResponse = await request(app).get("/api/v1/auth/verify").query({
-      token: verificationToken,
-    });
-
-    expect(verifyResponse.status).toBe(200);
-    expect(verifyResponse.body.user.status).toBe("active");
 
     // Verify user can be found by email before login (same query login uses)
     // Reuse findUserByEmail from earlier import
@@ -161,8 +147,10 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
     expect(gender?.code).toBeTruthy();
     expect(fitnessLevel?.code).toBeTruthy();
 
+    const email = "profile-registration@example.com";
+    const token = await obtainRegistrationLinkToken(app, email);
     const payload = {
-      email: "profile-registration@example.com",
+      token,
       username: "profile-registration",
       password: "SecureP@ssw0rd123!",
       terms_accepted: true,
@@ -180,18 +168,18 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
     );
 
     const response = await request(app)
-      .post("/api/v1/auth/register")
+      .post("/api/v1/auth/register/complete")
       .field("payload", JSON.stringify(payload))
       .attach("avatar", png, {
         filename: "registration-avatar.png",
         contentType: "image/png",
       });
 
-    expect(response.status).toBe(202);
+    expect(response.status).toBe(201);
 
     const { findUserByEmail } =
       await import("../../../apps/backend/src/modules/auth/auth.repository.js");
-    const user = await findUserByEmail(payload.email);
+    const user = await findUserByEmail(email);
     expect(user).toBeDefined();
 
     const profile = await db("profiles").where({ user_id: user?.id }).first();
@@ -239,12 +227,13 @@ describeWithTestDatabase("Integration: Auth → Session Flow", () => {
       "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*",
     );
 
+    const token = await obtainRegistrationLinkToken(app, email);
     const response = await request(app)
-      .post("/api/v1/auth/register")
+      .post("/api/v1/auth/register/complete")
       .field(
         "payload",
         JSON.stringify({
-          email,
+          token,
           username: "malware-registration",
           password: "SecureP@ssw0rd123!",
           terms_accepted: true,

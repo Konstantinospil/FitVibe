@@ -226,6 +226,15 @@ To use Redis:
 2. Set `REDIS_ENABLED=true` in backend environment
 3. Configure `REDIS_HOST` and `REDIS_PORT` if different from defaults
 
+### Email and the test mailbox (sign-up, password reset)
+
+Registration is email-first (ADR-039), and password reset also works only through the emailed link. Neither link appears in an API response. In development without SMTP (`EMAIL_ENABLED` unset or `false`), the backend keeps outgoing mail in an in-memory test mailbox automatically:
+
+1. Submit the address on `/register` or `/forgot-password`.
+2. Open `http://localhost:4000/api/v1/dev/mail?to=<address>` and follow the link in the newest message.
+
+`DELETE /api/v1/dev/mail` clears the mailbox. Captured mail lives in backend memory and is lost on restart. Set `EMAIL_CAPTURE_ENABLED=false` to turn it off. With `EMAIL_ENABLED=true`, mail is delivered over SMTP and the mailbox is off unless you set `EMAIL_CAPTURE_ENABLED=true`. The backend refuses to start with the mailbox enabled when `NODE_ENV=production`.
+
 ### ClamAV (Optional)
 
 ClamAV is only needed if you want antivirus scanning. It's disabled by default.

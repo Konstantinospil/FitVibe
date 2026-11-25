@@ -24,7 +24,7 @@ GitHub Actions JS **action runtimes** already target Node 24 (ADR-018). That is 
    - Engines: root `package.json` `"node": ">=24"`
    - Tooling: `.nvmrc` contains `24`
    - Types: `@types/node` `^24` at the workspace root and in `apps/backend`, `apps/frontend`, and `apps/backoffice`
-3. **Out of scope:** `packages/patched-extract-zip` keeps its upstream `engines` field. Backend tests stay on **Jest 29 + ts-jest** (ADR-021 remains Deferred).
+3. **Out of scope:** `packages/patched-extract-zip` keeps its upstream `engines` field (package removed in November 2026 once nothing depended on `extract-zip`; see `docs/dependency-override-second-pass.md`). Backend tests stay on **Jest 29 + ts-jest** (ADR-021 remains Deferred).
 4. **Native addons:** `sharp` `>=0.35` continues to supply musl prebuilds for Alpine; do not add a compile toolchain unless a prebuild is missing.
 
 ---

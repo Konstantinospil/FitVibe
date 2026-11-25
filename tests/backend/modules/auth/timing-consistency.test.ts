@@ -14,14 +14,18 @@ import * as bruteforceRepo from "../../../../apps/backend/src/modules/auth/brute
 import type { AuthUserRecord } from "../../../../apps/backend/src/modules/auth/auth.repository.js";
 import type {
   LoginDTO,
-  RegisterDTO,
+  StartRegistrationDTO,
 } from "../../../../apps/backend/src/modules/auth/auth.types.js";
 
 // Mock dependencies
+import { queueService } from "../../../../apps/backend/src/jobs/services/queue.factory.js";
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository");
 jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js");
 jest.mock("../../../../apps/backend/src/modules/auth/bruteforce.repository.js");
 jest.mock("bcryptjs");
+jest.mock("../../../../apps/backend/src/jobs/services/queue.factory.js", () => ({
+  queueService: { enqueue: jest.fn().mockResolvedValue(undefined) },
+}));
 jest.mock("../../../../apps/backend/src/services/mailer.service.js");
 jest.mock("../../../../apps/backend/src/db/index.js", () => {
   const insert = jest.fn().mockResolvedValue(undefined);
@@ -222,85 +226,52 @@ describe("AC-1.12: Timing Consistency for User Enumeration Protection", () => {
     });
   });
 
-  describe("Register Endpoint Timing", () => {
-    const registerDto: RegisterDTO = {
-      email: "newuser@example.com",
-      username: "newuser",
-      password: "ValidPassword123!",
-      terms_accepted: true,
-    };
+  describe("Register Endpoint Timing (email-first, ADR-039)", () => {
+    const startDto: StartRegistrationDTO = { email: "someone@example.com", locale: "en" };
 
-    it("should have consistent timing for new user vs existing user", async () => {
-      const bcrypt = await import("bcryptjs");
-      (bcrypt.hash as jest.Mock).mockImplementation(async () => {
+    it("takes the same time for every address because it only queues the request", async () => {
+      // Make an account lookup expensive: if step 1 ever touched account data
+      // again, the existing-address path would be visibly slower.
+      mockAuthRepo.findUserByEmail.mockImplementation(async () => {
         await new Promise((resolve) => setTimeout(resolve, 150));
-        return "$2a$12$newhash";
+        return { ...mockUser, status: "active" } as AuthUserRecord;
       });
 
-      // New user (doesn't exist)
-      mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
-      mockAuthRepo.findUserByUsername.mockResolvedValue(undefined);
-      mockAuthRepo.createUser.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthToken.mockResolvedValue([]);
-      mockAuthRepo.findUserById.mockResolvedValue({
-        ...mockUser,
-        id: "new-user-id",
-        status: "pending_verification",
-      });
-      mockAuthRepo.markAuthTokensConsumed.mockResolvedValue(1);
-      mockAuthRepo.countAuthTokensSince.mockResolvedValue(0);
-      mockAuthRepo.purgeAuthTokensOlderThan.mockResolvedValue(0);
+      const newAddressTime = await getAverageTiming(
+        () => authService.startRegistration({ ...startDto, email: "unused@example.com" }),
+        10,
+      );
+      const existingAddressTime = await getAverageTiming(
+        () => authService.startRegistration({ ...startDto, email: mockUser.primary_email ?? "" }),
+        10,
+      );
 
-      const newUserTime = await getAverageTiming(() => authService.register(registerDto), 10); // Increased from 3 to 10 to reduce jitter variance impact
-
-      // Existing user with pending_verification
-      const existingUser: AuthUserRecord = {
-        ...mockUser,
-        status: "pending_verification",
-      } as AuthUserRecord;
-      mockAuthRepo.findUserByEmail.mockResolvedValue(existingUser);
-
-      const existingUserTime = await getAverageTiming(() => authService.register(registerDto), 10); // Increased from 3 to 10 to reduce jitter variance impact
-
-      const variance = calculateVariance(newUserTime, existingUserTime);
-
-      // Allow up to 15% variance to account for system load and timing variations
-      expect(variance).toBeLessThanOrEqual(15);
+      expect(mockAuthRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(jest.mocked(queueService.enqueue)).toHaveBeenCalledTimes(20);
+      expect(calculateVariance(newAddressTime, existingAddressTime)).toBeLessThanOrEqual(15);
     });
   });
 
-  describe("Password Reset Endpoint Timing", () => {
-    it("should have consistent timing for valid vs invalid email", async () => {
-      const bcrypt = await import("bcryptjs");
-      (bcrypt.compare as jest.Mock).mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return false;
+  describe("Password Reset Endpoint Timing (queued, ADR-039)", () => {
+    it("takes the same time for every address because it only queues the request", async () => {
+      // Make an account lookup expensive: if the request ever touched account
+      // data again, the existing-account path would be visibly slower.
+      mockAuthRepo.findUserByEmail.mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        return mockUser;
       });
 
-      // Invalid email (user not found)
-      mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
-
-      const invalidEmailTime = await getAverageTiming(
+      const unknownAddressTime = await getAverageTiming(
         () => authService.requestPasswordReset("nonexistent@example.com"),
-        10, // Increased from 3 to 10 to reduce jitter variance impact
+        10,
       );
-
-      // Valid email (user exists)
-      mockAuthRepo.findUserByEmail.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthToken.mockResolvedValue([]);
-      mockAuthRepo.markAuthTokensConsumed.mockResolvedValue(1);
-      mockAuthRepo.purgeAuthTokensOlderThan.mockResolvedValue(0);
-
-      const validEmailTime = await getAverageTiming(
+      const knownAddressTime = await getAverageTiming(
         () => authService.requestPasswordReset("test@example.com"),
-        10, // Increased from 3 to 10 to reduce jitter variance impact
+        10,
       );
 
-      const variance = calculateVariance(invalidEmailTime, validEmailTime);
-
-      // Allow up to 15% variance to account for system load and timing variations
-      // Security requirement is ≤10%, but tests need some tolerance for environmental factors
-      expect(variance).toBeLessThanOrEqual(15);
+      expect(mockAuthRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(calculateVariance(unknownAddressTime, knownAddressTime)).toBeLessThanOrEqual(15);
     });
   });
 

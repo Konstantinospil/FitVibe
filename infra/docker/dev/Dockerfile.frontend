@@ -6,13 +6,18 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-# 1) Copy workspace manifests needed for dependency resolution
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY apps/frontend/package.json apps/frontend/
-COPY packages/*/package.json packages/*/
+# pnpm comes from the root package.json `packageManager` field, the same
+# version CI and the lockfile use; do not pin a different version here.
+ENV HUSKY=0
 
-# 2) Enable pnpm via corepack and pre-fetch deps for better caching
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+# 1) Copy only the lockfile/config inputs needed by pnpm fetch.
+#    Avoid wildcard COPY destinations for workspace manifests because
+#    Docker treats the destination wildcard literally as /app/packages/*.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .pnpmfile.cjs ./
+
+# 2) Activate the repository's pinned pnpm and pre-fetch dependencies.
+RUN corepack enable && corepack install
+RUN test "pnpm@$(pnpm --version)" = "$(node -p "require('./package.json').packageManager")"
 RUN pnpm fetch --prod=false
 
 # 3) Copy the remaining project sources
@@ -24,25 +29,21 @@ RUN pnpm install --frozen-lockfile --prod=false --offline
 # 5) Build the frontend workspace package (SSR build)
 RUN pnpm --filter @fitvibe/frontend run build:ssr
 
+# 6) Isolate the frontend package + production node_modules. This resolves the
+#    @fitvibe/ui workspace link, which a partial-manifest install cannot.
+RUN pnpm deploy --legacy --filter @fitvibe/frontend --prod /app/frontend-deploy
+
 # ---------- Runtime Stage ----------
 FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
-# Copy package files
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-lock.yaml ./
-COPY --from=builder /app/pnpm-workspace.yaml ./
-COPY --from=builder /app/apps/frontend/package.json ./apps/frontend/
-
-# Install production dependencies only
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate && \
-    pnpm install --frozen-lockfile --prod --no-offline
-
-# Copy built application
-COPY --from=builder /app/apps/frontend/dist ./apps/frontend/dist
-COPY --from=builder /app/apps/frontend/server.ts ./apps/frontend/
-COPY --from=builder /app/apps/frontend/index.html ./apps/frontend/
+COPY --from=builder /app/frontend-deploy/ ./
+# dist/ is gitignored, so pnpm deploy does not include the SSR build output
+COPY --from=builder /app/apps/frontend/dist ./dist
+COPY --from=builder /app/apps/frontend/server.ts ./server.ts
+COPY --from=builder /app/apps/frontend/index.html ./index.html
+COPY --from=builder /app/apps/frontend/src/ssr ./src/ssr
 
 # Create non-root user
 RUN addgroup -g 1000 nodejs && \
@@ -51,12 +52,10 @@ RUN addgroup -g 1000 nodejs && \
 
 USER nodejs
 
-WORKDIR /app/apps/frontend
-
 EXPOSE 4173
 
 ENV NODE_ENV=production
 ENV PORT=4173
 
-CMD ["node", "server.js"]
+CMD ["./node_modules/.bin/tsx", "server.ts"]
 ## ===============================================================

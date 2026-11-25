@@ -2,6 +2,8 @@ import { Router, type RequestHandler } from "express";
 import multer from "multer";
 import {
   register,
+  registrationIntent,
+  completeRegistration,
   registrationOptions,
   login,
   verify2FALogin,
@@ -25,7 +27,9 @@ import {
 import { rateLimit, rateLimitByUser } from "../common/rateLimiter.js";
 import { validate } from "../../utils/validation.js";
 import {
-  RegisterSchema,
+  StartRegistrationSchema,
+  RegistrationIntentSchema,
+  CompleteRegistrationSchema,
   LoginSchema,
   Verify2FALoginSchema,
   ForgotPasswordSchema,
@@ -89,12 +93,27 @@ authRouter.get(
   asyncHandler(registrationOptions),
 );
 
+// Email-first registration (ADR-039).
+// Step 1: the address only. Same answer for every address.
 authRouter.post(
   "/register",
   rateLimit("auth_register"),
-  registrationMultipart,
-  validate(RegisterSchema),
+  validate(StartRegistrationSchema),
   asyncHandler(register),
+);
+// Step 2: the emailed link proves mailbox ownership.
+authRouter.post(
+  "/register/intent",
+  rateLimit("auth_register_intent"),
+  validate(RegistrationIntentSchema),
+  asyncHandler(registrationIntent),
+);
+authRouter.post(
+  "/register/complete",
+  rateLimit("auth_register_complete"),
+  registrationMultipart,
+  validate(CompleteRegistrationSchema),
+  asyncHandler(completeRegistration),
 );
 authRouter.get("/verify", rateLimit("auth_verify"), asyncHandler(verifyEmail));
 authRouter.post(

@@ -5,7 +5,9 @@ import {
   rawHttpClient,
   getHealthStatus,
   login,
-  register,
+  startRegistration,
+  getRegistrationIntent,
+  completeRegistration,
   verify2FALogin,
   forgotPassword,
   resetPassword,
@@ -124,17 +126,44 @@ describe("API Service Functions", () => {
     });
   });
 
-  describe("register", () => {
-    it("should register successfully", async () => {
-      const mockResponse = {
-        user: { id: "1", username: "test", email: "test@example.com" },
-        session: { id: "session-1" },
-      };
-      // register uses rawHttpClient
-      rawMock.onPost("/api/v1/auth/register").reply(200, mockResponse);
+  describe("email-first registration (ADR-039)", () => {
+    it("starts registration with the address only", async () => {
+      rawMock.onPost("/api/v1/auth/register").reply((config) => {
+        expect(JSON.parse(String(config.data))).toEqual({
+          email: "test@example.com",
+          locale: "de",
+        });
+        return [202, { message: "accepted" }];
+      });
 
-      const result = await register({
+      await expect(startRegistration({ email: "test@example.com", locale: "de" })).resolves.toEqual(
+        {
+          message: "accepted",
+        },
+      );
+    });
+
+    it("looks up the address a link belongs to", async () => {
+      rawMock.onPost("/api/v1/auth/register/intent").reply((config) => {
+        expect(JSON.parse(String(config.data))).toEqual({ token: "link-token" });
+        return [200, { email: "test@example.com", expiresAt: "2026-11-25T12:00:00.000Z" }];
+      });
+
+      await expect(getRegistrationIntent("link-token")).resolves.toEqual({
         email: "test@example.com",
+        expiresAt: "2026-11-25T12:00:00.000Z",
+      });
+    });
+
+    it("completes registration as JSON without an avatar", async () => {
+      const mockResponse = { user: { id: "1", username: "test", email: "test@example.com" } };
+      rawMock.onPost("/api/v1/auth/register/complete").reply((config) => {
+        expect(JSON.parse(String(config.data))).toMatchObject({ token: "link-token" });
+        return [201, mockResponse];
+      });
+
+      const result = await completeRegistration({
+        token: "link-token",
         password: "password123",
         username: "test",
         terms_accepted: true,
@@ -143,17 +172,14 @@ describe("API Service Functions", () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it("should send multipart registration when an avatar is supplied", async () => {
-      const mockResponse = {
-        user: { id: "1", username: "test", email: "test@example.com" },
-        session: { id: "session-1" },
-      };
-      rawMock.onPost("/api/v1/auth/register").reply((config) => {
+    it("completes registration as multipart when an avatar is supplied", async () => {
+      const mockResponse = { user: { id: "1", username: "test", email: "test@example.com" } };
+      rawMock.onPost("/api/v1/auth/register/complete").reply((config) => {
         expect(config.data).toBeInstanceOf(FormData);
         const form = config.data as FormData;
         expect(form.get("avatar")).toBeInstanceOf(File);
         expect(JSON.parse(String(form.get("payload")))).toMatchObject({
-          email: "test@example.com",
+          token: "link-token",
           profile: {
             display_name: "Test User",
             weight_kg: 75,
@@ -162,15 +188,15 @@ describe("API Service Functions", () => {
             fitness_level: "advanced",
           },
         });
-        return [200, mockResponse];
+        return [201, mockResponse];
       });
 
       const avatar = new File([new Uint8Array([1, 2, 3])], "avatar.png", {
         type: "image/png",
       });
-      const result = await register(
+      const result = await completeRegistration(
         {
-          email: "test@example.com",
+          token: "link-token",
           password: "password123",
           username: "test",
           terms_accepted: true,
@@ -1034,8 +1060,7 @@ describe("API Service Functions", () => {
         bio: "lifter",
         alias: "A",
         weight: 80,
-        avatarUrl:
-          "/api/v1/users/avatar/u1?v=2026-10-10T12%3A34%3A56.000Z",
+        avatarUrl: "/api/v1/users/avatar/u1?v=2026-10-10T12%3A34%3A56.000Z",
       });
 
       apiMock.onGet("/api/v1/users/me").replyOnce(200, {
@@ -1212,9 +1237,9 @@ describe("API Service Functions", () => {
       apiMock.onPost("/api/v1/users/change-password").replyOnce(200, {
         passwordWarning: "PASSWORD_BREACHED",
       });
-      await expect(
-        changePassword({ currentPassword: "a", newPassword: "b" }),
-      ).resolves.toEqual({ passwordWarning: "PASSWORD_BREACHED" });
+      await expect(changePassword({ currentPassword: "a", newPassword: "b" })).resolves.toEqual({
+        passwordWarning: "PASSWORD_BREACHED",
+      });
       apiMock.onGet("/api/v1/users/me/privacy").reply(200, {
         defaultVisibility: "private",
         allowFollowers: true,

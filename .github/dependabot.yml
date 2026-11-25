@@ -26,9 +26,9 @@ updates:
       semver-minor-days: 3
       semver-patch-days: 2
     ignore:
-      # Vendored via pnpm overrides (link:packages/patched-*) for CVEs.
+      # Pinned by a security override in pnpm-workspace.yaml (GHSA-3g3m-2fjr-6pw4);
+      # update the override and docs/dependency-overrides.json together instead.
       - dependency-name: "glob"
-      - dependency-name: "extract-zip"
     groups:
       production-minor-and-patch:
         applies-to: "version-updates"
