@@ -1037,6 +1037,32 @@
     },
     "errors": {
       "load": "No se pudieron cargar los datos del calendario."
+    },
+    "schedule": {
+      "moveLabel": "Mover {{title}}",
+      "moveHint": "Arrastra a otro día del calendario o pulsa para elegir un nuevo día y hora.",
+      "conflictLabel": "Conflicto de horario",
+      "dialog": {
+        "title": "Mover entrenamiento",
+        "description": "Elige un nuevo día y hora para {{title}}."
+      },
+      "fields": {
+        "day": "Día",
+        "time": "Hora"
+      },
+      "actions": {
+        "save": "Mover entrenamiento",
+        "cancel": "Cancelar"
+      },
+      "status": {
+        "moved": "{{title}} se ha movido al {{date}}."
+      },
+      "errors": {
+        "conflict": "{{title}} ya está planificado para las {{time}} del {{date}}. Elige otro día u otra hora.",
+        "conflictUnlisted": "Ya hay otro entrenamiento planificado para las {{time}} del {{date}}. Elige otro día u otra hora.",
+        "invalid": "Ese día y hora no existen. Elige otros.",
+        "save": "No se pudo mover el entrenamiento. Inténtalo de nuevo."
+      }
     }
   },
   "workoutEditor": {

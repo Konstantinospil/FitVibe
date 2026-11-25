@@ -42,6 +42,16 @@ Users need an intuitive drag-and-drop interface for scheduling sessions in a cal
 - Client-side conflict detection for UX
 - Server-side validation for data integrity
 
+## Implementation / verification (2026-11-25)
+
+- Planned sessions on the Calendar (selected-day list and weekly plan) carry a move handle. Dragging it onto a month-grid day moves the session to that day and keeps its local time; activating it without dragging opens a day-and-time dialog, the non-drag alternative required by [US-13.3](https://github.com/Konstantinospil/FitVibe/issues/139).
+- AC01: a move updates the cached calendar optimistically, without a page reload, and is restored if the server refuses it. Re-render timing evidence (performance traces) is not collected yet.
+- AC02: conflicts against the loaded sessions are detected before any request. While dragging, the hovered day and the conflicting sessions are highlighted; a refused move shows an actionable message naming the blocking workout. Conflicting cards carry a text label, so the state does not rely on colour alone.
+- AC03: `PATCH /api/v1/sessions/:id` re-validates a changed `planned_at` inside the write transaction and rejects a conflict with `422 E.SESSION.SCHEDULE_CONFLICT` and `details.conflictingSessionIds`.
+- **Conflict definition (decision gate):** a conflict is another active session planned at the same instant, the rule activation and recurrence already use (see [US-4.2](./US-4.2-plan-activation-progress.md)). Overlap by workout duration needs authoritative duration semantics and remains an open product decision.
+- AC04 (month/week/day views with time slots) is not implemented yet; only the month view exists.
+- Keep this story **open** until AC04 and the AC01 performance evidence are complete.
+
 ## Test Strategy
 
 - E2E tests for drag-and-drop functionality

@@ -1037,6 +1037,32 @@
     },
     "errors": {
       "load": "Calendar data could not be loaded."
+    },
+    "schedule": {
+      "moveLabel": "Move {{title}}",
+      "moveHint": "Drag to another day in the calendar, or press to choose a new day and time.",
+      "conflictLabel": "Time conflict",
+      "dialog": {
+        "title": "Move workout",
+        "description": "Choose a new day and time for {{title}}."
+      },
+      "fields": {
+        "day": "Day",
+        "time": "Time"
+      },
+      "actions": {
+        "save": "Move workout",
+        "cancel": "Cancel"
+      },
+      "status": {
+        "moved": "{{title}} moved to {{date}}."
+      },
+      "errors": {
+        "conflict": "{{title}} is already planned for {{time}} on {{date}}. Choose another day or time.",
+        "conflictUnlisted": "Another workout is already planned for {{time}} on {{date}}. Choose another day or time.",
+        "invalid": "That day and time doesn't exist. Choose another one.",
+        "save": "The workout couldn't be moved. Try again."
+      }
     }
   },
   "workoutEditor": {

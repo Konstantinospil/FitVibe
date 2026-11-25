@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { SessionStatus, SessionVisibility } from "@fitvibe/contracts";
 import { apiClient } from "./httpApi";
 
@@ -170,6 +171,27 @@ export async function updateSession(
 ): Promise<SessionWithExercises> {
   const res = await apiClient.patch<SessionWithExercises>(`/api/v1/sessions/${sessionId}`, payload);
   return res.data;
+}
+
+/**
+ * IDs of the sessions that block a reschedule, when the server rejected it with
+ * `E.SESSION.SCHEDULE_CONFLICT`; null for every other error.
+ */
+export function getScheduleConflictIds(error: unknown): string[] | null {
+  if (!axios.isAxiosError(error) || error.response?.status !== 422) {
+    return null;
+  }
+  const body: unknown = error.response.data;
+  if (typeof body !== "object" || body === null || !("error" in body)) {
+    return null;
+  }
+  const payload = (body as { error?: { code?: unknown; details?: unknown } }).error;
+  if (payload?.code !== "E.SESSION.SCHEDULE_CONFLICT") {
+    return null;
+  }
+  const details = payload.details as { conflictingSessionIds?: unknown } | undefined;
+  const ids = details?.conflictingSessionIds;
+  return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
 }
 
 export async function deleteSession(sessionId: string): Promise<void> {

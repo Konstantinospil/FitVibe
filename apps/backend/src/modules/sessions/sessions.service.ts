@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
+import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 import {
+  findSessionsScheduledAt,
   listSessions,
   getSessionById,
   getSessionWithDetails,
@@ -34,6 +36,32 @@ import {
   normalizeSessionExercises,
   trimToNull,
 } from "./sessions.normalization.js";
+
+/**
+ * Server-side re-validation for rescheduling (US-4.3-AC03). Clients detect the
+ * same conflict before saving; the server stays authoritative.
+ */
+async function ensureScheduleSlotFree(
+  userId: string,
+  sessionId: string,
+  plannedAt: string,
+  trx: Knex.Transaction,
+): Promise<void> {
+  const conflicts = await findSessionsScheduledAt(
+    userId,
+    [plannedAt],
+    { excludeSessionId: sessionId },
+    trx,
+  );
+  if (conflicts.length > 0) {
+    throw new HttpError(
+      422,
+      "E.SESSION.SCHEDULE_CONFLICT",
+      "Another session is already planned at this time",
+      { conflictingSessionIds: conflicts.map((conflict) => conflict.id) },
+    );
+  }
+}
 
 const allowedTransitions: Record<string, string[]> = {
   planned: ["in_progress", "completed", "canceled"],
@@ -223,10 +251,20 @@ export async function updateOne(
 
   const completing = targetStatus === "completed" && current.status !== "completed";
   const fullGamificationRebuild = completing && current.gamification_rebuild_required === true;
+  const reschedulesTo =
+    updates.planned_at !== undefined &&
+    targetStatus !== "canceled" &&
+    new Date(updates.planned_at).getTime() !== new Date(current.planned_at).getTime()
+      ? updates.planned_at
+      : undefined;
 
   await db.transaction(async (trx) => {
     if (dto.plan_id) {
       await ensurePlanExists(trx, dto.plan_id, userId);
+    }
+
+    if (reschedulesTo !== undefined) {
+      await ensureScheduleSlotFree(userId, id, reschedulesTo, trx);
     }
 
     const affected = await updateSession(id, userId, updates, trx);

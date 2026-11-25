@@ -636,6 +636,47 @@ describe("Sessions Repository", () => {
     });
   });
 
+  describe("findSessionsScheduledAt", () => {
+    it("returns active sessions at the instants, normalized to ISO, excluding the moved session", async () => {
+      const builder = createMockQueryBuilder([
+        { id: "session-a", planned_at: new Date("2026-11-04T08:00:00Z") },
+        { id: "session-b", planned_at: "2026-11-04T08:00:00Z" },
+      ]);
+      queryBuilders["sessions"] = builder;
+
+      const result = await sessionsRepository.findSessionsScheduledAt(
+        userId,
+        ["2026-11-04T08:00:00.000Z"],
+        { excludeSessionId: sessionId },
+      );
+
+      expect(result).toEqual([
+        { id: "session-a", planned_at: "2026-11-04T08:00:00.000Z" },
+        { id: "session-b", planned_at: "2026-11-04T08:00:00.000Z" },
+      ]);
+      expect(builder.where).toHaveBeenCalledWith({ owner_id: userId });
+      expect(builder.whereNull).toHaveBeenCalledWith("deleted_at");
+      expect(builder.andWhere).toHaveBeenCalledWith("id", "<>", sessionId);
+    });
+
+    it("does not add an exclusion when no session is being moved", async () => {
+      const builder = createMockQueryBuilder([]);
+      queryBuilders["sessions"] = builder;
+
+      await sessionsRepository.findSessionsScheduledAt(userId, ["2026-11-04T08:00:00.000Z"]);
+
+      expect(builder.andWhere).not.toHaveBeenCalled();
+    });
+
+    it("returns an empty list without querying for no instants", async () => {
+      const builder = createMockQueryBuilder([]);
+      queryBuilders["sessions"] = builder;
+
+      await expect(sessionsRepository.findSessionsScheduledAt(userId, [])).resolves.toEqual([]);
+      expect(builder.where).not.toHaveBeenCalled();
+    });
+  });
+
   describe("sessionsExistAtDates", () => {
     it("should return existing session dates", async () => {
       const plannedDates = ["2024-01-15T10:00:00Z", "2024-01-16T10:00:00Z"];

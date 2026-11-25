@@ -1,9 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Calendar from "../../src/pages/Calendar";
 import * as api from "../../src/services/api";
+import * as sessionApi from "../../src/services/sessionApi";
+import { localDateKey } from "../../src/lib/scheduling/sessionSchedule";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
 
 vi.mock("react-i18next", () => ({
@@ -25,6 +27,14 @@ vi.mock("../../src/services/api", async () => {
   };
 });
 
+vi.mock("../../src/services/sessionApi", async () => {
+  const actual = await vi.importActual("../../src/services/sessionApi");
+  return {
+    ...actual,
+    updateSession: vi.fn(),
+  };
+});
+
 const { apiErrorSpy } = vi.hoisted(() => ({
   apiErrorSpy: vi.fn(),
 }));
@@ -35,6 +45,7 @@ vi.mock("../../src/utils/logger", () => ({
 
 const mockedListSessions = vi.mocked(api.listSessions);
 const mockedListExercises = vi.mocked(api.listExercises);
+const mockedUpdateSession = vi.mocked(sessionApi.updateSession);
 
 const atLocalHour = (base: Date, hour: number) => {
   const value = new Date(base);
@@ -251,6 +262,204 @@ describe("Calendar", () => {
 
     await waitFor(() => {
       expect(mockedListSessions).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("rescheduling planned sessions (US-4.3 / US-4.4 / US-13.3)", () => {
+    const MOVE = "calendarSurface.schedule.moveLabel";
+    const originalElementFromPoint = document.elementFromPoint;
+    let pointerTarget: Element | null;
+
+    beforeEach(() => {
+      pointerTarget = null;
+      document.elementFromPoint = vi.fn(() => pointerTarget);
+      mockedUpdateSession.mockImplementation(
+        async (id, payload) =>
+          ({
+            ...response.data.find((session) => session.id === id)!,
+            ...payload,
+            exercises: [],
+          }) as sessionApi.SessionWithExercises,
+      );
+    });
+
+    afterEach(() => {
+      document.elementFromPoint = originalElementFromPoint;
+    });
+
+    const dayCell = (date: Date) => {
+      const cell = document.querySelector(`[data-schedule-day="${localDateKey(date)}"]`);
+      if (!cell) {
+        throw new Error(`No calendar cell for ${localDateKey(date)}`);
+      }
+      return cell;
+    };
+
+    const status = () =>
+      screen.getAllByRole("status").find((node) => node.getAttribute("aria-live") === "polite");
+
+    const dragHandleTo = (handle: HTMLElement, target: Element) => {
+      fireEvent.pointerDown(handle, {
+        pointerId: 1,
+        isPrimary: true,
+        button: 0,
+        clientX: 5,
+        clientY: 5,
+      });
+      pointerTarget = target;
+      fireEvent.pointerMove(handle, { pointerId: 1, isPrimary: true, clientX: 120, clientY: 80 });
+    };
+
+    const release = (handle: HTMLElement) =>
+      fireEvent.pointerUp(handle, { pointerId: 1, isPrimary: true, clientX: 120, clientY: 80 });
+
+    it("offers the move handle only on planned sessions", async () => {
+      // Select yesterday: it holds a completed session only.
+      renderCalendar();
+      const yesterday = addDays(today, -1);
+      const fullDate = new Intl.DateTimeFormat("en", { dateStyle: "full" }).format(yesterday);
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: `${String(yesterday.getDate()).padStart(2, "0")} — calendarSurface.dayLabel:${fullDate}`,
+        }),
+      );
+
+      const selectedDay = document.querySelector(".calendar-surface__selected-day") as HTMLElement;
+      expect(await within(selectedDay).findByText("Completed Strength")).toBeInTheDocument();
+      expect(within(selectedDay).queryByRole("button", { name: MOVE })).not.toBeInTheDocument();
+    });
+
+    it("moves a session to a new day and time with the keyboard dialog", async () => {
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      fireEvent.click(handle);
+      expect(await screen.findByText("calendarSurface.schedule.dialog.title")).toBeInTheDocument();
+      const target = addDays(today, 3);
+      fireEvent.change(screen.getByLabelText("calendarSurface.schedule.fields.day"), {
+        target: { value: localDateKey(target) },
+      });
+      fireEvent.change(screen.getByLabelText("calendarSurface.schedule.fields.time"), {
+        target: { value: "07:30" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "calendarSurface.schedule.actions.save" }),
+      );
+
+      const expected = new Date(target);
+      expected.setHours(7, 30, 0, 0);
+      await waitFor(() => {
+        expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+          planned_at: expected.toISOString(),
+        });
+      });
+      await waitFor(() => {
+        expect(screen.queryByText("calendarSurface.schedule.dialog.title")).not.toBeInTheDocument();
+      });
+      expect(status()).toHaveTextContent("calendarSurface.schedule.status.moved");
+    });
+
+    it("refuses a dialog move onto another workout's time before saving", async () => {
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      fireEvent.click(handle);
+      fireEvent.change(await screen.findByLabelText("calendarSurface.schedule.fields.day"), {
+        target: { value: localDateKey(tomorrow) },
+      });
+      fireEvent.change(screen.getByLabelText("calendarSurface.schedule.fields.time"), {
+        target: { value: "09:00" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "calendarSurface.schedule.actions.save" }),
+      );
+
+      expect(
+        await screen.findByText("calendarSurface.schedule.errors.conflict"),
+      ).toBeInTheDocument();
+      expect(mockedUpdateSession).not.toHaveBeenCalled();
+      expect(screen.getByText("calendarSurface.schedule.dialog.title")).toBeInTheDocument();
+    });
+
+    it("drags a session onto another day, keeping its time, without reloading the page", async () => {
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+      const target = addDays(today, 3);
+
+      dragHandleTo(handle, dayCell(target));
+      expect(dayCell(target)).toHaveClass("calendar-month__cell--drop-target");
+      release(handle);
+
+      const expected = atLocalHour(target, 18);
+      await waitFor(() => {
+        expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+          planned_at: expected.toISOString(),
+        });
+      });
+      expect(mockedListSessions).toHaveBeenCalled();
+      expect(await screen.findByText("calendarSurface.schedule.status.moved")).toBeInTheDocument();
+    });
+
+    it("highlights a conflict while hovering and refuses the drop before saving", async () => {
+      const evening = addDays(today, 2);
+      response.data.push({
+        id: "planned-evening",
+        owner_id: "user-1",
+        title: "Evening Plan",
+        planned_at: atLocalHour(evening, 18).toISOString(),
+        status: "planned",
+        visibility: "private",
+        exercise_count: 0,
+      });
+      response.total = response.data.length;
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      dragHandleTo(handle, dayCell(evening));
+
+      expect(dayCell(evening)).toHaveClass("calendar-month__cell--conflict");
+      release(handle);
+
+      expect(
+        await screen.findByText("calendarSurface.schedule.errors.conflict"),
+      ).toBeInTheDocument();
+      expect(mockedUpdateSession).not.toHaveBeenCalled();
+      expect(dayCell(evening)).toHaveClass("calendar-month__cell--conflict");
+    });
+
+    it("reports a conflict the server found outside the loaded sessions", async () => {
+      mockedUpdateSession.mockRejectedValueOnce({
+        isAxiosError: true,
+        response: {
+          status: 422,
+          data: {
+            error: {
+              code: "E.SESSION.SCHEDULE_CONFLICT",
+              details: { conflictingSessionIds: ["not-loaded"] },
+            },
+          },
+        },
+      });
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      dragHandleTo(handle, dayCell(addDays(today, 3)));
+      release(handle);
+
+      expect(
+        await screen.findByText("calendarSurface.schedule.errors.conflictUnlisted"),
+      ).toBeInTheDocument();
+      expect(apiErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it("ignores a drop back onto the session's own day", async () => {
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      dragHandleTo(handle, dayCell(today));
+      release(handle);
+
+      expect(mockedUpdateSession).not.toHaveBeenCalled();
     });
   });
 

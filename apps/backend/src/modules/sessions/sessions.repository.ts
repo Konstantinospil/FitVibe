@@ -391,27 +391,53 @@ export async function refreshSessionSummary(concurrent = true): Promise<void> {
   await db.raw("SELECT public.refresh_session_summary(?)", [concurrent]);
 }
 
+export interface ScheduledSessionInstant {
+  id: string;
+  planned_at: string;
+}
+
+/**
+ * Active (non-deleted) sessions of a user planned at any of the given instants.
+ * This is the single definition of a schedule conflict: two sessions planned at
+ * the same instant. Duration-based overlap needs authoritative duration semantics
+ * and is intentionally not inferred here.
+ */
+export async function findSessionsScheduledAt(
+  userId: string,
+  plannedInstants: string[],
+  options: { excludeSessionId?: string } = {},
+  trx?: Knex.Transaction,
+): Promise<ScheduledSessionInstant[]> {
+  if (!plannedInstants.length) {
+    return [];
+  }
+
+  const query = executor(trx)("sessions")
+    .select("id", "planned_at")
+    .where({ owner_id: userId })
+    .whereNull("deleted_at")
+    .whereIn("planned_at", plannedInstants);
+
+  if (options.excludeSessionId) {
+    query.andWhere("id", "<>", options.excludeSessionId);
+  }
+
+  const rows = (await query) as Array<{ id: string; planned_at: Date | string }>;
+
+  return rows.map(({ id, planned_at }) => ({
+    id,
+    planned_at:
+      planned_at instanceof Date ? planned_at.toISOString() : new Date(planned_at).toISOString(),
+  }));
+}
+
 export async function sessionsExistAtDates(
   userId: string,
   plannedDates: string[],
   trx?: Knex.Transaction,
 ): Promise<string[]> {
-  if (!plannedDates.length) {
-    return [];
-  }
-
-  const rows = (await executor(trx)("sessions")
-    .select("planned_at")
-    .where({ owner_id: userId })
-    .whereNull("deleted_at")
-    .whereIn("planned_at", plannedDates)) as Array<{ planned_at: Date | string }>;
-
-  return rows.map(({ planned_at }) => {
-    if (planned_at instanceof Date) {
-      return planned_at.toISOString();
-    }
-    return new Date(planned_at).toISOString();
-  });
+  const rows = await findSessionsScheduledAt(userId, plannedDates, {}, trx);
+  return rows.map(({ planned_at }) => planned_at);
 }
 
 export async function replaceSessionExercises(

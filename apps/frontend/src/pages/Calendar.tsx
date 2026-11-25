@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
@@ -14,6 +14,28 @@ import { logger } from "../utils/logger";
 import WorkoutEditor, { type WorkoutEditorAction } from "../components/composites/WorkoutEditor";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import PlanManagement from "../components/composites/PlanManagement";
+import { FormFeedback, type FeedbackTone } from "../components/composites/FormStack";
+import ScheduleSessionCard, {
+  ScheduleDragPreview,
+} from "../components/composites/ScheduleSessionCard";
+import RescheduleSessionDialog from "../components/composites/RescheduleSessionDialog";
+import { usePointerDrag } from "../hooks/usePointerDrag";
+import {
+  CALENDAR_QUERY_KEY,
+  useSessionReschedule,
+  type RescheduleResult,
+} from "../hooks/useSessionReschedule";
+import {
+  findScheduleConflicts,
+  isReschedulable,
+  localDateKey as dateKey,
+  moveToLocalDay,
+} from "../lib/scheduling/sessionSchedule";
+
+/** Attribute that marks a calendar day cell as a drop target; its value is the day key. */
+const DROP_DAY_ATTRIBUTE = "data-schedule-day";
+
+type ScheduleFeedback = { tone: FeedbackTone; message: string };
 
 const startOfWeek = (date: Date) => {
   const copy = new Date(date);
@@ -28,11 +50,6 @@ const endOfWeek = (date: Date) => {
   copy.setDate(copy.getDate() + 7);
   copy.setMilliseconds(-1);
   return copy;
-};
-
-const dateKey = (date: Date | string) => {
-  const value = new Date(date);
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 };
 
 const statusFor = (sessions: SessionListItem[]): TrainingStatus => {
@@ -69,7 +86,7 @@ const CalendarPage: React.FC = () => {
   }, [visibleMonth]);
 
   const sessions = useQuery({
-    queryKey: ["calendar", dateKey(range.gridStart), dateKey(range.gridEnd)],
+    queryKey: [...CALENDAR_QUERY_KEY, dateKey(range.gridStart), dateKey(range.gridEnd)],
     queryFn: async () => {
       const filters = {
         planned_from: range.gridStart.toISOString(),
@@ -158,11 +175,14 @@ const CalendarPage: React.FC = () => {
     })
     .sort((a, b) => new Date(a.planned_at).getTime() - new Date(b.planned_at).getTime());
 
-  const formatDateTime = (value: string) =>
-    new Intl.DateTimeFormat(i18n.language, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(value));
+  const formatDateTime = useCallback(
+    (value: string) =>
+      new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(value)),
+    [i18n.language],
+  );
 
   const moveMonth = (delta: number) => {
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
@@ -170,6 +190,134 @@ const CalendarPage: React.FC = () => {
 
   const moveYear = (delta: number) => {
     setVisibleMonth((current) => new Date(current.getFullYear() + delta, current.getMonth(), 1));
+  };
+
+  const loadedSessions = useMemo(() => sessions.data?.data ?? [], [sessions.data]);
+  const { reschedule } = useSessionReschedule(loadedSessions);
+  const moveHintId = useId();
+  const [movingSession, setMovingSession] = useState<SessionListItem | null>(null);
+  const [scheduleFeedback, setScheduleFeedback] = useState<ScheduleFeedback | null>(null);
+  const [conflictIds, setConflictIds] = useState<ReadonlySet<string>>(() => new Set());
+
+  const sessionTitle = useCallback(
+    (session: SessionListItem) => session.title || t("homeSurface.session.workout"),
+    [t],
+  );
+
+  const conflictMessage = useCallback(
+    (result: Extract<RescheduleResult, { status: "conflict" }>) => {
+      const blocking = loadedSessions.find((session) => result.conflictingIds.includes(session.id));
+      const when = {
+        date: new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }).format(
+          new Date(result.plannedAt),
+        ),
+        time: new Intl.DateTimeFormat(i18n.language, { timeStyle: "short" }).format(
+          new Date(result.plannedAt),
+        ),
+      };
+      return blocking
+        ? t("calendarSurface.schedule.errors.conflict", { ...when, title: sessionTitle(blocking) })
+        : t("calendarSurface.schedule.errors.conflictUnlisted", when);
+    },
+    [i18n.language, loadedSessions, sessionTitle, t],
+  );
+
+  /** Saves a move and resolves to the refusal message, or null when it was saved. */
+  const performMove = useCallback(
+    async (session: SessionListItem, plannedAt: string): Promise<string | null> => {
+      const result = await reschedule(session, plannedAt);
+      if (result.status === "saved") {
+        const target = new Date(result.plannedAt);
+        setConflictIds(new Set());
+        setSelectedDate(target);
+        if (target < range.gridStart || target > range.gridEnd) {
+          setVisibleMonth(new Date(target.getFullYear(), target.getMonth(), 1));
+        }
+        setScheduleFeedback({
+          tone: "success",
+          message: t("calendarSurface.schedule.status.moved", {
+            title: sessionTitle(session),
+            date: formatDateTime(result.plannedAt),
+          }),
+        });
+        return null;
+      }
+      if (result.status === "conflict") {
+        setConflictIds(new Set(result.conflictingIds));
+        return conflictMessage(result);
+      }
+      return t("calendarSurface.schedule.errors.save");
+    },
+    [conflictMessage, formatDateTime, range.gridEnd, range.gridStart, reschedule, sessionTitle, t],
+  );
+
+  const dropOnDay = useCallback(
+    (session: SessionListItem, dayKey: string) => {
+      if (dayKey === dateKey(session.planned_at)) {
+        return;
+      }
+      const plannedAt = moveToLocalDay(session.planned_at, dayKey);
+      if (!plannedAt) {
+        setScheduleFeedback({
+          tone: "warning",
+          message: t("calendarSurface.schedule.errors.invalid"),
+        });
+        return;
+      }
+      void performMove(session, plannedAt).then((refusal) => {
+        if (refusal) {
+          setScheduleFeedback({ tone: "warning", message: refusal });
+        }
+      });
+    },
+    [performMove, t],
+  );
+
+  const { dragState, getHandleProps, previewRef } = usePointerDrag<SessionListItem>({
+    dropTargetAttribute: DROP_DAY_ATTRIBUTE,
+    onDrop: dropOnDay,
+  });
+
+  // While dragging, conflicts are previewed for the hovered day before anything is saved.
+  const hoverConflictIds = useMemo(() => {
+    if (!dragState?.overTarget) {
+      return new Set<string>();
+    }
+    const plannedAt = moveToLocalDay(dragState.item.planned_at, dragState.overTarget);
+    return new Set(
+      plannedAt
+        ? findScheduleConflicts(loadedSessions, dragState.item.id, plannedAt).map(({ id }) => id)
+        : [],
+    );
+  }, [dragState, loadedSessions]);
+
+  const highlightedConflicts = dragState ? hoverConflictIds : conflictIds;
+
+  const exerciseCount = (session: SessionListItem) =>
+    t("homeSurface.session.exercises", {
+      count: session.exercise_count,
+    });
+
+  const renderScheduleCard = (session: SessionListItem, meta: string, supporting: string) => {
+    const movable = isReschedulable(session);
+    return (
+      <ScheduleSessionCard
+        key={session.id}
+        title={sessionTitle(session)}
+        meta={meta}
+        supporting={supporting}
+        moveLabel={t("calendarSurface.schedule.moveLabel", { title: sessionTitle(session) })}
+        moveHintId={moveHintId}
+        handleProps={movable ? getHandleProps(session) : undefined}
+        onMove={movable ? () => setMovingSession(session) : undefined}
+        conflictLabel={
+          highlightedConflicts.has(session.id)
+            ? t("calendarSurface.schedule.conflictLabel")
+            : undefined
+        }
+        dragging={dragState?.item.id === session.id}
+      />
+    );
   };
 
   return (
@@ -256,10 +404,15 @@ const CalendarPage: React.FC = () => {
                   {weekday}
                 </div>
                 {dates.map((date) => {
-                  const daySessions = sessionsByDay.get(dateKey(date)) ?? [];
+                  const key = dateKey(date);
+                  const daySessions = sessionsByDay.get(key) ?? [];
                   const outside = date.getMonth() !== visibleMonth.getMonth();
-                  const selected = dateKey(date) === dateKey(selectedDate);
+                  const selected = key === dateKey(selectedDate);
                   const dayStatus = statusFor(daySessions);
+                  const dropTarget = dragState?.overTarget === key;
+                  const hasConflict = daySessions.some((session) =>
+                    highlightedConflicts.has(session.id),
+                  );
 
                   return (
                     <div
@@ -269,10 +422,13 @@ const CalendarPage: React.FC = () => {
                         outside ? "calendar-month__cell--outside" : "",
                         selected ? "calendar-month__selected" : "",
                         daySessions.length > 0 ? `calendar-month__cell--${dayStatus}` : "",
+                        dropTarget ? "calendar-month__cell--drop-target" : "",
+                        hasConflict ? "calendar-month__cell--conflict" : "",
                       ].join(" ")}
                       role="gridcell"
                       aria-selected={selected}
                       data-status={dayStatus}
+                      {...{ [DROP_DAY_ATTRIBUTE]: key }}
                     >
                       <Button
                         variant="ghost"
@@ -297,6 +453,19 @@ const CalendarPage: React.FC = () => {
             ))}
           </div>
 
+          <p id={moveHintId} className="sr-only">
+            {t("calendarSurface.schedule.moveHint")}
+          </p>
+          {/* Persistent live region: move outcomes and conflicts are announced
+              without moving focus (WCAG 4.1.3). */}
+          <div role="status" aria-live="polite">
+            {scheduleFeedback ? (
+              <FormFeedback tone={scheduleFeedback.tone} role="presentation">
+                {scheduleFeedback.message}
+              </FormFeedback>
+            ) : null}
+          </div>
+
           <div className="calendar-surface__selected-day">
             <div className="calendar-surface__selected-title">
               {new Intl.DateTimeFormat(i18n.language, {
@@ -309,18 +478,15 @@ const CalendarPage: React.FC = () => {
             {selectedSessions.length === 0 ? (
               <div className="training-empty">{t("calendarSurface.empty.selectedDay")}</div>
             ) : (
-              selectedSessions.map((session) => (
-                <TrainingSummaryCard
-                  key={session.id}
-                  title={session.title || t("homeSurface.session.workout")}
-                  meta={new Intl.DateTimeFormat(i18n.language, {
+              selectedSessions.map((session) =>
+                renderScheduleCard(
+                  session,
+                  new Intl.DateTimeFormat(i18n.language, {
                     timeStyle: "short",
-                  }).format(new Date(session.planned_at))}
-                  supporting={t("homeSurface.session.exercises", {
-                    count: session.exercise_count,
-                  })}
-                />
-              ))
+                  }).format(new Date(session.planned_at)),
+                  exerciseCount(session),
+                ),
+              )
             )}
           </div>
         </TrainingPanel>
@@ -358,23 +524,37 @@ const CalendarPage: React.FC = () => {
             {weeklyPlan.length === 0 ? (
               <div className="training-empty">{t("calendarSurface.empty.week")}</div>
             ) : (
-              weeklyPlan.map((session) => (
-                <TrainingSummaryCard
-                  key={session.id}
-                  title={session.title || t("homeSurface.session.workout")}
-                  meta={formatDateTime(session.planned_at)}
-                  supporting={
-                    session.notes ||
-                    t("homeSurface.session.exercises", {
-                      count: session.exercise_count,
-                    })
-                  }
-                />
-              ))
+              weeklyPlan.map((session) =>
+                renderScheduleCard(
+                  session,
+                  formatDateTime(session.planned_at),
+                  session.notes || exerciseCount(session),
+                ),
+              )
             )}
           </div>
         </TrainingPanel>
       </div>
+
+      {dragState ? (
+        <ScheduleDragPreview title={sessionTitle(dragState.item)} previewRef={previewRef} />
+      ) : null}
+
+      {movingSession ? (
+        <RescheduleSessionDialog
+          key={movingSession.id}
+          sessionTitle={sessionTitle(movingSession)}
+          plannedAt={movingSession.planned_at}
+          onCancel={() => setMovingSession(null)}
+          onConfirm={async (plannedAt) => {
+            const refusal = await performMove(movingSession, plannedAt);
+            if (!refusal) {
+              setMovingSession(null);
+            }
+            return refusal;
+          }}
+        />
+      ) : null}
 
       <PlanManagement open={managePlansOpen} onClose={() => setManagePlansOpen(false)} />
 
@@ -384,7 +564,7 @@ const CalendarPage: React.FC = () => {
         plannedAt={selectedDayStart.toISOString()}
         actions={editorAction ? [editorAction] : []}
         onSaved={() => {
-          void queryClient.invalidateQueries({ queryKey: ["calendar"] });
+          void queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
         }}
       />
     </main>

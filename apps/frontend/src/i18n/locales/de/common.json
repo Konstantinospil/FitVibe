@@ -1037,6 +1037,32 @@
     },
     "errors": {
       "load": "Kalenderdaten konnten nicht geladen werden."
+    },
+    "schedule": {
+      "moveLabel": "{{title}} verschieben",
+      "moveHint": "Im Kalender auf einen anderen Tag ziehen oder drücken, um einen neuen Tag und eine neue Uhrzeit zu wählen.",
+      "conflictLabel": "Zeitkonflikt",
+      "dialog": {
+        "title": "Workout verschieben",
+        "description": "Wähle einen neuen Tag und eine neue Uhrzeit für {{title}}."
+      },
+      "fields": {
+        "day": "Tag",
+        "time": "Uhrzeit"
+      },
+      "actions": {
+        "save": "Workout verschieben",
+        "cancel": "Abbrechen"
+      },
+      "status": {
+        "moved": "{{title}} wurde auf {{date}} verschoben."
+      },
+      "errors": {
+        "conflict": "{{title}} ist bereits für {{time}} am {{date}} geplant. Wähle einen anderen Tag oder eine andere Uhrzeit.",
+        "conflictUnlisted": "Ein anderes Workout ist bereits für {{time}} am {{date}} geplant. Wähle einen anderen Tag oder eine andere Uhrzeit.",
+        "invalid": "Diesen Tag mit dieser Uhrzeit gibt es nicht. Wähle eine andere Angabe.",
+        "save": "Das Workout konnte nicht verschoben werden. Versuche es erneut."
+      }
     }
   },
   "workoutEditor": {

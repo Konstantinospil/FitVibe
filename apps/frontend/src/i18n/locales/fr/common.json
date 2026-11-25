@@ -1037,6 +1037,32 @@
     },
     "errors": {
       "load": "Impossible de charger les données du calendrier."
+    },
+    "schedule": {
+      "moveLabel": "Déplacer {{title}}",
+      "moveHint": "Faites glisser vers un autre jour du calendrier, ou appuyez pour choisir un nouveau jour et une nouvelle heure.",
+      "conflictLabel": "Conflit d’horaire",
+      "dialog": {
+        "title": "Déplacer l’entraînement",
+        "description": "Choisissez un nouveau jour et une nouvelle heure pour {{title}}."
+      },
+      "fields": {
+        "day": "Jour",
+        "time": "Heure"
+      },
+      "actions": {
+        "save": "Déplacer l’entraînement",
+        "cancel": "Annuler"
+      },
+      "status": {
+        "moved": "{{title}} a été déplacé au {{date}}."
+      },
+      "errors": {
+        "conflict": "{{title}} est déjà prévu à {{time}} le {{date}}. Choisissez un autre jour ou une autre heure.",
+        "conflictUnlisted": "Un autre entraînement est déjà prévu à {{time}} le {{date}}. Choisissez un autre jour ou une autre heure.",
+        "invalid": "Ce jour et cette heure n’existent pas. Choisissez-en d’autres.",
+        "save": "Impossible de déplacer l’entraînement. Réessayez."
+      }
     }
   },
   "workoutEditor": {

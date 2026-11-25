@@ -479,6 +479,89 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* Movable planned session (ScheduleSessionCard) and its drag preview.
+ * The move handle sits in its own column, vertically centred beside the content. */
+.training-summary-card.schedule-session-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-sm);
+  align-items: center;
+}
+
+.schedule-session-card > .training-summary-card__copy,
+.schedule-session-card > .training-summary-card__supporting {
+  grid-column: 1;
+}
+
+.schedule-session-card > .training-summary-card__trailing {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.schedule-session-card--conflict {
+  outline: 2px solid var(--color-danger-border);
+  outline-offset: -2px;
+}
+
+.schedule-session-card__conflict {
+  display: block;
+  color: var(--color-danger-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.schedule-session-card--dragging {
+  opacity: var(--opacity-subtle);
+}
+
+.schedule-session-card__handle {
+  /* Touch drags start on the handle only, so the rest of the page keeps native scrolling.
+     Dragging from the handle must not start a text selection across the page. */
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.schedule-session-card__handle:active {
+  cursor: grabbing;
+}
+
+.schedule-drag-preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  max-width: min(18rem, 70vw);
+  margin: var(--space-sm) 0 0 var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: var(--control-border-width) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-e3);
+  font-family: var(--font-family-body);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+  font-weight: var(--font-weight-semibold);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.schedule-drag-preview > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-drag-preview > svg {
+  flex: none;
+  width: var(--control-icon-sm);
+  height: var(--control-icon-sm);
+  color: var(--color-text-secondary);
+}
+
 .training-empty,
 .training-error {
   padding: var(--space-lg);

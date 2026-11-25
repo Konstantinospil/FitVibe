@@ -40,6 +40,13 @@ Users need mobile-friendly touch gesture support for drag-and-drop scheduling. T
 - Performance critical: no scroll-jank >50ms
 - Screen width support ≥320px
 
+## Implementation / verification (2026-11-25)
+
+- Calendar scheduling uses Pointer Events, which cover touch (`touchstart`/`touchmove`/`touchend` input), mouse and pen through one code path.
+- Only the move handle sets `touch-action: none`, so a touch drag starts on the handle while the rest of the page keeps native scrolling. The dragged preview follows the pointer through a CSS transform, without re-rendering the page on each move.
+- Visual feedback: the target day shows a dashed outline, a conflicting target switches to danger tokens, and the dragged card is dimmed.
+- Unit tests cover the touch pointer path. Mobile-emulation E2E evidence, performance traces for long tasks over 50 ms, and drag-resize (sessions have no duration to resize yet) are still open; keep this story **open**.
+
 ## Test Strategy
 
 - E2E mobile emulation tests

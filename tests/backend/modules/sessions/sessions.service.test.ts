@@ -435,6 +435,69 @@ describe("Sessions Service", () => {
       expect(mockSessionsRepo.updateSession).toHaveBeenCalled();
     });
 
+    describe("rescheduling (US-4.3-AC03)", () => {
+      const plannedAt = "2026-11-02T08:00:00.000Z";
+      const scheduledSession: Session = { ...existingSession, planned_at: plannedAt };
+      const target = "2026-11-04T08:00:00.000Z";
+
+      it("rejects a move onto an occupied instant with 422 and the conflicting session IDs", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
+        mockSessionsRepo.findSessionsScheduledAt.mockResolvedValue([
+          { id: "other-session", planned_at: target },
+        ]);
+
+        const attempt = sessionsService.updateOne(userId, sessionId, { planned_at: target });
+
+        await expect(attempt).rejects.toMatchObject({
+          status: 422,
+          code: "E.SESSION.SCHEDULE_CONFLICT",
+          details: { conflictingSessionIds: ["other-session"] },
+        });
+        expect(mockSessionsRepo.findSessionsScheduledAt).toHaveBeenCalledWith(
+          userId,
+          [target],
+          { excludeSessionId: sessionId },
+          expect.anything(),
+        );
+        expect(mockSessionsRepo.updateSession).not.toHaveBeenCalled();
+      });
+
+      it("saves a move onto a free instant", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
+        mockSessionsRepo.findSessionsScheduledAt.mockResolvedValue([]);
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...scheduledSession,
+          planned_at: target,
+          exercises: [],
+        } as SessionWithExercises);
+
+        const result = await sessionsService.updateOne(userId, sessionId, { planned_at: target });
+
+        expect(result.planned_at).toBe(target);
+        expect(mockSessionsRepo.updateSession).toHaveBeenCalledWith(
+          sessionId,
+          userId,
+          expect.objectContaining({ planned_at: target }),
+          expect.anything(),
+        );
+      });
+
+      it("skips the conflict lookup when the planned instant does not change", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...scheduledSession,
+          exercises: [],
+        } as SessionWithExercises);
+
+        await sessionsService.updateOne(userId, sessionId, { planned_at: plannedAt });
+
+        expect(mockSessionsRepo.findSessionsScheduledAt).not.toHaveBeenCalled();
+        expect(mockSessionsRepo.updateSession).toHaveBeenCalled();
+      });
+    });
+
     it("should throw 404 when session not found", async () => {
       mockSessionsRepo.getSessionById.mockResolvedValue(null);
 
