@@ -2,8 +2,7 @@ const crypto = require("node:crypto");
 const AUTH_FLAG_KEY = "fitvibe:auth";
 const AUTH_HINT_INITIALIZED_KEY = "fitvibe:e2e:auth-hint-initialized";
 const CONSENT_STATUS_RECOVERY_WINDOW_MS = 75_000;
-const APPLICATION_BASE_URL =
-  process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
+const APPLICATION_BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:4173";
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
 
 const TEST_USER = {
@@ -52,13 +51,17 @@ async function createSeededSession(page, account = TEST_USER) {
   const request = page.context().request;
   const csrfToken = await getCsrfToken(request, "E2E session");
 
-  const loginResponse = await retryRateLimitedMutation(() => request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
-    data: { email: account.email, password: account.password },
-    headers: {
-      Origin: APPLICATION_ORIGIN,
-      "X-CSRF-Token": csrfToken,
-    },
-  }), "E2E login");
+  const loginResponse = await retryRateLimitedMutation(
+    () =>
+      request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
+        data: { email: account.email, password: account.password },
+        headers: {
+          Origin: APPLICATION_ORIGIN,
+          "X-CSRF-Token": csrfToken,
+        },
+      }),
+    "E2E login",
+  );
   if (!loginResponse.ok()) {
     throw new Error(`Unable to create seeded E2E session: HTTP ${loginResponse.status()}`);
   }
@@ -148,19 +151,20 @@ async function ensureEssentialCookieConsent(page) {
   const previousBody = await previous.json();
   if (!previousBody.data?.hasConsent) {
     const csrfToken = await getCsrfToken(request, "E2E consent");
-    const response = await retryRateLimitedMutation(() => request.post(
-      `${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`,
-      {
-        data: {
-          essential: true,
-          preferences: false,
-          analytics: false,
-          marketing: false,
-          source: "banner",
-        },
-        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
-      },
-    ), "E2E consent persistence");
+    const response = await retryRateLimitedMutation(
+      () =>
+        request.post(`${APPLICATION_ORIGIN}/api/v1/consent/cookie-preferences`, {
+          data: {
+            essential: true,
+            preferences: false,
+            analytics: false,
+            marketing: false,
+            source: "banner",
+          },
+          headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+        }),
+      "E2E consent persistence",
+    );
     if (!response.ok()) {
       throw new Error(`Unable to persist E2E consent: HTTP ${response.status()}`);
     }
@@ -207,7 +211,9 @@ async function ensureAuthenticatedBrowserConsent(page) {
 const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "el"];
 
 function normalizeLocale(locale) {
-  const normalized = String(locale || "en").slice(0, 2).toLowerCase();
+  const normalized = String(locale || "en")
+    .slice(0, 2)
+    .toLowerCase();
   return SUPPORTED_LOCALES.includes(normalized) ? normalized : "en";
 }
 
@@ -240,19 +246,18 @@ async function dismissFirstLoginTwoFactorInvitation(page) {
   const { common } = localeMessages(await currentLocale(page));
   const dialog = page.getByRole("dialog", { name: common.firstLogin2fa.title });
   await expect(dialog).toBeVisible();
-  const responsePromise = page.waitForResponse((response) =>
-    new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
-    response.request().method() === "POST",
+  const responsePromise = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/v1/auth/2fa/invitation/dismiss" &&
+      response.request().method() === "POST",
   );
-  await dialog
-    .getByRole("button", { name: common.firstLogin2fa.notNow, exact: true })
-    .click();
+  await dialog.getByRole("button", { name: common.firstLogin2fa.notNow, exact: true }).click();
   const response = await responsePromise;
   expect(response.ok()).toBeTruthy();
   await expect(dialog).toHaveCount(0);
-  const status = await page.context().request.get(
-    new URL("/api/v1/auth/2fa/status", page.url()).toString(),
-  );
+  const status = await page
+    .context()
+    .request.get(new URL("/api/v1/auth/2fa/status", page.url()).toString());
   expect(status.ok()).toBeTruthy();
   expect(await status.json()).toMatchObject({ invitationDismissed: true });
 }
@@ -306,7 +311,9 @@ async function assertConsentRequired(page) {
 }
 
 async function getAccountLanguage(page) {
-  const response = await page.context().request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
+  const response = await page
+    .context()
+    .request.get(`${APPLICATION_ORIGIN}/api/v1/users/me/preferences`);
   if (!response.ok()) {
     throw new Error(`Unable to read account language: HTTP ${response.status()}`);
   }
@@ -335,6 +342,74 @@ async function setAccountLanguage(page, locale) {
   return language;
 }
 
+/**
+ * Email-first registration (ADR-039): the continue link reaches only the
+ * mailbox. The E2E backend runs with EMAIL_CAPTURE_ENABLED=true, so tests read
+ * that mailbox through the non-production dev route, like a user reads email.
+ */
+async function readRegistrationLinkToken(request, email, { notBefore = 0 } = {}) {
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    const response = await request.get(
+      `${APPLICATION_ORIGIN}/api/v1/dev/mail?to=${encodeURIComponent(email)}`,
+    );
+    if (response.status() === 404) {
+      throw new Error(
+        "Test mailbox unavailable: start the backend with EMAIL_CAPTURE_ENABLED=true",
+      );
+    }
+    if (response.ok()) {
+      const { messages } = await response.json();
+      for (const message of messages) {
+        const match = /\/register\/complete\?token=([A-Za-z0-9_-]+)/.exec(message.text || "");
+        if (match && Date.parse(message.capturedAt) >= notBefore) {
+          return match[1];
+        }
+      }
+    }
+    if (Date.now() > deadline) {
+      throw new Error(`No registration link arrived for ${email}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+}
+
+async function registerAccountViaEmail(request, account) {
+  const requestedAt = Date.now() - 1000;
+  const startCsrf = await getCsrfToken(request, "registration start");
+  const start = await retryRateLimitedMutation(
+    () =>
+      request.post(`${APPLICATION_ORIGIN}/api/v1/auth/register`, {
+        data: { email: account.email, locale: "en" },
+        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": startCsrf },
+      }),
+    "E2E registration start",
+  );
+  if (start.status() !== 202) {
+    throw new Error(`Unable to start fixture registration: HTTP ${start.status()}`);
+  }
+
+  const token = await readRegistrationLinkToken(request, account.email, { notBefore: requestedAt });
+  const completeCsrf = await getCsrfToken(request, "registration completion");
+  const completion = await retryRateLimitedMutation(
+    () =>
+      request.post(`${APPLICATION_ORIGIN}/api/v1/auth/register/complete`, {
+        data: {
+          token,
+          username: account.username,
+          password: account.password,
+          terms_accepted: true,
+        },
+        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": completeCsrf },
+      }),
+    "E2E registration completion",
+  );
+  if (completion.status() !== 201) {
+    throw new Error(`Unable to complete fixture registration: HTTP ${completion.status()}`);
+  }
+  return (await completion.json()).user;
+}
+
 async function createFirstLoginAccount(page, testInfo) {
   const id = fixtureAccountId(testInfo);
   const account = {
@@ -344,38 +419,17 @@ async function createFirstLoginAccount(page, testInfo) {
     role: "athlete",
   };
   const request = page.context().request;
-  const registerCsrf = await getCsrfToken(request, "first-login registration");
-  const registration = await retryRateLimitedMutation(() => request.post(`${APPLICATION_ORIGIN}/api/v1/auth/register`, {
-    data: {
-      email: account.email,
-      username: account.username,
-      password: account.password,
-      terms_accepted: true,
-    },
-    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": registerCsrf },
-  }), "E2E registration");
-  if (registration.status() !== 202) {
-    throw new Error(`Unable to create first-login fixture account: HTTP ${registration.status()}`);
-  }
-  const registrationBody = await registration.json();
-  if (!registrationBody.debugVerificationToken) {
-    throw new Error("First-login fixture registration omitted debugVerificationToken");
-  }
-
-  const verification = await request.get(
-    `${APPLICATION_ORIGIN}/api/v1/auth/verify?token=${encodeURIComponent(
-      registrationBody.debugVerificationToken,
-    )}`,
-  );
-  if (!verification.ok()) {
-    throw new Error(`Unable to verify first-login fixture account: HTTP ${verification.status()}`);
-  }
+  await registerAccountViaEmail(request, account);
 
   const loginCsrf = await getCsrfToken(request, "first-login session");
-  const login = await retryRateLimitedMutation(() => request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
-    data: { email: account.email, password: account.password },
-    headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": loginCsrf },
-  }), "E2E first-login session");
+  const login = await retryRateLimitedMutation(
+    () =>
+      request.post(`${APPLICATION_ORIGIN}/api/v1/auth/login`, {
+        data: { email: account.email, password: account.password },
+        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": loginCsrf },
+      }),
+    "E2E first-login session",
+  );
   if (!login.ok()) {
     throw new Error(`Unable to login first-login fixture account: HTTP ${login.status()}`);
   }
@@ -486,7 +540,9 @@ async function describeElementAtPoint(page, { x, y }) {
         }
         const owner = el.closest("[data-component], [role=dialog], .cookie-consent-backdrop");
         if (owner && owner !== el) {
-          parts.push(` in ${owner.tagName.toLowerCase()}${owner.className ? `.${String(owner.className).split(/\s+/)[0]}` : ""}`);
+          parts.push(
+            ` in ${owner.tagName.toLowerCase()}${owner.className ? `.${String(owner.className).split(/\s+/)[0]}` : ""}`,
+          );
         }
         return parts.join("");
       },
@@ -560,6 +616,8 @@ module.exports = {
   setAccountLanguage,
   assertConsentRequired,
   createFirstLoginAccount,
+  readRegistrationLinkToken,
+  registerAccountViaEmail,
   prepareFullyOnboardedPage,
   prepareConsentRequiredPage,
   prepareFirstLoginState,

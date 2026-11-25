@@ -1,6 +1,9 @@
+import crypto from "crypto";
 import type { NextFunction, Request, Response } from "express";
 import {
-  register as doRegister,
+  startRegistration as doStartRegistration,
+  getRegistrationIntent as doGetRegistrationIntent,
+  completeRegistration as doCompleteRegistration,
   login as doLogin,
   verify2FALogin as doVerify2FALogin,
   refresh as doRefresh,
@@ -20,7 +23,9 @@ import {
 } from "./auth.service.js";
 import { env, JWKS } from "../../config/env.js";
 import {
-  RegisterSchema,
+  StartRegistrationSchema,
+  RegistrationIntentSchema,
+  CompleteRegistrationSchema,
   LoginSchema,
   Verify2FALoginSchema,
   ForgotPasswordSchema,
@@ -42,6 +47,7 @@ import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { extractClientIp } from "../../utils/ip-extractor.js";
 import { prepareRegistrationAvatar } from "./auth.registration-avatar.service.js";
 import { getRegistrationOptions } from "./auth.registration-options.service.js";
+import { hashRegistrationEmail } from "./auth.registration-email.js";
 
 function authCookieOptions(maxAge?: number) {
   return {
@@ -112,7 +118,15 @@ function getAuthenticatedUser(req: Request): { sub?: string; sid?: string; role?
   return req.user ?? null;
 }
 
-type RegisterInput = z.infer<typeof RegisterSchema>;
+type CompleteRegistrationInput = z.infer<typeof CompleteRegistrationSchema>;
+
+/** Identical for every address, registered or not (ADR-039). */
+export const PASSWORD_RESET_REQUESTED_MESSAGE =
+  "If the email is registered, a reset link will be sent shortly.";
+
+/** Identical for every address, registered or not (ADR-039). */
+export const REGISTRATION_STARTED_MESSAGE =
+  "If this address can be used to create an account, we have sent it an email with the next step.";
 type LoginInput = z.infer<typeof LoginSchema>;
 type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
@@ -129,35 +143,70 @@ export async function registrationOptions(
   }
 }
 
+/**
+ * POST /auth/register — step 1 of email-first registration (ADR-039).
+ * Only queues work; the response is the same whatever the address.
+ */
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const payload: RegisterInput = RegisterSchema.parse(req.body);
+    const payload = StartRegistrationSchema.parse(req.body);
+    const scopeUserId = `anon:registration:${hashRegistrationEmail(payload.email)}`;
+    const execute = async (): Promise<Record<string, unknown>> => {
+      await doStartRegistration(payload);
+      return { message: REGISTRATION_STARTED_MESSAGE };
+    };
+
+    const handled = await handleIdempotentRequest(req, res, scopeUserId, payload, async () => ({
+      status: 202,
+      body: await execute(),
+    }));
+    if (!handled) {
+      res.status(202).json(await execute());
+    }
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** POST /auth/register/intent — which address does this link finish? */
+export async function registrationIntent(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { token } = RegistrationIntentSchema.parse(req.body);
+    res.status(200).json(await doGetRegistrationIntent(token));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** POST /auth/register/complete — step 2, for the holder of the link. */
+export async function completeRegistration(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const payload: CompleteRegistrationInput = CompleteRegistrationSchema.parse(req.body);
     const preparedAvatar = req.file ? await prepareRegistrationAvatar(req.file) : undefined;
-    const scopeUserId = `anon:${payload.email}`;
+    const scopeUserId = `anon:registration-complete:${crypto
+      .createHash("sha256")
+      .update(payload.token)
+      .digest("hex")}`;
 
     const execute = async (): Promise<Record<string, unknown>> => {
-      const { verificationToken, passwordWarning } = preparedAvatar
-        ? await doRegister(payload, preparedAvatar)
-        : await doRegister(payload);
-      const response: Record<string, unknown> = {
-        message: "If the email is valid, a verification link will be sent shortly.",
-        ...(passwordWarning ? { passwordWarning } : {}),
-      };
-      if (!env.isProduction && verificationToken) {
-        response.debugVerificationToken = verificationToken;
-        response.verificationUrl = `${env.frontendUrl}/verify?token=${verificationToken}`;
-      }
-      return response;
+      const { user, passwordWarning } = preparedAvatar
+        ? await doCompleteRegistration(payload, preparedAvatar)
+        : await doCompleteRegistration(payload);
+      return { user, ...(passwordWarning ? { passwordWarning } : {}) };
     };
 
     const idempotencyPayload = {
       ...payload,
       avatar: req.file
-        ? {
-            filename: req.file.originalname,
-            mimetype: req.file.mimetype,
-            size: req.file.size,
-          }
+        ? { filename: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size }
         : null,
     };
     const handled = await handleIdempotentRequest(
@@ -165,14 +214,10 @@ export async function register(req: Request, res: Response, next: NextFunction):
       res,
       scopeUserId,
       idempotencyPayload,
-      async () => ({
-        status: 202,
-        body: await execute(),
-      }),
+      async () => ({ status: 201, body: await execute() }),
     );
-
     if (!handled) {
-      res.status(202).json(await execute());
+      res.status(201).json(await execute());
     }
   } catch (error) {
     next(error);
@@ -373,15 +418,9 @@ export async function forgotPassword(
     const scopeUserId = `anon:${payload.email}`;
 
     const execute = async (): Promise<Record<string, unknown>> => {
-      const { resetToken } = await requestPasswordReset(payload.email);
-      const response: Record<string, unknown> = {
-        message: "If the email is registered, a reset link will be sent shortly.",
-      };
-      if (!env.isProduction && resetToken) {
-        response.debugResetToken = resetToken;
-        response.resetUrl = `${env.frontendUrl}/reset-password?token=${resetToken}`;
-      }
-      return response;
+      // The reset link reaches only the mailbox, in every environment (ADR-039).
+      await requestPasswordReset(payload.email);
+      return { message: PASSWORD_RESET_REQUESTED_MESSAGE };
     };
 
     const handled = await handleIdempotentRequest(req, res, scopeUserId, payload, async () => ({

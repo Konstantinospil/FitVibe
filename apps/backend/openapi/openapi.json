@@ -55,36 +55,42 @@
     }
   ],
   "paths": {
+    "/auth/register/options": {
+      "get": {
+        "summary": "Get registration reference options",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationOptions"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/register": {
       "post": {
-        "summary": "Register a new account",
-        "tags": [
-          "Auth"
-        ],
+        "summary": "Start email-first registration (ADR-039)",
+        "description": "Step 1. Accepts only an address and always answers 202 with the same body. The outcome is delivered by email: a continue link for a new address, a notice for an existing account.",
+        "tags": ["Auth"],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
-              }
-            },
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "payload": {
-                    "type": "string",
-                    "description": "JSON-encoded RegisterRequest payload"
-                  },
-                  "avatar": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Optional JPEG, PNG, or WebP profile photo up to 5 MB"
-                  }
-                },
-                "required": [
-                  "payload"
-                ]
+                "$ref": "#/components/schemas/StartRegistrationRequest"
               }
             }
           }
@@ -94,7 +100,113 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                  "$ref": "#/components/schemas/RegistrationStartedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/intent": {
+      "post": {
+        "summary": "Look up the address an emailed registration link belongs to",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationIntentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationIntentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/complete": {
+      "post": {
+        "summary": "Finish registration for the holder of an emailed link",
+        "description": "Step 2. Creates an active, verified account and consumes the link. A taken username is reported because the caller has proved mailbox ownership.",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRegistrationRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payload": {
+                    "type": "string",
+                    "description": "JSON-encoded CompleteRegistrationRequest payload"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional JPEG, PNG, or WebP profile photo up to 5 MB"
+                  }
+                },
+                "required": ["payload"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationCompletedResponse"
                 }
               }
             }
@@ -109,6 +221,15 @@
             }
           },
           "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
             "content": {
               "application/json": {
                 "schema": {
@@ -132,9 +253,7 @@
     "/auth/login": {
       "post": {
         "summary": "Login with credentials",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "requestBody": {
           "content": {
             "application/json": {
@@ -169,9 +288,7 @@
     "/auth/refresh": {
       "post": {
         "summary": "Refresh access token",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "bearerAuth": []
@@ -211,9 +328,7 @@
     "/auth/logout": {
       "post": {
         "summary": "Logout current session",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "bearerAuth": []
@@ -238,9 +353,7 @@
     "/users/me": {
       "get": {
         "summary": "Get current user profile",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
@@ -269,9 +382,7 @@
       },
       "patch": {
         "summary": "Update profile",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
@@ -296,7 +407,7 @@
               }
             }
           },
-          "400": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -305,7 +416,16 @@
               }
             }
           },
-          "401": {
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
@@ -318,29 +438,16 @@
       }
     },
     "/users/me/preferences": {
-      "patch": {
-        "summary": "Update user preferences",
-        "tags": [
-          "Users"
-        ],
+      "get": {
+        "summary": "Get user preferences",
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "requestBody": {
-          "description": "Success",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePreferencesRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -349,18 +456,7 @@
               }
             }
           },
-          "400": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "401": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -371,19 +467,25 @@
           }
         }
       },
-      "get": {
-        "summary": "Get user preferences",
-        "tags": [
-          "Users"
-        ],
+      "patch": {
+        "summary": "Update user preferences",
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -392,8 +494,16 @@
               }
             }
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -408,9 +518,7 @@
     "/users/{alias}": {
       "get": {
         "summary": "Get public profile by alias",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "name": "alias",
@@ -446,9 +554,7 @@
     "/exercises": {
       "get": {
         "summary": "List exercises",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -489,9 +595,7 @@
       },
       "post": {
         "summary": "Create exercise",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -531,9 +635,7 @@
     "/exercises/{id}": {
       "put": {
         "summary": "Update exercise",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -582,9 +684,7 @@
       },
       "delete": {
         "summary": "Archive exercise",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -620,9 +720,7 @@
     "/sessions": {
       "get": {
         "summary": "List sessions",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -651,9 +749,7 @@
       },
       "post": {
         "summary": "Create session",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -690,12 +786,52 @@
         }
       }
     },
+    "/sessions/{id}/estimate": {
+      "get": {
+        "summary": "Estimate planned session duration and intensity",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionEstimate"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{id}/reopen": {
       "post": {
         "summary": "Reopen a completed session for correction",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -746,9 +882,7 @@
     "/sessions/{id}/complete": {
       "patch": {
         "summary": "Mark session complete",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -799,9 +933,7 @@
     "/vibeforms/me": {
       "get": {
         "summary": "Get the current user's normalized Vibeform",
-        "tags": [
-          "Vibeforms"
-        ],
+        "tags": ["Vibeforms"],
         "security": [
           {
             "bearerAuth": []
@@ -832,9 +964,7 @@
     "/vibeforms/me/preferences": {
       "put": {
         "summary": "Update the current user's Vibeform preferences",
-        "tags": [
-          "Vibeforms"
-        ],
+        "tags": ["Vibeforms"],
         "security": [
           {
             "bearerAuth": []
@@ -883,9 +1013,7 @@
     "/health": {
       "get": {
         "summary": "Liveness probe",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Service healthy",
@@ -909,9 +1037,7 @@
     "/metrics": {
       "get": {
         "summary": "Prometheus metrics",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Prometheus exposition format",
@@ -919,34 +1045,6 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/register/options": {
-      "get": {
-        "summary": "Get registration reference options",
-        "tags": [
-          "Auth"
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RegistrationOptions"
-                }
-              }
-            }
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -986,24 +1084,17 @@
                 "format": "uuid"
               }
             },
-            "required": [
-              "code",
-              "message"
-            ]
+            "required": ["code", "message"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "VibeformPreferences": {
         "type": "object",
         "properties": {
           "templateCode": {
             "type": "string",
-            "enum": [
-              "flow"
-            ]
+            "enum": ["flow"]
           },
           "templateVersion": {
             "type": "integer",
@@ -1011,22 +1102,13 @@
           },
           "bodyProfile": {
             "type": "string",
-            "enum": [
-              "shoulder-dominant",
-              "balanced",
-              "hip-dominant"
-            ]
+            "enum": ["shoulder-dominant", "balanced", "hip-dominant"]
           },
           "motionEnabled": {
             "type": "boolean"
           }
         },
-        "required": [
-          "templateCode",
-          "templateVersion",
-          "bodyProfile",
-          "motionEnabled"
-        ],
+        "required": ["templateCode", "templateVersion", "bodyProfile", "motionEnabled"],
         "additionalProperties": false
       },
       "UpdateVibeformPreferencesRequest": {
@@ -1034,17 +1116,11 @@
         "properties": {
           "templateCode": {
             "type": "string",
-            "enum": [
-              "flow"
-            ]
+            "enum": ["flow"]
           },
           "bodyProfile": {
             "type": "string",
-            "enum": [
-              "shoulder-dominant",
-              "balanced",
-              "hip-dominant"
-            ]
+            "enum": ["shoulder-dominant", "balanced", "hip-dominant"]
           },
           "motionEnabled": {
             "type": "boolean"
@@ -1097,16 +1173,10 @@
             "maximum": 1
           },
           "bmi": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "heightCm": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           }
         },
         "required": [
@@ -1140,12 +1210,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "preferences",
-          "metrics",
-          "calculationVersion",
-          "calculatedAt"
-        ],
+        "required": ["preferences", "metrics", "calculationVersion", "calculatedAt"],
         "additionalProperties": false
       },
       "AuthSuccessResponse": {
@@ -1164,18 +1229,131 @@
             "example": 900
           }
         },
-        "required": [
-          "accessToken",
-          "refreshToken",
-          "expiresIn"
-        ]
+        "required": ["accessToken", "refreshToken", "expiresIn"]
       },
-      "RegisterRequest": {
+      "RegistrationReferenceOption": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "description"],
+        "additionalProperties": false
+      },
+      "RegistrationOptions": {
+        "type": "object",
+        "properties": {
+          "genders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistrationReferenceOption"
+            }
+          },
+          "fitnessLevels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistrationReferenceOption"
+            }
+          },
+          "weight": {
+            "type": "object",
+            "properties": {
+              "minKg": {
+                "type": "number"
+              },
+              "maxKg": {
+                "type": "number"
+              }
+            },
+            "required": ["minKg", "maxKg"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["genders", "fitnessLevels", "weight"],
+        "additionalProperties": false
+      },
+      "StartRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "locale": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$",
+            "description": "UI language of the request; used for the email it sends."
+          }
+        },
+        "required": ["email"],
+        "additionalProperties": false
+      },
+      "RegistrationStartedResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "additionalProperties": false
+      },
+      "RegistrationIntentRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "required": ["token"],
+        "additionalProperties": false
+      },
+      "RegistrationIntentResponse": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
             "format": "email"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["email", "expiresAt"],
+        "additionalProperties": false
+      },
+      "RegistrationCompletedResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "passwordWarning": {
+            "type": "string",
+            "enum": ["PASSWORD_BREACHED", "BREACH_CHECK_UNAVAILABLE"]
+          }
+        },
+        "required": ["user"],
+        "additionalProperties": false
+      },
+      "CompleteRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
           },
           "alias": {
             "type": "string",
@@ -1245,11 +1423,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "email",
-          "password",
-          "terms_accepted"
-        ],
+        "required": ["token", "password", "terms_accepted"],
         "additionalProperties": false
       },
       "LoginRequest": {
@@ -1265,10 +1439,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "additionalProperties": false
       },
       "ForgotPasswordRequest": {
@@ -1279,9 +1450,7 @@
             "format": "email"
           }
         },
-        "required": [
-          "email"
-        ]
+        "required": ["email"]
       },
       "ResetPasswordRequest": {
         "type": "object",
@@ -1296,10 +1465,7 @@
             "maxLength": 128
           }
         },
-        "required": [
-          "token",
-          "newPassword"
-        ]
+        "required": ["token", "newPassword"]
       },
       "ResendVerificationRequest": {
         "type": "object",
@@ -1309,9 +1475,7 @@
             "format": "email"
           }
         },
-        "required": [
-          "email"
-        ]
+        "required": ["email"]
       },
       "Verify2FALoginRequest": {
         "type": "object",
@@ -1324,13 +1488,10 @@
             "type": "string",
             "minLength": 6,
             "maxLength": 9,
-            "pattern": "^(?:\\d{6}|[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})$"
+            "pattern": "^(?:\\\\d{6}|[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})$"
           }
         },
-        "required": [
-          "pendingSessionId",
-          "code"
-        ]
+        "required": ["pendingSessionId", "code"]
       },
       "ReportFeedItemRequest": {
         "type": "object",
@@ -1345,9 +1506,7 @@
             "maxLength": 500
           }
         },
-        "required": [
-          "reason"
-        ]
+        "required": ["reason"]
       },
       "CreateUserRequest": {
         "type": "object",
@@ -1374,11 +1533,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "athlete",
-              "coach",
-              "support"
-            ]
+            "enum": ["athlete", "coach", "support"]
           },
           "locale": {
             "type": "string",
@@ -1386,30 +1541,14 @@
           },
           "preferredLang": {
             "type": "string",
-            "enum": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "el"
-            ]
+            "enum": ["en", "de", "fr", "es", "el"]
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending_verification",
-              "active",
-              "suspended"
-            ]
+            "enum": ["pending_verification", "active", "suspended"]
           }
         },
-        "required": [
-          "username",
-          "displayName",
-          "email",
-          "password",
-          "role"
-        ]
+        "required": ["username", "displayName", "email", "password", "role"]
       },
       "CreateExerciseTypeRequest": {
         "type": "object",
@@ -1429,10 +1568,7 @@
             "maxLength": 255
           }
         },
-        "required": [
-          "code",
-          "name"
-        ]
+        "required": ["code", "name"]
       },
       "RefreshRequest": {
         "type": "object",
@@ -1441,9 +1577,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "refreshToken"
-        ]
+        "required": ["refreshToken"]
       },
       "UserProfile": {
         "type": "object",
@@ -1477,15 +1611,19 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "met_value": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 30
+          },
+          "seconds_per_rep": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 120
           }
         },
-        "required": [
-          "id",
-          "email",
-          "alias",
-          "status",
-          "createdAt"
-        ]
+        "required": ["id", "email", "alias", "status", "createdAt"]
       },
       "PublicProfile": {
         "type": "object",
@@ -1512,35 +1650,21 @@
             }
           }
         },
-        "required": [
-          "alias"
-        ]
+        "required": ["alias"]
       },
       "UserPreferences": {
         "type": "object",
         "properties": {
           "language": {
             "type": "string",
-            "enum": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "el"
-            ]
+            "enum": ["en", "de", "fr", "es", "el"]
           },
           "measurementSystem": {
             "type": "string",
-            "enum": [
-              "metric",
-              "imperial"
-            ]
+            "enum": ["metric", "imperial"]
           }
         },
-        "required": [
-          "language",
-          "measurementSystem"
-        ],
+        "required": ["language", "measurementSystem"],
         "additionalProperties": false
       },
       "UpdateProfileRequest": {
@@ -1563,59 +1687,66 @@
           "alias": {
             "type": "string",
             "minLength": 3,
-            "maxLength": 50
+            "maxLength": 32
           },
           "weight": {
             "type": "number",
-            "minimum": 20,
-            "maximum": 500
+            "exclusiveMinimum": 0,
+            "description": "Weight in weightUnit; must be within the 20–400 kg equivalent range."
           },
           "weightUnit": {
             "type": "string",
-            "enum": [
-              "kg",
-              "lb"
-            ]
+            "enum": ["kg", "lb"]
           },
           "fitnessLevel": {
             "type": "string",
-            "enum": [
-              "beginner",
-              "intermediate",
-              "advanced",
-              "elite"
-            ]
+            "enum": ["beginner", "intermediate", "advanced", "elite"]
           },
           "trainingFrequency": {
             "type": "string",
-            "enum": [
-              "rarely",
-              "1_2_per_week",
-              "3_4_per_week",
-              "5_plus_per_week"
-            ]
+            "enum": ["rarely", "1_2_per_week", "3_4_per_week", "5_plus_per_week"]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "weightUnit": {
+                  "const": "lb"
+                }
+              },
+              "required": ["weightUnit"]
+            },
+            "then": {
+              "properties": {
+                "weight": {
+                  "minimum": 44.09,
+                  "maximum": 881.85
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "weight": {
+                  "minimum": 20,
+                  "maximum": 400
+                }
+              }
+            }
+          }
+        ],
+        "additionalProperties": false
       },
       "UpdatePreferencesRequest": {
         "type": "object",
         "properties": {
           "language": {
             "type": "string",
-            "enum": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "el"
-            ]
+            "enum": ["en", "de", "fr", "es", "el"]
           },
           "measurementSystem": {
             "type": "string",
-            "enum": [
-              "metric",
-              "imperial"
-            ]
+            "enum": ["metric", "imperial"]
           }
         },
         "additionalProperties": false
@@ -1646,10 +1777,7 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "public"
-            ]
+            "enum": ["private", "public"]
           },
           "createdAt": {
             "type": "string",
@@ -1660,12 +1788,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "visibility",
-          "createdAt"
-        ]
+        "required": ["id", "name", "visibility", "createdAt"]
       },
       "ExerciseUpsertRequest": {
         "type": "object",
@@ -1678,10 +1801,7 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "public"
-            ]
+            "enum": ["private", "public"]
           },
           "tags": {
             "type": "array",
@@ -1694,12 +1814,19 @@
             "items": {
               "type": "string"
             }
+          },
+          "met_value": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 30
+          },
+          "seconds_per_rep": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 120
           }
         },
-        "required": [
-          "name",
-          "visibility"
-        ]
+        "required": ["name", "visibility"]
       },
       "ExerciseListResponse": {
         "type": "object",
@@ -1725,19 +1852,11 @@
             }
           }
         },
-        "required": [
-          "data",
-          "meta"
-        ]
+        "required": ["data", "meta"]
       },
       "SessionStatus": {
         "type": "string",
-        "enum": [
-          "planned",
-          "in_progress",
-          "completed",
-          "canceled"
-        ]
+        "enum": ["planned", "in_progress", "completed", "canceled"]
       },
       "Session": {
         "type": "object",
@@ -1768,18 +1887,10 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "followers",
-              "public"
-            ]
+            "enum": ["private", "followers", "public"]
           }
         },
-        "required": [
-          "id",
-          "status",
-          "scheduledAt"
-        ]
+        "required": ["id", "status", "scheduledAt"]
       },
       "SessionCreateRequest": {
         "type": "object",
@@ -1801,12 +1912,7 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "followers",
-              "public",
-              "link"
-            ]
+            "enum": ["private", "followers", "public", "link"]
           },
           "notes": {
             "type": "string",
@@ -1825,9 +1931,7 @@
             }
           }
         },
-        "required": [
-          "planned_at"
-        ]
+        "required": ["planned_at"]
       },
       "SessionExerciseInput": {
         "type": "object",
@@ -1855,16 +1959,11 @@
                   "maximum": 10
                 }
               },
-              "required": [
-                "reps"
-              ]
+              "required": ["reps"]
             }
           }
         },
-        "required": [
-          "exerciseId",
-          "sets"
-        ]
+        "required": ["exerciseId", "sets"]
       },
       "SessionListResponse": {
         "type": "object",
@@ -1890,10 +1989,56 @@
             }
           }
         },
+        "required": ["data", "meta"]
+      },
+      "SessionEstimate": {
+        "type": "object",
+        "properties": {
+          "activeDurationSec": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "restDurationSec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minimumTotalDurationSec": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "normalizedMet": {
+            "type": ["number", "null"],
+            "minimum": 0
+          },
+          "estimatedKcalPerMin": {
+            "type": ["number", "null"],
+            "minimum": 0
+          },
+          "estimatedActiveKcal": {
+            "type": ["number", "null"],
+            "minimum": 0
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "missingInputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
         "required": [
-          "data",
-          "meta"
-        ]
+          "activeDurationSec",
+          "restDurationSec",
+          "minimumTotalDurationSec",
+          "normalizedMet",
+          "estimatedKcalPerMin",
+          "estimatedActiveKcal",
+          "complete",
+          "missingInputs"
+        ],
+        "additionalProperties": false
       },
       "SessionCompleteRequest": {
         "type": "object",
@@ -1907,61 +2052,6 @@
             "type": "string"
           }
         }
-      },
-      "RegistrationReferenceOption": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "description"
-        ],
-        "additionalProperties": false
-      },
-      "RegistrationOptions": {
-        "type": "object",
-        "properties": {
-          "genders": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RegistrationReferenceOption"
-            }
-          },
-          "fitnessLevels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RegistrationReferenceOption"
-            }
-          },
-          "weight": {
-            "type": "object",
-            "properties": {
-              "minKg": {
-                "type": "number"
-              },
-              "maxKg": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "minKg",
-              "maxKg"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "genders",
-          "fitnessLevels",
-          "weight"
-        ],
-        "additionalProperties": false
       }
     }
   }

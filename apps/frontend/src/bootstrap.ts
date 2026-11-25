@@ -5,6 +5,7 @@ const PUBLIC_ROUTES = new Set<string>([
   "/",
   "/login",
   "/register",
+  "/register/complete",
   "/forgot-password",
   "/reset-password",
   "/login/verify-2fa",

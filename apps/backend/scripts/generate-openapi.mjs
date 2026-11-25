@@ -46,12 +46,40 @@ const paths = {
   },
   "/auth/register": {
     post: {
-      summary: "Register a new account",
+      summary: "Start email-first registration (ADR-039)",
+      description:
+        "Step 1. Accepts only an address and always answers 202 with the same body. The outcome is delivered by email: a continue link for a new address, a notice for an existing account.",
+      tags: ["Auth"],
+      requestBody: jsonContent("#/components/schemas/StartRegistrationRequest"),
+      responses: {
+        202: jsonContent("#/components/schemas/RegistrationStartedResponse"),
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        429: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/auth/register/intent": {
+    post: {
+      summary: "Look up the address an emailed registration link belongs to",
+      tags: ["Auth"],
+      requestBody: jsonContent("#/components/schemas/RegistrationIntentRequest"),
+      responses: {
+        200: jsonContent("#/components/schemas/RegistrationIntentResponse"),
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        410: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/auth/register/complete": {
+    post: {
+      summary: "Finish registration for the holder of an emailed link",
+      description:
+        "Step 2. Creates an active, verified account and consumes the link. A taken username is reported because the caller has proved mailbox ownership.",
       tags: ["Auth"],
       requestBody: {
         content: {
           "application/json": {
-            schema: { $ref: "#/components/schemas/RegisterRequest" },
+            schema: { $ref: "#/components/schemas/CompleteRegistrationRequest" },
           },
           "multipart/form-data": {
             schema: {
@@ -59,7 +87,7 @@ const paths = {
               properties: {
                 payload: {
                   type: "string",
-                  description: "JSON-encoded RegisterRequest payload",
+                  description: "JSON-encoded CompleteRegistrationRequest payload",
                 },
                 avatar: {
                   type: "string",
@@ -73,9 +101,10 @@ const paths = {
         },
       },
       responses: {
-        202: jsonContent("#/components/schemas/AuthSuccessResponse"),
+        201: jsonContent("#/components/schemas/RegistrationCompletedResponse"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
         409: jsonContent("#/components/schemas/ErrorResponse"),
+        410: jsonContent("#/components/schemas/ErrorResponse"),
         422: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
@@ -520,10 +549,55 @@ const schemas = {
     required: ["genders", "fitnessLevels", "weight"],
     additionalProperties: false,
   },
-  RegisterRequest: {
+  StartRegistrationRequest: {
+    type: "object",
+    properties: {
+      email: { type: "string", format: "email", maxLength: 254 },
+      locale: {
+        type: "string",
+        pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$",
+        description: "UI language of the request; used for the email it sends.",
+      },
+    },
+    required: ["email"],
+    additionalProperties: false,
+  },
+  RegistrationStartedResponse: {
+    type: "object",
+    properties: { message: { type: "string" } },
+    required: ["message"],
+    additionalProperties: false,
+  },
+  RegistrationIntentRequest: {
+    type: "object",
+    properties: {
+      token: { type: "string", minLength: 20, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" },
+    },
+    required: ["token"],
+    additionalProperties: false,
+  },
+  RegistrationIntentResponse: {
     type: "object",
     properties: {
       email: { type: "string", format: "email" },
+      expiresAt: { type: "string", format: "date-time" },
+    },
+    required: ["email", "expiresAt"],
+    additionalProperties: false,
+  },
+  RegistrationCompletedResponse: {
+    type: "object",
+    properties: {
+      user: { type: "object", additionalProperties: true },
+      passwordWarning: { type: "string", enum: ["PASSWORD_BREACHED", "BREACH_CHECK_UNAVAILABLE"] },
+    },
+    required: ["user"],
+    additionalProperties: false,
+  },
+  CompleteRegistrationRequest: {
+    type: "object",
+    properties: {
+      token: { type: "string", minLength: 20, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" },
       alias: {
         type: "string",
         minLength: 3,
@@ -570,7 +644,7 @@ const schemas = {
       },
       terms_accepted: { type: "boolean" },
     },
-    required: ["email", "password", "terms_accepted"],
+    required: ["token", "password", "terms_accepted"],
     additionalProperties: false,
   },
   LoginRequest: {
@@ -666,7 +740,17 @@ const schemas = {
       id: { type: "string", format: "uuid" },
       email: { type: "string", format: "email" },
       alias: { type: "string" },
-      status: { type: "string", enum: ["pending_verification", "active", "suspended", "banned", "pending_deletion", "deleted"] },
+      status: {
+        type: "string",
+        enum: [
+          "pending_verification",
+          "active",
+          "suspended",
+          "banned",
+          "pending_deletion",
+          "deleted",
+        ],
+      },
       createdAt: { type: "string", format: "date-time" },
       updatedAt: { type: "string", format: "date-time" },
       met_value: { type: ["number", "null"], minimum: 0.1, maximum: 30 },

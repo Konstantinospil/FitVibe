@@ -1972,7 +1972,6 @@ jobs:
           docker rm -f pre-main-backend pre-main-frontend pre-main-backoffice 2>/dev/null || true
           docker network rm pre-main-fitvibe 2>/dev/null || true
 
-
   pre_main_arm64_build:
     name: Pre-main arm64 Production Build
     runs-on: ubuntu-24.04-arm
@@ -3713,4 +3712,3 @@ jobs:
           artifacts: "artifacts/sbom-ingress.spdx.json,artifacts/sbom-backend.spdx.json,artifacts/sbom-frontend.spdx.json,artifacts/sbom-backoffice.spdx.json,artifacts/image-digests.txt,artifacts/artifacts/openapi/openapi.json"
           artifactErrorsFailBuild: true
           token: ${{ secrets.GITHUB_TOKEN }}
-

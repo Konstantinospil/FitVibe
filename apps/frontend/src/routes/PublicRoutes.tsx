@@ -7,6 +7,7 @@ import { loadFullTranslations } from "../i18n/config";
 
 const TwoFactorVerificationLogin = lazy(() => import("../pages/TwoFactorVerificationLogin"));
 const Register = lazy(() => import("../pages/Register"));
+const CompleteRegistration = lazy(() => import("../pages/CompleteRegistration"));
 const VerifyEmail = lazy(() => import("../pages/VerifyEmail"));
 const ForgotPassword = lazy(() => import("../pages/ForgotPassword"));
 // ResetPassword uses keys from common.json, which the minimal login bundle omits.
@@ -28,6 +29,7 @@ const PublicRoutes: React.FC = () => (
       <Route path="/login" element={<Login />} />
       <Route path="/login/verify-2fa" element={<TwoFactorVerificationLogin />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/register/complete" element={<CompleteRegistration />} />
       <Route path="/verify" element={<VerifyEmail />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />

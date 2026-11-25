@@ -39,6 +39,8 @@ import { appSettingsRouter } from "./modules/system/app-settings.routes.js";
 import { consentRouter } from "./modules/consent/consent.routes.js";
 import { logsRouter } from "./modules/logs/logs.routes.js";
 import { jwksHandler } from "./modules/auth/auth.controller.js";
+import { mailCaptureRouter } from "./modules/dev/mail-capture.routes.js";
+import { isMailCaptureEnabled } from "./services/mail-capture.service.js";
 
 const app = express();
 
@@ -208,6 +210,12 @@ apiRouter.use("/translations", translationsRouter);
 apiRouter.use("/legal", legalRouter);
 apiRouter.use("/measurements", measurementsRouter);
 apiRouter.use("/vibeforms", vibeformsRouter);
+
+// Test mailbox for email-first registration (ADR-039). Never mounted in
+// production: env.ts rejects EMAIL_CAPTURE_ENABLED there.
+if (isMailCaptureEnabled()) {
+  apiRouter.use("/dev", mailCaptureRouter);
+}
 
 app.use("/api/v1", apiRouter);
 app.use("/health", healthRouter);

@@ -11,6 +11,7 @@ const {
   acceptRegisterLegal,
   dismissFirstLoginTwoFactorInvitation,
   ensureAuthenticatedBrowserConsent,
+  readRegistrationLinkToken,
 } = require("./server-helpers.cjs");
 
 test("[E2E-SMOKE-001] login page renders the FitVibe welcome heading", async ({ page }) => {
@@ -20,7 +21,10 @@ test("[E2E-SMOKE-001] login page renders the FitVibe welcome heading", async ({ 
   await expect(page.getByRole("heading", { name: /welcome back/i })).toBeVisible();
 });
 
-test("[E2E-SMOKE-002] authenticated shell shows Home after real login", async ({ page, athleteAccount }) => {
+test("[E2E-SMOKE-002] authenticated shell shows Home after real login", async ({
+  page,
+  athleteAccount,
+}) => {
   await preparePage(page);
   await page.goto("/login");
   await waitForApp(page);
@@ -38,9 +42,10 @@ test("[E2E-SMOKE-002] authenticated shell shows Home after real login", async ({
   await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
   const mainNavigation = page.getByRole("navigation", { name: navigation.main, exact: true });
   await expect(mainNavigation).toBeVisible();
-  await expect(mainNavigation.getByRole("link", { name: navigation.home, exact: true })).toBeVisible();
+  await expect(
+    mainNavigation.getByRole("link", { name: navigation.home, exact: true }),
+  ).toBeVisible();
 });
-
 
 const { observeMutation } = require("./request-observer.cjs");
 
@@ -57,8 +62,26 @@ async function createDisposableAthlete(page, testInfo, options = {}) {
     activityIntensity: options.activityIntensity ?? "intermediate",
   };
 
+  // Email-first registration (ADR-039): step 1 takes the address only.
   await page.goto("/register");
   await waitForApp(page);
+  await emailInput(page).fill(email);
+  const requestedAt = Date.now() - 1000;
+  const started = page.waitForResponse(
+    (res) =>
+      new URL(res.url()).pathname === "/api/v1/auth/register" && res.request().method() === "POST",
+  );
+  await page.getByRole("button", { name: /continue/i }).click();
+  expect((await started).status()).toBe(202);
+  await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible();
+
+  // Step 2: the link from the mailbox opens the profile form.
+  const token = await readRegistrationLinkToken(page.context().request, email, {
+    notBefore: requestedAt,
+  });
+  await page.goto(`/register/complete?token=${encodeURIComponent(token)}`);
+  await waitForApp(page);
+  await expect(emailInput(page)).toHaveValue(email);
   await displayNameInput(page).fill(profile.displayName);
   await page.getByRole("spinbutton", { name: /weight/i }).fill(profile.weight);
   await page.getByLabel(/date of birth/i).fill(profile.dateOfBirth);
@@ -79,27 +102,25 @@ async function createDisposableAthlete(page, testInfo, options = {}) {
     });
   }
 
-  await emailInput(page).fill(email);
   await page.locator("form input[name='username']").fill(`smoke.${suffix}`);
   await passwordInput(page).fill(password);
   await confirmPasswordInput(page).fill(password);
   await acceptRegisterLegal(page);
-  const registration = page.waitForResponse((res) =>
-    new URL(res.url()).pathname === "/api/v1/auth/register" && res.request().method() === "POST");
+  const completion = page.waitForResponse(
+    (res) =>
+      new URL(res.url()).pathname === "/api/v1/auth/register/complete" &&
+      res.request().method() === "POST",
+  );
   await page.getByRole("button", { name: /create account/i }).click();
-  const response = await registration;
-  expect(response.status()).toBe(202);
-  const payload = await response.json();
-  expect(payload.debugVerificationToken).toBeTruthy();
-  await page.goto(`/verify?token=${encodeURIComponent(payload.debugVerificationToken)}`);
-  await waitForApp(page);
+  expect((await completion).status()).toBe(201);
+  await expect(page.getByRole("heading", { name: /your account is ready/i })).toBeVisible();
   // Registration may rotate the browser consent identity; resolve the real banner.
   const consentBackdrop = page.locator(".cookie-consent-backdrop");
   if (await consentBackdrop.isVisible()) {
     await consentBackdrop.getByRole("button", { name: /reject all/i }).click();
     await expect(consentBackdrop).toBeHidden();
   }
-  await page.getByRole("button", { name: /go to login/i }).click();
+  await page.getByRole("link", { name: /sign in/i }).click();
   await page.waitForURL((url) => url.pathname === "/login");
   await emailInput(page).fill(email);
   await passwordInput(page).fill(password);
@@ -112,7 +133,9 @@ async function createDisposableAthlete(page, testInfo, options = {}) {
   return { email, password, profile };
 }
 
-test("[E2E-SMOKE-003] registration persists profile fields and scanned avatar", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-003] registration persists profile fields and scanned avatar", async ({
+  page,
+}, testInfo) => {
   const created = await createDisposableAthlete(page, testInfo, {
     withAvatar: true,
     displayName: "Registration Athlete",
@@ -151,7 +174,10 @@ async function apiGet(page, path) {
   return response.json();
 }
 
-test("[E2E-SMOKE-004] athlete navigates all active surfaces with real authenticated data", async ({ page, athleteAccount }) => {
+test("[E2E-SMOKE-004] athlete navigates all active surfaces with real authenticated data", async ({
+  page,
+  athleteAccount,
+}) => {
   await authenticatedPage(page, athleteAccount);
   expect((await apiGet(page, "/api/v1/users/me")).id).toBeTruthy();
   for (const [label, route] of [
@@ -171,7 +197,10 @@ test("[E2E-SMOKE-004] athlete navigates all active surfaces with real authentica
   }
 });
 
-test("[E2E-SMOKE-005] calendar loads real sessions, allows exercise selection and persists planned workout", async ({ page, athleteAccount }, testInfo) => {
+test("[E2E-SMOKE-005] calendar loads real sessions, allows exercise selection and persists planned workout", async ({
+  page,
+  athleteAccount,
+}, testInfo) => {
   await authenticatedPage(page, athleteAccount);
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await expect(page.getByRole("grid")).toBeVisible();
@@ -186,7 +215,10 @@ test("[E2E-SMOKE-005] calendar loads real sessions, allows exercise selection an
   const selectedExerciseId = await option.getAttribute("value");
   expect(selectedExerciseId).toBeTruthy();
   await exerciseSelect.selectOption(selectedExerciseId);
-  await editor.locator('button[data-component="button"]').getByText(/^Add exercise$/i).click();
+  await editor
+    .locator('button[data-component="button"]')
+    .getByText(/^Add exercise$/i)
+    .click();
   const title = `E2E smoke plan ${testInfo.workerIndex}-${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const mutation = observeMutation(page, "POST", "/api/v1/sessions");
@@ -199,7 +231,10 @@ test("[E2E-SMOKE-005] calendar loads real sessions, allows exercise selection an
   await expect(page.getByText(title).first()).toBeVisible();
 });
 
-test("[E2E-SMOKE-006] published legal documents render their actual backend content", async ({ page, athleteAccount }) => {
+test("[E2E-SMOKE-006] published legal documents render their actual backend content", async ({
+  page,
+  athleteAccount,
+}) => {
   await authenticatedPage(page, athleteAccount);
   for (const kind of ["terms", "privacy"]) {
     const published = await apiGet(page, `/api/v1/legal/documents/${kind}?language=en`);
@@ -215,7 +250,10 @@ test("[E2E-SMOKE-006] published legal documents render their actual backend cont
   expect(status.privacy.currentVersion).toBeTruthy();
 });
 
-test("[E2E-SMOKE-007] athlete privacy acknowledgement withdrawal and reacceptance persist on backend", async ({ page, athleteAccount }) => {
+test("[E2E-SMOKE-007] athlete privacy acknowledgement withdrawal and reacceptance persist on backend", async ({
+  page,
+  athleteAccount,
+}) => {
   const waitForPrivacyResponse = (path) =>
     page.waitForResponse(
       (response) =>
@@ -230,7 +268,12 @@ test("[E2E-SMOKE-007] athlete privacy acknowledgement withdrawal and reacceptanc
     const acceptResponse = waitForPrivacyResponse("/api/v1/auth/privacy/accept");
     await page.getByRole("button", { name: /acknowledge/i }).click();
     await acceptResponse;
-    await expect.poll(async () => (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance).toBe(false);
+    await expect
+      .poll(
+        async () =>
+          (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance,
+      )
+      .toBe(false);
     accept.assertExactlyOnce(200);
     accept.stop();
   }
@@ -238,7 +281,12 @@ test("[E2E-SMOKE-007] athlete privacy acknowledgement withdrawal and reacceptanc
   const revokeResponse = waitForPrivacyResponse("/api/v1/auth/privacy/revoke");
   await page.getByRole("button", { name: /revoke acknowledgement/i }).click();
   await revokeResponse;
-  await expect.poll(async () => (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance).toBe(true);
+  await expect
+    .poll(
+      async () =>
+        (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance,
+    )
+    .toBe(true);
   revoke.assertExactlyOnce(200);
   revoke.stop();
   await page.reload();
@@ -247,12 +295,19 @@ test("[E2E-SMOKE-007] athlete privacy acknowledgement withdrawal and reacceptanc
   const acceptResponse = waitForPrivacyResponse("/api/v1/auth/privacy/accept");
   await page.getByRole("button", { name: /acknowledge/i }).click();
   await acceptResponse;
-  await expect.poll(async () => (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance).toBe(false);
+  await expect
+    .poll(
+      async () =>
+        (await apiGet(page, "/api/v1/auth/legal-documents/status")).privacy.needsAcceptance,
+    )
+    .toBe(false);
   accept.assertExactlyOnce(200);
   accept.stop();
 });
 
-test("[E2E-SMOKE-008] athlete can revoke Terms and the account session is invalidated", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-008] athlete can revoke Terms and the account session is invalidated", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   const before = await apiGet(page, "/api/v1/auth/legal-documents/status");
   expect(before.terms.needsAcceptance).toBe(false);
@@ -269,13 +324,15 @@ test("[E2E-SMOKE-008] athlete can revoke Terms and the account session is invali
   await page.goto("/");
   await waitForApp(page);
   await expect(emailInput(page)).toBeVisible();
-  const unauthenticated = await page.context().request.get(
-    new URL("/api/v1/users/me", page.url()).toString(),
-  );
+  const unauthenticated = await page
+    .context()
+    .request.get(new URL("/api/v1/users/me", page.url()).toString());
   expect(unauthenticated.status()).toBe(401);
 });
 
-test("[E2E-SMOKE-009] athlete logout rejects subsequent authenticated profile retrieval", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-009] athlete logout rejects subsequent authenticated profile retrieval", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await apiGet(page, "/api/v1/users/me");
   const logout = observeMutation(page, "POST", "/api/v1/auth/logout");
@@ -287,7 +344,10 @@ test("[E2E-SMOKE-009] athlete logout rejects subsequent authenticated profile re
   expect([401, 403]).toContain(res.status());
 });
 
-test("[E2E-SMOKE-010] athlete searches exercise library against the real catalog", async ({ page, athleteAccount }) => {
+test("[E2E-SMOKE-010] athlete searches exercise library against the real catalog", async ({
+  page,
+  athleteAccount,
+}) => {
   await authenticatedPage(page, athleteAccount);
   await page.getByRole("link", { name: /^library$/i }).click();
   await page.waitForURL((url) => url.pathname === "/library");
@@ -299,30 +359,44 @@ test("[E2E-SMOKE-010] athlete searches exercise library against the real catalog
   await expect(page.getByText(entry.name, { exact: true }).first()).toBeVisible();
 });
 
-test("[E2E-SMOKE-011] athlete starts an exercise workout and backend records an in-progress session", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-011] athlete starts an exercise workout and backend records an in-progress session", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.getByRole("link", { name: /^calendar$/i }).click();
   await expect(page.getByRole("grid")).toBeVisible();
-  await page.getByRole("button", { name: /^start/i }).first().click();
+  await page
+    .getByRole("button", { name: /^start/i })
+    .first()
+    .click();
   const editor = page.getByRole("dialog");
   await expect(editor).toBeVisible();
   const select = editor.getByRole("combobox").first();
   await expect.poll(async () => select.locator("option").count()).toBeGreaterThan(1);
   await select.selectOption({ index: 1 });
-  await editor.locator('button[data-component="button"]').getByText(/^Add exercise$/i).click();
+  await editor
+    .locator('button[data-component="button"]')
+    .getByText(/^Add exercise$/i)
+    .click();
   const title = `E2E smoke started ${Date.now()}`;
   await editor.getByRole("textbox").first().fill(title);
   const create = observeMutation(page, "POST", "/api/v1/sessions");
-  await editor.getByRole("button", { name: /^start/i }).last().click();
+  await editor
+    .getByRole("button", { name: /^start/i })
+    .last()
+    .click();
   await expect(editor).not.toBeVisible();
   create.assertExactlyOnce(201);
   create.stop();
   const sessions = await apiGet(page, "/api/v1/sessions?limit=100&offset=0");
-  expect(sessions.data.some((session) => session.title === title && session.status === "in_progress")).toBe(true);
+  expect(
+    sessions.data.some((session) => session.title === title && session.status === "in_progress"),
+  ).toBe(true);
 });
 
-
-test("[E2E-SMOKE-012] athlete creates personal exercise and finds it after reload", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-012] athlete creates personal exercise and finds it after reload", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/library");
   await waitForApp(page);
@@ -349,8 +423,11 @@ test("[E2E-SMOKE-012] athlete creates personal exercise and finds it after reloa
   // that the authenticated search endpoint returns exactly the saved exercise.
   const searchResponse = page.waitForResponse((response) => {
     const url = new URL(response.url());
-    return url.pathname === "/api/v1/exercises" && url.searchParams.get("q") === name &&
-      response.request().method() === "GET";
+    return (
+      url.pathname === "/api/v1/exercises" &&
+      url.searchParams.get("q") === name &&
+      response.request().method() === "GET"
+    );
   });
   await search.fill(name);
   const response = await searchResponse;
@@ -360,7 +437,9 @@ test("[E2E-SMOKE-012] athlete creates personal exercise and finds it after reloa
   await expect(library.getByText(name, { exact: true }).first()).toBeVisible();
 });
 
-test("[E2E-SMOKE-013] athlete saves complete editable profile across navigation", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-013] athlete saves complete editable profile across navigation", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
   await waitForApp(page);
@@ -375,12 +454,13 @@ test("[E2E-SMOKE-013] athlete saves complete editable profile across navigation"
   await page.getByRole("textbox", { name: /^alias$/i }).fill(alias);
   await page.getByRole("spinbutton", { name: /^weight$/i }).fill(weight);
   await page.getByRole("combobox", { name: /fitness level/i }).selectOption(fitnessLevel);
-  await page
-    .getByRole("combobox", { name: /training frequency/i })
-    .selectOption(trainingFrequency);
+  await page.getByRole("combobox", { name: /training frequency/i }).selectOption(trainingFrequency);
 
   const profilePatch = observeMutation(page, "PATCH", "/api/v1/users/me");
-  await page.getByRole("button", { name: /^save$/i }).first().click();
+  await page
+    .getByRole("button", { name: /^save$/i })
+    .first()
+    .click();
 
   await expect
     .poll(async () => {
@@ -422,7 +502,9 @@ test("[E2E-SMOKE-013] athlete saves complete editable profile across navigation"
   });
 });
 
-test("[E2E-SMOKE-014] Settings rejects invalid profile edits and preserves persisted data", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-014] Settings rejects invalid profile edits and preserves persisted data", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
   await waitForApp(page);
@@ -433,7 +515,10 @@ test("[E2E-SMOKE-014] Settings rejects invalid profile edits and preserves persi
 
   expectApiHttpError(page, "PATCH", "/api/v1/users/me", 422);
   const mutation = observeMutation(page, "PATCH", "/api/v1/users/me");
-  await page.getByRole("button", { name: /^save$/i }).first().click();
+  await page
+    .getByRole("button", { name: /^save$/i })
+    .first()
+    .click();
   await expect(page.getByRole("status")).toContainText(/could not|failed|error|unable/i);
   mutation.assertExactlyOnce(422);
   mutation.stop();
@@ -442,10 +527,14 @@ test("[E2E-SMOKE-014] Settings rejects invalid profile edits and preserves persi
   expect(after.profile?.alias).toBe(before.profile?.alias);
   await page.reload();
   await waitForApp(page);
-  await expect(page.getByRole("textbox", { name: /^alias$/i })).toHaveValue(before.profile?.alias ?? "");
+  await expect(page.getByRole("textbox", { name: /^alias$/i })).toHaveValue(
+    before.profile?.alias ?? "",
+  );
 });
 
-test("[E2E-SMOKE-015] athlete uploads and removes avatar from Settings", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-015] athlete uploads and removes avatar from Settings", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/settings");
   await waitForApp(page);
@@ -490,13 +579,15 @@ test("[E2E-SMOKE-015] athlete uploads and removes avatar from Settings", async (
   await expect(persistedPreview).toBeVisible();
   const avatarImage = persistedPreview.getByRole("img", { name: /smoke athlete/i });
   await expect(avatarImage).toBeVisible();
-  await expect.poll(async () =>
-    avatarImage.evaluate((img) => ({
-      complete: img.complete,
-      width: img.naturalWidth,
-      height: img.naturalHeight,
-    })),
-  ).toEqual({ complete: true, width: 128, height: 128 });
+  await expect
+    .poll(async () =>
+      avatarImage.evaluate((img) => ({
+        complete: img.complete,
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      })),
+    )
+    .toEqual({ complete: true, width: 128, height: 128 });
 
   const remove = observeMutation(page, "DELETE", "/api/v1/users/me/avatar");
   const removeResponse = page.waitForResponse(
@@ -512,7 +603,9 @@ test("[E2E-SMOKE-015] athlete uploads and removes avatar from Settings", async (
   remove.stop();
 });
 
-test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved profile", async ({ fullyOnboardedPage }) => {
+test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved profile", async ({
+  fullyOnboardedPage,
+}) => {
   // Exercise Vibeform persistence using the real, already authenticated and
   // consented worker account. A fresh first-login session and consent reload
   // are not part of this scenario and exhaust the shared CI rate limit.
@@ -528,7 +621,8 @@ test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved prof
   const original = await bodyProfile.inputValue();
   const changed = original === "balanced" ? "hip-dominant" : "balanced";
   await bodyProfile.selectOption(changed);
-  const save = page.locator(".training-panel")
+  const save = page
+    .locator(".training-panel")
     .filter({ has: page.getByText("Vibeform", { exact: true }) })
     .getByRole("button", { name: /^save$/i });
   const mutation = observeMutation(page, "PUT", "/api/v1/vibeforms/me/preferences");
@@ -549,7 +643,10 @@ test("[E2E-SMOKE-016] athlete changes Vibeform and Dashboard reflects saved prof
   await expect(page.getByRole("combobox", { name: /body profile/i })).toHaveValue(changed);
 });
 
-test("[E2E-SMOKE-017] Home and Dashboard retrieve real feed, completed activity, badges and Vibeform", async ({ page, athleteAccount }) => {
+test("[E2E-SMOKE-017] Home and Dashboard retrieve real feed, completed activity, badges and Vibeform", async ({
+  page,
+  athleteAccount,
+}) => {
   await authenticatedPage(page, athleteAccount);
   await apiGet(page, "/api/v1/sessions?status=completed&limit=10");
   await apiGet(page, "/api/v1/feed?scope=public&limit=10&sort=date");
@@ -558,7 +655,9 @@ test("[E2E-SMOKE-017] Home and Dashboard retrieve real feed, completed activity,
   await expect(page.locator("[data-app-surface='dashboard'] button[aria-pressed]")).toHaveCount(6);
 });
 
-test("[E2E-SMOKE-018] athlete uses Library exercise to open workout planning across surfaces", async ({ page }, testInfo) => {
+test("[E2E-SMOKE-018] athlete uses Library exercise to open workout planning across surfaces", async ({
+  page,
+}, testInfo) => {
   await createDisposableAthlete(page, testInfo);
   await page.goto("/library");
   await waitForApp(page);
@@ -568,7 +667,10 @@ test("[E2E-SMOKE-018] athlete uses Library exercise to open workout planning acr
   await page.locator("[data-component='library-filter-grid'] input").first().fill(exercise.name);
   const grid = page.locator("[data-component='library-result-grid']");
   await expect(grid.getByText(exercise.name, { exact: true }).first()).toBeVisible();
-  await grid.getByRole("button", { name: /add to workout/i }).first().click();
+  await grid
+    .getByRole("button", { name: /add to workout/i })
+    .first()
+    .click();
   const editor = page.getByRole("dialog");
   await expect(editor).toBeVisible();
   const title = `Library linked workout ${Date.now()}`;

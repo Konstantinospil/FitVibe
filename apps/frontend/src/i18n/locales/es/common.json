@@ -197,6 +197,7 @@
     "AUTH_SESSION_NOT_FOUND": "Sesión no encontrada",
     "UNAUTHENTICATED": "Falta contexto de autenticación",
     "USER_USERNAME_TAKEN": "El nombre de usuario ya está en uso",
+    "AUTH_EMAIL_ALREADY_REGISTERED": "Ya existe una cuenta para esta dirección. Inicia sesión o restablece tu contraseña.",
     "USER_USERNAME_INVALID": "El nombre de usuario debe tener entre 3 y 50 caracteres y puede incluir letras, números, puntos, guiones bajos y guiones",
     "USER_STATUS_INVALID": "No se puede cambiar el estado",
     "USER_DISPLAY_NAME_REQUIRED": "El nombre para mostrar es requerido",
