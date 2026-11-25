@@ -43,6 +43,7 @@
 | ADR-037 | Require Durable Redis/BullMQ Background Work in Production                                        | Accepted   | 2026-09-27    | [ADR-037-durable-production-job-queue.md](./ADR-037-durable-production-job-queue.md)                                                 |
 | ADR-038 | Superadmin Privilege and Sudo Model                                                               | Accepted   | 2026-09-27    | [ADR-038-superadmin-sudo-privilege-model.md](./ADR-038-superadmin-sudo-privilege-model.md)                                           |
 | ADR-039 | Email-first Registration to Prevent Account Enumeration                                           | Accepted   | 2026-11-25    | [ADR-039-email-first-registration.md](./ADR-039-email-first-registration.md)                                                         |
+| ADR-040 | First-party Browser Error Reporting                                                               | Proposed   | 2026-11-25    | [ADR-040-first-party-browser-error-reporting.md](./ADR-040-first-party-browser-error-reporting.md)                                   |
 
 ## Numbering notes
 
@@ -61,3 +62,4 @@
 - ADR-036 makes authentication state transitions atomic and access authorization session-backed for immediate invalidation.
 - ADR-037 requires Redis/BullMQ for production background work and forbids silent fallback to process-memory queues.
 - ADR-039 verifies the address before an account exists (email-first registration) so registration never reveals whether an address is registered.
+- ADR-040 (proposed) reports browser errors to FitVibe's own backend and log pipeline instead of a third-party SDK.

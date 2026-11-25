@@ -29,6 +29,7 @@ import { pointsRouter } from "./api/points.routes.js";
 import { feedRouter } from "./api/feed.routes.js";
 import { adminRouter } from "./api/admin.routes.js";
 import { contactRouter } from "./api/contact.routes.js";
+import { clientErrorsRouter } from "./api/client-errors.routes.js";
 import { translationsRouter } from "./api/translations.routes.js";
 import { measurementsRouter } from "./api/measurements.routes.js";
 import { legalRouter } from "./api/legal.routes.js";
@@ -201,6 +202,7 @@ apiRouter.use("/points", pointsRouter);
 apiRouter.use("/feed", feedRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/contact", contactRouter);
+apiRouter.use("/client-errors", clientErrorsRouter);
 apiRouter.use("/logs", logsRouter);
 
 apiRouter.use("/system", systemRouter);

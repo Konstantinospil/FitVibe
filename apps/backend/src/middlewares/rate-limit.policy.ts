@@ -44,6 +44,7 @@ const ROUTE_RATE_LIMIT_POLICIES = {
   auth_verify: { points: 60, duration: 60 },
   auth_verify_resend: { points: 3, duration: 3600 },
   badges_catalog: { points: 60, duration: 60 },
+  client_errors_report: { points: 20, duration: 60 },
   consent_save: { points: 10, duration: 60 },
   consent_status: { points: 60, duration: 60 },
   contact_get: { points: 60, duration: 60 },

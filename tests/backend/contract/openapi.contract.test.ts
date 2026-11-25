@@ -18,6 +18,7 @@ import {
 } from "../../../apps/backend/src/modules/users/users.controller.js";
 import { CreateExerciseTypeSchema } from "../../../apps/backend/src/modules/exercise-types/exerciseTypes.controller.js";
 import { UpdateVibeformPreferencesSchema } from "../../../apps/backend/src/modules/vibeforms/vibeforms.schemas.js";
+import { ClientErrorReportSchema } from "../../../apps/backend/src/modules/client-errors/client-errors.schemas.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -41,6 +42,7 @@ const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
   { name: "CreateUserRequest", schema: CreateUserSchema },
   { name: "CreateExerciseTypeRequest", schema: CreateExerciseTypeSchema },
   { name: "UpdateVibeformPreferencesRequest", schema: UpdateVibeformPreferencesSchema },
+  { name: "ClientErrorReportRequest", schema: ClientErrorReportSchema },
 ];
 
 type JsonSchemaObject = {

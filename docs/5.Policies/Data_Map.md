@@ -12,8 +12,8 @@
 | Moderation & safety            | `feed_reports`, `user_blocks`, audit log                                                        | Legitimate interests / legal obligation      | Reports retained 180d or until resolved                             |
 | Communications & notifications | `notifications` (planned), email provider logs                                                  | Legitimate interests / consent               | Notifications 90d rolling, provider logs 30d                        |
 | Security & compliance          | `audit_log`, `idempotency_keys`, `user_tombstones`                                              | Legitimate interests / legal obligation      | Audit log 180d, idempotency keys 24h, tombstones until backup purge |
-| Observability                  | Metrics/log pipelines (Prometheus, Loki)                                                        | Legitimate interests                         | Metrics 14d, logs 30d with PII redaction                            |
-| Backups                        | Manual PostgreSQL dumps; encryption and off-host replication not yet verified                                                              | Legal obligation                             | 14d rolling, purge accelerated for DSR                              |
+| Observability                  | Metrics/log pipelines (Prometheus, Loki); identity-free browser error reports (ADR-040)         | Legitimate interests                         | Metrics 14d, logs 30d with PII redaction                            |
+| Backups                        | Manual PostgreSQL dumps; encryption and off-host replication not yet verified                   | Legal obligation                             | 14d rolling, purge accelerated for DSR                              |
 
 ## Data residency
 
