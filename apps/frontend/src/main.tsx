@@ -4,8 +4,6 @@ import App from "./App";
 import "./styles/global.css";
 import "./styles/components.css";
 import "./styles/surfaces.css";
-// Suppress console errors in production for Lighthouse compliance
-import "./utils/suppressConsole";
 import { ensurePrivateTranslationsLoaded, minimalTranslationsReady } from "./i18n/config";
 // Theme store is small and needed immediately to prevent FOUC
 import { applyTheme, useThemeStore } from "./store/theme.store";

@@ -152,6 +152,20 @@ describe("CompleteRegistration (email-first step 2)", () => {
     expect(screen.getByRole("textbox", { name: /username/i })).toHaveValue("jamie.runner");
   });
 
+  it("gives the username a pattern browsers can compile with the v flag", async () => {
+    renderPage();
+    const username = await screen.findByRole("textbox", { name: /username/i });
+    const pattern = username.getAttribute("pattern") ?? "";
+
+    // Browsers compile `pattern` as /^(?:pattern)$/v. An unescaped "-" at the
+    // end of a character class is invalid there, so the browser reported a
+    // console error and skipped the validation entirely (issue 663).
+    const regex = new RegExp(`^(?:${pattern})$`, "v");
+    expect(regex.test("jamie.runner_01-x")).toBe(true);
+    expect(regex.test("jamie runner")).toBe(false);
+    expect(regex.test("jamie@runner")).toBe(false);
+  });
+
   it("treats a missing token as an unusable link without calling the API", async () => {
     renderPage("");
 

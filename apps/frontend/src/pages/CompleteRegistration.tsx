@@ -447,7 +447,7 @@ const CompleteRegistration: React.FC = () => {
           disabled={isSubmitting}
           minLength={3}
           maxLength={50}
-          pattern="[a-zA-Z0-9_.-]+"
+          pattern="[a-zA-Z0-9_.\-]+"
         />
 
         <PasswordField
