@@ -4,11 +4,13 @@
  * Provides structured logging with support for different log levels
  * and environment-specific behavior.
  *
- * In production, errors can be sent to a monitoring service (e.g., Sentry)
- * while reducing console noise.
+ * Errors are also reported to FitVibe's own backend once error reporting is
+ * installed (production only, see utils/errorReporter.ts and ADR-040).
  */
 
 /* eslint-disable no-console */
+
+import { reportLoggedError } from "./errorReporter";
 
 interface LogContext {
   [key: string]: unknown;
@@ -60,8 +62,7 @@ class Logger {
   }
 
   /**
-   * Log errors
-   * In production, this should send to a monitoring service
+   * Log errors and report them (message and Error only) to the backend
    */
   error(message: string, error?: Error, context?: LogContext): void {
     const errorContext: LogContext = {
@@ -77,9 +78,8 @@ class Logger {
     }
 
     console.error(`[ERROR] ${message}`, errorContext);
-
-    // In production, send to monitoring service
-    // Example: Sentry.captureException(error, { extra: errorContext });
+    // Context is deliberately not reported: it can hold user data (ADR-040).
+    reportLoggedError(message, error);
   }
 
   /**
