@@ -8,6 +8,11 @@ import * as bruteforceRepo from "../../../../apps/backend/src/modules/auth/brute
 import * as pending2faRepo from "../../../../apps/backend/src/modules/auth/pending-2fa.repository.js";
 import * as emailBlacklistRepository from "../../../../apps/backend/src/modules/common/email-blacklist.repository.js";
 import * as mailerService from "../../../../apps/backend/src/services/mailer.service.js";
+import { queueService } from "../../../../apps/backend/src/jobs/services/queue.factory.js";
+import {
+  PASSWORD_RESET_DISPATCH_JOB,
+  dispatchPasswordReset,
+} from "../../../../apps/backend/src/modules/auth/auth.password.service.js";
 import {
   acceptCurrentLegalDocument,
   acceptLegalDocumentVersion,
@@ -31,6 +36,9 @@ jest.mock("../../../../apps/backend/src/modules/auth/auth.registration-options.s
   getRegistrationOptions: jest.fn(),
 }));
 jest.mock("../../../../apps/backend/src/modules/auth/auth.repository.js");
+jest.mock("../../../../apps/backend/src/jobs/services/queue.factory.js", () => ({
+  queueService: { enqueue: jest.fn().mockResolvedValue(undefined) },
+}));
 jest.mock("../../../../apps/backend/src/modules/auth/two-factor.service.js");
 jest.mock("../../../../apps/backend/src/modules/auth/bruteforce.repository.js");
 jest.mock("../../../../apps/backend/src/modules/auth/pending-2fa.repository.js");
@@ -535,43 +543,67 @@ describe("Auth Service", () => {
     });
   });
 
-  describe("requestPasswordReset", () => {
-    it("should request password reset for existing user", async () => {
-      const mockUser: AuthUserRecord = {
-        id: userId,
-        email,
-        username,
-        password_hash: "hash",
-        email_verified: true,
-        status: "active",
-        terms_accepted: true,
-        terms_version: "1.0.0",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        locale: "en",
-      };
+  describe("requestPasswordReset (queued, ADR-039)", () => {
+    it("queues a sensitive job and reads no account data", async () => {
+      await authService.requestPasswordReset("  User@Example.com ");
 
-      // Temporarily enable email for this test
-      const originalEnabled = mockEnv.email.enabled;
-      mockEnv.email.enabled = true;
+      expect(jest.mocked(queueService.enqueue)).toHaveBeenCalledWith({
+        name: PASSWORD_RESET_DISPATCH_JOB,
+        payload: { email: "user@example.com" },
+        sensitive: true,
+      });
+      expect(mockAuthRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(mockAuthRepo.createAuthToken).not.toHaveBeenCalled();
+    });
+  });
 
-      mockAuthRepo.findUserByEmail.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthToken.mockResolvedValue("reset-token");
+  describe("dispatchPasswordReset (background job)", () => {
+    const activeUser: AuthUserRecord = {
+      id: userId,
+      email,
+      username,
+      password_hash: "hash",
+      email_verified: true,
+      status: "active",
+      terms_accepted: true,
+      terms_version: "1.0.0",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      locale: "en",
+    };
 
-      await authService.requestPasswordReset(email);
-
-      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
-      expect(mockMailerService.mailerService.send).toHaveBeenCalled();
-
-      mockEnv.email.enabled = originalEnabled;
+    beforeEach(() => {
+      mockAuthRepo.countAuthTokensSince.mockResolvedValue(0);
     });
 
-    it("should return empty result for non-existent user (prevent enumeration)", async () => {
-      mockAuthRepo.findUserByEmail.mockResolvedValue(null);
+    it("emails an active account its reset link, even with SMTP disabled", async () => {
+      mockEnv.email.enabled = false;
+      mockAuthRepo.findUserByEmail.mockResolvedValue(activeUser);
+      mockAuthRepo.createAuthToken.mockResolvedValue("reset-token");
 
-      await authService.requestPasswordReset("nonexistent@example.com");
+      await expect(dispatchPasswordReset({ email })).resolves.toBe("sent");
 
+      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
+      const [[mail]] = jest.mocked(mockMailerService.mailerService.send).mock.calls;
+      expect(mail.to).toBe(email);
+      expect(mail.text).toMatch(/http:\/\/localhost:3000\/reset-password\?token=[A-Za-z0-9_-]+/);
+    });
+
+    it.each([
+      ["an unknown address", undefined],
+      ["an inactive account", { ...activeUser, status: "suspended" }],
+    ])("sends nothing for %s", async (_label, user) => {
+      mockAuthRepo.findUserByEmail.mockResolvedValue(user as AuthUserRecord | undefined);
+
+      await expect(dispatchPasswordReset({ email })).resolves.toBe("no_email");
       expect(mockAuthRepo.createAuthToken).not.toHaveBeenCalled();
+      expect(mockMailerService.mailerService.send).not.toHaveBeenCalled();
+    });
+
+    it("rejects a malformed payload", async () => {
+      await expect(dispatchPasswordReset({ email: 7 })).rejects.toThrow(
+        "Invalid password reset dispatch payload",
+      );
     });
   });
 

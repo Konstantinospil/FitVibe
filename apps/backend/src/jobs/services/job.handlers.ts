@@ -14,6 +14,7 @@ export const SHARED_JOB_TYPES = [
   "audit.outbox.flush",
   "vibe-level.decay",
   "auth.registration.dispatch",
+  "auth.password-reset.dispatch",
 ] as const;
 
 export type SharedJobType = (typeof SHARED_JOB_TYPES)[number];
@@ -74,6 +75,10 @@ export async function executeSharedJob(
       const { dispatchRegistrationRequest } =
         await import("../../modules/auth/auth.registration.service.js");
       return dispatchRegistrationRequest(payload);
+    }
+    case "auth.password-reset.dispatch": {
+      const { dispatchPasswordReset } = await import("../../modules/auth/auth.password.service.js");
+      return dispatchPasswordReset(payload);
     }
   }
 }

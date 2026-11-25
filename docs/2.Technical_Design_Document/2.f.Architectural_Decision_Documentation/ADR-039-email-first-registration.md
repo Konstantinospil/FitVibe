@@ -63,8 +63,9 @@ Queue jobs that carry personal data are flagged `sensitive`. BullMQ removes them
 ### Consequences for existing flows
 
 - Self-service sign-up no longer creates `pending_verification` accounts. `/verify` and `/verify/resend` remain for administrator-created accounts, and AC-1.8 continues to cover them.
-- No response carries a token or link in any environment. `debugVerificationToken` and `verificationUrl` are removed.
-- Development and browser tests read email from an in-memory **test mailbox**: `EMAIL_CAPTURE_ENABLED=true` and `GET/DELETE /api/v1/dev/mail?to=`. The route is mounted only when capture is enabled, and `env.ts` refuses to start with capture enabled when `NODE_ENV=production`.
+- No response carries a token or link in any environment. `debugVerificationToken` and `verificationUrl` are removed from registration, and `debugResetToken` and `resetUrl` from forgot-password.
+- **Forgot-password uses the same pattern.** `POST /auth/password/forgot` only queues an `auth.password-reset.dispatch` job and returns the same `202` for every address. The job checks the deny-list and account status, issues the reset token and emails the link to active accounts only. Before, the reset email was sent inside the request for existing accounts only, so with SMTP enabled the response time revealed which addresses had accounts.
+- Development and browser tests read email from an in-memory **test mailbox** at `GET/DELETE /api/v1/dev/mail?to=`. It is **on by default when `NODE_ENV=development` and `EMAIL_ENABLED` is off**: there the links are otherwise unreachable, and before this change the same links were returned in API responses, so the default is no wider than what it replaces. It is off by default everywhere else. `EMAIL_CAPTURE_ENABLED` overrides the default either way. The route is mounted only when capture is enabled, and `env.ts` refuses to start with capture enabled when `NODE_ENV=production`.
 - The retention sweep deletes expired `registration_intents` rows.
 
 ---
@@ -90,7 +91,7 @@ Queue jobs that carry personal data are flagged `sensitive`. BullMQ removes them
 **Operational**
 
 - Production already requires Redis/BullMQ (ADR-037). Registration emails now depend on the worker being healthy.
-- The CI browser and accessibility jobs set `EMAIL_CAPTURE_ENABLED=true`. It must never be set in production, and startup enforces that.
+- No new setting is needed for local development or the CI browser and accessibility jobs (`NODE_ENV=development`, `EMAIL_ENABLED=false`). A development-mode deployment that is reachable by others and has no SMTP exposes the mailbox, just as it exposed the debug tokens before; such deployments should set `EMAIL_CAPTURE_ENABLED=false` or enable SMTP. Production refuses capture at startup.
 - Clients that called the old single-step `POST /auth/register` must move to the two-step API. The only client is the FitVibe frontend, updated in the same change.
 
 ---
@@ -124,6 +125,7 @@ Queue jobs that carry personal data are flagged `sensitive`. BullMQ removes them
 
 ## Status Log
 
-| Version | Date       | Change                                        | Author                             |
-| ------- | ---------- | --------------------------------------------- | ---------------------------------- |
-| v1.0    | 2026-11-25 | Initial decision; supersedes PR #659 approach | FitVibe team (drafted with Claude) |
+| Version | Date       | Change                                                                                                       | Author                             |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| v1.0    | 2026-11-25 | Initial decision; supersedes PR #659 approach                                                                | FitVibe team (drafted with Claude) |
+| v1.1    | 2026-11-25 | Forgot-password queued and debug reset token removed; test mailbox on by default in development without SMTP | FitVibe team (drafted with Claude) |

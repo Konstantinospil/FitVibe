@@ -121,6 +121,10 @@ function getAuthenticatedUser(req: Request): { sub?: string; sid?: string; role?
 type CompleteRegistrationInput = z.infer<typeof CompleteRegistrationSchema>;
 
 /** Identical for every address, registered or not (ADR-039). */
+export const PASSWORD_RESET_REQUESTED_MESSAGE =
+  "If the email is registered, a reset link will be sent shortly.";
+
+/** Identical for every address, registered or not (ADR-039). */
 export const REGISTRATION_STARTED_MESSAGE =
   "If this address can be used to create an account, we have sent it an email with the next step.";
 type LoginInput = z.infer<typeof LoginSchema>;
@@ -414,15 +418,9 @@ export async function forgotPassword(
     const scopeUserId = `anon:${payload.email}`;
 
     const execute = async (): Promise<Record<string, unknown>> => {
-      const { resetToken } = await requestPasswordReset(payload.email);
-      const response: Record<string, unknown> = {
-        message: "If the email is registered, a reset link will be sent shortly.",
-      };
-      if (!env.isProduction && resetToken) {
-        response.debugResetToken = resetToken;
-        response.resetUrl = `${env.frontendUrl}/reset-password?token=${resetToken}`;
-      }
-      return response;
+      // The reset link reaches only the mailbox, in every environment (ADR-039).
+      await requestPasswordReset(payload.email);
+      return { message: PASSWORD_RESET_REQUESTED_MESSAGE };
     };
 
     const handled = await handleIdempotentRequest(req, res, scopeUserId, payload, async () => ({

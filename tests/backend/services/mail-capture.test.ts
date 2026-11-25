@@ -33,6 +33,41 @@ describe("mail capture (test mailbox)", () => {
     );
   });
 
+  it.each([
+    ["development without SMTP", { NODE_ENV: "development" }, true],
+    ["development with SMTP", { NODE_ENV: "development", EMAIL_ENABLED: "true" }, false],
+    [
+      "development, explicitly off",
+      { NODE_ENV: "development", EMAIL_CAPTURE_ENABLED: "false" },
+      false,
+    ],
+    ["test", { NODE_ENV: "test" }, false],
+    ["test, explicitly on", { NODE_ENV: "test", EMAIL_CAPTURE_ENABLED: "true" }, true],
+  ])("defaults sensibly: %s", async (_label, vars, expected) => {
+    delete process.env.EMAIL_CAPTURE_ENABLED;
+    delete process.env.EMAIL_ENABLED;
+    Object.assign(process.env, vars);
+    const capture = await import("../../../apps/backend/src/services/mail-capture.service.js");
+
+    expect(capture.isMailCaptureEnabled()).toBe(expected);
+  });
+
+  it("stays off in production when the flag is not set", async () => {
+    const keys = generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      publicKeyEncoding: { type: "spki", format: "pem" },
+    });
+    process.env.NODE_ENV = "production";
+    process.env.JWT_PRIVATE_KEY = keys.privateKey;
+    process.env.JWT_PUBLIC_KEY = keys.publicKey;
+    delete process.env.EMAIL_CAPTURE_ENABLED;
+    delete process.env.EMAIL_ENABLED;
+
+    const { env } = await import("../../../apps/backend/src/config/env.js");
+    expect(env.email.captureEnabled).toBe(false);
+  });
+
   it("captures nothing when disabled", async () => {
     process.env.EMAIL_CAPTURE_ENABLED = "false";
     const capture = await import("../../../apps/backend/src/services/mail-capture.service.js");

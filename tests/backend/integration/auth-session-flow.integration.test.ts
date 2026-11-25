@@ -27,10 +27,7 @@ import {
   ensureUsernameColumnExists,
 } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
-import {
-  obtainRegistrationLinkToken,
-  registerThroughEmail,
-} from "../../setup/registration-flow.js";
+import { obtainRegistrationLinkToken, registerThroughEmail } from "../../setup/emailed-links.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { seed as seedLegalPublications } from "../../../apps/backend/src/db/seeds/005_legal_publications.js";

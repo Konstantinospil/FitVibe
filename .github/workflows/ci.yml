@@ -2187,8 +2187,6 @@ jobs:
       REDIS_PORT: "6379"
       CLAMAV_ENABLED: "false"
       EMAIL_ENABLED: "false"
-      # Test mailbox for email-first registration links (ADR-039); refused in production.
-      EMAIL_CAPTURE_ENABLED: "true"
     # Pin the browser runtime and OS dependencies to the same Playwright version
     # as @playwright/test. Do not provision browsers/apt packages at runtime.
     container:
@@ -2497,8 +2495,6 @@ jobs:
       REDIS_PORT: "6379"
       CLAMAV_ENABLED: "false"
       EMAIL_ENABLED: "false"
-      # Test mailbox for email-first registration links (ADR-039); refused in production.
-      EMAIL_CAPTURE_ENABLED: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

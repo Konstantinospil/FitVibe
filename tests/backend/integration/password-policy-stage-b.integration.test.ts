@@ -20,7 +20,7 @@ import {
 import { getCurrentTermsVersion } from "../../../apps/backend/src/config/terms.js";
 import { truncateAll, ensureRolesSeeded, createTestIp } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
-import { registerThroughEmail } from "../../setup/registration-flow.js";
+import { obtainPasswordResetToken, registerThroughEmail } from "../../setup/emailed-links.js";
 import { HttpError } from "../../../apps/backend/src/utils/http.js";
 
 const OLD = "ExistingPassword123!";
@@ -99,8 +99,9 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
       .send({ email, password: OLD });
     expect(signin.status).toBe(200);
     const access = signin.body.tokens.accessToken;
-    const forgot = async () => request(app).post("/api/v1/auth/password/forgot").send({ email });
-    const firstToken = (await forgot()).body.debugResetToken;
+    // The reset link reaches only the mailbox (ADR-039).
+    const forgot = async () => obtainPasswordResetToken(app, email);
+    const firstToken = await forgot();
     expect(firstToken).toEqual(expect.any(String));
 
     const checker = jest
@@ -129,7 +130,7 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
     expect(changed.password_hash).toMatch(/^\$argon2id\$/);
     expect((await db("user_password_history").where({ user_id: userId })).length).toBe(1);
 
-    const nextToken = (await forgot()).body.debugResetToken;
+    const nextToken = await forgot();
     const reused = await request(app)
       .post("/api/v1/auth/password/reset")
       .send({ token: nextToken, newPassword: OLD });
@@ -141,8 +142,8 @@ describeWithTestDatabase("Stage B: password writing and migration (#557)", () =>
     expect(stillActiveToken).toBeDefined();
   });
   it("rejects a short administrator password even when promotion races with reset preflight", async () => {
-    const forgot = await request(app).post("/api/v1/auth/password/forgot").send({ email });
-    expect(forgot.status).toBe(202);
+    // The token row exists once the reset email has been sent.
+    await obtainPasswordResetToken(app, email);
     const token = await db("auth_tokens")
       .where({ user_id: userId, token_type: "password_reset" })
       .orderBy("created_at", "desc")

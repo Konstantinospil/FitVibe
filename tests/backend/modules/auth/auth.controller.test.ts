@@ -243,7 +243,7 @@ describe("Auth Controller", () => {
     const completeData = {
       token: "a".repeat(43),
       username: "testuser",
-      password: "SecureP@ssw0rd123",
+      password: "correct horse battery staple",
       terms_accepted: true,
     };
     const createdUser = {
@@ -616,12 +616,10 @@ describe("Auth Controller", () => {
   });
 
   describe("forgotPassword", () => {
-    it("should request password reset without idempotency", async () => {
+    it("queues the request and answers with the message only, in every environment", async () => {
       const email = "test@example.com";
       mockRequest.body = { email };
-      mockAuthService.requestPasswordReset.mockResolvedValue({
-        resetToken: "reset-token",
-      });
+      mockAuthService.requestPasswordReset.mockResolvedValue(undefined);
 
       await authController.forgotPassword(
         mockRequest as Request,
@@ -631,13 +629,10 @@ describe("Auth Controller", () => {
 
       expect(mockAuthService.requestPasswordReset).toHaveBeenCalledWith(email);
       expect(mockResponse.status).toHaveBeenCalledWith(202);
-      expect(mockResponse.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining("reset link will be sent"),
-          debugResetToken: "reset-token",
-          resetUrl: "http://localhost:3000/reset-password?token=reset-token",
-        }),
-      );
+      // No debug token or link (ADR-039): the reset link reaches only the mailbox.
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: authController.PASSWORD_RESET_REQUESTED_MESSAGE,
+      });
       expect(mockNext).not.toHaveBeenCalled();
     });
 

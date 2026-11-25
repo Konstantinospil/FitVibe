@@ -24,7 +24,7 @@ import {
 } from "../../../apps/backend/src/modules/auth/auth.registration.service.js";
 import { truncateAll, ensureRolesSeeded, createTestIp } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
-import { clearRegistrationRequests } from "../../setup/registration-flow.js";
+import { clearRegistrationRequests } from "../../setup/emailed-links.js";
 
 const PASSWORD = "an original long passphrase for registration";
 const ACTIVE_EMAIL = "active-owner@example.com";

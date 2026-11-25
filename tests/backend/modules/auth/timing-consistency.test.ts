@@ -252,38 +252,26 @@ describe("AC-1.12: Timing Consistency for User Enumeration Protection", () => {
     });
   });
 
-  describe("Password Reset Endpoint Timing", () => {
-    it("should have consistent timing for valid vs invalid email", async () => {
-      const bcrypt = await import("bcryptjs");
-      (bcrypt.compare as jest.Mock).mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        return false;
+  describe("Password Reset Endpoint Timing (queued, ADR-039)", () => {
+    it("takes the same time for every address because it only queues the request", async () => {
+      // Make an account lookup expensive: if the request ever touched account
+      // data again, the existing-account path would be visibly slower.
+      mockAuthRepo.findUserByEmail.mockImplementation(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        return mockUser;
       });
 
-      // Invalid email (user not found)
-      mockAuthRepo.findUserByEmail.mockResolvedValue(undefined);
-
-      const invalidEmailTime = await getAverageTiming(
+      const unknownAddressTime = await getAverageTiming(
         () => authService.requestPasswordReset("nonexistent@example.com"),
-        10, // Increased from 3 to 10 to reduce jitter variance impact
+        10,
       );
-
-      // Valid email (user exists)
-      mockAuthRepo.findUserByEmail.mockResolvedValue(mockUser);
-      mockAuthRepo.createAuthToken.mockResolvedValue([]);
-      mockAuthRepo.markAuthTokensConsumed.mockResolvedValue(1);
-      mockAuthRepo.purgeAuthTokensOlderThan.mockResolvedValue(0);
-
-      const validEmailTime = await getAverageTiming(
+      const knownAddressTime = await getAverageTiming(
         () => authService.requestPasswordReset("test@example.com"),
-        10, // Increased from 3 to 10 to reduce jitter variance impact
+        10,
       );
 
-      const variance = calculateVariance(invalidEmailTime, validEmailTime);
-
-      // Allow up to 15% variance to account for system load and timing variations
-      // Security requirement is ≤10%, but tests need some tolerance for environmental factors
-      expect(variance).toBeLessThanOrEqual(15);
+      expect(mockAuthRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(calculateVariance(unknownAddressTime, knownAddressTime)).toBeLessThanOrEqual(15);
     });
   });
 
