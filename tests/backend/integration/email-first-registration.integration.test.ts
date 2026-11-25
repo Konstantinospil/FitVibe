@@ -286,6 +286,33 @@ describeWithTestDatabase("Email-first registration (ADR-039)", () => {
     expect(orphanUsers).toHaveLength(0);
   });
 
+  it("lets one of several concurrent links claim an alias and reports the rest as taken", async () => {
+    const emails = Array.from({ length: 4 }, (_, i) => `race-alias-${i}@example.com`);
+    for (const email of emails) {
+      await start(email);
+    }
+    for (const email of emails) {
+      await settled(email, 1);
+    }
+    const tokens = emails.map((email) => continueToken(mailTo(email)[0]));
+
+    const results = await Promise.all(
+      tokens.map((token) => complete({ token, username: "contested-alias" })),
+    );
+    const created = results.filter((result) => result.status === 201);
+    expect(created).toHaveLength(1);
+    for (const result of results.filter((r) => r.status !== 201)) {
+      expect(result.status).toBe(409);
+      expect(result.body).toMatchObject({ error: { code: "USER_USERNAME_TAKEN" } });
+    }
+    expect(await db("profiles").where({ alias: "contested-alias" })).toHaveLength(1);
+    expect(await db("user_contacts").whereIn("value", emails)).toHaveLength(1);
+    const orphanUsers = await db("users as u")
+      .leftJoin("profiles as p", "p.user_id", "u.id")
+      .whereNull("p.user_id");
+    expect(orphanUsers).toHaveLength(0);
+  });
+
   it("never returns a token or link in any response", async () => {
     const reply = await start("no-debug@example.com");
     expect(JSON.stringify(reply.body)).not.toMatch(/token|verify|register\/complete/i);

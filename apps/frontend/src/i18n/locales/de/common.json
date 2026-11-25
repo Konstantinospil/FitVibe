@@ -187,7 +187,6 @@
     "AUTH_INVALID_TOKEN": "Ungültiger Verifizierungstoken",
     "AUTH_TOKEN_EXPIRED": "Dein Verifizierungslink ist abgelaufen. Bitte fordere einen neuen an",
     "AUTH_TOO_MANY_REQUESTS": "Verifizierungslimit erreicht. Bitte versuche es später erneut",
-    "AUTH_CONFLICT": "Registrierung konnte nicht abgeschlossen werden",
     "AUTH_USER_NOT_FOUND": "Benutzer nicht gefunden",
     "AUTH_INVALID_CREDENTIALS": "Ungültige Zugangsdaten",
     "AUTH_INVALID_REFRESH": "Ungültiger Refresh-Token",

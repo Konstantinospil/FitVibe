@@ -187,7 +187,6 @@
     "AUTH_INVALID_TOKEN": "Jeton de vérification invalide",
     "AUTH_TOKEN_EXPIRED": "Votre lien de vérification a expiré. Veuillez en demander un nouveau",
     "AUTH_TOO_MANY_REQUESTS": "Limite de vérification atteinte. Veuillez réessayer plus tard",
-    "AUTH_CONFLICT": "Impossible de terminer l'inscription",
     "AUTH_USER_NOT_FOUND": "Utilisateur introuvable",
     "AUTH_INVALID_CREDENTIALS": "Identifiants invalides",
     "AUTH_INVALID_REFRESH": "Jeton de rafraîchissement invalide",
