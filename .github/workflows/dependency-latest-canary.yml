@@ -58,7 +58,7 @@ jobs:
           mkdir -p dependency-canary-report
           pnpm install --frozen-lockfile --no-offline
           git rev-parse HEAD > dependency-canary-report/base-commit.txt
-          node -e 'const fs=require("fs");const m=require("./package.json");fs.writeFileSync("dependency-canary-report/toolchain.json",JSON.stringify({packageManager:m.packageManager,pnpm:m.devDependencies.pnpm},null,2))'
+          node -e 'const fs=require("fs");const m=require("./package.json");fs.writeFileSync("dependency-canary-report/toolchain.json",JSON.stringify({packageManager:m.packageManager},null,2))'
       - name: Remove one override in disposable checkout
         if: github.event_name == 'workflow_dispatch' && inputs.remove_override != ''
         env:
