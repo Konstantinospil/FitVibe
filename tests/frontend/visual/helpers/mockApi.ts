@@ -342,6 +342,22 @@ export async function mockRegistrationOptions(page: Page) {
   });
 }
 
+// Step 2 of email-first registration (ADR-039) reads the address from the link token.
+// Fixed expiry keeps the response deterministic for visual runs.
+export const VISUAL_REGISTRATION_INTENT = {
+  email: "visual@example.com",
+  expiresAt: "2030-01-01T00:00:00.000Z",
+};
+
+export async function mockRegistrationIntent(page: Page) {
+  await page.route("**/api/v1/auth/register/intent", async (route) => {
+    if (route.request().method() !== "POST") {
+      return route.fallback();
+    }
+    return fulfillJson(route, VISUAL_REGISTRATION_INTENT);
+  });
+}
+
 export async function mockCurrentUser(page: Page, overrides?: Partial<typeof DEFAULT_USER>) {
   await page.route("**/api/v1/users/me", async (route) => {
     if (route.request().method() !== "GET") {
@@ -819,11 +835,23 @@ export async function mockAuthRefresh(page: Page) {
  * Register this before navigation so unmocked endpoints cannot hang networkidle.
  */
 const VISUAL_VIBEFORM_PROFILE = {
-  preferences: { templateCode: "flow", templateVersion: 1, bodyProfile: "balanced", motionEnabled: true },
+  preferences: {
+    templateCode: "flow",
+    templateVersion: 1,
+    bodyProfile: "balanced",
+    motionEnabled: true,
+  },
   metrics: {
-    intelligence: 0.4, regeneration: 0.5, agility: 0.6, explosivity: 0.7,
-    endurance: 0.8, strength: 0.9, upperBodyLoad: 0.5, lowerBodyLoad: 0.5,
-    bmi: null, heightCm: null,
+    intelligence: 0.4,
+    regeneration: 0.5,
+    agility: 0.6,
+    explosivity: 0.7,
+    endurance: 0.8,
+    strength: 0.9,
+    upperBodyLoad: 0.5,
+    lowerBodyLoad: 0.5,
+    bmi: null,
+    heightCm: null,
   },
   calculationVersion: "2",
   calculatedAt: NOW_ISO,
@@ -879,6 +907,7 @@ export async function installDefaultMocks(page: Page): Promise<void> {
 
   await mockSystemConfig(page);
   await mockRegistrationOptions(page);
+  await mockRegistrationIntent(page);
   await mockCurrentUser(page);
   await mockUserAttributes(page);
   await mockMeasurements(page);

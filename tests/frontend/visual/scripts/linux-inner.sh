@@ -7,7 +7,7 @@ cp -a /work/tests/frontend/visual /tmp/run/tests/frontend/visual
 cp /work/tests/qa/assert-computed-typography.cjs /tmp/run/tests/qa/
 cp /work/design/typography.schema.json /tmp/run/design/
 cd /tmp/run
-printf '%s\n' '{"type":"module","devDependencies":{"@playwright/test":"1.64.1"}}' > package.json
+printf '%s\n' '{"type":"module","devDependencies":{"@playwright/test":"1.65.1"}}' > package.json
 npm install --silent --no-audit --no-fund
 npx playwright test --config tests/frontend/visual/config/playwright.config.ts \
   --update-snapshots="${UPDATE_SNAPSHOTS:-none}" "$@"
