@@ -34,7 +34,7 @@ check_prerequisites() {
     log "Checking prerequisites..."
     
     if ! command -v pnpm &> /dev/null; then
-        error "pnpm is not installed. Please install pnpm 9.14.4"
+        error "pnpm is not installed. Run: corepack enable && corepack install (version from package.json packageManager)"
         exit 1
     fi
     
