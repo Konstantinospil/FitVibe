@@ -245,3 +245,54 @@ test("canary toolchain restore keeps packageManager and drops a re-added pnpm de
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+test("Dockerfiles take pnpm from packageManager and deploy in legacy mode", () => {
+  const dockerRoot = path.join(root, "infra/docker");
+  const dockerfiles = fs
+    .readdirSync(dockerRoot, { recursive: true })
+    .filter((rel) => path.basename(rel).startsWith("Dockerfile"))
+    .map((rel) => path.join(dockerRoot, rel))
+    .filter((file) => /\bpnpm\b/.test(fs.readFileSync(file, "utf8")));
+  assert.ok(dockerfiles.length >= 5, "expected the pnpm-based dev and prod Dockerfiles");
+  for (const file of dockerfiles) {
+    const name = path.relative(root, file);
+    const text = fs.readFileSync(file, "utf8");
+    assert.doesNotMatch(
+      text,
+      /corepack prepare pnpm@|COREPACK_ENABLE_PROJECT_SPEC=0|pm_on_fail/,
+      `${name} must not pin or bypass pnpm`,
+    );
+    assert.match(
+      text,
+      /corepack enable && corepack install/,
+      `${name} must install pnpm from packageManager`,
+    );
+    assert.match(
+      text,
+      /test "pnpm@\$\(pnpm --version\)" = "\$\(node -p "require\('\.\/package\.json'\)\.packageManager"\)"/,
+      `${name} must assert the pnpm version`,
+    );
+    for (const line of text.split("\n").filter((l) => /^COPY .*pnpm-lock\.yaml/.test(l))) {
+      assert.match(
+        line,
+        /\.pnpmfile\.cjs/,
+        `${name}: lockfile COPY must include .pnpmfile.cjs (pnpmfileChecksum)`,
+      );
+      assert.doesNotMatch(
+        line,
+        /packages\/\*/,
+        `${name}: avoid wildcard workspace COPY destinations`,
+      );
+    }
+    for (const line of text.split("\n").filter((l) => /^RUN\b.*\bpnpm deploy\b/.test(l))) {
+      assert.match(line, /--legacy/, `${name}: pnpm deploy must use --legacy`);
+    }
+  }
+  assert.match(
+    fs.readFileSync(path.join(root, "pnpm-workspace.yaml"), "utf8"),
+    /^forceLegacyDeploy: true$/m,
+  );
+  assert.ok(
+    !fs.existsSync(path.join(root, ".npmrc")),
+    "pnpm 12 ignores .npmrc settings; configure pnpm-workspace.yaml",
+  );
+});

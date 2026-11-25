@@ -70,3 +70,18 @@ Details and removal criteria for the kept entries are in
   override or manifest.
 - `tests/qa/report-dependency-relevance.cjs` reports parent-scoped selectors
   (`parent>child`) as stale because it looks them up as package names.
+
+## Addendum: pnpm toolchain pins (25 November 2026)
+
+- The root `pnpm` devDependency (drifted to 12.21.0 via Dependabot) was removed;
+  pnpm is pinned only by `packageManager` (12.5.1).
+- Dockerfiles no longer pin their own pnpm (`10.34.5` dev, `12.9.0` prod). They
+  run `corepack install` and assert the version equals `packageManager`.
+  Reproduced on the 4 October tree: pnpm 12.5.1 deploys fine with an explicit
+  `--legacy`; the failure that motivated 12.9.0 was a plain `pnpm deploy`.
+- pnpm 12 ignores `force-legacy-deploy` in `.npmrc` (12.5.1 and 12.9.0 both fail a
+  plain deploy with it). The setting now lives in `pnpm-workspace.yaml` as
+  `forceLegacyDeploy: true`, and `.npmrc` was deleted.
+- Dev images were broken on `feature`: the backend ran a plain deploy, and the
+  frontend runtime stage installed without `.pnpmfile.cjs` and without the
+  `@fitvibe/ui` workspace package. Both now follow the prod build flow.

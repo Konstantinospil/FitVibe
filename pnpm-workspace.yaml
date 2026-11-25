@@ -7,7 +7,6 @@ packages:
 # pnpm 12 build-script policy. Keep this explicit so CI fails closed for any
 # newly introduced dependency that tries to run lifecycle scripts.
 allowBuilds:
-  pnpm: true
   protobufjs: true
   snyk: true
   esbuild: true
@@ -16,6 +15,11 @@ allowBuilds:
   # Jest 30.5 uses the native-backed resolver via jest-resolve.
   unrs-resolver: true
   msgpackr-extract: false
+
+# Use legacy `pnpm deploy` (pnpm 12 reads this here, not from .npmrc).
+# Non-legacy deploy would require injectWorkspacePackages; the Dockerfiles
+# also pass --legacy explicitly.
+forceLegacyDeploy: true
 
 # pnpm 12 reads dependency-resolution policy from pnpm-workspace.yaml.
 # Regenerate combined PR #594/#595 OpenTelemetry 3 dependency lockfile.
