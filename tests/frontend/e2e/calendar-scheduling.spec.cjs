@@ -431,6 +431,30 @@ test.describe("Calendar scheduling on a touch device (US-4.4)", () => {
       .poll(() => plannedAtOf(page, session.id))
       .toBe(at(otherDay, BASE_HOUR, 43).toISOString());
   });
+  test("the calendar fits a 320 px screen in every view (US-4.4-AC02)", async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    const { today } = scheduleDays();
+    const title = `Narrow ${testInfo.testId}`;
+    await createPlannedSession(page, { title, plannedAt: at(today, BASE_HOUR - 2, 50) });
+    await openCalendar(page);
+
+    const overflow = () =>
+      page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(await overflow(), "month view").toBeLessThanOrEqual(0);
+    for (const view of [calendarSurface.views.week, calendarSurface.views.day]) {
+      await switchView(page, view);
+      await expect(slotCell(page, today, BASE_HOUR - 2).getByText(title)).toBeVisible();
+      // The time grid scrolls inside its own container; the page itself must not.
+      expect(await overflow(), view).toBeLessThanOrEqual(0);
+    }
+    await testInfo.attach("calendar-320px-day.png", {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
+  });
+
   test("touch: drag the resize handle in the day view", async ({ page }, testInfo) => {
     const { today } = scheduleDays();
     const title = `Touch resize ${testInfo.testId}`;
