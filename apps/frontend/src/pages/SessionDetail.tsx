@@ -1,0 +1,242 @@
+import React, { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
+import { Button, InputControl } from "@fitvibe/ui";
+import { useTranslation } from "react-i18next";
+import {
+  cloneSession,
+  getSession,
+  updateSession,
+  type SessionExercise,
+  type SessionExerciseSet,
+  type SessionWithExercises,
+} from "../services/sessionApi";
+import { useCurrentUserId } from "../lib/auth/useCurrentUserId";
+import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
+import { RetryErrorPanel, StatusPanel } from "../components/composites/StatusPanel";
+import { FormFeedback } from "../components/composites/FormStack";
+import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
+import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
+
+type Translate = ReturnType<typeof useTranslation>["t"];
+
+const SUMMARY_SEPARATOR = " · ";
+
+function metric(t: Translate, key: string, value: string | number | null | undefined) {
+  return value === null || value === undefined ? null : t(`sessionDetail.${key}`, { value });
+}
+
+const joinMetrics = (parts: Array<string | null>) =>
+  parts.filter((part): part is string => Boolean(part)).join(SUMMARY_SEPARATOR);
+
+function setSummary(t: Translate, set: SessionExerciseSet) {
+  return joinMetrics([
+    metric(t, "reps", set.reps),
+    metric(t, "load", set.weight_kg),
+    metric(t, "duration", set.duration_sec),
+    metric(t, "distance", set.distance_m),
+    metric(t, "rpe", set.rpe),
+    metric(t, "rest", set.rest_sec),
+  ]);
+}
+
+function exerciseSummary(t: Translate, exercise: SessionExercise) {
+  const planned = exercise.planned;
+  return joinMetrics([
+    metric(t, "sets", planned?.sets),
+    metric(t, "reps", planned?.reps),
+    metric(t, "load", planned?.load),
+    metric(t, "plannedDuration", planned?.duration),
+    metric(t, "plannedDistance", planned?.distance),
+    metric(t, "rpe", planned?.rpe),
+    metric(t, "plannedRest", planned?.rest),
+  ]);
+}
+
+const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session }) => {
+  const { t } = useTranslation();
+  return (
+    <TrainingPanel title={t("sessionDetail.exerciseList")}>
+      {session.exercises.length === 0 ? <p>{t("sessionDetail.empty")}</p> : null}
+      {session.exercises.map((exercise) => (
+        <React.Fragment key={exercise.id}>
+          <TrainingSummaryCard
+            title={exercise.exercise_name || t("workoutEditor.exerciseFallback")}
+            meta={t("sessionDetail.prescription")}
+            supporting={exerciseSummary(t, exercise)}
+          />
+          {exercise.notes ? <p>{exercise.notes}</p> : null}
+          {exercise.sets.map((set) => (
+            <TrainingSummaryCard
+              key={set.id}
+              title={t("sessionDetail.set", { number: set.order_index })}
+              meta={t(
+                session.status === "completed" || set.recorded_at
+                  ? "sessionDetail.actual"
+                  : "sessionDetail.prescription",
+              )}
+              supporting={setSummary(t, set) || t("sessionDetail.unrecorded")}
+            />
+          ))}
+        </React.Fragment>
+      ))}
+    </TrainingPanel>
+  );
+};
+
+/**
+ * Read view of one of the athlete's sessions (`/sessions/:id`): schedule, status,
+ * prescription and recorded sets, and awarded points once completed. The owner can
+ * start a planned session and reuse any session as a new private one; completed
+ * records are not edited here.
+ */
+const SessionDetail: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const { t, i18n } = useTranslation();
+  const userId = useCurrentUserId();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [copyDate, setCopyDate] = useState("");
+  // The server decides who may read a session; ownership only decides which actions show.
+  const queryKey = useMemo(() => ["session-detail", id] as const, [id]);
+  const query = useQuery({
+    queryKey,
+    queryFn: () => getSession(id!),
+    enabled: Boolean(id),
+  });
+  const session = query.data;
+  const isOwner = Boolean(session && userId && session.owner_id === userId);
+
+  const dateTimeFormat = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }),
+    [i18n.language],
+  );
+
+  const start = useMutation({
+    mutationFn: (sessionId: string) => updateSession(sessionId, { status: "in_progress" }),
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(queryKey, updated);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ["home", "recent-sessions"] }),
+      ]);
+    },
+  });
+
+  const reuse = useMutation({
+    mutationFn: ({ sessionId, plannedAt }: { sessionId: string; plannedAt: string }) =>
+      cloneSession(sessionId, {
+        planned_at: plannedAt,
+        plan_id: null,
+        visibility: "private",
+        recurrence_rule: null,
+        include_actual: false,
+      }),
+    onSuccess: async (copy) => {
+      await queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+      void navigate(`/sessions/${copy.id}`);
+    },
+  });
+
+  const busy = start.isPending || reuse.isPending;
+  const parsedCopyDate = new Date(copyDate);
+  const validCopyDate = copyDate !== "" && Number.isFinite(parsedCopyDate.getTime());
+
+  const scheduledRange = (value: SessionWithExercises) =>
+    dateTimeFormat.formatRange(
+      new Date(value.planned_at),
+      new Date(sessionEnd(value.planned_at, durationOf(value))),
+    );
+
+  return (
+    <main className="training-page" aria-labelledby="session-detail-title">
+      <h1 id="session-detail-title">{session?.title || t("sessionDetail.title")}</h1>
+      {query.isLoading ? <StatusPanel kind="loading">{t("loading.app")}</StatusPanel> : null}
+      {query.isError ? (
+        <RetryErrorPanel
+          message={t("sessionDetail.loadError")}
+          retryLabel={t("actions.retry")}
+          onRetry={() => void query.refetch()}
+          isRetrying={query.isFetching}
+        />
+      ) : null}
+      {session ? (
+        <>
+          <TrainingPanel title={t(`sessionDetail.${session.status}`)}>
+            <p>{t("sessionDetail.plannedAt", { value: scheduledRange(session) })}</p>
+            {session.started_at ? (
+              <p>
+                {t("sessionDetail.startedAt", {
+                  value: dateTimeFormat.format(new Date(session.started_at)),
+                })}
+              </p>
+            ) : null}
+            {session.completed_at ? (
+              <p>
+                {t("sessionDetail.completedAt", {
+                  value: dateTimeFormat.format(new Date(session.completed_at)),
+                })}
+              </p>
+            ) : null}
+            <p>
+              {t("sessionDetail.visibility", {
+                value: t(`visibility.labels.${session.visibility}`),
+              })}
+            </p>
+            {session.notes ? <p>{session.notes}</p> : null}
+            {session.status === "completed" ? (
+              <p>
+                {session.points === null || session.points === undefined
+                  ? t("sessionDetail.pointsPending")
+                  : t("homeSurface.session.points", { count: session.points })}
+              </p>
+            ) : null}
+            {isOwner && session.status === "planned" ? (
+              <Button
+                disabled={busy}
+                isLoading={start.isPending}
+                onClick={() => start.mutate(session.id)}
+              >
+                {t("workoutEditor.actions.start")}
+              </Button>
+            ) : null}
+            {isOwner && session.status === "in_progress" ? (
+              <FormFeedback tone="info">{t("sessionDetail.activeNotice")}</FormFeedback>
+            ) : null}
+            {start.isError ? (
+              <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback>
+            ) : null}
+          </TrainingPanel>
+          <SessionExercises session={session} />
+          {isOwner && session.status !== "canceled" ? (
+            <TrainingPanel title={t("sessionDetail.reuse")}>
+              <label className="form-label">
+                <span className="form-label-text">{t("sessionDetail.reuseDate")}</span>
+                <InputControl
+                  type="datetime-local"
+                  value={copyDate}
+                  onChange={(event) => setCopyDate(event.target.value)}
+                />
+              </label>
+              <Button
+                variant="secondary"
+                disabled={busy || !validCopyDate}
+                isLoading={reuse.isPending}
+                onClick={() =>
+                  reuse.mutate({ sessionId: session.id, plannedAt: parsedCopyDate.toISOString() })
+                }
+              >
+                {t("sessionDetail.reuse")}
+              </Button>
+              {reuse.isError ? (
+                <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback>
+              ) : null}
+            </TrainingPanel>
+          ) : null}
+        </>
+      ) : null}
+    </main>
+  );
+};
+
+export default SessionDetail;

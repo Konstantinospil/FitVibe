@@ -1026,7 +1026,11 @@
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
       "previousYear": "Année précédente",
-      "nextYear": "Année suivante"
+      "nextYear": "Année suivante",
+      "previousWeek": "Semaine précédente",
+      "nextWeek": "Semaine suivante",
+      "previousDay": "Jour précédent",
+      "nextDay": "Jour suivant"
     },
     "gridLabel": "Calendrier mensuel des entraînements",
     "dayLabel": "{{date}}, {{count}} entraînements",
@@ -1037,6 +1041,58 @@
     },
     "errors": {
       "load": "Impossible de charger les données du calendrier."
+    },
+    "schedule": {
+      "moveLabel": "Déplacer {{title}}",
+      "moveHint": "Faites glisser vers un autre jour ou une autre heure. Ou appuyez sur Espace pour le saisir, déplacez-le avec les flèches et appuyez sur Entrée pour le déposer. Entrée seule ouvre le choix du jour, de l’heure et de la durée.",
+      "resizeHint": "Faites glisser pour changer l’heure de fin de l’entraînement. Ou appuyez sur Espace, changez la fin avec les flèches haut et bas et appuyez sur Entrée pour enregistrer. Entrée seule ouvre le choix du jour, de l’heure et de la durée.",
+      "conflictLabel": "Conflit d’horaire",
+      "dialog": {
+        "title": "Reprogrammer l’entraînement",
+        "description": "Choisissez un nouveau jour, une heure de début et une durée pour {{title}}."
+      },
+      "fields": {
+        "day": "Jour",
+        "time": "Heure",
+        "duration": "Durée en minutes"
+      },
+      "actions": {
+        "save": "Reprogrammer l’entraînement",
+        "cancel": "Annuler"
+      },
+      "status": {
+        "rescheduled": "{{title}} est maintenant prévu le {{date}}, {{start}}–{{end}}."
+      },
+      "errors": {
+        "conflict": "{{title}} est prévu de {{start}} à {{end}} le {{date}}. Choisissez une autre heure.",
+        "conflictUnlisted": "Un autre entraînement est prévu entre {{start}} et {{end}} le {{date}}. Choisissez une autre heure.",
+        "invalid": "Ce jour et cette heure n’existent pas. Choisissez-en d’autres.",
+        "save": "Impossible de reprogrammer l’entraînement. Réessayez.",
+        "invalidDuration": "Choisissez une durée comprise entre {{min}} et {{max}} minutes."
+      },
+      "chipLabel": "{{time}} {{title}}, déplacer",
+      "resizeLabel": "{{title}}, se termine à {{time}}, changer la durée",
+      "keyboard": {
+        "pickedUp": "{{title}} saisi. Utilisez les flèches pour choisir un nouveau jour ou une nouvelle heure, Entrée pour déposer, Échap pour annuler.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}} : conflit avec {{title}}.",
+        "cancelled": "Déplacement de {{title}} annulé.",
+        "resizePickedUp": "Modification de la durée de {{title}}. Utilisez les flèches haut et bas pour changer la fin, Entrée pour enregistrer, Échap pour annuler.",
+        "resizeOver": "Se termine à {{time}}, {{duration}}.",
+        "resizeOverConflict": "Se termine à {{time}}, {{duration}} : conflit avec {{title}}.",
+        "resizeCancelled": "Durée de {{title}} inchangée."
+      }
+    },
+    "views": {
+      "label": "Vue du calendrier",
+      "month": "Mois",
+      "week": "Semaine",
+      "day": "Jour"
+    },
+    "timeGrid": {
+      "weekLabel": "Programme hebdomadaire des entraînements",
+      "dayLabel": "Programme quotidien des entraînements",
+      "timeHeading": "Heure"
     }
   },
   "workoutEditor": {
@@ -1095,6 +1151,40 @@
   },
   "actions": {
     "retry": "Réessayer"
+  },
+  "sessionDetail": {
+    "title": "Entraînement",
+    "details": "Détails : {{title}}",
+    "planned": "Planifié",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "canceled": "Annulé",
+    "plannedAt": "Planifié pour : {{value}}",
+    "startedAt": "Début : {{value}}",
+    "completedAt": "Terminé le : {{value}}",
+    "visibility": "Visibilité : {{value}}",
+    "exerciseList": "Exercices et séries",
+    "prescription": "Prescription",
+    "actual": "Résultats enregistrés",
+    "unrecorded": "Non enregistré",
+    "set": "Série {{number}}",
+    "reps": "Répétitions : {{value}}",
+    "load": "Charge : {{value}} kg",
+    "duration": "Durée : {{value}} s",
+    "distance": "Distance : {{value}} m",
+    "rpe": "RPE : {{value}}",
+    "rest": "Repos : {{value}} s",
+    "empty": "Aucun exercice.",
+    "loadError": "Impossible de charger l’entraînement.",
+    "saveError": "Impossible de mettre à jour l’entraînement.",
+    "reuse": "Réutiliser pour un nouvel entraînement",
+    "reuseDate": "Planifier la copie",
+    "activeNotice": "Cet entraînement est en cours. La saisie en direct n’est pas encore disponible.",
+    "pointsPending": "Les points sont en cours de calcul.",
+    "sets": "Séries : {{value}}",
+    "plannedDuration": "Durée prévue : {{value}}",
+    "plannedDistance": "Distance prévue : {{value}}",
+    "plannedRest": "Repos prévu : {{value}}"
   },
   "librarySurface": {
     "title": "Bibliothèque",
@@ -1179,6 +1269,7 @@
     "noDate": "Non définie",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} séances",
+    "progress": "{{completed}} séances sur {{total}} terminées ({{percent}})",
     "loading": "Chargement des plans…",
     "empty": "Aucun plan pour le moment.",
     "fields": {

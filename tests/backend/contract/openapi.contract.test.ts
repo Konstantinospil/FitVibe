@@ -9,7 +9,12 @@ import {
   ResendVerificationSchema,
   Verify2FALoginSchema,
 } from "../../../apps/backend/src/modules/auth/auth.schemas.js";
-import { CreateSessionSchema } from "../../../apps/backend/src/modules/sessions/sessions.controller.js";
+import {
+  CreateSessionSchema,
+  SessionExerciseInputSchema,
+  SessionSetInputSchema,
+  UpdateSessionSchema,
+} from "../../../apps/backend/src/modules/sessions/sessions.controller.js";
 import { ReportFeedItemSchema } from "../../../apps/backend/src/modules/feed/feed.schemas.js";
 import {
   UpdateProfileSchema,
@@ -19,6 +24,7 @@ import {
 import { CreateExerciseTypeSchema } from "../../../apps/backend/src/modules/exercise-types/exerciseTypes.controller.js";
 import { UpdateVibeformPreferencesSchema } from "../../../apps/backend/src/modules/vibeforms/vibeforms.schemas.js";
 import { ClientErrorReportSchema } from "../../../apps/backend/src/modules/client-errors/client-errors.schemas.js";
+import { SESSION_DURATION_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.schedule.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -36,6 +42,9 @@ const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
   { name: "ResendVerificationRequest", schema: ResendVerificationSchema },
   { name: "Verify2FALoginRequest", schema: Verify2FALoginSchema },
   { name: "SessionCreateRequest", schema: CreateSessionSchema },
+  { name: "SessionUpdateRequest", schema: UpdateSessionSchema },
+  { name: "SessionExerciseInput", schema: SessionExerciseInputSchema },
+  { name: "SessionSetInput", schema: SessionSetInputSchema },
   { name: "ReportFeedItemRequest", schema: ReportFeedItemSchema },
   { name: "UpdateProfileRequest", schema: UpdateProfileSchema },
   { name: "UpdatePreferencesRequest", schema: UpdatePreferencesSchema },
@@ -113,6 +122,42 @@ describe("OpenAPI contract alignment", () => {
       }
     });
   }
+
+  it("documents PATCH /sessions/{id} with its request body and the 422 overlap contract", () => {
+    const operation = (openApiSpec as any).paths?.["/sessions/{id}"]?.patch;
+    const refOf = (status: number) =>
+      operation?.responses?.[status]?.content?.["application/json"]?.schema?.$ref;
+
+    expect(operation?.requestBody?.content?.["application/json"]?.schema?.$ref).toBe(
+      "#/components/schemas/SessionUpdateRequest",
+    );
+    expect(refOf(200)).toBe("#/components/schemas/SessionWithExercises");
+    expect(refOf(422)).toBe("#/components/schemas/ScheduleConflictResponse");
+    for (const status of [400, 401, 404, 409, 429]) {
+      expect(operation?.responses).toHaveProperty(String(status));
+    }
+
+    const conflict = (openApiSpec as any).components.schemas.ScheduleConflictResponse.properties
+      .error;
+    expect(conflict.properties.code.enum).toEqual(["E.SESSION.SCHEDULE_CONFLICT"]);
+    expect(conflict.required).toContain("details");
+    expect(conflict.properties.details.required).toEqual(["conflictingSessionIds"]);
+    expect(conflict.properties.details.properties.conflictingSessionIds.items).toEqual({
+      type: "string",
+      format: "uuid",
+    });
+  });
+
+  it("documents the session length on updates and responses within the server's bounds", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    for (const name of ["SessionCreateRequest", "SessionUpdateRequest", "SessionWithExercises"]) {
+      expect(schemas[name].properties.planned_duration_min).toMatchObject({
+        type: "integer",
+        minimum: SESSION_DURATION_LIMITS.min,
+        maximum: SESSION_DURATION_LIMITS.max,
+      });
+    }
+  });
 
   it("keeps calculated Vibeform fields read-only on the preference update operation", () => {
     const operation = (openApiSpec as any).paths?.["/vibeforms/me/preferences"]?.put;

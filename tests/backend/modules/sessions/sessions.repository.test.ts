@@ -13,6 +13,8 @@ function createMockQueryBuilder(defaultValue: unknown = []) {
     where: jest.fn().mockReturnThis(),
     whereNull: jest.fn().mockReturnThis(),
     whereIn: jest.fn().mockReturnThis(),
+    whereNot: jest.fn().mockReturnThis(),
+    whereRaw: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     andWhereILike: jest.fn().mockReturnThis(),
     leftJoin: jest.fn().mockReturnThis(),
@@ -636,38 +638,60 @@ describe("Sessions Repository", () => {
     });
   });
 
-  describe("sessionsExistAtDates", () => {
-    it("should return existing session dates", async () => {
-      const plannedDates = ["2024-01-15T10:00:00Z", "2024-01-16T10:00:00Z"];
-      const mockRows = [
-        { planned_at: "2024-01-15T10:00:00Z" },
-        { planned_at: new Date("2024-01-16T10:00:00Z") },
-      ];
+  describe("findOverlappingSessions", () => {
+    const window = { start: "2026-11-04T08:00:00.000Z", durationMin: 60 };
 
-      const newBuilder = createMockQueryBuilder(mockRows);
-      queryBuilders["sessions"] = newBuilder;
+    it("returns overlapping active sessions, normalized to ISO, excluding the moved session", async () => {
+      const builder = createMockQueryBuilder([
+        { id: "session-a", planned_at: new Date("2026-11-04T07:30:00Z"), planned_duration_min: 45 },
+        { id: "session-b", planned_at: "2026-11-04T08:30:00Z", planned_duration_min: 60 },
+      ]);
+      queryBuilders["sessions"] = builder;
 
-      const result = await sessionsRepository.sessionsExistAtDates(userId, plannedDates);
+      const result = await sessionsRepository.findOverlappingSessions(userId, [window], {
+        excludeSessionId: sessionId,
+      });
 
-      expect(result).toHaveLength(2);
-      expect(result[0]).toBe("2024-01-15T10:00:00.000Z");
-      expect(newBuilder.where).toHaveBeenCalledWith({ owner_id: userId });
-      expect(newBuilder.whereIn).toHaveBeenCalledWith("planned_at", plannedDates);
+      expect(result).toEqual([
+        { id: "session-a", planned_at: "2026-11-04T07:30:00.000Z", planned_duration_min: 45 },
+        { id: "session-b", planned_at: "2026-11-04T08:30:00.000Z", planned_duration_min: 60 },
+      ]);
+      expect(builder.where).toHaveBeenCalledWith({ owner_id: userId });
+      expect(builder.whereNull).toHaveBeenCalledWith("deleted_at");
+      expect(builder.whereNot).toHaveBeenCalledWith("status", "canceled");
+      expect(builder.andWhere).toHaveBeenCalledWith("id", "<>", sessionId);
     });
 
-    it("should return empty array for empty input", async () => {
-      const result = await sessionsRepository.sessionsExistAtDates(userId, []);
+    it("binds every window's start and length to the overlap predicate", async () => {
+      const builder = createMockQueryBuilder([]);
+      queryBuilders["sessions"] = builder;
 
-      expect(result).toEqual([]);
+      await sessionsRepository.findOverlappingSessions(userId, [
+        window,
+        { start: "2026-11-05T18:15:00Z", durationMin: 30 },
+      ]);
+
+      const [sql, bindings] = (builder.whereRaw as jest.Mock).mock.calls[0];
+      expect(sql).toContain("(?::timestamptz, ?::integer), (?::timestamptz, ?::integer)");
+      expect(bindings).toEqual(["2026-11-04T08:00:00.000Z", 60, "2026-11-05T18:15:00.000Z", 30]);
+      expect(builder.andWhere).not.toHaveBeenCalled();
     });
 
-    it("should work with transaction", async () => {
-      const newBuilder = createMockQueryBuilder([]);
-      const mockTrx = ((_table: string) => newBuilder) as any;
+    it("returns an empty list without querying for no windows", async () => {
+      const builder = createMockQueryBuilder([]);
+      queryBuilders["sessions"] = builder;
 
-      await sessionsRepository.sessionsExistAtDates(userId, ["2024-01-15"], mockTrx);
+      await expect(sessionsRepository.findOverlappingSessions(userId, [])).resolves.toEqual([]);
+      expect(builder.where).not.toHaveBeenCalled();
+    });
 
-      expect(newBuilder.where).toHaveBeenCalled();
+    it("uses the given transaction", async () => {
+      const builder = createMockQueryBuilder([]);
+      const mockTrx = ((_table: string) => builder) as any;
+
+      await sessionsRepository.findOverlappingSessions(userId, [window], {}, mockTrx);
+
+      expect(builder.where).toHaveBeenCalled();
     });
   });
 

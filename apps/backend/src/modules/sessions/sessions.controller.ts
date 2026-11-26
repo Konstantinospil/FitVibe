@@ -13,6 +13,7 @@ import {
 } from "./sessions.service.js";
 import { getSessionEstimate } from "./sessions.estimation.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
+import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
 const visibilityEnum = z.enum(["private", "followers", "public", "link"]);
@@ -79,10 +80,17 @@ const sessionExerciseSchema = z
   })
   .strict();
 
+const plannedDurationSchema = z
+  .number()
+  .int()
+  .min(SESSION_DURATION_LIMITS.min)
+  .max(SESSION_DURATION_LIMITS.max);
+
 const createSchema = z.object({
   plan_id: z.string().uuid().nullable().optional(),
   title: titleSchema.nullable().optional(),
   planned_at: z.string().datetime(),
+  planned_duration_min: plannedDurationSchema.optional(),
   visibility: visibilityEnum.optional(),
   notes: z.string().max(1000).nullable().optional(),
   recurrence_rule: z.string().max(255).nullable().optional(),
@@ -90,12 +98,16 @@ const createSchema = z.object({
 });
 
 export const CreateSessionSchema = createSchema;
+/** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
+export const SessionExerciseInputSchema = sessionExerciseSchema;
+export const SessionSetInputSchema = sessionSetSchema;
 
 const updateSchema = z
   .object({
     plan_id: z.string().uuid().nullable().optional(),
     title: titleSchema.nullable().optional(),
     planned_at: z.string().datetime().optional(),
+    planned_duration_min: plannedDurationSchema.optional(),
     status: statusEnum.optional(),
     visibility: visibilityEnum.optional(),
     notes: z.string().max(1000).nullable().optional(),
@@ -106,6 +118,8 @@ const updateSchema = z
     exercises: z.array(sessionExerciseSchema).max(50).optional(),
   })
   .strict();
+
+export const UpdateSessionSchema = updateSchema;
 
 const cloneSchema = z
   .object({

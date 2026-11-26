@@ -6,7 +6,7 @@ const APPLICATION_BASE_URL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.
 const APPLICATION_ORIGIN = new URL(APPLICATION_BASE_URL).origin;
 
 const TEST_USER = {
-  id: "11111111-1111-1111-1111-111111111111",
+  id: "11111111-1111-4111-8111-111111111111",
   email: "admin@fitvibe.local",
   password: process.env.ADMIN_PASSWORD || "admin",
   username: "admin",
@@ -592,9 +592,12 @@ async function acceptRegisterLegal(page) {
 }
 
 module.exports = {
+  APPLICATION_ORIGIN,
   AUTH_FLAG_KEY,
   CONSENT_STATUS_RECOVERY_WINDOW_MS,
   TEST_USER,
+  getCsrfToken,
+  retryRateLimitedMutation,
   preparePage,
   ensureEssentialCookieConsent,
   ensureAuthenticatedBrowserConsent,

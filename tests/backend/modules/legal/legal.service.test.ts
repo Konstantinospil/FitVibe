@@ -38,7 +38,7 @@ jest.mock("../../../../apps/backend/src/modules/common/audit.util.js", () => ({
 }));
 
 const materialTerms = {
-  id: "11111111-1111-1111-1111-111111111111",
+  id: "11111111-1111-4111-8111-111111111111",
   document_type: "terms",
   version: "2026-09-25.1",
   change_class: "material",
@@ -112,7 +112,7 @@ describe("legal publication invariants", () => {
   it("treats acceptance of a newer editorial publication as satisfying the preceding material gate", async () => {
     jest.mocked(getCurrentLegalVersion).mockResolvedValue({
       ...materialTerms,
-      id: "22222222-2222-2222-2222-222222222222",
+      id: "22222222-2222-4222-8222-222222222222",
       version: "2026-09-26.1",
       change_class: "editorial",
       user_action: "none",
@@ -121,9 +121,9 @@ describe("legal publication invariants", () => {
     });
     jest.mocked(getLatestRequiredLegalVersion).mockResolvedValue(materialTerms);
     jest.mocked(getLatestAcceptanceForDocument).mockResolvedValue({
-      id: "33333333-3333-3333-3333-333333333333",
+      id: "33333333-3333-4333-8333-333333333333",
       user_id: "user-1",
-      version_id: "22222222-2222-2222-2222-222222222222",
+      version_id: "22222222-2222-4222-8222-222222222222",
       action: "accept",
       source: "application",
       accepted_at: "2026-09-26T09:00:00.000Z",
@@ -147,7 +147,7 @@ describe("legal publication invariants", () => {
     jest.mocked(getCurrentLegalVersion).mockResolvedValue(materialTerms);
     jest.mocked(getLatestRequiredLegalVersion).mockResolvedValue(materialTerms);
     jest.mocked(getLatestAcceptanceForDocument).mockResolvedValue({
-      id: "33333333-3333-3333-3333-333333333333",
+      id: "33333333-3333-4333-8333-333333333333",
       user_id: "user-1",
       version_id: "00000000-0000-0000-0000-000000000001",
       action: "accept",
@@ -190,7 +190,7 @@ describe("legal publication invariants", () => {
   it("uses publication order rather than version-string equality for cookie renewal", async () => {
     jest.mocked(getLegalVersionById).mockResolvedValue({
       ...materialTerms,
-      id: "44444444-4444-4444-4444-444444444444",
+      id: "44444444-4444-4444-8444-444444444444",
       document_type: "cookie",
       version: "2026-09-26.1",
       change_class: "editorial",
@@ -207,7 +207,7 @@ describe("legal publication invariants", () => {
     await expect(
       legalVersionSatisfiesCurrentRequirement(
         "cookie",
-        "44444444-4444-4444-4444-444444444444",
+        "44444444-4444-4444-8444-444444444444",
       ),
     ).resolves.toBe(true);
   });

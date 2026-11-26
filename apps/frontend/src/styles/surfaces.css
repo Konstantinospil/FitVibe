@@ -194,6 +194,37 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* Calendar scheduling drop targets. A dashed highlight outline marks where a
+ * dragged workout will land; the solid outline stays reserved for the selected
+ * day. Conflicting days switch to danger tokens; the session cards involved carry
+ * a text label (see .schedule-session-card), so state never depends on color alone. */
+.calendar-month__cell--drop-target {
+  background: var(--color-info-bg);
+  outline: 2px dashed var(--color-highlight);
+  outline-offset: -2px;
+}
+
+.calendar-month__cell--conflict,
+.calendar-month__cell--drop-target.calendar-month__cell--conflict {
+  background: var(--color-danger-bg);
+  outline-color: var(--color-danger);
+}
+
+.calendar-month__cell--conflict:not(.calendar-month__cell--drop-target) {
+  outline: 2px solid var(--color-danger);
+  outline-offset: -2px;
+}
+
+.calendar-month__cell--conflict button {
+  color: var(--color-danger-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .calendar-month__cell {
+    transition: background var(--control-transition-duration) ease;
+  }
+}
+
 .workout-editor__shell,
 .workout-editor__general,
 .workout-editor__metric-row,

@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { SessionStatus, SessionVisibility } from "@fitvibe/contracts";
 import { apiClient } from "./httpApi";
 
@@ -38,6 +39,7 @@ export interface SessionExercise {
   id: string;
   session_id: string;
   exercise_id?: string | null;
+  exercise_name?: string | null;
   order_index: number;
   notes?: string | null;
   planned?: SessionExerciseAttributes | null;
@@ -53,6 +55,8 @@ export interface Session {
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
+  /** Planned length in minutes; the session occupies [planned_at, planned_at + length). */
+  planned_duration_min: number;
   status: SessionStatus;
   visibility: SessionVisibility;
   notes?: string | null;
@@ -118,6 +122,7 @@ export interface CreateSessionRequest {
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
+  planned_duration_min?: number;
   visibility?: SessionVisibility;
   notes?: string | null;
   recurrence_rule?: string | null;
@@ -128,6 +133,7 @@ export interface UpdateSessionRequest {
   plan_id?: string | null;
   title?: string | null;
   planned_at?: string;
+  planned_duration_min?: number;
   status?: SessionStatus;
   visibility?: SessionVisibility;
   notes?: string | null;
@@ -170,6 +176,27 @@ export async function updateSession(
 ): Promise<SessionWithExercises> {
   const res = await apiClient.patch<SessionWithExercises>(`/api/v1/sessions/${sessionId}`, payload);
   return res.data;
+}
+
+/**
+ * IDs of the sessions that block a reschedule, when the server rejected it with
+ * `E.SESSION.SCHEDULE_CONFLICT`; null for every other error.
+ */
+export function getScheduleConflictIds(error: unknown): string[] | null {
+  if (!axios.isAxiosError(error) || error.response?.status !== 422) {
+    return null;
+  }
+  const body: unknown = error.response.data;
+  if (typeof body !== "object" || body === null || !("error" in body)) {
+    return null;
+  }
+  const payload = (body as { error?: { code?: unknown; details?: unknown } }).error;
+  if (payload?.code !== "E.SESSION.SCHEDULE_CONFLICT") {
+    return null;
+  }
+  const details = payload.details as { conflictingSessionIds?: unknown } | undefined;
+  const ids = details?.conflictingSessionIds;
+  return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
 }
 
 export async function deleteSession(sessionId: string): Promise<void> {

@@ -33,6 +33,43 @@ const bearerAuth = {
   bearerAuth: [],
 };
 
+const sessionIdParameter = {
+  name: "id",
+  in: "path",
+  required: true,
+  schema: { type: "string", format: "uuid" },
+};
+
+// Mirrors the zod schemas in sessions.controller.ts; tests/backend/contract checks them.
+const nullable = (schema) => ({ ...schema, nullable: true });
+const intervalString = nullable({
+  type: "string",
+  description: "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+});
+const plannedAttributes = {
+  sets: nullable({ type: "integer", minimum: 0 }),
+  reps: nullable({ type: "integer", minimum: 0 }),
+  load: nullable({ type: "number", minimum: 0 }),
+  distance: nullable({ type: "number", minimum: 0 }),
+  duration: intervalString,
+  rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+  rest: intervalString,
+  extras: { type: "object", additionalProperties: true },
+};
+const plannedAttributesObject = nullable({
+  type: "object",
+  properties: plannedAttributes,
+  additionalProperties: false,
+});
+const actualAttributesObject = nullable({
+  type: "object",
+  properties: {
+    ...plannedAttributes,
+    recorded_at: nullable({ type: "string", format: "date-time" }),
+  },
+  additionalProperties: false,
+});
+
 const paths = {
   "/auth/register/options": {
     get: {
@@ -299,6 +336,69 @@ const paths = {
       responses: {
         201: jsonContent("#/components/schemas/Session"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}": {
+    patch: {
+      summary: "Update a session (details, schedule, status, exercises)",
+      description: [
+        "Partial update: only the fields sent change. There is no ETag or If-Match check; the last write wins.",
+        "",
+        "Scheduling: a session occupies [planned_at, planned_at + planned_duration_min). A change of `planned_at` or `planned_duration_min` that overlaps another active session of the same user is refused with 422 `E.SESSION.SCHEDULE_CONFLICT`, listing the blocking sessions in `error.details.conflictingSessionIds`. Back-to-back sessions do not conflict; canceled sessions occupy no time; a session being canceled is not checked.",
+        "",
+        "Status: allowed transitions are planned → in_progress | completed | canceled and in_progress → completed | canceled. `started_at` and `completed_at` default to the time of the change. Changing a completed session's plan, schedule, timestamps, calories or exercises requires reopening it first (409 `E.SESSION.REOPEN_REQUIRED`).",
+        "",
+        "Sending `exercises` replaces the session's exercises and sets.",
+      ].join("\n"),
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [sessionIdParameter],
+      requestBody: jsonContent("#/components/schemas/SessionUpdateRequest"),
+      responses: {
+        200: {
+          description: "The updated session with its exercises.",
+          ...jsonContent("#/components/schemas/SessionWithExercises"),
+        },
+        400: {
+          description:
+            "Invalid body (`error` is the zod field report), an invalid status transition (`E.SESSION.INVALID_STATUS`) or a plan the user does not own (`E.SESSION.INVALID_PLAN`).",
+          content: {
+            "application/json": {
+              schema: {
+                oneOf: [
+                  { $ref: "#/components/schemas/ErrorResponse" },
+                  { $ref: "#/components/schemas/ValidationErrorResponse" },
+                ],
+              },
+            },
+          },
+        },
+        401: {
+          description: "Missing or invalid access token.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        403: {
+          description: "CSRF check failed.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        404: {
+          description: "`E.SESSION.NOT_FOUND`.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        409: {
+          description:
+            "`E.SESSION.REOPEN_REQUIRED`: reopen the completed session before correcting it.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        422: {
+          description: "`E.SESSION.SCHEDULE_CONFLICT`: the new time overlaps other sessions.",
+          ...jsonContent("#/components/schemas/ScheduleConflictResponse"),
+        },
+        429: {
+          description: "`RATE_LIMITED`; see `Retry-After`.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
       },
     },
   },
@@ -930,6 +1030,12 @@ const schemas = {
       plan_id: { type: "string", format: "uuid", nullable: true },
       title: { type: "string", minLength: 2, maxLength: 100, nullable: true },
       planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: {
+        type: "integer",
+        minimum: 5,
+        maximum: 720,
+        description: "Planned length in minutes; defaults to 60.",
+      },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
       notes: { type: "string", maxLength: 1000, nullable: true },
       recurrence_rule: { type: "string", maxLength: 255, nullable: true },
@@ -943,21 +1049,183 @@ const schemas = {
   SessionExerciseInput: {
     type: "object",
     properties: {
-      exerciseId: { type: "string", format: "uuid" },
+      id: { type: "string", format: "uuid" },
+      exercise_id: nullable({ type: "string", format: "uuid" }),
+      order: { type: "integer", minimum: 1 },
+      notes: nullable({ type: "string", maxLength: 1000 }),
+      planned: plannedAttributesObject,
+      actual: actualAttributesObject,
       sets: {
+        type: "array",
+        maxItems: 100,
+        items: { $ref: "#/components/schemas/SessionSetInput" },
+      },
+    },
+    required: ["order"],
+    additionalProperties: false,
+  },
+  SessionSetInput: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      order: { type: "integer", minimum: 1 },
+      reps: nullable({ type: "integer", minimum: 0 }),
+      weight_kg: nullable({ type: "number", minimum: 0 }),
+      distance_m: nullable({ type: "number", minimum: 0 }),
+      duration_sec: nullable({ type: "integer", minimum: 0 }),
+      rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+      rest_sec: nullable({ type: "integer", minimum: 0 }),
+      extras: { type: "object", additionalProperties: true },
+      recorded_at: nullable({ type: "string", format: "date-time" }),
+      notes: nullable({ type: "string", maxLength: 500 }),
+    },
+    required: ["order"],
+    additionalProperties: false,
+  },
+  SessionUpdateRequest: {
+    type: "object",
+    properties: {
+      plan_id: nullable({ type: "string", format: "uuid" }),
+      title: nullable({ type: "string", minLength: 2, maxLength: 100 }),
+      planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: {
+        type: "integer",
+        minimum: 5,
+        maximum: 720,
+        description: "Planned length in minutes.",
+      },
+      status: { type: "string", enum: ["planned", "in_progress", "completed", "canceled"] },
+      visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
+      notes: nullable({ type: "string", maxLength: 1000 }),
+      recurrence_rule: nullable({ type: "string", maxLength: 255 }),
+      started_at: { type: "string", format: "date-time" },
+      completed_at: { type: "string", format: "date-time" },
+      calories: nullable({ type: "integer", minimum: 0 }),
+      exercises: {
+        type: "array",
+        maxItems: 50,
+        description: "Replaces all exercises and sets of the session.",
+        items: { $ref: "#/components/schemas/SessionExerciseInput" },
+      },
+    },
+    additionalProperties: false,
+  },
+  SessionWithExercises: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      owner_id: { type: "string", format: "uuid" },
+      plan_id: nullable({ type: "string", format: "uuid" }),
+      title: nullable({ type: "string" }),
+      planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: { type: "integer", minimum: 5, maximum: 720 },
+      status: { $ref: "#/components/schemas/SessionStatus" },
+      visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
+      notes: nullable({ type: "string" }),
+      recurrence_rule: nullable({ type: "string" }),
+      started_at: nullable({ type: "string", format: "date-time" }),
+      completed_at: nullable({ type: "string", format: "date-time" }),
+      calories: nullable({ type: "integer" }),
+      points: nullable({ type: "integer", description: "Server-awarded points once completed." }),
+      gamification_rebuild_required: { type: "boolean" },
+      deleted_at: nullable({ type: "string", format: "date-time" }),
+      created_at: { type: "string", format: "date-time" },
+      updated_at: { type: "string", format: "date-time" },
+      exercises: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            reps: { type: "integer", minimum: 1 },
-            weight: { type: "number", minimum: 0 },
-            rpe: { type: "number", minimum: 1, maximum: 10 },
+            id: { type: "string", format: "uuid" },
+            session_id: { type: "string", format: "uuid" },
+            exercise_id: nullable({ type: "string", format: "uuid" }),
+            exercise_name: nullable({
+              type: "string",
+              description: "Name snapshot at planning time.",
+            }),
+            order_index: { type: "integer", minimum: 1 },
+            notes: nullable({ type: "string" }),
+            planned: plannedAttributesObject,
+            actual: actualAttributesObject,
+            sets: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  order_index: { type: "integer", minimum: 1 },
+                  reps: nullable({ type: "integer" }),
+                  weight_kg: nullable({ type: "number" }),
+                  distance_m: nullable({ type: "number" }),
+                  duration_sec: nullable({ type: "integer" }),
+                  rpe: nullable({ type: "integer" }),
+                  rest_sec: nullable({ type: "integer" }),
+                  extras: { type: "object", additionalProperties: true },
+                  recorded_at: nullable({ type: "string", format: "date-time" }),
+                  notes: nullable({ type: "string" }),
+                },
+                required: ["id", "order_index"],
+              },
+            },
           },
-          required: ["reps"],
+          required: ["id", "session_id", "order_index", "sets"],
         },
       },
     },
-    required: ["exerciseId", "sets"],
+    required: [
+      "id",
+      "owner_id",
+      "planned_at",
+      "planned_duration_min",
+      "status",
+      "visibility",
+      "exercises",
+    ],
+  },
+  ScheduleConflictResponse: {
+    type: "object",
+    properties: {
+      error: {
+        type: "object",
+        properties: {
+          code: { type: "string", enum: ["E.SESSION.SCHEDULE_CONFLICT"] },
+          message: { type: "string" },
+          details: {
+            type: "object",
+            properties: {
+              conflictingSessionIds: {
+                type: "array",
+                minItems: 1,
+                items: { type: "string", format: "uuid" },
+                description: "Active sessions whose planned time overlaps the requested one.",
+              },
+            },
+            required: ["conflictingSessionIds"],
+          },
+          requestId: { type: "string" },
+        },
+        required: ["code", "message", "details"],
+      },
+    },
+    required: ["error"],
+  },
+  ValidationErrorResponse: {
+    type: "object",
+    description: "Request body rejected by schema validation (zod `flatten()` output).",
+    properties: {
+      error: {
+        type: "object",
+        properties: {
+          formErrors: { type: "array", items: { type: "string" } },
+          fieldErrors: {
+            type: "object",
+            additionalProperties: { type: "array", items: { type: "string" } },
+          },
+        },
+        required: ["formErrors", "fieldErrors"],
+      },
+    },
+    required: ["error"],
   },
   SessionListResponse: {
     type: "object",

@@ -1,4 +1,5 @@
 import React from "react";
+import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -101,7 +102,9 @@ describe("Home", () => {
   const renderHome = () =>
     render(
       <QueryClientProvider client={queryClient}>
-        <Home />
+        <MemoryRouter>
+          <Home />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
 
@@ -131,6 +134,24 @@ describe("Home", () => {
     );
   });
 
+
+  it("opens a previous workout's details", async () => {
+    const DetailProbe = () => <div>details for {useParams().id}</div>;
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/sessions/:id" element={<DetailProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "sessionDetail.details" }));
+
+    expect(await screen.findByText("details for session-1")).toBeInTheDocument();
+  });
 
   it("renders unpublished community workouts with username and workout fallbacks", async () => {
     mockedApi.getFeed.mockResolvedValue({

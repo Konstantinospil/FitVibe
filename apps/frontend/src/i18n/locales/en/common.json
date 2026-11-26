@@ -1026,7 +1026,11 @@
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
       "previousYear": "Previous year",
-      "nextYear": "Next year"
+      "nextYear": "Next year",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "previousDay": "Previous day",
+      "nextDay": "Next day"
     },
     "gridLabel": "Monthly workout calendar",
     "dayLabel": "{{date}}, {{count}} workouts",
@@ -1037,6 +1041,58 @@
     },
     "errors": {
       "load": "Calendar data could not be loaded."
+    },
+    "schedule": {
+      "moveLabel": "Move {{title}}",
+      "moveHint": "Drag to another day or time. Or press Space to pick it up, move it with the arrow keys and press Enter to drop it. Press Enter on its own to change the day, time and length.",
+      "resizeHint": "Drag to change when the workout ends. Or press Space, change the end with the up and down arrow keys and press Enter to save. Press Enter on its own to change the day, time and length.",
+      "conflictLabel": "Time conflict",
+      "dialog": {
+        "title": "Reschedule workout",
+        "description": "Choose a new day, start time and length for {{title}}."
+      },
+      "fields": {
+        "day": "Day",
+        "time": "Time",
+        "duration": "Length in minutes"
+      },
+      "actions": {
+        "save": "Reschedule workout",
+        "cancel": "Cancel"
+      },
+      "status": {
+        "rescheduled": "{{title}} is now planned for {{date}}, {{start}}–{{end}}."
+      },
+      "errors": {
+        "conflict": "{{title}} is planned from {{start}} to {{end}} on {{date}}. Choose another time.",
+        "conflictUnlisted": "Another workout is planned between {{start}} and {{end}} on {{date}}. Choose another time.",
+        "invalid": "That day and time doesn't exist. Choose another one.",
+        "save": "The workout couldn't be rescheduled. Try again.",
+        "invalidDuration": "Choose a length between {{min}} and {{max}} minutes."
+      },
+      "chipLabel": "{{time}} {{title}}, move",
+      "resizeLabel": "{{title}}, ends {{time}}, change length",
+      "keyboard": {
+        "pickedUp": "{{title}} picked up. Use the arrow keys to choose a new day or time, Enter to drop, Escape to cancel.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}}: conflicts with {{title}}.",
+        "cancelled": "Move of {{title}} cancelled.",
+        "resizePickedUp": "Changing the length of {{title}}. Use the up and down arrow keys to change the end, Enter to save, Escape to cancel.",
+        "resizeOver": "Ends at {{time}}, {{duration}}.",
+        "resizeOverConflict": "Ends at {{time}}, {{duration}}: conflicts with {{title}}.",
+        "resizeCancelled": "Length of {{title}} unchanged."
+      }
+    },
+    "views": {
+      "label": "Calendar view",
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
+    },
+    "timeGrid": {
+      "weekLabel": "Weekly workout schedule",
+      "dayLabel": "Daily workout schedule",
+      "timeHeading": "Time"
     }
   },
   "workoutEditor": {
@@ -1095,6 +1151,40 @@
   },
   "actions": {
     "retry": "Retry"
+  },
+  "sessionDetail": {
+    "title": "Workout",
+    "details": "Details: {{title}}",
+    "planned": "Planned",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "canceled": "Canceled",
+    "plannedAt": "Scheduled: {{value}}",
+    "startedAt": "Started: {{value}}",
+    "completedAt": "Completed: {{value}}",
+    "visibility": "Visibility: {{value}}",
+    "exerciseList": "Exercises and sets",
+    "prescription": "Prescription",
+    "actual": "Recorded results",
+    "unrecorded": "Not recorded",
+    "set": "Set {{number}}",
+    "reps": "Reps: {{value}}",
+    "load": "Load: {{value}} kg",
+    "duration": "Duration: {{value}} s",
+    "distance": "Distance: {{value}} m",
+    "rpe": "RPE: {{value}}",
+    "rest": "Rest: {{value}} s",
+    "empty": "No exercises.",
+    "loadError": "Workout could not be loaded.",
+    "saveError": "Workout could not be updated.",
+    "reuse": "Reuse as new workout",
+    "reuseDate": "Schedule the copy",
+    "activeNotice": "This workout is in progress. Live recording is not yet available.",
+    "pointsPending": "Points are being processed.",
+    "sets": "Sets: {{value}}",
+    "plannedDuration": "Planned duration: {{value}}",
+    "plannedDistance": "Planned distance: {{value}}",
+    "plannedRest": "Planned rest: {{value}}"
   },
   "librarySurface": {
     "title": "Library",
@@ -1179,6 +1269,7 @@
     "noDate": "Not set",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} sessions",
+    "progress": "{{completed}} of {{total}} sessions completed ({{percent}})",
     "loading": "Loading plans…",
     "empty": "No training plans yet.",
     "fields": {

@@ -8,8 +8,9 @@ import {
   getSessionWithDetails,
   refreshSessionSummary,
   replaceSessionExercises,
-  sessionsExistAtDates,
+  findOverlappingSessions,
 } from "../sessions/sessions.repository.js";
+import { overlappingPairs, type ScheduleWindow } from "../sessions/sessions.schedule.js";
 import {
   convertExistingExerciseToInput,
   normalizeSessionExercises,
@@ -96,11 +97,17 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
       }
       sources.set(source.id, detail);
     }
-    const conflicts = await sessionsExistAtDates(
-      userId,
-      occurrences.map((row) => row.plannedAt),
-      trx,
+    const windows: ScheduleWindow[] = occurrences.map((occurrence) => ({
+      start: occurrence.plannedAt,
+      durationMin: sources.get(occurrence.sourceId)?.planned_duration_min ?? 0,
+    }));
+    const existing = await findOverlappingSessions(userId, windows, {}, trx);
+    const generated = overlappingPairs(windows).flatMap((pair) =>
+      pair.map((index) => windows[index].start),
     );
+    const conflicts = [
+      ...new Set([...existing.map(({ planned_at }) => planned_at), ...generated]),
+    ].sort();
     if (conflicts.length) {
       throw new HttpError(
         409,
@@ -126,6 +133,7 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
           owner_id: userId,
           plan_id: planId,
           planned_at: occurrence.plannedAt,
+          planned_duration_min: source.planned_duration_min,
           title: source.title ?? null,
           status: "planned",
           visibility: source.visibility,

@@ -44,6 +44,12 @@ The planner feature requires comprehensive testing at unit, integration, and E2E
 - Integration tests for API flows
 - E2E tests for complete workflows
 
+## Implementation / verification (2026-11-26)
+
+- AC01: coverage from the unit suites. Backend `modules/plans/*`: 95.9 % statements (activation service 97 %, activation schedule 98.7 %, repository 99.3 %, service 91.4 %, controller 91.8 %); `sessions.schedule.ts` 100 %. Frontend planner code: `lib/scheduling/*` 99–100 %, `useSessionReschedule` 100 %, `useKeyboardMove` 100 %, `usePointerDrag` 95 %, `useCalendarScheduling` 94 %, `Calendar` 94 %, `PlanManagement` 95 %, schedule composites 86–100 % lines.
+- AC02: integration tests against Postgres: `plan-crud` (CRUD, archive, ETag), `plan-activation` (generation, progress, overlap refusal) and `session-scheduling` (move and resize overlaps, back-to-back, canceled and other users' sessions).
+- AC03: `planner-workflow.spec.cjs` (create, stale-edit banner, activate, calendar, archive) and `calendar-scheduling.spec.cjs` (drag-and-drop in every view, keyboard, resize, overlap refusal, server 422, touch drag and touch resize).
+
 ## Test Strategy
 
 - Unit tests for business logic

@@ -1026,7 +1026,11 @@
       "previousMonth": "Vorheriger Monat",
       "nextMonth": "Nächster Monat",
       "previousYear": "Vorheriges Jahr",
-      "nextYear": "Nächstes Jahr"
+      "nextYear": "Nächstes Jahr",
+      "previousWeek": "Vorherige Woche",
+      "nextWeek": "Nächste Woche",
+      "previousDay": "Vorheriger Tag",
+      "nextDay": "Nächster Tag"
     },
     "gridLabel": "Monatlicher Workout-Kalender",
     "dayLabel": "{{date}}, {{count}} Workouts",
@@ -1037,6 +1041,58 @@
     },
     "errors": {
       "load": "Kalenderdaten konnten nicht geladen werden."
+    },
+    "schedule": {
+      "moveLabel": "{{title}} verschieben",
+      "moveHint": "Auf einen anderen Tag oder eine andere Uhrzeit ziehen. Oder mit der Leertaste aufnehmen, mit den Pfeiltasten verschieben und mit der Eingabetaste ablegen. Die Eingabetaste allein öffnet die Auswahl von Tag, Uhrzeit und Dauer.",
+      "resizeHint": "Ziehen, um das Ende des Workouts zu ändern. Oder die Leertaste drücken, das Ende mit den Pfeiltasten nach oben und unten ändern und mit der Eingabetaste speichern. Die Eingabetaste allein öffnet die Auswahl von Tag, Uhrzeit und Dauer.",
+      "conflictLabel": "Zeitkonflikt",
+      "dialog": {
+        "title": "Workout neu planen",
+        "description": "Wähle einen neuen Tag, eine neue Startzeit und eine Dauer für {{title}}."
+      },
+      "fields": {
+        "day": "Tag",
+        "time": "Uhrzeit",
+        "duration": "Dauer in Minuten"
+      },
+      "actions": {
+        "save": "Workout neu planen",
+        "cancel": "Abbrechen"
+      },
+      "status": {
+        "rescheduled": "{{title}} ist jetzt für {{date}}, {{start}}–{{end}} geplant."
+      },
+      "errors": {
+        "conflict": "{{title}} ist am {{date}} von {{start}} bis {{end}} geplant. Wähle eine andere Zeit.",
+        "conflictUnlisted": "Ein anderes Workout ist am {{date}} zwischen {{start}} und {{end}} geplant. Wähle eine andere Zeit.",
+        "invalid": "Diesen Tag mit dieser Uhrzeit gibt es nicht. Wähle eine andere Angabe.",
+        "save": "Das Workout konnte nicht neu geplant werden. Versuche es erneut.",
+        "invalidDuration": "Wähle eine Dauer zwischen {{min}} und {{max}} Minuten."
+      },
+      "chipLabel": "{{time}} {{title}}, verschieben",
+      "resizeLabel": "{{title}}, endet um {{time}}, Dauer ändern",
+      "keyboard": {
+        "pickedUp": "{{title}} aufgenommen. Wähle mit den Pfeiltasten einen neuen Tag oder eine neue Uhrzeit, lege es mit der Eingabetaste ab oder brich mit Escape ab.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}}: Konflikt mit {{title}}.",
+        "cancelled": "Verschieben von {{title}} abgebrochen.",
+        "resizePickedUp": "Dauer von {{title}} ändern. Ändere das Ende mit den Pfeiltasten nach oben und unten, speichere mit der Eingabetaste oder brich mit Escape ab.",
+        "resizeOver": "Endet um {{time}}, {{duration}}.",
+        "resizeOverConflict": "Endet um {{time}}, {{duration}}: Konflikt mit {{title}}.",
+        "resizeCancelled": "Dauer von {{title}} unverändert."
+      }
+    },
+    "views": {
+      "label": "Kalenderansicht",
+      "month": "Monat",
+      "week": "Woche",
+      "day": "Tag"
+    },
+    "timeGrid": {
+      "weekLabel": "Wöchentlicher Workout-Plan",
+      "dayLabel": "Täglicher Workout-Plan",
+      "timeHeading": "Uhrzeit"
     }
   },
   "workoutEditor": {
@@ -1095,6 +1151,40 @@
   },
   "actions": {
     "retry": "Erneut versuchen"
+  },
+  "sessionDetail": {
+    "title": "Workout",
+    "details": "Details: {{title}}",
+    "planned": "Geplant",
+    "in_progress": "In Bearbeitung",
+    "completed": "Abgeschlossen",
+    "canceled": "Abgebrochen",
+    "plannedAt": "Geplant für: {{value}}",
+    "startedAt": "Begonnen: {{value}}",
+    "completedAt": "Abgeschlossen am: {{value}}",
+    "visibility": "Sichtbarkeit: {{value}}",
+    "exerciseList": "Übungen und Sätze",
+    "prescription": "Vorgaben",
+    "actual": "Erfasste Ergebnisse",
+    "unrecorded": "Nicht erfasst",
+    "set": "Satz {{number}}",
+    "reps": "Wiederholungen: {{value}}",
+    "load": "Gewicht: {{value}} kg",
+    "duration": "Dauer: {{value}} s",
+    "distance": "Strecke: {{value}} m",
+    "rpe": "RPE: {{value}}",
+    "rest": "Pause: {{value}} s",
+    "empty": "Keine Übungen.",
+    "loadError": "Das Workout konnte nicht geladen werden.",
+    "saveError": "Das Workout konnte nicht aktualisiert werden.",
+    "reuse": "Als neues Workout wiederverwenden",
+    "reuseDate": "Kopie einplanen",
+    "activeNotice": "Dieses Workout läuft. Die Live-Erfassung ist noch nicht verfügbar.",
+    "pointsPending": "Punkte werden verarbeitet.",
+    "sets": "Sätze: {{value}}",
+    "plannedDuration": "Geplante Dauer: {{value}}",
+    "plannedDistance": "Geplante Strecke: {{value}}",
+    "plannedRest": "Geplante Pause: {{value}}"
   },
   "librarySurface": {
     "title": "Bibliothek",
@@ -1179,6 +1269,7 @@
     "noDate": "Nicht festgelegt",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} Trainingseinheiten",
+    "progress": "{{completed}} von {{total}} Trainingseinheiten abgeschlossen ({{percent}})",
     "loading": "Trainingspläne werden geladen…",
     "empty": "Noch keine Trainingspläne vorhanden.",
     "fields": {

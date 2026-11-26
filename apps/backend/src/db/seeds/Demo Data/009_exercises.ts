@@ -4,7 +4,7 @@ const now = new Date();
 
 const EXERCISES = [
   {
-    id: "77777777-7777-7777-7777-777777777777",
+    id: "77777777-7777-4777-8777-777777777777",
     owner_id: null,
     name: "Barbell Back Squat",
     type_code: "strength",
@@ -18,7 +18,7 @@ const EXERCISES = [
     archived_at: null,
   },
   {
-    id: "77777777-7777-7777-7777-777777777778",
+    id: "77777777-7777-4777-8777-777777777778",
     owner_id: null,
     name: "Barbell Bench Press",
     type_code: "strength",
@@ -32,7 +32,7 @@ const EXERCISES = [
     archived_at: null,
   },
   {
-    id: "77777777-7777-7777-7777-777777777779",
+    id: "77777777-7777-4777-8777-777777777779",
     owner_id: null,
     name: "Conventional Deadlift",
     type_code: "strength",
@@ -46,7 +46,7 @@ const EXERCISES = [
     archived_at: null,
   },
   {
-    id: "77777777-7777-7777-7777-777777777780",
+    id: "77777777-7777-4777-8777-777777777780",
     owner_id: null,
     name: "Tempo Run 5K",
     type_code: "cardio",
@@ -60,7 +60,7 @@ const EXERCISES = [
     archived_at: null,
   },
   {
-    id: "77777777-7777-7777-7777-777777777781",
+    id: "77777777-7777-4777-8777-777777777781",
     owner_id: null,
     name: "Endurance Ride 60k",
     type_code: "cardio",
@@ -75,7 +75,7 @@ const EXERCISES = [
   },
   {
     id: "88888888-8888-8888-8888-888888888888",
-    owner_id: "22222222-2222-2222-2222-222222222222",
+    owner_id: "22222222-2222-4222-8222-222222222222",
     name: "Tempo Run 5K",
     type_code: "cardio",
     muscle_group: "legs",
