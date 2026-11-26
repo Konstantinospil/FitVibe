@@ -79,13 +79,40 @@ const chip = (page, title) =>
 const moveStatus = (page, title) =>
   page.getByRole("status").filter({ hasText: new RegExp(`^${escapeRegExp(title)} moved to`) });
 
+const centerOf = (box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+
+/** Whether the centre of `locator` is what the pointer would hit (not clipped or covered). */
+async function receivesPointer(locator) {
+  const box = await locator.boundingBox();
+  if (!box) {
+    return false;
+  }
+  return locator.evaluate((element, point) => {
+    const hit = document.elementFromPoint(point.x, point.y);
+    return Boolean(hit && element.contains(hit));
+  }, centerOf(box));
+}
+
+/**
+ * Presses `from`, then moves to `to` without releasing. A trial click first scrolls the
+ * source into view and checks it receives the press. A target the pointer cannot reach
+ * yet is brought into view the way a user would: by resting at the window edge, which
+ * auto-scrolls the calendar.
+ */
 async function mouseDrag(page, from, to) {
-  const start = await from.boundingBox();
-  const end = await to.boundingBox();
-  expect(start && end, "drag source and target are on screen").toBeTruthy();
-  await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+  await from.click({ trial: true });
+  const start = centerOf(await from.boundingBox());
+  await page.mouse.move(start.x, start.y);
   await page.mouse.down();
-  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 12 });
+  if (!(await receivesPointer(to))) {
+    const { height } = page.viewportSize();
+    const targetBox = await to.boundingBox();
+    await page.mouse.move(start.x, targetBox && targetBox.y < start.y ? 4 : height - 4, { steps: 8 });
+    await expect.poll(() => receivesPointer(to)).toBe(true);
+    await page.mouse.move(start.x, height / 2, { steps: 4 });
+  }
+  const end = centerOf(await to.boundingBox());
+  await page.mouse.move(end.x, end.y, { steps: 12 });
 }
 
 async function switchView(page, label) {
