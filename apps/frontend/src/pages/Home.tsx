@@ -219,13 +219,13 @@ const Home: React.FC = () => {
                     supporting={sessionSummary(session, t)}
                     trailing={
                       <>
-                        {session.points != null
+                        {session.points !== null && session.points !== undefined
                           ? t("homeSurface.session.points", { count: session.points })
                           : null}
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={() => navigate(`/sessions/${session.id}`)}
+                          onClick={() => void navigate(`/sessions/${session.id}`)}
                         >
                           {t("sessionDetail.details", {
                             title: session.title || t("homeSurface.session.workoutSummary"),

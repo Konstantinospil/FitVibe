@@ -10,7 +10,7 @@ import { Modal } from "../components/composites/Modal";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import WorkoutEditor from "../components/composites/WorkoutEditor";
-import { useAuthStore } from "../store/auth.store";
+import { useCurrentUserId } from "../hooks/useCurrentUserId";
 import { logger } from "../utils/logger";
 
 const PAGE_SIZE = 20;
@@ -19,7 +19,7 @@ const Library: React.FC = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user);
+  const userId = useCurrentUserId();
   const [search, setSearch] = useState("");
   const [typeCode, setTypeCode] = useState("");
   const [muscleGroup, setMuscleGroup] = useState("");
@@ -93,7 +93,7 @@ const Library: React.FC = () => {
   }, [search, typeCode, muscleGroup, equipment, tags]);
 
   const source = (exercise: Exercise) =>
-    exercise.owner_id === null ? "global" : exercise.owner_id === user?.id ? "mine" : "public";
+    exercise.owner_id === null ? "global" : exercise.owner_id === userId ? "mine" : "public";
 
   const refresh = () =>
     queryClient.invalidateQueries({
@@ -225,7 +225,7 @@ const Library: React.FC = () => {
                         {t("librarySurface.actions.addToWorkout")}
                       </Button>
 
-                      {exercise.owner_id === user?.id ? (
+                      {exercise.owner_id === userId ? (
                         <>
                           <Button
                             size="sm"
@@ -287,7 +287,7 @@ const Library: React.FC = () => {
         onSaved={(saved) => {
           void queryClient.invalidateQueries({ queryKey: ["calendar"] });
           if (saved.status === "in_progress") {
-            navigate(`/sessions/${saved.id}`);
+            void navigate(`/sessions/${saved.id}`);
           }
         }}
       />

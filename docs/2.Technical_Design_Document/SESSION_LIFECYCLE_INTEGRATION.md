@@ -1,6 +1,6 @@
 # Session lifecycle integration — replacement for PR #489
 
-Status: draft implementation; not evidence of full acceptance. Base: `feat/261-calendar-rescheduling` at `b39c9ec666c632ac2979b1b5558a2627128c9a91` (PR #670, eight commits ahead of feature).
+Status: merged into `feat/261-calendar-rescheduling` (PR #670) as the first slice of the #489 replacement. It covers session details, entry points, start and reuse. Recording, completion and the other open items below are not done, so the issues stay open.
 
 ## Structure and ownership
 
@@ -12,14 +12,22 @@ Status: draft implementation; not evidence of full acceptance. Base: `feat/261-c
 
 ## Acceptance and unresolved invariants
 
-| Issue | Recovered scope | Remaining |
-| --- | --- | --- |
-| #289 | Protected session details, entry-point navigation, own-history clone | Complete prescription cloning, historical Log, result/Vibe UI, integration/E2E evidence |
-| #290 | Start an existing planned workout; enter persisted session detail | Dedicated live Start/resume, timer, recording, interval/intake contract |
-| #365 | Separate detail from editor; preserve canonical session identity | Dedicated execution state machine and commands, set recording, pause/rest, skip/add, finish/stop/discard, optional media |
+| Issue | Recovered scope                                                      | Remaining                                                                                                                |
+| ----- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| #289  | Protected session details, entry-point navigation, own-history clone | Complete prescription cloning, historical Log, result/Vibe UI, integration/E2E evidence                                  |
+| #290  | Start an existing planned workout; enter persisted session detail    | Dedicated live Start/resume, timer, recording, interval/intake contract                                                  |
+| #365  | Separate detail from editor; preserve canonical session identity     | Dedicated execution state machine and commands, set recording, pause/rest, skip/add, finish/stop/discard, optional media |
 
 PR #489's full-array replacement is deliberately not copied: it filters out unrecorded rows, changes IDs, loses RPE/rest/notes/extras, and re-snapshots names. The current planning editor stores some prescription in unrecorded exercise_sets rows, while clone(include_actual=false) drops all set rows. Before enabling recording, define and validate immutable effective prescription separately from actual sets within the existing domain; preserve stable IDs and snapshots and ensure unrecorded placeholders never contribute to completed scoring. Legacy rows cannot be classified solely by recorded_at because historical writers may omit timestamps. This needs API/data design and migration review under ADR-029, ADR-007 and #364/#365, including scoring/analytics and estimation consumers. Do not copy performed metrics into new achievements. Do not mark the issues complete on this draft.
 
 ## Verification
 
-Add protected route and loader tests and session detail lifecycle tests. Existing calendar scheduling and smoke tests must remain authoritative; run lint, formatting, typecheck, unit, integration, both E2E shards and visual/a11y gates before review. No local execution is claimed for connector-created changes.
+- `tests/frontend/pages/SessionDetail.test.tsx` covers the detail view: schedule with planned length, visibility, prescription and recorded sets, points, start, reuse, owner-only actions, canceled sessions, load errors, and the owner after a page reload. The Calendar, Home and Library tests cover their links into the detail view.
+- `tests/frontend/e2e/session-detail.spec.cjs` runs against the real backend. It opens a planned workout from the Calendar, starts it (the server records `started_at`), and reuses it as a private copy that keeps its planned length at the chosen time. It also opens a completed workout from Home's history.
+- Fixed before merging:
+  - Owner actions waited for the auth store's user, which is only set by a sign-in in the same tab. After a reload the page loaded nothing. The session now loads straight away, and `useCurrentUserId` falls back to the profile API to decide whether to show owner actions.
+  - Visibility used a missing translation key.
+  - Planned distance claimed a unit (km) the data model does not define.
+  - Two translation keys were unused.
+  - Lint and formatting errors.
+- `Library` had the same reload problem (owned exercises showed as public, without edit actions). It now uses `useCurrentUserId` too.

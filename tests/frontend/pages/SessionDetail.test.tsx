@@ -1,0 +1,250 @@
+import React from "react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import SessionDetail from "../../src/pages/SessionDetail";
+import * as sessionApi from "../../src/services/sessionApi";
+import * as accountApi from "../../src/services/accountApi";
+import type { SessionWithExercises } from "../../src/services/sessionApi";
+import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options && "value" in options ? `${key}=${String(options.value)}` : key,
+    i18n: { language: "en" },
+  }),
+}));
+
+let currentUserId: string | null = "user-1";
+vi.mock("../../src/store/auth.store", () => ({
+  useAuthStore: (
+    selector: (state: { user: { id: string } | null; isAuthenticated: boolean }) => unknown,
+  ) => selector({ user: currentUserId ? { id: currentUserId } : null, isAuthenticated: true }),
+}));
+vi.mock("../../src/services/accountApi", () => ({ getCurrentUser: vi.fn() }));
+
+vi.mock("../../src/services/sessionApi", async () => {
+  const actual = await vi.importActual("../../src/services/sessionApi");
+  return { ...actual, getSession: vi.fn(), updateSession: vi.fn(), cloneSession: vi.fn() };
+});
+
+const mocked = vi.mocked(sessionApi);
+
+const baseSession = (overrides: Partial<SessionWithExercises> = {}): SessionWithExercises => ({
+  id: "session-1",
+  owner_id: "user-1",
+  title: "Leg day",
+  planned_at: "2026-12-01T17:00:00.000Z",
+  planned_duration_min: 90,
+  status: "planned",
+  visibility: "private",
+  notes: "Bring belt",
+  exercises: [
+    {
+      id: "se-1",
+      session_id: "session-1",
+      exercise_id: "squat",
+      exercise_name: "Back squat",
+      order_index: 1,
+      planned: { sets: 2, reps: 5, load: 100 },
+      sets: [
+        { id: "set-1", order_index: 1, reps: 5, weight_kg: 100, rest_sec: 120 },
+        {
+          id: "set-2",
+          order_index: 2,
+          reps: 5,
+          weight_kg: 100,
+          recorded_at: "2026-12-01T17:20:00Z",
+        },
+      ],
+    },
+  ],
+  ...overrides,
+});
+
+describe("SessionDetail", () => {
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    currentUserId = "user-1";
+    queryClient = createTestQueryClient();
+    mocked.getSession.mockResolvedValue(baseSession());
+  });
+
+  afterEach(async () => {
+    await cleanupQueryClient(queryClient);
+    vi.clearAllMocks();
+  });
+
+  const renderDetail = (id = "session-1") =>
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[`/sessions/${id}`]}>
+          <Routes>
+            <Route path="/sessions/:id" element={<SessionDetail />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+  it("shows the schedule with its length, visibility, notes and every exercise and set", async () => {
+    renderDetail();
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Leg day" })).toBeInTheDocument();
+    const range = new Intl.DateTimeFormat("en", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).formatRange(new Date("2026-12-01T17:00:00.000Z"), new Date("2026-12-01T18:30:00.000Z"));
+    // Intl output contains narrow spaces that the default text matcher normalises away.
+    expect(screen.getByText(/^sessionDetail\.plannedAt=/).textContent).toBe(
+      `sessionDetail.plannedAt=${range}`,
+    );
+    expect(
+      screen.getByText("sessionDetail.visibility=visibility.labels.private"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Bring belt")).toBeInTheDocument();
+    expect(screen.getByText("Back squat")).toBeInTheDocument();
+    expect(
+      screen.getByText("sessionDetail.sets=2 · sessionDetail.reps=5 · sessionDetail.load=100"),
+    ).toBeInTheDocument();
+    // The unrecorded row is prescription; the recorded row shows results.
+    expect(screen.getAllByText("sessionDetail.prescription")).toHaveLength(2);
+    expect(screen.getByText("sessionDetail.actual")).toBeInTheDocument();
+    expect(
+      screen.getByText("sessionDetail.reps=5 · sessionDetail.load=100 · sessionDetail.rest=120"),
+    ).toBeInTheDocument();
+  });
+
+  it("starts a planned session and shows that recording is not available yet", async () => {
+    mocked.updateSession.mockResolvedValue(
+      baseSession({ status: "in_progress", started_at: "2026-12-01T17:01:00.000Z" }),
+    );
+    renderDetail();
+
+    fireEvent.click(await screen.findByRole("button", { name: "workoutEditor.actions.start" }));
+
+    await waitFor(() =>
+      expect(mocked.updateSession).toHaveBeenCalledWith("session-1", { status: "in_progress" }),
+    );
+    expect(await screen.findByText("sessionDetail.activeNotice")).toBeInTheDocument();
+    expect(screen.getByText(/^sessionDetail\.startedAt=/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reports a failed start", async () => {
+    mocked.updateSession.mockRejectedValue(new Error("offline"));
+    renderDetail();
+
+    fireEvent.click(await screen.findByRole("button", { name: "workoutEditor.actions.start" }));
+
+    expect(await screen.findByText("sessionDetail.saveError")).toBeInTheDocument();
+  });
+
+  it("reuses the session as a private copy at the chosen time and opens the copy", async () => {
+    mocked.cloneSession.mockResolvedValue(baseSession({ id: "copy-1" }));
+    renderDetail();
+    const reuse = await screen.findByRole("button", { name: "sessionDetail.reuse" });
+    expect(reuse).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("sessionDetail.reuseDate"), {
+      target: { value: "2026-12-08T07:30" },
+    });
+    fireEvent.click(reuse);
+
+    await waitFor(() =>
+      expect(mocked.cloneSession).toHaveBeenCalledWith("session-1", {
+        planned_at: new Date("2026-12-08T07:30").toISOString(),
+        plan_id: null,
+        visibility: "private",
+        recurrence_rule: null,
+        include_actual: false,
+      }),
+    );
+    // The page moves on to the copy and loads it.
+    await waitFor(() => expect(mocked.getSession).toHaveBeenCalledWith("copy-1"));
+  });
+
+  it("reports a failed reuse and stays on the session", async () => {
+    mocked.cloneSession.mockRejectedValue(new Error("offline"));
+    renderDetail();
+    fireEvent.change(await screen.findByLabelText("sessionDetail.reuseDate"), {
+      target: { value: "2026-12-08T07:30" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "sessionDetail.reuse" }));
+
+    expect(await screen.findByText("sessionDetail.saveError")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Leg day" })).toBeInTheDocument();
+  });
+
+  it("shows awarded points on a completed session, or that they are pending", async () => {
+    mocked.getSession.mockResolvedValue(
+      baseSession({ status: "completed", completed_at: "2026-12-01T18:20:00.000Z", points: 42 }),
+    );
+    const { unmount } = renderDetail();
+    expect(await screen.findByText("homeSurface.session.points")).toBeInTheDocument();
+    expect(screen.getByText(/^sessionDetail\.completedAt=/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
+    ).not.toBeInTheDocument();
+    unmount();
+    await cleanupQueryClient(queryClient);
+    queryClient = createTestQueryClient();
+
+    mocked.getSession.mockResolvedValue(baseSession({ status: "completed", points: null }));
+    renderDetail();
+    expect(await screen.findByText("sessionDetail.pointsPending")).toBeInTheDocument();
+  });
+
+  it("offers no start or reuse to someone who does not own the session", async () => {
+    currentUserId = "user-2";
+    renderDetail();
+
+    expect(await screen.findByText("Back squat")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "sessionDetail.reuse" })).not.toBeInTheDocument();
+  });
+
+  it("after a reload, takes the owner from the profile and still offers the owner's actions", async () => {
+    currentUserId = null;
+    vi.mocked(accountApi.getCurrentUser).mockResolvedValue({
+      id: "user-1",
+    } as Awaited<ReturnType<typeof accountApi.getCurrentUser>>);
+    renderDetail();
+
+    expect(
+      await screen.findByRole("button", { name: "workoutEditor.actions.start" }),
+    ).toBeInTheDocument();
+    expect(mocked.getSession).toHaveBeenCalledWith("session-1");
+    expect(accountApi.getCurrentUser).toHaveBeenCalled();
+  });
+
+  it("offers no reuse for a canceled session", async () => {
+    mocked.getSession.mockResolvedValue(baseSession({ status: "canceled" }));
+    renderDetail();
+
+    expect(await screen.findByText("Back squat")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "sessionDetail.reuse" })).not.toBeInTheDocument();
+  });
+
+  it("lists a session without exercises", async () => {
+    mocked.getSession.mockResolvedValue(baseSession({ exercises: [] }));
+    renderDetail();
+
+    expect(await screen.findByText("sessionDetail.empty")).toBeInTheDocument();
+  });
+
+  it("offers a retry when the session cannot be loaded", async () => {
+    mocked.getSession.mockRejectedValueOnce(new Error("missing"));
+    renderDetail();
+
+    expect(await screen.findByText("sessionDetail.loadError")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "actions.retry" }));
+    expect(await screen.findByText("Back squat")).toBeInTheDocument();
+  });
+});

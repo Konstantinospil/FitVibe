@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, InputControl } from "@fitvibe/ui";
@@ -11,32 +11,38 @@ import {
   type SessionExerciseSet,
   type SessionWithExercises,
 } from "../services/sessionApi";
-import { useAuthStore } from "../store/auth.store";
+import { useCurrentUserId } from "../hooks/useCurrentUserId";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import { RetryErrorPanel, StatusPanel } from "../components/composites/StatusPanel";
 import { FormFeedback } from "../components/composites/FormStack";
 import { CALENDAR_QUERY_KEY } from "../hooks/useSessionReschedule";
+import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
+const SUMMARY_SEPARATOR = " · ";
+
 function metric(t: Translate, key: string, value: string | number | null | undefined) {
-  return value == null ? null : t(`sessionDetail.${key}`, { value });
+  return value === null || value === undefined ? null : t(`sessionDetail.${key}`, { value });
 }
 
+const joinMetrics = (parts: Array<string | null>) =>
+  parts.filter((part): part is string => Boolean(part)).join(SUMMARY_SEPARATOR);
+
 function setSummary(t: Translate, set: SessionExerciseSet) {
-  return [
+  return joinMetrics([
     metric(t, "reps", set.reps),
     metric(t, "load", set.weight_kg),
     metric(t, "duration", set.duration_sec),
     metric(t, "distance", set.distance_m),
     metric(t, "rpe", set.rpe),
     metric(t, "rest", set.rest_sec),
-  ].filter(Boolean).join(" · ");
+  ]);
 }
 
 function exerciseSummary(t: Translate, exercise: SessionExercise) {
   const planned = exercise.planned;
-  return [
+  return joinMetrics([
     metric(t, "sets", planned?.sets),
     metric(t, "reps", planned?.reps),
     metric(t, "load", planned?.load),
@@ -44,7 +50,7 @@ function exerciseSummary(t: Translate, exercise: SessionExercise) {
     metric(t, "plannedDistance", planned?.distance),
     metric(t, "rpe", planned?.rpe),
     metric(t, "plannedRest", planned?.rest),
-  ].filter(Boolean).join(" · ");
+  ]);
 }
 
 const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session }) => {
@@ -78,33 +84,45 @@ const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session
   );
 };
 
+/**
+ * Read view of one of the athlete's sessions (`/sessions/:id`): schedule, status,
+ * prescription and recorded sets, and awarded points once completed. The owner can
+ * start a planned session and reuse any session as a new private one; completed
+ * records are not edited here.
+ */
 const SessionDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
-  const ownerId = useAuthStore((state) => state.user?.id);
+  const userId = useCurrentUserId();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [copyDate, setCopyDate] = useState("");
-  const key = ["session-detail", ownerId, id];
+  // The server decides who may read a session; ownership only decides which actions show.
+  const queryKey = useMemo(() => ["session-detail", id] as const, [id]);
   const query = useQuery({
-    queryKey: key,
+    queryKey,
     queryFn: () => getSession(id!),
-    enabled: Boolean(id && ownerId),
+    enabled: Boolean(id),
   });
   const session = query.data;
-  const isOwner = Boolean(session && ownerId && session.owner_id === ownerId);
-  const dateFormat = new Intl.DateTimeFormat(i18n.language, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const isOwner = Boolean(session && userId && session.owner_id === userId);
+
+  const dateTimeFormat = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }),
+    [i18n.language],
+  );
+
   const start = useMutation({
     mutationFn: (sessionId: string) => updateSession(sessionId, { status: "in_progress" }),
-    onSuccess: (updated) => {
-      queryClient.setQueryData(key, updated);
-      void queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
-      void queryClient.invalidateQueries({ queryKey: ["home", "recent-sessions"] });
+    onSuccess: async (updated) => {
+      queryClient.setQueryData(queryKey, updated);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY }),
+        queryClient.invalidateQueries({ queryKey: ["home", "recent-sessions"] }),
+      ]);
     },
   });
+
   const reuse = useMutation({
     mutationFn: ({ sessionId, plannedAt }: { sessionId: string; plannedAt: string }) =>
       cloneSession(sessionId, {
@@ -114,14 +132,21 @@ const SessionDetail: React.FC = () => {
         recurrence_rule: null,
         include_actual: false,
       }),
-    onSuccess: (copy) => {
-      void queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
-      navigate(`/sessions/${copy.id}`);
+    onSuccess: async (copy) => {
+      await queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+      void navigate(`/sessions/${copy.id}`);
     },
   });
+
   const busy = start.isPending || reuse.isPending;
-  const parsedDate = new Date(copyDate);
-  const validCopyDate = copyDate !== "" && Number.isFinite(parsedDate.getTime());
+  const parsedCopyDate = new Date(copyDate);
+  const validCopyDate = copyDate !== "" && Number.isFinite(parsedCopyDate.getTime());
+
+  const scheduledRange = (value: SessionWithExercises) =>
+    dateTimeFormat.formatRange(
+      new Date(value.planned_at),
+      new Date(sessionEnd(value.planned_at, durationOf(value))),
+    );
 
   return (
     <main className="training-page" aria-labelledby="session-detail-title">
@@ -138,17 +163,33 @@ const SessionDetail: React.FC = () => {
       {session ? (
         <>
           <TrainingPanel title={t(`sessionDetail.${session.status}`)}>
-            <p>{t("sessionDetail.plannedAt")}: {dateFormat.format(new Date(session.planned_at))}</p>
+            <p>{t("sessionDetail.plannedAt", { value: scheduledRange(session) })}</p>
             {session.started_at ? (
-              <p>{t("sessionDetail.startedAt")}: {dateFormat.format(new Date(session.started_at))}</p>
+              <p>
+                {t("sessionDetail.startedAt", {
+                  value: dateTimeFormat.format(new Date(session.started_at)),
+                })}
+              </p>
             ) : null}
             {session.completed_at ? (
-              <p>{t("sessionDetail.completedAt")}: {dateFormat.format(new Date(session.completed_at))}</p>
+              <p>
+                {t("sessionDetail.completedAt", {
+                  value: dateTimeFormat.format(new Date(session.completed_at)),
+                })}
+              </p>
             ) : null}
-            <p>{t("sessionDetail.visibility", { value: t(`visibility.${session.visibility}`) })}</p>
+            <p>
+              {t("sessionDetail.visibility", {
+                value: t(`visibility.labels.${session.visibility}`),
+              })}
+            </p>
             {session.notes ? <p>{session.notes}</p> : null}
             {session.status === "completed" ? (
-              <p>{session.points == null ? t("sessionDetail.pointsPending") : t("homeSurface.session.points", { count: session.points })}</p>
+              <p>
+                {session.points === null || session.points === undefined
+                  ? t("sessionDetail.pointsPending")
+                  : t("homeSurface.session.points", { count: session.points })}
+              </p>
             ) : null}
             {isOwner && session.status === "planned" ? (
               <Button
@@ -162,24 +203,34 @@ const SessionDetail: React.FC = () => {
             {isOwner && session.status === "in_progress" ? (
               <FormFeedback tone="info">{t("sessionDetail.activeNotice")}</FormFeedback>
             ) : null}
-            {start.isError ? <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback> : null}
+            {start.isError ? (
+              <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback>
+            ) : null}
           </TrainingPanel>
           <SessionExercises session={session} />
           {isOwner && session.status !== "canceled" ? (
             <TrainingPanel title={t("sessionDetail.reuse")}>
               <label className="form-label">
                 <span className="form-label-text">{t("sessionDetail.reuseDate")}</span>
-                <InputControl type="datetime-local" value={copyDate} onChange={(event) => setCopyDate(event.target.value)} />
+                <InputControl
+                  type="datetime-local"
+                  value={copyDate}
+                  onChange={(event) => setCopyDate(event.target.value)}
+                />
               </label>
               <Button
                 variant="secondary"
                 disabled={busy || !validCopyDate}
                 isLoading={reuse.isPending}
-                onClick={() => reuse.mutate({ sessionId: session.id, plannedAt: parsedDate.toISOString() })}
+                onClick={() =>
+                  reuse.mutate({ sessionId: session.id, plannedAt: parsedCopyDate.toISOString() })
+                }
               >
                 {t("sessionDetail.reuse")}
               </Button>
-              {reuse.isError ? <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback> : null}
+              {reuse.isError ? (
+                <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback>
+              ) : null}
             </TrainingPanel>
           ) : null}
         </>

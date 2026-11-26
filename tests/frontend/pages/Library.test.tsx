@@ -1,5 +1,5 @@
-import { MemoryRouter } from "react-router-dom";
 import React from "react";
+import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,7 +19,26 @@ vi.mock("../../src/components/composites/ExerciseCreator", () => ({
   default: ({ open, exercise }: { open: boolean; exercise?: api.Exercise | null }) => open ? <div>{exercise ? "creator-edit" : "creator-create"}</div> : null,
 }));
 vi.mock("../../src/components/composites/WorkoutEditor", () => ({
-  default: ({ open, initialExercise }: { open: boolean; initialExercise?: Pick<api.Exercise, "id" | "name"> | null }) => open ? <div>{initialExercise ? "workout-seeded" : "workout-empty"}</div> : null,
+  default: ({
+    open,
+    initialExercise,
+    onSaved,
+  }: {
+    open: boolean;
+    initialExercise?: Pick<api.Exercise, "id" | "name"> | null;
+    onSaved?: (saved: { id: string; status: string }) => void;
+  }) =>
+    open ? (
+      <div>
+        {initialExercise ? "workout-seeded" : "workout-empty"}
+        <button type="button" onClick={() => onSaved?.({ id: "started-1", status: "in_progress" })}>
+          start-workout
+        </button>
+        <button type="button" onClick={() => onSaved?.({ id: "planned-1", status: "planned" })}>
+          plan-workout
+        </button>
+      </div>
+    ) : null,
 }));
 
 describe("Library", () => {
@@ -40,7 +59,14 @@ describe("Library", () => {
   });
   afterEach(async () => { await cleanupQueryClient(queryClient); vi.clearAllMocks(); });
 
-  const renderLibrary = () => render(<QueryClientProvider client={queryClient}><MemoryRouter><Library /></MemoryRouter></QueryClientProvider>);
+  const renderLibrary = () =>
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <Library />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
 
   it("renders global, owned and public exercises distinctly", async () => {
     renderLibrary();
@@ -57,6 +83,30 @@ describe("Library", () => {
     await screen.findByText("Global");
     fireEvent.change(screen.getByLabelText("librarySurface.filters.search"), { target: { value: "squat" } });
     await waitFor(() => expect(vi.mocked(api.listExercises)).toHaveBeenLastCalledWith(expect.objectContaining({ q: "squat", limit: 20, offset: 0 })));
+  });
+
+  it("opens a started workout's details, and stays for a planned one", async () => {
+    const DetailProbe = () => <div>details for {useParams().id}</div>;
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<Library />} />
+            <Route path="/sessions/:id" element={<DetailProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Global");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "librarySurface.actions.addToWorkout" })[0],
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "plan-workout" }));
+    expect(screen.getByText("workout-seeded")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "start-workout" }));
+    expect(await screen.findByText("details for started-1")).toBeInTheDocument();
   });
 
   it("opens recovered creator and workout editor workflows", async () => {
