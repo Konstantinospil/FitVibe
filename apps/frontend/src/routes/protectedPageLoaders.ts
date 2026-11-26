@@ -31,6 +31,7 @@ export function memoizeImport<T extends ModuleWithDefault>(
 export const loadProtectedRoutes = memoizeImport(() => import("./ProtectedRoutes"));
 export const loadHome = memoizeImport(() => import("../pages/Home"));
 export const loadCalendar = memoizeImport(() => import("../pages/Calendar"));
+export const loadSessionDetail = memoizeImport(() => import("../pages/SessionDetail"));
 export const loadLibrary = memoizeImport(() => import("../pages/Library"));
 export const loadDashboard = memoizeImport(() => import("../pages/Dashboard"));
 export const loadSettings = memoizeImport(() => import("../pages/Settings"));
@@ -66,7 +67,10 @@ function normalizePath(pathname: string): string {
 export function prefetchProtectedEntry(pathname: string): void {
   const swallow = () => undefined;
   void loadProtectedRoutes().catch(swallow);
-  const loadPage = PAGE_LOADERS_BY_PATH[normalizePath(pathname)];
+  const path = normalizePath(pathname);
+  const loadPage = /^\/sessions\/[^/]+$/.test(path)
+    ? loadSessionDetail
+    : PAGE_LOADERS_BY_PATH[path];
   if (loadPage) {
     void loadPage().catch(swallow);
   }

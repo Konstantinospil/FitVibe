@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom";
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -101,7 +102,7 @@ describe("Home", () => {
   const renderHome = () =>
     render(
       <QueryClientProvider client={queryClient}>
-        <Home />
+        <MemoryRouter><Home /></MemoryRouter>
       </QueryClientProvider>,
     );
 

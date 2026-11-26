@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { listSessions, type SessionListItem } from "../services/api";
 import {
   TrainingPanel,
@@ -80,6 +81,7 @@ const statusFor = (sessions: SessionListItem[]): TrainingStatus => {
 const CalendarPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [editorAction, setEditorAction] = useState<WorkoutEditorAction | null>(null);
   const [managePlansOpen, setManagePlansOpen] = useState(false);
   const [view, setView] = useState<CalendarView>("month");
@@ -312,6 +314,8 @@ const CalendarPage: React.FC = () => {
         handleProps={movable ? scheduling.handlePropsFor(session) : undefined}
         handleId={session.id}
         onMove={movable ? () => scheduling.openDialog(session) : undefined}
+        onDetails={() => navigate(`/sessions/${session.id}`)}
+        detailsLabel={t("sessionDetail.details", { title: sessionTitle(session) })}
         conflictLabel={conflictLabelFor(session)}
         dragging={scheduling.isMoving(session)}
       />
@@ -665,6 +669,15 @@ const CalendarPage: React.FC = () => {
                       count: session.exercise_count,
                     })
                   }
+                  trailing={
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => navigate(`/sessions/${session.id}`)}
+                    >
+                      {t("sessionDetail.details", { title: sessionTitle(session) })}
+                    </Button>
+                  }
                 />
               ))
             )}
@@ -716,8 +729,11 @@ const CalendarPage: React.FC = () => {
         onClose={() => setEditorAction(null)}
         plannedAt={selectedDayStart.toISOString()}
         actions={editorAction ? [editorAction] : []}
-        onSaved={() => {
+        onSaved={(saved) => {
           void queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY });
+          if (saved.status === "in_progress") {
+            navigate(`/sessions/${saved.id}`);
+          }
         }}
       />
     </main>

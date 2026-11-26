@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom";
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -39,7 +40,7 @@ describe("Library", () => {
   });
   afterEach(async () => { await cleanupQueryClient(queryClient); vi.clearAllMocks(); });
 
-  const renderLibrary = () => render(<QueryClientProvider client={queryClient}><Library /></QueryClientProvider>);
+  const renderLibrary = () => render(<QueryClientProvider client={queryClient}><MemoryRouter><Library /></MemoryRouter></QueryClientProvider>);
 
   it("renders global, owned and public exercises distinctly", async () => {
     renderLibrary();

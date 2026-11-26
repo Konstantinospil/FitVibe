@@ -26,12 +26,14 @@ import {
   loadLibrary,
   loadPrivacy,
   loadSettings,
+  loadSessionDetail,
   loadTerms,
   loadTermsReacceptance,
 } from "./protectedPageLoaders";
 
 const Home = lazy(loadHome);
 const Calendar = lazy(loadCalendar);
+const SessionDetail = lazy(loadSessionDetail);
 const Library = lazy(loadLibrary);
 const Dashboard = lazy(loadDashboard);
 const Settings = lazy(loadSettings);
@@ -163,6 +165,7 @@ const ProtectedRoutes: React.FC<ProtectedRoutesProps> = ({
           <Route element={<MainLayout />}>
             <Route index element={page(<Home />)} />
             <Route path="calendar" element={page(<Calendar />)} />
+            <Route path="sessions/:id" element={page(<SessionDetail />)} />
             <Route path="library" element={page(<Library />)} />
             <Route path="dashboard" element={page(<Dashboard />)} />
             <Route path="settings" element={page(<Settings />)} />

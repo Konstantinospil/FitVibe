@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { GripVertical } from "lucide-react";
-import { IconButton } from "@fitvibe/ui";
+import { Button, IconButton } from "@fitvibe/ui";
 import { TrainingSummaryCard } from "./TrainingSurface";
 import {
   SCHEDULE_HANDLE_ATTRIBUTE,
@@ -22,6 +22,8 @@ export interface ScheduleSessionCardProps {
   handleId?: string;
   /** Opens the non-drag move dialog (click, Enter or Space on the handle). */
   onMove?: () => void;
+  onDetails?: () => void;
+  detailsLabel?: string;
   /** Visible label shown when the session takes part in a schedule conflict. */
   conflictLabel?: string;
   /** Being dragged or picked up with the keyboard. */
@@ -42,6 +44,8 @@ const ScheduleSessionCard: React.FC<ScheduleSessionCardProps> = ({
   handleProps,
   handleId,
   onMove,
+  onDetails,
+  detailsLabel,
   conflictLabel,
   dragging = false,
 }) => {
@@ -70,18 +74,25 @@ const ScheduleSessionCard: React.FC<ScheduleSessionCardProps> = ({
         )
       }
       trailing={
-        movable ? (
-          <IconButton
-            {...handleProps}
-            {...{ [SCHEDULE_HANDLE_ATTRIBUTE]: handleId }}
-            className="schedule-session-card__handle"
-            icon={<GripVertical />}
-            label={moveLabel}
-            size="sm"
-            aria-describedby={moveHintId}
-            onClick={onMove}
-          />
-        ) : undefined
+        <>
+          {onDetails ? (
+            <Button size="sm" variant="secondary" onClick={onDetails}>
+              {detailsLabel}
+            </Button>
+          ) : null}
+          {movable ? (
+            <IconButton
+              {...handleProps}
+              {...{ [SCHEDULE_HANDLE_ATTRIBUTE]: handleId }}
+              className="schedule-session-card__handle"
+              icon={<GripVertical />}
+              label={moveLabel}
+              size="sm"
+              aria-describedby={moveHintId}
+              onClick={onMove}
+            />
+          ) : null}
+        </>
       }
     />
   );

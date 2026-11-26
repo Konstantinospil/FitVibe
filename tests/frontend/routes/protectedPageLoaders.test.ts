@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("../../src/routes/ProtectedRoutes", () => ({ default: "ProtectedRoutes" }));
 vi.mock("../../src/pages/Home", () => ({ default: "Home" }));
+vi.mock("../../src/pages/SessionDetail", () => ({ default: "SessionDetail" }));
 vi.mock("../../src/pages/Calendar", () => ({ default: "Calendar" }));
 vi.mock("../../src/pages/Library", () => ({ default: "Library" }));
 vi.mock("../../src/pages/Dashboard", () => ({ default: "Dashboard" }));
@@ -14,6 +15,7 @@ vi.mock("../../src/pages/AdminPasswordUpdate", () => ({ default: "AdminPasswordU
 
 import {
   loadDashboard,
+  loadSessionDetail,
   loadProtectedRoutes,
   loadTerms,
   memoizeImport,
@@ -28,6 +30,11 @@ describe("protectedPageLoaders (#634)", () => {
 
   it("resolves the real module for a route", async () => {
     await expect(loadDashboard()).resolves.toMatchObject({ default: "Dashboard" });
+  });
+
+  it("loads the session detail page for dynamic protected paths", async () => {
+    prefetchProtectedEntry("/sessions/example-session");
+    await expect(loadSessionDetail()).resolves.toMatchObject({ default: "SessionDetail" });
   });
 
   it("does not cache a failed chunk request, so a later render can retry", async () => {

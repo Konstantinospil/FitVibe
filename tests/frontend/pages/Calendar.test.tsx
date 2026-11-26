@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom";
 import React from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -125,7 +126,7 @@ describe("Calendar", () => {
   const renderCalendar = () =>
     render(
       <QueryClientProvider client={queryClient}>
-        <Calendar />
+        <MemoryRouter><Calendar /></MemoryRouter>
       </QueryClientProvider>,
     );
 
