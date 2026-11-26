@@ -11,7 +11,9 @@
 
 The Vibeform is meant to be both an identity and a mirror. The athlete chooses a base form, and their current training state shapes it, both as they train and as they stop training.
 
-Today the six Vibe inputs to the Vibeform are the ADR-034 Vibe levels, normalised as `(L − 100) / 2900`. Levels are bounded to 100–3,000 and never decrease without training. Only the regional body loads fade, using a 12-week window and a 42-day half-life (`VIBEFORM_CALCULATION_VERSION = "2"`). So the Vibeform cannot show detraining.
+Today the six Vibe inputs to the Vibeform are the ADR-034 Vibe levels, normalised as `(L − 100) / 2900`. The regional body loads fade, using a 12-week window and a 42-day half-life (`VIBEFORM_CALCULATION_VERSION = "2"`).
+
+Levels are bounded to 100–3,000. They already decay slowly: `jobs/services/vibe-level-decay.service.ts` runs during every gamification reconciliation (`reconcileGamificationProjection`). A Vibe whose level has not changed for at least a day loses one level per idle day, at most 50 per run and never below 100. A global `vibe-level.decay` job handler exists too, but nothing schedules it. Because reconciliation runs after completed sessions, an athlete who stops using the app loses nothing until they come back. Even then the loss is at most 50 of the 2,900-level range per run, so the Vibeform can barely show detraining.
 
 Points, Vibe levels and leaderboards represent lifetime achievement. Making them decay would punish holidays, illness and injury, so detraining needs its own quantity.
 
@@ -75,7 +77,8 @@ The ADR-034 levels keep the athlete's specialisation visible. Form shrinks that 
 ### 7. Scope
 
 - Capability and form drive only the Vibeform and Vibe balance.
-- Points, Vibe levels, the below-average balance bonus, badges and leaderboards stay exactly as ADR-034 defines them.
+- Points, Vibe levels (including the existing slow level decay), the below-average balance bonus, badges and leaderboards stay as they are.
+- Because `input_v = N(level_v) · form_v`, detraining reaches the Vibeform through both factors: the slow level decay and the much faster form decay. The level decay is small (at most 50 levels per reconciliation), so form dominates. Whether the level decay should remain once capability exists is a separate decision.
 - The frontend never calculates capability; it reads it from `GET /api/v1/vibeforms/me`.
 - The change ships as `VIBEFORM_CALCULATION_VERSION = "3"`.
 
