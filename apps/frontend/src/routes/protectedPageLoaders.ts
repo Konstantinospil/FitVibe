@@ -32,6 +32,7 @@ export const loadProtectedRoutes = memoizeImport(() => import("./ProtectedRoutes
 export const loadHome = memoizeImport(() => import("../pages/Home"));
 export const loadCalendar = memoizeImport(() => import("../pages/Calendar"));
 export const loadSessionDetail = memoizeImport(() => import("../pages/SessionDetail"));
+export const loadLog = memoizeImport(() => import("../pages/Log"));
 export const loadLibrary = memoizeImport(() => import("../pages/Library"));
 export const loadDashboard = memoizeImport(() => import("../pages/Dashboard"));
 export const loadSettings = memoizeImport(() => import("../pages/Settings"));
@@ -44,6 +45,7 @@ export const loadAdminPasswordUpdate = memoizeImport(() => import("../pages/Admi
 const PAGE_LOADERS_BY_PATH: Readonly<Record<string, () => Promise<ModuleWithDefault>>> = {
   "/": loadHome,
   "/calendar": loadCalendar,
+  "/log": loadLog,
   "/library": loadLibrary,
   "/dashboard": loadDashboard,
   "/settings": loadSettings,

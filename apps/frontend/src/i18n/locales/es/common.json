@@ -1184,7 +1184,10 @@
     "sets": "Series: {{value}}",
     "plannedDuration": "Duración prevista: {{value}}",
     "plannedDistance": "Distancia prevista: {{value}}",
-    "plannedRest": "Descanso previsto: {{value}}"
+    "plannedRest": "Descanso previsto: {{value}}",
+    "skipped": "Omitida",
+    "target": "objetivo: {{value}}",
+    "stoppedEarly": "Terminado antes de tiempo"
   },
   "librarySurface": {
     "title": "Biblioteca",
@@ -1255,6 +1258,32 @@
         "update": "No se pudo actualizar el ejercicio.",
         "types": "No se pudieron cargar los tipos de ejercicio."
       }
+    }
+  },
+  "logSurface": {
+    "title": "Registrar un entrenamiento",
+    "sections": {
+      "workout": "Entrenamiento",
+      "exercises": "Ejercicios"
+    },
+    "fields": {
+      "startTime": "Hora de inicio",
+      "weight": "Peso (kg)",
+      "distance": "Distancia (metros)",
+      "rpe": "Esfuerzo (RPE 1–10)"
+    },
+    "actions": {
+      "save": "Guardar entrenamiento",
+      "addSet": "Añadir serie",
+      "removeSet": "Quitar la serie {{number}} de {{name}}",
+      "removeExercise": "Quitar {{name}}"
+    },
+    "empty": "Añade los ejercicios que hiciste y completa cada serie.",
+    "errors": {
+      "save": "No se pudo guardar el entrenamiento. Revisa los valores e inténtalo de nuevo.",
+      "future": "Un entrenamiento registrado debe haber empezado en el pasado. Elige un día o una hora anterior.",
+      "noExercises": "Añade al menos un ejercicio.",
+      "invalidSet": "{{exercise}}, serie {{number}}: revisa {{field}}."
     }
   },
   "loading": {

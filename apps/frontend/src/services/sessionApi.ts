@@ -1,9 +1,31 @@
 import axios from "axios";
-import type { SessionStatus, SessionVisibility } from "@fitvibe/contracts";
+import type {
+  SessionCompletionOutcome,
+  SessionSetSource,
+  SessionSetStatus,
+  SessionStatus,
+  SessionVisibility,
+} from "@fitvibe/contracts";
 import { apiClient } from "./httpApi";
 
 // Sessions API (extending from earlier types)
-export type { SessionStatus, SessionVisibility };
+export type {
+  SessionCompletionOutcome,
+  SessionSetSource,
+  SessionSetStatus,
+  SessionStatus,
+  SessionVisibility,
+};
+
+/** A set's prescription (ADR-042). The top-level set fields hold performed values. */
+export interface SessionSetPlannedValues {
+  reps?: number | null;
+  weight_kg?: number | null;
+  distance_m?: number | null;
+  duration_sec?: number | null;
+  rpe?: number | null;
+  rest_sec?: number | null;
+}
 
 export interface SessionExerciseAttributes {
   sets?: number | null;
@@ -23,6 +45,10 @@ export interface SessionExerciseActualAttributes extends SessionExerciseAttribut
 export interface SessionExerciseSet {
   id: string;
   order_index: number;
+  /** Only completed sets are performed work (ADR-042). */
+  status: SessionSetStatus;
+  source: SessionSetSource;
+  planned: SessionSetPlannedValues | null;
   reps?: number | null;
   weight_kg?: number | null;
   distance_m?: number | null;
@@ -63,6 +89,7 @@ export interface Session {
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
+  completion_outcome?: SessionCompletionOutcome | null;
   calories?: number | null;
   points?: number | null;
   deleted_at?: string | null;
@@ -106,6 +133,9 @@ export interface SessionExerciseInput {
   sets?: Array<{
     id?: string;
     order: number;
+    status?: SessionSetStatus;
+    source?: SessionSetSource;
+    planned?: SessionSetPlannedValues | null;
     reps?: number | null;
     weight_kg?: number | null;
     distance_m?: number | null;
@@ -119,6 +149,9 @@ export interface SessionExerciseInput {
 }
 
 export interface CreateSessionRequest {
+  /** "completed" logs a past workout in one request (ADR-042). */
+  status?: "planned" | "completed";
+  completion_outcome?: SessionCompletionOutcome;
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
@@ -135,6 +168,7 @@ export interface UpdateSessionRequest {
   planned_at?: string;
   planned_duration_min?: number;
   status?: SessionStatus;
+  completion_outcome?: SessionCompletionOutcome;
   visibility?: SessionVisibility;
   notes?: string | null;
   recurrence_rule?: string | null;

@@ -17,6 +17,7 @@ import { RetryErrorPanel, StatusPanel } from "../components/composites/StatusPan
 import { FormFeedback } from "../components/composites/FormStack";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
+import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
@@ -29,16 +30,37 @@ function metric(t: Translate, key: string, value: string | number | null | undef
 const joinMetrics = (parts: Array<string | null>) =>
   parts.filter((part): part is string => Boolean(part)).join(SUMMARY_SEPARATOR);
 
-function setSummary(t: Translate, set: SessionExerciseSet) {
+type SetValues = Pick<
+  SessionExerciseSet,
+  "reps" | "weight_kg" | "duration_sec" | "distance_m" | "rpe" | "rest_sec"
+>;
+
+function valuesSummary(t: Translate, values: Partial<SetValues> | null | undefined) {
   return joinMetrics([
-    metric(t, "reps", set.reps),
-    metric(t, "load", set.weight_kg),
-    metric(t, "duration", set.duration_sec),
-    metric(t, "distance", set.distance_m),
-    metric(t, "rpe", set.rpe),
-    metric(t, "rest", set.rest_sec),
+    metric(t, "reps", values?.reps),
+    metric(t, "load", values?.weight_kg),
+    metric(t, "duration", values?.duration_sec),
+    metric(t, "distance", values?.distance_m),
+    metric(t, "rpe", values?.rpe),
+    metric(t, "rest", values?.rest_sec),
   ]);
 }
+
+/** What was done for completed sets, the target for the rest (ADR-042). */
+function setSummary(t: Translate, set: SessionExerciseSet) {
+  const target = valuesSummary(t, set.planned);
+  if (set.status !== "completed") {
+    return target || t("sessionDetail.unrecorded");
+  }
+  const performed = valuesSummary(t, set) || t("sessionDetail.unrecorded");
+  return target ? `${performed} (${t("sessionDetail.target", { value: target })})` : performed;
+}
+
+const SET_META_KEYS = {
+  planned: "sessionDetail.prescription",
+  completed: "sessionDetail.actual",
+  skipped: "sessionDetail.skipped",
+} as const;
 
 function exerciseSummary(t: Translate, exercise: SessionExercise) {
   const planned = exercise.planned;
@@ -70,12 +92,8 @@ const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session
             <TrainingSummaryCard
               key={set.id}
               title={t("sessionDetail.set", { number: set.order_index })}
-              meta={t(
-                session.status === "completed" || set.recorded_at
-                  ? "sessionDetail.actual"
-                  : "sessionDetail.prescription",
-              )}
-              supporting={setSummary(t, set) || t("sessionDetail.unrecorded")}
+              meta={t(SET_META_KEYS[set.status])}
+              supporting={setSummary(t, set)}
             />
           ))}
         </React.Fragment>
@@ -103,6 +121,11 @@ const SessionDetail: React.FC = () => {
     queryKey,
     queryFn: () => getSession(id!),
     enabled: Boolean(id),
+    refetchInterval: (current) =>
+      current.state.data?.status === "completed" &&
+      (current.state.data.points === null || current.state.data.points === undefined)
+        ? TRAINING_DATA_CONFIG.pointsPendingPollMs
+        : false,
   });
   const session = query.data;
   const isOwner = Boolean(session && userId && session.owner_id === userId);
@@ -184,8 +207,11 @@ const SessionDetail: React.FC = () => {
               })}
             </p>
             {session.notes ? <p>{session.notes}</p> : null}
+            {session.completion_outcome === "stopped_early" ? (
+              <p>{t("sessionDetail.stoppedEarly")}</p>
+            ) : null}
             {session.status === "completed" ? (
-              <p>
+              <p aria-live="polite">
                 {session.points === null || session.points === undefined
                   ? t("sessionDetail.pointsPending")
                   : t("homeSurface.session.points", { count: session.points })}

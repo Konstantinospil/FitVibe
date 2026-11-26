@@ -1184,7 +1184,10 @@
     "sets": "Séries : {{value}}",
     "plannedDuration": "Durée prévue : {{value}}",
     "plannedDistance": "Distance prévue : {{value}}",
-    "plannedRest": "Repos prévu : {{value}}"
+    "plannedRest": "Repos prévu : {{value}}",
+    "skipped": "Sautée",
+    "target": "objectif : {{value}}",
+    "stoppedEarly": "Arrêté avant la fin"
   },
   "librarySurface": {
     "title": "Bibliothèque",
@@ -1255,6 +1258,32 @@
         "update": "L’exercice n’a pas pu être mis à jour.",
         "types": "Les types d’exercice n’ont pas pu être chargés."
       }
+    }
+  },
+  "logSurface": {
+    "title": "Enregistrer une séance",
+    "sections": {
+      "workout": "Séance",
+      "exercises": "Exercices"
+    },
+    "fields": {
+      "startTime": "Heure de début",
+      "weight": "Poids (kg)",
+      "distance": "Distance (mètres)",
+      "rpe": "Effort (RPE 1–10)"
+    },
+    "actions": {
+      "save": "Enregistrer la séance",
+      "addSet": "Ajouter une série",
+      "removeSet": "Retirer la série {{number}} de {{name}}",
+      "removeExercise": "Retirer {{name}}"
+    },
+    "empty": "Ajoutez les exercices réalisés, puis remplissez chaque série.",
+    "errors": {
+      "save": "La séance n’a pas pu être enregistrée. Vérifiez les valeurs et réessayez.",
+      "future": "Une séance enregistrée doit avoir commencé dans le passé. Choisissez un jour ou une heure antérieurs.",
+      "noExercises": "Ajoutez au moins un exercice.",
+      "invalidSet": "{{exercise}}, série {{number}} : vérifiez {{field}}."
     }
   },
   "loading": {

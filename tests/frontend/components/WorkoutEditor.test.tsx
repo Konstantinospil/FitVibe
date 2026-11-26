@@ -363,11 +363,10 @@ describe("WorkoutEditor", () => {
               id: "set-1",
               session_exercise_id: "session-ex-rich",
               order_index: 0,
-              reps: 7,
-              weight_kg: 40,
-              duration_sec: 30,
-              rpe: 6,
-              rest_sec: 45,
+              status: "planned",
+              source: "prescribed",
+              // The workout's targets live in the set's prescription (ADR-042).
+              planned: { reps: 7, weight_kg: 40, duration_sec: 30, rpe: 6, rest_sec: 45 },
             },
           ],
         },
@@ -412,11 +411,14 @@ describe("WorkoutEditor", () => {
               }),
               sets: expect.arrayContaining([
                 expect.objectContaining({
-                  reps: 8,
-                  weight_kg: 42.5,
-                  duration_sec: 30,
-                  rpe: 7,
-                  rest_sec: 45,
+                  status: "planned",
+                  planned: {
+                    reps: 8,
+                    weight_kg: 42.5,
+                    duration_sec: 30,
+                    rpe: 7,
+                    rest_sec: 45,
+                  },
                 }),
               ]),
             }),
@@ -463,13 +465,17 @@ describe("WorkoutEditor", () => {
                 extras: undefined,
               }),
               sets: [
-                expect.objectContaining({
-                  reps: null,
-                  weight_kg: null,
-                  duration_sec: null,
-                  rpe: null,
-                  rest_sec: null,
-                }),
+                {
+                  order: 1,
+                  status: "planned",
+                  planned: {
+                    reps: null,
+                    weight_kg: null,
+                    duration_sec: null,
+                    rpe: null,
+                    rest_sec: null,
+                  },
+                },
               ],
             }),
           ],
@@ -537,5 +543,4 @@ describe("WorkoutEditor", () => {
 
     expect(screen.queryByText("workoutEditor.title")).not.toBeInTheDocument();
   });
-
 });

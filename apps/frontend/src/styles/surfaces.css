@@ -228,7 +228,7 @@
 .workout-editor__shell,
 .workout-editor__general,
 .workout-editor__metric-row,
-.workout-editor__activity-toolbar,
+.exercise-picker,
 .workout-editor__activity-fields,
 .workout-editor__rest-row,
 .workout-editor__bottom-actions {
@@ -268,7 +268,7 @@
   grid-template-columns: minmax(0, 5fr) minmax(0, 3fr);
 }
 
-.workout-editor__activity-toolbar {
+.exercise-picker {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
@@ -299,13 +299,13 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.workout-editor__search-control {
+.exercise-picker__search {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.workout-editor__search-control > svg {
+.exercise-picker__search > svg {
   position: absolute;
   left: var(--space-md);
   z-index: 1;
@@ -313,8 +313,75 @@
   pointer-events: none;
 }
 
-.workout-editor__search-control select {
+.exercise-picker__search select {
   padding-left: var(--space-2xl);
+}
+
+/* Manual Log (/log): workout details beside the exercises and their sets. */
+.log-surface__grid {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+}
+
+.log-surface__when {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.log-surface__exercise-list {
+  display: grid;
+  gap: var(--space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.log-exercise {
+  display: grid;
+  gap: var(--space-sm);
+  justify-items: start;
+  padding: var(--space-sm);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+}
+
+.log-exercise__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.log-exercise__header h4 {
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.log-set {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-sm);
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.log-set legend {
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+}
+
+.log-set__fields {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs);
 }
 
 @media (max-width: 768px) {
@@ -327,11 +394,17 @@
   .workout-editor__main,
   .workout-editor__general,
   .workout-editor__metric-row,
-  .workout-editor__activity-toolbar,
+  .exercise-picker,
   .workout-editor__activity-fields,
   .workout-editor__rest-row,
-  .workout-editor__bottom-actions {
+  .workout-editor__bottom-actions,
+  .log-surface__grid,
+  .log-surface__when {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .log-set__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-surface__grid {
@@ -352,13 +425,42 @@
 }
 
 /* Library page composition */
-[data-component="library-header"]{display:flex;gap:var(--space-md);justify-content:space-between;align-items:center;flex-wrap:wrap}
-[data-slot="library-actions"],[data-slot="library-card-actions"]{display:flex;gap:var(--space-sm);flex-wrap:wrap}
-[data-slot="library-card-actions"]{gap:var(--space-xs)}
-[data-component="library-filter-grid"]{display:grid;grid-template-columns:repeat(auto-fit,minmax(12rem,1fr));gap:var(--space-sm)}
-[data-component="library-result-grid"]{display:grid;grid-template-columns:repeat(auto-fit,minmax(16rem,1fr));gap:var(--space-md)}
-[data-component="library-pagination"]{display:flex;justify-content:space-between;gap:var(--space-sm);padding-top:var(--space-sm)}
-[data-component="library-detail"]{display:grid;gap:var(--space-sm)}
+[data-component="library-header"] {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+[data-slot="library-actions"],
+[data-slot="library-card-actions"] {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+[data-slot="library-card-actions"] {
+  gap: var(--space-xs);
+}
+[data-component="library-filter-grid"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--space-sm);
+}
+[data-component="library-result-grid"] {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-md);
+}
+[data-component="library-pagination"] {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+}
+[data-component="library-detail"] {
+  display: grid;
+  gap: var(--space-sm);
+}
 
 /* Keep content fluid at narrow viewports and browser zoom. The typography
  * roles above remain token-driven; wrapping must not force horizontal scroll. */

@@ -15,6 +15,8 @@ export const TRAINING_DATA_CONFIG = {
   sessionDurationMaxMinutes: 720,
   sessionDurationDefaultMinutes: 60,
   sessionDurationStepMinutes: 15,
+  // Points are awarded in the background after completion; the session page checks again until they arrive.
+  pointsPendingPollMs: 2_000,
   // GET /exercises accepts at most 100 records per request.
   exerciseCatalogLimit: 100,
   standardQueryStaleMs: 60_000,
