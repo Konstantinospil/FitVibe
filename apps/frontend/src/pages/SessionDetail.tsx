@@ -11,11 +11,11 @@ import {
   type SessionExerciseSet,
   type SessionWithExercises,
 } from "../services/sessionApi";
-import { useCurrentUserId } from "../hooks/useCurrentUserId";
+import { useCurrentUserId } from "../lib/auth/useCurrentUserId";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import { RetryErrorPanel, StatusPanel } from "../components/composites/StatusPanel";
 import { FormFeedback } from "../components/composites/FormStack";
-import { CALENDAR_QUERY_KEY } from "../hooks/useSessionReschedule";
+import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
 
 type Translate = ReturnType<typeof useTranslation>["t"];

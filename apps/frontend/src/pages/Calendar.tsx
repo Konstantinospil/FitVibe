@@ -25,7 +25,7 @@ import ScheduleSessionChip, {
 import ScheduleTimeGrid from "../components/composites/ScheduleTimeGrid";
 import CalendarViewSwitch, { type CalendarView } from "../components/composites/CalendarViewSwitch";
 import RescheduleSessionDialog from "../components/composites/RescheduleSessionDialog";
-import { CALENDAR_QUERY_KEY } from "../hooks/useSessionReschedule";
+import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { SCHEDULE_DROP_ATTRIBUTE, useCalendarScheduling } from "../hooks/useCalendarScheduling";
 import {
   coveredSlotKeys,

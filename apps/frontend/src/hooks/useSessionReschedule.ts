@@ -7,10 +7,8 @@ import {
   type SessionsListResponse,
 } from "../services/sessionApi";
 import { durationOf, findScheduleConflicts } from "../lib/scheduling/sessionSchedule";
+import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { logger } from "../utils/logger";
-
-/** Every cached calendar window starts with this key segment. */
-export const CALENDAR_QUERY_KEY = ["calendar"] as const;
 
 /** Where a session should be: its start and its planned length in minutes. */
 export interface SessionSchedule {

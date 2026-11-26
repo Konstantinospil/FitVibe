@@ -10,7 +10,7 @@ import { Modal } from "../components/composites/Modal";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import WorkoutEditor from "../components/composites/WorkoutEditor";
-import { useCurrentUserId } from "../hooks/useCurrentUserId";
+import { useCurrentUserId } from "../lib/auth/useCurrentUserId";
 import { logger } from "../utils/logger";
 
 const PAGE_SIZE = 20;
