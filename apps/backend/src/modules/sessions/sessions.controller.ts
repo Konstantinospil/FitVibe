@@ -98,6 +98,9 @@ const createSchema = z.object({
 });
 
 export const CreateSessionSchema = createSchema;
+/** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
+export const SessionExerciseInputSchema = sessionExerciseSchema;
+export const SessionSetInputSchema = sessionSetSchema;
 
 const updateSchema = z
   .object({
@@ -115,6 +118,8 @@ const updateSchema = z
     exercises: z.array(sessionExerciseSchema).max(50).optional(),
   })
   .strict();
+
+export const UpdateSessionSchema = updateSchema;
 
 const cloneSchema = z
   .object({

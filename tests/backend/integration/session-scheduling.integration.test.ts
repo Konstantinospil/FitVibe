@@ -9,6 +9,17 @@ import {
 } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { signInNewAthlete, type SignedInAthlete } from "../test-helpers/athlete-session.js";
+import openApiSpec from "../../../apps/backend/openapi/openapi.json";
+
+const documented = (name: string) => (openApiSpec as any).components.schemas[name];
+
+/** The documented properties and required fields of a schema match a real response body. */
+const expectDocumentedShape = (body: Record<string, unknown>, schema: any) => {
+  expect(Object.keys(body).filter((key) => !(key in schema.properties))).toEqual([]);
+  for (const key of schema.required ?? []) {
+    expect(body).toHaveProperty(key);
+  }
+};
 
 /**
  * Overlap-based schedule conflicts against real Postgres (US-4.3-AC03, US-4.5-AC02):
@@ -68,6 +79,11 @@ describeWithTestDatabase("Integration: session scheduling conflicts", () => {
     expect(response.status).toBe(422);
     expect(response.body.error.code).toBe("E.SESSION.SCHEDULE_CONFLICT");
     expect(response.body.error.details.conflictingSessionIds).toEqual([morning.id]);
+    // The body matches the OpenAPI ScheduleConflictResponse (#673).
+    const conflictSchema = documented("ScheduleConflictResponse").properties.error;
+    expectDocumentedShape(response.body, documented("ScheduleConflictResponse"));
+    expectDocumentedShape(response.body.error, conflictSchema);
+    expect(conflictSchema.properties.code.enum).toContain(response.body.error.code);
     const row = await db("sessions").where({ id: later.id }).first();
     expect(new Date(row.planned_at).toISOString()).toBe("2026-12-01T10:00:00.000Z");
   });
@@ -90,6 +106,8 @@ describeWithTestDatabase("Integration: session scheduling conflicts", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.planned_at).toBe("2026-12-01T09:00:00.000Z");
+    // The body matches the OpenAPI SessionWithExercises (#673).
+    expectDocumentedShape(response.body, documented("SessionWithExercises"));
   });
 
   it("refuses a resize that runs into the next session and saves one that fits", async () => {
