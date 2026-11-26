@@ -107,7 +107,9 @@ async function mouseDrag(page, from, to) {
   if (!(await receivesPointer(to))) {
     const { height } = page.viewportSize();
     const targetBox = await to.boundingBox();
-    await page.mouse.move(start.x, targetBox && targetBox.y < start.y ? 4 : height - 4, { steps: 8 });
+    await page.mouse.move(start.x, targetBox && targetBox.y < start.y ? 4 : height - 4, {
+      steps: 8,
+    });
     await expect.poll(() => receivesPointer(to)).toBe(true);
     await page.mouse.move(start.x, height / 2, { steps: 4 });
   }
