@@ -45,7 +45,9 @@ Users need mobile-friendly touch gesture support for drag-and-drop scheduling. T
 - Calendar scheduling uses Pointer Events, which cover touch (`touchstart`/`touchmove`/`touchend` input), mouse and pen through one code path.
 - Only the move handle sets `touch-action: none`, so a touch drag starts on the handle while the rest of the page keeps native scrolling. The dragged preview follows the pointer through a CSS transform, without re-rendering the page on each move.
 - Visual feedback: the target day shows a dashed outline, a conflicting target switches to danger tokens, and the dragged card is dimmed.
-- Unit tests cover the touch pointer path. Mobile-emulation E2E evidence, performance traces for long tasks over 50 ms, and drag-resize (sessions have no duration to resize yet) are still open; keep this story **open**.
+- 2026-11-26: holding the finger near the top or bottom edge scrolls the calendar, so a day that is off screen on a phone (the month grid sits above the selected day's workouts) can still be reached.
+- E2E (`tests/frontend/e2e/calendar-scheduling.spec.cjs`, 360 × 780 touch emulation): a touch drag reaches an off-screen day by edge auto-scroll and saves the move; long tasks over 50 ms during the drag fail the test, and the measurement is attached.
+- **Open:** drag-resize. Sessions have no duration to resize until a duration model exists (see [#338](https://github.com/Konstantinospil/FitVibe/issues/338)). Keep this story **open** for that part.
 
 ## Test Strategy
 

@@ -7,7 +7,14 @@ import * as plans from "../../src/services/planApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
 
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
+  useTranslation: () => ({
+    // Plan progress shows its interpolated values; every other key renders as itself.
+    t: (key: string, options?: { completed?: number; total?: number; percent?: string }) =>
+      options?.completed !== undefined
+        ? `${key}:${options.completed}/${options.total}/${options.percent}`
+        : key,
+    i18n: { language: "en" },
+  }),
 }));
 vi.mock("../../src/services/planApi", async () => ({
   ...(await vi.importActual<typeof import("../../src/services/planApi")>(
@@ -69,6 +76,25 @@ describe("Training plan management", () => {
   afterEach(async () => {
     await cleanupQueryClient(client);
     vi.clearAllMocks();
+  });
+
+  it("shows completion progress for activated plans and the session count otherwise", async () => {
+    vi.mocked(plans.listTrainingPlans).mockResolvedValue([
+      samplePlan,
+      {
+        ...samplePlan,
+        id: "plan-active",
+        name: "Active block",
+        activated_at: "2026-11-01T08:00:00.000Z",
+        session_count: 8,
+        completed_count: 3,
+        progress_percent: "37.50",
+      },
+    ]);
+    renderPlans();
+
+    expect(await screen.findByText("trainingPlans.progress:3/8/38%")).toBeInTheDocument();
+    expect(screen.getByText("trainingPlans.sessionCount")).toBeInTheDocument();
   });
 
   it("loads existing plans and opens a populated edit form with its server version", async () => {

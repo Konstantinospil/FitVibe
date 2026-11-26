@@ -562,6 +562,187 @@
   color: var(--color-text-secondary);
 }
 
+/* Calendar view switch (CalendarViewSwitch). */
+.calendar-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+/* Week and day views (ScheduleTimeGrid). Same structure as the month matrix:
+ * 1px gaps over the border colour draw the grid lines, day headers use the
+ * primary band, and the hour column stays quiet so sessions carry the colour. */
+.schedule-time-grid__scroll {
+  overflow-x: auto;
+}
+
+.schedule-time-grid {
+  display: grid;
+  grid-template-columns: max-content repeat(7, minmax(4.5rem, 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.schedule-time-grid[data-days="1"] {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.schedule-time-grid__row {
+  display: contents;
+}
+
+.schedule-time-grid__corner,
+.schedule-time-grid__day {
+  background: var(--color-primary);
+  color: var(--color-primary-on);
+}
+
+.schedule-time-grid__day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xs);
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-semibold);
+}
+
+.schedule-time-grid__day [data-ui="button"] {
+  color: inherit;
+}
+
+.schedule-time-grid__day [data-ui="button"][aria-pressed="true"] {
+  outline: 2px solid var(--color-primary-on);
+  outline-offset: -2px;
+}
+
+.schedule-time-grid__hour {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.schedule-time-grid__slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+  min-height: var(--control-height-md);
+  padding: var(--space-xs);
+  background: var(--color-surface);
+}
+
+.schedule-time-grid__slot--drop-target {
+  background: var(--color-info-bg);
+  outline: 2px dashed var(--color-highlight);
+  outline-offset: -2px;
+}
+
+.schedule-time-grid__slot--conflict {
+  background: var(--color-danger-bg);
+  outline: 2px solid var(--color-danger);
+  outline-offset: -2px;
+}
+
+.schedule-time-grid__slot--drop-target.schedule-time-grid__slot--conflict {
+  outline-style: dashed;
+}
+
+/* Session chip inside a slot (ScheduleSessionChip). The status shows as the
+ * chip's edge and tint, and the time and title are always written out. */
+.schedule-chip,
+.schedule-time-grid [data-ui="button"].schedule-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text-primary);
+  border: 0;
+  border-left: var(--space-xs) solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-line-height);
+  text-align: left;
+}
+
+.schedule-chip [data-slot="content"],
+.schedule-chip [data-slot="content"] > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.schedule-chip--success,
+.schedule-time-grid [data-ui="button"].schedule-chip--success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-left-color: var(--color-success);
+}
+
+.schedule-chip--warning,
+.schedule-time-grid [data-ui="button"].schedule-chip--warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-left-color: var(--color-warning);
+}
+
+.schedule-chip--danger,
+.schedule-time-grid [data-ui="button"].schedule-chip--danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border-left-color: var(--color-danger);
+}
+
+.schedule-chip__time {
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-chip__title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-chip__conflict {
+  color: var(--color-danger-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.schedule-chip--conflict {
+  outline: 2px solid var(--color-danger-border);
+  outline-offset: -2px;
+}
+
+.schedule-chip--moving {
+  opacity: var(--opacity-subtle);
+}
+
+.schedule-chip--movable {
+  /* As with the card handle: touch drags start here and must not scroll or select text. */
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.schedule-chip--movable:active {
+  cursor: grabbing;
+}
+
 .training-empty,
 .training-error {
   padding: var(--space-lg);

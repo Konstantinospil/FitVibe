@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   findScheduleConflicts,
   isReschedulable,
+  isScheduleStepKey,
   localDateKey,
   localDateTimeToIso,
   localTimeKey,
   moveToLocalDay,
+  plannedAtForTarget,
+  slotKey,
+  stepScheduleTarget,
+  targetKeyFor,
 } from "../../src/lib/scheduling/sessionSchedule";
 import type { SessionListItem } from "../../src/services/sessionApi";
 
@@ -55,6 +60,68 @@ describe("sessionSchedule", () => {
 
     it("rejects a malformed target day", () => {
       expect(moveToLocalDay(at(2026, 11, 2, 18), "not-a-day")).toBeNull();
+    });
+  });
+
+  describe("schedule targets", () => {
+    it("builds zero-padded hour-slot keys", () => {
+      expect(slotKey("2026-11-04", 7)).toBe("2026-11-04T07");
+    });
+
+    it("rejects an hour slot outside the day", () => {
+      expect(plannedAtForTarget(at(2026, 11, 4, 18), "2026-11-04T24")).toBeNull();
+    });
+
+    it("reports the target a session occupies at each granularity", () => {
+      const instant = at(2026, 11, 4, 18, 45);
+      expect(targetKeyFor(instant, "day")).toBe("2026-11-04");
+      expect(targetKeyFor(instant, "hour")).toBe("2026-11-04T18");
+    });
+
+    it("keeps the local time on a day target and the minutes on an hour slot", () => {
+      const instant = at(2026, 11, 4, 18, 45);
+      expect(plannedAtForTarget(instant, "2026-11-06")).toBe(at(2026, 11, 6, 18, 45));
+      expect(plannedAtForTarget(instant, "2026-11-06T07")).toBe(at(2026, 11, 6, 7, 45));
+      expect(plannedAtForTarget(instant, "nope")).toBeNull();
+    });
+  });
+
+  describe("stepScheduleTarget", () => {
+    const week = Array.from({ length: 14 }, (_, index) =>
+      localDateKey(at(2026, 11, 2 + index, 12)),
+    );
+
+    it("recognises only arrow keys as steps", () => {
+      expect(isScheduleStepKey("ArrowLeft")).toBe(true);
+      expect(isScheduleStepKey("ArrowDown")).toBe(true);
+      expect(isScheduleStepKey("Enter")).toBe(false);
+    });
+
+    it("moves day targets by a day horizontally and a week vertically", () => {
+      expect(stepScheduleTarget("2026-11-04", "ArrowRight", week)).toBe("2026-11-05");
+      expect(stepScheduleTarget("2026-11-04", "ArrowLeft", week)).toBe("2026-11-03");
+      expect(stepScheduleTarget("2026-11-04", "ArrowDown", week)).toBe("2026-11-11");
+      expect(stepScheduleTarget("2026-11-11", "ArrowUp", week)).toBe("2026-11-04");
+    });
+
+    it("stays inside the visible days", () => {
+      expect(stepScheduleTarget("2026-11-02", "ArrowLeft", week)).toBe("2026-11-02");
+      expect(stepScheduleTarget("2026-11-10", "ArrowDown", week)).toBe("2026-11-10");
+      expect(stepScheduleTarget("2026-12-24", "ArrowRight", week)).toBe("2026-12-24");
+    });
+
+    it("moves hour slots by a day horizontally and an hour vertically, within the day", () => {
+      expect(stepScheduleTarget("2026-11-04T18", "ArrowRight", week)).toBe("2026-11-05T18");
+      expect(stepScheduleTarget("2026-11-04T18", "ArrowDown", week)).toBe("2026-11-04T19");
+      expect(stepScheduleTarget("2026-11-04T18", "ArrowUp", week)).toBe("2026-11-04T17");
+      expect(stepScheduleTarget("2026-11-04T23", "ArrowDown", week)).toBe("2026-11-04T23");
+      expect(stepScheduleTarget("2026-11-04T00", "ArrowUp", week)).toBe("2026-11-04T00");
+    });
+
+    it("keeps a single-day view on its day", () => {
+      expect(stepScheduleTarget("2026-11-04T18", "ArrowRight", ["2026-11-04"])).toBe(
+        "2026-11-04T18",
+      );
     });
   });
 

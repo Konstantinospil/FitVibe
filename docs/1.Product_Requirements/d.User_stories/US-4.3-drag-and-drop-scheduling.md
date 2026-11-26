@@ -45,12 +45,14 @@ Users need an intuitive drag-and-drop interface for scheduling sessions in a cal
 ## Implementation / verification (2026-11-25)
 
 - Planned sessions on the Calendar (selected-day list and weekly plan) carry a move handle. Dragging it onto a month-grid day moves the session to that day and keeps its local time; activating it without dragging opens a day-and-time dialog, the non-drag alternative required by [US-13.3](https://github.com/Konstantinospil/FitVibe/issues/139).
-- AC01: a move updates the cached calendar optimistically, without a page reload, and is restored if the server refuses it. Re-render timing evidence (performance traces) is not collected yet.
+- AC01: a move updates the cached calendar optimistically, without a page reload, and is restored if the server refuses it. The E2E scenario measures the time from pointer release to the target day's re-render and fails above 150 ms (it attaches the measurement).
 - AC02: conflicts against the loaded sessions are detected before any request. While dragging, the hovered day and the conflicting sessions are highlighted; a refused move shows an actionable message naming the blocking workout. Conflicting cards carry a text label, so the state does not rely on colour alone.
 - AC03: `PATCH /api/v1/sessions/:id` re-validates a changed `planned_at` inside the write transaction and rejects a conflict with `422 E.SESSION.SCHEDULE_CONFLICT` and `details.conflictingSessionIds`.
 - **Conflict definition (decision gate):** a conflict is another active session planned at the same instant, the rule activation and recurrence already use (see [US-4.2](./US-4.2-plan-activation-progress.md)). Overlap by workout duration needs authoritative duration semantics and remains an open product decision.
-- AC04 (month/week/day views with time slots) is not implemented yet; only the month view exists.
-- Keep this story **open** until AC04 and the AC01 performance evidence are complete.
+- AC04 (2026-11-26): a view switch offers **Month**, **Week** and **Day**. Week and day views show hour rows (06:00–22:00, widened to fit earlier or later sessions) by day columns; each session is a chip labelled with its time and title and coloured by status. Dropping a chip on an hour slot moves the session to that day and hour and keeps its minutes.
+- Dragging near the top or bottom of the window scrolls the calendar, so off-screen days and hours stay reachable.
+- E2E: `tests/frontend/e2e/calendar-scheduling.spec.cjs` covers month, week and day moves, keyboard moves, the move dialog, client refusal of a conflict (no request sent) and the server 422 (HTTP trace attached).
+- Close this story once that E2E suite passes in CI on `feature`.
 
 ## Test Strategy
 

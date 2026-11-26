@@ -592,9 +592,12 @@ async function acceptRegisterLegal(page) {
 }
 
 module.exports = {
+  APPLICATION_ORIGIN,
   AUTH_FLAG_KEY,
   CONSENT_STATUS_RECOVERY_WINDOW_MS,
   TEST_USER,
+  getCsrfToken,
+  retryRateLimitedMutation,
   preparePage,
   ensureEssentialCookieConsent,
   ensureAuthenticatedBrowserConsent,

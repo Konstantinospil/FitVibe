@@ -1026,7 +1026,11 @@
       "previousMonth": "Vorheriger Monat",
       "nextMonth": "Nächster Monat",
       "previousYear": "Vorheriges Jahr",
-      "nextYear": "Nächstes Jahr"
+      "nextYear": "Nächstes Jahr",
+      "previousWeek": "Vorherige Woche",
+      "nextWeek": "Nächste Woche",
+      "previousDay": "Vorheriger Tag",
+      "nextDay": "Nächster Tag"
     },
     "gridLabel": "Monatlicher Workout-Kalender",
     "dayLabel": "{{date}}, {{count}} Workouts",
@@ -1040,7 +1044,7 @@
     },
     "schedule": {
       "moveLabel": "{{title}} verschieben",
-      "moveHint": "Im Kalender auf einen anderen Tag ziehen oder drücken, um einen neuen Tag und eine neue Uhrzeit zu wählen.",
+      "moveHint": "Auf einen anderen Tag oder eine andere Uhrzeit ziehen. Oder mit der Leertaste aufnehmen, mit den Pfeiltasten verschieben und mit der Eingabetaste ablegen. Die Eingabetaste allein öffnet die Auswahl von Tag und Uhrzeit.",
       "conflictLabel": "Zeitkonflikt",
       "dialog": {
         "title": "Workout verschieben",
@@ -1062,7 +1066,25 @@
         "conflictUnlisted": "Ein anderes Workout ist bereits für {{time}} am {{date}} geplant. Wähle einen anderen Tag oder eine andere Uhrzeit.",
         "invalid": "Diesen Tag mit dieser Uhrzeit gibt es nicht. Wähle eine andere Angabe.",
         "save": "Das Workout konnte nicht verschoben werden. Versuche es erneut."
+      },
+      "chipLabel": "{{time}} {{title}}, verschieben",
+      "keyboard": {
+        "pickedUp": "{{title}} aufgenommen. Wähle mit den Pfeiltasten einen neuen Tag oder eine neue Uhrzeit, lege es mit der Eingabetaste ab oder brich mit Escape ab.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}}: Konflikt mit {{title}}.",
+        "cancelled": "Verschieben von {{title}} abgebrochen."
       }
+    },
+    "views": {
+      "label": "Kalenderansicht",
+      "month": "Monat",
+      "week": "Woche",
+      "day": "Tag"
+    },
+    "timeGrid": {
+      "weekLabel": "Wöchentlicher Workout-Plan",
+      "dayLabel": "Täglicher Workout-Plan",
+      "timeHeading": "Uhrzeit"
     }
   },
   "workoutEditor": {
@@ -1205,6 +1227,7 @@
     "noDate": "Nicht festgelegt",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} Trainingseinheiten",
+    "progress": "{{completed}} von {{total}} Trainingseinheiten abgeschlossen ({{percent}})",
     "loading": "Trainingspläne werden geladen…",
     "empty": "Noch keine Trainingspläne vorhanden.",
     "fields": {

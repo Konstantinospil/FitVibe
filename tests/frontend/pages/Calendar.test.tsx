@@ -47,9 +47,9 @@ const mockedListSessions = vi.mocked(api.listSessions);
 const mockedListExercises = vi.mocked(api.listExercises);
 const mockedUpdateSession = vi.mocked(sessionApi.updateSession);
 
-const atLocalHour = (base: Date, hour: number) => {
+const atLocalHour = (base: Date, hour: number, minutes = 0) => {
   const value = new Date(base);
-  value.setHours(hour, 0, 0, 0);
+  value.setHours(hour, minutes, 0, 0);
   return value;
 };
 
@@ -460,6 +460,178 @@ describe("Calendar", () => {
       release(handle);
 
       expect(mockedUpdateSession).not.toHaveBeenCalled();
+    });
+
+    describe("week and day views (US-4.3-AC04)", () => {
+      const slotCell = (date: Date, hour: number) => {
+        const key = `${localDateKey(date)}T${String(hour).padStart(2, "0")}`;
+        const cell = document.querySelector(`[data-schedule-day="${key}"]`);
+        if (!cell) {
+          throw new Error(`No time slot ${key}`);
+        }
+        return cell;
+      };
+
+      const chipFor = (sessionId: string) => {
+        const chip = document.querySelector<HTMLElement>(
+          `.schedule-time-grid [data-schedule-handle="${sessionId}"]`,
+        );
+        if (!chip) {
+          throw new Error(`No chip for ${sessionId}`);
+        }
+        return chip;
+      };
+
+      it("switches between month, week and day views", async () => {
+        renderCalendar();
+        await screen.findAllByRole("button", { name: MOVE });
+        const views = screen.getByRole("group", { name: "calendarSurface.views.label" });
+        expect(
+          within(views).getByRole("button", { name: "calendarSurface.views.month" }),
+        ).toHaveAttribute("aria-pressed", "true");
+
+        fireEvent.click(within(views).getByRole("button", { name: "calendarSurface.views.week" }));
+
+        const week = screen.getByRole("table", { name: "calendarSurface.timeGrid.weekLabel" });
+        expect(screen.queryByRole("grid")).not.toBeInTheDocument();
+        // A time column header plus seven day columns.
+        expect(within(week).getAllByRole("columnheader")).toHaveLength(8);
+        expect(slotCell(today, 18)).toContainElement(chipFor("planned-today"));
+        expect(
+          within(slotCell(today, 18) as HTMLElement).getByText("Today Plan"),
+        ).toBeInTheDocument();
+
+        fireEvent.click(within(views).getByRole("button", { name: "calendarSurface.views.day" }));
+
+        const day = screen.getByRole("table", { name: "calendarSurface.timeGrid.dayLabel" });
+        expect(within(day).getAllByRole("columnheader")).toHaveLength(2);
+        expect(slotCell(today, 18)).toContainElement(chipFor("planned-today"));
+      });
+
+      it("shows completed sessions in their slot without a move control", async () => {
+        renderCalendar();
+        await screen.findAllByRole("button", { name: MOVE });
+        fireEvent.click(screen.getByRole("button", { name: "calendarSurface.views.day" }));
+        fireEvent.click(
+          screen.getByRole("button", { name: "calendarSurface.navigation.previousDay" }),
+        );
+
+        const yesterdaySlot = slotCell(addDays(today, -1), 9) as HTMLElement;
+        expect(within(yesterdaySlot).getByText("Completed Strength")).toBeInTheDocument();
+        expect(within(yesterdaySlot).queryByRole("button")).not.toBeInTheDocument();
+      });
+
+      it("drags a chip onto another hour, keeping its minutes", async () => {
+        response.data[1] = {
+          ...response.data[1],
+          planned_at: atLocalHour(today, 18, 30).toISOString(),
+        };
+        renderCalendar();
+        await screen.findAllByRole("button", { name: MOVE });
+        fireEvent.click(screen.getByRole("button", { name: "calendarSurface.views.week" }));
+
+        const chip = chipFor("planned-today");
+        dragHandleTo(chip, slotCell(today, 7));
+        expect(slotCell(today, 7)).toHaveClass("schedule-time-grid__slot--drop-target");
+        release(chip);
+
+        await waitFor(() => {
+          expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+            planned_at: atLocalHour(today, 7, 30).toISOString(),
+          });
+        });
+      });
+    });
+
+    describe("keyboard pick-up (US-13.3-AC01)", () => {
+      it("picks up with Space, moves a day with the arrow keys and drops with Enter", async () => {
+        renderCalendar();
+        const [handle] = await screen.findAllByRole("button", { name: MOVE });
+        handle.focus();
+
+        fireEvent.keyDown(handle, { key: " " });
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.pickedUp");
+        fireEvent.keyDown(handle, { key: "ArrowRight" });
+        expect(dayCell(tomorrow)).toHaveClass("calendar-month__cell--drop-target");
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.over");
+        fireEvent.keyDown(handle, { key: "Enter" });
+
+        await waitFor(() => {
+          expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+            planned_at: atLocalHour(tomorrow, 18).toISOString(),
+          });
+        });
+        expect(screen.queryByText("calendarSurface.schedule.dialog.title")).not.toBeInTheDocument();
+      });
+
+      it("moves by an hour in the week view and returns focus to the moved session", async () => {
+        renderCalendar();
+        await screen.findAllByRole("button", { name: MOVE });
+        fireEvent.click(screen.getByRole("button", { name: "calendarSurface.views.week" }));
+        const chip = document.querySelector<HTMLElement>(
+          '.schedule-time-grid [data-schedule-handle="planned-today"]',
+        )!;
+        chip.focus();
+
+        fireEvent.keyDown(chip, { key: " " });
+        fireEvent.keyDown(chip, { key: "ArrowUp" });
+        fireEvent.keyDown(chip, { key: "ArrowUp" });
+        fireEvent.keyDown(chip, { key: "Enter" });
+
+        await waitFor(() => {
+          expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+            planned_at: atLocalHour(today, 16).toISOString(),
+          });
+        });
+        await waitFor(() => {
+          expect(document.activeElement).toHaveAttribute("data-schedule-handle", "planned-today");
+        });
+      });
+
+      it("announces a conflict while moving and cancels with Escape", async () => {
+        const evening = addDays(today, 2);
+        response.data.push({
+          id: "planned-evening",
+          owner_id: "user-1",
+          title: "Evening Plan",
+          planned_at: atLocalHour(evening, 18).toISOString(),
+          status: "planned",
+          visibility: "private",
+          exercise_count: 0,
+        });
+        response.total = response.data.length;
+        renderCalendar();
+        const [handle] = await screen.findAllByRole("button", { name: MOVE });
+        handle.focus();
+
+        fireEvent.keyDown(handle, { key: " " });
+        fireEvent.keyDown(handle, { key: "ArrowRight" });
+        fireEvent.keyDown(handle, { key: "ArrowRight" });
+
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.overConflict");
+        expect(dayCell(evening)).toHaveClass("calendar-month__cell--conflict");
+
+        fireEvent.keyDown(handle, { key: "Escape" });
+
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.cancelled");
+        expect(dayCell(evening)).not.toHaveClass("calendar-month__cell--conflict");
+        expect(mockedUpdateSession).not.toHaveBeenCalled();
+      });
+
+      it("leaves Enter to the handle's click while nothing is picked up, opening the dialog", async () => {
+        renderCalendar();
+        const [handle] = await screen.findAllByRole("button", { name: MOVE });
+        handle.focus();
+
+        // Browsers turn an unhandled Enter on a button into a click.
+        const enterHandled = !fireEvent.keyDown(handle, { key: "Enter" });
+        fireEvent.click(handle);
+
+        expect(enterHandled).toBe(false);
+        expect(
+          await screen.findByText("calendarSurface.schedule.dialog.title"),
+        ).toBeInTheDocument();
+      });
     });
   });
 

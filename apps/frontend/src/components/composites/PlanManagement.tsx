@@ -392,7 +392,18 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
                     start: dateLabel(plan.start_date),
                     end: dateLabel(plan.end_date),
                   })}
-                  supporting={t("trainingPlans.sessionCount", { count: plan.session_count })}
+                  supporting={
+                    plan.activated_at
+                      ? t("trainingPlans.progress", {
+                          completed: plan.completed_count,
+                          total: plan.session_count,
+                          percent: new Intl.NumberFormat(i18n.language, {
+                            style: "percent",
+                            maximumFractionDigits: 0,
+                          }).format(Number(plan.progress_percent) / 100),
+                        })
+                      : t("trainingPlans.sessionCount", { count: plan.session_count })
+                  }
                   trailing={
                     <FormActions>
                       {!plan.activated_at &&

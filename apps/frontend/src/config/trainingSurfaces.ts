@@ -6,6 +6,9 @@ export const TRAINING_DATA_CONFIG = {
   // GET /sessions accepts at most 100 records per request.
   calendarApiPageLimit: 100,
   calendarGridDayCount: 42,
+  // Week and day views show at least these hours; earlier or later sessions extend the range.
+  calendarDayStartHour: 6,
+  calendarDayEndHour: 22,
   // GET /exercises accepts at most 100 records per request.
   exerciseCatalogLimit: 100,
   standardQueryStaleMs: 60_000,

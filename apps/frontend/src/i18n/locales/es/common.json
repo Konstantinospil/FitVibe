@@ -1026,7 +1026,11 @@
       "previousMonth": "Mes anterior",
       "nextMonth": "Mes siguiente",
       "previousYear": "Año anterior",
-      "nextYear": "Año siguiente"
+      "nextYear": "Año siguiente",
+      "previousWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "previousDay": "Día anterior",
+      "nextDay": "Día siguiente"
     },
     "gridLabel": "Calendario mensual de entrenamientos",
     "dayLabel": "{{date}}, {{count}} entrenamientos",
@@ -1040,7 +1044,7 @@
     },
     "schedule": {
       "moveLabel": "Mover {{title}}",
-      "moveHint": "Arrastra a otro día del calendario o pulsa para elegir un nuevo día y hora.",
+      "moveHint": "Arrastra a otro día u hora. O pulsa la barra espaciadora para tomarlo, muévelo con las flechas y pulsa Intro para soltarlo. Intro por sí solo abre la elección de día y hora.",
       "conflictLabel": "Conflicto de horario",
       "dialog": {
         "title": "Mover entrenamiento",
@@ -1062,7 +1066,25 @@
         "conflictUnlisted": "Ya hay otro entrenamiento planificado para las {{time}} del {{date}}. Elige otro día u otra hora.",
         "invalid": "Ese día y hora no existen. Elige otros.",
         "save": "No se pudo mover el entrenamiento. Inténtalo de nuevo."
+      },
+      "chipLabel": "{{time}} {{title}}, mover",
+      "keyboard": {
+        "pickedUp": "Has tomado {{title}}. Usa las flechas para elegir un nuevo día u hora, Intro para soltar y Escape para cancelar.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}}: conflicto con {{title}}.",
+        "cancelled": "Se canceló el movimiento de {{title}}."
       }
+    },
+    "views": {
+      "label": "Vista del calendario",
+      "month": "Mes",
+      "week": "Semana",
+      "day": "Día"
+    },
+    "timeGrid": {
+      "weekLabel": "Horario semanal de entrenamientos",
+      "dayLabel": "Horario diario de entrenamientos",
+      "timeHeading": "Hora"
     }
   },
   "workoutEditor": {
@@ -1205,6 +1227,7 @@
     "noDate": "Sin definir",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} sesiones",
+    "progress": "{{completed}} de {{total}} sesiones completadas ({{percent}})",
     "loading": "Cargando planes…",
     "empty": "Todavía no hay planes.",
     "fields": {

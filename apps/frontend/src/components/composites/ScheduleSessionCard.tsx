@@ -3,11 +3,10 @@ import { createPortal } from "react-dom";
 import { GripVertical } from "lucide-react";
 import { IconButton } from "@fitvibe/ui";
 import { TrainingSummaryCard } from "./TrainingSurface";
-
-export type ScheduleHandleProps = Pick<
-  React.HTMLAttributes<HTMLElement>,
-  "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel" | "onClickCapture"
->;
+import {
+  SCHEDULE_HANDLE_ATTRIBUTE,
+  type ScheduleHandleProps,
+} from "../../lib/scheduling/scheduleHandle";
 
 export interface ScheduleSessionCardProps {
   title: React.ReactNode;
@@ -17,12 +16,15 @@ export interface ScheduleSessionCardProps {
   moveLabel: string;
   /** Id of the element that explains how the handle works. */
   moveHintId?: string;
-  /** Pointer handlers from `usePointerDrag`; omitted for sessions that cannot move. */
+  /** Drag and keyboard-move handlers; omitted for sessions that cannot move. */
   handleProps?: ScheduleHandleProps;
+  /** Session id, exposed on the handle so focus can return to it after a move. */
+  handleId?: string;
   /** Opens the non-drag move dialog (click, Enter or Space on the handle). */
   onMove?: () => void;
   /** Visible label shown when the session takes part in a schedule conflict. */
   conflictLabel?: string;
+  /** Being dragged or picked up with the keyboard. */
   dragging?: boolean;
 }
 
@@ -38,6 +40,7 @@ const ScheduleSessionCard: React.FC<ScheduleSessionCardProps> = ({
   moveLabel,
   moveHintId,
   handleProps,
+  handleId,
   onMove,
   conflictLabel,
   dragging = false,
@@ -70,6 +73,7 @@ const ScheduleSessionCard: React.FC<ScheduleSessionCardProps> = ({
         movable ? (
           <IconButton
             {...handleProps}
+            {...{ [SCHEDULE_HANDLE_ATTRIBUTE]: handleId }}
             className="schedule-session-card__handle"
             icon={<GripVertical />}
             label={moveLabel}

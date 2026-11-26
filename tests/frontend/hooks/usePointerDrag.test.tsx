@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePointerDrag } from "../../src/hooks/usePointerDrag";
 
@@ -143,6 +143,56 @@ describe("usePointerDrag", () => {
     expect(screen.getByTestId("state")).toHaveTextContent("idle");
 
     expect(onDrop).not.toHaveBeenCalled();
+  });
+
+  it("auto-scrolls its scroll container while the pointer rests near the window edge", () => {
+    const frames: FrameRequestCallback[] = [];
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const caf = vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
+    const onDrop = vi.fn();
+    const { container } = render(
+      <div data-testid="scroller" style={{ overflowY: "auto" }}>
+        <Harness onDrop={onDrop} onClick={vi.fn()} />
+      </div>,
+    );
+    const scroller = container.querySelector<HTMLElement>('[data-testid="scroller"]')!;
+    let scrollTop = 200;
+    Object.defineProperty(scroller, "scrollHeight", { configurable: true, value: 2000 });
+    Object.defineProperty(scroller, "clientHeight", { configurable: true, value: 600 });
+    Object.defineProperty(scroller, "scrollTop", {
+      configurable: true,
+      get: () => scrollTop,
+      set: (value: number) => {
+        scrollTop = Math.max(0, value);
+      },
+    });
+    const handle = screen.getByRole("button", { name: "handle" });
+
+    press(handle);
+    moveTo(handle, 50, 5); // inside the top edge zone
+    expect(frames).toHaveLength(1);
+    act(() => frames.shift()!(0));
+    expect(scrollTop).toBeLessThan(200);
+
+    // While scrolling, the target under the resting pointer is re-checked.
+    hit = screen.getByTestId("zone-a");
+    act(() => frames.shift()!(16));
+    expect(screen.getByTestId("state")).toHaveTextContent("item-1:a");
+
+    // Leaving the edge zone stops the loop.
+    moveTo(handle, 50, 300);
+    const settled = scrollTop;
+    act(() => frames.shift()?.(32));
+    expect(scrollTop).toBe(settled);
+    expect(frames).toHaveLength(0);
+
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 50, clientY: 300 });
+    expect(onDrop).toHaveBeenCalledWith("item-1", "a");
+    raf.mockRestore();
+    caf.mockRestore();
   });
 
   it("ignores secondary buttons", () => {
