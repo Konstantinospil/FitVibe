@@ -18,6 +18,8 @@ Status: merged into `feat/261-calendar-rescheduling` (PR #670) as the first slic
 | #290  | Start an existing planned workout; enter persisted session detail    | Dedicated live Start/resume, timer, recording, interval/intake contract                                                  |
 | #365  | Separate detail from editor; preserve canonical session identity     | Dedicated execution state machine and commands, set recording, pause/rest, skip/add, finish/stop/discard, optional media |
 
+**Update (2026-11-26):** ADR-042 settles the prescription/performed split described below. Sets now have a status (planned, completed or skipped), a source and their own planned values. Only completed sets score. The backfill classifies existing rows by their session.
+
 PR #489's full-array replacement is deliberately not copied: it filters out unrecorded rows, changes IDs, loses RPE/rest/notes/extras, and re-snapshots names. The current planning editor stores some prescription in unrecorded exercise_sets rows, while clone(include_actual=false) drops all set rows. Before enabling recording, define and validate immutable effective prescription separately from actual sets within the existing domain; preserve stable IDs and snapshots and ensure unrecorded placeholders never contribute to completed scoring. Legacy rows cannot be classified solely by recorded_at because historical writers may omit timestamps. This needs API/data design and migration review under ADR-029, ADR-007 and #364/#365, including scoring/analytics and estimation consumers. Do not copy performed metrics into new achievements. Do not mark the issues complete on this draft.
 
 ## Verification

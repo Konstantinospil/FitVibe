@@ -9,6 +9,9 @@ import type {
   SessionExerciseAttributes,
   SessionExerciseSet,
   SessionQuery,
+  SessionSetPlannedValues,
+  SessionSetSource,
+  SessionSetStatus,
   SessionWithExercises,
 } from "./sessions.types";
 
@@ -19,6 +22,9 @@ interface SessionQueryOptions {
 export interface SessionExerciseSetUpsert {
   id: string;
   order_index: number;
+  status: SessionSetStatus;
+  source: SessionSetSource;
+  planned: SessionSetPlannedValues | null;
   reps?: number | null;
   weight_kg?: number | null;
   distance_m?: number | null;
@@ -102,6 +108,41 @@ function toSessionInterval(value: DatabaseInterval): string | null {
   const date = field("years", "Y") + field("months", "M") + field("days", "D");
   const time = field("hours", "H") + field("minutes", "M") + field("seconds", "S");
   return `P${date}${time ? `T${time}` : date ? "" : "T0S"}`;
+}
+
+const PLANNED_SET_COLUMNS = [
+  "planned_reps",
+  "planned_weight_kg",
+  "planned_distance_m",
+  "planned_duration_sec",
+  "planned_rpe",
+  "planned_rest_sec",
+] as const;
+
+type PlannedSetColumns = Record<(typeof PLANNED_SET_COLUMNS)[number], number | string | null>;
+
+/** The set's prescription, or null when no planned value is stored (ADR-042). */
+function toPlannedSetValues(row: PlannedSetColumns): SessionSetPlannedValues | null {
+  const planned: SessionSetPlannedValues = {
+    reps: toNumber(row.planned_reps),
+    weight_kg: toNumber(row.planned_weight_kg),
+    distance_m: toNumber(row.planned_distance_m),
+    duration_sec: toNumber(row.planned_duration_sec),
+    rpe: toNumber(row.planned_rpe),
+    rest_sec: toNumber(row.planned_rest_sec),
+  };
+  return Object.values(planned).some((value) => value !== null) ? planned : null;
+}
+
+function fromPlannedSetValues(planned: SessionSetPlannedValues | null): PlannedSetColumns {
+  return {
+    planned_reps: planned?.reps ?? null,
+    planned_weight_kg: planned?.weight_kg ?? null,
+    planned_distance_m: planned?.distance_m ?? null,
+    planned_duration_sec: planned?.duration_sec ?? null,
+    planned_rpe: planned?.rpe ?? null,
+    planned_rest_sec: planned?.rest_sec ?? null,
+  };
 }
 
 function normalizeExtras(extras: unknown): Record<string, unknown> {
@@ -233,6 +274,14 @@ type SessionExerciseSetRow = {
   id: string;
   session_exercise_id: string;
   order_index: number;
+  status: SessionSetStatus;
+  source: SessionSetSource;
+  planned_reps: number | null;
+  planned_weight_kg: number | string | null;
+  planned_distance_m: number | null;
+  planned_duration_sec: number | null;
+  planned_rpe: number | null;
+  planned_rest_sec: number | null;
   reps: number | null;
   weight_kg: number | string | null;
   distance_m: number | null;
@@ -293,6 +342,9 @@ export async function getSessionWithDetails(
           "id",
           "session_exercise_id",
           "order_index",
+          "status",
+          "source",
+          ...PLANNED_SET_COLUMNS,
           "reps",
           "weight_kg",
           "distance_m",
@@ -312,6 +364,9 @@ export async function getSessionWithDetails(
     list.push({
       id: row.id,
       order_index: row.order_index,
+      status: row.status,
+      source: row.source,
+      planned: toPlannedSetValues(row),
       reps: row.reps ?? null,
       weight_kg: toNumber(row.weight_kg),
       distance_m: row.distance_m ?? null,
@@ -456,6 +511,21 @@ export async function replaceSessionExercises(
   sessionId: string,
   exercises: SessionExerciseUpsertInput[],
 ): Promise<void> {
+  // Keep the name snapshot an exercise already has in this session. Replacing
+  // the rows must not rename recorded history after a catalogue rename (#289).
+  const previousRows = ((await trx("session_exercises")
+    .where({ session_id: sessionId })
+    .select("exercise_id", "exercise_name")) ?? []) as Array<{
+    exercise_id: string | null;
+    exercise_name: string | null;
+  }>;
+  const exerciseNamesMap = new Map<string, string>();
+  for (const row of previousRows) {
+    if (row.exercise_id && row.exercise_name) {
+      exerciseNamesMap.set(row.exercise_id, row.exercise_name);
+    }
+  }
+
   await trx("session_exercises").where({ session_id: sessionId }).del();
 
   if (!exercises.length) {
@@ -464,13 +534,11 @@ export async function replaceSessionExercises(
 
   const timestamp = new Date().toISOString();
 
-  // Fetch exercise names for exercises that have an exercise_id
-  // This creates a snapshot of the exercise name at the time of session creation
+  // New exercises take a snapshot of the catalogue name at the time they are added.
   const exerciseIds = exercises
     .map((e) => e.exercise_id)
-    .filter((id): id is string => id !== null && id !== undefined);
+    .filter((id): id is string => id !== null && id !== undefined && !exerciseNamesMap.has(id));
 
-  const exerciseNamesMap = new Map<string, string>();
   if (exerciseIds.length > 0) {
     const exerciseRows = (await trx("exercises")
       .whereIn("id", exerciseIds)
@@ -526,6 +594,9 @@ export async function replaceSessionExercises(
       id: set.id,
       session_exercise_id: exercise.id,
       order_index: set.order_index,
+      status: set.status,
+      source: set.source,
+      ...fromPlannedSetValues(set.planned),
       reps: set.reps ?? null,
       weight_kg: set.weight_kg ?? null,
       distance_m: set.distance_m ?? null,
@@ -600,8 +671,8 @@ export async function listRegionalStrengthStimuli(
             THEN 'fullBody'
         END AS region,
         s.completed_at,
-        GREATEST(COUNT(es.id), 1) AS set_count,
-        AVG(es.rpe) FILTER (WHERE es.rpe BETWEEN 1 AND 10) AS average_rpe
+        GREATEST(COUNT(es.id) FILTER (WHERE es.status = 'completed'), 1) AS set_count,
+        AVG(es.rpe) FILTER (WHERE es.status = 'completed' AND es.rpe BETWEEN 1 AND 10) AS average_rpe
       FROM sessions s
       INNER JOIN session_exercises se ON se.session_id = s.id
       INNER JOIN exercises e ON e.id = se.exercise_id

@@ -90,7 +90,16 @@ describeWithTestDatabase("Integration: plan activation", () => {
       exerciseRows.map((row) => row.id),
     );
     expect(sets).toHaveLength(12);
-    expect(sets.every((set) => set.rest_sec === 90 && set.recorded_at === null)).toBe(true);
+    // Generated sessions carry the template's targets as their prescription (ADR-042).
+    expect(
+      sets.every(
+        (set) =>
+          set.status === "planned" &&
+          set.planned_rest_sec === 90 &&
+          set.rest_sec === null &&
+          set.recorded_at === null,
+      ),
+    ).toBe(true);
 
     const repeated = await request(app)
       .post(`/api/v1/plans/${planId}/activate`)

@@ -56,6 +56,36 @@ const plannedAttributes = {
   rest: intervalString,
   extras: { type: "object", additionalProperties: true },
 };
+// ADR-042: a set's prescription; the top-level set fields hold performed values.
+const plannedSetValuesObject = nullable({
+  type: "object",
+  description: "The set's prescription (targets). Performed values are the top-level set fields.",
+  properties: {
+    reps: nullable({ type: "integer", minimum: 0 }),
+    weight_kg: nullable({ type: "number", minimum: 0 }),
+    distance_m: nullable({ type: "number", minimum: 0 }),
+    duration_sec: nullable({ type: "integer", minimum: 0 }),
+    rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+    rest_sec: nullable({ type: "integer", minimum: 0 }),
+  },
+  additionalProperties: false,
+});
+const setStatusSchema = {
+  type: "string",
+  enum: ["planned", "completed", "skipped"],
+  description: "Only completed sets are performed work and count for scoring (ADR-042).",
+};
+const setSourceSchema = {
+  type: "string",
+  enum: ["prescribed", "added"],
+  description: "prescribed: part of the plan; added: added while training.",
+};
+const completionOutcomeSchema = {
+  type: "string",
+  enum: ["completed", "stopped_early"],
+  description: "How a completed session ended. Neither outcome counts as failure.",
+};
+
 const plannedAttributesObject = nullable({
   type: "object",
   properties: plannedAttributes,
@@ -1027,6 +1057,16 @@ const schemas = {
   SessionCreateRequest: {
     type: "object",
     properties: {
+      status: {
+        type: "string",
+        enum: ["planned", "completed"],
+        description:
+          "completed logs a past workout in one request: started_at = planned_at, completed_at = planned_at + planned_duration_min (not later than now). planned_at must not be in the future (422 E.SESSION.LOG_IN_FUTURE).",
+      },
+      completion_outcome: {
+        ...completionOutcomeSchema,
+        description: "Only with status completed; defaults to completed.",
+      },
       plan_id: { type: "string", format: "uuid", nullable: true },
       title: { type: "string", minLength: 2, maxLength: 100, nullable: true },
       planned_at: { type: "string", format: "date-time" },
@@ -1066,9 +1106,14 @@ const schemas = {
   },
   SessionSetInput: {
     type: "object",
+    description:
+      "Without status, a set with recorded_at is completed and any other set is planned. For compatibility, a planned set whose targets are in the top-level fields has them moved to planned.",
     properties: {
       id: { type: "string", format: "uuid" },
       order: { type: "integer", minimum: 1 },
+      status: setStatusSchema,
+      source: setSourceSchema,
+      planned: plannedSetValuesObject,
       reps: nullable({ type: "integer", minimum: 0 }),
       weight_kg: nullable({ type: "number", minimum: 0 }),
       distance_m: nullable({ type: "number", minimum: 0 }),
@@ -1095,6 +1140,11 @@ const schemas = {
         description: "Planned length in minutes.",
       },
       status: { type: "string", enum: ["planned", "in_progress", "completed", "canceled"] },
+      completion_outcome: {
+        ...completionOutcomeSchema,
+        description:
+          "Only when the session transitions to completed; defaults to completed (400 E.SESSION.OUTCOME_WITHOUT_COMPLETION otherwise).",
+      },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
       notes: nullable({ type: "string", maxLength: 1000 }),
       recurrence_rule: nullable({ type: "string", maxLength: 255 }),
@@ -1125,6 +1175,7 @@ const schemas = {
       recurrence_rule: nullable({ type: "string" }),
       started_at: nullable({ type: "string", format: "date-time" }),
       completed_at: nullable({ type: "string", format: "date-time" }),
+      completion_outcome: nullable(completionOutcomeSchema),
       calories: nullable({ type: "integer" }),
       points: nullable({ type: "integer", description: "Server-awarded points once completed." }),
       gamification_rebuild_required: { type: "boolean" },
@@ -1154,6 +1205,9 @@ const schemas = {
                 properties: {
                   id: { type: "string", format: "uuid" },
                   order_index: { type: "integer", minimum: 1 },
+                  status: setStatusSchema,
+                  source: setSourceSchema,
+                  planned: plannedSetValuesObject,
                   reps: nullable({ type: "integer" }),
                   weight_kg: nullable({ type: "number" }),
                   distance_m: nullable({ type: "number" }),
@@ -1164,7 +1218,7 @@ const schemas = {
                   recorded_at: nullable({ type: "string", format: "date-time" }),
                   notes: nullable({ type: "string" }),
                 },
-                required: ["id", "order_index"],
+                required: ["id", "order_index", "status", "source"],
               },
             },
           },

@@ -15,7 +15,10 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll } from "@jest/gl
 import bcrypt from "bcryptjs";
 import db from "../../../apps/backend/src/db/index.js";
 import { createUser } from "../../../apps/backend/src/modules/auth/auth.repository.js";
-import { awardPointsForSession, getPointsHistory } from "../../../apps/backend/src/modules/points/points.service.js";
+import {
+  awardPointsForSession,
+  getPointsHistory,
+} from "../../../apps/backend/src/modules/points/points.service.js";
 import { reconcileGamificationProjection } from "../../../apps/backend/src/modules/points/gamification-projection.service.js";
 import { applyVibeLevelDecay } from "../../../apps/backend/src/jobs/services/vibe-level-decay.service.js";
 import {
@@ -267,11 +270,7 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
 
     const ordered = await listCompletedSessionIdsForGamification(testUser.id);
 
-    expect(ordered).toEqual([
-      earlier.id,
-      sameTimeLowerId.id,
-      sameTimeHigherId.id,
-    ]);
+    expect(ordered).toEqual([earlier.id, sameTimeLowerId.id, sameTimeHigherId.id]);
   });
 
   it("paginates equal-timestamp point events without gaps or duplicates", async () => {
@@ -340,12 +339,14 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
           order_index: 0,
           sets: [
             {
+              status: "completed",
               id: uuidv4(),
               order_index: 0,
               weight_kg: 100,
               reps: 5,
             },
             {
+              status: "completed",
               id: uuidv4(),
               order_index: 1,
               weight_kg: 100,
@@ -421,6 +422,7 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
           },
           sets: [
             {
+              status: "completed",
               id: uuidv4(),
               order_index: 0,
               weight_kg: 100,
@@ -464,6 +466,7 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
           order_index: 0,
           sets: [
             {
+              status: "completed",
               id: uuidv4(),
               order_index: 0,
               weight_kg: 100,
@@ -528,6 +531,7 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
           order_index: 0,
           sets: [
             {
+              status: "completed",
               id: uuidv4(),
               order_index: 0,
               weight_kg: 100,
@@ -671,6 +675,7 @@ describeWithTestDatabase("Integration: Vibe Level System (v2_vibe_lvl)", () => {
           order_index: 0,
           sets: [
             {
+              status: "completed",
               id: uuidv4(),
               order_index: 0,
               weight_kg: 100,

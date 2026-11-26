@@ -17,6 +17,9 @@ import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
 const visibilityEnum = z.enum(["private", "followers", "public", "link"]);
+const setStatusEnum = z.enum(["planned", "completed", "skipped"]);
+const setSourceEnum = z.enum(["prescribed", "added"]);
+const completionOutcomeEnum = z.enum(["completed", "stopped_early"]);
 
 const titleSchema = z
   .string()
@@ -52,10 +55,25 @@ const actualAttributesSchema = plannedAttributesSchema.extend({
   recorded_at: z.string().datetime().nullable().optional(),
 });
 
+const setMetricFields = {
+  reps: z.number().int().min(0).nullable().optional(),
+  weight_kg: z.number().min(0).nullable().optional(),
+  distance_m: z.number().min(0).nullable().optional(),
+  duration_sec: z.number().int().min(0).nullable().optional(),
+  rpe: z.number().int().min(1).max(10).nullable().optional(),
+  rest_sec: z.number().int().min(0).nullable().optional(),
+};
+
+/** A set's prescription (ADR-042); the top-level set fields hold performed values. */
+const plannedSetValuesSchema = z.object(setMetricFields).strict();
+
 const sessionSetSchema = z
   .object({
     id: z.string().uuid().optional(),
     order: z.number().int().min(1),
+    status: setStatusEnum.optional(),
+    source: setSourceEnum.optional(),
+    planned: plannedSetValuesSchema.nullable().optional(),
     reps: z.number().int().min(0).nullable().optional(),
     weight_kg: z.number().min(0).nullable().optional(),
     distance_m: z.number().min(0).nullable().optional(),
@@ -87,6 +105,9 @@ const plannedDurationSchema = z
   .max(SESSION_DURATION_LIMITS.max);
 
 const createSchema = z.object({
+  /** "completed" logs a past workout in one request (ADR-042). */
+  status: z.enum(["planned", "completed"]).optional(),
+  completion_outcome: completionOutcomeEnum.optional(),
   plan_id: z.string().uuid().nullable().optional(),
   title: titleSchema.nullable().optional(),
   planned_at: z.string().datetime(),
@@ -109,6 +130,7 @@ const updateSchema = z
     planned_at: z.string().datetime().optional(),
     planned_duration_min: plannedDurationSchema.optional(),
     status: statusEnum.optional(),
+    completion_outcome: completionOutcomeEnum.optional(),
     visibility: visibilityEnum.optional(),
     notes: z.string().max(1000).nullable().optional(),
     recurrence_rule: z.string().max(255).nullable().optional(),

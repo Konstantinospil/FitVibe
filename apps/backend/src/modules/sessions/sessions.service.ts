@@ -89,6 +89,23 @@ export async function getOne(userId: string, id: string): Promise<SessionWithExe
   return session;
 }
 
+/**
+ * A logged workout (manual Log, ADR-042) started at its planned time and lasted
+ * its planned length, but it cannot end in the future.
+ */
+function loggedWorkoutTimes(plannedAt: string, durationMin: number, now: Date) {
+  const start = new Date(plannedAt);
+  if (start.getTime() > now.getTime()) {
+    throw new HttpError(
+      422,
+      "E.SESSION.LOG_IN_FUTURE",
+      "A logged workout must have started in the past",
+    );
+  }
+  const end = Math.min(start.getTime() + durationMin * 60_000, now.getTime());
+  return { started_at: start.toISOString(), completed_at: new Date(end).toISOString() };
+}
+
 export async function createOne(
   userId: string,
   dto: CreateSessionDTO,
@@ -97,18 +114,34 @@ export async function createOne(
   const sessionId = uuidv4();
   const now = new Date();
   const timestamp = now.toISOString();
+  const logging = dto.status === "completed";
+  if (dto.completion_outcome !== undefined && !logging) {
+    throw new HttpError(
+      400,
+      "E.SESSION.OUTCOME_WITHOUT_COMPLETION",
+      "completion_outcome is only accepted for a completed session",
+    );
+  }
+  const plannedAt = new Date(dto.planned_at).toISOString();
+  const plannedDurationMin = dto.planned_duration_min ?? DEFAULT_SESSION_DURATION_MIN;
 
   const row: Session = {
     id: sessionId,
     owner_id: userId,
     plan_id: dto.plan_id ?? null,
     title: trimToNull(dto.title),
-    planned_at: new Date(dto.planned_at).toISOString(),
-    planned_duration_min: dto.planned_duration_min ?? DEFAULT_SESSION_DURATION_MIN,
-    status: "planned",
+    planned_at: plannedAt,
+    planned_duration_min: plannedDurationMin,
+    status: logging ? "completed" : "planned",
     visibility: dto.visibility ?? "private",
     notes: trimToNull(dto.notes),
     recurrence_rule: trimToNull(dto.recurrence_rule),
+    ...(logging
+      ? {
+          ...loggedWorkoutTimes(plannedAt, plannedDurationMin, now),
+          completion_outcome: dto.completion_outcome ?? "completed",
+        }
+      : {}),
     created_at: timestamp,
     updated_at: timestamp,
   };
@@ -121,6 +154,9 @@ export async function createOne(
     await createSession(row, trx);
     if (normalizedExercises.length > 0) {
       await replaceSessionExercises(trx, sessionId, normalizedExercises);
+    }
+    if (logging) {
+      await markGamificationStale(userId, false, trx);
     }
   });
 
@@ -136,6 +172,8 @@ export async function createOne(
       visibility: row.visibility,
       recurrence_rule: row.recurrence_rule,
       exercise_count: normalizedExercises.length,
+      status: row.status,
+      completion_outcome: row.completion_outcome ?? null,
     },
   });
 
@@ -153,6 +191,11 @@ export async function createOne(
 
   if (normalizedExercises.length > 0 || created.status === "completed") {
     await refreshSessionSummary();
+  }
+
+  if (logging) {
+    await reconcileSessionPublication(userId, sessionId, created.status, created.visibility);
+    scheduleGamificationReconciliation(userId, sessionId, false);
   }
 
   return created;
@@ -188,9 +231,22 @@ export async function updateOne(
   const normalizedExercises = dto.exercises ? normalizeSessionExercises(dto.exercises) : null;
 
   const targetStatus = dto.status;
+  if (
+    dto.completion_outcome !== undefined &&
+    !(targetStatus === "completed" && current.status !== "completed")
+  ) {
+    throw new HttpError(
+      400,
+      "E.SESSION.OUTCOME_WITHOUT_COMPLETION",
+      "completion_outcome is only accepted when the session is completed",
+    );
+  }
   let targetStartedAt = dto.started_at;
   let targetCompletedAt = dto.completed_at;
   let targetDeletedAt: string | null | undefined;
+  const updates: Partial<Session> = {
+    updated_at: new Date().toISOString(),
+  };
 
   if (targetStatus && targetStatus !== current.status) {
     const allowed = allowedTransitions[current.status] ?? [];
@@ -209,14 +265,13 @@ export async function updateOne(
     if (targetStatus === "completed" && !targetCompletedAt) {
       targetCompletedAt = nowIso;
     }
+    if (targetStatus === "completed") {
+      updates.completion_outcome = dto.completion_outcome ?? "completed";
+    }
     if (targetStatus === "canceled") {
       targetDeletedAt = nowIso;
     }
   }
-
-  const updates: Partial<Session> = {
-    updated_at: new Date().toISOString(),
-  };
 
   if (dto.plan_id !== undefined) {
     updates.plan_id = dto.plan_id ?? null;
@@ -398,6 +453,7 @@ export async function reopenOne(userId: string, id: string): Promise<SessionWith
       {
         status: "in_progress",
         completed_at: null,
+        completion_outcome: null,
         points: null,
         gamification_rebuild_required: true,
       },
