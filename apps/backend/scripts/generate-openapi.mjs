@@ -930,6 +930,12 @@ const schemas = {
       plan_id: { type: "string", format: "uuid", nullable: true },
       title: { type: "string", minLength: 2, maxLength: 100, nullable: true },
       planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: {
+        type: "integer",
+        minimum: 5,
+        maximum: 720,
+        description: "Planned length in minutes; defaults to 60.",
+      },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
       notes: { type: "string", maxLength: 1000, nullable: true },
       recurrence_rule: { type: "string", maxLength: 255, nullable: true },

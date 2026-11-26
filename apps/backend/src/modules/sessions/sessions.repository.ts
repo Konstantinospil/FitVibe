@@ -1,5 +1,6 @@
 import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
+import type { ScheduleWindow } from "./sessions.schedule.js";
 import type {
   PaginatedResult,
   Session,
@@ -391,53 +392,63 @@ export async function refreshSessionSummary(concurrent = true): Promise<void> {
   await db.raw("SELECT public.refresh_session_summary(?)", [concurrent]);
 }
 
-export interface ScheduledSessionInstant {
+export interface ScheduledSessionWindow {
   id: string;
   planned_at: string;
+  planned_duration_min: number;
 }
 
 /**
- * Active (non-deleted) sessions of a user planned at any of the given instants.
- * This is the single definition of a schedule conflict: two sessions planned at
- * the same instant. Duration-based overlap needs authoritative duration semantics
- * and is intentionally not inferred here.
+ * Sessions of a user whose planned interval overlaps any of the given windows.
+ * This is the single definition of a schedule conflict (see `sessions.schedule.ts`):
+ * half-open intervals `[planned_at, planned_at + planned_duration_min)` that
+ * overlap. Canceled and deleted sessions occupy no time.
  */
-export async function findSessionsScheduledAt(
+export async function findOverlappingSessions(
   userId: string,
-  plannedInstants: string[],
+  windows: readonly ScheduleWindow[],
   options: { excludeSessionId?: string } = {},
   trx?: Knex.Transaction,
-): Promise<ScheduledSessionInstant[]> {
-  if (!plannedInstants.length) {
+): Promise<ScheduledSessionWindow[]> {
+  if (!windows.length) {
     return [];
   }
 
+  const values = windows.map(() => "(?::timestamptz, ?::integer)").join(", ");
+  const bindings = windows.flatMap((window) => [
+    new Date(window.start).toISOString(),
+    window.durationMin,
+  ]);
+
   const query = executor(trx)("sessions")
-    .select("id", "planned_at")
+    .select("id", "planned_at", "planned_duration_min")
     .where({ owner_id: userId })
     .whereNull("deleted_at")
-    .whereIn("planned_at", plannedInstants);
+    .whereNot("status", "canceled")
+    .whereRaw(
+      `EXISTS (SELECT 1 FROM (VALUES ${values}) AS w(start_at, duration_min)
+        WHERE sessions.planned_at < w.start_at + w.duration_min * interval '1 minute'
+          AND w.start_at < sessions.planned_at + sessions.planned_duration_min * interval '1 minute')`,
+      bindings,
+    )
+    .orderBy("planned_at", "asc");
 
   if (options.excludeSessionId) {
     query.andWhere("id", "<>", options.excludeSessionId);
   }
 
-  const rows = (await query) as Array<{ id: string; planned_at: Date | string }>;
+  const rows = (await query) as Array<{
+    id: string;
+    planned_at: Date | string;
+    planned_duration_min: number;
+  }>;
 
-  return rows.map(({ id, planned_at }) => ({
+  return rows.map(({ id, planned_at, planned_duration_min }) => ({
     id,
     planned_at:
       planned_at instanceof Date ? planned_at.toISOString() : new Date(planned_at).toISOString(),
+    planned_duration_min,
   }));
-}
-
-export async function sessionsExistAtDates(
-  userId: string,
-  plannedDates: string[],
-  trx?: Knex.Transaction,
-): Promise<string[]> {
-  const rows = await findSessionsScheduledAt(userId, plannedDates, {}, trx);
-  return rows.map(({ planned_at }) => planned_at);
 }
 
 export async function replaceSessionExercises(

@@ -43,6 +43,13 @@ Users need the ability to perform full CRUD operations on training plans. This i
 - Soft-delete via `archived_at` timestamp
 - Plan updates must preserve associated sessions
 
+## Implementation / verification (2026-11-26)
+
+- AC01–AC04: `tests/backend/integration/plan-crud.integration.test.ts` runs against Postgres. It times five plan creations after a warm-up and fails above 500 ms (each run logs the timings; locally 5–12 ms), checks that updates survive a reload, that deleting sets `archived_at` and keeps the plan's sessions, and that a stale `If-Match` gets 412 while the current ETag or no ETag saves.
+- Fixed while adding AC02 evidence: `PATCH /plans/:id` ignored `duration_weeks`, `target_frequency` and `time_zone`, so edits to those fields in the Training plans dialog were silently lost.
+- E2E: `tests/frontend/e2e/planner-workflow.spec.cjs` creates a plan in the dialog, shows the conflict banner for a stale edit, activates the plan, finds the generated workout in the calendar and archives the plan without losing its workouts.
+- The dialog no longer logs a stale-version refusal as an error: it is an expected outcome shown as the banner.
+
 ## Test Strategy
 
 - Unit tests for plan CRUD operations

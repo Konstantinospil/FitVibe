@@ -18,15 +18,20 @@ import { FormFeedback } from "../components/composites/FormStack";
 import ScheduleSessionCard, {
   ScheduleDragPreview,
 } from "../components/composites/ScheduleSessionCard";
-import ScheduleSessionChip from "../components/composites/ScheduleSessionChip";
+import ScheduleSessionChip, {
+  ScheduleSessionContinuation,
+} from "../components/composites/ScheduleSessionChip";
 import ScheduleTimeGrid from "../components/composites/ScheduleTimeGrid";
 import CalendarViewSwitch, { type CalendarView } from "../components/composites/CalendarViewSwitch";
 import RescheduleSessionDialog from "../components/composites/RescheduleSessionDialog";
 import { CALENDAR_QUERY_KEY } from "../hooks/useSessionReschedule";
 import { SCHEDULE_DROP_ATTRIBUTE, useCalendarScheduling } from "../hooks/useCalendarScheduling";
 import {
+  coveredSlotKeys,
+  durationOf,
   isReschedulable,
   localDateKey as dateKey,
+  sessionEnd,
   slotKey,
 } from "../lib/scheduling/sessionSchedule";
 
@@ -182,9 +187,12 @@ const CalendarPage: React.FC = () => {
     let last: number = TRAINING_DATA_CONFIG.calendarDayEndHour;
     for (const day of visibleDays) {
       for (const session of sessionsByDay.get(day) ?? []) {
-        const hour = new Date(session.planned_at).getHours();
-        first = Math.min(first, hour);
-        last = Math.max(last, hour);
+        const start = new Date(session.planned_at);
+        // The last minute of the session; a session ending at 20:00 does not need the 20:00 row.
+        const lastMinute = new Date(sessionEnd(session.planned_at, durationOf(session)));
+        lastMinute.setMinutes(lastMinute.getMinutes() - 1);
+        first = Math.min(first, start.getHours());
+        last = Math.max(last, dateKey(lastMinute) === day ? lastMinute.getHours() : 23);
       }
     }
     return Array.from({ length: last - first + 1 }, (_, index) => first + index);
@@ -216,8 +224,18 @@ const CalendarPage: React.FC = () => {
       timeStyle: "short",
     }).format(new Date(value));
 
-  const formatTime = (value: string) =>
-    new Intl.DateTimeFormat(i18n.language, { timeStyle: "short" }).format(new Date(value));
+  // Formatters are built once per language: the time grid formats every chip on each
+  // render, and a drag re-renders the grid whenever the pointer reaches a new slot.
+  const timeFormat = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { timeStyle: "short" }),
+    [i18n.language],
+  );
+  const dayFormat = useMemo(
+    () => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }),
+    [i18n.language],
+  );
+
+  const formatTime = (value: string) => timeFormat.format(new Date(value));
 
   const moveMonth = (delta: number) => {
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
@@ -254,6 +272,7 @@ const CalendarPage: React.FC = () => {
   );
 
   const moveHintId = useId();
+  const resizeHintId = useId();
   const scheduling = useCalendarScheduling({
     loadedSessions,
     granularity: view === "month" ? "day" : "hour",
@@ -261,6 +280,16 @@ const CalendarPage: React.FC = () => {
     onMoved,
   });
   const { sessionTitle, highlightedConflicts } = scheduling;
+
+  /** Start and end of a session, e.g. "18:00–19:30"; follows a pending resize. */
+  const formatTimeRange = (session: SessionListItem) =>
+    timeFormat.formatRange(
+      new Date(session.planned_at),
+      new Date(sessionEnd(session.planned_at, scheduling.displayedDuration(session))),
+    );
+
+  const formatDateTimeRange = (session: SessionListItem) =>
+    `${dayFormat.format(new Date(session.planned_at))}, ${formatTimeRange(session)}`;
 
   const exerciseCount = (session: SessionListItem) =>
     t("homeSurface.session.exercises", {
@@ -289,41 +318,80 @@ const CalendarPage: React.FC = () => {
     );
   };
 
+  const startsInSlot = (session: SessionListItem, day: string, hour: number) =>
+    dateKey(session.planned_at) === day && new Date(session.planned_at).getHours() === hour;
+
+  /**
+   * Sessions by the hour slots their planned time reaches into (week and day views),
+   * using the pending length of a session being resized. Built once per change, so
+   * a drag over the grid does not rescan every session for every slot.
+   */
+  const { pendingResize } = scheduling;
+  const slotSessions = useMemo(() => {
+    const map = new Map<string, SessionListItem[]>();
+    if (view === "month") {
+      return map;
+    }
+    const days = new Set(visibleDays);
+    const byStart = [...loadedSessions].sort(
+      (a, b) => new Date(a.planned_at).getTime() - new Date(b.planned_at).getTime(),
+    );
+    for (const session of byStart) {
+      const length =
+        pendingResize?.session.id === session.id ? pendingResize.durationMin : durationOf(session);
+      for (const key of coveredSlotKeys(session.planned_at, length)) {
+        if (days.has(key.slice(0, key.indexOf("T")))) {
+          map.set(key, [...(map.get(key) ?? []), session]);
+        }
+      }
+    }
+    return map;
+  }, [loadedSessions, pendingResize, view, visibleDays]);
+
+  const sessionsInSlot = (day: string, hour: number) => slotSessions.get(slotKey(day, hour)) ?? [];
+
   const renderSlot = (day: string, hour: number) =>
-    (sessionsByDay.get(day) ?? [])
-      .filter((session) => new Date(session.planned_at).getHours() === hour)
-      .map((session) => {
-        const movable = isReschedulable(session);
-        const time = formatTime(session.planned_at);
+    sessionsInSlot(day, hour).map((session) => {
+      if (!startsInSlot(session, day, hour)) {
         return (
-          <ScheduleSessionChip
+          <ScheduleSessionContinuation
             key={session.id}
-            time={time}
-            title={sessionTitle(session)}
             status={statusFor([session])}
-            moveLabel={t("calendarSurface.schedule.chipLabel", {
-              time,
-              title: sessionTitle(session),
-            })}
-            moveHintId={moveHintId}
-            handleProps={movable ? scheduling.handlePropsFor(session) : undefined}
-            handleId={session.id}
-            onMove={movable ? () => scheduling.openDialog(session) : undefined}
-            conflictLabel={conflictLabelFor(session)}
-            moving={scheduling.isMoving(session)}
+            conflict={highlightedConflicts.has(session.id)}
           />
         );
-      });
+      }
+      const movable = isReschedulable(session);
+      const time = formatTimeRange(session);
+      const title = sessionTitle(session);
+      return (
+        <ScheduleSessionChip
+          key={session.id}
+          time={time}
+          title={title}
+          status={statusFor([session])}
+          moveLabel={t("calendarSurface.schedule.chipLabel", { time, title })}
+          moveHintId={moveHintId}
+          handleProps={movable ? scheduling.handlePropsFor(session) : undefined}
+          handleId={session.id}
+          onMove={movable ? () => scheduling.openDialog(session) : undefined}
+          resizeLabel={t("calendarSurface.schedule.resizeLabel", {
+            title,
+            time: formatTime(sessionEnd(session.planned_at, scheduling.displayedDuration(session))),
+          })}
+          resizeHintId={resizeHintId}
+          resizeHandleProps={movable ? scheduling.resizeHandlePropsFor(session) : undefined}
+          conflictLabel={conflictLabelFor(session)}
+          moving={scheduling.isMoving(session)}
+          resizing={scheduling.isResizing(session)}
+        />
+      );
+    });
 
-  const slotState = (day: string, hour: number) => {
-    return {
-      dropTarget: scheduling.isDropTarget(slotKey(day, hour)),
-      conflict: (sessionsByDay.get(day) ?? []).some(
-        (session) =>
-          new Date(session.planned_at).getHours() === hour && highlightedConflicts.has(session.id),
-      ),
-    };
-  };
+  const slotState = (day: string, hour: number) => ({
+    dropTarget: scheduling.isDropTarget(slotKey(day, hour)),
+    conflict: sessionsInSlot(day, hour).some((session) => highlightedConflicts.has(session.id)),
+  });
 
   const shiftPeriod = (direction: -1 | 1) => {
     selectDay(addDays(selectedDate, direction * (view === "week" ? 7 : 1)));
@@ -546,6 +614,9 @@ const CalendarPage: React.FC = () => {
           <p id={moveHintId} className="sr-only">
             {t("calendarSurface.schedule.moveHint")}
           </p>
+          <p id={resizeHintId} className="sr-only">
+            {t("calendarSurface.schedule.resizeHint")}
+          </p>
           {/* Persistent live region: move outcomes and conflicts are announced
               without moving focus (WCAG 4.1.3). */}
           <div role="status" aria-live="polite">
@@ -569,7 +640,7 @@ const CalendarPage: React.FC = () => {
               <div className="training-empty">{t("calendarSurface.empty.selectedDay")}</div>
             ) : (
               selectedSessions.map((session) =>
-                renderScheduleCard(session, formatTime(session.planned_at), exerciseCount(session)),
+                renderScheduleCard(session, formatTimeRange(session), exerciseCount(session)),
               )
             )}
           </div>
@@ -611,7 +682,7 @@ const CalendarPage: React.FC = () => {
               weeklyPlan.map((session) =>
                 renderScheduleCard(
                   session,
-                  formatDateTime(session.planned_at),
+                  formatDateTimeRange(session),
                   session.notes || exerciseCount(session),
                 ),
               )
@@ -632,8 +703,9 @@ const CalendarPage: React.FC = () => {
           key={scheduling.dialogSession.id}
           sessionTitle={sessionTitle(scheduling.dialogSession)}
           plannedAt={scheduling.dialogSession.planned_at}
+          durationMin={durationOf(scheduling.dialogSession)}
           onCancel={scheduling.closeDialog}
-          onConfirm={scheduling.confirmDialogMove}
+          onConfirm={scheduling.confirmDialogChange}
         />
       ) : null}
 

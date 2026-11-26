@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Knex } from "knex";
 import { db } from "../../db/connection.js";
 import {
-  findSessionsScheduledAt,
+  findOverlappingSessions,
   listSessions,
   getSessionById,
   getSessionWithDetails,
@@ -36,20 +36,21 @@ import {
   normalizeSessionExercises,
   trimToNull,
 } from "./sessions.normalization.js";
+import { DEFAULT_SESSION_DURATION_MIN, type ScheduleWindow } from "./sessions.schedule.js";
 
 /**
- * Server-side re-validation for rescheduling (US-4.3-AC03). Clients detect the
- * same conflict before saving; the server stays authoritative.
+ * Server-side re-validation for rescheduling and resizing (US-4.3-AC03). Clients
+ * detect the same overlap before saving; the server stays authoritative.
  */
 async function ensureScheduleSlotFree(
   userId: string,
   sessionId: string,
-  plannedAt: string,
+  window: ScheduleWindow,
   trx: Knex.Transaction,
 ): Promise<void> {
-  const conflicts = await findSessionsScheduledAt(
+  const conflicts = await findOverlappingSessions(
     userId,
-    [plannedAt],
+    [window],
     { excludeSessionId: sessionId },
     trx,
   );
@@ -57,7 +58,7 @@ async function ensureScheduleSlotFree(
     throw new HttpError(
       422,
       "E.SESSION.SCHEDULE_CONFLICT",
-      "Another session is already planned at this time",
+      "Another session is planned during this time",
       { conflictingSessionIds: conflicts.map((conflict) => conflict.id) },
     );
   }
@@ -103,6 +104,7 @@ export async function createOne(
     plan_id: dto.plan_id ?? null,
     title: trimToNull(dto.title),
     planned_at: new Date(dto.planned_at).toISOString(),
+    planned_duration_min: dto.planned_duration_min ?? DEFAULT_SESSION_DURATION_MIN,
     status: "planned",
     visibility: dto.visibility ?? "private",
     notes: trimToNull(dto.notes),
@@ -169,6 +171,7 @@ export async function updateOne(
   const correctionFieldsTouched =
     dto.plan_id !== undefined ||
     dto.planned_at !== undefined ||
+    dto.planned_duration_min !== undefined ||
     dto.started_at !== undefined ||
     dto.completed_at !== undefined ||
     dto.calories !== undefined ||
@@ -224,6 +227,9 @@ export async function updateOne(
   if (dto.planned_at) {
     updates.planned_at = new Date(dto.planned_at).toISOString();
   }
+  if (dto.planned_duration_min !== undefined) {
+    updates.planned_duration_min = dto.planned_duration_min;
+  }
   if (targetStatus) {
     updates.status = targetStatus;
   }
@@ -251,11 +257,19 @@ export async function updateOne(
 
   const completing = targetStatus === "completed" && current.status !== "completed";
   const fullGamificationRebuild = completing && current.gamification_rebuild_required === true;
-  const reschedulesTo =
+  const movesStart =
     updates.planned_at !== undefined &&
-    targetStatus !== "canceled" &&
-    new Date(updates.planned_at).getTime() !== new Date(current.planned_at).getTime()
-      ? updates.planned_at
+    new Date(updates.planned_at).getTime() !== new Date(current.planned_at).getTime();
+  const changesLength =
+    updates.planned_duration_min !== undefined &&
+    updates.planned_duration_min !== current.planned_duration_min;
+  const occupiedStatus = targetStatus ?? current.status;
+  const reschedulesTo: ScheduleWindow | undefined =
+    (movesStart || changesLength) && occupiedStatus !== "canceled"
+      ? {
+          start: updates.planned_at ?? current.planned_at,
+          durationMin: updates.planned_duration_min ?? current.planned_duration_min,
+        }
       : undefined;
 
   await db.transaction(async (trx) => {

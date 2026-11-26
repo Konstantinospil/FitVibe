@@ -380,6 +380,27 @@ describe("Plans Repository", () => {
       );
     });
 
+    it("writes the activation schedule fields", async () => {
+      const newBuilder = createMockQueryBuilder();
+      queryBuilders["plans"] = newBuilder;
+      newBuilder.update.mockResolvedValue(1);
+
+      await plansRepository.updatePlan(planId, {
+        duration_weeks: 6,
+        target_frequency: 4,
+        time_zone: "Europe/Athens",
+      });
+
+      expect(newBuilder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          duration_weeks: 6,
+          target_frequency: 4,
+          time_zone: "Europe/Athens",
+        }),
+      );
+      expect(newBuilder.whereNull).toHaveBeenCalledWith("activated_at");
+    });
+
     it("should update plan progress metrics", async () => {
       const newBuilder = createMockQueryBuilder();
       queryBuilders["plans"] = newBuilder;

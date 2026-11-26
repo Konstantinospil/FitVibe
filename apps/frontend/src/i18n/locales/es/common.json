@@ -1044,35 +1044,43 @@
     },
     "schedule": {
       "moveLabel": "Mover {{title}}",
-      "moveHint": "Arrastra a otro día u hora. O pulsa la barra espaciadora para tomarlo, muévelo con las flechas y pulsa Intro para soltarlo. Intro por sí solo abre la elección de día y hora.",
+      "moveHint": "Arrastra a otro día u hora. O pulsa la barra espaciadora para tomarlo, muévelo con las flechas y pulsa Intro para soltarlo. Intro por sí solo abre la elección de día, hora y duración.",
+      "resizeHint": "Arrastra para cambiar cuándo termina el entrenamiento. O pulsa la barra espaciadora, cambia el final con las flechas arriba y abajo y pulsa Intro para guardar. Intro por sí solo abre la elección de día, hora y duración.",
       "conflictLabel": "Conflicto de horario",
       "dialog": {
-        "title": "Mover entrenamiento",
-        "description": "Elige un nuevo día y hora para {{title}}."
+        "title": "Reprogramar entrenamiento",
+        "description": "Elige un nuevo día, hora de inicio y duración para {{title}}."
       },
       "fields": {
         "day": "Día",
-        "time": "Hora"
+        "time": "Hora",
+        "duration": "Duración en minutos"
       },
       "actions": {
-        "save": "Mover entrenamiento",
+        "save": "Reprogramar entrenamiento",
         "cancel": "Cancelar"
       },
       "status": {
-        "moved": "{{title}} se ha movido al {{date}}."
+        "rescheduled": "{{title}} está planificado para el {{date}}, {{start}}–{{end}}."
       },
       "errors": {
-        "conflict": "{{title}} ya está planificado para las {{time}} del {{date}}. Elige otro día u otra hora.",
-        "conflictUnlisted": "Ya hay otro entrenamiento planificado para las {{time}} del {{date}}. Elige otro día u otra hora.",
+        "conflict": "{{title}} está planificado de {{start}} a {{end}} el {{date}}. Elige otra hora.",
+        "conflictUnlisted": "Hay otro entrenamiento planificado entre las {{start}} y las {{end}} del {{date}}. Elige otra hora.",
         "invalid": "Ese día y hora no existen. Elige otros.",
-        "save": "No se pudo mover el entrenamiento. Inténtalo de nuevo."
+        "save": "No se pudo reprogramar el entrenamiento. Inténtalo de nuevo.",
+        "invalidDuration": "Elige una duración de entre {{min}} y {{max}} minutos."
       },
       "chipLabel": "{{time}} {{title}}, mover",
+      "resizeLabel": "{{title}}, termina a las {{time}}, cambiar duración",
       "keyboard": {
         "pickedUp": "Has tomado {{title}}. Usa las flechas para elegir un nuevo día u hora, Intro para soltar y Escape para cancelar.",
         "over": "{{target}}.",
         "overConflict": "{{target}}: conflicto con {{title}}.",
-        "cancelled": "Se canceló el movimiento de {{title}}."
+        "cancelled": "Se canceló el movimiento de {{title}}.",
+        "resizePickedUp": "Cambiando la duración de {{title}}. Usa las flechas arriba y abajo para cambiar el final, Intro para guardar y Escape para cancelar.",
+        "resizeOver": "Termina a las {{time}}, {{duration}}.",
+        "resizeOverConflict": "Termina a las {{time}}, {{duration}}: conflicto con {{title}}.",
+        "resizeCancelled": "La duración de {{title}} no ha cambiado."
       }
     },
     "views": {

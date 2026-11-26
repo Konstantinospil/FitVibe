@@ -1,4 +1,5 @@
 import type { Session } from "../../services/sessionApi";
+import { TRAINING_DATA_CONFIG, TRAINING_TIME_UNITS } from "../../config/trainingSurfaces";
 
 /**
  * Pure scheduling rules shared by every planner surface (calendar, dialogs, hooks).
@@ -6,7 +7,10 @@ import type { Session } from "../../services/sessionApi";
  * groups sessions into days.
  */
 
-type SchedulableSession = Pick<Session, "id" | "planned_at" | "status" | "deleted_at">;
+type SchedulableSession = Pick<
+  Session,
+  "id" | "planned_at" | "planned_duration_min" | "status" | "deleted_at"
+>;
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
@@ -138,21 +142,111 @@ export const isReschedulable = (session: Pick<Session, "status" | "deleted_at">)
   session.status === "planned" && !session.deleted_at;
 
 /**
- * Sessions that would conflict with `sessionId` planned at `plannedAt`.
- * A conflict is another active session at the same instant: the same rule the
- * server enforces. Duration-based overlap is not inferred on either side.
+ * Planned length of a session in minutes. Sessions from the API always carry it;
+ * the server default covers records that predate it in a cache.
+ */
+export const durationOf = (session: Pick<Session, "planned_duration_min">): number =>
+  session.planned_duration_min ?? TRAINING_DATA_CONFIG.sessionDurationDefaultMinutes;
+
+const minutesToMs = (minutes: number) => minutes * TRAINING_TIME_UNITS.millisecondsPerMinute;
+
+/** The instant a session planned at `plannedAt` for `durationMin` minutes ends. */
+export const sessionEnd = (plannedAt: string, durationMin: number): string =>
+  new Date(new Date(plannedAt).getTime() + minutesToMs(durationMin)).toISOString();
+
+/** Half-open intervals `[start, end)` overlap; back-to-back sessions do not. */
+const overlaps = (aStart: number, aEnd: number, bStart: number, bEnd: number) =>
+  aStart < bEnd && bStart < aEnd;
+
+/**
+ * Sessions that would conflict with `sessionId` planned at `plannedAt` for
+ * `durationMin` minutes: other active sessions whose planned time overlaps it.
+ * This is the same rule the server enforces; canceled sessions occupy no time.
  */
 export const findScheduleConflicts = <T extends SchedulableSession>(
   sessions: readonly T[],
   sessionId: string,
   plannedAt: string,
+  durationMin: number,
 ): T[] => {
-  const target = new Date(plannedAt).getTime();
-  return sessions.filter(
-    (session) =>
-      session.id !== sessionId &&
-      session.status !== "canceled" &&
-      !session.deleted_at &&
-      new Date(session.planned_at).getTime() === target,
+  const start = new Date(plannedAt).getTime();
+  const end = start + minutesToMs(durationMin);
+  return sessions.filter((session) => {
+    if (session.id === sessionId || session.status === "canceled" || session.deleted_at) {
+      return false;
+    }
+    const otherStart = new Date(session.planned_at).getTime();
+    return overlaps(start, end, otherStart, otherStart + minutesToMs(durationOf(session)));
+  });
+};
+
+/**
+ * Hour-slot keys (`YYYY-MM-DDTHH`, local time) a session planned at `plannedAt`
+ * for `durationMin` minutes reaches into, in order, starting with its own slot.
+ */
+export const coveredSlotKeys = (plannedAt: string, durationMin: number): string[] => {
+  const end = new Date(plannedAt).getTime() + minutesToMs(durationMin);
+  const cursor = new Date(plannedAt);
+  cursor.setMinutes(0, 0, 0);
+  const keys: string[] = [];
+  while (cursor.getTime() < end) {
+    keys.push(slotKey(localDateKey(cursor), cursor.getHours()));
+    cursor.setHours(cursor.getHours() + 1);
+  }
+  return keys;
+};
+
+export interface DurationLimits {
+  min: number;
+  max: number;
+  step: number;
+}
+
+export const SESSION_DURATION_LIMITS: DurationLimits = {
+  min: TRAINING_DATA_CONFIG.sessionDurationMinMinutes,
+  max: TRAINING_DATA_CONFIG.sessionDurationMaxMinutes,
+  step: TRAINING_DATA_CONFIG.sessionDurationStepMinutes,
+};
+
+const clampDuration = (minutes: number, limits: DurationLimits) =>
+  Math.min(limits.max, Math.max(limits.min, minutes));
+
+/**
+ * Length a session gets when its end is dragged onto an hour slot: it then ends
+ * where that slot ends. Slots before the start give the shortest length.
+ * Returns null for day targets, which carry no time.
+ */
+export const durationForSlotEnd = (
+  plannedAt: string,
+  targetKey: string,
+  limits: DurationLimits = SESSION_DURATION_LIMITS,
+): number | null => {
+  const target = parseTarget(targetKey);
+  if (!target || target.hour === null) {
+    return null;
+  }
+  const slotStart = localDateTimeToIso(target.day, `${pad(target.hour)}:00`);
+  if (!slotStart) {
+    return null;
+  }
+  const end = new Date(slotStart).getTime() + minutesToMs(TRAINING_TIME_UNITS.minutesPerHour);
+  const minutes = Math.round(
+    (end - new Date(plannedAt).getTime()) / TRAINING_TIME_UNITS.millisecondsPerMinute,
   );
+  return clampDuration(minutes, limits);
+};
+
+/**
+ * Keyboard resizing: the down arrow lengthens and the up arrow shortens by one
+ * step (the time axis runs downwards). Other keys are not resize keys.
+ */
+export const stepDuration = (
+  durationMin: number,
+  key: string,
+  limits: DurationLimits = SESSION_DURATION_LIMITS,
+): number | null => {
+  if (key !== "ArrowUp" && key !== "ArrowDown") {
+    return null;
+  }
+  return clampDuration(durationMin + (key === "ArrowDown" ? limits.step : -limits.step), limits);
 };

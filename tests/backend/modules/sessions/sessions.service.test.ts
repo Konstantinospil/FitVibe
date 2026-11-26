@@ -435,15 +435,19 @@ describe("Sessions Service", () => {
       expect(mockSessionsRepo.updateSession).toHaveBeenCalled();
     });
 
-    describe("rescheduling (US-4.3-AC03)", () => {
+    describe("rescheduling and resizing (US-4.3-AC03)", () => {
       const plannedAt = "2026-11-02T08:00:00.000Z";
-      const scheduledSession: Session = { ...existingSession, planned_at: plannedAt };
+      const scheduledSession: Session = {
+        ...existingSession,
+        planned_at: plannedAt,
+        planned_duration_min: 60,
+      };
       const target = "2026-11-04T08:00:00.000Z";
 
-      it("rejects a move onto an occupied instant with 422 and the conflicting session IDs", async () => {
+      it("rejects a move that overlaps another session with 422 and the conflicting session IDs", async () => {
         mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
-        mockSessionsRepo.findSessionsScheduledAt.mockResolvedValue([
-          { id: "other-session", planned_at: target },
+        mockSessionsRepo.findOverlappingSessions.mockResolvedValue([
+          { id: "other-session", planned_at: target, planned_duration_min: 45 },
         ]);
 
         const attempt = sessionsService.updateOne(userId, sessionId, { planned_at: target });
@@ -453,18 +457,18 @@ describe("Sessions Service", () => {
           code: "E.SESSION.SCHEDULE_CONFLICT",
           details: { conflictingSessionIds: ["other-session"] },
         });
-        expect(mockSessionsRepo.findSessionsScheduledAt).toHaveBeenCalledWith(
+        expect(mockSessionsRepo.findOverlappingSessions).toHaveBeenCalledWith(
           userId,
-          [target],
+          [{ start: target, durationMin: 60 }],
           { excludeSessionId: sessionId },
           expect.anything(),
         );
         expect(mockSessionsRepo.updateSession).not.toHaveBeenCalled();
       });
 
-      it("saves a move onto a free instant", async () => {
+      it("saves a move into free time", async () => {
         mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
-        mockSessionsRepo.findSessionsScheduledAt.mockResolvedValue([]);
+        mockSessionsRepo.findOverlappingSessions.mockResolvedValue([]);
         mockSessionsRepo.updateSession.mockResolvedValue(1);
         mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
           ...scheduledSession,
@@ -483,7 +487,48 @@ describe("Sessions Service", () => {
         );
       });
 
-      it("skips the conflict lookup when the planned instant does not change", async () => {
+      it("checks a resize against the session's current start and its new length", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
+        mockSessionsRepo.findOverlappingSessions.mockResolvedValue([]);
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...scheduledSession,
+          planned_duration_min: 90,
+          exercises: [],
+        } as SessionWithExercises);
+
+        await sessionsService.updateOne(userId, sessionId, { planned_duration_min: 90 });
+
+        expect(mockSessionsRepo.findOverlappingSessions).toHaveBeenCalledWith(
+          userId,
+          [{ start: plannedAt, durationMin: 90 }],
+          { excludeSessionId: sessionId },
+          expect.anything(),
+        );
+        expect(mockSessionsRepo.updateSession).toHaveBeenCalledWith(
+          sessionId,
+          userId,
+          expect.objectContaining({ planned_duration_min: 90 }),
+          expect.anything(),
+        );
+      });
+
+      it("rejects a resize that overlaps the next session", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
+        mockSessionsRepo.findOverlappingSessions.mockResolvedValue([
+          { id: "next-session", planned_at: "2026-11-02T09:30:00.000Z", planned_duration_min: 60 },
+        ]);
+
+        await expect(
+          sessionsService.updateOne(userId, sessionId, { planned_duration_min: 120 }),
+        ).rejects.toMatchObject({
+          status: 422,
+          details: { conflictingSessionIds: ["next-session"] },
+        });
+        expect(mockSessionsRepo.updateSession).not.toHaveBeenCalled();
+      });
+
+      it("skips the overlap lookup when neither start nor length changes", async () => {
         mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
         mockSessionsRepo.updateSession.mockResolvedValue(1);
         mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
@@ -491,10 +536,41 @@ describe("Sessions Service", () => {
           exercises: [],
         } as SessionWithExercises);
 
-        await sessionsService.updateOne(userId, sessionId, { planned_at: plannedAt });
+        await sessionsService.updateOne(userId, sessionId, {
+          planned_at: plannedAt,
+          planned_duration_min: 60,
+        });
 
-        expect(mockSessionsRepo.findSessionsScheduledAt).not.toHaveBeenCalled();
+        expect(mockSessionsRepo.findOverlappingSessions).not.toHaveBeenCalled();
         expect(mockSessionsRepo.updateSession).toHaveBeenCalled();
+      });
+
+      it("does not check overlaps for a session being canceled", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(scheduledSession);
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...scheduledSession,
+          status: "canceled",
+          exercises: [],
+        } as SessionWithExercises);
+
+        await sessionsService.updateOne(userId, sessionId, {
+          planned_at: target,
+          status: "canceled",
+        });
+
+        expect(mockSessionsRepo.findOverlappingSessions).not.toHaveBeenCalled();
+      });
+
+      it("treats a planned-length change on a completed session as a correction", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue({
+          ...scheduledSession,
+          status: "completed",
+        });
+
+        await expect(
+          sessionsService.updateOne(userId, sessionId, { planned_duration_min: 30 }),
+        ).rejects.toMatchObject({ status: 409, code: "E.SESSION.REOPEN_REQUIRED" });
       });
     });
 
@@ -1054,6 +1130,7 @@ describe("Sessions Service", () => {
       owner_id: userId,
       title: "Source Session",
       planned_at: new Date().toISOString(),
+      planned_duration_min: 45,
       status: "planned",
       visibility: "private",
       exercises: [],
@@ -1076,7 +1153,7 @@ describe("Sessions Service", () => {
       } as SessionWithExercises;
 
       mockSessionsRepo.getSessionWithDetails.mockResolvedValueOnce(sourceSession);
-      mockSessionsRepo.sessionsExistAtDates.mockResolvedValue([]);
+      mockSessionsRepo.findOverlappingSessions.mockResolvedValue([]);
       mockSessionsRepo.createSession.mockResolvedValue(undefined);
       mockSessionsRepo.getSessionWithDetails.mockResolvedValue(mockCloned);
       mockSessionsRepo.refreshSessionSummary.mockResolvedValue(undefined);
@@ -1155,14 +1232,24 @@ describe("Sessions Service", () => {
 
     it("should throw error when conflicts exist", async () => {
       mockSessionsRepo.getSessionWithDetails.mockResolvedValueOnce(sourceSession);
-      mockSessionsRepo.sessionsExistAtDates.mockResolvedValue(["2024-01-01T00:00:00Z"]);
+      mockSessionsRepo.findOverlappingSessions.mockResolvedValue([
+        { id: "busy", planned_at: "2024-01-01T00:30:00.000Z", planned_duration_min: 60 },
+      ]);
 
       await expect(
         sessionsService.applyRecurrence(userId, "source-123", {
           occurrences: 3,
           offset_days: 7,
         }),
-      ).rejects.toThrow(HttpError);
+      ).rejects.toMatchObject({
+        status: 409,
+        code: "E.SESSION.RECURRENCE_CONFLICT",
+        details: { conflicts: ["2024-01-01T00:30:00.000Z"] },
+      });
+      // Every occurrence is checked with the source session's planned length.
+      const [, windows] = mockSessionsRepo.findOverlappingSessions.mock.calls[0];
+      expect(windows).toHaveLength(3);
+      expect(windows.every((window) => window.durationMin === 45)).toBe(true);
     });
   });
 

@@ -356,7 +356,34 @@ describe("Calendar", () => {
       await waitFor(() => {
         expect(screen.queryByText("calendarSurface.schedule.dialog.title")).not.toBeInTheDocument();
       });
-      expect(status()).toHaveTextContent("calendarSurface.schedule.status.moved");
+      expect(status()).toHaveTextContent("calendarSurface.schedule.status.rescheduled");
+    });
+
+    it("changes the length in the dialog and validates it", async () => {
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      fireEvent.click(handle);
+      const length = await screen.findByLabelText("calendarSurface.schedule.fields.duration");
+      expect(length).toHaveValue(60);
+      // The field's own limits stop the form before anything is sent.
+      fireEvent.change(length, { target: { value: "3" } });
+      expect(length).toBeInvalid();
+      fireEvent.submit(length.closest("form")!);
+      expect(
+        await screen.findByText("calendarSurface.schedule.errors.invalidDuration"),
+      ).toBeInTheDocument();
+      expect(mockedUpdateSession).not.toHaveBeenCalled();
+
+      fireEvent.change(length, { target: { value: "45" } });
+      fireEvent.click(
+        screen.getByRole("button", { name: "calendarSurface.schedule.actions.save" }),
+      );
+      await waitFor(() => {
+        expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+          planned_duration_min: 45,
+        });
+      });
     });
 
     it("refuses a dialog move onto another workout's time before saving", async () => {
@@ -397,7 +424,9 @@ describe("Calendar", () => {
         });
       });
       expect(mockedListSessions).toHaveBeenCalled();
-      expect(await screen.findByText("calendarSurface.schedule.status.moved")).toBeInTheDocument();
+      expect(
+        await screen.findByText("calendarSurface.schedule.status.rescheduled"),
+      ).toBeInTheDocument();
     });
 
     it("highlights a conflict while hovering and refuses the drop before saving", async () => {
@@ -425,6 +454,29 @@ describe("Calendar", () => {
       ).toBeInTheDocument();
       expect(mockedUpdateSession).not.toHaveBeenCalled();
       expect(dayCell(evening)).toHaveClass("calendar-month__cell--conflict");
+    });
+
+    it("refuses a move into the time a longer session still occupies", async () => {
+      // Tomorrow's 09:00 plan runs until 11:00; a move to 10:00 overlaps it.
+      response.data[2] = { ...response.data[2], planned_duration_min: 120 };
+      renderCalendar();
+      const [handle] = await screen.findAllByRole("button", { name: MOVE });
+
+      fireEvent.click(handle);
+      fireEvent.change(await screen.findByLabelText("calendarSurface.schedule.fields.day"), {
+        target: { value: localDateKey(tomorrow) },
+      });
+      fireEvent.change(screen.getByLabelText("calendarSurface.schedule.fields.time"), {
+        target: { value: "10:00" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "calendarSurface.schedule.actions.save" }),
+      );
+
+      expect(
+        await screen.findByText("calendarSurface.schedule.errors.conflict"),
+      ).toBeInTheDocument();
+      expect(mockedUpdateSession).not.toHaveBeenCalled();
     });
 
     it("reports a conflict the server found outside the loaded sessions", async () => {
@@ -540,6 +592,125 @@ describe("Calendar", () => {
             planned_at: atLocalHour(today, 7, 30).toISOString(),
           });
         });
+      });
+    });
+
+    describe("session length (US-4.4-AC01)", () => {
+      const slotCell = (date: Date, hour: number) => {
+        const key = `${localDateKey(date)}T${String(hour).padStart(2, "0")}`;
+        return document.querySelector(`[data-schedule-day="${key}"]`) as HTMLElement;
+      };
+
+      const resizeHandle = (sessionId: string) =>
+        document.querySelector<HTMLElement>(`[data-schedule-resize="${sessionId}"]`)!;
+
+      const openWeek = async () => {
+        renderCalendar();
+        await screen.findAllByRole("button", { name: MOVE });
+        fireEvent.click(screen.getByRole("button", { name: "calendarSurface.views.week" }));
+      };
+
+      it("shows the time range and marks the later hours a session occupies", async () => {
+        response.data[1] = { ...response.data[1], planned_duration_min: 120 };
+        await openWeek();
+
+        const range = new Intl.DateTimeFormat("en", { timeStyle: "short" }).formatRange(
+          atLocalHour(today, 18),
+          atLocalHour(today, 20),
+        );
+        expect(slotCell(today, 18).querySelector(".schedule-chip__time")).toHaveTextContent(range, {
+          normalizeWhitespace: false,
+        });
+        expect(slotCell(today, 19).querySelector(".schedule-chip-continuation")).not.toBeNull();
+        expect(slotCell(today, 20).querySelector(".schedule-chip-continuation")).toBeNull();
+        expect(resizeHandle("planned-today")).toHaveAccessibleName(
+          "calendarSurface.schedule.resizeLabel",
+        );
+      });
+
+      it("offers no resize handle on completed sessions", async () => {
+        await openWeek();
+        expect(resizeHandle("completed-1")).toBeNull();
+      });
+
+      it("drags the resize handle to a later hour and saves the new length", async () => {
+        await openWeek();
+        const handle = resizeHandle("planned-today");
+
+        dragHandleTo(handle, slotCell(today, 19));
+        expect(handle.closest(".schedule-chip-group")?.firstElementChild).toHaveClass(
+          "schedule-chip--resizing",
+        );
+        // The pending end already shows in the grid.
+        expect(slotCell(today, 19).querySelector(".schedule-chip-continuation")).not.toBeNull();
+        release(handle);
+
+        await waitFor(() => {
+          expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+            planned_duration_min: 120,
+          });
+        });
+        expect(status()).toHaveTextContent("calendarSurface.schedule.status.rescheduled");
+      });
+
+      it("previews and refuses a resize into the next session", async () => {
+        response.data.push({
+          id: "planned-later",
+          owner_id: "user-1",
+          title: "Later Plan",
+          planned_at: atLocalHour(today, 19, 30).toISOString(),
+          planned_duration_min: 30,
+          status: "planned",
+          visibility: "private",
+          exercise_count: 0,
+        });
+        response.total = response.data.length;
+        await openWeek();
+        const handle = resizeHandle("planned-today");
+
+        dragHandleTo(handle, slotCell(today, 19));
+        expect(slotCell(today, 19)).toHaveClass("schedule-time-grid__slot--conflict");
+        release(handle);
+
+        expect(
+          await screen.findByText("calendarSurface.schedule.errors.conflict"),
+        ).toBeInTheDocument();
+        expect(mockedUpdateSession).not.toHaveBeenCalled();
+      });
+
+      it("resizes with Space and the arrow keys and returns focus to the resize handle", async () => {
+        await openWeek();
+        const handle = resizeHandle("planned-today");
+        handle.focus();
+
+        fireEvent.keyDown(handle, { key: " " });
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.resizePickedUp");
+        fireEvent.keyDown(handle, { key: "ArrowDown" });
+        fireEvent.keyDown(handle, { key: "ArrowDown" });
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.resizeOver");
+        fireEvent.keyDown(handle, { key: "Enter" });
+
+        await waitFor(() => {
+          expect(mockedUpdateSession).toHaveBeenCalledWith("planned-today", {
+            planned_duration_min: 90,
+          });
+        });
+        await waitFor(() => {
+          expect(document.activeElement).toHaveAttribute("data-schedule-resize", "planned-today");
+        });
+      });
+
+      it("cancels a keyboard resize with Escape", async () => {
+        await openWeek();
+        const handle = resizeHandle("planned-today");
+        handle.focus();
+
+        fireEvent.keyDown(handle, { key: " " });
+        fireEvent.keyDown(handle, { key: "ArrowUp" });
+        fireEvent.keyDown(handle, { key: "Escape" });
+
+        expect(status()).toHaveTextContent("calendarSurface.schedule.keyboard.resizeCancelled");
+        expect(mockedUpdateSession).not.toHaveBeenCalled();
       });
     });
 

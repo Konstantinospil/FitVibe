@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  coveredSlotKeys,
+  durationForSlotEnd,
+  durationOf,
   findScheduleConflicts,
   isReschedulable,
+  sessionEnd,
+  stepDuration,
   isScheduleStepKey,
   localDateKey,
   localDateTimeToIso,
@@ -21,6 +26,7 @@ const session = (overrides: Partial<SessionListItem>): SessionListItem => ({
   id: "session",
   owner_id: "user-1",
   planned_at: at(2026, 11, 2, 8),
+  planned_duration_min: 60,
   status: "planned",
   visibility: "private",
   exercise_count: 0,
@@ -139,29 +145,101 @@ describe("sessionSchedule", () => {
     const target = at(2026, 11, 4, 8);
     const sessions = [
       session({ id: "moving", planned_at: at(2026, 11, 2, 8) }),
-      session({ id: "same-instant", planned_at: target }),
-      session({ id: "same-day-other-time", planned_at: at(2026, 11, 4, 9) }),
+      session({ id: "same-start", planned_at: target, planned_duration_min: 30 }),
+      session({
+        id: "starts-inside",
+        planned_at: at(2026, 11, 4, 8, 45),
+        planned_duration_min: 15,
+      }),
+      session({ id: "ends-inside", planned_at: at(2026, 11, 4, 7, 30), planned_duration_min: 45 }),
+      session({ id: "back-to-back", planned_at: at(2026, 11, 4, 9) }),
+      session({ id: "ends-at-start", planned_at: at(2026, 11, 4, 7), planned_duration_min: 60 }),
       session({ id: "canceled", planned_at: target, status: "canceled" }),
       session({ id: "deleted", planned_at: target, deleted_at: at(2026, 11, 1, 9) }),
-      session({ id: "completed-same-instant", planned_at: target, status: "completed" }),
+      session({ id: "completed-overlap", planned_at: at(2026, 11, 4, 8, 15), status: "completed" }),
     ];
 
-    it("reports active sessions at the same instant, including completed records", () => {
-      expect(findScheduleConflicts(sessions, "moving", target).map(({ id }) => id)).toEqual([
-        "same-instant",
-        "completed-same-instant",
+    it("reports active sessions whose planned time overlaps, including completed records", () => {
+      expect(findScheduleConflicts(sessions, "moving", target, 60).map(({ id }) => id)).toEqual([
+        "same-start",
+        "starts-inside",
+        "ends-inside",
+        "completed-overlap",
       ]);
     });
 
+    it("treats back-to-back sessions as free", () => {
+      const ids = findScheduleConflicts(sessions, "moving", target, 60).map(({ id }) => id);
+      expect(ids).not.toContain("back-to-back");
+      expect(ids).not.toContain("ends-at-start");
+    });
+
+    it("grows with the planned length", () => {
+      expect(findScheduleConflicts(sessions, "moving", target, 61).map(({ id }) => id)).toContain(
+        "back-to-back",
+      );
+    });
+
     it("never reports the moved session against itself", () => {
-      expect(findScheduleConflicts(sessions, "same-instant", target).map(({ id }) => id)).toEqual([
-        "completed-same-instant",
-      ]);
+      expect(findScheduleConflicts(sessions, "same-start", target, 30).map(({ id }) => id)).toEqual(
+        ["ends-inside", "completed-overlap"],
+      );
     });
 
     it("compares instants rather than ISO string spellings", () => {
       const spelled = [session({ id: "other", planned_at: "2026-11-04T08:00:00Z" })];
-      expect(findScheduleConflicts(spelled, "moving", "2026-11-04T08:00:00.000Z")).toHaveLength(1);
+      expect(findScheduleConflicts(spelled, "moving", "2026-11-04T08:00:00.000Z", 5)).toHaveLength(
+        1,
+      );
+    });
+
+    it("uses the default length for sessions cached without one", () => {
+      const legacy = [
+        session({ id: "legacy", planned_at: target, planned_duration_min: undefined }),
+      ];
+      expect(durationOf(legacy[0])).toBe(60);
+      expect(findScheduleConflicts(legacy, "moving", at(2026, 11, 4, 8, 59), 5)).toHaveLength(1);
+    });
+  });
+
+  describe("durations", () => {
+    it("computes the end of a session", () => {
+      expect(sessionEnd(at(2026, 11, 4, 18, 20), 100)).toBe(at(2026, 11, 4, 20));
+    });
+
+    it("lists the hour slots a session reaches into, across midnight", () => {
+      expect(coveredSlotKeys(at(2026, 11, 4, 18, 30), 90)).toEqual([
+        "2026-11-04T18",
+        "2026-11-04T19",
+      ]);
+      expect(coveredSlotKeys(at(2026, 11, 4, 18), 60)).toEqual(["2026-11-04T18"]);
+      expect(coveredSlotKeys(at(2026, 11, 4, 23, 30), 45)).toEqual([
+        "2026-11-04T23",
+        "2026-11-05T00",
+      ]);
+    });
+
+    it("ends a resized session where the target hour slot ends", () => {
+      const start = at(2026, 11, 4, 18, 20);
+      expect(durationForSlotEnd(start, slotKey("2026-11-04", 19))).toBe(100);
+      expect(durationForSlotEnd(start, slotKey("2026-11-04", 18))).toBe(40);
+    });
+
+    it("clamps resized lengths and ignores day targets", () => {
+      const start = at(2026, 11, 4, 18, 20);
+      expect(durationForSlotEnd(start, slotKey("2026-11-04", 9))).toBe(5);
+      expect(durationForSlotEnd(at(2026, 11, 4, 0), slotKey("2026-11-05", 20))).toBe(720);
+      expect(durationForSlotEnd(start, "2026-11-04")).toBeNull();
+      expect(durationForSlotEnd(start, "not-a-target")).toBeNull();
+    });
+
+    it("steps lengths with the up and down arrows inside the limits", () => {
+      expect(stepDuration(60, "ArrowDown")).toBe(75);
+      expect(stepDuration(60, "ArrowUp")).toBe(45);
+      expect(stepDuration(10, "ArrowUp")).toBe(5);
+      expect(stepDuration(715, "ArrowDown")).toBe(720);
+      expect(stepDuration(60, "ArrowLeft")).toBeNull();
+      expect(stepDuration(60, "Enter")).toBeNull();
     });
   });
 });

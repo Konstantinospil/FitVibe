@@ -1044,35 +1044,43 @@
     },
     "schedule": {
       "moveLabel": "Déplacer {{title}}",
-      "moveHint": "Faites glisser vers un autre jour ou une autre heure. Ou appuyez sur Espace pour le saisir, déplacez-le avec les flèches et appuyez sur Entrée pour le déposer. Entrée seule ouvre le choix du jour et de l’heure.",
+      "moveHint": "Faites glisser vers un autre jour ou une autre heure. Ou appuyez sur Espace pour le saisir, déplacez-le avec les flèches et appuyez sur Entrée pour le déposer. Entrée seule ouvre le choix du jour, de l’heure et de la durée.",
+      "resizeHint": "Faites glisser pour changer l’heure de fin de l’entraînement. Ou appuyez sur Espace, changez la fin avec les flèches haut et bas et appuyez sur Entrée pour enregistrer. Entrée seule ouvre le choix du jour, de l’heure et de la durée.",
       "conflictLabel": "Conflit d’horaire",
       "dialog": {
-        "title": "Déplacer l’entraînement",
-        "description": "Choisissez un nouveau jour et une nouvelle heure pour {{title}}."
+        "title": "Reprogrammer l’entraînement",
+        "description": "Choisissez un nouveau jour, une heure de début et une durée pour {{title}}."
       },
       "fields": {
         "day": "Jour",
-        "time": "Heure"
+        "time": "Heure",
+        "duration": "Durée en minutes"
       },
       "actions": {
-        "save": "Déplacer l’entraînement",
+        "save": "Reprogrammer l’entraînement",
         "cancel": "Annuler"
       },
       "status": {
-        "moved": "{{title}} a été déplacé au {{date}}."
+        "rescheduled": "{{title}} est maintenant prévu le {{date}}, {{start}}–{{end}}."
       },
       "errors": {
-        "conflict": "{{title}} est déjà prévu à {{time}} le {{date}}. Choisissez un autre jour ou une autre heure.",
-        "conflictUnlisted": "Un autre entraînement est déjà prévu à {{time}} le {{date}}. Choisissez un autre jour ou une autre heure.",
+        "conflict": "{{title}} est prévu de {{start}} à {{end}} le {{date}}. Choisissez une autre heure.",
+        "conflictUnlisted": "Un autre entraînement est prévu entre {{start}} et {{end}} le {{date}}. Choisissez une autre heure.",
         "invalid": "Ce jour et cette heure n’existent pas. Choisissez-en d’autres.",
-        "save": "Impossible de déplacer l’entraînement. Réessayez."
+        "save": "Impossible de reprogrammer l’entraînement. Réessayez.",
+        "invalidDuration": "Choisissez une durée comprise entre {{min}} et {{max}} minutes."
       },
       "chipLabel": "{{time}} {{title}}, déplacer",
+      "resizeLabel": "{{title}}, se termine à {{time}}, changer la durée",
       "keyboard": {
         "pickedUp": "{{title}} saisi. Utilisez les flèches pour choisir un nouveau jour ou une nouvelle heure, Entrée pour déposer, Échap pour annuler.",
         "over": "{{target}}.",
         "overConflict": "{{target}} : conflit avec {{title}}.",
-        "cancelled": "Déplacement de {{title}} annulé."
+        "cancelled": "Déplacement de {{title}} annulé.",
+        "resizePickedUp": "Modification de la durée de {{title}}. Utilisez les flèches haut et bas pour changer la fin, Entrée pour enregistrer, Échap pour annuler.",
+        "resizeOver": "Se termine à {{time}}, {{duration}}.",
+        "resizeOverConflict": "Se termine à {{time}}, {{duration}} : conflit avec {{title}}.",
+        "resizeCancelled": "Durée de {{title}} inchangée."
       }
     },
     "views": {

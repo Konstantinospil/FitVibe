@@ -1044,35 +1044,43 @@
     },
     "schedule": {
       "moveLabel": "Move {{title}}",
-      "moveHint": "Drag to another day or time. Or press Space to pick it up, move it with the arrow keys and press Enter to drop it. Press Enter on its own to choose a day and time.",
+      "moveHint": "Drag to another day or time. Or press Space to pick it up, move it with the arrow keys and press Enter to drop it. Press Enter on its own to change the day, time and length.",
+      "resizeHint": "Drag to change when the workout ends. Or press Space, change the end with the up and down arrow keys and press Enter to save. Press Enter on its own to change the day, time and length.",
       "conflictLabel": "Time conflict",
       "dialog": {
-        "title": "Move workout",
-        "description": "Choose a new day and time for {{title}}."
+        "title": "Reschedule workout",
+        "description": "Choose a new day, start time and length for {{title}}."
       },
       "fields": {
         "day": "Day",
-        "time": "Time"
+        "time": "Time",
+        "duration": "Length in minutes"
       },
       "actions": {
-        "save": "Move workout",
+        "save": "Reschedule workout",
         "cancel": "Cancel"
       },
       "status": {
-        "moved": "{{title}} moved to {{date}}."
+        "rescheduled": "{{title}} is now planned for {{date}}, {{start}}–{{end}}."
       },
       "errors": {
-        "conflict": "{{title}} is already planned for {{time}} on {{date}}. Choose another day or time.",
-        "conflictUnlisted": "Another workout is already planned for {{time}} on {{date}}. Choose another day or time.",
+        "conflict": "{{title}} is planned from {{start}} to {{end}} on {{date}}. Choose another time.",
+        "conflictUnlisted": "Another workout is planned between {{start}} and {{end}} on {{date}}. Choose another time.",
         "invalid": "That day and time doesn't exist. Choose another one.",
-        "save": "The workout couldn't be moved. Try again."
+        "save": "The workout couldn't be rescheduled. Try again.",
+        "invalidDuration": "Choose a length between {{min}} and {{max}} minutes."
       },
       "chipLabel": "{{time}} {{title}}, move",
+      "resizeLabel": "{{title}}, ends {{time}}, change length",
       "keyboard": {
         "pickedUp": "{{title}} picked up. Use the arrow keys to choose a new day or time, Enter to drop, Escape to cancel.",
         "over": "{{target}}.",
         "overConflict": "{{target}}: conflicts with {{title}}.",
-        "cancelled": "Move of {{title}} cancelled."
+        "cancelled": "Move of {{title}} cancelled.",
+        "resizePickedUp": "Changing the length of {{title}}. Use the up and down arrow keys to change the end, Enter to save, Escape to cancel.",
+        "resizeOver": "Ends at {{time}}, {{duration}}.",
+        "resizeOverConflict": "Ends at {{time}}, {{duration}}: conflicts with {{title}}.",
+        "resizeCancelled": "Length of {{title}} unchanged."
       }
     },
     "views": {

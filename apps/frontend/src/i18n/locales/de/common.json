@@ -1044,35 +1044,43 @@
     },
     "schedule": {
       "moveLabel": "{{title}} verschieben",
-      "moveHint": "Auf einen anderen Tag oder eine andere Uhrzeit ziehen. Oder mit der Leertaste aufnehmen, mit den Pfeiltasten verschieben und mit der Eingabetaste ablegen. Die Eingabetaste allein öffnet die Auswahl von Tag und Uhrzeit.",
+      "moveHint": "Auf einen anderen Tag oder eine andere Uhrzeit ziehen. Oder mit der Leertaste aufnehmen, mit den Pfeiltasten verschieben und mit der Eingabetaste ablegen. Die Eingabetaste allein öffnet die Auswahl von Tag, Uhrzeit und Dauer.",
+      "resizeHint": "Ziehen, um das Ende des Workouts zu ändern. Oder die Leertaste drücken, das Ende mit den Pfeiltasten nach oben und unten ändern und mit der Eingabetaste speichern. Die Eingabetaste allein öffnet die Auswahl von Tag, Uhrzeit und Dauer.",
       "conflictLabel": "Zeitkonflikt",
       "dialog": {
-        "title": "Workout verschieben",
-        "description": "Wähle einen neuen Tag und eine neue Uhrzeit für {{title}}."
+        "title": "Workout neu planen",
+        "description": "Wähle einen neuen Tag, eine neue Startzeit und eine Dauer für {{title}}."
       },
       "fields": {
         "day": "Tag",
-        "time": "Uhrzeit"
+        "time": "Uhrzeit",
+        "duration": "Dauer in Minuten"
       },
       "actions": {
-        "save": "Workout verschieben",
+        "save": "Workout neu planen",
         "cancel": "Abbrechen"
       },
       "status": {
-        "moved": "{{title}} wurde auf {{date}} verschoben."
+        "rescheduled": "{{title}} ist jetzt für {{date}}, {{start}}–{{end}} geplant."
       },
       "errors": {
-        "conflict": "{{title}} ist bereits für {{time}} am {{date}} geplant. Wähle einen anderen Tag oder eine andere Uhrzeit.",
-        "conflictUnlisted": "Ein anderes Workout ist bereits für {{time}} am {{date}} geplant. Wähle einen anderen Tag oder eine andere Uhrzeit.",
+        "conflict": "{{title}} ist am {{date}} von {{start}} bis {{end}} geplant. Wähle eine andere Zeit.",
+        "conflictUnlisted": "Ein anderes Workout ist am {{date}} zwischen {{start}} und {{end}} geplant. Wähle eine andere Zeit.",
         "invalid": "Diesen Tag mit dieser Uhrzeit gibt es nicht. Wähle eine andere Angabe.",
-        "save": "Das Workout konnte nicht verschoben werden. Versuche es erneut."
+        "save": "Das Workout konnte nicht neu geplant werden. Versuche es erneut.",
+        "invalidDuration": "Wähle eine Dauer zwischen {{min}} und {{max}} Minuten."
       },
       "chipLabel": "{{time}} {{title}}, verschieben",
+      "resizeLabel": "{{title}}, endet um {{time}}, Dauer ändern",
       "keyboard": {
         "pickedUp": "{{title}} aufgenommen. Wähle mit den Pfeiltasten einen neuen Tag oder eine neue Uhrzeit, lege es mit der Eingabetaste ab oder brich mit Escape ab.",
         "over": "{{target}}.",
         "overConflict": "{{target}}: Konflikt mit {{title}}.",
-        "cancelled": "Verschieben von {{title}} abgebrochen."
+        "cancelled": "Verschieben von {{title}} abgebrochen.",
+        "resizePickedUp": "Dauer von {{title}} ändern. Ändere das Ende mit den Pfeiltasten nach oben und unten, speichere mit der Eingabetaste oder brich mit Escape ab.",
+        "resizeOver": "Endet um {{time}}, {{duration}}.",
+        "resizeOverConflict": "Endet um {{time}}, {{duration}}: Konflikt mit {{title}}.",
+        "resizeCancelled": "Dauer von {{title}} unverändert."
       }
     },
     "views": {

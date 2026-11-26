@@ -154,10 +154,11 @@ const PlanManagement: React.FC<PlanManagementProps> = ({ open, onClose }) => {
       setDraft(null);
     } catch (cause) {
       if (isTrainingPlanConflict(cause)) {
+        // An expected outcome of concurrent editing, shown as the conflict banner.
         setConflict(true);
-      } else {
-        setError(t("trainingPlans.errors.save"));
+        return;
       }
+      setError(t("trainingPlans.errors.save"));
       logger.apiError(
         "Failed to save training plan",
         cause,

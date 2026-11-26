@@ -743,6 +743,59 @@
   cursor: grabbing;
 }
 
+/* A movable chip with its resize handle underneath: the handle sits on the
+ * chip's bottom edge, where a session ends on the time axis. */
+.schedule-chip-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.schedule-chip-group [data-component="icon-button"].schedule-chip__resize {
+  width: 100%;
+  min-height: var(--control-height-sm);
+  border-radius: var(--radius-none) var(--radius-none) var(--radius-sm) var(--radius-sm);
+  color: var(--color-text-muted);
+  /* Touch drags start here and must not scroll or select text. */
+  touch-action: none;
+  user-select: none;
+  cursor: ns-resize;
+}
+
+.schedule-chip--resizing {
+  outline: 2px dashed var(--color-highlight);
+  outline-offset: -2px;
+}
+
+/* Later slots a session still occupies (ScheduleSessionContinuation). */
+.schedule-chip-continuation {
+  flex: 1 1 auto;
+  min-height: var(--space-md);
+  background: var(--color-surface-muted);
+  border-left: var(--space-xs) solid var(--color-primary);
+}
+
+.schedule-chip-continuation--success {
+  background: var(--color-success-bg);
+  border-left-color: var(--color-success);
+}
+
+.schedule-chip-continuation--warning {
+  background: var(--color-warning-bg);
+  border-left-color: var(--color-warning);
+}
+
+.schedule-chip-continuation--danger {
+  background: var(--color-danger-bg);
+  border-left-color: var(--color-danger);
+}
+
+.schedule-chip-continuation--conflict {
+  outline: 2px solid var(--color-danger-border);
+  outline-offset: -2px;
+}
+
 .training-empty,
 .training-error {
   padding: var(--space-lg);

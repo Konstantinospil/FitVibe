@@ -1987,6 +1987,12 @@
             "type": "string",
             "format": "date-time"
           },
+          "planned_duration_min": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 720,
+            "description": "Planned length in minutes; defaults to 60."
+          },
           "visibility": {
             "type": "string",
             "enum": ["private", "followers", "public", "link"]

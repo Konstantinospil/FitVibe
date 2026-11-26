@@ -186,6 +186,18 @@ export async function updatePlan(
     patch.end_date = updates.end_date;
   }
 
+  if (updates.duration_weeks !== undefined) {
+    patch.duration_weeks = updates.duration_weeks;
+  }
+
+  if (updates.target_frequency !== undefined) {
+    patch.target_frequency = updates.target_frequency;
+  }
+
+  if (updates.time_zone !== undefined) {
+    patch.time_zone = updates.time_zone;
+  }
+
   const query = withDb(trx)<PlanRow>(PLANS_TABLE).where({ id: planId }).whereNull("archived_at");
   // Prevent concurrent schedule edits after another request activates the plan.
   if (

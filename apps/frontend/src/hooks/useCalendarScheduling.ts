@@ -3,19 +3,28 @@ import { useTranslation } from "react-i18next";
 import type { SessionListItem } from "../services/sessionApi";
 import {
   SCHEDULE_HANDLE_ATTRIBUTE,
+  SCHEDULE_RESIZE_HANDLE_ATTRIBUTE,
   type ScheduleHandleProps,
 } from "../lib/scheduling/scheduleHandle";
 import {
+  durationForSlotEnd,
+  durationOf,
   findScheduleConflicts,
   isScheduleStepKey,
   plannedAtForTarget,
+  sessionEnd,
+  stepDuration,
   stepScheduleTarget,
   targetKeyFor,
   type ScheduleGranularity,
 } from "../lib/scheduling/sessionSchedule";
 import { usePointerDrag } from "./usePointerDrag";
 import { useKeyboardMove, type KeyboardMoveEvent } from "./useKeyboardMove";
-import { useSessionReschedule, type RescheduleResult } from "./useSessionReschedule";
+import {
+  useSessionReschedule,
+  type RescheduleResult,
+  type SessionSchedule,
+} from "./useSessionReschedule";
 
 /** Attribute that marks a calendar day or hour slot as a drop target; its value is the target key. */
 export const SCHEDULE_DROP_ATTRIBUTE = "data-schedule-day";
@@ -31,14 +40,43 @@ export interface CalendarSchedulingOptions {
   granularity: ScheduleGranularity;
   /** Day keys currently on screen, in order; keyboard moves stay inside them. */
   visibleDays: readonly string[];
-  /** Called after a move is saved, so the page can follow the session. */
+  /** Called after a change is saved, so the page can follow the session. */
   onMoved: (plannedAt: string) => void;
 }
 
+/** A pending change of a session's length, from a resize drag or the keyboard. */
+export interface PendingResize {
+  session: SessionListItem;
+  durationMin: number;
+}
+
+interface Refocus {
+  id: string;
+  attribute: string;
+}
+
+const scheduleOf = (session: SessionListItem): SessionSchedule => ({
+  plannedAt: session.planned_at,
+  durationMin: durationOf(session),
+});
+
+/** A resize keeps the start and changes the length. */
+const resizedSchedule = (session: SessionListItem, durationMin: number): SessionSchedule => ({
+  plannedAt: session.planned_at,
+  durationMin,
+});
+
+/** A move keeps the length and takes the target's start. */
+const movedSchedule = (session: SessionListItem, targetKey: string): SessionSchedule | null => {
+  const plannedAt = plannedAtForTarget(session.planned_at, targetKey);
+  return plannedAt ? { plannedAt, durationMin: durationOf(session) } : null;
+};
+
 /**
- * Everything the Calendar needs to move planned sessions: pointer drag,
- * keyboard pick-up, the move dialog, conflict preview, saving, announcements
- * and returning focus to the moved session's handle. The page only renders.
+ * Everything the Calendar needs to move and resize planned sessions: pointer
+ * drag, keyboard pick-up, the reschedule dialog, overlap preview, saving,
+ * announcements and returning focus to the handle that was used. The page only
+ * renders.
  */
 export function useCalendarScheduling({
   loadedSessions,
@@ -51,7 +89,7 @@ export function useCalendarScheduling({
   const [feedback, setFeedback] = useState<ScheduleFeedback | null>(null);
   const [conflictIds, setConflictIds] = useState<ReadonlySet<string>>(() => new Set());
   const [dialogSession, setDialogSession] = useState<SessionListItem | null>(null);
-  const [refocusId, setRefocusId] = useState<string | null>(null);
+  const [refocus, setRefocus] = useState<Refocus | null>(null);
 
   const sessionTitle = useCallback(
     (session: SessionListItem) => session.title || t("homeSurface.session.workout"),
@@ -67,33 +105,63 @@ export function useCalendarScheduling({
     [i18n.language],
   );
 
+  const formatDate = useCallback(
+    (value: string) =>
+      new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }).format(new Date(value)),
+    [i18n.language],
+  );
+
+  const formatTime = useCallback(
+    (value: string) =>
+      new Intl.DateTimeFormat(i18n.language, { timeStyle: "short" }).format(new Date(value)),
+    [i18n.language],
+  );
+
+  const formatMinutes = useCallback(
+    (minutes: number) =>
+      new Intl.NumberFormat(i18n.language, {
+        style: "unit",
+        unit: "minute",
+        unitDisplay: "long",
+      }).format(minutes),
+    [i18n.language],
+  );
+
+  /** Day, start and end of a schedule, for messages. */
+  const describe = useCallback(
+    ({ plannedAt, durationMin }: SessionSchedule) => ({
+      date: formatDate(plannedAt),
+      start: formatTime(plannedAt),
+      end: formatTime(sessionEnd(plannedAt, durationMin)),
+    }),
+    [formatDate, formatTime],
+  );
+
   const conflictMessage = useCallback(
     (result: Extract<RescheduleResult, { status: "conflict" }>) => {
       const blocking = loadedSessions.find((session) => result.conflictingIds.includes(session.id));
-      const instant = new Date(result.plannedAt);
-      const when = {
-        date: new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium" }).format(instant),
-        time: new Intl.DateTimeFormat(i18n.language, { timeStyle: "short" }).format(instant),
-      };
       return blocking
-        ? t("calendarSurface.schedule.errors.conflict", { ...when, title: sessionTitle(blocking) })
-        : t("calendarSurface.schedule.errors.conflictUnlisted", when);
+        ? t("calendarSurface.schedule.errors.conflict", {
+            ...describe(scheduleOf(blocking)),
+            title: sessionTitle(blocking),
+          })
+        : t("calendarSurface.schedule.errors.conflictUnlisted", describe(result));
     },
-    [i18n.language, loadedSessions, sessionTitle, t],
+    [describe, loadedSessions, sessionTitle, t],
   );
 
-  /** Saves a move and resolves to the refusal message, or null when it was saved. */
-  const performMove = useCallback(
-    async (session: SessionListItem, plannedAt: string): Promise<string | null> => {
-      const result = await reschedule(session, plannedAt);
+  /** Saves a new start and length; resolves to the refusal message, or null when saved. */
+  const performChange = useCallback(
+    async (session: SessionListItem, schedule: SessionSchedule): Promise<string | null> => {
+      const result = await reschedule(session, schedule);
       if (result.status === "saved") {
         setConflictIds(new Set());
         onMoved(result.plannedAt);
         setFeedback({
           tone: "success",
-          message: t("calendarSurface.schedule.status.moved", {
+          message: t("calendarSurface.schedule.status.rescheduled", {
+            ...describe(result),
             title: sessionTitle(session),
-            date: formatInstant(result.plannedAt),
           }),
         });
         return null;
@@ -104,26 +172,49 @@ export function useCalendarScheduling({
       }
       return t("calendarSurface.schedule.errors.save");
     },
-    [conflictMessage, formatInstant, onMoved, reschedule, sessionTitle, t],
+    [conflictMessage, describe, onMoved, reschedule, sessionTitle, t],
   );
 
-  /** Moves a session onto a day or hour-slot target; resolves once the outcome is shown. */
-  const dropOnTarget = useCallback(
-    async (session: SessionListItem, targetKey: string): Promise<void> => {
-      const plannedAt = plannedAtForTarget(session.planned_at, targetKey);
-      if (!plannedAt) {
+  /** Saves a change unless it changes nothing; refusals are shown as feedback. */
+  const applyChange = useCallback(
+    async (session: SessionListItem, schedule: SessionSchedule | null): Promise<void> => {
+      if (!schedule) {
         setFeedback({ tone: "warning", message: t("calendarSurface.schedule.errors.invalid") });
         return;
       }
-      if (new Date(plannedAt).getTime() === new Date(session.planned_at).getTime()) {
+      const unchanged =
+        new Date(schedule.plannedAt).getTime() === new Date(session.planned_at).getTime() &&
+        schedule.durationMin === durationOf(session);
+      if (unchanged) {
         return;
       }
-      const refusal = await performMove(session, plannedAt);
+      const refusal = await performChange(session, schedule);
       if (refusal) {
         setFeedback({ tone: "warning", message: refusal });
       }
     },
-    [performMove, t],
+    [performChange, t],
+  );
+
+  // ----- Moving: the session keeps its length and takes a new start. -----
+
+  const dropOnTarget = useCallback(
+    (session: SessionListItem, targetKey: string) =>
+      applyChange(session, movedSchedule(session, targetKey)),
+    [applyChange],
+  );
+
+  const conflictsFor = useCallback(
+    (session: SessionListItem, schedule: SessionSchedule | null): SessionListItem[] =>
+      schedule
+        ? findScheduleConflicts(
+            loadedSessions,
+            session.id,
+            schedule.plannedAt,
+            schedule.durationMin,
+          )
+        : [],
+    [loadedSessions],
   );
 
   const pointer = usePointerDrag<SessionListItem>({
@@ -131,48 +222,34 @@ export function useCalendarScheduling({
     onDrop: (session, targetKey) => void dropOnTarget(session, targetKey),
   });
 
-  const conflictsAt = useCallback(
-    (session: SessionListItem, targetKey: string): SessionListItem[] => {
-      const plannedAt = plannedAtForTarget(session.planned_at, targetKey);
-      return plannedAt ? findScheduleConflicts(loadedSessions, session.id, plannedAt) : [];
-    },
-    [loadedSessions],
+  const announce = useCallback(
+    (tone: ScheduleFeedback["tone"], key: string, values: Record<string, string>) =>
+      setFeedback({ tone, message: t(`calendarSurface.schedule.keyboard.${key}`, values) }),
+    [t],
   );
 
-  const announceKeyboard = useCallback(
+  const announceMove = useCallback(
     (event: KeyboardMoveEvent, session: SessionListItem, targetKey: string) => {
       const title = sessionTitle(session);
       if (event === "pickup") {
-        setFeedback({
-          tone: "info",
-          message: t("calendarSurface.schedule.keyboard.pickedUp", { title }),
-        });
+        announce("info", "pickedUp", { title });
       } else if (event === "cancel") {
-        setFeedback({
-          tone: "info",
-          message: t("calendarSurface.schedule.keyboard.cancelled", { title }),
-        });
+        announce("info", "cancelled", { title });
       } else if (event === "move") {
-        const plannedAt = plannedAtForTarget(session.planned_at, targetKey);
-        if (!plannedAt) {
+        const schedule = movedSchedule(session, targetKey);
+        if (!schedule) {
           return;
         }
-        const target = formatInstant(plannedAt, granularity === "hour");
-        const [blocking] = conflictsAt(session, targetKey);
-        setFeedback(
-          blocking
-            ? {
-                tone: "warning",
-                message: t("calendarSurface.schedule.keyboard.overConflict", {
-                  target,
-                  title: sessionTitle(blocking),
-                }),
-              }
-            : { tone: "info", message: t("calendarSurface.schedule.keyboard.over", { target }) },
-        );
+        const target = formatInstant(schedule.plannedAt, granularity === "hour");
+        const [blocking] = conflictsFor(session, schedule);
+        if (blocking) {
+          announce("warning", "overConflict", { target, title: sessionTitle(blocking) });
+        } else {
+          announce("info", "over", { target });
+        }
       }
     },
-    [conflictsAt, formatInstant, granularity, sessionTitle, t],
+    [announce, conflictsFor, formatInstant, granularity, sessionTitle],
   );
 
   const keyboard = useKeyboardMove<SessionListItem>({
@@ -182,38 +259,121 @@ export function useCalendarScheduling({
     // The moved session may render in another slot (optimistic update, or a rollback
     // after a refusal); focus returns to its handle once that outcome is on screen.
     onDrop: (session, targetKey) => {
-      void dropOnTarget(session, targetKey).then(() => setRefocusId(session.id));
+      void dropOnTarget(session, targetKey).then(() =>
+        setRefocus({ id: session.id, attribute: SCHEDULE_HANDLE_ATTRIBUTE }),
+      );
     },
-    onEvent: announceKeyboard,
+    onEvent: announceMove,
   });
 
-  // Return focus to the moved session's handle so keyboard users keep their place.
+  // ----- Resizing: the session keeps its start and gets a new end. -----
+
+  const resizePointer = usePointerDrag<SessionListItem>({
+    dropTargetAttribute: SCHEDULE_DROP_ATTRIBUTE,
+    onDrop: (session, targetKey) => {
+      const durationMin = durationForSlotEnd(session.planned_at, targetKey);
+      void applyChange(
+        session,
+        durationMin === null ? null : resizedSchedule(session, durationMin),
+      );
+    },
+  });
+
+  const announceResize = useCallback(
+    (event: KeyboardMoveEvent, session: SessionListItem, target: string) => {
+      const title = sessionTitle(session);
+      if (event === "pickup") {
+        announce("info", "resizePickedUp", { title });
+      } else if (event === "cancel") {
+        announce("info", "resizeCancelled", { title });
+      } else if (event === "move") {
+        const durationMin = Number(target);
+        const values = {
+          time: formatTime(sessionEnd(session.planned_at, durationMin)),
+          duration: formatMinutes(durationMin),
+        };
+        const [blocking] = conflictsFor(session, resizedSchedule(session, durationMin));
+        if (blocking) {
+          announce("warning", "resizeOverConflict", { ...values, title: sessionTitle(blocking) });
+        } else {
+          announce("info", "resizeOver", values);
+        }
+      }
+    },
+    [announce, conflictsFor, formatMinutes, formatTime, sessionTitle],
+  );
+
+  const resizeKeyboard = useKeyboardMove<SessionListItem>({
+    initialTarget: (session) => String(durationOf(session)),
+    step: (target, key) => {
+      const next = stepDuration(Number(target), key);
+      return next === null ? null : String(next);
+    },
+    onDrop: (session, target) => {
+      void applyChange(session, resizedSchedule(session, Number(target))).then(() =>
+        setRefocus({ id: session.id, attribute: SCHEDULE_RESIZE_HANDLE_ATTRIBUTE }),
+      );
+    },
+    onEvent: announceResize,
+  });
+
+  // Return focus to the handle that was used, so keyboard users keep their place.
   useEffect(() => {
-    if (!refocusId) {
+    if (!refocus) {
       return;
     }
     const handle = document.querySelector<HTMLElement>(
-      `[${SCHEDULE_HANDLE_ATTRIBUTE}="${CSS.escape(refocusId)}"]`,
+      `[${refocus.attribute}="${CSS.escape(refocus.id)}"]`,
     );
     if (handle) {
       handle.focus();
-      setRefocusId(null);
+      setRefocus(null);
     }
-  }, [loadedSessions, refocusId]);
+  }, [loadedSessions, refocus]);
 
   /** The pending move, from either a pointer drag or a keyboard pick-up. */
   const activeMove = pointer.dragState ?? keyboard.moveState;
 
-  // While a move is pending, conflicts are previewed for its target before anything is saved.
+  /** The pending length change, from either a resize drag or the keyboard. */
+  const pendingResize = useMemo<PendingResize | null>(() => {
+    if (resizeKeyboard.moveState) {
+      return {
+        session: resizeKeyboard.moveState.item,
+        durationMin: Number(resizeKeyboard.moveState.overTarget),
+      };
+    }
+    const drag = resizePointer.dragState;
+    if (!drag) {
+      return null;
+    }
+    const durationMin = drag.overTarget
+      ? durationForSlotEnd(drag.item.planned_at, drag.overTarget)
+      : null;
+    return { session: drag.item, durationMin: durationMin ?? durationOf(drag.item) };
+  }, [resizeKeyboard.moveState, resizePointer.dragState]);
+
+  // While a change is pending, overlaps are previewed before anything is saved.
   const highlightedConflicts = useMemo<ReadonlySet<string>>(() => {
+    if (pendingResize) {
+      return new Set(
+        conflictsFor(
+          pendingResize.session,
+          resizedSchedule(pendingResize.session, pendingResize.durationMin),
+        ).map(({ id }) => id),
+      );
+    }
     if (!activeMove) {
       return conflictIds;
     }
     if (!activeMove.overTarget) {
       return new Set();
     }
-    return new Set(conflictsAt(activeMove.item, activeMove.overTarget).map(({ id }) => id));
-  }, [activeMove, conflictIds, conflictsAt]);
+    return new Set(
+      conflictsFor(activeMove.item, movedSchedule(activeMove.item, activeMove.overTarget)).map(
+        ({ id }) => id,
+      ),
+    );
+  }, [activeMove, conflictIds, conflictsFor, pendingResize]);
 
   const handlePropsFor = useCallback(
     (session: SessionListItem): ScheduleHandleProps => ({
@@ -223,32 +383,47 @@ export function useCalendarScheduling({
     [keyboard, pointer],
   );
 
-  const confirmDialogMove = useCallback(
-    async (plannedAt: string) => {
+  const resizeHandlePropsFor = useCallback(
+    (session: SessionListItem): ScheduleHandleProps => ({
+      ...resizePointer.getHandleProps(session),
+      ...resizeKeyboard.getKeyHandlers(session),
+    }),
+    [resizeKeyboard, resizePointer],
+  );
+
+  const confirmDialogChange = useCallback(
+    async (schedule: SessionSchedule) => {
       if (!dialogSession) {
         return null;
       }
-      const refusal = await performMove(dialogSession, plannedAt);
+      const refusal = await performChange(dialogSession, schedule);
       if (!refusal) {
         setDialogSession(null);
       }
       return refusal;
     },
-    [dialogSession, performMove],
+    [dialogSession, performChange],
   );
 
   return {
     feedback,
     sessionTitle,
     activeMove,
+    pendingResize,
+    /** Length to show for a session: the pending one while it is being resized. */
+    displayedDuration: (session: SessionListItem) =>
+      pendingResize?.session.id === session.id ? pendingResize.durationMin : durationOf(session),
     isMoving: (session: SessionListItem) => activeMove?.item.id === session.id,
-    isDropTarget: (targetKey: string) => activeMove?.overTarget === targetKey,
+    isResizing: (session: SessionListItem) => pendingResize?.session.id === session.id,
+    isDropTarget: (targetKey: string) =>
+      activeMove?.overTarget === targetKey || resizePointer.dragState?.overTarget === targetKey,
     highlightedConflicts,
     handlePropsFor,
+    resizeHandlePropsFor,
     dialogSession,
     openDialog: setDialogSession,
     closeDialog: () => setDialogSession(null),
-    confirmDialogMove,
+    confirmDialogChange,
     dragPreview: pointer.dragState
       ? { item: pointer.dragState.item, ref: pointer.previewRef }
       : null,

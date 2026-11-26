@@ -54,6 +54,8 @@ export interface Session {
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
+  /** Planned length in minutes; the session occupies [planned_at, planned_at + length). */
+  planned_duration_min: number;
   status: SessionStatus;
   visibility: SessionVisibility;
   notes?: string | null;
@@ -119,6 +121,7 @@ export interface CreateSessionRequest {
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
+  planned_duration_min?: number;
   visibility?: SessionVisibility;
   notes?: string | null;
   recurrence_rule?: string | null;
@@ -129,6 +132,7 @@ export interface UpdateSessionRequest {
   plan_id?: string | null;
   title?: string | null;
   planned_at?: string;
+  planned_duration_min?: number;
   status?: SessionStatus;
   visibility?: SessionVisibility;
   notes?: string | null;
