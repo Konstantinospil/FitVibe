@@ -5,11 +5,11 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DEMO_IDS = {
-  "Barbell Back Squat": "77777777-7777-7777-7777-777777777777",
-  "Barbell Bench Press": "77777777-7777-7777-7777-777777777778",
-  "Conventional Deadlift": "77777777-7777-7777-7777-777777777779",
-  "Tempo Run 5K": "77777777-7777-7777-7777-777777777780",
-  "Endurance Ride 60k": "77777777-7777-7777-7777-777777777781",
+  "Barbell Back Squat": "77777777-7777-4777-8777-777777777777",
+  "Barbell Bench Press": "77777777-7777-4777-8777-777777777778",
+  "Conventional Deadlift": "77777777-7777-4777-8777-777777777779",
+  "Tempo Run 5K": "77777777-7777-4777-8777-777777777780",
+  "Endurance Ride 60k": "77777777-7777-4777-8777-777777777781",
 };
 
 function uuid(vibeDigit, seq) {

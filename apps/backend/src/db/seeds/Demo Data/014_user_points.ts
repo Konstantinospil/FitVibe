@@ -4,10 +4,10 @@ const now = new Date();
 
 const USER_POINTS = [
   {
-    id: "44444444-5555-6666-7777-888888888888",
-    user_id: "22222222-2222-2222-2222-222222222222",
+    id: "44444444-5555-4666-8777-888888888888",
+    user_id: "22222222-2222-4222-8222-222222222222",
     source_type: "session_completed",
-    source_id: "aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    source_id: "aaaaaaa1-aaaa-4aaa-aaaa-aaaaaaaaaaaa",
     algorithm_version: "v1",
     points: 30,
     calories: 320,
@@ -17,8 +17,8 @@ const USER_POINTS = [
     awarded_at: now,
   },
   {
-    id: "99999999-aaaa-bbbb-cccc-dddddddddddd",
-    user_id: "22222222-2222-2222-2222-222222222222",
+    id: "99999999-aaaa-4bbb-8ccc-dddddddddddd",
+    user_id: "22222222-2222-4222-8222-222222222222",
     source_type: "streak_bonus",
     algorithm_version: "v1",
     points: 15,

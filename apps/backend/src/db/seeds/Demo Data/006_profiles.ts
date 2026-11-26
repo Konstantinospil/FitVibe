@@ -4,7 +4,7 @@ export async function seed(knex: Knex): Promise<void> {
   const now = new Date();
   const rows = [
     {
-      user_id: "11111111-1111-1111-1111-111111111111",
+      user_id: "11111111-1111-4111-8111-111111111111",
       date_of_birth: null,
       gender_code: "prefer_not_to_say",
       alias: "admin",
@@ -14,7 +14,7 @@ export async function seed(knex: Knex): Promise<void> {
       updated_at: now,
     },
     {
-      user_id: "22222222-2222-2222-2222-222222222222",
+      user_id: "22222222-2222-4222-8222-222222222222",
       date_of_birth: "1994-05-12",
       gender_code: "woman",
       alias: "jane.doe",

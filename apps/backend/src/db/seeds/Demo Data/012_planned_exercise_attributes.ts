@@ -4,8 +4,8 @@ const now = new Date();
 
 const PLANNED = [
   {
-    id: "eeeeeee1-eeee-eeee-eeee-eeeeeeeeeeee",
-    session_exercise_id: "bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    id: "eeeeeee1-eeee-4eee-8eee-eeeeeeeeeeee",
+    session_exercise_id: "bbbbbbb1-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
     sets: 5,
     reps: 3,
     load: 120,
@@ -17,8 +17,8 @@ const PLANNED = [
     created_at: now,
   },
   {
-    id: "fffffff1-ffff-ffff-ffff-ffffffffffff",
-    session_exercise_id: "ccccccc1-cccc-cccc-cccc-cccccccccccc",
+    id: "fffffff1-ffff-4fff-8fff-ffffffffffff",
+    session_exercise_id: "ccccccc1-cccc-4ccc-8ccc-cccccccccccc",
     sets: 3,
     reps: 6,
     load: 90,
@@ -30,8 +30,8 @@ const PLANNED = [
     created_at: now,
   },
   {
-    id: "11111111-aaaa-bbbb-cccc-222222222222",
-    session_exercise_id: "ddddddd1-dddd-dddd-dddd-dddddddddddd",
+    id: "11111111-aaaa-4bbb-8ccc-222222222222",
+    session_exercise_id: "ddddddd1-dddd-4ddd-8ddd-dddddddddddd",
     sets: null,
     reps: null,
     load: null,

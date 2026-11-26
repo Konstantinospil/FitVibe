@@ -220,7 +220,7 @@ describe("Auth Service", () => {
       needsAction: false,
     });
     mockGetCurrentLegalPublication.mockResolvedValue({
-      id: "11111111-1111-1111-1111-111111111111",
+      id: "11111111-1111-4111-8111-111111111111",
       document_type: "terms",
       version: "1.0.0",
       change_class: "legacy",
@@ -232,7 +232,7 @@ describe("Auth Service", () => {
       created_at: "2024-06-01T00:00:00.000Z",
     });
     mockAcceptLegalDocumentVersion.mockResolvedValue({
-      id: "11111111-1111-1111-1111-111111111111",
+      id: "11111111-1111-4111-8111-111111111111",
       document_type: "terms",
       version: "1.0.0",
       change_class: "legacy",
@@ -244,7 +244,7 @@ describe("Auth Service", () => {
       created_at: "2024-06-01T00:00:00.000Z",
     });
     mockAcceptCurrentLegalDocument.mockResolvedValue({
-      id: "11111111-1111-1111-1111-111111111111",
+      id: "11111111-1111-4111-8111-111111111111",
       document_type: "terms",
       version: "1.0.0",
       change_class: "legacy",

@@ -338,7 +338,7 @@ describeWithTestDatabase("database seeds", () => {
     });
 
     describe("users seed", () => {
-      const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
+      const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
       it("inserts only the bootstrap administrator", async () => {
         const users = await client("users").select("*");
         expect(users).toHaveLength(1);
