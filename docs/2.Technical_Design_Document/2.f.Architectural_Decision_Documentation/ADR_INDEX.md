@@ -44,6 +44,7 @@
 | ADR-038 | Superadmin Privilege and Sudo Model                                                               | Accepted   | 2026-09-27    | [ADR-038-superadmin-sudo-privilege-model.md](./ADR-038-superadmin-sudo-privilege-model.md)                                           |
 | ADR-039 | Email-first Registration to Prevent Account Enumeration                                           | Accepted   | 2026-11-25    | [ADR-039-email-first-registration.md](./ADR-039-email-first-registration.md)                                                         |
 | ADR-040 | First-party Browser Error Reporting                                                               | Proposed   | 2026-11-25    | [ADR-040-first-party-browser-error-reporting.md](./ADR-040-first-party-browser-error-reporting.md)                                   |
+| ADR-041 | Vibe Capability and Detraining Model                                                              | Proposed   | 2026-11-26    | [ADR-041-vibe-capability-and-detraining-model.md](./ADR-041-vibe-capability-and-detraining-model.md)                                 |
 
 ## Numbering notes
 
@@ -63,3 +64,4 @@
 - ADR-037 requires Redis/BullMQ for production background work and forbids silent fallback to process-memory queues.
 - ADR-039 verifies the address before an account exists (email-first registration) so registration never reveals whether an address is registered.
 - ADR-040 (proposed) reports browser errors to FitVibe's own backend and log pipeline instead of a third-party SDK.
+- ADR-041 (proposed) adds a per-Vibe capability with experience-softened detraining that drives the Vibeform and Vibe balance, leaving ADR-034 levels and points unchanged.
