@@ -2,8 +2,8 @@
 
 const EXERCISE_SETS = [
   {
-    id: "eeeeeee1-eeee-eeee-eeee-eeeeeeeeeeee",
-    session_exercise_id: "bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    id: "eeeeeee1-eeee-4eee-8eee-eeeeeeeeeeee",
+    session_exercise_id: "bbbbbbb1-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
     order_index: 1,
     reps: 3,
     weight_kg: 150,
@@ -14,8 +14,8 @@ const EXERCISE_SETS = [
     created_at: new Date(),
   },
   {
-    id: "fffffff1-ffff-ffff-ffff-ffffffffffff",
-    session_exercise_id: "bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    id: "fffffff1-ffff-4fff-8fff-ffffffffffff",
+    session_exercise_id: "bbbbbbb1-bbbb-4bbb-bbbb-bbbbbbbbbbbb",
     order_index: 2,
     reps: 5,
     weight_kg: 120,
@@ -26,8 +26,8 @@ const EXERCISE_SETS = [
     created_at: new Date(),
   },
   {
-    id: "11111111-aaaa-bbbb-cccc-222222222222",
-    session_exercise_id: "ddddddd1-dddd-dddd-dddd-dddddddddddd",
+    id: "11111111-aaaa-4bbb-8ccc-222222222222",
+    session_exercise_id: "ddddddd1-dddd-4ddd-8ddd-dddddddddddd",
     order_index: 1,
     reps: null,
     weight_kg: null,

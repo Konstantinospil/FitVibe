@@ -20,7 +20,7 @@ import { truncateAll, createTestIp, ensureRolesSeeded } from "../../setup/test-h
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
 import { obtainPasswordResetToken } from "../../setup/emailed-links.js";
 
-const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
+const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const PASSWORD = "StageA-Admin-Password-2026!";
 const REPLACEMENT_PASSWORD = "StageA-Replaced-Password-2026!";
 

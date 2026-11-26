@@ -2,7 +2,7 @@ import { db } from "../connection.js";
 import { logger } from "../../config/logger.js";
 import { toErrorPayload } from "../../utils/error.utils.js";
 
-const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
+const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 
 const TABLES = [
   "roles",
