@@ -1,4 +1,5 @@
 import React from "react";
+import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -125,7 +126,9 @@ describe("Calendar", () => {
   const renderCalendar = () =>
     render(
       <QueryClientProvider client={queryClient}>
-        <Calendar />
+        <MemoryRouter>
+          <Calendar />
+        </MemoryRouter>
       </QueryClientProvider>,
     );
 
@@ -192,6 +195,25 @@ describe("Calendar", () => {
     await waitFor(() => {
       expect(screen.getAllByText("Tomorrow Plan").length).toBeGreaterThan(0);
     });
+  });
+
+  it("opens a session's details from the selected day", async () => {
+    const DetailProbe = () => <div>details for {useParams().id}</div>;
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<Calendar />} />
+            <Route path="/sessions/:id" element={<DetailProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const [details] = await screen.findAllByRole("button", { name: "sessionDetail.details" });
+    fireEvent.click(details);
+
+    expect(await screen.findByText(/^details for /)).toBeInTheDocument();
   });
 
   it("navigates month and year without fixed calendar data", () => {

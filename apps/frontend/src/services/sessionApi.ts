@@ -39,6 +39,7 @@ export interface SessionExercise {
   id: string;
   session_id: string;
   exercise_id?: string | null;
+  exercise_name?: string | null;
   order_index: number;
   notes?: string | null;
   planned?: SessionExerciseAttributes | null;
