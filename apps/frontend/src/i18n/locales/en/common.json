@@ -1184,7 +1184,10 @@
     "sets": "Sets: {{value}}",
     "plannedDuration": "Planned duration: {{value}}",
     "plannedDistance": "Planned distance: {{value}}",
-    "plannedRest": "Planned rest: {{value}}"
+    "plannedRest": "Planned rest: {{value}}",
+    "skipped": "Skipped",
+    "target": "target: {{value}}",
+    "stoppedEarly": "Stopped early"
   },
   "librarySurface": {
     "title": "Library",
@@ -1255,6 +1258,32 @@
         "update": "The exercise could not be updated.",
         "types": "Exercise types could not be loaded."
       }
+    }
+  },
+  "logSurface": {
+    "title": "Log a workout",
+    "sections": {
+      "workout": "Workout",
+      "exercises": "Exercises"
+    },
+    "fields": {
+      "startTime": "Start time",
+      "weight": "Weight (kg)",
+      "distance": "Distance (metres)",
+      "rpe": "Effort (RPE 1–10)"
+    },
+    "actions": {
+      "save": "Save workout",
+      "addSet": "Add set",
+      "removeSet": "Remove set {{number}} of {{name}}",
+      "removeExercise": "Remove {{name}}"
+    },
+    "empty": "Add the exercises you did, then fill in each set.",
+    "errors": {
+      "save": "The workout couldn't be saved. Check the values and try again.",
+      "future": "A logged workout must have started in the past. Choose an earlier day or time.",
+      "noExercises": "Add at least one exercise.",
+      "invalidSet": "{{exercise}}, set {{number}}: check {{field}}."
     }
   },
   "loading": {

@@ -84,7 +84,15 @@ const template = (id: string, plannedAt: string, overrides: Partial<SessionWithE
         exercise_id: null,
         order_index: 1,
         planned: { sets: 2, reps: 8 },
-        sets: [{ id: `${id}-set`, order_index: 1, reps: 8, rest_sec: 90 }],
+        sets: [
+          {
+            id: `${id}-set`,
+            order_index: 1,
+            status: "planned",
+            source: "prescribed",
+            planned: { reps: 8, rest_sec: 90 },
+          },
+        ],
       },
     ],
     ...overrides,
@@ -140,7 +148,14 @@ describe("activateUserPlan", () => {
     expect(created.every((row) => row.status === "planned" && row.plan_id === planId)).toBe(true);
     const [, , exercises] = sessions.replaceSessionExercises.mock.calls[0];
     expect(exercises[0].sets).toEqual([
-      expect.objectContaining({ order_index: 1, reps: 8, rest_sec: 90, recorded_at: null }),
+      // The templates' targets become the generated sessions' prescription (ADR-042).
+      expect.objectContaining({
+        order_index: 1,
+        status: "planned",
+        planned: expect.objectContaining({ reps: 8, rest_sec: 90 }),
+        reps: null,
+        recorded_at: null,
+      }),
     ]);
     expect(plans.updatePlanProgress).toHaveBeenCalledWith(planId, 4, 0, expect.anything());
     expect(insertAudit).toHaveBeenCalledWith(

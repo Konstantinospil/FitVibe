@@ -1,10 +1,16 @@
 import type {
+  SessionCompletionOutcome as SharedSessionCompletionOutcome,
+  SessionSetSource as SharedSessionSetSource,
+  SessionSetStatus as SharedSessionSetStatus,
   SessionStatus as SharedSessionStatus,
   SessionVisibility as SharedSessionVisibility,
 } from "@fitvibe/contracts";
 
 export type SessionStatus = SharedSessionStatus;
 export type SessionVisibility = SharedSessionVisibility;
+export type SessionSetStatus = SharedSessionSetStatus;
+export type SessionSetSource = SharedSessionSetSource;
+export type SessionCompletionOutcome = SharedSessionCompletionOutcome;
 
 export interface Session {
   id: string;
@@ -20,6 +26,8 @@ export interface Session {
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
+  /** Set when the session completes (ADR-042); null otherwise. */
+  completion_outcome?: SessionCompletionOutcome | null;
   calories?: number | null;
   points?: number | null;
   gamification_rebuild_required?: boolean;
@@ -48,9 +56,22 @@ export interface SessionExerciseActualInput extends SessionExerciseAttributesInp
   recorded_at?: string | null;
 }
 
+/** A set's prescription (ADR-042). The top-level set fields hold performed values. */
+export interface SessionSetPlannedValues {
+  reps?: number | null;
+  weight_kg?: number | null;
+  distance_m?: number | null;
+  duration_sec?: number | null;
+  rpe?: number | null;
+  rest_sec?: number | null;
+}
+
 export interface SessionSetInput {
   id?: string;
   order: number;
+  status?: SessionSetStatus;
+  source?: SessionSetSource;
+  planned?: SessionSetPlannedValues | null;
   reps?: number | null;
   weight_kg?: number | null;
   distance_m?: number | null;
@@ -73,6 +94,9 @@ export interface SessionExerciseInput {
 }
 
 export interface CreateSessionDTO {
+  /** "completed" logs a past workout in one step (manual Log, ADR-042). */
+  status?: "planned" | "completed";
+  completion_outcome?: SessionCompletionOutcome;
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
@@ -89,6 +113,8 @@ export interface UpdateSessionDTO {
   planned_at?: string;
   planned_duration_min?: number;
   status?: SessionStatus;
+  /** Only accepted when the session transitions to completed; defaults to "completed". */
+  completion_outcome?: SessionCompletionOutcome;
   visibility?: SessionVisibility;
   notes?: string | null;
   recurrence_rule?: string | null;
@@ -156,6 +182,10 @@ export interface SessionExerciseActualAttributes extends SessionExerciseAttribut
 export interface SessionExerciseSet {
   id: string;
   order_index: number;
+  status: SessionSetStatus;
+  source: SessionSetSource;
+  /** The set's prescription; null when none was recorded (for example historical logs). */
+  planned: SessionSetPlannedValues | null;
   reps?: number | null;
   weight_kg?: number | null;
   distance_m?: number | null;

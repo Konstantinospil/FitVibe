@@ -84,7 +84,10 @@ function computeSessionMetrics(
       }
     }
 
-    for (const set of exercise.sets ?? []) {
+    // Only completed sets are performed work (ADR-042); planned and skipped sets never score.
+    for (const set of (exercise.sets ?? []).filter(
+      (candidate) => candidate.status === "completed",
+    )) {
       if (set.rpe !== undefined && set.rpe !== null) {
         rpeValues.push(Number(set.rpe));
       }

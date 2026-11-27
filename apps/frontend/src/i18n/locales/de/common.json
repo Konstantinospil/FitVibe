@@ -1184,7 +1184,10 @@
     "sets": "Sätze: {{value}}",
     "plannedDuration": "Geplante Dauer: {{value}}",
     "plannedDistance": "Geplante Strecke: {{value}}",
-    "plannedRest": "Geplante Pause: {{value}}"
+    "plannedRest": "Geplante Pause: {{value}}",
+    "skipped": "Übersprungen",
+    "target": "Ziel: {{value}}",
+    "stoppedEarly": "Vorzeitig beendet"
   },
   "librarySurface": {
     "title": "Bibliothek",
@@ -1255,6 +1258,32 @@
         "update": "Die Übung konnte nicht aktualisiert werden.",
         "types": "Übungstypen konnten nicht geladen werden."
       }
+    }
+  },
+  "logSurface": {
+    "title": "Training erfassen",
+    "sections": {
+      "workout": "Training",
+      "exercises": "Übungen"
+    },
+    "fields": {
+      "startTime": "Startzeit",
+      "weight": "Gewicht (kg)",
+      "distance": "Strecke (Meter)",
+      "rpe": "Anstrengung (RPE 1–10)"
+    },
+    "actions": {
+      "save": "Training speichern",
+      "addSet": "Satz hinzufügen",
+      "removeSet": "Satz {{number}} von {{name}} entfernen",
+      "removeExercise": "{{name}} entfernen"
+    },
+    "empty": "Füge die Übungen hinzu, die du gemacht hast, und trage dann jeden Satz ein.",
+    "errors": {
+      "save": "Das Training konnte nicht gespeichert werden. Prüfe die Werte und versuche es erneut.",
+      "future": "Ein erfasstes Training muss in der Vergangenheit begonnen haben. Wähle einen früheren Tag oder eine frühere Uhrzeit.",
+      "noExercises": "Füge mindestens eine Übung hinzu.",
+      "invalidSet": "{{exercise}}, Satz {{number}}: Prüfe {{field}}."
     }
   },
   "loading": {

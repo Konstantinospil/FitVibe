@@ -50,13 +50,29 @@ const baseSession = (overrides: Partial<SessionWithExercises> = {}): SessionWith
       order_index: 1,
       planned: { sets: 2, reps: 5, load: 100 },
       sets: [
-        { id: "set-1", order_index: 1, reps: 5, weight_kg: 100, rest_sec: 120 },
+        {
+          id: "set-1",
+          order_index: 1,
+          status: "planned",
+          source: "prescribed",
+          planned: { reps: 5, weight_kg: 100, rest_sec: 120 },
+        },
         {
           id: "set-2",
           order_index: 2,
-          reps: 5,
+          status: "completed",
+          source: "prescribed",
+          planned: { reps: 5 },
+          reps: 4,
           weight_kg: 100,
           recorded_at: "2026-12-01T17:20:00Z",
+        },
+        {
+          id: "set-3",
+          order_index: 3,
+          status: "skipped",
+          source: "prescribed",
+          planned: { reps: 3 },
         },
       ],
     },
@@ -109,12 +125,34 @@ describe("SessionDetail", () => {
     expect(
       screen.getByText("sessionDetail.sets=2 · sessionDetail.reps=5 · sessionDetail.load=100"),
     ).toBeInTheDocument();
-    // The unrecorded row is prescription; the recorded row shows results.
+    // Planned sets show their target, completed sets what was done next to the
+    // target, skipped sets are labelled as skipped (ADR-042).
     expect(screen.getAllByText("sessionDetail.prescription")).toHaveLength(2);
     expect(screen.getByText("sessionDetail.actual")).toBeInTheDocument();
+    expect(screen.getByText("sessionDetail.skipped")).toBeInTheDocument();
     expect(
       screen.getByText("sessionDetail.reps=5 · sessionDetail.load=100 · sessionDetail.rest=120"),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "sessionDetail.reps=4 · sessionDetail.load=100 (sessionDetail.target=sessionDetail.reps=5)",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("sessionDetail.reps=3")).toBeInTheDocument();
+  });
+
+  it("says when a completed workout was stopped early", async () => {
+    mocked.getSession.mockResolvedValue(
+      baseSession({
+        status: "completed",
+        completed_at: "2026-12-01T18:00:00.000Z",
+        completion_outcome: "stopped_early",
+        points: 12,
+      }),
+    );
+    renderDetail();
+
+    expect(await screen.findByText("sessionDetail.stoppedEarly")).toBeInTheDocument();
   });
 
   it("starts a planned session and shows that recording is not available yet", async () => {

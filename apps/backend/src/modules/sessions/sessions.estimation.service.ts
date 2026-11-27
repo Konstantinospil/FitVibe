@@ -64,10 +64,13 @@ export function estimateSessionComposition(
     let exerciseActiveSec = 0;
     let exerciseDurationComplete = true;
 
-    if (exercise.sets.length > 0) {
-      exercise.sets.forEach((set, setIndex) => {
-        const explicitDuration = finiteNonNegative(set.duration_sec);
-        const reps = finiteNonNegative(set.reps);
+    // Performed values where recorded, otherwise the set's prescription (ADR-042).
+    // Skipped sets take no time.
+    const sets = exercise.sets.filter((set) => set.status !== "skipped");
+    if (sets.length > 0) {
+      sets.forEach((set, setIndex) => {
+        const explicitDuration = finiteNonNegative(set.duration_sec ?? set.planned?.duration_sec);
+        const reps = finiteNonNegative(set.reps ?? set.planned?.reps);
 
         if (explicitDuration !== null && explicitDuration > 0) {
           exerciseActiveSec += explicitDuration;
@@ -83,8 +86,8 @@ export function estimateSessionComposition(
           missing.add(`exercise:${exercise.exercise_id ?? exercise.id}:duration`);
         }
 
-        if (setIndex < exercise.sets.length - 1) {
-          restDurationSec += finiteNonNegative(set.rest_sec) ?? 0;
+        if (setIndex < sets.length - 1) {
+          restDurationSec += finiteNonNegative(set.rest_sec ?? set.planned?.rest_sec) ?? 0;
         }
       });
     } else {

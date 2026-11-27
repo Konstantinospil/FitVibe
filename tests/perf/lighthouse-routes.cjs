@@ -16,6 +16,7 @@ const publicRoutes = [
 const athleteRoutes = [
   "/",
   "/calendar",
+  "/log",
   "/library",
   "/dashboard",
   "/settings",

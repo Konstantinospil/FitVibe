@@ -31,6 +31,7 @@ const SESSIONS = [
     started_at: new Date(completed.getTime() + 5 * 60 * 1000),
     completed_at: new Date(completed.getTime() + 45 * 60 * 1000),
     status: "completed",
+    completion_outcome: "completed",
     visibility: "public",
     calories: 320,
     points: 30,

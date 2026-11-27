@@ -137,6 +137,9 @@ const Home: React.FC = () => {
                 })
               : t("homeSurface.activity.startHint")}
           </p>
+          <Button variant="secondary" onClick={() => void navigate("/log")}>
+            {t("logSurface.title")}
+          </Button>
         </TrainingPanel>
 
         <TrainingPanel
