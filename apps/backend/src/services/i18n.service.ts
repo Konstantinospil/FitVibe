@@ -3,6 +3,8 @@
  * Supports multiple languages with fallback to English
  */
 
+import { EMAIL_STYLES } from "./email.theme.js";
+
 type SupportedLanguage = "en" | "de" | "es" | "fr" | "el";
 
 interface EmailTranslations {
@@ -279,17 +281,17 @@ export function generateVerificationEmailHtml(
 ): string {
   const t = getEmailTranslations(lang);
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="${EMAIL_STYLES.container}">
       <h2>${t.verification.welcome}</h2>
       <p>Thank you for registering. Please verify your email address by clicking the link below:</p>
       <p>
-        <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+        <a href="${verificationUrl}" style="${EMAIL_STYLES.button}">
           ${t.verification.verifyButton}
         </a>
       </p>
       <p>${t.verification.orCopy}</p>
-      <p style="color: #666; word-break: break-all;">${verificationUrl}</p>
-      <p style="color: #999; font-size: 12px; margin-top: 32px;">
+      <p style="${EMAIL_STYLES.rawLink}">${verificationUrl}</p>
+      <p style="${EMAIL_STYLES.footer}">
         ${t.verification.expiresIn} ${expiresInMinutes} ${t.verification.minutes}.
       </p>
     </div>
@@ -318,17 +320,17 @@ export function generateResendVerificationEmailHtml(
 ): string {
   const t = getEmailTranslations(lang);
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="${EMAIL_STYLES.container}">
       <h2>${t.resend.title}</h2>
       <p>${t.resend.message}</p>
       <p>
-        <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+        <a href="${verificationUrl}" style="${EMAIL_STYLES.button}">
           ${t.resend.verifyButton}
         </a>
       </p>
       <p>${t.resend.orCopy}</p>
-      <p style="color: #666; word-break: break-all;">${verificationUrl}</p>
-      <p style="color: #999; font-size: 12px; margin-top: 32px;">
+      <p style="${EMAIL_STYLES.rawLink}">${verificationUrl}</p>
+      <p style="${EMAIL_STYLES.footer}">
         ${t.resend.expiresIn} ${expiresInMinutes} ${t.resend.minutes}.
       </p>
     </div>
@@ -358,17 +360,17 @@ export function generateRegistrationContinueEmailHtml(
 ): string {
   const t = getEmailTranslations(lang).registrationContinue;
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="${EMAIL_STYLES.container}">
       <h2>${t.title}</h2>
       <p>${t.message}</p>
       <p>
-        <a href="${continueUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+        <a href="${continueUrl}" style="${EMAIL_STYLES.button}">
           ${t.continueButton}
         </a>
       </p>
       <p>${t.orCopy}</p>
-      <p style="color: #666; word-break: break-all;">${continueUrl}</p>
-      <p style="color: #999; font-size: 12px; margin-top: 32px;">
+      <p style="${EMAIL_STYLES.rawLink}">${continueUrl}</p>
+      <p style="${EMAIL_STYLES.footer}">
         ${t.expiresIn} ${expiresInMinutes} ${t.minutes}. ${t.ignore}
       </p>
     </div>
@@ -395,16 +397,16 @@ export function generateRegistrationAttemptEmailHtml(
 ): string {
   const t = getEmailTranslations(lang).registrationAttempt;
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="${EMAIL_STYLES.container}">
       <h2>${t.title}</h2>
       <p>${t.message}</p>
       <p>
-        <a href="${loginUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+        <a href="${loginUrl}" style="${EMAIL_STYLES.button}">
           ${t.signInButton}
         </a>
       </p>
       <p>${t.resetPrompt} <a href="${resetUrl}">${t.resetLink}</a></p>
-      <p style="color: #999; font-size: 12px; margin-top: 32px;">
+      <p style="${EMAIL_STYLES.footer}">
         ${t.ignore}
       </p>
     </div>
