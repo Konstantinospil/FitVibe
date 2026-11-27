@@ -1583,6 +1583,49 @@
         }
       }
     },
+    "/sessions/{id}/vibe-changes": {
+      "get": {
+        "summary": "Vibe level changes a completed session caused",
+        "description": "Owner only. Lists the active Vibe level changes from completing this session, one per Vibe it trained. Empty until the session is completed and its points are processed. Returns 404 for a missing session and for someone else's.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionVibeChanges"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{id}/reopen": {
       "post": {
         "summary": "Reopen a completed session for correction",
@@ -3014,6 +3057,12 @@
             "minimum": 0,
             "nullable": true
           },
+          "heart_rate_bpm": {
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250,
+            "nullable": true
+          },
           "extras": {
             "type": "object",
             "additionalProperties": true
@@ -3068,6 +3117,12 @@
           "rest_sec": {
             "type": "integer",
             "minimum": 0,
+            "nullable": true
+          },
+          "heart_rate_bpm": {
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250,
             "nullable": true
           },
           "notes": {
@@ -3528,6 +3583,12 @@
                         "type": "integer",
                         "nullable": true
                       },
+                      "heart_rate_bpm": {
+                        "type": "integer",
+                        "minimum": 20,
+                        "maximum": 250,
+                        "nullable": true
+                      },
                       "extras": {
                         "type": "object",
                         "additionalProperties": true
@@ -3650,6 +3711,47 @@
           }
         },
         "required": ["data", "meta"]
+      },
+      "SessionVibeChanges": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "domain_code": {
+                  "type": "string",
+                  "enum": [
+                    "strength",
+                    "agility",
+                    "endurance",
+                    "explosivity",
+                    "intelligence",
+                    "regeneration"
+                  ]
+                },
+                "previous_level": {
+                  "type": "number"
+                },
+                "new_level": {
+                  "type": "number"
+                },
+                "change": {
+                  "type": "number"
+                }
+              },
+              "required": ["domain_code", "previous_level", "new_level", "change"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["session_id", "changes"],
+        "additionalProperties": false
       },
       "SessionEstimate": {
         "type": "object",

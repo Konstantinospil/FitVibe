@@ -575,6 +575,22 @@
       "status": "active"
     },
     {
+      "name": "maintainability-regressions",
+      "patterns": ["^tests/qa/maintainability-core\\.test\\.mjs$"],
+      "owner": "Frontend architecture / QA",
+      "ci_job_ids": ["architecture_hardcoding"],
+      "contract_sources": [
+        "apps/frontend/ARCHITECTURE.md",
+        "tests/qa/maintainability-core.mjs",
+        "tests/qa/baseline/maintainability.json"
+      ],
+      "fixture_dependencies": ["inline TypeScript and CSS fixtures"],
+      "isolation_model": "node:test pure-function analysis; no external service",
+      "expected_artifacts": ["CI step log", "tests/qa/reports/maintainability.json"],
+      "severity": "blocking",
+      "status": "active"
+    },
+    {
       "name": "coverage-gate-negative-tests",
       "patterns": ["^tests/qa/check-coverage\\.test\\.cjs$"],
       "owner": "QA",

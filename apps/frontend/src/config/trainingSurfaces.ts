@@ -15,6 +15,15 @@ export const TRAINING_DATA_CONFIG = {
   sessionDurationMaxMinutes: 720,
   sessionDurationDefaultMinutes: 60,
   sessionDurationStepMinutes: 15,
+  // Set results the server accepts: effort (RPE) 1–10 and an optional heart rate of
+  // 20–250 bpm. The server enforces the same bounds.
+  setRpeMin: 1,
+  setRpeMax: 10,
+  setHeartRateMinBpm: 20,
+  setHeartRateMaxBpm: 250,
+  // Body weight the profile accepts, in kilograms; the server enforces the same range.
+  bodyWeightMinKg: 20,
+  bodyWeightMaxKg: 400,
   // Points are awarded in the background after completion; the session page checks again until they arrive.
   pointsPendingPollMs: 2_000,
   // GET /exercises accepts at most 100 records per request.

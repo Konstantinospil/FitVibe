@@ -130,6 +130,39 @@ describeWithTestDatabase("Integration: live workout execution (ADR-043)", () => 
     expect(contradictory.status).toBe(422);
   });
 
+  it("records an optional heart rate and clears it when the set is skipped (issue 89)", async () => {
+    const session = await startWorkout();
+    const [first] = session.exercises[0].sets;
+
+    const recorded = await api("patch", `/${session.id}/sets/${first.id}`, {
+      status: "completed",
+      reps: 8,
+      heart_rate_bpm: 152,
+    });
+    expect(recorded.status).toBe(200);
+    expect(recorded.body.exercises[0].sets[0]).toMatchObject({ heart_rate_bpm: 152 });
+
+    const skipped = await api("patch", `/${session.id}/sets/${first.id}`, { status: "skipped" });
+    expect(skipped.body.exercises[0].sets[0]).toMatchObject({ heart_rate_bpm: null });
+
+    expect(
+      (
+        await api("patch", `/${session.id}/sets/${first.id}`, {
+          status: "skipped",
+          heart_rate_bpm: 120,
+        })
+      ).status,
+    ).toBe(422);
+    expect(
+      (
+        await api("patch", `/${session.id}/sets/${first.id}`, {
+          status: "completed",
+          heart_rate_bpm: 10,
+        })
+      ).status,
+    ).toBe(400);
+  });
+
   it("adds a set once per idempotency key, adds an exercise and skips one", async () => {
     const session = await startWorkout();
     const exerciseRow = session.exercises[0].id;

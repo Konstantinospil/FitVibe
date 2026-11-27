@@ -19,6 +19,7 @@ import type {
   SessionListItem,
   SessionQuery,
   PaginatedResult,
+  SessionVibeChanges,
   SessionWithExercises,
 } from "./sessions.types";
 import { recomputeProgress } from "../plans/plans.service.js";
@@ -38,6 +39,7 @@ import {
 } from "./sessions.normalization.js";
 import { DEFAULT_SESSION_DURATION_MIN, type ScheduleWindow } from "./sessions.schedule.js";
 import { closedPause } from "./sessions.execution.service.js";
+import { listActiveSessionVibeChanges } from "../points/vibe-level.repository.js";
 
 /**
  * Server-side re-validation for rescheduling and resizing (US-4.3-AC03). Clients
@@ -88,6 +90,32 @@ export async function getOne(userId: string, id: string): Promise<SessionWithExe
     throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
   }
   return session;
+}
+
+/**
+ * The Vibe level changes a session caused (issue 289). They are personal, so only
+ * the owner sees them; anyone else gets the same 404 as for a missing session.
+ * The list is empty until the session is completed and its points are processed.
+ */
+export async function getSessionVibeChanges(
+  userId: string,
+  id: string,
+): Promise<SessionVibeChanges> {
+  // Scoped to the owner and to sessions not deleted, so a missing session and
+  // someone else's answer the same way.
+  if (!(await getSessionById(id, userId))) {
+    throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
+  }
+  const changes = await listActiveSessionVibeChanges(userId, id);
+  return {
+    session_id: id,
+    changes: changes.map((change) => ({
+      domain_code: change.domain_code,
+      previous_level: change.old_vibe_level,
+      new_level: change.new_vibe_level,
+      change: change.change_amount,
+    })),
+  };
 }
 
 /**

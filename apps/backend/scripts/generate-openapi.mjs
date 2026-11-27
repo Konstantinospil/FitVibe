@@ -115,6 +115,10 @@ const pathUuid = (name) => ({
   required: true,
   schema: { type: "string", format: "uuid" },
 });
+// A completed set's heart rate (issue 89). The contract test pins these bounds to
+// HEART_RATE_LIMITS in sessions.normalization.ts.
+const heartRateBpm = nullable({ type: "integer", minimum: 20, maximum: 250 });
+
 const executionOperation = (summary, description, options = {}) => ({
   summary,
   description,
@@ -552,6 +556,27 @@ const paths = {
       ],
       responses: {
         200: jsonContent("#/components/schemas/SessionEstimate"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/vibe-changes": {
+    get: {
+      summary: "Vibe level changes a completed session caused",
+      description:
+        "Owner only. Lists the active Vibe level changes from completing this session, one per Vibe it trained. Empty until the session is completed and its points are processed. Returns 404 for a missing session and for someone else's.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonContent("#/components/schemas/SessionVibeChanges"),
         404: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
@@ -1227,6 +1252,7 @@ const schemas = {
       duration_sec: nullable({ type: "integer", minimum: 0 }),
       rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
       rest_sec: nullable({ type: "integer", minimum: 0 }),
+      heart_rate_bpm: heartRateBpm,
       extras: { type: "object", additionalProperties: true },
       recorded_at: nullable({ type: "string", format: "date-time" }),
       notes: nullable({ type: "string", maxLength: 500 }),
@@ -1244,6 +1270,7 @@ const schemas = {
       duration_sec: nullable({ type: "integer", minimum: 0 }),
       rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
       rest_sec: nullable({ type: "integer", minimum: 0 }),
+      heart_rate_bpm: heartRateBpm,
       notes: nullable({ type: "string", maxLength: 500 }),
     },
     required: ["status"],
@@ -1360,6 +1387,7 @@ const schemas = {
                   duration_sec: nullable({ type: "integer" }),
                   rpe: nullable({ type: "integer" }),
                   rest_sec: nullable({ type: "integer" }),
+                  heart_rate_bpm: heartRateBpm,
                   extras: { type: "object", additionalProperties: true },
                   recorded_at: nullable({ type: "string", format: "date-time" }),
                   notes: nullable({ type: "string" }),
@@ -1444,6 +1472,38 @@ const schemas = {
       },
     },
     required: ["data", "meta"],
+  },
+  SessionVibeChanges: {
+    type: "object",
+    properties: {
+      session_id: { type: "string", format: "uuid" },
+      changes: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            domain_code: {
+              type: "string",
+              enum: [
+                "strength",
+                "agility",
+                "endurance",
+                "explosivity",
+                "intelligence",
+                "regeneration",
+              ],
+            },
+            previous_level: { type: "number" },
+            new_level: { type: "number" },
+            change: { type: "number" },
+          },
+          required: ["domain_code", "previous_level", "new_level", "change"],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ["session_id", "changes"],
+    additionalProperties: false,
   },
   SessionEstimate: {
     type: "object",

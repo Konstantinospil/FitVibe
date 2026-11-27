@@ -3,6 +3,8 @@ import {
   EMPTY_SET_INPUTS,
   invalidMetric,
   isBlankSet,
+  labelKeyFor,
+  pickTargetValues,
   SET_METRIC_FIELDS,
   toMetricInputs,
   toMetricValues,
@@ -35,16 +37,55 @@ describe("set metrics", () => {
   });
 
   it("converts between inputs and values, blank as null", () => {
-    expect(toMetricValues(inputs({ reps: "5", weight_kg: "100" }))).toEqual({
+    expect(toMetricValues(inputs({ reps: "5", weight_kg: "100" }), "kg")).toEqual({
       reps: 5,
       weight_kg: 100,
       duration_sec: null,
       distance_m: null,
       rpe: null,
+      heart_rate_bpm: null,
     });
-    expect(toMetricInputs({ reps: 5, weight_kg: null, rpe: 0 })).toEqual(
+    expect(toMetricInputs({ reps: 5, weight_kg: null, rpe: 0 }, "kg")).toEqual(
       inputs({ reps: "5", rpe: "0" }),
     );
-    expect(toMetricInputs(null)).toEqual(EMPTY_SET_INPUTS);
+    expect(toMetricInputs(null, "kg")).toEqual(EMPTY_SET_INPUTS);
+  });
+
+  it("enters and shows load in pounds but sends kilograms", () => {
+    // 225 lb = 102.0582833 kg, stored to two decimals.
+    expect(toMetricValues(inputs({ weight_kg: "225" }), "lb").weight_kg).toBe(102.06);
+    // 100 kg = 220.46 lb, shown to one decimal.
+    expect(toMetricInputs({ weight_kg: 100 }, "lb").weight_kg).toBe("220.5");
+    // A blank load stays blank in either unit.
+    expect(toMetricValues(inputs({ reps: "5" }), "lb").weight_kg).toBeNull();
+  });
+
+  it("labels load with the athlete's unit", () => {
+    const load = SET_METRIC_FIELDS.find(({ metric }) => metric === "weight_kg")!;
+    const reps = SET_METRIC_FIELDS.find(({ metric }) => metric === "reps")!;
+    expect(labelKeyFor(load, "kg")).toBe("logSurface.fields.weight");
+    expect(labelKeyFor(load, "lb")).toBe("logSurface.fields.weightLb");
+    expect(labelKeyFor(reps, "lb")).toBe("workoutEditor.fields.repetitions");
+  });
+
+  it("validates an optional heart rate as a whole number from 20 to 250", () => {
+    expect(invalidMetric(inputs({ heart_rate_bpm: "" }))).toBeNull();
+    expect(invalidMetric(inputs({ heart_rate_bpm: "148" }))).toBeNull();
+    expect(invalidMetric(inputs({ heart_rate_bpm: "19" }))).toBe("heart_rate_bpm");
+    expect(invalidMetric(inputs({ heart_rate_bpm: "251" }))).toBe("heart_rate_bpm");
+    expect(invalidMetric(inputs({ heart_rate_bpm: "140.5" }))).toBe("heart_rate_bpm");
+    expect(toMetricValues(inputs({ heart_rate_bpm: "148" }), "kg").heart_rate_bpm).toBe(148);
+  });
+
+  it("picks stored values as a target, without converting them or a heart rate", () => {
+    // A completed set as stored, heart rate included.
+    const stored = { reps: 5, weight_kg: 60.25, heart_rate_bpm: 150 };
+    expect(pickTargetValues(stored)).toEqual({
+      reps: 5,
+      weight_kg: 60.25,
+      duration_sec: null,
+      distance_m: null,
+      rpe: null,
+    });
   });
 });

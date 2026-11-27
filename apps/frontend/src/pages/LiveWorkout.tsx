@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Pause, Play, Plus } from "lucide-react";
-import { Button, InputControl } from "@fitvibe/ui";
+import { Button, InputControl, MetricCard } from "@fitvibe/ui";
 import type { TFunction } from "i18next";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
 import { RetryErrorPanel, StatusPanel } from "../components/composites/StatusPanel";
-import { FormFeedback } from "../components/composites/FormStack";
+import { FormActions, FormFeedback, FormStack } from "../components/composites/FormStack";
 import { Modal } from "../components/composites/Modal";
 import { ExercisePicker, useExerciseCatalog } from "../components/composites/ExercisePicker";
 import { useClock } from "../hooks/useClock";
@@ -29,10 +29,15 @@ import {
 import {
   fieldFor,
   invalidMetric,
+  labelKeyFor,
+  pickTargetValues,
   toMetricInputs,
   toMetricValues,
   type SetMetricInputs,
+  type SetMetricValues,
 } from "../lib/forms/setMetrics";
+import { useLoadUnit } from "../hooks/useLoadUnit";
+import type { LoadUnit } from "../lib/units/load";
 import { setSummary, valuesSummary } from "../lib/sessions/setSummary";
 import { apiErrorCode } from "../services/httpApi";
 import type {
@@ -62,7 +67,7 @@ function plannedFromLast(exercise: SessionExercise): SessionSetPlannedValues | n
   if (last.status !== "completed") {
     return null;
   }
-  return { ...toMetricValues(toMetricInputs(last)), rest_sec: last.rest_sec ?? null };
+  return { ...pickTargetValues(last), rest_sec: last.rest_sec ?? null };
 }
 
 const errorMessageKey = (error: unknown) =>
@@ -72,57 +77,66 @@ const errorMessageKey = (error: unknown) =>
 
 type CurrentSetProps = {
   position: LivePosition;
+  loadUnit: LoadUnit;
   disabled: boolean;
-  /** Inputs to complete the set, or null to skip it. */
-  onRecord: (inputs: SetMetricInputs | null) => void;
+  /** Values to complete the set with (load in kilograms), or null to skip it. */
+  onRecord: (values: SetMetricValues | null) => void;
 };
 
 /** The set to do now: its target, the values to record, and Complete or Skip. */
-const CurrentSet: React.FC<CurrentSetProps> = ({ position, disabled, onRecord }) => {
+const CurrentSet: React.FC<CurrentSetProps> = ({ position, loadUnit, disabled, onRecord }) => {
   const { t } = useTranslation();
   const { set, exercise, setNumber, setCount } = position;
-  // Keyed by set id in the parent, so the fields start from this set's target.
-  const [inputs, setInputs] = useState<SetMetricInputs>(() => toMetricInputs(set.planned));
+  // Keyed by set id and unit in the parent, so the fields start from this set's target.
+  const [inputs, setInputs] = useState<SetMetricInputs>(() =>
+    toMetricInputs(set.planned, loadUnit),
+  );
   const [message, setMessage] = useState<string | null>(null);
   const fields = fieldsFor(set);
-  const target = valuesSummary(t, set.planned);
+  const target = valuesSummary(t, set.planned, loadUnit);
 
   const complete = (event: React.FormEvent) => {
     event.preventDefault();
     const metric = invalidMetric(inputs, fields);
     if (metric) {
-      setMessage(t("liveWorkout.errors.invalidSet", { field: t(fieldFor(metric).labelKey) }));
+      setMessage(
+        t("liveWorkout.errors.invalidSet", { field: t(labelKeyFor(fieldFor(metric), loadUnit)) }),
+      );
       return;
     }
     setMessage(null);
-    onRecord(inputs);
+    onRecord(toMetricValues(inputs, loadUnit));
   };
 
   return (
-    <form className="live-set" noValidate onSubmit={complete} aria-labelledby="live-set-title">
+    <FormStack className="live-set" noValidate onSubmit={complete} aria-labelledby="live-set-title">
       <div className="live-set__heading">
-        <h2 id="live-set-title">{exerciseName(t, exercise)}</h2>
-        <p>{t("liveWorkout.current.setOf", { number: setNumber, count: setCount })}</p>
+        <h2 id="live-set-title" className="typography-section-title">
+          {exerciseName(t, exercise)}
+        </h2>
+        <p className="text-secondary">
+          {t("liveWorkout.current.setOf", { number: setNumber, count: setCount })}
+        </p>
       </div>
-      <p className="live-set__target">
+      <p className="live-set__target text-secondary">
         {target
           ? t("liveWorkout.current.target", { value: target })
           : t("liveWorkout.current.noTarget")}
       </p>
-      <fieldset className="live-set__fields" disabled={disabled}>
+      <fieldset className="set-fields" disabled={disabled}>
         <legend className="sr-only">{t("liveWorkout.current.values")}</legend>
-        {fields.map(({ metric, labelKey, integer, min, max }) => (
-          <label key={metric} className="form-label">
-            <span className="form-label-text">{t(labelKey)}</span>
+        {fields.map((field) => (
+          <label key={field.metric} className="form-label">
+            <span className="form-label-text">{t(labelKeyFor(field, loadUnit))}</span>
             <InputControl
               type="number"
-              inputMode={integer ? "numeric" : "decimal"}
-              min={min}
-              max={max}
-              step={integer ? 1 : "any"}
-              value={inputs[metric]}
+              inputMode={field.integer ? "numeric" : "decimal"}
+              min={field.min}
+              max={field.max}
+              step={field.integer ? 1 : "any"}
+              value={inputs[field.metric]}
               onChange={(event) => {
-                setInputs((current) => ({ ...current, [metric]: event.target.value }));
+                setInputs((current) => ({ ...current, [field.metric]: event.target.value }));
                 setMessage(null);
               }}
             />
@@ -130,7 +144,7 @@ const CurrentSet: React.FC<CurrentSetProps> = ({ position, disabled, onRecord })
         ))}
       </fieldset>
       {message ? <FormFeedback tone="warning">{message}</FormFeedback> : null}
-      <div className="live-set__actions">
+      <FormActions>
         <Button type="submit" disabled={disabled}>
           {t("liveWorkout.actions.completeSet")}
         </Button>
@@ -142,8 +156,8 @@ const CurrentSet: React.FC<CurrentSetProps> = ({ position, disabled, onRecord })
         >
           {t("liveWorkout.actions.skipSet")}
         </Button>
-      </div>
-    </form>
+      </FormActions>
+    </FormStack>
   );
 };
 
@@ -191,7 +205,7 @@ const FinishDialog: React.FC<FinishDialogProps> = ({
             </Button>
           </>
         ) : (
-          <div className="live-finish__actions">
+          <FormActions>
             <Button
               isLoading={busy}
               onClick={() => onChoose({ kind: "save", outcome: "completed" })}
@@ -208,34 +222,25 @@ const FinishDialog: React.FC<FinishDialogProps> = ({
             <Button variant="ghost" disabled={busy} onClick={() => setConfirmDiscard(true)}>
               {t("liveWorkout.actions.discard")}
             </Button>
-          </div>
+          </FormActions>
         )
       }
     >
-      <div className="live-finish">
+      <FormStack as="div" className="live-finish">
         {error ? <FormFeedback tone="danger">{error}</FormFeedback> : null}
         {confirmDiscard ? (
           <p>{t("liveWorkout.finish.discardWarning")}</p>
         ) : (
           <>
-            <dl className="live-finish__summary">
-              <div>
-                <dt>{t("liveWorkout.finish.done")}</dt>
-                <dd>{summary.completedSets}</dd>
-              </div>
-              <div>
-                <dt>{t("liveWorkout.finish.skipped")}</dt>
-                <dd>{summary.skippedSets}</dd>
-              </div>
-              <div>
-                <dt>{t("liveWorkout.finish.remaining")}</dt>
-                <dd>{summary.remainingSets}</dd>
-              </div>
-            </dl>
+            <div className="metric-card-grid">
+              <MetricCard label={t("liveWorkout.finish.done")} value={summary.completedSets} />
+              <MetricCard label={t("liveWorkout.finish.skipped")} value={summary.skippedSets} />
+              <MetricCard label={t("liveWorkout.finish.remaining")} value={summary.remainingSets} />
+            </div>
             <p>{t("liveWorkout.finish.scoring")}</p>
           </>
         )}
-      </div>
+      </FormStack>
     </Modal>
   );
 };
@@ -256,6 +261,7 @@ const LiveWorkout: React.FC = () => {
   const paused = Boolean(session?.paused_at);
   const now = useClock(active);
   const catalog = useExerciseCatalog({ enabled: active, source: "live workout" });
+  const { unit: loadUnit, ready: loadUnitReady } = useLoadUnit();
 
   const run = (input: LiveCommand) => {
     if (!command.isPending) {
@@ -327,7 +333,7 @@ const LiveWorkout: React.FC = () => {
             aria-label={t("liveWorkout.clock.label")}
           >
             <div className="live-clock__primary">
-              <span className="live-clock__label">
+              <span className="typography-supporting text-secondary">
                 {paused ? t("liveWorkout.clock.paused") : t("liveWorkout.clock.active")}
               </span>
               <span className="live-clock__value" role="timer">
@@ -335,7 +341,9 @@ const LiveWorkout: React.FC = () => {
               </span>
             </div>
             <div className="live-clock__secondary">
-              <span className="live-clock__label">{t("liveWorkout.clock.elapsed")}</span>
+              <span className="typography-supporting text-secondary">
+                {t("liveWorkout.clock.elapsed")}
+              </span>
               <span className="live-clock__value live-clock__value--small" role="timer">
                 {formatClock(elapsedSeconds(session, now))}
               </span>
@@ -378,16 +386,15 @@ const LiveWorkout: React.FC = () => {
               ) : null}
               {position ? (
                 <CurrentSet
-                  key={position.set.id}
+                  key={`${position.set.id}:${loadUnit}`}
                   position={position}
-                  disabled={busy || paused}
-                  onRecord={(inputs) =>
+                  loadUnit={loadUnit}
+                  disabled={busy || paused || !loadUnitReady}
+                  onRecord={(values) =>
                     run({
                       kind: "record",
                       setId: position.set.id,
-                      payload: inputs
-                        ? { status: "completed", ...toMetricValues(inputs) }
-                        : { status: "skipped" },
+                      payload: values ? { status: "completed", ...values } : { status: "skipped" },
                     })
                   }
                 />
@@ -395,7 +402,7 @@ const LiveWorkout: React.FC = () => {
                 <div className="training-empty">{t("liveWorkout.current.done")}</div>
               )}
               {next ? (
-                <p className="live-set__next">
+                <p className="live-set__next text-secondary">
                   {t("liveWorkout.current.next", {
                     name: exerciseName(t, next.exercise),
                     number: next.setNumber,
@@ -405,7 +412,7 @@ const LiveWorkout: React.FC = () => {
             </TrainingPanel>
 
             <TrainingPanel title={t("liveWorkout.outline.title")} className="live-surface__outline">
-              <ol className="live-outline">
+              <ol className="stack-list">
                 {session.exercises.map((exercise) => {
                   const name = exerciseName(t, exercise);
                   const skipped = exercise.status === "skipped";
@@ -413,21 +420,25 @@ const LiveWorkout: React.FC = () => {
                   return (
                     <li key={exercise.id} className="live-outline__exercise" data-skipped={skipped}>
                       <div className="live-outline__header">
-                        <h3>{name}</h3>
-                        {skipped ? <span>{t("sessionDetail.skipped")}</span> : null}
+                        <h3 className="typography-card-title">{name}</h3>
+                        {skipped ? (
+                          <span className="typography-supporting text-secondary">
+                            {t("sessionDetail.skipped")}
+                          </span>
+                        ) : null}
                       </div>
                       {exercise.sets.map((set, index) => (
                         <TrainingSummaryCard
                           key={set.id}
                           title={t("sessionDetail.set", { number: index + 1 })}
                           meta={t(SET_META_KEYS[set.status])}
-                          supporting={setSummary(t, set)}
+                          supporting={setSummary(t, set, loadUnit)}
                           className={
                             set.id === position?.set.id ? "live-outline__set--current" : undefined
                           }
                         />
                       ))}
-                      <div className="live-outline__actions">
+                      <FormActions>
                         <Button
                           type="button"
                           variant="secondary"
@@ -458,7 +469,7 @@ const LiveWorkout: React.FC = () => {
                             {t("liveWorkout.actions.skipExercise", { name })}
                           </Button>
                         ) : null}
-                      </div>
+                      </FormActions>
                     </li>
                   );
                 })}

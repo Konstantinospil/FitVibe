@@ -84,6 +84,8 @@ export interface SessionSetInput {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  /** Optional result of a completed set, in beats per minute (issue 89). */
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;
@@ -200,6 +202,8 @@ export interface SessionExerciseSet {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  /** Optional result of a completed set, in beats per minute (issue 89). */
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;
@@ -220,6 +224,19 @@ export interface SessionExercise {
   sets: SessionExerciseSet[];
   created_at?: string;
   updated_at?: string;
+}
+
+/** How one Vibe's level moved because of a completed session (issue 289). */
+export interface SessionVibeChange {
+  domain_code: string;
+  previous_level: number;
+  new_level: number;
+  change: number;
+}
+
+export interface SessionVibeChanges {
+  session_id: string;
+  changes: SessionVibeChange[];
 }
 
 export interface SessionWithExercises extends Session {

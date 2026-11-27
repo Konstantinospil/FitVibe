@@ -1,6 +1,19 @@
 export type VibeKey =
   "strength" | "agility" | "endurance" | "explosivity" | "intelligence" | "regeneration";
 
+/** The six Vibes in their canonical order. */
+export const VIBE_KEYS: readonly VibeKey[] = [
+  "strength",
+  "agility",
+  "endurance",
+  "explosivity",
+  "intelligence",
+  "regeneration",
+];
+
+export const isVibeKey = (value: string): value is VibeKey =>
+  (VIBE_KEYS as readonly string[]).includes(value);
+
 export const VIBE_TYPE_CODE_MAP: Record<VibeKey, string> = {
   strength: "strength",
   agility: "balance",

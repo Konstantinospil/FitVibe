@@ -1117,6 +1117,7 @@
       "sets": "Series",
       "repetitions": "Repeticiones",
       "weight": "Resistencia / peso",
+      "weightLb": "Resistencia / peso (lb)",
       "duration": "Duración (segundos)",
       "exertion": "Esfuerzo objetivo",
       "restSet": "Descanso tras cada serie (segundos)",
@@ -1170,9 +1171,11 @@
     "set": "Serie {{number}}",
     "reps": "Repeticiones: {{value}}",
     "load": "Peso: {{value}} kg",
+    "loadLb": "Peso: {{value}} lb",
     "duration": "Duración: {{value}} s",
     "distance": "Distancia: {{value}} m",
     "rpe": "RPE: {{value}}",
+    "heartRate": "Frecuencia cardiaca: {{value}} ppm",
     "rest": "Descanso: {{value}} s",
     "empty": "No hay ejercicios.",
     "loadError": "No se pudo cargar el entrenamiento.",
@@ -1268,8 +1271,10 @@
     "fields": {
       "startTime": "Hora de inicio",
       "weight": "Peso (kg)",
+      "weightLb": "Peso (lb)",
       "distance": "Distancia (metros)",
-      "rpe": "Esfuerzo (RPE 1–10)"
+      "rpe": "Esfuerzo (RPE 1–10)",
+      "heartRate": "Frecuencia cardiaca (ppm, opcional)"
     },
     "actions": {
       "save": "Guardar entrenamiento",
@@ -1443,5 +1448,12 @@
       "notActive": "Este entrenamiento ya no está en curso. Ábrelo para ver lo registrado.",
       "invalidSet": "Revisa {{field}}."
     }
+  },
+  "vibeChanges": {
+    "title": "Cambios de Vibe",
+    "level": "Nivel {{value}}",
+    "none": "Este entrenamiento no cambió ningún nivel de Vibe.",
+    "loading": "Cargando cambios de Vibe…",
+    "loadError": "No se pudieron cargar los cambios de Vibe."
   }
 }

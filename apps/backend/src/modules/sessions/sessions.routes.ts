@@ -10,6 +10,7 @@ import {
   cloneSessionHandler,
   applyRecurrenceHandler,
   getSessionEstimateHandler,
+  getSessionVibeChangesHandler,
   pauseSessionHandler,
   resumeSessionHandler,
   recordSetHandler,
@@ -52,6 +53,12 @@ sessionsRouter.get(
   rateLimit("sessions_estimate"),
   requireAccessToken,
   asyncHandler(getSessionEstimateHandler),
+);
+sessionsRouter.get(
+  "/:id/vibe-changes",
+  rateLimit("sessions_get"),
+  requireAccessToken,
+  asyncHandler(getSessionVibeChangesHandler),
 );
 sessionsRouter.post(
   "/:id/reopen",

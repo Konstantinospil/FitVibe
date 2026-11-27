@@ -6,18 +6,8 @@ import { getUserBadges } from "../services/api";
 import { getMyVibeformProfile } from "../lib/vibeform/api";
 import { VibeformRenderer } from "../lib/vibeform/components/VibeformRenderer";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
+import { VIBE_KEYS, type VibeKey } from "../constants/vibes";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
-
-const VIBES = [
-  "strength",
-  "agility",
-  "endurance",
-  "explosivity",
-  "intelligence",
-  "regeneration",
-] as const;
-
-type VibeKey = (typeof VIBES)[number];
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -75,7 +65,7 @@ const Dashboard: React.FC = () => {
 
         <TrainingPanel title={t("dashboard.vibesTitle")}>
           <div className="training-scroll">
-            {VIBES.map((vibe) => (
+            {VIBE_KEYS.map((vibe) => (
               <Button
                 key={vibe}
                 type="button"

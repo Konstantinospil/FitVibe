@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Log from "../../src/pages/Log";
 import * as api from "../../src/services/api";
+import * as accountApi from "../../src/services/accountApi";
 import * as sessionApi from "../../src/services/sessionApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
 
@@ -24,6 +25,11 @@ vi.mock("react-i18next", () => ({
 vi.mock("../../src/services/api", async () => {
   const actual = await vi.importActual("../../src/services/api");
   return { ...actual, listExercises: vi.fn() };
+});
+
+vi.mock("../../src/services/accountApi", async () => {
+  const actual = await vi.importActual("../../src/services/accountApi");
+  return { ...actual, getUserPreferences: vi.fn() };
 });
 
 vi.mock("../../src/services/sessionApi", async () => {
@@ -59,6 +65,10 @@ describe("Log", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "metric",
+    });
     queryClient = createTestQueryClient();
     vi.mocked(api.listExercises).mockResolvedValue(exercises);
     createSession.mockResolvedValue({
@@ -154,12 +164,70 @@ describe("Log", () => {
               duration_sec: null,
               distance_m: null,
               rpe: 8,
+              heart_rate_bpm: null,
             },
           ],
         },
       ],
     });
     expect(await screen.findByText("Session page")).toBeInTheDocument();
+  });
+
+  it("takes load in pounds for an imperial athlete and stores kilograms", async () => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "imperial",
+    });
+    renderLog();
+    setWhen(PAST_DAY, "09:00", "45");
+    await addSquat();
+    const set = screen.getByRole("group", { name: "sessionDetail.set(number=1)" });
+    const load = await within(set).findByLabelText("logSurface.fields.weightLb");
+    await waitFor(() => expect(load).toBeEnabled());
+    expect(within(set).queryByLabelText("logSurface.fields.weight")).not.toBeInTheDocument();
+    setField(1, "workoutEditor.fields.repetitions", "5");
+    setField(1, "logSurface.fields.weightLb", "225");
+
+    fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.save" }));
+
+    await waitFor(() => expect(createSession).toHaveBeenCalledTimes(1));
+    const [payload] = createSession.mock.calls[0];
+    expect(payload.exercises?.[0].sets?.[0]).toMatchObject({ reps: 5, weight_kg: 102.06 });
+  });
+
+  it("sends an optional heart rate with a set and checks its range", async () => {
+    renderLog();
+    setWhen(PAST_DAY, "09:00", "45");
+    await addSquat();
+    setField(1, "workoutEditor.fields.repetitions", "5");
+    setField(1, "logSurface.fields.heartRate", "12");
+
+    fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.save" }));
+    expect(
+      await screen.findByText(
+        "logSurface.errors.invalidSet(exercise=Back squat,number=1,field=logSurface.fields.heartRate)",
+      ),
+    ).toBeInTheDocument();
+    expect(createSession).not.toHaveBeenCalled();
+
+    setField(1, "logSurface.fields.heartRate", "146");
+    fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.save" }));
+
+    await waitFor(() => expect(createSession).toHaveBeenCalledTimes(1));
+    expect(createSession.mock.calls[0][0].exercises?.[0].sets?.[0]).toMatchObject({
+      reps: 5,
+      heart_rate_bpm: 146,
+    });
+  });
+
+  it("holds load entry until the unit is known", async () => {
+    vi.mocked(accountApi.getUserPreferences).mockReturnValue(new Promise(() => {}));
+    renderLog();
+    await addSquat();
+
+    const set = screen.getByRole("group", { name: "sessionDetail.set(number=1)" });
+    expect(within(set).getByLabelText("logSurface.fields.weight")).toBeDisabled();
+    expect(within(set).getByLabelText("workoutEditor.fields.repetitions")).toBeEnabled();
   });
 
   it("adds exercises and sets without submitting the form", async () => {

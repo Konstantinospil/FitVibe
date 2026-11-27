@@ -1,4 +1,5 @@
 import type { VibeformBodyProfile, VibeformMetrics, VibeformPreferences } from "@fitvibe/types";
+import { roundTo } from "../math/round";
 
 export type { VibeformBodyProfile, VibeformMetrics };
 
@@ -61,9 +62,10 @@ function lerp(min: number, max: number, amount: number): number {
   return min + (max - min) * clamp01(amount);
 }
 
-function round(value: number, decimals = 3): number {
-  const factor = 10 ** decimals;
-  return Math.round(value * factor) / factor;
+const VISUAL_DECIMALS = 3;
+
+function round(value: number, decimals = VISUAL_DECIMALS): number {
+  return roundTo(value, decimals);
 }
 
 /**

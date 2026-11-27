@@ -9,6 +9,7 @@ import {
   hasMetricValue,
   normalizeSetMetrics,
   trimToNull,
+  normalizeHeartRate,
 } from "./sessions.normalization.js";
 import type { Session, SessionSetPlannedValues, SessionWithExercises } from "./sessions.types.js";
 
@@ -29,6 +30,7 @@ export interface RecordSetCommand {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  heart_rate_bpm?: number | null;
   notes?: string | null;
 }
 
@@ -155,7 +157,8 @@ export function recordSet(
     }
 
     const performed = normalizeSetMetrics(command, "set");
-    if (command.status === "skipped" && hasMetricValue(performed)) {
+    const heartRate = normalizeHeartRate(command.heart_rate_bpm, "set");
+    if (command.status === "skipped" && (hasMetricValue(performed) || heartRate !== null)) {
       throw new HttpError(
         422,
         "E.SESSION.INVALID_SET",
@@ -168,6 +171,7 @@ export function recordSet(
       .update({
         status: command.status,
         ...(completed ? performed : EMPTY_SET_METRICS),
+        heart_rate_bpm: completed ? heartRate : null,
         // A correction keeps the time the set was first recorded.
         recorded_at: completed ? (set.recorded_at ?? new Date().toISOString()) : null,
         ...(command.notes !== undefined ? { notes: trimToNull(command.notes) } : {}),

@@ -57,6 +57,8 @@ export interface SessionExerciseSet {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  /** Optional result of a completed set, in beats per minute. */
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;
@@ -150,6 +152,7 @@ export interface SessionExerciseInput {
     duration_sec?: number | null;
     rpe?: number | null;
     rest_sec?: number | null;
+    heart_rate_bpm?: number | null;
     extras?: Record<string, unknown>;
     recorded_at?: string | null;
     notes?: string | null;
@@ -204,6 +207,25 @@ export async function listSessions(params?: SessionQuery): Promise<SessionsListR
 
 export async function getSession(sessionId: string): Promise<SessionWithExercises> {
   const res = await apiClient.get<SessionWithExercises>(`/api/v1/sessions/${sessionId}`);
+  return res.data;
+}
+
+/** How one Vibe's level moved because of a completed session (issue 289). */
+export interface SessionVibeChange {
+  domain_code: string;
+  previous_level: number;
+  new_level: number;
+  change: number;
+}
+
+export interface SessionVibeChanges {
+  session_id: string;
+  changes: SessionVibeChange[];
+}
+
+/** Owner only; empty until the session's points are processed. */
+export async function getSessionVibeChanges(sessionId: string): Promise<SessionVibeChanges> {
+  const res = await apiClient.get<SessionVibeChanges>(`/api/v1/sessions/${sessionId}/vibe-changes`);
   return res.data;
 }
 
@@ -296,6 +318,7 @@ export interface RecordSetRequest {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  heart_rate_bpm?: number | null;
   notes?: string | null;
 }
 

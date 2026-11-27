@@ -52,12 +52,20 @@ export function nextPosition(session: SessionWithExercises): LivePosition | null
   return openPositions(session)[1] ?? null;
 }
 
-/** Fields to record for a set: those it has a target for, or reps and load. */
+/**
+ * Fields to record for a set: those it has a target for (or reps and load), then
+ * the optional results every set offers, such as heart rate.
+ */
 export function fieldsFor(set: SessionExerciseSet): readonly SetMetricField[] {
   const targeted = SET_METRIC_FIELDS.filter(
-    ({ metric }) => set.planned?.[metric] !== null && set.planned?.[metric] !== undefined,
+    ({ metric, resultOnly }) =>
+      !resultOnly &&
+      metric !== "heart_rate_bpm" &&
+      set.planned?.[metric] !== null &&
+      set.planned?.[metric] !== undefined,
   );
-  return targeted.length > 0 ? targeted : DEFAULT_FIELDS;
+  const resultOnly = SET_METRIC_FIELDS.filter((field) => field.resultOnly);
+  return [...(targeted.length > 0 ? targeted : DEFAULT_FIELDS), ...resultOnly];
 }
 
 const secondsSince = (value: string, now: number) =>

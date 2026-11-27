@@ -32,6 +32,7 @@ export interface SessionExerciseSetUpsert {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;
@@ -293,6 +294,7 @@ type SessionExerciseSetRow = {
   duration_sec: number | null;
   rpe: number | null;
   rest_sec: number | null;
+  heart_rate_bpm: number | null;
   extras: unknown;
   recorded_at: Date | string | null;
   notes: string | null;
@@ -358,6 +360,7 @@ export async function getSessionWithDetails(
           "duration_sec",
           "rpe",
           "rest_sec",
+          "heart_rate_bpm",
           "extras",
           "recorded_at",
           "notes",
@@ -380,6 +383,7 @@ export async function getSessionWithDetails(
       duration_sec: row.duration_sec ?? null,
       rpe: row.rpe ?? null,
       rest_sec: row.rest_sec ?? null,
+      heart_rate_bpm: row.heart_rate_bpm ?? null,
       extras: normalizeExtras(row.extras),
       recorded_at: toDateString(row.recorded_at) ?? null,
       notes: row.notes ?? null,
@@ -614,6 +618,7 @@ export async function replaceSessionExercises(
       duration_sec: set.duration_sec ?? null,
       rpe: set.rpe ?? null,
       rest_sec: set.rest_sec ?? null,
+      heart_rate_bpm: set.heart_rate_bpm ?? null,
       extras: set.extras ?? {},
       recorded_at: set.recorded_at ?? null,
       notes: set.notes ?? null,

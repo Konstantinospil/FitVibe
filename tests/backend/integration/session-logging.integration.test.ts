@@ -136,6 +136,49 @@ describeWithTestDatabase("Integration: session logging (ADR-042)", () => {
     );
   });
 
+  it("stores an optional heart rate on completed sets only (issue 89)", async () => {
+    const response = await post({
+      status: "completed",
+      planned_at: hoursFromNow(-2),
+      exercises: [
+        {
+          order: 1,
+          exercise_id: exerciseId,
+          sets: [
+            { order: 1, status: "completed", reps: 5, heart_rate_bpm: 148 },
+            { order: 2, status: "completed", reps: 5 },
+          ],
+        },
+      ],
+    });
+    expect(response.status).toBe(201);
+    expect(response.body.exercises[0].sets).toEqual([
+      expect.objectContaining({ heart_rate_bpm: 148 }),
+      expect.objectContaining({ heart_rate_bpm: null }),
+    ]);
+
+    const outOfRange = await post({
+      status: "completed",
+      planned_at: hoursFromNow(-1),
+      exercises: [
+        {
+          order: 1,
+          exercise_id: exerciseId,
+          sets: [{ order: 1, status: "completed", heart_rate_bpm: 300 }],
+        },
+      ],
+    });
+    expect(outOfRange.status).toBe(400);
+
+    // The database refuses a heart rate on a set that is not completed, whatever the caller.
+    const [secondSet] = response.body.exercises[0].sets.slice(1);
+    await expect(
+      db("exercise_sets")
+        .where({ id: secondSet.id })
+        .update({ status: "skipped", heart_rate_bpm: 120 }),
+    ).rejects.toThrow(/exercise_sets_heart_rate_bpm_completed/);
+  });
+
   it("refuses a log that starts in the future", async () => {
     const response = await post({ status: "completed", planned_at: hoursFromNow(1) });
 

@@ -28,6 +28,7 @@ import { CreateExerciseTypeSchema } from "../../../apps/backend/src/modules/exer
 import { UpdateVibeformPreferencesSchema } from "../../../apps/backend/src/modules/vibeforms/vibeforms.schemas.js";
 import { ClientErrorReportSchema } from "../../../apps/backend/src/modules/client-errors/client-errors.schemas.js";
 import { SESSION_DURATION_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.schedule.js";
+import { HEART_RATE_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -161,6 +162,19 @@ describe("OpenAPI contract alignment", () => {
         type: "integer",
         minimum: SESSION_DURATION_LIMITS.min,
         maximum: SESSION_DURATION_LIMITS.max,
+      });
+    }
+  });
+
+  it("documents a set's heart rate within the server's bounds (issue 89)", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    const responseSet =
+      schemas.SessionWithExercises.properties.exercises.items.properties.sets.items;
+    for (const set of [schemas.SessionSetInput, schemas.RecordSetRequest, responseSet]) {
+      expect(set.properties.heart_rate_bpm).toMatchObject({
+        type: "integer",
+        minimum: HEART_RATE_LIMITS.min,
+        maximum: HEART_RATE_LIMITS.max,
       });
     }
   });

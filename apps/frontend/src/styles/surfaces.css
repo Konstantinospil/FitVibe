@@ -331,14 +331,6 @@
   gap: var(--space-sm);
 }
 
-.log-surface__exercise-list {
-  display: grid;
-  gap: var(--space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .log-exercise {
   display: grid;
   gap: var(--space-sm);
@@ -380,11 +372,37 @@
   line-height: var(--type-supporting-line-height);
 }
 
-.log-set__fields {
+/* The fields of one set, shared by the manual Log and the live workout. */
+.set-fields {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-3xl) * 2), 1fr));
   align-items: end;
+  gap: var(--space-sm);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A grid of metric cards: the Vibe changes on a result, the finish summary. */
+.metric-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-3xl) * 2), 1fr));
+  gap: var(--space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vibe-change-list__label {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-xs);
+}
+
+.vibe-change-list [data-slot="vibe-icon"] {
+  width: var(--control-icon-lg);
+  height: var(--control-icon-lg);
 }
 
 /* Live workout (/start/:id): the training clock, then the current set beside the plan. */
@@ -408,12 +426,6 @@
 .live-clock__secondary {
   display: grid;
   gap: var(--space-xs);
-}
-
-.live-clock__label {
-  color: var(--color-text-secondary);
-  font-size: var(--type-supporting-size);
-  line-height: var(--type-supporting-line-height);
 }
 
 .live-clock__value {
@@ -445,11 +457,6 @@
   align-items: start;
 }
 
-.live-set {
-  display: grid;
-  gap: var(--space-sm);
-}
-
 .live-set__heading {
   display: flex;
   flex-wrap: wrap;
@@ -458,36 +465,10 @@
   gap: var(--space-sm);
 }
 
-.live-set__heading h2 {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-section-title-size);
-}
-
-.live-set__heading p,
+.live-set__heading > *,
 .live-set__target,
 .live-set__next {
   margin: 0;
-  color: var(--color-text-secondary);
-}
-
-.live-set__fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-3xl) * 2), 1fr));
-  align-items: end;
-  gap: var(--space-sm);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.live-set__actions,
-.live-outline__actions,
-.live-finish__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
 }
 
 .live-rest {
@@ -508,7 +489,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.live-outline {
+/* A vertical list of blocks: the Log's exercises, the live workout plan. */
+.stack-list {
   display: grid;
   gap: var(--space-md);
   margin: 0;
@@ -534,13 +516,6 @@
 
 .live-outline__header h3 {
   margin: 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-card-title-size);
-}
-
-.live-outline__header span {
-  color: var(--color-text-secondary);
-  font-size: var(--type-supporting-size);
 }
 
 .live-outline__set--current {
@@ -548,33 +523,8 @@
   box-shadow: inset var(--space-xs) 0 0 var(--color-primary);
 }
 
-.live-finish {
-  display: grid;
-  gap: var(--space-md);
-}
-
 .live-finish p {
   margin: 0;
-}
-
-.live-finish__summary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-sm);
-  margin: 0;
-}
-
-.live-finish__summary dt {
-  color: var(--color-text-secondary);
-  font-size: var(--type-supporting-size);
-}
-
-.live-finish__summary dd {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-family: var(--font-family-heading);
-  font-size: var(--type-section-title-size);
-  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 768px) {
@@ -599,10 +549,6 @@
 
   .live-clock__actions {
     justify-content: flex-start;
-  }
-
-  .log-set__fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-surface__grid {

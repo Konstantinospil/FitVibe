@@ -97,9 +97,11 @@ describe("live workout fields", () => {
     expect(fieldsFor(set({ planned: { weight_kg: 80, reps: 8 } })).map((f) => f.metric)).toEqual([
       "reps",
       "weight_kg",
+      "heart_rate_bpm",
     ]);
     expect(fieldsFor(set({ planned: { duration_sec: 60 } })).map((f) => f.metric)).toEqual([
       "duration_sec",
+      "heart_rate_bpm",
     ]);
   });
 
@@ -107,8 +109,13 @@ describe("live workout fields", () => {
     expect(fieldsFor(set({ planned: { rest_sec: 60 } })).map((f) => f.metric)).toEqual([
       "reps",
       "weight_kg",
+      "heart_rate_bpm",
     ]);
-    expect(fieldsFor(set({ planned: null })).map((f) => f.metric)).toEqual(["reps", "weight_kg"]);
+    expect(fieldsFor(set({ planned: null })).map((f) => f.metric)).toEqual([
+      "reps",
+      "weight_kg",
+      "heart_rate_bpm",
+    ]);
   });
 });
 
