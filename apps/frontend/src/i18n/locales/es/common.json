@@ -1179,7 +1179,6 @@
     "saveError": "No se pudo actualizar el entrenamiento.",
     "reuse": "Reutilizar como nuevo entrenamiento",
     "reuseDate": "Programar la copia",
-    "activeNotice": "El entrenamiento está en curso. El registro en directo aún no está disponible.",
     "pointsPending": "Se están procesando los puntos.",
     "sets": "Series: {{value}}",
     "plannedDuration": "Duración prevista: {{value}}",
@@ -1391,5 +1390,58 @@
   "vibeformConstellation": {
     "accessibleLabel": "Panel Vibeform",
     "athleteLabel": "Vibeform del deportista"
+  },
+  "liveWorkout": {
+    "title": "Entrenamiento en directo",
+    "notStarted": "Este entrenamiento no ha empezado. Empiézalo para registrar cada serie sobre la marcha.",
+    "pausedNotice": "En pausa. Reanuda para registrar series.",
+    "rest": "Descanso",
+    "clock": {
+      "label": "Tiempo de entrenamiento",
+      "active": "Tiempo entrenando",
+      "paused": "En pausa",
+      "elapsed": "Desde el inicio"
+    },
+    "current": {
+      "title": "Ahora",
+      "setOf": "Serie {{number}} de {{count}}",
+      "target": "Objetivo: {{value}}",
+      "noTarget": "Sin objetivo. Registra lo que hiciste.",
+      "values": "Lo que hiciste",
+      "next": "Siguiente: {{name}}, serie {{number}}",
+      "done": "Todas las series están registradas. Añade una serie o un ejercicio, o termina el entrenamiento."
+    },
+    "outline": {
+      "title": "Plan del entrenamiento"
+    },
+    "finish": {
+      "title": "Terminar entrenamiento",
+      "done": "Series hechas",
+      "skipped": "Series omitidas",
+      "remaining": "Series sin hacer",
+      "scoring": "Solo las series que completaste cuentan para los puntos.",
+      "discardTitle": "¿Descartar este entrenamiento?",
+      "discardWarning": "Se eliminarán el entrenamiento y todas las series registradas, y no se otorgarán puntos."
+    },
+    "actions": {
+      "continue": "Continuar entrenamiento",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "finish": "Terminar entrenamiento",
+      "completeSet": "Completar serie",
+      "skipSet": "Omitir serie",
+      "addSetTo": "Añadir serie a {{name}}",
+      "skipExercise": "Omitir {{name}}",
+      "saveCompleted": "Guardar entrenamiento",
+      "saveStoppedEarly": "Guardar como terminado antes",
+      "discard": "Descartar entrenamiento",
+      "confirmDiscard": "Descartar",
+      "keepWorkout": "Conservar entrenamiento"
+    },
+    "errors": {
+      "save": "No se pudo guardar el cambio. Inténtalo de nuevo.",
+      "notActive": "Este entrenamiento ya no está en curso. Ábrelo para ver lo registrado.",
+      "invalidSet": "Revisa {{field}}."
+    }
   }
 }

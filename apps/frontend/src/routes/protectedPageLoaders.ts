@@ -33,6 +33,7 @@ export const loadHome = memoizeImport(() => import("../pages/Home"));
 export const loadCalendar = memoizeImport(() => import("../pages/Calendar"));
 export const loadSessionDetail = memoizeImport(() => import("../pages/SessionDetail"));
 export const loadLog = memoizeImport(() => import("../pages/Log"));
+export const loadLiveWorkout = memoizeImport(() => import("../pages/LiveWorkout"));
 export const loadLibrary = memoizeImport(() => import("../pages/Library"));
 export const loadDashboard = memoizeImport(() => import("../pages/Dashboard"));
 export const loadSettings = memoizeImport(() => import("../pages/Settings"));
@@ -56,6 +57,15 @@ const PAGE_LOADERS_BY_PATH: Readonly<Record<string, () => Promise<ModuleWithDefa
   "/admin/password-update": loadAdminPasswordUpdate,
 };
 
+// Pages whose path carries an id.
+const DYNAMIC_PAGE_LOADERS: ReadonlyArray<{
+  pattern: RegExp;
+  load: () => Promise<ModuleWithDefault>;
+}> = [
+  { pattern: /^\/sessions\/[^/]+$/, load: loadSessionDetail },
+  { pattern: /^\/start\/[^/]+$/, load: loadLiveWorkout },
+];
+
 function normalizePath(pathname: string): string {
   const lower = pathname.toLowerCase();
   return lower.length > 1 && lower.endsWith("/") ? lower.slice(0, -1) : lower;
@@ -70,9 +80,9 @@ export function prefetchProtectedEntry(pathname: string): void {
   const swallow = () => undefined;
   void loadProtectedRoutes().catch(swallow);
   const path = normalizePath(pathname);
-  const loadPage = /^\/sessions\/[^/]+$/.test(path)
-    ? loadSessionDetail
-    : PAGE_LOADERS_BY_PATH[path];
+  const loadPage =
+    DYNAMIC_PAGE_LOADERS.find(({ pattern }) => pattern.test(path))?.load ??
+    PAGE_LOADERS_BY_PATH[path];
   if (loadPage) {
     void loadPage().catch(swallow);
   }

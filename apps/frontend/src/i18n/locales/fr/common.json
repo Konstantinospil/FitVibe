@@ -1179,7 +1179,6 @@
     "saveError": "Impossible de mettre à jour l’entraînement.",
     "reuse": "Réutiliser pour un nouvel entraînement",
     "reuseDate": "Planifier la copie",
-    "activeNotice": "Cet entraînement est en cours. La saisie en direct n’est pas encore disponible.",
     "pointsPending": "Les points sont en cours de calcul.",
     "sets": "Séries : {{value}}",
     "plannedDuration": "Durée prévue : {{value}}",
@@ -1391,5 +1390,58 @@
   "vibeformConstellation": {
     "accessibleLabel": "Tableau de bord Vibeform",
     "athleteLabel": "Vibeform de l’athlète"
+  },
+  "liveWorkout": {
+    "title": "Séance en direct",
+    "notStarted": "Cette séance n'a pas commencé. Démarrez-la pour enregistrer chaque série au fur et à mesure.",
+    "pausedNotice": "En pause. Reprenez pour enregistrer des séries.",
+    "rest": "Récupération",
+    "clock": {
+      "label": "Durée de la séance",
+      "active": "Temps d'entraînement",
+      "paused": "En pause",
+      "elapsed": "Depuis le début"
+    },
+    "current": {
+      "title": "Maintenant",
+      "setOf": "Série {{number}} sur {{count}}",
+      "target": "Objectif : {{value}}",
+      "noTarget": "Aucun objectif. Enregistrez ce que vous avez fait.",
+      "values": "Ce que vous avez fait",
+      "next": "Ensuite : {{name}}, série {{number}}",
+      "done": "Toutes les séries sont enregistrées. Ajoutez une série ou un exercice, ou terminez la séance."
+    },
+    "outline": {
+      "title": "Programme de la séance"
+    },
+    "finish": {
+      "title": "Terminer la séance",
+      "done": "Séries faites",
+      "skipped": "Séries passées",
+      "remaining": "Séries non faites",
+      "scoring": "Seules les séries terminées comptent pour les points.",
+      "discardTitle": "Abandonner cette séance ?",
+      "discardWarning": "La séance et toutes les séries enregistrées seront supprimées, et aucun point ne sera attribué."
+    },
+    "actions": {
+      "continue": "Reprendre la séance",
+      "pause": "Pause",
+      "resume": "Reprendre",
+      "finish": "Terminer la séance",
+      "completeSet": "Valider la série",
+      "skipSet": "Passer la série",
+      "addSetTo": "Ajouter une série à {{name}}",
+      "skipExercise": "Passer {{name}}",
+      "saveCompleted": "Enregistrer la séance",
+      "saveStoppedEarly": "Enregistrer comme arrêtée tôt",
+      "discard": "Abandonner la séance",
+      "confirmDiscard": "Abandonner",
+      "keepWorkout": "Garder la séance"
+    },
+    "errors": {
+      "save": "La modification n'a pas pu être enregistrée. Réessayez.",
+      "notActive": "Cette séance n'est plus en cours. Ouvrez-la pour voir ce qui a été enregistré.",
+      "invalidSet": "Vérifiez {{field}}."
+    }
   }
 }

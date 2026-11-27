@@ -39,6 +39,14 @@ ADR-042 separated a set's prescription from performed work and added the `stoppe
 ## Consequences
 
 - The Start screen can resume after a reload from the server's state alone.
+- **Start screen (`/start/:id`).** Start on the session page opens it, and a workout in progress shows Continue workout there.
+  - The current set is the first `planned` set of an exercise that is not skipped, in server order.
+  - Its fields are the metrics it has a target for (reps and load when it has none), prefilled from the target.
+  - The screen sends one command per action and replaces its cached session with the returned one.
+  - Set entry waits while paused, so recorded work is never stamped inside a pause.
+  - The timers and the rest countdown come from `started_at`, `paused_*` and `recorded_at`.
+  - Finish offers save as completed, save as stopped early, or discard after a second confirmation.
+  - The Log and the Start screen share the set fields and their validation (`lib/forms/setMetrics.ts`).
 - Order is server-authoritative: added work goes to the end of its exercise or of the workout.
 - **Still to come:**
   - Raw vs Adjusted effective prescriptions (#364) build on `planned_*` and are fixed at start;

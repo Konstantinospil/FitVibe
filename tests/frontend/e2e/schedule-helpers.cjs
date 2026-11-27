@@ -75,6 +75,22 @@ async function createPlannedSession(
   return response.json();
 }
 
+/** Creates a strength exercise owned by the signed-in athlete. */
+async function createExercise(page, name) {
+  const request = page.context().request;
+  const csrfToken = await getCsrfToken(request, "exercise");
+  const response = await retryRateLimitedMutation(
+    () =>
+      request.post(`${APPLICATION_ORIGIN}/api/v1/exercises`, {
+        data: { name, type_code: "strength" },
+        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
+      }),
+    "create exercise",
+  );
+  expect(response.status(), "exercise created").toBe(201);
+  return response.json();
+}
+
 async function fetchSession(page, sessionId) {
   const response = await page
     .context()
@@ -110,6 +126,7 @@ module.exports = {
   BASE_HOUR,
   DAY_MS,
   at,
+  createExercise,
   createPlannedSession,
   dayKey,
   durationOf,
