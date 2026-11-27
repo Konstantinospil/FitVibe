@@ -40,6 +40,7 @@ import {
 import { DEFAULT_SESSION_DURATION_MIN, type ScheduleWindow } from "./sessions.schedule.js";
 import { closedPause } from "./sessions.execution.service.js";
 import { listActiveSessionVibeChanges } from "../points/vibe-level.repository.js";
+import { insertLoggedIntake } from "./sessions.intake.service.js";
 
 /**
  * Server-side re-validation for rescheduling and resizing (US-4.3-AC03). Clients
@@ -89,8 +90,9 @@ export async function getOne(userId: string, id: string): Promise<SessionWithExe
   if (!session) {
     throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
   }
-  // The workout photo is personal (ADR-044): a public session is shown without it.
-  return session.owner_id === userId ? session : { ...session, photo: null };
+  // The photo (ADR-044) and intake (ADR-045) are personal: a public session is
+  // shown to anyone else without them.
+  return session.owner_id === userId ? session : { ...session, photo: null, intake: null };
 }
 
 /**
@@ -163,6 +165,13 @@ export async function createOne(
   if (dto.result_note !== undefined && !logging) {
     throw resultNoteWithoutResult();
   }
+  if (dto.intake?.length && !logging) {
+    throw new HttpError(
+      400,
+      "E.SESSION.INTAKE_WITHOUT_RESULT",
+      "intake is only accepted with a logged (completed) session",
+    );
+  }
   const plannedAt = new Date(dto.planned_at).toISOString();
   const plannedDurationMin = dto.planned_duration_min ?? DEFAULT_SESSION_DURATION_MIN;
 
@@ -196,6 +205,9 @@ export async function createOne(
     await createSession(row, trx);
     if (normalizedExercises.length > 0) {
       await replaceSessionExercises(trx, sessionId, normalizedExercises);
+    }
+    if (logging && row.completed_at) {
+      await insertLoggedIntake(trx, sessionId, row.completed_at, dto.intake ?? []);
     }
     if (logging) {
       await markGamificationStale(userId, false, trx);

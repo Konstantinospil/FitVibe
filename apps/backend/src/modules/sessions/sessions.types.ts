@@ -120,6 +120,8 @@ export interface CreateSessionDTO {
   result_note?: string | null;
   recurrence_rule?: string | null;
   exercises?: SessionExerciseInput[];
+  /** What was drunk and eaten; only with status "completed" (ADR-045). */
+  intake?: { kind: IntakeKind; amount: number }[];
 }
 
 export interface UpdateSessionDTO {
@@ -246,6 +248,22 @@ export interface SessionVibeChanges {
   changes: SessionVibeChange[];
 }
 
+/** ADR-045: water in millilitres, or food energy in kilocalories. */
+export type IntakeKind = "water" | "energy";
+
+export interface SessionIntakeEntry {
+  id: string;
+  kind: IntakeKind;
+  amount: number;
+  recorded_at: string;
+}
+
+/** What the athlete drank and ate during a workout; only its owner receives it. */
+export interface SessionIntake {
+  entries: SessionIntakeEntry[];
+  totals: { water_ml: number; energy_kcal: number };
+}
+
 /** The workout photo (ADR-044); only its owner ever receives it. */
 export interface SessionPhoto {
   id: string;
@@ -259,4 +277,6 @@ export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
   /** Present on the owner's reads; null when there is none or for anyone else. */
   photo?: SessionPhoto | null;
+  /** ADR-045: present on the owner's reads; null for anyone else. */
+  intake?: SessionIntake | null;
 }

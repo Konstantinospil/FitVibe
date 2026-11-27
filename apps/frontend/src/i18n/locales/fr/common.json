@@ -1484,5 +1484,43 @@
       "removeMessage": "La photo sera supprimée. Tu pourras en ajouter une autre plus tard.",
       "finishUploadFailed": "Ta séance est enregistrée, mais la photo n'a pas pu être envoyée. Ajoute-la de nouveau ici."
     }
+  },
+  "workoutIntake": {
+    "title": "Eau et nourriture",
+    "kind": {
+      "water": "Eau",
+      "energy": "Énergie alimentaire"
+    },
+    "amount": {
+      "water": "{{amount}} ml",
+      "energy": "{{amount}} kcal"
+    },
+    "quickWater": "Ajouter {{amount}}",
+    "fields": {
+      "kind": "Type",
+      "amount": {
+        "water": "Eau (ml)",
+        "energy": "Énergie alimentaire (kcal)"
+      },
+      "total": {
+        "water": "Eau bue (ml)",
+        "energy": "Énergie alimentaire consommée (kcal)"
+      }
+    },
+    "add": "Ajouter",
+    "entries": "Eau et nourriture enregistrées",
+    "entry": {
+      "water": "{{amount}} d'eau à {{time}}",
+      "energy": "{{amount}} de nourriture à {{time}}"
+    },
+    "remove": "Retirer",
+    "removeEntry": "Retirer {{amount}}",
+    "empty": "Rien n'est encore enregistré.",
+    "invalid": {
+      "water": "Saisis des millilitres entiers de 1 à {{max}}.",
+      "energy": "Saisis des kilocalories entières de 1 à {{max}}."
+    },
+    "saveError": "L'entrée n'a pas pu être enregistrée. Réessaie.",
+    "removeError": "L'entrée n'a pas pu être retirée. Réessaie."
   }
 }

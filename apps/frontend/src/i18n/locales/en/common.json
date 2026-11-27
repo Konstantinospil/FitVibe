@@ -1484,5 +1484,43 @@
       "removeMessage": "The photo will be deleted. You can add another one later.",
       "finishUploadFailed": "Your workout is saved, but the photo couldn't be uploaded. Add it again here."
     }
+  },
+  "workoutIntake": {
+    "title": "Water and food",
+    "kind": {
+      "water": "Water",
+      "energy": "Food energy"
+    },
+    "amount": {
+      "water": "{{amount}} ml",
+      "energy": "{{amount}} kcal"
+    },
+    "quickWater": "Add {{amount}}",
+    "fields": {
+      "kind": "Type",
+      "amount": {
+        "water": "Water (ml)",
+        "energy": "Food energy (kcal)"
+      },
+      "total": {
+        "water": "Water drunk (ml)",
+        "energy": "Food energy eaten (kcal)"
+      }
+    },
+    "add": "Add",
+    "entries": "Recorded water and food",
+    "entry": {
+      "water": "{{amount}} of water at {{time}}",
+      "energy": "{{amount}} of food at {{time}}"
+    },
+    "remove": "Remove",
+    "removeEntry": "Remove {{amount}}",
+    "empty": "Nothing recorded yet.",
+    "invalid": {
+      "water": "Enter whole millilitres from 1 to {{max}}.",
+      "energy": "Enter whole kilocalories from 1 to {{max}}."
+    },
+    "saveError": "The entry couldn't be saved. Try again.",
+    "removeError": "The entry couldn't be removed. Try again."
   }
 }

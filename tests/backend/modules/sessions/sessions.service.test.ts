@@ -485,6 +485,15 @@ describe("Sessions Service", () => {
         });
       });
 
+      it("refuses intake when creating a planned session (ADR-045)", async () => {
+        await expect(
+          sessionsService.createOne(userId, {
+            planned_at: new Date().toISOString(),
+            intake: [{ kind: "water", amount: 500 }],
+          }),
+        ).rejects.toMatchObject({ status: 400, code: "E.SESSION.INTAKE_WITHOUT_RESULT" });
+      });
+
       it("refuses a result note when creating a planned session", async () => {
         await expect(
           sessionsService.createOne(userId, {

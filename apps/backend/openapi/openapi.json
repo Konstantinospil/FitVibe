@@ -1626,6 +1626,129 @@
         }
       }
     },
+    "/sessions/{id}/intake": {
+      "post": {
+        "summary": "Record water or food energy for a workout",
+        "description": "Owner only (ADR-045). Once the session has started or is completed (409 E.SESSION.INTAKE_NOT_STARTED otherwise); 404 for a missing session and for someone else's. Returns the session's intake.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionIntakeEntryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionIntake"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/intake/{entryId}": {
+      "delete": {
+        "summary": "Remove an intake entry",
+        "description": "Owner only. Returns the session's remaining intake.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionIntake"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{id}/photo": {
       "post": {
         "summary": "Add or replace the photo of a completed workout",
@@ -2985,6 +3108,28 @@
             "nullable": true,
             "description": "What the athlete wrote after the workout (ADR-044). Only with status completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise)."
           },
+          "intake": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "description": "Water in millilitres (at most 5000) or food energy in kilocalories (at most 5000). Not the workout's own calories.",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": ["water", "energy"]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 5000
+                }
+              },
+              "required": ["kind", "amount"],
+              "additionalProperties": false
+            },
+            "description": "What was drunk and eaten during a logged workout (ADR-045), recorded at its end. Only with status completed (400 E.SESSION.INTAKE_WITHOUT_RESULT otherwise)."
+          },
           "recurrence_rule": {
             "type": "string",
             "maxLength": 255,
@@ -3497,6 +3642,15 @@
             "description": "The workout photo; only the owner receives it (null for anyone else).",
             "nullable": true
           },
+          "intake": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionIntake"
+              }
+            ],
+            "description": "Water and food energy (ADR-045); only the owner receives it (null for anyone else).",
+            "nullable": true
+          },
           "recurrence_rule": {
             "type": "string",
             "nullable": true
@@ -3907,6 +4061,69 @@
           }
         },
         "required": ["data", "meta"]
+      },
+      "SessionIntake": {
+        "type": "object",
+        "description": "What the athlete drank and ate during a workout (ADR-045).",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": ["water", "energy"]
+                },
+                "amount": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "recorded_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": ["id", "kind", "amount", "recorded_at"]
+            }
+          },
+          "totals": {
+            "type": "object",
+            "properties": {
+              "water_ml": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "energy_kcal": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": ["water_ml", "energy_kcal"]
+          }
+        },
+        "required": ["entries", "totals"]
+      },
+      "SessionIntakeEntryInput": {
+        "type": "object",
+        "description": "Water in millilitres (at most 5000) or food energy in kilocalories (at most 5000). Not the workout's own calories.",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["water", "energy"]
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5000
+          }
+        },
+        "required": ["kind", "amount"],
+        "additionalProperties": false
       },
       "SessionPhoto": {
         "type": "object",
