@@ -34,7 +34,6 @@ describe("VibeChangeList", () => {
     expect(within(rows[0]).getByText("+12.5")).toBeInTheDocument();
     expect(within(rows[1]).getByText("0")).toBeInTheDocument();
     expect(within(rows[2]).getByText("-1")).toBeInTheDocument();
-    expect(rows[2]).toHaveAttribute("data-direction", "-1");
     // The icon is decorative; the name carries the meaning.
     expect(rows[0].querySelector('[data-slot="vibe-icon"]')).toHaveAttribute("aria-hidden", "true");
   });

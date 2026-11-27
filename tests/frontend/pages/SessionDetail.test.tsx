@@ -269,10 +269,12 @@ describe("SessionDetail", () => {
       ".training-panel",
     )!;
     const rows = await within(panel).findAllByRole("listitem");
+    // One metric card per Vibe: name, signed change, then the new level.
     expect(rows.map((row) => row.textContent)).toEqual([
-      "vibes.strength.namevibeChanges.level=1,013+12.5",
-      "vibes.endurance.namevibeChanges.level=984+4",
+      "vibes.strength.name+12.5vibeChanges.level=1,013",
+      "vibes.endurance.name+4vibeChanges.level=984",
     ]);
+    expect(rows[0].querySelector('[data-component="metric-card"]')).not.toBeNull();
     expect(mocked.getSessionVibeChanges).toHaveBeenCalledWith("session-1");
   });
 

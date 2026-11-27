@@ -115,6 +115,10 @@ const pathUuid = (name) => ({
   required: true,
   schema: { type: "string", format: "uuid" },
 });
+// A completed set's heart rate (issue 89). The contract test pins these bounds to
+// HEART_RATE_LIMITS in sessions.normalization.ts.
+const heartRateBpm = nullable({ type: "integer", minimum: 20, maximum: 250 });
+
 const executionOperation = (summary, description, options = {}) => ({
   summary,
   description,
@@ -1248,7 +1252,7 @@ const schemas = {
       duration_sec: nullable({ type: "integer", minimum: 0 }),
       rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
       rest_sec: nullable({ type: "integer", minimum: 0 }),
-      heart_rate_bpm: nullable({ type: "integer", minimum: 20, maximum: 250 }),
+      heart_rate_bpm: heartRateBpm,
       extras: { type: "object", additionalProperties: true },
       recorded_at: nullable({ type: "string", format: "date-time" }),
       notes: nullable({ type: "string", maxLength: 500 }),
@@ -1266,7 +1270,7 @@ const schemas = {
       duration_sec: nullable({ type: "integer", minimum: 0 }),
       rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
       rest_sec: nullable({ type: "integer", minimum: 0 }),
-      heart_rate_bpm: nullable({ type: "integer", minimum: 20, maximum: 250 }),
+      heart_rate_bpm: heartRateBpm,
       notes: nullable({ type: "string", maxLength: 500 }),
     },
     required: ["status"],
@@ -1383,7 +1387,7 @@ const schemas = {
                   duration_sec: nullable({ type: "integer" }),
                   rpe: nullable({ type: "integer" }),
                   rest_sec: nullable({ type: "integer" }),
-                  heart_rate_bpm: nullable({ type: "integer", minimum: 20, maximum: 250 }),
+                  heart_rate_bpm: heartRateBpm,
                   extras: { type: "object", additionalProperties: true },
                   recorded_at: nullable({ type: "string", format: "date-time" }),
                   notes: nullable({ type: "string" }),

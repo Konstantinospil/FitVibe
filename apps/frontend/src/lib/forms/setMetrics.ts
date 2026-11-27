@@ -1,4 +1,5 @@
 import { optionalNonNegativeNumber } from "./numberInput";
+import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
 import { fromStoredKg, toStoredKg, type LoadUnit } from "../units/load";
 
 /**
@@ -35,13 +36,19 @@ export const SET_METRIC_FIELDS: readonly SetMetricField[] = [
   { metric: "weight_kg", labelKey: "logSurface.fields.weight", integer: false, min: 0 },
   { metric: "duration_sec", labelKey: "workoutEditor.fields.duration", integer: true, min: 0 },
   { metric: "distance_m", labelKey: "logSurface.fields.distance", integer: true, min: 0 },
-  { metric: "rpe", labelKey: "logSurface.fields.rpe", integer: true, min: 1, max: 10 },
+  {
+    metric: "rpe",
+    labelKey: "logSurface.fields.rpe",
+    integer: true,
+    min: TRAINING_DATA_CONFIG.setRpeMin,
+    max: TRAINING_DATA_CONFIG.setRpeMax,
+  },
   {
     metric: "heart_rate_bpm",
     labelKey: "logSurface.fields.heartRate",
     integer: true,
-    min: 20,
-    max: 250,
+    min: TRAINING_DATA_CONFIG.setHeartRateMinBpm,
+    max: TRAINING_DATA_CONFIG.setHeartRateMaxBpm,
     resultOnly: true,
   },
 ];

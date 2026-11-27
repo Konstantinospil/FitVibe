@@ -26,7 +26,7 @@ import { getContactById, getUserMetrics } from "./users.repository.js";
 import { passwordPolicy } from "../auth/auth.schemas.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { writeUserDataArchive } from "./user-data-archive.service.js";
-import { lbToKg } from "../../utils/units.js";
+import { BODY_WEIGHT_KG_LIMITS, lbToKg } from "../../utils/units.js";
 
 const usernameSchema = z
   .string()
@@ -77,11 +77,11 @@ const updateProfileSchema = z
     }
 
     const weightKg = value.weightUnit === "lb" ? lbToKg(value.weight) : value.weight;
-    if (weightKg < 20 || weightKg > 400) {
+    if (weightKg < BODY_WEIGHT_KG_LIMITS.min || weightKg > BODY_WEIGHT_KG_LIMITS.max) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["weight"],
-        message: "Weight must be between 20 and 400 kg equivalent",
+        message: `Weight must be between ${BODY_WEIGHT_KG_LIMITS.min} and ${BODY_WEIGHT_KG_LIMITS.max} kg equivalent`,
       });
     }
   });

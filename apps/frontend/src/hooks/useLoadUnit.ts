@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUserPreferences } from "../services/accountApi";
 import { loadUnitFor, type LoadUnit } from "../lib/units/load";
-
-const PREFERENCES_STALE_MS = 5 * 60_000;
+import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 
 export interface LoadUnitState {
   unit: LoadUnit;
@@ -21,7 +20,7 @@ export function useLoadUnit(): LoadUnitState {
   const preferences = useQuery({
     queryKey: ["settings", "preferences"],
     queryFn: getUserPreferences,
-    staleTime: PREFERENCES_STALE_MS,
+    staleTime: TRAINING_DATA_CONFIG.standardQueryStaleMs,
   });
   return {
     unit: loadUnitFor(preferences.data?.measurementSystem),

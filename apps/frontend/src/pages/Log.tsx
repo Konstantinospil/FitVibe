@@ -328,7 +328,7 @@ const Log: React.FC = () => {
                   {exercise.sets.map((set, index) => (
                     <fieldset key={set.key} className="log-set" disabled={busy}>
                       <legend>{t("sessionDetail.set", { number: index + 1 })}</legend>
-                      <div className="log-set__fields">
+                      <div className="set-fields">
                         {SET_METRIC_FIELDS.map((field) => (
                           <label key={field.metric} className="form-label">
                             <span className="form-label-text">

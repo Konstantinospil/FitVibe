@@ -18,7 +18,12 @@ import { TrainingPanel } from "../components/composites/TrainingSurface";
 import { AvatarEditor } from "../components/profile/AvatarEditor";
 import { CookiePreferences } from "../components/CookieConsent";
 import { TwoFactorManagement } from "../components/profile/TwoFactorManagement";
-import { bodyWeightBounds, KG_PER_LB, loadUnitFor } from "../lib/units/load";
+import {
+  BODY_WEIGHT_INPUT_DECIMALS,
+  bodyWeightBounds,
+  KG_PER_LB,
+  loadUnitFor,
+} from "../lib/units/load";
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -81,7 +86,9 @@ const Settings: React.FC = () => {
     if (storedWeightKg === null || storedWeightKg === undefined) {
       setWeight("");
     } else if (preferencesQuery.data?.measurementSystem === "imperial") {
-      setWeight((storedWeightKg / KG_PER_LB).toFixed(2).replace(/\.00$/, ""));
+      setWeight(
+        (storedWeightKg / KG_PER_LB).toFixed(BODY_WEIGHT_INPUT_DECIMALS).replace(/\.0+$/, ""),
+      );
     } else {
       setWeight(String(storedWeightKg));
     }
