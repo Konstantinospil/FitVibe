@@ -1455,5 +1455,34 @@
     "none": "Dieses Training hat keine Vibe-Stufe verändert.",
     "loading": "Vibe-Änderungen werden geladen…",
     "loadError": "Die Vibe-Änderungen konnten nicht geladen werden."
+  },
+  "workoutResult": {
+    "title": "Wie es lief",
+    "note": {
+      "label": "Trainingsnotiz",
+      "placeholder": "Wie hat es sich angefühlt? Was willst du dir fürs nächste Mal merken?",
+      "save": "Notiz speichern",
+      "saved": "Notiz gespeichert.",
+      "saveError": "Die Notiz konnte nicht gespeichert werden. Versuche es noch einmal."
+    },
+    "photo": {
+      "label": "Foto",
+      "alt": "Foto von diesem Training",
+      "help": "JPEG, PNG oder WebP, bis {{size}} MB. Nur du kannst es sehen.",
+      "add": "Foto hinzufügen",
+      "replace": "Foto ersetzen",
+      "remove": "Foto entfernen",
+      "invalidType": "Wähle ein JPEG-, PNG- oder WebP-Bild.",
+      "tooLarge": "Dieses Foto ist zu groß. Wähle eines bis {{size}} MB.",
+      "rejected": "Diese Datei wurde von der Sicherheitsprüfung abgelehnt. Wähle ein anderes Foto.",
+      "uploadError": "Das Foto konnte nicht hochgeladen werden. Versuche es noch einmal.",
+      "uploading": "Foto wird hochgeladen …",
+      "added": "Foto hinzugefügt.",
+      "removed": "Foto entfernt.",
+      "removeError": "Das Foto konnte nicht entfernt werden. Versuche es noch einmal.",
+      "removeTitle": "Dieses Foto entfernen?",
+      "removeMessage": "Das Foto wird gelöscht. Du kannst später ein anderes hinzufügen.",
+      "finishUploadFailed": "Dein Training ist gespeichert, aber das Foto konnte nicht hochgeladen werden. Füge es hier erneut hinzu."
+    }
   }
 }

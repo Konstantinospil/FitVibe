@@ -24,7 +24,10 @@ export interface Session {
   planned_duration_min: number;
   status: SessionStatus;
   visibility: SessionVisibility;
+  /** The plan's instructions for this session. */
   notes?: string | null;
+  /** ADR-044: what the athlete wrote after the workout; null while planned. */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
@@ -113,6 +116,8 @@ export interface CreateSessionDTO {
   planned_duration_min?: number;
   visibility?: SessionVisibility;
   notes?: string | null;
+  /** Only with status "completed" (ADR-044). */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   exercises?: SessionExerciseInput[];
 }
@@ -127,6 +132,8 @@ export interface UpdateSessionDTO {
   completion_outcome?: SessionCompletionOutcome;
   visibility?: SessionVisibility;
   notes?: string | null;
+  /** Only when the session is, or becomes, completed (ADR-044). */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
@@ -239,6 +246,17 @@ export interface SessionVibeChanges {
   changes: SessionVibeChange[];
 }
 
+/** The workout photo (ADR-044); only its owner ever receives it. */
+export interface SessionPhoto {
+  id: string;
+  url: string;
+  mime_type: string;
+  bytes: number;
+  uploaded_at: string;
+}
+
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
+  /** Present on the owner's reads; null when there is none or for anyone else. */
+  photo?: SessionPhoto | null;
 }

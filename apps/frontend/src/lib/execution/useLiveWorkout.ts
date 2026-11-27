@@ -9,6 +9,7 @@ import {
   resumeSession,
   skipSessionExercise,
   updateSession,
+  uploadSessionPhoto,
   type RecordSetRequest,
   type SessionCompletionOutcome,
   type SessionSetPlannedValues,
@@ -17,6 +18,7 @@ import {
 import { generateIdempotencyKey } from "../../utils/idempotency";
 import { CALENDAR_QUERY_KEY } from "../scheduling/calendarQuery";
 import { liveSessionQueryKey } from "./liveWorkout";
+import { markPhotoUploadFailed } from "../sessions/workoutPhoto";
 
 export type LiveCommand =
   | { kind: "start" }
@@ -28,7 +30,14 @@ export type LiveCommand =
   | { kind: "skipExercise"; exerciseRowId: string };
 
 export type FinishChoice =
-  { kind: "save"; outcome: SessionCompletionOutcome } | { kind: "discard" };
+  | {
+      kind: "save";
+      outcome: SessionCompletionOutcome;
+      /** The athlete's note and photo (ADR-044); both optional. */
+      resultNote?: string;
+      photo?: File | null;
+    }
+  | { kind: "discard" };
 
 /**
  * Data for the live workout (ADR-043). Every command returns the whole session,
@@ -91,7 +100,23 @@ export function useLiveWorkout(sessionId: string | undefined) {
         await deleteSession(id);
         return null;
       }
-      return updateSession(id, { status: "completed", completion_outcome: choice.outcome });
+      const note = choice.resultNote?.trim();
+      const saved = await updateSession(id, {
+        status: "completed",
+        completion_outcome: choice.outcome,
+        ...(note ? { result_note: note } : {}),
+      });
+      if (!choice.photo) {
+        return saved;
+      }
+      // The workout is saved either way; a failed photo is reported on the
+      // session page, where it can be added again (ADR-044).
+      try {
+        return { ...saved, photo: await uploadSessionPhoto(id, choice.photo) };
+      } catch {
+        markPhotoUploadFailed(id);
+        return saved;
+      }
     },
     onSuccess: async (session) => {
       if (session) {

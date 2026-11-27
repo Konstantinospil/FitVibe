@@ -1,7 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { Avatar, Button } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { deleteAvatar, uploadAvatar } from "../../services/api";
+import { ImageFilePicker } from "../composites/ImageFilePicker";
+import { readImagePreview, type ImageFileProblem } from "../../lib/media/imageFile";
 
 interface AvatarEditorProps {
   currentAvatarUrl?: string | null;
@@ -10,8 +12,10 @@ interface AvatarEditorProps {
   onChanged: () => unknown;
 }
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+const PROBLEM_KEYS: Record<ImageFileProblem, string> = {
+  invalidType: "settings.profile.avatarInvalidType",
+  tooLarge: "settings.profile.avatarTooLarge",
+};
 
 export const AvatarEditor: React.FC<AvatarEditorProps> = ({
   currentAvatarUrl,
@@ -20,35 +24,27 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
   onChanged,
 }) => {
   const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectFile = (file: File | undefined) => {
-    if (!file) {
-      return;
-    }
-    // A rejected new selection must never leave an older file uploadable.
+  const clearSelection = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
     setIdempotencyKey(null);
-    if (!ALLOWED_TYPES.has(file.type)) {
-      setMessage(t("settings.profile.avatarInvalidType"));
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      setMessage(t("settings.profile.avatarTooLarge"));
-      return;
-    }
+  };
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(typeof reader.result === "string" ? reader.result : null);
-    };
-    reader.readAsDataURL(file);
+  // A rejected new selection must never leave an older file uploadable.
+  const rejectFile = (problem: ImageFileProblem) => {
+    clearSelection();
+    setMessage(t(PROBLEM_KEYS[problem]));
+  };
+
+  const selectFile = (file: File) => {
+    clearSelection();
+    readImagePreview(file).then(setPreviewUrl, () => setPreviewUrl(null));
     setSelectedFile(file);
     setIdempotencyKey(crypto.randomUUID());
     setMessage(null);
@@ -64,14 +60,9 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
     setMessage(null);
     try {
       await uploadAvatar(selectedFile, idempotencyKey);
-      setSelectedFile(null);
       // Use the persisted profile URL, not an inline preview that can outlive a
       // failed refresh or differ from the server's authoritative image.
-      setPreviewUrl(null);
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
-      setIdempotencyKey(null);
+      clearSelection();
       await onChanged();
       setMessage(t("settings.profile.avatarUploadSuccess"));
     } catch {
@@ -86,9 +77,7 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
     setMessage(null);
     try {
       await deleteAvatar();
-      setPreviewUrl(null);
-      setSelectedFile(null);
-      setIdempotencyKey(null);
+      clearSelection();
       await onChanged();
       setMessage(t("settings.profile.avatarDeleteSuccess"));
     } catch {
@@ -121,24 +110,13 @@ export const AvatarEditor: React.FC<AvatarEditorProps> = ({
         </div>
       </div>
 
-      <input
-        ref={inputRef}
-        className="sr-only"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        aria-label={t("settings.profile.avatarSelect")}
-        onChange={(event) => selectFile(event.target.files?.[0])}
-      />
-
       <div className="flex flex--gap-sm flex--wrap">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => inputRef.current?.click()}
+        <ImageFilePicker
+          label={t("settings.profile.avatarSelect")}
+          onSelect={selectFile}
+          onReject={rejectFile}
           disabled={busy}
-        >
-          {t("settings.profile.avatarSelect")}
-        </Button>
+        />
         {selectedFile ? (
           <Button type="button" onClick={() => void save()} isLoading={busy}>
             {t("settings.profile.avatarUpload")}

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import multer from "multer";
+import { singleImageUpload } from "../../services/imageUpload.service.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
@@ -10,11 +10,6 @@ import {
   getBodyProgressPhotoHandler,
   uploadBodyProgressPhotoHandler,
 } from "./users.body-progress.controller.js";
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
 
 export const usersBodyProgressRouter = Router();
 
@@ -36,7 +31,7 @@ usersBodyProgressRouter.post(
   "/me/body-progress/photo",
   rateLimit("user_body_progress_photo_upload"),
   requireAccessToken,
-  upload.single("photo"),
+  singleImageUpload("photo"),
   asyncHandler(uploadBodyProgressPhotoHandler),
 );
 

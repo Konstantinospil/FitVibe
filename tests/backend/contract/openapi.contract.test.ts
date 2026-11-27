@@ -28,7 +28,10 @@ import { CreateExerciseTypeSchema } from "../../../apps/backend/src/modules/exer
 import { UpdateVibeformPreferencesSchema } from "../../../apps/backend/src/modules/vibeforms/vibeforms.schemas.js";
 import { ClientErrorReportSchema } from "../../../apps/backend/src/modules/client-errors/client-errors.schemas.js";
 import { SESSION_DURATION_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.schedule.js";
-import { HEART_RATE_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
+import {
+  HEART_RATE_LIMITS,
+  SESSION_TEXT_LIMITS,
+} from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -177,6 +180,35 @@ describe("OpenAPI contract alignment", () => {
         maximum: HEART_RATE_LIMITS.max,
       });
     }
+  });
+
+  it("documents session and set note lengths within the server's limits (ADR-044)", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    for (const name of ["SessionCreateRequest", "SessionUpdateRequest"]) {
+      for (const field of ["notes", "result_note"]) {
+        expect(schemas[name].properties[field]).toMatchObject({
+          type: "string",
+          maxLength: SESSION_TEXT_LIMITS.noteMaxLength,
+        });
+      }
+    }
+    expect(schemas.SessionExerciseInput.properties.notes.maxLength).toBe(
+      SESSION_TEXT_LIMITS.noteMaxLength,
+    );
+    for (const set of [schemas.SessionSetInput, schemas.RecordSetRequest]) {
+      expect(set.properties.notes.maxLength).toBe(SESSION_TEXT_LIMITS.setNoteMaxLength);
+    }
+  });
+
+  it("documents the owner-only workout photo (ADR-044)", () => {
+    const paths = (openApiSpec as any).paths;
+    expect(Object.keys(paths["/sessions/{id}/photo"]).sort()).toEqual(["delete", "post"]);
+    expect(paths["/sessions/{id}/photo/{photoId}"].get.responses[200]).toBeDefined();
+    const photo = (openApiSpec as any).components.schemas.SessionWithExercises.properties.photo;
+    expect(photo).toMatchObject({
+      nullable: true,
+      allOf: [{ $ref: "#/components/schemas/SessionPhoto" }],
+    });
   });
 
   it("keeps calculated Vibeform fields read-only on the preference update operation", () => {

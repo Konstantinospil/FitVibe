@@ -1,8 +1,7 @@
 import type { Request, Response } from "express";
 import { readRouteParam } from "../../utils/http.js";
-import sharp from "sharp";
 import { z } from "zod";
-import { scanBuffer } from "../../services/antivirus.service.js";
+import { PHOTO_RENDITION, prepareImage } from "../../services/imageUpload.service.js";
 import {
   deleteStorageObject,
   readStorageObject,
@@ -22,9 +21,6 @@ const weightSchema = z.object({
   weightKg: z.number().min(20).max(500),
   measuredAt: z.string().datetime().optional(),
 });
-
-const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp", "image/jpg"]);
-const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function getBodyProgressHandler(req: Request, res: Response): Promise<void> {
   const userId = req.user?.sub;
@@ -75,48 +71,22 @@ export async function uploadBodyProgressPhotoHandler(req: Request, res: Response
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  if (!req.file) {
-    res.status(400).json({ error: "UPLOAD_NO_FILE" });
-    return;
-  }
-  if (!ALLOWED_MIME.has(req.file.mimetype)) {
-    res.status(400).json({ error: "UPLOAD_UNSUPPORTED_TYPE" });
-    return;
-  }
-  if (req.file.size > MAX_BYTES) {
-    res.status(400).json({ error: "UPLOAD_TOO_LARGE" });
-    return;
-  }
-
-  const scanResult = await scanBuffer(req.file.buffer, req.file.originalname);
-  if (scanResult.isInfected) {
-    res.status(422).json({
-      error: { code: "E.UPLOAD.MALWARE_DETECTED", message: "UPLOAD_MALWARE_DETECTED" },
-    });
-    return;
-  }
-
-  const processed = await sharp(req.file.buffer)
-    .rotate()
-    .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 85 })
-    .toBuffer();
-
-  const file = await saveUserProgressPhotoFile(userId, processed, "image/jpeg");
-  const record = await addBodyProgressPhoto(userId, file.storageKey, "image/jpeg", file.bytes);
+  const image = await prepareImage(req.file, PHOTO_RENDITION);
+  const file = await saveUserProgressPhotoFile(userId, image.buffer, image.mimeType);
+  const record = await addBodyProgressPhoto(userId, file.storageKey, image.mimeType, file.bytes);
 
   await insertAudit({
     actorUserId: userId,
     entityType: "body_progress",
     action: "photo_uploaded",
     entityId: record.id,
-    metadata: { bytes: file.bytes, mime: "image/jpeg" },
+    metadata: { bytes: file.bytes, mime: image.mimeType },
   });
 
   res.status(201).json({
     id: record.id,
     fileUrl: `/api/v1/users/me/body-progress/photo/${record.id}`,
-    mimeType: "image/jpeg",
+    mimeType: image.mimeType,
     bytes: file.bytes,
     createdAt: record.createdAt,
   });
@@ -137,7 +107,7 @@ export async function getBodyProgressPhotoHandler(req: Request, res: Response): 
 
   try {
     const buffer = await readStorageObject(photo.storageKey);
-    res.set("Content-Type", photo.mimeType ?? "image/jpeg");
+    res.set("Content-Type", photo.mimeType ?? PHOTO_RENDITION.mimeType);
     res.set("Cache-Control", "private, max-age=300");
     res.send(buffer);
   } catch {

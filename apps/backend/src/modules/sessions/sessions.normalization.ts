@@ -66,6 +66,9 @@ function ensureRpeRange(
   return value;
 }
 
+/** Longest free text a session, exercise or set may hold, in characters. */
+export const SESSION_TEXT_LIMITS = { noteMaxLength: 1000, setNoteMaxLength: 500 } as const;
+
 /** Bounds of a set's heart rate (issue 89): they refuse typing errors, not unusual athletes. */
 export const HEART_RATE_LIMITS = { min: 20, max: 250 } as const;
 

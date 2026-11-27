@@ -17,7 +17,11 @@ import {
   addSetHandler,
   addExerciseHandler,
   skipExerciseHandler,
+  uploadSessionPhotoHandler,
+  getSessionPhotoHandler,
+  deleteSessionPhotoHandler,
 } from "./sessions.controller.js";
+import { singleImageUpload } from "../../services/imageUpload.service.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import { asyncHandler } from "../../utils/async-handler.js";
@@ -96,4 +100,25 @@ sessionsRouter.post(
   "/:id/exercises/:exerciseId/skip",
   ...execution,
   asyncHandler(skipExerciseHandler),
+);
+
+// Workout photo (ADR-044): one per completed session, read by its owner only.
+sessionsRouter.post(
+  "/:id/photo",
+  rateLimit("sessions_photo_upload"),
+  requireAccessToken,
+  singleImageUpload("photo"),
+  asyncHandler(uploadSessionPhotoHandler),
+);
+sessionsRouter.get(
+  "/:id/photo/:photoId",
+  rateLimit("sessions_photo_get"),
+  requireAccessToken,
+  asyncHandler(getSessionPhotoHandler),
+);
+sessionsRouter.delete(
+  "/:id/photo",
+  rateLimit("sessions_photo_delete"),
+  requireAccessToken,
+  asyncHandler(deleteSessionPhotoHandler),
 );

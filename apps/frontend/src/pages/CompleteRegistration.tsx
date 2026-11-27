@@ -14,6 +14,8 @@ import AuthPageLayout from "../components/AuthPageLayout";
 import { PasswordStrengthFeedback } from "../components/PasswordStrengthFeedback";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { StatusPanel } from "../components/composites/StatusPanel";
+import { ImageFilePicker } from "../components/composites/ImageFilePicker";
+import { readImagePreview, type ImageFileProblem } from "../lib/media/imageFile";
 import {
   completeRegistration,
   getRegistrationIntent,
@@ -22,8 +24,10 @@ import {
 } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const AVATAR_PROBLEM_KEYS: Record<ImageFileProblem, string> = {
+  invalidType: "auth.register.avatarInvalidType",
+  tooLarge: "auth.register.avatarTooLarge",
+};
 
 type LinkState = "checking" | "ready" | "invalid" | "expired" | "done";
 
@@ -63,7 +67,6 @@ const CompleteRegistration: React.FC = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
   const formRef = useRef<HTMLFormElement>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
   useRequiredFieldValidation(formRef, t);
 
   const [linkState, setLinkState] = useState<LinkState>("checking");
@@ -128,24 +131,8 @@ const CompleteRegistration: React.FC = () => {
     };
   }, [t]);
 
-  const handleAvatarSelection = (file: File | undefined) => {
-    if (!file) {
-      return;
-    }
-    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
-      setError(t("auth.register.avatarInvalidType"));
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      setError(t("auth.register.avatarTooLarge"));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setAvatarPreview(typeof reader.result === "string" ? reader.result : null);
-    };
-    reader.readAsDataURL(file);
+  const handleAvatarSelection = (file: File) => {
+    readImagePreview(file).then(setAvatarPreview, () => setAvatarPreview(null));
     setAvatarFile(file);
     setError(null);
   };
@@ -356,24 +343,13 @@ const CompleteRegistration: React.FC = () => {
               <span className="text-sm text-muted">{t("auth.register.photoHelp")}</span>
             </div>
           </div>
-          <input
-            ref={avatarInputRef}
-            className="sr-only"
+          <ImageFilePicker
             name="avatar"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            aria-label={t("auth.register.photoSelect")}
+            label={avatarFile ? t("auth.register.photoChange") : t("auth.register.photoSelect")}
+            onSelect={handleAvatarSelection}
+            onReject={(problem) => setError(t(AVATAR_PROBLEM_KEYS[problem]))}
             disabled={isSubmitting}
-            onChange={(event) => handleAvatarSelection(event.target.files?.[0])}
           />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => avatarInputRef.current?.click()}
-            disabled={isSubmitting}
-          >
-            {avatarFile ? t("auth.register.photoChange") : t("auth.register.photoSelect")}
-          </Button>
         </div>
 
         <InputField

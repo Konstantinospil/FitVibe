@@ -626,3 +626,16 @@
     min-width: 0;
   }
 }
+
+/* A workout photo (ADR-044): its own shape, within the panel's width. */
+.workout-photo {
+  display: block;
+  max-width: 100%;
+  max-height: calc(var(--space-3xl) * 6);
+  border-radius: var(--radius-md);
+  object-fit: contain;
+}
+
+.workout-photo--compact {
+  max-height: calc(var(--space-3xl) * 3);
+}

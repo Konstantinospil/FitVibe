@@ -21,6 +21,9 @@ export const TRAINING_DATA_CONFIG = {
   setRpeMax: 10,
   setHeartRateMinBpm: 20,
   setHeartRateMaxBpm: 250,
+  // Longest note on a session (the plan's notes and the post-workout note); the
+  // server enforces the same limit (SESSION_TEXT_LIMITS).
+  sessionNoteMaxLength: 1000,
   // Body weight the profile accepts, in kilograms; the server enforces the same range.
   bodyWeightMinKg: 20,
   bodyWeightMaxKg: 400,

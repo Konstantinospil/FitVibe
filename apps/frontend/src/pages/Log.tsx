@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Minus, Plus, X } from "lucide-react";
-import { Button, IconButton, InputControl, TextareaControl } from "@fitvibe/ui";
+import { Button, IconButton, InputControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -28,6 +28,7 @@ import {
   type SetMetricInputs,
 } from "../lib/forms/setMetrics";
 import { apiErrorCode } from "../services/httpApi";
+import { ResultNoteField } from "../components/domain/ResultNoteField";
 import { useLoadUnit } from "../hooks/useLoadUnit";
 import type { LoadUnit } from "../lib/units/load";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
@@ -93,7 +94,7 @@ const Log: React.FC = () => {
   const [day, setDay] = useState(() => localDateKey(initialStart));
   const [time, setTime] = useState(() => localTimeKey(initialStart));
   const [length, setLength] = useState(String(TRAINING_DATA_CONFIG.sessionDurationDefaultMinutes));
-  const [notes, setNotes] = useState("");
+  const [resultNote, setResultNote] = useState("");
   const [exercises, setExercises] = useState<LoggedExercise[]>([]);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -212,7 +213,8 @@ const Log: React.FC = () => {
       title: name.trim() || null,
       planned_at: start,
       planned_duration_min: minutes,
-      notes: notes.trim() || null,
+      // A logged workout is already done, so its note is a post-workout note (ADR-044).
+      result_note: resultNote.trim() || null,
       visibility: "private",
       exercises: toExerciseInputs(exercises, loadUnit),
     });
@@ -283,15 +285,7 @@ const Log: React.FC = () => {
               />
             </label>
           </div>
-          <label className="form-label">
-            <span className="form-label-text">{t("workoutEditor.fields.notes")}</span>
-            <TextareaControl
-              value={notes}
-              maxLength={1000}
-              disabled={busy}
-              onChange={(event) => setNotes(event.target.value)}
-            />
-          </label>
+          <ResultNoteField value={resultNote} onChange={setResultNote} disabled={busy} />
           {message ? <FormFeedback tone="warning">{message}</FormFeedback> : null}
           <Button type="submit" isLoading={busy}>
             {t("logSurface.actions.save")}

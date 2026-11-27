@@ -8,6 +8,7 @@ import type {
   SessionExercise,
   SessionExerciseAttributes,
   SessionExerciseSet,
+  SessionPhoto,
   SessionQuery,
   SessionExerciseStatus,
   SessionSetPlannedValues,
@@ -15,6 +16,47 @@ import type {
   SessionSetStatus,
   SessionWithExercises,
 } from "./sessions.types";
+
+/** `media.target_type` of a workout photo (ADR-044). */
+export const SESSION_PHOTO_TARGET = "session";
+
+/** Where the owner reads a photo; a new upload has a new id, so a new URL. */
+export const sessionPhotoUrl = (sessionId: string, photoId: string) =>
+  `/api/v1/sessions/${sessionId}/photo/${photoId}`;
+
+export interface SessionPhotoRow {
+  id: string;
+  storage_key: string;
+  mime_type: string;
+  bytes: number;
+  created_at: Date | string;
+}
+
+/** The media rows of a session's photo; the unique index keeps it to one. */
+export function sessionPhotoRows(
+  sessionId: string,
+  trx?: Knex.Transaction,
+): Promise<SessionPhotoRow[]> {
+  return executor(trx)("media")
+    .where({ target_type: SESSION_PHOTO_TARGET, target_id: sessionId })
+    .select<SessionPhotoRow[]>("id", "storage_key", "mime_type", "bytes", "created_at");
+}
+
+export async function findSessionPhoto(
+  sessionId: string,
+  trx?: Knex.Transaction,
+): Promise<SessionPhoto | null> {
+  const [row] = await sessionPhotoRows(sessionId, trx);
+  return row
+    ? {
+        id: row.id,
+        url: sessionPhotoUrl(sessionId, row.id),
+        mime_type: row.mime_type,
+        bytes: row.bytes,
+        uploaded_at: toDateString(row.created_at) ?? "",
+      }
+    : null;
+}
 
 interface SessionQueryOptions {
   includeDeleted?: boolean;
@@ -424,6 +466,7 @@ export async function getSessionWithDetails(
   return {
     ...session,
     exercises,
+    photo: await findSessionPhoto(id, trx),
   };
 }
 

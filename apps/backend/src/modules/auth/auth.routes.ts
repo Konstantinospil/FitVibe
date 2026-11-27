@@ -1,5 +1,4 @@
 import { Router, type RequestHandler } from "express";
-import multer from "multer";
 import {
   register,
   registrationIntent,
@@ -44,22 +43,14 @@ import { asyncHandler } from "../../utils/async-handler.js";
 import twoFactorRoutes from "./two-factor.routes.js";
 import { administratorPasswordPolicyStatus } from "./admin-password-policy.controller.js";
 import { HttpError } from "../../utils/http.js";
+import { singleImageUpload } from "../../services/imageUpload.service.js";
 
 export const authRouter = Router();
 
-const registrationUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+const readRegistrationAvatar = singleImageUpload("avatar");
 
 const registrationMultipart: RequestHandler = (req, res, next) => {
-  registrationUpload.single("avatar")(req, res, (error: unknown) => {
-    if (error instanceof multer.MulterError) {
-      res.status(422).json({
-        error: error.code === "LIMIT_FILE_SIZE" ? "UPLOAD_TOO_LARGE" : "UPLOAD_INVALID",
-      });
-      return;
-    }
+  readRegistrationAvatar(req, res, (error: unknown) => {
     if (error) {
       next(error);
       return;
