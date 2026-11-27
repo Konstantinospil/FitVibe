@@ -40,7 +40,12 @@ import { useLoadUnit } from "../hooks/useLoadUnit";
 import type { LoadUnit } from "../lib/units/load";
 import { setSummary, valuesSummary } from "../lib/sessions/setSummary";
 import { apiErrorCode } from "../services/httpApi";
+import { ResultNoteField } from "../components/domain/ResultNoteField";
+import { WorkoutPhotoField } from "../components/composites/WorkoutPhotoField";
+import { readImagePreview } from "../lib/media/imageFile";
+import { PHOTO_MESSAGE_VALUES, PHOTO_PROBLEM_KEYS } from "../lib/sessions/workoutPhoto";
 import type {
+  SessionCompletionOutcome,
   SessionExercise,
   SessionSetPlannedValues,
   SessionWithExercises,
@@ -181,7 +186,23 @@ const FinishDialog: React.FC<FinishDialogProps> = ({
 }) => {
   const { t } = useTranslation();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [resultNote, setResultNote] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoProblem, setPhotoProblem] = useState<string | null>(null);
   const summary = summarize(session);
+  const save = (outcome: SessionCompletionOutcome) =>
+    onChoose({ kind: "save", outcome, resultNote, photo });
+  const choosePhoto = (file: File) => {
+    setPhotoProblem(null);
+    setPhoto(file);
+    readImagePreview(file).then(setPhotoPreview, () => setPhotoPreview(null));
+  };
+  const removePhoto = () => {
+    setPhoto(null);
+    setPhotoPreview(null);
+    setPhotoProblem(null);
+  };
   const close = () => {
     setConfirmDiscard(false);
     onClose();
@@ -206,17 +227,10 @@ const FinishDialog: React.FC<FinishDialogProps> = ({
           </>
         ) : (
           <FormActions>
-            <Button
-              isLoading={busy}
-              onClick={() => onChoose({ kind: "save", outcome: "completed" })}
-            >
+            <Button isLoading={busy} onClick={() => save("completed")}>
               {t("liveWorkout.actions.saveCompleted")}
             </Button>
-            <Button
-              variant="secondary"
-              disabled={busy}
-              onClick={() => onChoose({ kind: "save", outcome: "stopped_early" })}
-            >
+            <Button variant="secondary" disabled={busy} onClick={() => save("stopped_early")}>
               {t("liveWorkout.actions.saveStoppedEarly")}
             </Button>
             <Button variant="ghost" disabled={busy} onClick={() => setConfirmDiscard(true)}>
@@ -238,6 +252,18 @@ const FinishDialog: React.FC<FinishDialogProps> = ({
               <MetricCard label={t("liveWorkout.finish.remaining")} value={summary.remainingSets} />
             </div>
             <p>{t("liveWorkout.finish.scoring")}</p>
+            <ResultNoteField value={resultNote} onChange={setResultNote} disabled={busy} />
+            <WorkoutPhotoField
+              src={photoPreview}
+              compact
+              onSelect={choosePhoto}
+              onReject={(problem) =>
+                setPhotoProblem(t(PHOTO_PROBLEM_KEYS[problem], PHOTO_MESSAGE_VALUES))
+              }
+              onRemove={removePhoto}
+              busy={busy}
+              feedback={photoProblem ? { tone: "warning", text: photoProblem } : null}
+            />
           </>
         )}
       </FormStack>

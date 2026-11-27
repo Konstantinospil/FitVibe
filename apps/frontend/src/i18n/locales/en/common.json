@@ -1455,5 +1455,34 @@
     "none": "This workout didn't change a Vibe level.",
     "loading": "Loading Vibe changes…",
     "loadError": "Vibe changes couldn't be loaded."
+  },
+  "workoutResult": {
+    "title": "How it went",
+    "note": {
+      "label": "Workout note",
+      "placeholder": "How did it feel? Anything to remember next time?",
+      "save": "Save note",
+      "saved": "Note saved.",
+      "saveError": "The note couldn't be saved. Try again."
+    },
+    "photo": {
+      "label": "Photo",
+      "alt": "Photo from this workout",
+      "help": "JPEG, PNG or WebP, up to {{size}} MB. Only you can see it.",
+      "add": "Add photo",
+      "replace": "Replace photo",
+      "remove": "Remove photo",
+      "invalidType": "Choose a JPEG, PNG or WebP image.",
+      "tooLarge": "This photo is too large. Choose one up to {{size}} MB.",
+      "rejected": "This file was refused by the safety check. Choose another photo.",
+      "uploadError": "The photo couldn't be uploaded. Try again.",
+      "uploading": "Uploading photo…",
+      "added": "Photo added.",
+      "removed": "Photo removed.",
+      "removeError": "The photo couldn't be removed. Try again.",
+      "removeTitle": "Remove this photo?",
+      "removeMessage": "The photo will be deleted. You can add another one later.",
+      "finishUploadFailed": "Your workout is saved, but the photo couldn't be uploaded. Add it again here."
+    }
   }
 }

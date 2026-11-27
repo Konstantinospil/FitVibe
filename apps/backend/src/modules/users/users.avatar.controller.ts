@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Request, Response } from "express";
 import { readRouteParam } from "../../utils/http.js";
-import sharp from "sharp";
 import { insertAudit } from "../common/audit.util.js";
 import { logger } from "../../config/logger.js";
 import {
@@ -14,41 +13,40 @@ import {
   readStorageObject,
   saveUserAvatarFile,
 } from "../../services/mediaStorage.service.js";
-import { scanBuffer } from "../../services/antivirus.service.js";
+import {
+  AVATAR_RENDITION,
+  IMAGE_UPLOAD_ERRORS,
+  imageFileProblem,
+  prepareImage,
+} from "../../services/imageUpload.service.js";
+import { HttpError } from "../../utils/http.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
-
-const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp", "image/jpg"]);
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB per PRD
 
 export async function uploadAvatarHandler(req: Request, res: Response): Promise<void> {
   const userId = req.user?.sub as string;
-  if (!req.file) {
-    res.status(422).json({ error: "UPLOAD_NO_FILE" });
-    return;
-  }
-  if (!ALLOWED_MIME.has(req.file.mimetype)) {
-    res.status(422).json({ error: "UPLOAD_UNSUPPORTED_TYPE" });
-    return;
-  }
-  if (req.file.size > MAX_BYTES) {
-    res.status(422).json({ error: "UPLOAD_TOO_LARGE" });
+  const problem = imageFileProblem(req.file);
+  if (problem || !req.file) {
+    res.status(422).json({ error: problem ?? IMAGE_UPLOAD_ERRORS.noFile });
     return;
   }
 
   const file = req.file;
   const execute = async (): Promise<{ status: 201 | 422; body: Record<string, unknown> }> => {
-    const scanResult = await scanBuffer(file.buffer, file.originalname);
-    if (scanResult.isInfected) {
+    let processed: Buffer;
+    try {
+      processed = (await prepareImage(file, AVATAR_RENDITION)).buffer;
+    } catch (error) {
+      if (!(error instanceof HttpError)) {
+        throw error;
+      }
+      if (error.code !== IMAGE_UPLOAD_ERRORS.malware) {
+        return { status: 422, body: { error: error.code } };
+      }
+      const { viruses } = error.details as { viruses: string[] };
       logger.warn(
-        {
-          userId,
-          filename: file.originalname,
-          viruses: scanResult.viruses,
-          size: file.size,
-        },
+        { userId, filename: file.originalname, viruses, size: file.size },
         "[avatar] Malware detected in upload",
       );
-
       await insertAudit({
         actorUserId: userId,
         entityType: "user_media",
@@ -56,17 +54,16 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
         entityId: userId,
         metadata: {
           reason: "malware_detected",
-          viruses: scanResult.viruses,
+          viruses,
           filename: file.originalname,
           size: file.size,
         },
       });
-
       return {
         status: 422,
         body: {
           error: {
-            code: "E.UPLOAD.MALWARE_DETECTED",
+            code: IMAGE_UPLOAD_ERRORS.malware,
             message: "UPLOAD_MALWARE_DETECTED",
             details: { reason: "malware_detected" },
           },
@@ -74,42 +71,14 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       };
     }
 
-    let imageFormat: string | undefined;
-    try {
-      imageFormat = (await sharp(file.buffer).metadata()).format;
-    } catch {
-      return {
-        status: 422,
-        body: { error: "UPLOAD_UNSUPPORTED_TYPE" },
-      };
-    }
-
-    if (!imageFormat || !["jpeg", "png", "webp"].includes(imageFormat)) {
-      return {
-        status: 422,
-        body: { error: "UPLOAD_UNSUPPORTED_TYPE" },
-      };
-    }
-
-    let processed: Buffer;
-    try {
-      processed = await sharp(file.buffer)
-        .rotate()
-        .resize(128, 128, { fit: "cover" })
-        .png({ quality: 80 })
-        .toBuffer();
-    } catch {
-      return { status: 422, body: { error: "UPLOAD_UNSUPPORTED_TYPE" } };
-    }
-
-    const fileMeta = await saveUserAvatarFile(userId, processed, "image/png");
+    const fileMeta = await saveUserAvatarFile(userId, processed, AVATAR_RENDITION.mimeType);
     const publicUrl = `/api/v1/users/avatar/${userId}`;
     let saved: Awaited<ReturnType<typeof saveUserAvatarMetadata>>;
     try {
       saved = await saveUserAvatarMetadata(userId, {
         storageKey: fileMeta.storageKey,
         fileUrl: publicUrl,
-        mimeType: "image/png",
+        mimeType: AVATAR_RENDITION.mimeType,
         bytes: fileMeta.bytes,
       });
     } catch (error) {
@@ -134,7 +103,7 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
       entityType: "user_media",
       action: "avatar_upload",
       entityId: record.id,
-      metadata: { size: fileMeta.bytes, mime: "image/png" },
+      metadata: { size: fileMeta.bytes, mime: AVATAR_RENDITION.mimeType },
     });
 
     return {
@@ -143,9 +112,9 @@ export async function uploadAvatarHandler(req: Request, res: Response): Promise<
         success: true,
         fileUrl: publicUrl,
         bytes: fileMeta.bytes,
-        mimeType: "image/png",
+        mimeType: AVATAR_RENDITION.mimeType,
         updatedAt: record.created_at,
-        preview: `data:image/png;base64,${processed.toString("base64")}`,
+        preview: `data:${AVATAR_RENDITION.mimeType};base64,${processed.toString("base64")}`,
       },
     };
   };
@@ -173,7 +142,7 @@ export async function getAvatarHandler(req: Request, res: Response): Promise<voi
   }
   try {
     const buffer = await readStorageObject(metadata.storage_key);
-    res.set("Content-Type", metadata.mime_type ?? "image/png");
+    res.set("Content-Type", metadata.mime_type ?? AVATAR_RENDITION.mimeType);
     res.set("Cache-Control", "private, max-age=300");
     res.send(buffer);
     return;

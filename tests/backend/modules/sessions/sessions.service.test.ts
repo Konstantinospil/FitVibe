@@ -435,6 +435,66 @@ describe("Sessions Service", () => {
       expect(mockSessionsRepo.updateSession).toHaveBeenCalled();
     });
 
+    describe("result note (ADR-044)", () => {
+      it("refuses a result note on a session that is not completed", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(existingSession);
+
+        await expect(
+          sessionsService.updateOne(userId, sessionId, { result_note: "Felt strong" }),
+        ).rejects.toMatchObject({ status: 400, code: "E.SESSION.RESULT_NOTE_WITHOUT_RESULT" });
+        expect(mockSessionsRepo.updateSession).not.toHaveBeenCalled();
+      });
+
+      it("saves the note with the finish, apart from the plan's notes", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue({
+          ...existingSession,
+          status: "in_progress",
+          notes: "Keep the rest short",
+        });
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...existingSession,
+          exercises: [],
+        } as SessionWithExercises);
+
+        await sessionsService.updateOne(userId, sessionId, {
+          status: "completed",
+          result_note: "  Felt strong  ",
+        });
+
+        const updates = mockSessionsRepo.updateSession.mock.calls[0][2];
+        expect(updates).toMatchObject({ status: "completed", result_note: "Felt strong" });
+        expect(updates).not.toHaveProperty("notes");
+      });
+
+      it("lets the athlete edit the note of a completed workout without reopening it", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue({
+          ...existingSession,
+          status: "completed",
+        });
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...existingSession,
+          exercises: [],
+        } as SessionWithExercises);
+
+        await sessionsService.updateOne(userId, sessionId, { result_note: "" });
+
+        expect(mockSessionsRepo.updateSession.mock.calls[0][2]).toMatchObject({
+          result_note: null,
+        });
+      });
+
+      it("refuses a result note when creating a planned session", async () => {
+        await expect(
+          sessionsService.createOne(userId, {
+            planned_at: new Date().toISOString(),
+            result_note: "Too early",
+          }),
+        ).rejects.toMatchObject({ status: 400, code: "E.SESSION.RESULT_NOTE_WITHOUT_RESULT" });
+      });
+    });
+
     describe("rescheduling and resizing (US-4.3-AC03)", () => {
       const plannedAt = "2026-11-02T08:00:00.000Z";
       const scheduledSession: Session = {
@@ -749,8 +809,6 @@ describe("Sessions Service", () => {
       );
     });
 
-
-
     it("retires feed publication when a completed public session becomes private", async () => {
       const completedPublicSession: Session = {
         ...existingSession,
@@ -962,9 +1020,9 @@ describe("Sessions Service", () => {
       };
       mockSessionsRepo.getSessionById.mockResolvedValue(completedSession);
 
-      await expect(
-        sessionsService.updateOne(userId, sessionId, { calories: 450 }),
-      ).rejects.toThrow("Completed workout records must be reopened before correction.");
+      await expect(sessionsService.updateOne(userId, sessionId, { calories: 450 })).rejects.toThrow(
+        "Completed workout records must be reopened before correction.",
+      );
     });
 
     it("should handle update when affected rows is 0", async () => {

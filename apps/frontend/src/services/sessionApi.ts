@@ -91,7 +91,10 @@ export interface Session {
   planned_duration_min: number;
   status: SessionStatus;
   visibility: SessionVisibility;
+  /** The plan's instructions. */
   notes?: string | null;
+  /** ADR-044: what the athlete wrote after the workout. */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
@@ -112,8 +115,19 @@ export interface SessionListItem extends Session {
   exercise_count: number;
 }
 
+/** The workout photo (ADR-044); only its owner receives it. */
+export interface SessionPhoto {
+  id: string;
+  /** Owner-only image path; a replaced photo has a new one. */
+  url: string;
+  mime_type: string;
+  bytes: number;
+  uploaded_at: string;
+}
+
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
+  photo?: SessionPhoto | null;
 }
 
 export interface SessionQuery {
@@ -169,6 +183,8 @@ export interface CreateSessionRequest {
   planned_duration_min?: number;
   visibility?: SessionVisibility;
   notes?: string | null;
+  /** Only with status "completed". */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   exercises?: SessionExerciseInput[];
 }
@@ -182,6 +198,8 @@ export interface UpdateSessionRequest {
   completion_outcome?: SessionCompletionOutcome;
   visibility?: SessionVisibility;
   notes?: string | null;
+  /** Only when the session is, or becomes, completed. */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
@@ -265,6 +283,20 @@ export function getScheduleConflictIds(error: unknown): string[] | null {
 
 export async function deleteSession(sessionId: string): Promise<void> {
   await apiClient.delete(`/api/v1/sessions/${sessionId}`);
+}
+
+/** Adds or replaces the photo of a completed workout (ADR-044). */
+export async function uploadSessionPhoto(sessionId: string, photo: File): Promise<SessionPhoto> {
+  const formData = new FormData();
+  formData.append("photo", photo);
+  const res = await apiClient.post<SessionPhoto>(`/api/v1/sessions/${sessionId}/photo`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
+export async function deleteSessionPhoto(sessionId: string): Promise<void> {
+  await apiClient.delete(`/api/v1/sessions/${sessionId}/photo`);
 }
 
 export async function cloneSession(

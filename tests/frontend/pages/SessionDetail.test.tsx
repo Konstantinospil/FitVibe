@@ -8,6 +8,7 @@ import * as sessionApi from "../../src/services/sessionApi";
 import * as accountApi from "../../src/services/accountApi";
 import type { SessionWithExercises } from "../../src/services/sessionApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
+import { markPhotoUploadFailed, takePhotoUploadFailed } from "../../src/lib/sessions/workoutPhoto";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -36,6 +37,8 @@ vi.mock("../../src/services/sessionApi", async () => {
     updateSession: vi.fn(),
     cloneSession: vi.fn(),
     getSessionVibeChanges: vi.fn(),
+    uploadSessionPhoto: vi.fn(),
+    deleteSessionPhoto: vi.fn(),
   };
 });
 
@@ -376,6 +379,130 @@ describe("SessionDetail", () => {
     ).toBeInTheDocument();
     expect(mocked.getSession).toHaveBeenCalledWith("session-1");
     expect(accountApi.getCurrentUser).toHaveBeenCalled();
+  });
+
+  describe("note and photo (ADR-044)", () => {
+    const photo = {
+      id: "photo-1",
+      url: "/api/v1/sessions/session-1/photo/photo-1",
+      mime_type: "image/jpeg",
+      bytes: 2048,
+      uploaded_at: "2026-12-01T18:10:00.000Z",
+    };
+    const completed = (overrides: Partial<SessionWithExercises> = {}) =>
+      baseSession({ status: "completed", points: 40, result_note: "Felt strong", ...overrides });
+    const panel = async () =>
+      (await screen.findByText("workoutResult.title")).closest<HTMLElement>(".training-panel")!;
+
+    beforeEach(() => {
+      mocked.getSessionVibeChanges.mockResolvedValue({ session_id: "session-1", changes: [] });
+    });
+
+    it("lets the owner edit the note; saving waits for a change", async () => {
+      mocked.getSession.mockResolvedValue(completed());
+      mocked.updateSession.mockResolvedValue(completed({ result_note: "Felt strong, knee fine" }));
+      renderDetail();
+      const result = await panel();
+      const save = within(result).getByRole("button", { name: "workoutResult.note.save" });
+      expect(within(result).getByLabelText("workoutResult.note.label")).toHaveValue("Felt strong");
+      expect(save).toBeDisabled();
+
+      fireEvent.change(within(result).getByLabelText("workoutResult.note.label"), {
+        target: { value: "Felt strong, knee fine" },
+      });
+      fireEvent.click(save);
+
+      expect(await within(result).findByText("workoutResult.note.saved")).toBeInTheDocument();
+      expect(mocked.updateSession).toHaveBeenCalledWith("session-1", {
+        result_note: "Felt strong, knee fine",
+      });
+    });
+
+    it("uploads a chosen photo and shows it", async () => {
+      mocked.getSession.mockResolvedValue(completed());
+      mocked.uploadSessionPhoto.mockResolvedValue(photo);
+      renderDetail();
+      const result = await panel();
+      const file = new File([new Uint8Array([1])], "lift.png", { type: "image/png" });
+
+      fireEvent.change(within(result).getByLabelText("workoutResult.photo.add"), {
+        target: { files: [file] },
+      });
+
+      expect(await within(result).findByText("workoutResult.photo.added")).toBeInTheDocument();
+      expect(mocked.uploadSessionPhoto).toHaveBeenCalledWith("session-1", file);
+      expect(within(result).getByRole("img", { name: "workoutResult.photo.alt" })).toHaveAttribute(
+        "src",
+        photo.url,
+      );
+    });
+
+    it("explains a refused upload", async () => {
+      mocked.getSession.mockResolvedValue(completed());
+      mocked.uploadSessionPhoto.mockRejectedValue(
+        Object.assign(new Error("refused"), {
+          isAxiosError: true,
+          response: { status: 422, data: { error: { code: "E.UPLOAD.MALWARE_DETECTED" } } },
+        }),
+      );
+      renderDetail();
+      const result = await panel();
+      fireEvent.change(within(result).getByLabelText("workoutResult.photo.add"), {
+        target: { files: [new File([new Uint8Array([1])], "x.png", { type: "image/png" })] },
+      });
+      expect(await within(result).findByText("workoutResult.photo.rejected")).toBeVisible();
+    });
+
+    it("removes the photo only after confirmation", async () => {
+      mocked.getSession.mockResolvedValue(completed({ photo }));
+      mocked.deleteSessionPhoto.mockResolvedValue(undefined);
+      renderDetail();
+      const result = await panel();
+
+      fireEvent.click(within(result).getByRole("button", { name: "workoutResult.photo.remove" }));
+      expect(mocked.deleteSessionPhoto).not.toHaveBeenCalled();
+      const confirm = await screen.findByRole("dialog", {
+        name: "workoutResult.photo.removeTitle",
+      });
+      fireEvent.click(within(confirm).getByRole("button", { name: "workoutResult.photo.remove" }));
+
+      expect(await within(result).findByText("workoutResult.photo.removed")).toBeInTheDocument();
+      expect(mocked.deleteSessionPhoto).toHaveBeenCalledWith("session-1");
+      expect(within(result).queryByRole("img")).not.toBeInTheDocument();
+    });
+
+    it("says once that the photo did not upload when the workout was finished", async () => {
+      mocked.getSession.mockResolvedValue(completed());
+      markPhotoUploadFailed("session-1");
+      renderDetail();
+      const result = await panel();
+      expect(within(result).getByText("workoutResult.photo.finishUploadFailed")).toBeVisible();
+      expect(takePhotoUploadFailed("session-1")).toBe(false);
+    });
+
+    it("shows anyone else the note, without an editor", async () => {
+      currentUserId = "user-2";
+      mocked.getSession.mockResolvedValue(completed());
+      renderDetail();
+      const result = await panel();
+      expect(within(result).getByText("Felt strong")).toBeInTheDocument();
+      expect(within(result).queryByRole("textbox")).not.toBeInTheDocument();
+      expect(within(result).queryByRole("button")).not.toBeInTheDocument();
+    });
+
+    it("shows anyone else nothing when there is no note", async () => {
+      currentUserId = "user-2";
+      mocked.getSession.mockResolvedValue(completed({ result_note: null }));
+      renderDetail();
+      expect(await screen.findByText("Back squat")).toBeInTheDocument();
+      expect(screen.queryByText("workoutResult.title")).not.toBeInTheDocument();
+    });
+
+    it("has nothing to edit before the workout is done", async () => {
+      renderDetail();
+      expect(await screen.findByText("Back squat")).toBeInTheDocument();
+      expect(screen.queryByText("workoutResult.title")).not.toBeInTheDocument();
+    });
   });
 
   it("offers no reuse for a canceled session", async () => {

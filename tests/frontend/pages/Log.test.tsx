@@ -141,6 +141,11 @@ describe("Log", () => {
     setField(2, "logSurface.fields.weight", "");
     setField(2, "logSurface.fields.rpe", "");
 
+    // The Log's note is a post-workout note (ADR-044), not the plan's notes.
+    fireEvent.change(screen.getByLabelText("workoutResult.note.label"), {
+      target: { value: "  Felt strong  " },
+    });
+
     fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.save" }));
 
     await waitFor(() => expect(createSession).toHaveBeenCalledTimes(1));
@@ -149,7 +154,7 @@ describe("Log", () => {
       title: "Leg day",
       planned_at: new Date(2026, 10, 20, 9, 0).toISOString(),
       planned_duration_min: 45,
-      notes: null,
+      result_note: "Felt strong",
       visibility: "private",
       exercises: [
         {

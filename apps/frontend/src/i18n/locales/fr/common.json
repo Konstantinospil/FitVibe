@@ -1455,5 +1455,34 @@
     "none": "Cette séance n'a modifié aucun niveau de Vibe.",
     "loading": "Chargement de l'évolution des Vibes…",
     "loadError": "L'évolution des Vibes n'a pas pu être chargée."
+  },
+  "workoutResult": {
+    "title": "Comment ça s'est passé",
+    "note": {
+      "label": "Note de séance",
+      "placeholder": "Comment t'es-tu senti ? Quelque chose à retenir pour la prochaine fois ?",
+      "save": "Enregistrer la note",
+      "saved": "Note enregistrée.",
+      "saveError": "La note n'a pas pu être enregistrée. Réessaie."
+    },
+    "photo": {
+      "label": "Photo",
+      "alt": "Photo de cette séance",
+      "help": "JPEG, PNG ou WebP, jusqu'à {{size}} Mo. Toi seul peux la voir.",
+      "add": "Ajouter une photo",
+      "replace": "Remplacer la photo",
+      "remove": "Retirer la photo",
+      "invalidType": "Choisis une image JPEG, PNG ou WebP.",
+      "tooLarge": "Cette photo est trop lourde. Choisis-en une de {{size}} Mo maximum.",
+      "rejected": "Le contrôle de sécurité a refusé ce fichier. Choisis une autre photo.",
+      "uploadError": "La photo n'a pas pu être envoyée. Réessaie.",
+      "uploading": "Envoi de la photo…",
+      "added": "Photo ajoutée.",
+      "removed": "Photo retirée.",
+      "removeError": "La photo n'a pas pu être retirée. Réessaie.",
+      "removeTitle": "Retirer cette photo ?",
+      "removeMessage": "La photo sera supprimée. Tu pourras en ajouter une autre plus tard.",
+      "finishUploadFailed": "Ta séance est enregistrée, mais la photo n'a pas pu être envoyée. Ajoute-la de nouveau ici."
+    }
   }
 }

@@ -1,5 +1,5 @@
-import { Router, type RequestHandler } from "express";
-import multer from "multer";
+import { Router } from "express";
+import { singleImageUpload } from "../../services/imageUpload.service.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
 import { asyncHandler } from "../../utils/async-handler.js";
@@ -9,22 +9,7 @@ import {
   deleteAvatarHandler,
 } from "./users.avatar.controller.js";
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
-
-const uploadSingleAvatar: RequestHandler = (req, res, next) => {
-  upload.single("avatar")(req, res, (error: unknown) => {
-    if (error instanceof multer.MulterError) {
-      res.status(422).json({
-        error: error.code === "LIMIT_FILE_SIZE" ? "UPLOAD_TOO_LARGE" : "UPLOAD_INVALID",
-      });
-      return;
-    }
-    next(error);
-  });
-};
+const uploadSingleAvatar = singleImageUpload("avatar");
 
 export const usersAvatarRouter = Router();
 

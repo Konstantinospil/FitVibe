@@ -118,6 +118,12 @@ const pathUuid = (name) => ({
 // A completed set's heart rate (issue 89). The contract test pins these bounds to
 // HEART_RATE_LIMITS in sessions.normalization.ts.
 const heartRateBpm = nullable({ type: "integer", minimum: 20, maximum: 250 });
+// Free text of a session or exercise, and of a set. Pinned to SESSION_TEXT_LIMITS
+// in sessions.normalization.ts by the contract test.
+const sessionNote = nullable({ type: "string", maxLength: 1000 });
+const setNote = nullable({ type: "string", maxLength: 500 });
+// The shared image pipeline (services/imageUpload.service.ts).
+const imageUploadDescription = "JPEG, PNG, or WebP image up to 5 MB";
 
 const executionOperation = (summary, description, options = {}) => ({
   summary,
@@ -215,7 +221,7 @@ const paths = {
                 avatar: {
                   type: "string",
                   format: "binary",
-                  description: "Optional JPEG, PNG, or WebP profile photo up to 5 MB",
+                  description: `Optional profile photo: ${imageUploadDescription}`,
                 },
               },
               required: ["payload"],
@@ -577,6 +583,64 @@ const paths = {
       ],
       responses: {
         200: jsonContent("#/components/schemas/SessionVibeChanges"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/photo": {
+    post: {
+      summary: "Add or replace the photo of a completed workout",
+      description: `Owner only (ADR-044). The image is scanned for malware, checked to be what it claims, and re-encoded as JPEG without metadata. Replaces an existing photo. Allowed once the session is completed, either outcome (409 E.SESSION.PHOTO_NOT_COMPLETED otherwise); 404 for a missing session and for someone else's.`,
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id")],
+      requestBody: {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                photo: { type: "string", format: "binary", description: imageUploadDescription },
+              },
+              required: ["photo"],
+            },
+          },
+        },
+      },
+      responses: {
+        201: jsonContent("#/components/schemas/SessionPhoto"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+        409: jsonContent("#/components/schemas/ErrorResponse"),
+        422: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+    delete: {
+      summary: "Remove the workout photo",
+      description:
+        "Owner only. Succeeds when there is no photo too; 404 for a missing session and for someone else's.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id")],
+      responses: {
+        204: { description: "Removed, or there was none" },
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/photo/{photoId}": {
+    get: {
+      summary: "The workout photo's image",
+      description:
+        "Owner only. Safe to cache: a replaced photo has a new id. 404 for anyone else, a missing session or an old id.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id"), pathUuid("photoId")],
+      responses: {
+        200: {
+          description: "The image",
+          content: { "image/jpeg": { schema: { type: "string", format: "binary" } } },
+        },
         404: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
@@ -1207,7 +1271,12 @@ const schemas = {
         description: "Planned length in minutes; defaults to 60.",
       },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
-      notes: { type: "string", maxLength: 1000, nullable: true },
+      notes: { ...sessionNote, description: "The plan's instructions." },
+      result_note: {
+        ...sessionNote,
+        description:
+          "What the athlete wrote after the workout (ADR-044). Only with status completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise).",
+      },
       recurrence_rule: { type: "string", maxLength: 255, nullable: true },
       exercises: {
         type: "array",
@@ -1224,7 +1293,7 @@ const schemas = {
       order: { type: "integer", minimum: 1 },
       status: exerciseStatusSchema,
       source: setSourceSchema,
-      notes: nullable({ type: "string", maxLength: 1000 }),
+      notes: sessionNote,
       planned: plannedAttributesObject,
       actual: actualAttributesObject,
       sets: {
@@ -1255,7 +1324,7 @@ const schemas = {
       heart_rate_bpm: heartRateBpm,
       extras: { type: "object", additionalProperties: true },
       recorded_at: nullable({ type: "string", format: "date-time" }),
-      notes: nullable({ type: "string", maxLength: 500 }),
+      notes: setNote,
     },
     required: ["order"],
     additionalProperties: false,
@@ -1271,7 +1340,7 @@ const schemas = {
       rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
       rest_sec: nullable({ type: "integer", minimum: 0 }),
       heart_rate_bpm: heartRateBpm,
-      notes: nullable({ type: "string", maxLength: 500 }),
+      notes: setNote,
     },
     required: ["status"],
     additionalProperties: false,
@@ -1306,7 +1375,12 @@ const schemas = {
           "Only when the session transitions to completed; defaults to completed (400 E.SESSION.OUTCOME_WITHOUT_COMPLETION otherwise).",
       },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
-      notes: nullable({ type: "string", maxLength: 1000 }),
+      notes: sessionNote,
+      result_note: {
+        ...sessionNote,
+        description:
+          "What the athlete wrote after the workout (ADR-044). Only when the session is, or becomes, completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise). Editable on a completed session.",
+      },
       recurrence_rule: nullable({ type: "string", maxLength: 255 }),
       started_at: { type: "string", format: "date-time" },
       completed_at: { type: "string", format: "date-time" },
@@ -1331,7 +1405,15 @@ const schemas = {
       planned_duration_min: { type: "integer", minimum: 5, maximum: 720 },
       status: { $ref: "#/components/schemas/SessionStatus" },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
-      notes: nullable({ type: "string" }),
+      notes: nullable({ type: "string", description: "The plan's instructions." }),
+      result_note: nullable({
+        type: "string",
+        description: "What the athlete wrote after the workout (ADR-044).",
+      }),
+      photo: nullable({
+        allOf: [{ $ref: "#/components/schemas/SessionPhoto" }],
+        description: "The workout photo; only the owner receives it (null for anyone else).",
+      }),
       recurrence_rule: nullable({ type: "string" }),
       started_at: nullable({ type: "string", format: "date-time" }),
       completed_at: nullable({ type: "string", format: "date-time" }),
@@ -1472,6 +1554,18 @@ const schemas = {
       },
     },
     required: ["data", "meta"],
+  },
+  SessionPhoto: {
+    type: "object",
+    description: "A workout photo (ADR-044). A replaced photo has a new id and url.",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      url: { type: "string", description: "Owner-only GET path of the image." },
+      mime_type: { type: "string", enum: ["image/jpeg"] },
+      bytes: { type: "integer", minimum: 0 },
+      uploaded_at: { type: "string", format: "date-time" },
+    },
+    required: ["id", "url", "mime_type", "bytes", "uploaded_at"],
   },
   SessionVibeChanges: {
     type: "object",

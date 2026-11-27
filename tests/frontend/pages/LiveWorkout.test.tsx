@@ -10,6 +10,7 @@ import * as accountApi from "../../src/services/accountApi";
 import * as sessionApi from "../../src/services/sessionApi";
 import type { SessionWithExercises } from "../../src/services/sessionApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
+import { takePhotoUploadFailed } from "../../src/lib/sessions/workoutPhoto";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -46,6 +47,7 @@ vi.mock("../../src/services/sessionApi", async () => {
     skipSessionExercise: vi.fn(),
     pauseSession: vi.fn(),
     resumeSession: vi.fn(),
+    uploadSessionPhoto: vi.fn(),
   };
 });
 
@@ -418,6 +420,89 @@ describe("LiveWorkout", () => {
       }),
     );
     expect(await screen.findByText("Session page")).toBeInTheDocument();
+  });
+
+  describe("note and photo (ADR-044)", () => {
+    const photo = () => new File([new Uint8Array([1, 2, 3])], "lift.jpg", { type: "image/jpeg" });
+    const openFinish = async () => {
+      await currentSet();
+      fireEvent.click(screen.getByRole("button", { name: "liveWorkout.actions.finish" }));
+      return screen.findByRole("dialog");
+    };
+    const choosePhoto = (dialog: HTMLElement, file: File) =>
+      fireEvent.change(within(dialog).getByLabelText("workoutResult.photo.add"), {
+        target: { files: [file] },
+      });
+
+    beforeEach(() => {
+      mocked.updateSession.mockResolvedValue(liveSession({ status: "completed" }));
+    });
+
+    it("saves the note with the finish, then uploads the photo", async () => {
+      const file = photo();
+      mocked.uploadSessionPhoto.mockResolvedValue({
+        id: "photo-1",
+        url: "/api/v1/sessions/session-1/photo/photo-1",
+        mime_type: "image/jpeg",
+        bytes: 3,
+        uploaded_at: iso(700),
+      });
+      renderLive();
+      const dialog = await openFinish();
+      fireEvent.change(within(dialog).getByLabelText("workoutResult.note.label"), {
+        target: { value: "  Felt strong  " },
+      });
+      choosePhoto(dialog, file);
+      expect(
+        await within(dialog).findByRole("img", { name: "workoutResult.photo.alt" }),
+      ).toBeVisible();
+
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "liveWorkout.actions.saveCompleted" }),
+      );
+
+      expect(await screen.findByText("Session page")).toBeInTheDocument();
+      expect(mocked.updateSession).toHaveBeenCalledWith("session-1", {
+        status: "completed",
+        completion_outcome: "completed",
+        result_note: "Felt strong",
+      });
+      expect(mocked.uploadSessionPhoto).toHaveBeenCalledWith("session-1", file);
+      expect(takePhotoUploadFailed("session-1")).toBe(false);
+    });
+
+    it("keeps the saved workout when the photo fails, and tells the session page", async () => {
+      mocked.uploadSessionPhoto.mockRejectedValue(new Error("network"));
+      renderLive();
+      const dialog = await openFinish();
+      choosePhoto(dialog, photo());
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "liveWorkout.actions.saveStoppedEarly" }),
+      );
+
+      expect(await screen.findByText("Session page")).toBeInTheDocument();
+      expect(takePhotoUploadFailed("session-1")).toBe(true);
+    });
+
+    it("refuses a file that is not an image before anything is sent", async () => {
+      renderLive();
+      const dialog = await openFinish();
+      choosePhoto(dialog, new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
+      expect(
+        await within(dialog).findByText("workoutResult.photo.invalidType(size=5)"),
+      ).toBeVisible();
+
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "liveWorkout.actions.saveCompleted" }),
+      );
+
+      expect(await screen.findByText("Session page")).toBeInTheDocument();
+      expect(mocked.uploadSessionPhoto).not.toHaveBeenCalled();
+      expect(mocked.updateSession).toHaveBeenCalledWith("session-1", {
+        status: "completed",
+        completion_outcome: "completed",
+      });
+    });
   });
 
   it("discards only after a second confirmation", async () => {

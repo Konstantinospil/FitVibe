@@ -116,6 +116,10 @@ const ROUTE_RATE_LIMIT_POLICIES = {
   sessions_update: { points: 30, duration: 60 },
   // Live workout commands (ADR-043): one call per recorded set, pause or change.
   sessions_execution: { points: 120, duration: 60 },
+  // Workout photos (ADR-044): same budgets as body-progress photos.
+  sessions_photo_delete: { points: 30, duration: 60 },
+  sessions_photo_get: { points: 120, duration: 60 },
+  sessions_photo_upload: { points: 10, duration: 60 },
   translations_bulk: { points: 10, duration: 60 },
   translations_create: { points: 30, duration: 60 },
   translations_delete: { points: 30, duration: 60 },

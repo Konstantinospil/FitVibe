@@ -19,6 +19,7 @@ import { ExercisePicker, useExerciseCatalog, type ExerciseOption } from "./Exerc
 import { Modal } from "./Modal";
 import { RetryErrorPanel, StatusPanel } from "./StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "./TrainingSurface";
+import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
 
 export type WorkoutExerciseDraft = {
   id: string;
@@ -421,6 +422,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
               <TextareaControl
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
+                maxLength={TRAINING_DATA_CONFIG.sessionNoteMaxLength}
                 rows={2}
                 placeholder={t("workoutEditor.placeholders.notes")}
                 disabled={isBusy}

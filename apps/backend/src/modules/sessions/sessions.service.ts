@@ -89,7 +89,8 @@ export async function getOne(userId: string, id: string): Promise<SessionWithExe
   if (!session) {
     throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
   }
-  return session;
+  // The workout photo is personal (ADR-044): a public session is shown without it.
+  return session.owner_id === userId ? session : { ...session, photo: null };
 }
 
 /**
@@ -122,6 +123,14 @@ export async function getSessionVibeChanges(
  * A logged workout (manual Log, ADR-042) started at its planned time and lasted
  * its planned length, but it cannot end in the future.
  */
+function resultNoteWithoutResult(): HttpError {
+  return new HttpError(
+    400,
+    "E.SESSION.RESULT_NOTE_WITHOUT_RESULT",
+    "result_note is only accepted for a completed session",
+  );
+}
+
 function loggedWorkoutTimes(plannedAt: string, durationMin: number, now: Date) {
   const start = new Date(plannedAt);
   if (start.getTime() > now.getTime()) {
@@ -151,6 +160,9 @@ export async function createOne(
       "completion_outcome is only accepted for a completed session",
     );
   }
+  if (dto.result_note !== undefined && !logging) {
+    throw resultNoteWithoutResult();
+  }
   const plannedAt = new Date(dto.planned_at).toISOString();
   const plannedDurationMin = dto.planned_duration_min ?? DEFAULT_SESSION_DURATION_MIN;
 
@@ -164,6 +176,7 @@ export async function createOne(
     status: logging ? "completed" : "planned",
     visibility: dto.visibility ?? "private",
     notes: trimToNull(dto.notes),
+    result_note: logging ? trimToNull(dto.result_note) : null,
     recurrence_rule: trimToNull(dto.recurrence_rule),
     ...(logging
       ? {
@@ -270,6 +283,10 @@ export async function updateOne(
       "completion_outcome is only accepted when the session is completed",
     );
   }
+  // The note describes a result, so the session must be, or become, completed.
+  if (dto.result_note !== undefined && (targetStatus ?? current.status) !== "completed") {
+    throw resultNoteWithoutResult();
+  }
   let targetStartedAt = dto.started_at;
   let targetCompletedAt = dto.completed_at;
   let targetDeletedAt: string | null | undefined;
@@ -326,6 +343,9 @@ export async function updateOne(
   }
   if (dto.notes !== undefined) {
     updates.notes = trimToNull(dto.notes);
+  }
+  if (dto.result_note !== undefined) {
+    updates.result_note = trimToNull(dto.result_note);
   }
   if (dto.recurrence_rule !== undefined) {
     updates.recurrence_rule = trimToNull(dto.recurrence_rule);

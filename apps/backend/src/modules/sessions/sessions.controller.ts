@@ -23,7 +23,16 @@ import {
 } from "./sessions.execution.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
-import { HEART_RATE_LIMITS } from "./sessions.normalization.js";
+import { HEART_RATE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
+import {
+  SESSION_PHOTO_CACHE_CONTROL,
+  deleteSessionPhoto,
+  readSessionPhoto,
+  saveSessionPhoto,
+} from "./sessions.photo.service.js";
+
+const noteSchema = z.string().max(SESSION_TEXT_LIMITS.noteMaxLength).nullable().optional();
+const setNoteSchema = z.string().max(SESSION_TEXT_LIMITS.setNoteMaxLength).nullable().optional();
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
 const visibilityEnum = z.enum(["private", "followers", "public", "link"]);
@@ -102,7 +111,7 @@ const sessionSetSchema = z
     heart_rate_bpm: heartRateSchema,
     extras: extrasSchema,
     recorded_at: z.string().datetime().nullable().optional(),
-    notes: z.string().max(500).nullable().optional(),
+    notes: setNoteSchema,
   })
   .strict();
 
@@ -113,7 +122,7 @@ const sessionExerciseSchema = z
     order: z.number().int().min(1),
     status: z.enum(["planned", "skipped"]).optional(),
     source: setSourceEnum.optional(),
-    notes: z.string().max(1000).nullable().optional(),
+    notes: noteSchema,
     planned: plannedAttributesSchema.nullable().optional(),
     actual: actualAttributesSchema.nullable().optional(),
     sets: z.array(sessionSetSchema).max(100).optional(),
@@ -135,7 +144,9 @@ const createSchema = z.object({
   planned_at: z.string().datetime(),
   planned_duration_min: plannedDurationSchema.optional(),
   visibility: visibilityEnum.optional(),
-  notes: z.string().max(1000).nullable().optional(),
+  notes: noteSchema,
+  /** ADR-044: only with status "completed". */
+  result_note: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
   exercises: z.array(sessionExerciseSchema).max(50).optional(),
 });
@@ -154,7 +165,9 @@ const updateSchema = z
     status: statusEnum.optional(),
     completion_outcome: completionOutcomeEnum.optional(),
     visibility: visibilityEnum.optional(),
-    notes: z.string().max(1000).nullable().optional(),
+    notes: noteSchema,
+    /** ADR-044: only when the session is, or becomes, completed. */
+    result_note: noteSchema,
     recurrence_rule: z.string().max(255).nullable().optional(),
     started_at: z.string().datetime().optional(),
     completed_at: z.string().datetime().optional(),
@@ -170,7 +183,7 @@ const cloneSchema = z
     planned_at: z.string().datetime().optional(),
     date_offset_days: z.number().int().min(-365).max(365).optional(),
     title: titleSchema.nullable().optional(),
-    notes: z.string().max(1000).nullable().optional(),
+    notes: noteSchema,
     visibility: visibilityEnum.optional(),
     recurrence_rule: z.string().max(255).nullable().optional(),
     plan_id: z.string().uuid().nullable().optional(),
@@ -190,7 +203,7 @@ const recurrenceSchema = z.object({
   plan_id: z.string().uuid().nullable().optional(),
   visibility: visibilityEnum.optional(),
   title: titleSchema.nullable().optional(),
-  notes: z.string().max(1000).nullable().optional(),
+  notes: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
 });
 
@@ -405,6 +418,41 @@ export async function getSessionVibeChangesHandler(req: Request, res: Response):
   res.json(await getSessionVibeChanges(userId, id));
 }
 
+// --- Workout photo (ADR-044) -------------------------------------------------
+
+export async function uploadSessionPhotoHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const id = readRouteParam(req.params.id, "id");
+  res.status(201).json(await saveSessionPhoto(userId, id, req.file));
+}
+
+export async function getSessionPhotoHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const photo = await readSessionPhoto(
+    userId,
+    readRouteParam(req.params.id, "id"),
+    readRouteParam(req.params.photoId, "photoId"),
+  );
+  res.set("Content-Type", photo.mimeType);
+  res.set("Cache-Control", SESSION_PHOTO_CACHE_CONTROL);
+  res.send(photo.buffer);
+}
+
+export async function deleteSessionPhotoHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  await deleteSessionPhoto(userId, readRouteParam(req.params.id, "id"));
+  res.status(204).send();
+}
+
 // --- Live workout execution (ADR-043) ---------------------------------------
 
 const recordSetSchema = z
@@ -412,7 +460,7 @@ const recordSetSchema = z
     status: z.enum(["completed", "skipped"]),
     ...setMetricFields,
     heart_rate_bpm: heartRateSchema,
-    notes: z.string().max(500).nullable().optional(),
+    notes: setNoteSchema,
   })
   .strict();
 

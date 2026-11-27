@@ -193,7 +193,7 @@
                   "avatar": {
                     "type": "string",
                     "format": "binary",
-                    "description": "Optional JPEG, PNG, or WebP profile photo up to 5 MB"
+                    "description": "Optional profile photo: JPEG, PNG, or WebP image up to 5 MB"
                   }
                 },
                 "required": ["payload"]
@@ -1626,6 +1626,174 @@
         }
       }
     },
+    "/sessions/{id}/photo": {
+      "post": {
+        "summary": "Add or replace the photo of a completed workout",
+        "description": "Owner only (ADR-044). The image is scanned for malware, checked to be what it claims, and re-encoded as JPEG without metadata. Replaces an existing photo. Allowed once the session is completed, either outcome (409 E.SESSION.PHOTO_NOT_COMPLETED otherwise); 404 for a missing session and for someone else's.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG, PNG, or WebP image up to 5 MB"
+                  }
+                },
+                "required": ["photo"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionPhoto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove the workout photo",
+        "description": "Owner only. Succeeds when there is no photo too; 404 for a missing session and for someone else's.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed, or there was none"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/photo/{photoId}": {
+      "get": {
+        "summary": "The workout photo's image",
+        "description": "Owner only. Safe to cache: a replaced photo has a new id. 404 for anyone else, a missing session or an old id.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{id}/reopen": {
       "post": {
         "summary": "Reopen a completed session for correction",
@@ -2808,7 +2976,14 @@
           "notes": {
             "type": "string",
             "maxLength": 1000,
-            "nullable": true
+            "nullable": true,
+            "description": "The plan's instructions."
+          },
+          "result_note": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "What the athlete wrote after the workout (ADR-044). Only with status completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise)."
           },
           "recurrence_rule": {
             "type": "string",
@@ -3232,6 +3407,12 @@
             "maxLength": 1000,
             "nullable": true
           },
+          "result_note": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "What the athlete wrote after the workout (ADR-044). Only when the session is, or becomes, completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise). Editable on a completed session."
+          },
           "recurrence_rule": {
             "type": "string",
             "maxLength": 255,
@@ -3299,6 +3480,21 @@
           },
           "notes": {
             "type": "string",
+            "description": "The plan's instructions.",
+            "nullable": true
+          },
+          "result_note": {
+            "type": "string",
+            "description": "What the athlete wrote after the workout (ADR-044).",
+            "nullable": true
+          },
+          "photo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionPhoto"
+              }
+            ],
+            "description": "The workout photo; only the owner receives it (null for anyone else).",
             "nullable": true
           },
           "recurrence_rule": {
@@ -3711,6 +3907,33 @@
           }
         },
         "required": ["data", "meta"]
+      },
+      "SessionPhoto": {
+        "type": "object",
+        "description": "A workout photo (ADR-044). A replaced photo has a new id and url.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "description": "Owner-only GET path of the image."
+          },
+          "mime_type": {
+            "type": "string",
+            "enum": ["image/jpeg"]
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "url", "mime_type", "bytes", "uploaded_at"]
       },
       "SessionVibeChanges": {
         "type": "object",
