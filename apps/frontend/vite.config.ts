@@ -19,6 +19,18 @@ export function shouldInlineAsset(filePath: string, content: Buffer): boolean | 
   return content.length < INLINE_ASSET_LIMIT_BYTES;
 }
 
+// "shared-small" groups small, shared leaf modules (icons, layout, form pieces,
+// constants, math helpers) into one chunk that every page loads with the shell,
+// to save round trips (issue 634).
+const SHARED_SMALL_MODULES =
+  /[\\/](src[\\/](components|contexts|hooks|layouts|constants|lib[\\/]math)|node_modules[\\/].*lucide-react)[\\/]/;
+// Small modules that import training or media libraries (units, set metrics,
+// photo helpers, the exercise catalogue) stay out of it, so their imports are not
+// downloaded on every page. Grouped there, they pushed public and signed-in pages
+// over the LCP budget; Rolldown now places them with the pages that use them.
+const SHARED_MODULES_WITH_IMPORTS =
+  /[\\/]src[\\/](components[\\/](composites[\\/](ExercisePicker|ImageFilePicker|WorkoutPhotoField|SessionResultPanel|SessionIntakePanel|WorkoutEditor)\.|profile[\\/])|hooks[\\/]useLoadUnit\.)/;
+
 export default defineConfig(() => {
   const isVitest = process.env.VITEST === "true";
   const isSSR = process.env.SSR === "true";
@@ -240,21 +252,10 @@ export default defineConfig(() => {
                 codeSplitting: {
                   includeDependenciesRecursively: false,
                   groups: [
-                    // Small modules shared only by training pages (Plan, Log, live
-                    // workout, session page, settings). Kept out of "shared-small",
-                    // which every page loads with the shell: grouped there, their
-                    // imports of training libraries (units, set metrics, photo
-                    // helpers) were downloaded on public pages and pushed their
-                    // LCP over budget. Groups match in order, so this one wins.
-                    {
-                      name: "training-shared",
-                      test: /[\\/]src[\\/](components[\\/](domain|profile)[\\/]|components[\\/]composites[\\/](TrainingSurface|ExercisePicker|ImageFilePicker|WorkoutPhotoField|SessionResultPanel|WorkoutEditor)\.|hooks[\\/](useLoadUnit|useClock)\.)/,
-                      minShareCount: 2,
-                      maxModuleSize: 4096,
-                    },
                     {
                       name: "shared-small",
-                      test: /[\\/](src[\\/](components|contexts|hooks|layouts)|node_modules[\\/].*lucide-react)[\\/]/,
+                      test: (id: string) =>
+                        SHARED_SMALL_MODULES.test(id) && !SHARED_MODULES_WITH_IMPORTS.test(id),
                       minShareCount: 2,
                       maxModuleSize: 4096,
                     },
