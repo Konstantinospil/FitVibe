@@ -1,5 +1,6 @@
 import type {
   SessionCompletionOutcome as SharedSessionCompletionOutcome,
+  SessionExerciseStatus as SharedSessionExerciseStatus,
   SessionSetSource as SharedSessionSetSource,
   SessionSetStatus as SharedSessionSetStatus,
   SessionStatus as SharedSessionStatus,
@@ -11,6 +12,7 @@ export type SessionVisibility = SharedSessionVisibility;
 export type SessionSetStatus = SharedSessionSetStatus;
 export type SessionSetSource = SharedSessionSetSource;
 export type SessionCompletionOutcome = SharedSessionCompletionOutcome;
+export type SessionExerciseStatus = SharedSessionExerciseStatus;
 
 export interface Session {
   id: string;
@@ -28,6 +30,10 @@ export interface Session {
   completed_at?: string | null;
   /** Set when the session completes (ADR-042); null otherwise. */
   completion_outcome?: SessionCompletionOutcome | null;
+  /** ADR-043: start of the current pause, or null while running. */
+  paused_at?: string | null;
+  /** ADR-043: total length of finished pauses, in seconds. */
+  paused_seconds?: number;
   calories?: number | null;
   points?: number | null;
   gamification_rebuild_required?: boolean;
@@ -87,6 +93,8 @@ export interface SessionExerciseInput {
   id?: string;
   exercise_id?: string | null;
   order: number;
+  status?: SessionExerciseStatus;
+  source?: SessionSetSource;
   notes?: string | null;
   planned?: SessionExerciseAttributesInput | null;
   actual?: SessionExerciseActualInput | null;
@@ -204,6 +212,8 @@ export interface SessionExercise {
   exercise_id?: string | null;
   exercise_name?: string | null; // Snapshot of exercise name at time of session creation
   order_index: number;
+  status: SessionExerciseStatus;
+  source: SessionSetSource;
   notes?: string | null;
   planned?: SessionExerciseAttributes | null;
   actual?: SessionExerciseActualAttributes | null;

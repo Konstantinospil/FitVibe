@@ -907,6 +907,640 @@
         }
       }
     },
+    "/sessions/{id}/pause": {
+      "post": {
+        "summary": "Pause a workout in progress",
+        "description": "Starts a pause; pausing again changes nothing. Pauses do not count as active time (ADR-043).",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/resume": {
+      "post": {
+        "summary": "Resume a paused workout",
+        "description": "Ends the pause and adds its length to `paused_seconds`; resuming a running workout changes nothing.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/sets/{setId}": {
+      "patch": {
+        "summary": "Record, correct or skip a set",
+        "description": "completed stores the performed values (a correction keeps the first recorded_at); skipped clears them. The set's prescription is never changed.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "setId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordSetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`E.SESSION.INVALID_SET`: a skipped set cannot have performed values.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/exercises": {
+      "post": {
+        "summary": "Add an exercise while training",
+        "description": "Appends the exercise (source added) with one empty planned set. Supports Idempotency-Key.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddExerciseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/exercises/{exerciseId}/sets": {
+      "post": {
+        "summary": "Add a set while training",
+        "description": "Appends a planned set (source added) to the exercise and brings a skipped exercise back. Supports Idempotency-Key.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exerciseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/exercises/{exerciseId}/skip": {
+      "post": {
+        "summary": "Skip an exercise",
+        "description": "Marks the exercise skipped and its remaining planned sets skipped; recorded sets stay.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exerciseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{id}/estimate": {
       "get": {
         "summary": "Estimate planned session duration and intensity",
@@ -2163,6 +2797,16 @@
             "type": "integer",
             "minimum": 1
           },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "skipped"],
+            "description": "An exercise is done when its sets are; skipped is an explicit athlete action (ADR-043)."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["prescribed", "added"],
+            "description": "prescribed: part of the plan; added: added while training."
+          },
           "notes": {
             "type": "string",
             "maxLength": 1000,
@@ -2388,6 +3032,109 @@
         "required": ["order"],
         "additionalProperties": false
       },
+      "RecordSetRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["completed", "skipped"]
+          },
+          "reps": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "weight_kg": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "distance_m": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "duration_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "rpe": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "nullable": true
+          },
+          "rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        },
+        "required": ["status"],
+        "additionalProperties": false
+      },
+      "AddSetRequest": {
+        "type": "object",
+        "properties": {
+          "planned": {
+            "type": "object",
+            "description": "The set's prescription (targets). Performed values are the top-level set fields.",
+            "properties": {
+              "reps": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "weight_kg": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "distance_m": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "duration_sec": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "rpe": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "nullable": true
+              },
+              "rest_sec": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddExerciseRequest": {
+        "type": "object",
+        "properties": {
+          "exercise_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["exercise_id"],
+        "additionalProperties": false
+      },
       "SessionUpdateRequest": {
         "type": "object",
         "properties": {
@@ -2519,6 +3266,17 @@
             "description": "How a completed session ended. Neither outcome counts as failure.",
             "nullable": true
           },
+          "paused_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start of the current pause; null while running.",
+            "nullable": true
+          },
+          "paused_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total length of finished pauses. Active time = elapsed − paused_seconds − open pause."
+          },
           "calories": {
             "type": "integer",
             "nullable": true
@@ -2570,6 +3328,16 @@
                 "order_index": {
                   "type": "integer",
                   "minimum": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["planned", "skipped"],
+                  "description": "An exercise is done when its sets are; skipped is an explicit athlete action (ADR-043)."
+                },
+                "source": {
+                  "type": "string",
+                  "enum": ["prescribed", "added"],
+                  "description": "prescribed: part of the plan; added: added while training."
                 },
                 "notes": {
                   "type": "string",
@@ -2778,7 +3546,7 @@
                   }
                 }
               },
-              "required": ["id", "session_id", "order_index", "sets"]
+              "required": ["id", "session_id", "order_index", "status", "source", "sets"]
             }
           }
         },

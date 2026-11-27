@@ -14,6 +14,9 @@ import {
   SessionExerciseInputSchema,
   SessionSetInputSchema,
   UpdateSessionSchema,
+  RecordSetSchema,
+  AddSetSchema,
+  AddExerciseSchema,
 } from "../../../apps/backend/src/modules/sessions/sessions.controller.js";
 import { ReportFeedItemSchema } from "../../../apps/backend/src/modules/feed/feed.schemas.js";
 import {
@@ -45,6 +48,9 @@ const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
   { name: "SessionUpdateRequest", schema: UpdateSessionSchema },
   { name: "SessionExerciseInput", schema: SessionExerciseInputSchema },
   { name: "SessionSetInput", schema: SessionSetInputSchema },
+  { name: "RecordSetRequest", schema: RecordSetSchema },
+  { name: "AddSetRequest", schema: AddSetSchema },
+  { name: "AddExerciseRequest", schema: AddExerciseSchema },
   { name: "ReportFeedItemRequest", schema: ReportFeedItemSchema },
   { name: "UpdateProfileRequest", schema: UpdateProfileSchema },
   { name: "UpdatePreferencesRequest", schema: UpdatePreferencesSchema },

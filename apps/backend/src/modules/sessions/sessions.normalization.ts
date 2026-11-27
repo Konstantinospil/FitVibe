@@ -182,9 +182,9 @@ function intervalToSeconds(value: string | null, context: string, field: string)
   );
 }
 
-type SetMetricValues = Required<{ [K in keyof SessionSetPlannedValues]: number | null }>;
+export type SetMetricValues = Required<{ [K in keyof SessionSetPlannedValues]: number | null }>;
 
-const EMPTY_SET_METRICS: SetMetricValues = {
+export const EMPTY_SET_METRICS: SetMetricValues = {
   reps: null,
   weight_kg: null,
   distance_m: null,
@@ -193,7 +193,7 @@ const EMPTY_SET_METRICS: SetMetricValues = {
   rest_sec: null,
 };
 
-function normalizeSetMetrics(
+export function normalizeSetMetrics(
   values: SessionSetPlannedValues | null | undefined,
   context: string,
 ): SetMetricValues {
@@ -207,7 +207,7 @@ function normalizeSetMetrics(
   };
 }
 
-function hasMetricValue(values: SetMetricValues): boolean {
+export function hasMetricValue(values: SetMetricValues): boolean {
   return Object.values(values).some((value) => value !== null);
 }
 
@@ -360,6 +360,8 @@ export function normalizeSessionExercises(
       id: exercise.id ?? uuidv4(),
       exercise_id: exercise.exercise_id ?? null,
       order_index: order,
+      status: exercise.status ?? "planned",
+      source: exercise.source ?? "prescribed",
       notes: trimToNull(exercise.notes),
       planned: normalizeAttributesInput(exercise.planned ?? null, `${context} planned`),
       sets: performedSets,
@@ -377,6 +379,8 @@ export function convertExistingExerciseToInput(
   return {
     order: exercise.order_index,
     exercise_id: exercise.exercise_id ?? undefined,
+    // A reused workout starts from scratch; a full copy keeps how it went.
+    ...(includeActual ? { status: exercise.status, source: exercise.source } : {}),
     notes: exercise.notes ?? undefined,
     planned: exercise.planned ?? undefined,
     actual: null,

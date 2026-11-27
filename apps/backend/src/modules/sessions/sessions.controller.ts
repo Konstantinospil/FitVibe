@@ -12,6 +12,14 @@ import {
   applyRecurrence,
 } from "./sessions.service.js";
 import { getSessionEstimate } from "./sessions.estimation.service.js";
+import {
+  addExercise,
+  addSet,
+  pauseSession,
+  recordSet,
+  resumeSession,
+  skipExercise,
+} from "./sessions.execution.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
 
@@ -91,6 +99,8 @@ const sessionExerciseSchema = z
     id: z.string().uuid().optional(),
     exercise_id: z.string().uuid().nullable().optional(),
     order: z.number().int().min(1),
+    status: z.enum(["planned", "skipped"]).optional(),
+    source: setSourceEnum.optional(),
     notes: z.string().max(1000).nullable().optional(),
     planned: plannedAttributesSchema.nullable().optional(),
     actual: actualAttributesSchema.nullable().optional(),
@@ -372,3 +382,90 @@ export async function getSessionEstimateHandler(req: Request, res: Response): Pr
   const estimate = await getSessionEstimate(userId, id);
   res.json(estimate);
 }
+
+// --- Live workout execution (ADR-043) ---------------------------------------
+
+const recordSetSchema = z
+  .object({
+    status: z.enum(["completed", "skipped"]),
+    ...setMetricFields,
+    notes: z.string().max(500).nullable().optional(),
+  })
+  .strict();
+
+const addSetSchema = z.object({ planned: plannedSetValuesSchema.nullable().optional() }).strict();
+
+const addExerciseSchema = z.object({ exercise_id: z.string().uuid() }).strict();
+
+/** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
+export const RecordSetSchema = recordSetSchema;
+export const AddSetSchema = addSetSchema;
+export const AddExerciseSchema = addExerciseSchema;
+
+async function executionCommand<T>(
+  req: Request,
+  res: Response,
+  schema: z.ZodType<T> | null,
+  command: (userId: string, sessionId: string, body: T) => Promise<unknown>,
+  options: { idempotent?: boolean; status?: number } = {},
+): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const parsed = schema
+    ? schema.safeParse(req.body ?? {})
+    : { success: true as const, data: {} as T };
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const sessionId = readRouteParam(req.params.id, "id");
+  const status = options.status ?? 200;
+  if (options.idempotent) {
+    getIdempotencyKey(req);
+    const handled = await handleIdempotentRequest(req, res, userId, parsed.data, async () => ({
+      status,
+      body: await command(userId, sessionId, parsed.data),
+    }));
+    if (handled) {
+      return;
+    }
+  }
+  res.status(status).json(await command(userId, sessionId, parsed.data));
+}
+
+export const pauseSessionHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, null, (userId, sessionId) => pauseSession(userId, sessionId));
+
+export const resumeSessionHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, null, (userId, sessionId) => resumeSession(userId, sessionId));
+
+export const recordSetHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, recordSetSchema, (userId, sessionId, body) =>
+    recordSet(userId, sessionId, readRouteParam(req.params.setId, "setId"), body),
+  );
+
+export const addSetHandler = (req: Request, res: Response) =>
+  executionCommand(
+    req,
+    res,
+    addSetSchema,
+    (userId, sessionId, body) =>
+      addSet(userId, sessionId, readRouteParam(req.params.exerciseId, "exerciseId"), body),
+    { idempotent: true, status: 201 },
+  );
+
+export const addExerciseHandler = (req: Request, res: Response) =>
+  executionCommand(
+    req,
+    res,
+    addExerciseSchema,
+    (userId, sessionId, body) => addExercise(userId, sessionId, body),
+    { idempotent: true, status: 201 },
+  );
+
+export const skipExerciseHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, null, (userId, sessionId) =>
+    skipExercise(userId, sessionId, readRouteParam(req.params.exerciseId, "exerciseId")),
+  );
