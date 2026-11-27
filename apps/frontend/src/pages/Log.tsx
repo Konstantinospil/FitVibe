@@ -23,10 +23,13 @@ import {
   invalidMetric,
   isBlankSet,
   SET_METRIC_FIELDS,
+  labelKeyFor,
   toMetricValues,
   type SetMetricInputs,
 } from "../lib/forms/setMetrics";
 import { apiErrorCode } from "../services/httpApi";
+import { useLoadUnit } from "../hooks/useLoadUnit";
+import type { LoadUnit } from "../lib/units/load";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import {
   localDateKey,
@@ -54,7 +57,7 @@ function defaultStart(now = new Date()): Date {
 }
 
 /** Filled sets become performed work; blank rows are left out (ADR-042). */
-function toExerciseInputs(exercises: LoggedExercise[]): SessionExerciseInput[] {
+function toExerciseInputs(exercises: LoggedExercise[], loadUnit: LoadUnit): SessionExerciseInput[] {
   return exercises.map((exercise, index) => ({
     exercise_id: exercise.exerciseId,
     order: index + 1,
@@ -63,7 +66,7 @@ function toExerciseInputs(exercises: LoggedExercise[]): SessionExerciseInput[] {
       .map((set, setIndex) => ({
         order: setIndex + 1,
         status: "completed" as const,
-        ...toMetricValues(set),
+        ...toMetricValues(set, loadUnit),
       })),
   }));
 }
@@ -76,6 +79,7 @@ function toExerciseInputs(exercises: LoggedExercise[]): SessionExerciseInput[] {
  */
 const Log: React.FC = () => {
   const { t } = useTranslation();
+  const { unit: loadUnit, ready: loadUnitReady } = useLoadUnit();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const nextKey = useRef(0);
@@ -194,7 +198,7 @@ const Log: React.FC = () => {
             t("logSurface.errors.invalidSet", {
               exercise: exercise.name,
               number: index + 1,
-              field: t(fieldFor(metric).labelKey),
+              field: t(labelKeyFor(fieldFor(metric), loadUnit)),
             }),
           );
           return;
@@ -210,7 +214,7 @@ const Log: React.FC = () => {
       planned_duration_min: minutes,
       notes: notes.trim() || null,
       visibility: "private",
-      exercises: toExerciseInputs(exercises),
+      exercises: toExerciseInputs(exercises, loadUnit),
     });
   };
 
@@ -325,18 +329,24 @@ const Log: React.FC = () => {
                     <fieldset key={set.key} className="log-set" disabled={busy}>
                       <legend>{t("sessionDetail.set", { number: index + 1 })}</legend>
                       <div className="log-set__fields">
-                        {SET_METRIC_FIELDS.map(({ metric, labelKey, integer, min, max }) => (
-                          <label key={metric} className="form-label">
-                            <span className="form-label-text">{t(labelKey)}</span>
+                        {SET_METRIC_FIELDS.map((field) => (
+                          <label key={field.metric} className="form-label">
+                            <span className="form-label-text">
+                              {t(labelKeyFor(field, loadUnit))}
+                            </span>
                             <InputControl
                               type="number"
-                              inputMode={integer ? "numeric" : "decimal"}
-                              min={min}
-                              max={max}
-                              step={integer ? 1 : "any"}
-                              value={set[metric]}
+                              inputMode={field.integer ? "numeric" : "decimal"}
+                              min={field.min}
+                              max={field.max}
+                              step={field.integer ? 1 : "any"}
+                              value={set[field.metric]}
+                              // Load waits for the unit, so it is never read in the other one.
+                              disabled={field.metric === "weight_kg" && !loadUnitReady}
                               onChange={(event) =>
-                                updateSet(exercise.key, set.key, { [metric]: event.target.value })
+                                updateSet(exercise.key, set.key, {
+                                  [field.metric]: event.target.value,
+                                })
                               }
                             />
                           </label>

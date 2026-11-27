@@ -1117,6 +1117,7 @@
       "sets": "Séries",
       "repetitions": "Répétitions",
       "weight": "Résistance / poids",
+      "weightLb": "Résistance / poids (lb)",
       "duration": "Durée (secondes)",
       "exertion": "Effort cible",
       "restSet": "Repos après chaque série (secondes)",
@@ -1170,6 +1171,7 @@
     "set": "Série {{number}}",
     "reps": "Répétitions : {{value}}",
     "load": "Charge : {{value}} kg",
+    "loadLb": "Charge : {{value}} lb",
     "duration": "Durée : {{value}} s",
     "distance": "Distance : {{value}} m",
     "rpe": "RPE : {{value}}",
@@ -1268,6 +1270,7 @@
     "fields": {
       "startTime": "Heure de début",
       "weight": "Poids (kg)",
+      "weightLb": "Poids (lb)",
       "distance": "Distance (mètres)",
       "rpe": "Effort (RPE 1–10)"
     },
@@ -1443,5 +1446,12 @@
       "notActive": "Cette séance n'est plus en cours. Ouvrez-la pour voir ce qui a été enregistré.",
       "invalidSet": "Vérifiez {{field}}."
     }
+  },
+  "vibeChanges": {
+    "title": "Évolution des Vibes",
+    "level": "Niveau {{value}}",
+    "none": "Cette séance n'a modifié aucun niveau de Vibe.",
+    "loading": "Chargement de l'évolution des Vibes…",
+    "loadError": "L'évolution des Vibes n'a pas pu être chargée."
   }
 }

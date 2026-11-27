@@ -2,12 +2,7 @@ import React, { useState } from "react";
 import { Button, type ButtonSize } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import type { VibeKey } from "../../constants/vibes";
-import strengthIcon from "../../assets/icons/earth-strength.svg";
-import agilityIcon from "../../assets/icons/air-agility.svg";
-import enduranceIcon from "../../assets/icons/water-endurance.svg";
-import explosivityIcon from "../../assets/icons/fire-explosivity.svg";
-import intelligenceIcon from "../../assets/icons/shadow-intelligence.svg";
-import regenerationIcon from "../../assets/icons/aether-regeneration.svg";
+import { VibeIcon } from "./VibeIcon";
 
 export interface VibeBadgeProps {
   vibe: VibeKey;
@@ -16,15 +11,6 @@ export interface VibeBadgeProps {
   size?: ButtonSize;
   disabled?: boolean;
 }
-
-const iconByVibe: Record<VibeKey, string> = {
-  strength: strengthIcon,
-  agility: agilityIcon,
-  endurance: enduranceIcon,
-  explosivity: explosivityIcon,
-  intelligence: intelligenceIcon,
-  regeneration: regenerationIcon,
-};
 
 export const VibeBadge: React.FC<VibeBadgeProps> = ({
   vibe,
@@ -74,14 +60,7 @@ export const VibeBadge: React.FC<VibeBadgeProps> = ({
       {showLevel && canRevealLevel ? (
         <span data-slot="vibe-level">{level}</span>
       ) : (
-        <span
-          aria-hidden="true"
-          data-slot="vibe-icon"
-          style={{
-            WebkitMaskImage: `url(${iconByVibe[vibe]})`,
-            maskImage: `url(${iconByVibe[vibe]})`,
-          }}
-        />
+        <VibeIcon vibe={vibe} />
       )}
     </Button>
   );

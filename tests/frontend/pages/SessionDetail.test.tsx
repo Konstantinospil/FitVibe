@@ -1,6 +1,6 @@
 import React from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SessionDetail from "../../src/pages/SessionDetail";
@@ -23,11 +23,20 @@ vi.mock("../../src/store/auth.store", () => ({
     selector: (state: { user: { id: string } | null; isAuthenticated: boolean }) => unknown,
   ) => selector({ user: currentUserId ? { id: currentUserId } : null, isAuthenticated: true }),
 }));
-vi.mock("../../src/services/accountApi", () => ({ getCurrentUser: vi.fn() }));
+vi.mock("../../src/services/accountApi", () => ({
+  getCurrentUser: vi.fn(),
+  getUserPreferences: vi.fn(),
+}));
 
 vi.mock("../../src/services/sessionApi", async () => {
   const actual = await vi.importActual("../../src/services/sessionApi");
-  return { ...actual, getSession: vi.fn(), updateSession: vi.fn(), cloneSession: vi.fn() };
+  return {
+    ...actual,
+    getSession: vi.fn(),
+    updateSession: vi.fn(),
+    cloneSession: vi.fn(),
+    getSessionVibeChanges: vi.fn(),
+  };
 });
 
 const mocked = vi.mocked(sessionApi);
@@ -86,6 +95,10 @@ describe("SessionDetail", () => {
   beforeEach(() => {
     currentUserId = "user-1";
     queryClient = createTestQueryClient();
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "metric",
+    });
     mocked.getSession.mockResolvedValue(baseSession());
   });
 
@@ -237,6 +250,76 @@ describe("SessionDetail", () => {
 
     expect(await screen.findByText("sessionDetail.saveError")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Leg day" })).toBeInTheDocument();
+  });
+
+  it("shows each Vibe a completed workout moved, in the usual Vibe order", async () => {
+    mocked.getSession.mockResolvedValue(
+      baseSession({ status: "completed", completed_at: "2026-12-01T18:20:00.000Z", points: 42 }),
+    );
+    mocked.getSessionVibeChanges.mockResolvedValue({
+      session_id: "session-1",
+      changes: [
+        { domain_code: "endurance", previous_level: 980, new_level: 984, change: 4 },
+        { domain_code: "strength", previous_level: 1000, new_level: 1012.5, change: 12.5 },
+      ],
+    });
+    renderDetail();
+
+    const panel = (await screen.findByText("vibeChanges.title")).closest<HTMLElement>(
+      ".training-panel",
+    )!;
+    const rows = await within(panel).findAllByRole("listitem");
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "vibes.strength.namevibeChanges.level=1,013+12.5",
+      "vibes.endurance.namevibeChanges.level=984+4",
+    ]);
+    expect(mocked.getSessionVibeChanges).toHaveBeenCalledWith("session-1");
+  });
+
+  it("asks for Vibe changes only once points are in, and only for the owner", async () => {
+    mocked.getSession.mockResolvedValue(baseSession({ status: "completed", points: null }));
+    const { unmount } = renderDetail();
+    expect(await screen.findByText("sessionDetail.pointsPending")).toBeInTheDocument();
+    expect(screen.queryByText("vibeChanges.title")).not.toBeInTheDocument();
+    unmount();
+
+    currentUserId = "user-2";
+    mocked.getSession.mockResolvedValue(baseSession({ status: "completed", points: 42 }));
+    renderDetail();
+    expect(await screen.findByText("homeSurface.session.points")).toBeInTheDocument();
+    expect(screen.queryByText("vibeChanges.title")).not.toBeInTheDocument();
+    expect(mocked.getSessionVibeChanges).not.toHaveBeenCalled();
+  });
+
+  it("says when a workout moved no Vibe, and offers a retry when the changes fail", async () => {
+    mocked.getSession.mockResolvedValue(baseSession({ status: "completed", points: 0 }));
+    mocked.getSessionVibeChanges.mockResolvedValueOnce({ session_id: "session-1", changes: [] });
+    const { unmount } = renderDetail();
+    expect(await screen.findByText("vibeChanges.none")).toBeInTheDocument();
+    unmount();
+    await cleanupQueryClient(queryClient);
+    queryClient = createTestQueryClient();
+
+    mocked.getSessionVibeChanges.mockRejectedValueOnce(new Error("offline"));
+    mocked.getSessionVibeChanges.mockResolvedValueOnce({ session_id: "session-1", changes: [] });
+    renderDetail();
+    expect(await screen.findByText("vibeChanges.loadError")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "actions.retry" }));
+    expect(await screen.findByText("vibeChanges.none")).toBeInTheDocument();
+  });
+
+  it("shows load in pounds for an imperial athlete", async () => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "imperial",
+    });
+    renderDetail();
+
+    expect(
+      await screen.findByText(
+        "sessionDetail.sets=2 · sessionDetail.reps=5 · sessionDetail.loadLb=220.5",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("shows awarded points on a completed session, or that they are pending", async () => {

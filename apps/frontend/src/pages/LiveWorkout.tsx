@@ -29,10 +29,15 @@ import {
 import {
   fieldFor,
   invalidMetric,
+  labelKeyFor,
+  pickMetricValues,
   toMetricInputs,
   toMetricValues,
   type SetMetricInputs,
+  type SetMetricValues,
 } from "../lib/forms/setMetrics";
+import { useLoadUnit } from "../hooks/useLoadUnit";
+import type { LoadUnit } from "../lib/units/load";
 import { setSummary, valuesSummary } from "../lib/sessions/setSummary";
 import { apiErrorCode } from "../services/httpApi";
 import type {
@@ -62,7 +67,7 @@ function plannedFromLast(exercise: SessionExercise): SessionSetPlannedValues | n
   if (last.status !== "completed") {
     return null;
   }
-  return { ...toMetricValues(toMetricInputs(last)), rest_sec: last.rest_sec ?? null };
+  return { ...pickMetricValues(last), rest_sec: last.rest_sec ?? null };
 }
 
 const errorMessageKey = (error: unknown) =>
@@ -72,30 +77,35 @@ const errorMessageKey = (error: unknown) =>
 
 type CurrentSetProps = {
   position: LivePosition;
+  loadUnit: LoadUnit;
   disabled: boolean;
-  /** Inputs to complete the set, or null to skip it. */
-  onRecord: (inputs: SetMetricInputs | null) => void;
+  /** Values to complete the set with (load in kilograms), or null to skip it. */
+  onRecord: (values: SetMetricValues | null) => void;
 };
 
 /** The set to do now: its target, the values to record, and Complete or Skip. */
-const CurrentSet: React.FC<CurrentSetProps> = ({ position, disabled, onRecord }) => {
+const CurrentSet: React.FC<CurrentSetProps> = ({ position, loadUnit, disabled, onRecord }) => {
   const { t } = useTranslation();
   const { set, exercise, setNumber, setCount } = position;
-  // Keyed by set id in the parent, so the fields start from this set's target.
-  const [inputs, setInputs] = useState<SetMetricInputs>(() => toMetricInputs(set.planned));
+  // Keyed by set id and unit in the parent, so the fields start from this set's target.
+  const [inputs, setInputs] = useState<SetMetricInputs>(() =>
+    toMetricInputs(set.planned, loadUnit),
+  );
   const [message, setMessage] = useState<string | null>(null);
   const fields = fieldsFor(set);
-  const target = valuesSummary(t, set.planned);
+  const target = valuesSummary(t, set.planned, loadUnit);
 
   const complete = (event: React.FormEvent) => {
     event.preventDefault();
     const metric = invalidMetric(inputs, fields);
     if (metric) {
-      setMessage(t("liveWorkout.errors.invalidSet", { field: t(fieldFor(metric).labelKey) }));
+      setMessage(
+        t("liveWorkout.errors.invalidSet", { field: t(labelKeyFor(fieldFor(metric), loadUnit)) }),
+      );
       return;
     }
     setMessage(null);
-    onRecord(inputs);
+    onRecord(toMetricValues(inputs, loadUnit));
   };
 
   return (
@@ -111,18 +121,18 @@ const CurrentSet: React.FC<CurrentSetProps> = ({ position, disabled, onRecord })
       </p>
       <fieldset className="live-set__fields" disabled={disabled}>
         <legend className="sr-only">{t("liveWorkout.current.values")}</legend>
-        {fields.map(({ metric, labelKey, integer, min, max }) => (
-          <label key={metric} className="form-label">
-            <span className="form-label-text">{t(labelKey)}</span>
+        {fields.map((field) => (
+          <label key={field.metric} className="form-label">
+            <span className="form-label-text">{t(labelKeyFor(field, loadUnit))}</span>
             <InputControl
               type="number"
-              inputMode={integer ? "numeric" : "decimal"}
-              min={min}
-              max={max}
-              step={integer ? 1 : "any"}
-              value={inputs[metric]}
+              inputMode={field.integer ? "numeric" : "decimal"}
+              min={field.min}
+              max={field.max}
+              step={field.integer ? 1 : "any"}
+              value={inputs[field.metric]}
               onChange={(event) => {
-                setInputs((current) => ({ ...current, [metric]: event.target.value }));
+                setInputs((current) => ({ ...current, [field.metric]: event.target.value }));
                 setMessage(null);
               }}
             />
@@ -256,6 +266,7 @@ const LiveWorkout: React.FC = () => {
   const paused = Boolean(session?.paused_at);
   const now = useClock(active);
   const catalog = useExerciseCatalog({ enabled: active, source: "live workout" });
+  const { unit: loadUnit, ready: loadUnitReady } = useLoadUnit();
 
   const run = (input: LiveCommand) => {
     if (!command.isPending) {
@@ -378,16 +389,15 @@ const LiveWorkout: React.FC = () => {
               ) : null}
               {position ? (
                 <CurrentSet
-                  key={position.set.id}
+                  key={`${position.set.id}:${loadUnit}`}
                   position={position}
-                  disabled={busy || paused}
-                  onRecord={(inputs) =>
+                  loadUnit={loadUnit}
+                  disabled={busy || paused || !loadUnitReady}
+                  onRecord={(values) =>
                     run({
                       kind: "record",
                       setId: position.set.id,
-                      payload: inputs
-                        ? { status: "completed", ...toMetricValues(inputs) }
-                        : { status: "skipped" },
+                      payload: values ? { status: "completed", ...values } : { status: "skipped" },
                     })
                   }
                 />
@@ -421,7 +431,7 @@ const LiveWorkout: React.FC = () => {
                           key={set.id}
                           title={t("sessionDetail.set", { number: index + 1 })}
                           meta={t(SET_META_KEYS[set.status])}
-                          supporting={setSummary(t, set)}
+                          supporting={setSummary(t, set, loadUnit)}
                           className={
                             set.id === position?.set.id ? "live-outline__set--current" : undefined
                           }

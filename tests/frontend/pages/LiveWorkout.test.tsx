@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LiveWorkout from "../../src/pages/LiveWorkout";
 import * as api from "../../src/services/api";
+import * as accountApi from "../../src/services/accountApi";
 import * as sessionApi from "../../src/services/sessionApi";
 import type { SessionWithExercises } from "../../src/services/sessionApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
@@ -25,6 +26,11 @@ vi.mock("react-i18next", () => ({
 vi.mock("../../src/services/api", async () => {
   const actual = await vi.importActual("../../src/services/api");
   return { ...actual, listExercises: vi.fn() };
+});
+
+vi.mock("../../src/services/accountApi", async () => {
+  const actual = await vi.importActual("../../src/services/accountApi");
+  return { ...actual, getUserPreferences: vi.fn() };
 });
 
 vi.mock("../../src/services/sessionApi", async () => {
@@ -154,6 +160,10 @@ describe("LiveWorkout", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "metric",
+    });
     // Only the clock is fixed; timers and promises run normally.
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(iso(630)));
@@ -226,6 +236,38 @@ describe("LiveWorkout", () => {
     );
     expect(await screen.findByRole("heading", { level: 2, name: "Plank" })).toBeInTheDocument();
     expect(screen.getByLabelText("workoutEditor.fields.duration")).toHaveValue(60);
+  });
+
+  it("shows the target and takes load in pounds for an imperial athlete", async () => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "imperial",
+    });
+    mocked.recordSet.mockResolvedValue(afterSecondSet());
+    renderLive();
+
+    const form = await currentSet();
+    // The 100 kg target, in pounds.
+    const load = await within(form).findByLabelText("logSurface.fields.weightLb");
+    expect(load).toHaveValue(220.5);
+    expect(
+      within(form).getByText(
+        "liveWorkout.current.target(value=sessionDetail.reps(value=5) · sessionDetail.loadLb(value=220.5) · sessionDetail.rest(value=90))",
+      ),
+    ).toBeInTheDocument();
+    fireEvent.change(load, { target: { value: "225" } });
+    fireEvent.click(within(form).getByRole("button", { name: "liveWorkout.actions.completeSet" }));
+
+    await waitFor(() =>
+      expect(mocked.recordSet).toHaveBeenCalledWith("session-1", "set-2", {
+        status: "completed",
+        reps: 5,
+        weight_kg: 102.06,
+        duration_sec: null,
+        distance_m: null,
+        rpe: null,
+      }),
+    );
   });
 
   it("skips a set without sending values", async () => {

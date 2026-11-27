@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   getAll,
   getOne,
+  getSessionVibeChanges,
   createOne,
   updateOne,
   cancelOne,
@@ -381,6 +382,16 @@ export async function getSessionEstimateHandler(req: Request, res: Response): Pr
   const id = readRouteParam(req.params.id, "id");
   const estimate = await getSessionEstimate(userId, id);
   res.json(estimate);
+}
+
+export async function getSessionVibeChangesHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+
+  const id = readRouteParam(req.params.id, "id");
+  res.json(await getSessionVibeChanges(userId, id));
 }
 
 // --- Live workout execution (ADR-043) ---------------------------------------

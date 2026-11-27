@@ -207,6 +207,25 @@ export async function getSession(sessionId: string): Promise<SessionWithExercise
   return res.data;
 }
 
+/** How one Vibe's level moved because of a completed session (issue 289). */
+export interface SessionVibeChange {
+  domain_code: string;
+  previous_level: number;
+  new_level: number;
+  change: number;
+}
+
+export interface SessionVibeChanges {
+  session_id: string;
+  changes: SessionVibeChange[];
+}
+
+/** Owner only; empty until the session's points are processed. */
+export async function getSessionVibeChanges(sessionId: string): Promise<SessionVibeChanges> {
+  const res = await apiClient.get<SessionVibeChanges>(`/api/v1/sessions/${sessionId}/vibe-changes`);
+  return res.data;
+}
+
 export async function createSession(payload: CreateSessionRequest): Promise<SessionWithExercises> {
   const res = await apiClient.post<SessionWithExercises>("/api/v1/sessions", payload);
   return res.data;

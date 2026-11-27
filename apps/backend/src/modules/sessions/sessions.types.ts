@@ -222,6 +222,19 @@ export interface SessionExercise {
   updated_at?: string;
 }
 
+/** How one Vibe's level moved because of a completed session (issue 289). */
+export interface SessionVibeChange {
+  domain_code: string;
+  previous_level: number;
+  new_level: number;
+  change: number;
+}
+
+export interface SessionVibeChanges {
+  session_id: string;
+  changes: SessionVibeChange[];
+}
+
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
 }

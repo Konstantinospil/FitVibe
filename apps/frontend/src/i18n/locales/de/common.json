@@ -1117,6 +1117,7 @@
       "sets": "Sätze",
       "repetitions": "Wiederholungen",
       "weight": "Widerstand / Gewicht",
+      "weightLb": "Widerstand / Gewicht (lb)",
       "duration": "Dauer (Sekunden)",
       "exertion": "Zielanstrengung",
       "restSet": "Pause nach jedem Satz (Sekunden)",
@@ -1170,6 +1171,7 @@
     "set": "Satz {{number}}",
     "reps": "Wiederholungen: {{value}}",
     "load": "Gewicht: {{value}} kg",
+    "loadLb": "Gewicht: {{value}} lb",
     "duration": "Dauer: {{value}} s",
     "distance": "Strecke: {{value}} m",
     "rpe": "RPE: {{value}}",
@@ -1268,6 +1270,7 @@
     "fields": {
       "startTime": "Startzeit",
       "weight": "Gewicht (kg)",
+      "weightLb": "Gewicht (lb)",
       "distance": "Strecke (Meter)",
       "rpe": "Anstrengung (RPE 1–10)"
     },
@@ -1443,5 +1446,12 @@
       "notActive": "Dieses Training läuft nicht mehr. Öffne es, um die erfassten Werte zu sehen.",
       "invalidSet": "Prüfe {{field}}."
     }
+  },
+  "vibeChanges": {
+    "title": "Vibe-Änderungen",
+    "level": "Stufe {{value}}",
+    "none": "Dieses Training hat keine Vibe-Stufe verändert.",
+    "loading": "Vibe-Änderungen werden geladen…",
+    "loadError": "Die Vibe-Änderungen konnten nicht geladen werden."
   }
 }

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import {
   cloneSession,
   getSession,
+  getSessionVibeChanges,
   updateSession,
   type SessionExercise,
   type SessionWithExercises,
@@ -17,8 +18,12 @@ import { FormFeedback } from "../components/composites/FormStack";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
 import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
-import { joinMetrics, metric, setSummary } from "../lib/sessions/setSummary";
+import { joinMetrics, loadMetric, metric, setSummary } from "../lib/sessions/setSummary";
+import { useLoadUnit } from "../hooks/useLoadUnit";
+import type { LoadUnit } from "../lib/units/load";
 import { liveSessionQueryKey, liveWorkoutPath } from "../lib/execution/liveWorkout";
+import { VibeChangeList } from "../components/domain/VibeChangeList";
+import { isVibeKey } from "../constants/vibes";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
 
@@ -28,12 +33,12 @@ const SET_META_KEYS = {
   skipped: "sessionDetail.skipped",
 } as const;
 
-function exerciseSummary(t: Translate, exercise: SessionExercise) {
+function exerciseSummary(t: Translate, exercise: SessionExercise, unit: LoadUnit) {
   const planned = exercise.planned;
   return joinMetrics([
     metric(t, "sets", planned?.sets),
     metric(t, "reps", planned?.reps),
-    metric(t, "load", planned?.load),
+    loadMetric(t, planned?.load, unit),
     metric(t, "plannedDuration", planned?.duration),
     metric(t, "plannedDistance", planned?.distance),
     metric(t, "rpe", planned?.rpe),
@@ -43,6 +48,7 @@ function exerciseSummary(t: Translate, exercise: SessionExercise) {
 
 const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session }) => {
   const { t } = useTranslation();
+  const { unit } = useLoadUnit();
   return (
     <TrainingPanel title={t("sessionDetail.exerciseList")}>
       {session.exercises.length === 0 ? <p>{t("sessionDetail.empty")}</p> : null}
@@ -51,7 +57,7 @@ const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session
           <TrainingSummaryCard
             title={exercise.exercise_name || t("workoutEditor.exerciseFallback")}
             meta={t("sessionDetail.prescription")}
-            supporting={exerciseSummary(t, exercise)}
+            supporting={exerciseSummary(t, exercise, unit)}
           />
           {exercise.notes ? <p>{exercise.notes}</p> : null}
           {exercise.sets.map((set) => (
@@ -59,7 +65,7 @@ const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session
               key={set.id}
               title={t("sessionDetail.set", { number: set.order_index })}
               meta={t(SET_META_KEYS[set.status])}
-              supporting={setSummary(t, set)}
+              supporting={setSummary(t, set, unit)}
             />
           ))}
         </React.Fragment>
@@ -95,6 +101,15 @@ const SessionDetail: React.FC = () => {
   });
   const session = query.data;
   const isOwner = Boolean(session && userId && session.owner_id === userId);
+  // Points and Vibe changes are written in one transaction, so once points show,
+  // the changes are there too (issue 289).
+  const pointsAwarded =
+    session?.status === "completed" && session.points !== null && session.points !== undefined;
+  const vibeChanges = useQuery({
+    queryKey: ["session-vibe-changes", id],
+    queryFn: () => getSessionVibeChanges(id!),
+    enabled: Boolean(id) && isOwner && pointsAwarded,
+  });
 
   const dateTimeFormat = useMemo(
     () => new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }),
@@ -203,6 +218,38 @@ const SessionDetail: React.FC = () => {
               <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback>
             ) : null}
           </TrainingPanel>
+          {isOwner && pointsAwarded ? (
+            <TrainingPanel title={t("vibeChanges.title")} className="session-vibe-changes">
+              {vibeChanges.isError ? (
+                <RetryErrorPanel
+                  message={t("vibeChanges.loadError")}
+                  retryLabel={t("actions.retry")}
+                  onRetry={() => void vibeChanges.refetch()}
+                  isRetrying={vibeChanges.isFetching}
+                />
+              ) : vibeChanges.data ? (
+                vibeChanges.data.changes.length > 0 ? (
+                  <VibeChangeList
+                    changes={vibeChanges.data.changes.flatMap((change) =>
+                      isVibeKey(change.domain_code)
+                        ? [
+                            {
+                              vibe: change.domain_code,
+                              newLevel: change.new_level,
+                              change: change.change,
+                            },
+                          ]
+                        : [],
+                    )}
+                  />
+                ) : (
+                  <p>{t("vibeChanges.none")}</p>
+                )
+              ) : (
+                <StatusPanel kind="loading">{t("vibeChanges.loading")}</StatusPanel>
+              )}
+            </TrainingPanel>
+          ) : null}
           <SessionExercises session={session} />
           {isOwner && session.status !== "canceled" ? (
             <TrainingPanel title={t("sessionDetail.reuse")}>

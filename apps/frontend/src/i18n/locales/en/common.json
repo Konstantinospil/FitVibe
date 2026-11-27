@@ -1117,6 +1117,7 @@
       "sets": "Sets",
       "repetitions": "Repetitions",
       "weight": "Resistance / weight",
+      "weightLb": "Resistance / weight (lb)",
       "duration": "Duration (seconds)",
       "exertion": "Target exertion",
       "restSet": "Rest after each set (seconds)",
@@ -1170,6 +1171,7 @@
     "set": "Set {{number}}",
     "reps": "Reps: {{value}}",
     "load": "Load: {{value}} kg",
+    "loadLb": "Load: {{value}} lb",
     "duration": "Duration: {{value}} s",
     "distance": "Distance: {{value}} m",
     "rpe": "RPE: {{value}}",
@@ -1268,6 +1270,7 @@
     "fields": {
       "startTime": "Start time",
       "weight": "Weight (kg)",
+      "weightLb": "Weight (lb)",
       "distance": "Distance (metres)",
       "rpe": "Effort (RPE 1–10)"
     },
@@ -1443,5 +1446,12 @@
       "notActive": "This workout is no longer in progress. Open it to see what was recorded.",
       "invalidSet": "Check {{field}}."
     }
+  },
+  "vibeChanges": {
+    "title": "Vibe changes",
+    "level": "Level {{value}}",
+    "none": "This workout didn't change a Vibe level.",
+    "loading": "Loading Vibe changes…",
+    "loadError": "Vibe changes couldn't be loaded."
   }
 }

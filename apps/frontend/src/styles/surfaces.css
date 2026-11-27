@@ -387,6 +387,48 @@
   gap: var(--space-xs);
 }
 
+/* Workout result: the Vibe levels a session moved (issue 289). */
+.vibe-change-list {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vibe-change-list [data-slot="vibe-icon"] {
+  width: var(--control-icon-lg);
+  height: var(--control-icon-lg);
+}
+
+.vibe-change-list__item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.vibe-change-list__name {
+  color: var(--color-text-primary);
+}
+
+.vibe-change-list__level {
+  color: var(--color-text-secondary);
+  font-size: var(--type-supporting-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.vibe-change-list__change {
+  min-width: var(--space-2xl);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-heading);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
 /* Live workout (/start/:id): the training clock, then the current set beside the plan. */
 .live-clock {
   display: grid;

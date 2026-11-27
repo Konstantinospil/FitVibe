@@ -1,5 +1,6 @@
 import type { SessionSetPlannedValues } from "../../services/sessionApi";
 import { optionalNonNegativeNumber } from "./numberInput";
+import { fromStoredKg, toStoredKg, type LoadUnit } from "../units/load";
 
 /**
  * The values an athlete records for one set, shared by the manual Log and the live
@@ -7,6 +8,7 @@ import { optionalNonNegativeNumber } from "./numberInput";
  */
 export type SetMetric = "reps" | "weight_kg" | "duration_sec" | "distance_m" | "rpe";
 
+/** The fields as typed. `weight_kg` holds load in the athlete's unit until sent. */
 export type SetMetricInputs = Record<SetMetric, string>;
 
 export type SetMetricValues = Pick<SessionSetPlannedValues, SetMetric>;
@@ -40,6 +42,10 @@ export const EMPTY_SET_INPUTS: SetMetricInputs = {
 export const fieldFor = (metric: SetMetric): SetMetricField =>
   SET_METRIC_FIELDS.find((field) => field.metric === metric)!;
 
+/** The field's label; load names the athlete's unit (issue 89). */
+export const labelKeyFor = (field: SetMetricField, unit: LoadUnit): string =>
+  field.metric === "weight_kg" && unit === "lb" ? "logSurface.fields.weightLb" : field.labelKey;
+
 export const isBlankSet = (inputs: SetMetricInputs, metrics = SET_METRIC_FIELDS) =>
   metrics.every(({ metric }) => !inputs[metric].trim());
 
@@ -65,24 +71,40 @@ export function invalidMetric(
   return null;
 }
 
-/** Numbers to send; blank fields become null. */
-export function toMetricValues(inputs: SetMetricInputs): SetMetricValues {
+/** Numbers to send, load in kilograms; blank fields become null. */
+export function toMetricValues(inputs: SetMetricInputs, unit: LoadUnit): SetMetricValues {
+  const load = optionalNonNegativeNumber(inputs.weight_kg);
   return {
     reps: optionalNonNegativeNumber(inputs.reps),
-    weight_kg: optionalNonNegativeNumber(inputs.weight_kg),
+    weight_kg: load === null ? null : toStoredKg(load, unit),
     duration_sec: optionalNonNegativeNumber(inputs.duration_sec),
     distance_m: optionalNonNegativeNumber(inputs.distance_m),
     rpe: optionalNonNegativeNumber(inputs.rpe),
   };
 }
 
-/** Inputs prefilled from values, such as a set's target. */
-export function toMetricInputs(values: SetMetricValues | null | undefined): SetMetricInputs {
+/** The stored metric values of a set or target, without converting units. */
+export function pickMetricValues(values: Partial<SetMetricValues>): SetMetricValues {
+  return {
+    reps: values.reps ?? null,
+    weight_kg: values.weight_kg ?? null,
+    duration_sec: values.duration_sec ?? null,
+    distance_m: values.distance_m ?? null,
+    rpe: values.rpe ?? null,
+  };
+}
+
+/** Inputs prefilled from values (load in kilograms), such as a set's target. */
+export function toMetricInputs(
+  values: SetMetricValues | null | undefined,
+  unit: LoadUnit,
+): SetMetricInputs {
   const text = (value: number | null | undefined) =>
     value === null || value === undefined ? "" : String(value);
+  const load = values?.weight_kg;
   return {
     reps: text(values?.reps),
-    weight_kg: text(values?.weight_kg),
+    weight_kg: text(load === null || load === undefined ? load : fromStoredKg(load, unit)),
     duration_sec: text(values?.duration_sec),
     distance_m: text(values?.distance_m),
     rpe: text(values?.rpe),
