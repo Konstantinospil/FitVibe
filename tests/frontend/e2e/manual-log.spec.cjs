@@ -3,14 +3,14 @@
 // in one request as a completed session with performed sets, then opens on its
 // session page, where the server-awarded points appear.
 const { test, expect } = require("./fixtures.cjs");
+const { preparePage, waitForApp } = require("./server-helpers.cjs");
 const {
-  APPLICATION_ORIGIN,
-  getCsrfToken,
-  preparePage,
-  retryRateLimitedMutation,
-  waitForApp,
-} = require("./server-helpers.cjs");
-const { DAY_MS, escapeRegExp, fetchSession, pad } = require("./schedule-helpers.cjs");
+  DAY_MS,
+  createExercise,
+  escapeRegExp,
+  fetchSession,
+  pad,
+} = require("./schedule-helpers.cjs");
 const {
   calendarSurface,
   homeSurface,
@@ -20,21 +20,6 @@ const {
 } = require("../../../apps/frontend/src/i18n/locales/en/common.json");
 
 test.use({ timezoneId: "UTC" });
-
-async function createExercise(page, name) {
-  const request = page.context().request;
-  const csrfToken = await getCsrfToken(request, "exercise");
-  const response = await retryRateLimitedMutation(
-    () =>
-      request.post(`${APPLICATION_ORIGIN}/api/v1/exercises`, {
-        data: { name, type_code: "strength" },
-        headers: { Origin: APPLICATION_ORIGIN, "X-CSRF-Token": csrfToken },
-      }),
-    "create exercise",
-  );
-  expect(response.status(), "exercise created").toBe(201);
-  return response.json();
-}
 
 test.describe("Manual Log", () => {
   test.beforeEach(async ({ page, athleteAccount }) => {

@@ -1,6 +1,5 @@
 import React, { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { Minus, Plus, X } from "lucide-react";
 import { Button, IconButton, InputControl, TextareaControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
@@ -18,7 +17,16 @@ import {
 import { FormFeedback } from "../components/composites/FormStack";
 import { TrainingPanel } from "../components/composites/TrainingSurface";
 import { TRAINING_DATA_CONFIG, TRAINING_TIME_UNITS } from "../config/trainingSurfaces";
-import { optionalNonNegativeNumber } from "../lib/forms/numberInput";
+import {
+  EMPTY_SET_INPUTS,
+  fieldFor,
+  invalidMetric,
+  isBlankSet,
+  SET_METRIC_FIELDS,
+  toMetricValues,
+  type SetMetricInputs,
+} from "../lib/forms/setMetrics";
+import { apiErrorCode } from "../services/httpApi";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import {
   localDateKey,
@@ -27,15 +35,7 @@ import {
   SESSION_DURATION_LIMITS,
 } from "../lib/scheduling/sessionSchedule";
 
-type SetValues = {
-  reps: string;
-  weight: string;
-  duration: string;
-  distance: string;
-  rpe: string;
-};
-
-type LoggedSet = SetValues & { key: string };
+type LoggedSet = SetMetricInputs & { key: string };
 
 type LoggedExercise = {
   key: string;
@@ -43,21 +43,6 @@ type LoggedExercise = {
   name: string;
   sets: LoggedSet[];
 };
-
-const SET_FIELDS: ReadonlyArray<{
-  field: keyof SetValues;
-  label: string;
-  integer: boolean;
-  max?: number;
-}> = [
-  { field: "reps", label: "workoutEditor.fields.repetitions", integer: true },
-  { field: "weight", label: "logSurface.fields.weight", integer: false },
-  { field: "duration", label: "workoutEditor.fields.duration", integer: true },
-  { field: "distance", label: "logSurface.fields.distance", integer: true },
-  { field: "rpe", label: "logSurface.fields.rpe", integer: true, max: 10 },
-];
-
-const EMPTY_SET: SetValues = { reps: "", weight: "", duration: "", distance: "", rpe: "" };
 
 /** A workout of the default length that has just ended, rounded down to the duration step. */
 function defaultStart(now = new Date()): Date {
@@ -68,53 +53,19 @@ function defaultStart(now = new Date()): Date {
   return new Date(Math.floor(start / stepMs) * stepMs);
 }
 
-const isBlank = (set: SetValues) => SET_FIELDS.every(({ field }) => !set[field].trim());
-
-/** A set field is invalid when it is filled but not a whole number where one is required. */
-function invalidField(set: SetValues): keyof SetValues | null {
-  for (const { field, integer, max } of SET_FIELDS) {
-    if (!set[field].trim()) {
-      continue;
-    }
-    const value = optionalNonNegativeNumber(set[field]);
-    const outOfRange =
-      value === null ||
-      (integer && !Number.isInteger(value)) ||
-      (max !== undefined && value > max) ||
-      (field === "rpe" && value < 1);
-    if (outOfRange) {
-      return field;
-    }
-  }
-  return null;
-}
-
 /** Filled sets become performed work; blank rows are left out (ADR-042). */
 function toExerciseInputs(exercises: LoggedExercise[]): SessionExerciseInput[] {
   return exercises.map((exercise, index) => ({
     exercise_id: exercise.exerciseId,
     order: index + 1,
     sets: exercise.sets
-      .filter((set) => !isBlank(set))
+      .filter((set) => !isBlankSet(set))
       .map((set, setIndex) => ({
         order: setIndex + 1,
         status: "completed" as const,
-        reps: optionalNonNegativeNumber(set.reps),
-        weight_kg: optionalNonNegativeNumber(set.weight),
-        duration_sec: optionalNonNegativeNumber(set.duration),
-        distance_m: optionalNonNegativeNumber(set.distance),
-        rpe: optionalNonNegativeNumber(set.rpe),
+        ...toMetricValues(set),
       })),
   }));
-}
-
-function errorCode(error: unknown): string | null {
-  if (!axios.isAxiosError(error)) {
-    return null;
-  }
-  const body: unknown = error.response?.data;
-  const code = (body as { error?: { code?: unknown } } | undefined)?.error?.code;
-  return typeof code === "string" ? code : null;
 }
 
 /**
@@ -155,7 +106,7 @@ const Log: React.FC = () => {
     },
     onError: (error) => {
       setMessage(
-        errorCode(error) === "E.SESSION.LOG_IN_FUTURE"
+        apiErrorCode(error) === "E.SESSION.LOG_IN_FUTURE"
           ? t("logSurface.errors.future")
           : t("logSurface.errors.save"),
       );
@@ -169,7 +120,7 @@ const Log: React.FC = () => {
         key: newKey(),
         exerciseId: exercise.id,
         name: exercise.name,
-        sets: [{ key: newKey(), ...EMPTY_SET }],
+        sets: [{ key: newKey(), ...EMPTY_SET_INPUTS }],
       },
     ]);
     setMessage(null);
@@ -178,7 +129,7 @@ const Log: React.FC = () => {
   const updateExercise = (key: string, update: (exercise: LoggedExercise) => LoggedExercise) =>
     setExercises((current) => current.map((item) => (item.key === key ? update(item) : item)));
 
-  const updateSet = (exerciseKey: string, setKey: string, patch: Partial<SetValues>) => {
+  const updateSet = (exerciseKey: string, setKey: string, patch: Partial<SetMetricInputs>) => {
     updateExercise(exerciseKey, (exercise) => ({
       ...exercise,
       sets: exercise.sets.map((set) => (set.key === setKey ? { ...set, ...patch } : set)),
@@ -190,15 +141,10 @@ const Log: React.FC = () => {
   const addSet = (exerciseKey: string) =>
     updateExercise(exerciseKey, (exercise) => {
       const previous = exercise.sets[exercise.sets.length - 1];
-      const values: SetValues = previous
-        ? {
-            reps: previous.reps,
-            weight: previous.weight,
-            duration: previous.duration,
-            distance: previous.distance,
-            rpe: previous.rpe,
-          }
-        : EMPTY_SET;
+      const values: SetMetricInputs = { ...EMPTY_SET_INPUTS };
+      for (const { metric } of SET_METRIC_FIELDS) {
+        values[metric] = previous?.[metric] ?? "";
+      }
       return { ...exercise, sets: [...exercise.sets, { key: newKey(), ...values }] };
     });
 
@@ -242,13 +188,13 @@ const Log: React.FC = () => {
     }
     for (const exercise of exercises) {
       for (const [index, set] of exercise.sets.entries()) {
-        const field = invalidField(set);
-        if (field) {
+        const metric = invalidMetric(set);
+        if (metric) {
           setMessage(
             t("logSurface.errors.invalidSet", {
               exercise: exercise.name,
               number: index + 1,
-              field: t(SET_FIELDS.find((item) => item.field === field)!.label),
+              field: t(fieldFor(metric).labelKey),
             }),
           );
           return;
@@ -379,18 +325,18 @@ const Log: React.FC = () => {
                     <fieldset key={set.key} className="log-set" disabled={busy}>
                       <legend>{t("sessionDetail.set", { number: index + 1 })}</legend>
                       <div className="log-set__fields">
-                        {SET_FIELDS.map(({ field, label, integer, max }) => (
-                          <label key={field} className="form-label">
-                            <span className="form-label-text">{t(label)}</span>
+                        {SET_METRIC_FIELDS.map(({ metric, labelKey, integer, min, max }) => (
+                          <label key={metric} className="form-label">
+                            <span className="form-label-text">{t(labelKey)}</span>
                             <InputControl
                               type="number"
                               inputMode={integer ? "numeric" : "decimal"}
-                              min={field === "rpe" ? 1 : 0}
+                              min={min}
                               max={max}
                               step={integer ? 1 : "any"}
-                              value={set[field]}
+                              value={set[metric]}
                               onChange={(event) =>
-                                updateSet(exercise.key, set.key, { [field]: event.target.value })
+                                updateSet(exercise.key, set.key, { [metric]: event.target.value })
                               }
                             />
                           </label>

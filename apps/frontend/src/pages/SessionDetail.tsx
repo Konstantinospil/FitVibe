@@ -8,7 +8,6 @@ import {
   getSession,
   updateSession,
   type SessionExercise,
-  type SessionExerciseSet,
   type SessionWithExercises,
 } from "../services/sessionApi";
 import { useCurrentUserId } from "../lib/auth/useCurrentUserId";
@@ -18,43 +17,10 @@ import { FormFeedback } from "../components/composites/FormStack";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
 import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
+import { joinMetrics, metric, setSummary } from "../lib/sessions/setSummary";
+import { liveSessionQueryKey, liveWorkoutPath } from "../lib/execution/liveWorkout";
 
 type Translate = ReturnType<typeof useTranslation>["t"];
-
-const SUMMARY_SEPARATOR = " · ";
-
-function metric(t: Translate, key: string, value: string | number | null | undefined) {
-  return value === null || value === undefined ? null : t(`sessionDetail.${key}`, { value });
-}
-
-const joinMetrics = (parts: Array<string | null>) =>
-  parts.filter((part): part is string => Boolean(part)).join(SUMMARY_SEPARATOR);
-
-type SetValues = Pick<
-  SessionExerciseSet,
-  "reps" | "weight_kg" | "duration_sec" | "distance_m" | "rpe" | "rest_sec"
->;
-
-function valuesSummary(t: Translate, values: Partial<SetValues> | null | undefined) {
-  return joinMetrics([
-    metric(t, "reps", values?.reps),
-    metric(t, "load", values?.weight_kg),
-    metric(t, "duration", values?.duration_sec),
-    metric(t, "distance", values?.distance_m),
-    metric(t, "rpe", values?.rpe),
-    metric(t, "rest", values?.rest_sec),
-  ]);
-}
-
-/** What was done for completed sets, the target for the rest (ADR-042). */
-function setSummary(t: Translate, set: SessionExerciseSet) {
-  const target = valuesSummary(t, set.planned);
-  if (set.status !== "completed") {
-    return target || t("sessionDetail.unrecorded");
-  }
-  const performed = valuesSummary(t, set) || t("sessionDetail.unrecorded");
-  return target ? `${performed} (${t("sessionDetail.target", { value: target })})` : performed;
-}
 
 const SET_META_KEYS = {
   planned: "sessionDetail.prescription",
@@ -139,10 +105,12 @@ const SessionDetail: React.FC = () => {
     mutationFn: (sessionId: string) => updateSession(sessionId, { status: "in_progress" }),
     onSuccess: async (updated) => {
       queryClient.setQueryData(queryKey, updated);
+      queryClient.setQueryData(liveSessionQueryKey(updated.id), updated);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: CALENDAR_QUERY_KEY }),
         queryClient.invalidateQueries({ queryKey: ["home", "recent-sessions"] }),
       ]);
+      void navigate(liveWorkoutPath(updated.id));
     },
   });
 
@@ -227,7 +195,9 @@ const SessionDetail: React.FC = () => {
               </Button>
             ) : null}
             {isOwner && session.status === "in_progress" ? (
-              <FormFeedback tone="info">{t("sessionDetail.activeNotice")}</FormFeedback>
+              <Button onClick={() => void navigate(liveWorkoutPath(session.id))}>
+                {t("liveWorkout.actions.continue")}
+              </Button>
             ) : null}
             {start.isError ? (
               <FormFeedback tone="danger">{t("sessionDetail.saveError")}</FormFeedback>

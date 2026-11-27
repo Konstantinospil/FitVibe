@@ -46,6 +46,7 @@
 | ADR-040 | First-party Browser Error Reporting                                                               | Proposed   | 2026-11-25    | [ADR-040-first-party-browser-error-reporting.md](./ADR-040-first-party-browser-error-reporting.md)                                   |
 | ADR-041 | Vibe Capability and Detraining Model                                                              | Proposed   | 2026-11-26    | [ADR-041-vibe-capability-and-detraining-model.md](./ADR-041-vibe-capability-and-detraining-model.md)                                 |
 | ADR-042 | Separate a Set's Prescription from Performed Work                                                 | Accepted   | 2026-11-26    | [ADR-042-set-prescription-and-performed-work.md](./ADR-042-set-prescription-and-performed-work.md)                                   |
+| ADR-043 | Live Workout Execution Commands                                                                   | Accepted   | 2026-11-27    | [ADR-043-live-workout-execution-commands.md](./ADR-043-live-workout-execution-commands.md)                                           |
 
 ## Numbering notes
 
@@ -67,3 +68,4 @@
 - ADR-040 (proposed) reports browser errors to FitVibe's own backend and log pipeline instead of a third-party SDK.
 - ADR-041 (proposed) adds a per-Vibe capability with experience-softened detraining that drives the Vibeform and Vibe balance, leaving ADR-034 levels and points unchanged.
 - ADR-042 separates a set's prescription from performed work (set status, source and planned values), adds the stopped-early outcome and one-request manual logging.
+- ADR-043 adds server-authoritative live workout commands (record, correct and skip sets, add work, skip exercises, pause and resume) with timestamp-derived timing.

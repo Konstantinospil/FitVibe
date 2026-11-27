@@ -9,6 +9,7 @@ import type {
   SessionExerciseAttributes,
   SessionExerciseSet,
   SessionQuery,
+  SessionExerciseStatus,
   SessionSetPlannedValues,
   SessionSetSource,
   SessionSetStatus,
@@ -40,6 +41,8 @@ export interface SessionExerciseUpsertInput {
   id: string;
   exercise_id: string | null;
   order_index: number;
+  status: SessionExerciseStatus;
+  source: SessionSetSource;
   notes: string | null;
   planned?: SessionExerciseAttributes | null;
   sets: SessionExerciseSetUpsert[];
@@ -257,6 +260,8 @@ type SessionExerciseRow = {
   exercise_id: string | null;
   exercise_name: string | null; // Snapshot of exercise name
   order_index: number;
+  status: SessionExerciseStatus;
+  source: SessionSetSource;
   notes: string | null;
   created_at?: Date | string | null;
   updated_at?: Date | string | null;
@@ -316,6 +321,8 @@ export async function getSessionWithDetails(
       "se.exercise_id as exercise_id",
       "se.exercise_name as exercise_name",
       "se.order_index as order_index",
+      "se.status as status",
+      "se.source as source",
       "se.notes as notes",
       "se.created_at as created_at",
       "se.updated_at as updated_at",
@@ -399,6 +406,8 @@ export async function getSessionWithDetails(
       exercise_id: row.exercise_id,
       exercise_name: row.exercise_name ?? null,
       order_index: row.order_index,
+      status: row.status,
+      source: row.source,
       notes: row.notes ?? null,
       created_at: toDateString(row.created_at),
       updated_at: toDateString(row.updated_at),
@@ -558,6 +567,8 @@ export async function replaceSessionExercises(
         ? (exerciseNamesMap.get(exercise.exercise_id) ?? null)
         : null,
       order_index: exercise.order_index,
+      status: exercise.status,
+      source: exercise.source,
       notes: exercise.notes,
       created_at: timestamp,
       updated_at: timestamp,

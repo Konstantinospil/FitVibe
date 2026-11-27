@@ -37,6 +37,7 @@ import {
   trimToNull,
 } from "./sessions.normalization.js";
 import { DEFAULT_SESSION_DURATION_MIN, type ScheduleWindow } from "./sessions.schedule.js";
+import { closedPause } from "./sessions.execution.service.js";
 
 /**
  * Server-side re-validation for rescheduling and resizing (US-4.3-AC03). Clients
@@ -267,6 +268,10 @@ export async function updateOne(
     }
     if (targetStatus === "completed") {
       updates.completion_outcome = dto.completion_outcome ?? "completed";
+      // Finishing while paused ends the pause (ADR-043).
+      if (current.paused_at) {
+        Object.assign(updates, closedPause(current, new Date()));
+      }
     }
     if (targetStatus === "canceled") {
       targetDeletedAt = nowIso;

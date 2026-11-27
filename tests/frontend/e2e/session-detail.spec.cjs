@@ -22,6 +22,7 @@ const {
 } = require("./schedule-helpers.cjs");
 const {
   homeSurface,
+  liveWorkout,
   sessionDetail,
   workoutEditor,
 } = require("../../../apps/frontend/src/i18n/locales/en/common.json");
@@ -93,12 +94,18 @@ test.describe("Session details", () => {
     await expect(page.getByText("Sets: 2 · Reps: 5 · Load: 60 kg")).toBeVisible();
     await expect(page.getByText("Reps: 5 · Load: 60 kg · Rest: 90 s")).toHaveCount(2);
 
-    // Start: the server records the start; recording itself is not available yet.
+    // Start: the server records the start and the live workout opens (ADR-043).
     await page.getByRole("button", { name: workoutEditor.actions.start, exact: true }).click();
-    await expect(page.getByText(sessionDetail.activeNotice)).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/start/${session.id}$`));
     const started = await fetchSession(page, session.id);
     expect(started.status).toBe("in_progress");
     expect(started.started_at).toBeTruthy();
+
+    // Back on the session page, a workout in progress offers to continue.
+    await page.goto(`/sessions/${session.id}`);
+    await expect(
+      page.getByRole("button", { name: liveWorkout.actions.continue, exact: true }),
+    ).toBeVisible();
 
     // Reuse: a private, detached copy at the chosen time, which then opens.
     const copyAt = new Date(today.getTime() + 2 * DAY_MS + (DETAIL_HOUR * 60 + 50) * 60_000);

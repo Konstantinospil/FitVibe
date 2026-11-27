@@ -1179,7 +1179,6 @@
     "saveError": "Das Workout konnte nicht aktualisiert werden.",
     "reuse": "Als neues Workout wiederverwenden",
     "reuseDate": "Kopie einplanen",
-    "activeNotice": "Dieses Workout läuft. Die Live-Erfassung ist noch nicht verfügbar.",
     "pointsPending": "Punkte werden verarbeitet.",
     "sets": "Sätze: {{value}}",
     "plannedDuration": "Geplante Dauer: {{value}}",
@@ -1391,5 +1390,58 @@
   "vibeformConstellation": {
     "accessibleLabel": "Vibeform-Übersicht",
     "athleteLabel": "Vibeform des Sportlers"
+  },
+  "liveWorkout": {
+    "title": "Live-Training",
+    "notStarted": "Dieses Training hat noch nicht begonnen. Starte es, um jeden Satz direkt zu erfassen.",
+    "pausedNotice": "Pausiert. Setze fort, um Sätze zu erfassen.",
+    "rest": "Satzpause",
+    "clock": {
+      "label": "Trainingszeit",
+      "active": "Trainingszeit",
+      "paused": "Pausiert",
+      "elapsed": "Seit Beginn"
+    },
+    "current": {
+      "title": "Jetzt",
+      "setOf": "Satz {{number}} von {{count}}",
+      "target": "Ziel: {{value}}",
+      "noTarget": "Kein Ziel. Erfasse, was du gemacht hast.",
+      "values": "Was du gemacht hast",
+      "next": "Als Nächstes: {{name}}, Satz {{number}}",
+      "done": "Alle Sätze sind erfasst. Füge einen Satz oder eine Übung hinzu oder beende das Training."
+    },
+    "outline": {
+      "title": "Trainingsplan"
+    },
+    "finish": {
+      "title": "Training beenden",
+      "done": "Erledigte Sätze",
+      "skipped": "Übersprungene Sätze",
+      "remaining": "Offene Sätze",
+      "scoring": "Nur abgeschlossene Sätze zählen für Punkte.",
+      "discardTitle": "Dieses Training verwerfen?",
+      "discardWarning": "Das Training und alle erfassten Sätze werden entfernt, und es werden keine Punkte vergeben."
+    },
+    "actions": {
+      "continue": "Training fortsetzen",
+      "pause": "Pausieren",
+      "resume": "Fortsetzen",
+      "finish": "Training beenden",
+      "completeSet": "Satz abschließen",
+      "skipSet": "Satz überspringen",
+      "addSetTo": "Satz zu {{name}} hinzufügen",
+      "skipExercise": "{{name}} überspringen",
+      "saveCompleted": "Training speichern",
+      "saveStoppedEarly": "Als vorzeitig beendet speichern",
+      "discard": "Training verwerfen",
+      "confirmDiscard": "Verwerfen",
+      "keepWorkout": "Training behalten"
+    },
+    "errors": {
+      "save": "Die Änderung konnte nicht gespeichert werden. Versuche es erneut.",
+      "notActive": "Dieses Training läuft nicht mehr. Öffne es, um die erfassten Werte zu sehen.",
+      "invalidSet": "Prüfe {{field}}."
+    }
   }
 }

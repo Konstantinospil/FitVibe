@@ -10,6 +10,12 @@ import {
   cloneSessionHandler,
   applyRecurrenceHandler,
   getSessionEstimateHandler,
+  pauseSessionHandler,
+  resumeSessionHandler,
+  recordSetHandler,
+  addSetHandler,
+  addExerciseHandler,
+  skipExerciseHandler,
 } from "./sessions.controller.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
 import { rateLimit } from "../common/rateLimiter.js";
@@ -70,4 +76,17 @@ sessionsRouter.delete(
   rateLimit("sessions_delete"),
   requireAccessToken,
   asyncHandler(deleteSessionHandler),
+);
+
+// Live workout execution (ADR-043): frequent small commands during a workout.
+const execution = [rateLimit("sessions_execution"), requireAccessToken] as const;
+sessionsRouter.post("/:id/pause", ...execution, asyncHandler(pauseSessionHandler));
+sessionsRouter.post("/:id/resume", ...execution, asyncHandler(resumeSessionHandler));
+sessionsRouter.patch("/:id/sets/:setId", ...execution, asyncHandler(recordSetHandler));
+sessionsRouter.post("/:id/exercises", ...execution, asyncHandler(addExerciseHandler));
+sessionsRouter.post("/:id/exercises/:exerciseId/sets", ...execution, asyncHandler(addSetHandler));
+sessionsRouter.post(
+  "/:id/exercises/:exerciseId/skip",
+  ...execution,
+  asyncHandler(skipExerciseHandler),
 );

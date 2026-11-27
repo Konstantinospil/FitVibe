@@ -65,6 +65,16 @@ export const apiClient = axios.create(baseConfig);
 // Separate client without interceptors to avoid circular refresh attempts.
 export const rawHttpClient = axios.create(baseConfig);
 
+/** The `error.code` of an API error response, such as `E.SESSION.NOT_ACTIVE`, or null. */
+export function apiErrorCode(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) {
+    return null;
+  }
+  const body: unknown = error.response?.data;
+  const code = (body as { error?: { code?: unknown } } | undefined)?.error?.code;
+  return typeof code === "string" ? code : null;
+}
+
 let cachedCsrfToken: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 

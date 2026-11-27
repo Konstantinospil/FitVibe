@@ -11,6 +11,8 @@ export type SessionSetStatus = "planned" | "completed" | "skipped";
 export type SessionSetSource = "prescribed" | "added";
 /** ADR-042: how a completed session ended. Neither outcome counts as failure. */
 export type SessionCompletionOutcome = "completed" | "stopped_early";
+/** ADR-043: an exercise is done when its sets are; skipping is explicit. */
+export type SessionExerciseStatus = "planned" | "skipped";
 
 export type UserLanguage = "en" | "de" | "fr" | "es" | "el";
 

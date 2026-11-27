@@ -100,6 +100,7 @@ describe("SessionDetail", () => {
         <MemoryRouter initialEntries={[`/sessions/${id}`]}>
           <Routes>
             <Route path="/sessions/:id" element={<SessionDetail />} />
+            <Route path="/start/:id" element={<p>live workout</p>} />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>,
@@ -155,7 +156,7 @@ describe("SessionDetail", () => {
     expect(await screen.findByText("sessionDetail.stoppedEarly")).toBeInTheDocument();
   });
 
-  it("starts a planned session and shows that recording is not available yet", async () => {
+  it("starts a planned session and opens the live workout", async () => {
     mocked.updateSession.mockResolvedValue(
       baseSession({ status: "in_progress", started_at: "2026-12-01T17:01:00.000Z" }),
     );
@@ -166,10 +167,30 @@ describe("SessionDetail", () => {
     await waitFor(() =>
       expect(mocked.updateSession).toHaveBeenCalledWith("session-1", { status: "in_progress" }),
     );
-    expect(await screen.findByText("sessionDetail.activeNotice")).toBeInTheDocument();
-    expect(screen.getByText(/^sessionDetail\.startedAt=/)).toBeInTheDocument();
+    expect(await screen.findByText("live workout")).toBeInTheDocument();
+  });
+
+  it("offers to continue a workout in progress", async () => {
+    mocked.getSession.mockResolvedValue(
+      baseSession({ status: "in_progress", started_at: "2026-12-01T17:01:00.000Z" }),
+    );
+    renderDetail();
+
+    fireEvent.click(await screen.findByRole("button", { name: "liveWorkout.actions.continue" }));
+
+    expect(await screen.findByText("live workout")).toBeInTheDocument();
+  });
+
+  it("does not offer to continue someone else's workout", async () => {
+    currentUserId = "user-2";
+    mocked.getSession.mockResolvedValue(
+      baseSession({ status: "in_progress", started_at: "2026-12-01T17:01:00.000Z" }),
+    );
+    renderDetail();
+
+    expect(await screen.findByText(/^sessionDetail\.startedAt=/)).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "workoutEditor.actions.start" }),
+      screen.queryByRole("button", { name: "liveWorkout.actions.continue" }),
     ).not.toBeInTheDocument();
   });
 

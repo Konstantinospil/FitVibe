@@ -1,6 +1,7 @@
 import axios from "axios";
 import type {
   SessionCompletionOutcome,
+  SessionExerciseStatus,
   SessionSetSource,
   SessionSetStatus,
   SessionStatus,
@@ -11,6 +12,7 @@ import { apiClient } from "./httpApi";
 // Sessions API (extending from earlier types)
 export type {
   SessionCompletionOutcome,
+  SessionExerciseStatus,
   SessionSetSource,
   SessionSetStatus,
   SessionStatus,
@@ -67,6 +69,8 @@ export interface SessionExercise {
   exercise_id?: string | null;
   exercise_name?: string | null;
   order_index: number;
+  status: SessionExerciseStatus;
+  source: SessionSetSource;
   notes?: string | null;
   planned?: SessionExerciseAttributes | null;
   actual?: SessionExerciseActualAttributes | null;
@@ -90,6 +94,10 @@ export interface Session {
   started_at?: string | null;
   completed_at?: string | null;
   completion_outcome?: SessionCompletionOutcome | null;
+  /** ADR-043: start of the current pause, or null while running. */
+  paused_at?: string | null;
+  /** ADR-043: total length of finished pauses, in seconds. */
+  paused_seconds?: number;
   calories?: number | null;
   points?: number | null;
   deleted_at?: string | null;
@@ -275,5 +283,78 @@ export interface SessionEstimate {
 
 export async function getSessionEstimate(sessionId: string): Promise<SessionEstimate> {
   const res = await apiClient.get<SessionEstimate>(`/api/v1/sessions/${sessionId}/estimate`);
+  return res.data;
+}
+
+// Live workout execution (ADR-043): each command returns the whole session.
+
+export interface RecordSetRequest {
+  status: "completed" | "skipped";
+  reps?: number | null;
+  weight_kg?: number | null;
+  distance_m?: number | null;
+  duration_sec?: number | null;
+  rpe?: number | null;
+  rest_sec?: number | null;
+  notes?: string | null;
+}
+
+export async function recordSet(
+  sessionId: string,
+  setId: string,
+  payload: RecordSetRequest,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.patch<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/sets/${setId}`,
+    payload,
+  );
+  return res.data;
+}
+
+/** One key per athlete action, so a retried request adds the set only once. */
+export async function addSessionSet(
+  sessionId: string,
+  exerciseRowId: string,
+  planned: SessionSetPlannedValues | null,
+  idempotencyKey: string,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/exercises/${exerciseRowId}/sets`,
+    planned ? { planned } : {},
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return res.data;
+}
+
+export async function addSessionExercise(
+  sessionId: string,
+  exerciseId: string,
+  idempotencyKey: string,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/exercises`,
+    { exercise_id: exerciseId },
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return res.data;
+}
+
+export async function skipSessionExercise(
+  sessionId: string,
+  exerciseRowId: string,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/exercises/${exerciseRowId}/skip`,
+  );
+  return res.data;
+}
+
+export async function pauseSession(sessionId: string): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(`/api/v1/sessions/${sessionId}/pause`);
+  return res.data;
+}
+
+export async function resumeSession(sessionId: string): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(`/api/v1/sessions/${sessionId}/resume`);
   return res.data;
 }

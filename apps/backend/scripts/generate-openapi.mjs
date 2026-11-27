@@ -80,6 +80,58 @@ const setSourceSchema = {
   enum: ["prescribed", "added"],
   description: "prescribed: part of the plan; added: added while training.",
 };
+const exerciseStatusSchema = {
+  type: "string",
+  enum: ["planned", "skipped"],
+  description:
+    "An exercise is done when its sets are; skipped is an explicit athlete action (ADR-043).",
+};
+const executionErrors = {
+  400: {
+    description: "Invalid body (zod field report).",
+    ...jsonContent("#/components/schemas/ValidationErrorResponse"),
+  },
+  401: {
+    description: "Missing or invalid access token.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+  403: { description: "CSRF check failed.", ...jsonContent("#/components/schemas/ErrorResponse") },
+  404: {
+    description: "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+  409: {
+    description: "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+  429: {
+    description: "`RATE_LIMITED`; see `Retry-After`.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+};
+const pathUuid = (name) => ({
+  name,
+  in: "path",
+  required: true,
+  schema: { type: "string", format: "uuid" },
+});
+const executionOperation = (summary, description, options = {}) => ({
+  summary,
+  description,
+  tags: ["Sessions"],
+  security: [bearerAuth],
+  parameters: [sessionIdParameter, ...(options.parameters ?? [])],
+  ...(options.requestBody ? { requestBody: jsonContent(options.requestBody) } : {}),
+  responses: {
+    [options.status ?? 200]: {
+      description: "The whole workout after the change.",
+      ...jsonContent("#/components/schemas/SessionWithExercises"),
+    },
+    ...executionErrors,
+    ...(options.extraResponses ?? {}),
+  },
+});
+
 const completionOutcomeSchema = {
   type: "string",
   enum: ["completed", "stopped_early"],
@@ -431,6 +483,59 @@ const paths = {
         },
       },
     },
+  },
+  "/sessions/{id}/pause": {
+    post: executionOperation(
+      "Pause a workout in progress",
+      "Starts a pause; pausing again changes nothing. Pauses do not count as active time (ADR-043).",
+    ),
+  },
+  "/sessions/{id}/resume": {
+    post: executionOperation(
+      "Resume a paused workout",
+      "Ends the pause and adds its length to `paused_seconds`; resuming a running workout changes nothing.",
+    ),
+  },
+  "/sessions/{id}/sets/{setId}": {
+    patch: executionOperation(
+      "Record, correct or skip a set",
+      "completed stores the performed values (a correction keeps the first recorded_at); skipped clears them. The set's prescription is never changed.",
+      {
+        parameters: [pathUuid("setId")],
+        requestBody: "#/components/schemas/RecordSetRequest",
+        extraResponses: {
+          422: {
+            description: "`E.SESSION.INVALID_SET`: a skipped set cannot have performed values.",
+            ...jsonContent("#/components/schemas/ErrorResponse"),
+          },
+        },
+      },
+    ),
+  },
+  "/sessions/{id}/exercises": {
+    post: executionOperation(
+      "Add an exercise while training",
+      "Appends the exercise (source added) with one empty planned set. Supports Idempotency-Key.",
+      { requestBody: "#/components/schemas/AddExerciseRequest", status: 201 },
+    ),
+  },
+  "/sessions/{id}/exercises/{exerciseId}/sets": {
+    post: executionOperation(
+      "Add a set while training",
+      "Appends a planned set (source added) to the exercise and brings a skipped exercise back. Supports Idempotency-Key.",
+      {
+        parameters: [pathUuid("exerciseId")],
+        requestBody: "#/components/schemas/AddSetRequest",
+        status: 201,
+      },
+    ),
+  },
+  "/sessions/{id}/exercises/{exerciseId}/skip": {
+    post: executionOperation(
+      "Skip an exercise",
+      "Marks the exercise skipped and its remaining planned sets skipped; recorded sets stay.",
+      { parameters: [pathUuid("exerciseId")] },
+    ),
   },
   "/sessions/{id}/estimate": {
     get: {
@@ -1092,6 +1197,8 @@ const schemas = {
       id: { type: "string", format: "uuid" },
       exercise_id: nullable({ type: "string", format: "uuid" }),
       order: { type: "integer", minimum: 1 },
+      status: exerciseStatusSchema,
+      source: setSourceSchema,
       notes: nullable({ type: "string", maxLength: 1000 }),
       planned: plannedAttributesObject,
       actual: actualAttributesObject,
@@ -1125,6 +1232,32 @@ const schemas = {
       notes: nullable({ type: "string", maxLength: 500 }),
     },
     required: ["order"],
+    additionalProperties: false,
+  },
+  RecordSetRequest: {
+    type: "object",
+    properties: {
+      status: { type: "string", enum: ["completed", "skipped"] },
+      reps: nullable({ type: "integer", minimum: 0 }),
+      weight_kg: nullable({ type: "number", minimum: 0 }),
+      distance_m: nullable({ type: "number", minimum: 0 }),
+      duration_sec: nullable({ type: "integer", minimum: 0 }),
+      rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+      rest_sec: nullable({ type: "integer", minimum: 0 }),
+      notes: nullable({ type: "string", maxLength: 500 }),
+    },
+    required: ["status"],
+    additionalProperties: false,
+  },
+  AddSetRequest: {
+    type: "object",
+    properties: { planned: plannedSetValuesObject },
+    additionalProperties: false,
+  },
+  AddExerciseRequest: {
+    type: "object",
+    properties: { exercise_id: { type: "string", format: "uuid" } },
+    required: ["exercise_id"],
     additionalProperties: false,
   },
   SessionUpdateRequest: {
@@ -1176,6 +1309,17 @@ const schemas = {
       started_at: nullable({ type: "string", format: "date-time" }),
       completed_at: nullable({ type: "string", format: "date-time" }),
       completion_outcome: nullable(completionOutcomeSchema),
+      paused_at: nullable({
+        type: "string",
+        format: "date-time",
+        description: "Start of the current pause; null while running.",
+      }),
+      paused_seconds: {
+        type: "integer",
+        minimum: 0,
+        description:
+          "Total length of finished pauses. Active time = elapsed − paused_seconds − open pause.",
+      },
       calories: nullable({ type: "integer" }),
       points: nullable({ type: "integer", description: "Server-awarded points once completed." }),
       gamification_rebuild_required: { type: "boolean" },
@@ -1195,6 +1339,8 @@ const schemas = {
               description: "Name snapshot at planning time.",
             }),
             order_index: { type: "integer", minimum: 1 },
+            status: exerciseStatusSchema,
+            source: setSourceSchema,
             notes: nullable({ type: "string" }),
             planned: plannedAttributesObject,
             actual: actualAttributesObject,
@@ -1222,7 +1368,7 @@ const schemas = {
               },
             },
           },
-          required: ["id", "session_id", "order_index", "sets"],
+          required: ["id", "session_id", "order_index", "status", "source", "sets"],
         },
       },
     },

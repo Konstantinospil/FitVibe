@@ -1179,7 +1179,6 @@
     "saveError": "Workout could not be updated.",
     "reuse": "Reuse as new workout",
     "reuseDate": "Schedule the copy",
-    "activeNotice": "This workout is in progress. Live recording is not yet available.",
     "pointsPending": "Points are being processed.",
     "sets": "Sets: {{value}}",
     "plannedDuration": "Planned duration: {{value}}",
@@ -1391,5 +1390,58 @@
   "vibeformConstellation": {
     "accessibleLabel": "Vibeform dashboard",
     "athleteLabel": "Athlete Vibeform"
+  },
+  "liveWorkout": {
+    "title": "Live workout",
+    "notStarted": "This workout hasn't started. Start it to record each set as you go.",
+    "pausedNotice": "Paused. Resume to record sets.",
+    "rest": "Rest",
+    "clock": {
+      "label": "Workout time",
+      "active": "Training time",
+      "paused": "Paused",
+      "elapsed": "Since start"
+    },
+    "current": {
+      "title": "Now",
+      "setOf": "Set {{number}} of {{count}}",
+      "target": "Target: {{value}}",
+      "noTarget": "No target. Record what you did.",
+      "values": "What you did",
+      "next": "Next: {{name}}, set {{number}}",
+      "done": "Every set is recorded. Add a set or an exercise, or finish the workout."
+    },
+    "outline": {
+      "title": "Workout plan"
+    },
+    "finish": {
+      "title": "Finish workout",
+      "done": "Sets done",
+      "skipped": "Sets skipped",
+      "remaining": "Sets not done",
+      "scoring": "Only sets you completed count towards points.",
+      "discardTitle": "Discard this workout?",
+      "discardWarning": "The workout and every set you recorded will be removed, and no points will be awarded."
+    },
+    "actions": {
+      "continue": "Continue workout",
+      "pause": "Pause",
+      "resume": "Resume",
+      "finish": "Finish workout",
+      "completeSet": "Complete set",
+      "skipSet": "Skip set",
+      "addSetTo": "Add set to {{name}}",
+      "skipExercise": "Skip {{name}}",
+      "saveCompleted": "Save workout",
+      "saveStoppedEarly": "Save as stopped early",
+      "discard": "Discard workout",
+      "confirmDiscard": "Discard",
+      "keepWorkout": "Keep workout"
+    },
+    "errors": {
+      "save": "That change couldn't be saved. Try again.",
+      "notActive": "This workout is no longer in progress. Open it to see what was recorded.",
+      "invalidSet": "Check {{field}}."
+    }
   }
 }

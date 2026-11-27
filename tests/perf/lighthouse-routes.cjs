@@ -41,6 +41,11 @@ const conditionalRoutes = [
     fixture: "administrator password-policy gate",
   },
   { mode: "athlete", path: "/sessions/:id", fixture: "a session the athlete owns (dynamic id)" },
+  {
+    mode: "athlete",
+    path: "/start/:id",
+    fixture: "a workout the athlete has started (dynamic id)",
+  },
 ];
 // Backoffice has an independent admin session and must not be represented by
 // the athlete fixture. These are tracked but not yet collected.
