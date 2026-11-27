@@ -17,14 +17,16 @@ const ResetPassword = lazy(async () => {
   return module;
 });
 // The legal pages' consent strings live in the legal bundles (terms.json,
-// privacy.json), which no other page loads. Fetch them with the page chunk.
-const Terms = lazy(async () => {
-  const [module] = await Promise.all([import("../pages/Terms"), ensureLegalTranslationsLoaded()]);
-  return module;
+// privacy.json), which no other page loads. Start them with the page chunk but
+// do not wait: the heading needs only the app strings, and translated text
+// re-renders when the bundle arrives (bindI18nStore "added" in i18n/config).
+const Terms = lazy(() => {
+  void ensureLegalTranslationsLoaded();
+  return import("../pages/Terms");
 });
-const Privacy = lazy(async () => {
-  const [module] = await Promise.all([import("../pages/Privacy"), ensureLegalTranslationsLoaded()]);
-  return module;
+const Privacy = lazy(() => {
+  void ensureLegalTranslationsLoaded();
+  return import("../pages/Privacy");
 });
 const Cookie = lazy(() => import("../pages/Cookie"));
 const Contact = lazy(() => import("../pages/Contact"));
