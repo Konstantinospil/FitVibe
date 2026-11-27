@@ -1175,6 +1175,7 @@
     "duration": "Duration: {{value}} s",
     "distance": "Distance: {{value}} m",
     "rpe": "RPE: {{value}}",
+    "heartRate": "Heart rate: {{value}} bpm",
     "rest": "Rest: {{value}} s",
     "empty": "No exercises.",
     "loadError": "Workout could not be loaded.",
@@ -1272,7 +1273,8 @@
       "weight": "Weight (kg)",
       "weightLb": "Weight (lb)",
       "distance": "Distance (metres)",
-      "rpe": "Effort (RPE 1–10)"
+      "rpe": "Effort (RPE 1–10)",
+      "heartRate": "Heart rate (bpm, optional)"
     },
     "actions": {
       "save": "Save workout",

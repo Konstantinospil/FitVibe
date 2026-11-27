@@ -8,10 +8,17 @@ import * as vibeApi from "../../src/lib/vibeform/api";
 
 vi.mock("../../src/hooks/useCookieConsent", () => ({
   useCookieConsent: () => ({
-    consentStatus: { hasConsent: true, consent: {
-      essential: true, preferences: false, analytics: false, marketing: false,
-      version: "v1", updatedAt: "now",
-    } },
+    consentStatus: {
+      hasConsent: true,
+      consent: {
+        essential: true,
+        preferences: false,
+        analytics: false,
+        marketing: false,
+        version: "v1",
+        updatedAt: "now",
+      },
+    },
     isLoading: false,
     error: null,
     savePreferences: vi.fn(),
@@ -97,7 +104,12 @@ describe("Settings", () => {
     });
     vi.mocked(api.deleteAvatar).mockResolvedValue();
     vi.mocked(vibeApi.getMyVibeformProfile).mockResolvedValue({
-      preferences: { templateCode: "flow", templateVersion: 1, bodyProfile: "balanced", motionEnabled: true },
+      preferences: {
+        templateCode: "flow",
+        templateVersion: 1,
+        bodyProfile: "balanced",
+        motionEnabled: true,
+      },
       metrics: {
         intelligence: 0.4,
         regeneration: 0.5,
@@ -279,6 +291,8 @@ describe("Settings", () => {
     const trainingFrequency = screen.getByLabelText("settings.profile.trainingFrequency");
 
     expect(weight).toHaveValue(75);
+    expect(weight).toHaveAttribute("min", "20");
+    expect(weight).toHaveAttribute("max", "400");
 
     fireEvent.change(weight, { target: { value: "80.5" } });
     fireEvent.change(fitnessLevel, { target: { value: "advanced" } });
@@ -307,6 +321,9 @@ describe("Settings", () => {
 
     const weight = await screen.findByLabelText("settings.profile.weight");
     expect(weight).toHaveValue(165.35);
+    // 20-400 kg in pounds, rounded inwards so both ends are accepted.
+    await waitFor(() => expect(weight).toHaveAttribute("min", "44.1"));
+    expect(weight).toHaveAttribute("max", "881.84");
 
     fireEvent.change(weight, { target: { value: "170" } });
     fireEvent.click(screen.getAllByRole("button", { name: "common.save" })[0]);

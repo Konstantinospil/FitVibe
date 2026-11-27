@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  BODY_WEIGHT_KG_LIMITS,
+  bodyWeightBounds,
   fromStoredKg,
   KG_PER_LB,
   loadUnitFor,
@@ -32,5 +34,16 @@ describe("load units", () => {
     for (const pounds of [5, 45, 135, 225, 315, 405, 495]) {
       expect(fromStoredKg(toStoredKg(pounds, "lb"), "lb")).toBe(pounds);
     }
+  });
+
+  it("offers body-weight bounds in pounds that convert back inside the kilogram range", () => {
+    expect(bodyWeightBounds("kg")).toEqual({ min: 20, max: 400 });
+    const { min, max } = bodyWeightBounds("lb");
+    expect({ min, max }).toEqual({ min: 44.1, max: 881.84 });
+    // The old literals (44.09 and 881.85 lb) converted to just outside 20-400 kg.
+    expect(min * KG_PER_LB).toBeGreaterThanOrEqual(BODY_WEIGHT_KG_LIMITS.min);
+    expect(max * KG_PER_LB).toBeLessThanOrEqual(BODY_WEIGHT_KG_LIMITS.max);
+    expect(44.09 * KG_PER_LB).toBeLessThan(BODY_WEIGHT_KG_LIMITS.min);
+    expect(881.85 * KG_PER_LB).toBeGreaterThan(BODY_WEIGHT_KG_LIMITS.max);
   });
 });

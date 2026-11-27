@@ -26,7 +26,7 @@ export const joinMetrics = (parts: Array<string | null>) =>
 
 type SetValues = Pick<
   SessionExerciseSet,
-  "reps" | "weight_kg" | "duration_sec" | "distance_m" | "rpe" | "rest_sec"
+  "reps" | "weight_kg" | "duration_sec" | "distance_m" | "rpe" | "rest_sec" | "heart_rate_bpm"
 >;
 
 export function valuesSummary(
@@ -40,6 +40,7 @@ export function valuesSummary(
     metric(t, "duration", values?.duration_sec),
     metric(t, "distance", values?.distance_m),
     metric(t, "rpe", values?.rpe),
+    metric(t, "heartRate", values?.heart_rate_bpm),
     metric(t, "rest", values?.rest_sec),
   ]);
 }

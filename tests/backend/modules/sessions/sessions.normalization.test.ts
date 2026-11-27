@@ -257,3 +257,72 @@ describe("set status and prescription (ADR-042)", () => {
     );
   });
 });
+
+describe("set heart rate (issue 89)", () => {
+  const normalizeOne = (set: Record<string, unknown>) =>
+    normalizeSessionExercises([{ order: 1, sets: [{ order: 1, ...set }] }])[0].sets[0];
+
+  it("keeps an optional heart rate on a completed set, as a result and not a target", () => {
+    expect(normalizeOne({ status: "completed", reps: 5, heart_rate_bpm: 142 })).toMatchObject({
+      status: "completed",
+      heart_rate_bpm: 142,
+      planned: null,
+    });
+    expect(normalizeOne({ status: "completed", reps: 5 })).toMatchObject({ heart_rate_bpm: null });
+  });
+
+  it("does not move a heart rate into the target when a set is planned", () => {
+    // Top-level values of a planned set become its target (ADR-042); a heart rate cannot.
+    expect(() => normalizeOne({ reps: 5, heart_rate_bpm: 120 })).toThrow(
+      expect.objectContaining({ code: "E.SESSION.INVALID_SET" }),
+    );
+  });
+
+  it.each([
+    ["a planned set", { status: "planned", heart_rate_bpm: 120 }],
+    ["a skipped set", { status: "skipped", heart_rate_bpm: 120 }],
+    ["a heart rate below 20", { status: "completed", heart_rate_bpm: 19 }],
+    ["a heart rate above 250", { status: "completed", heart_rate_bpm: 251 }],
+    ["a fractional heart rate", { status: "completed", heart_rate_bpm: 120.5 }],
+  ])("rejects %s with one", (_label, set) => {
+    expect(() => normalizeOne(set)).toThrow(
+      expect.objectContaining({ code: "E.SESSION.INVALID_SET" }),
+    );
+  });
+
+  it("accepts the bounds themselves", () => {
+    expect(normalizeOne({ status: "completed", heart_rate_bpm: 20 }).heart_rate_bpm).toBe(20);
+    expect(normalizeOne({ status: "completed", heart_rate_bpm: 250 }).heart_rate_bpm).toBe(250);
+  });
+
+  it("keeps the heart rate in a full copy but not when reused as a prescription", () => {
+    const exercise = {
+      id: "row-1",
+      session_id: "session-1",
+      exercise_id: "exercise-1",
+      order_index: 1,
+      status: "planned" as const,
+      source: "prescribed" as const,
+      sets: [
+        {
+          id: "set-1",
+          order_index: 1,
+          status: "completed" as const,
+          source: "prescribed" as const,
+          planned: null,
+          reps: 5,
+          heart_rate_bpm: 150,
+        },
+      ],
+    };
+
+    expect(convertExistingExerciseToInput(exercise, true).sets?.[0]).toMatchObject({
+      heart_rate_bpm: 150,
+    });
+    const reused = convertExistingExerciseToInput(exercise, false).sets?.[0];
+    expect(reused?.planned).toEqual(
+      expect.not.objectContaining({ heart_rate_bpm: expect.anything() }),
+    );
+    expect(reused).not.toHaveProperty("heart_rate_bpm");
+  });
+});

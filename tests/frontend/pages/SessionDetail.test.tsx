@@ -308,6 +308,16 @@ describe("SessionDetail", () => {
     expect(await screen.findByText("vibeChanges.none")).toBeInTheDocument();
   });
 
+  it("shows a set's heart rate when one was recorded", async () => {
+    const session = baseSession({ status: "completed", points: 10 });
+    session.exercises[0].sets[1] = { ...session.exercises[0].sets[1], heart_rate_bpm: 151 };
+    mocked.getSession.mockResolvedValue(session);
+    mocked.getSessionVibeChanges.mockResolvedValue({ session_id: "session-1", changes: [] });
+    renderDetail();
+
+    expect(await screen.findByText(/sessionDetail\.heartRate=151/)).toBeInTheDocument();
+  });
+
   it("shows load in pounds for an imperial athlete", async () => {
     vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
       language: "en",

@@ -164,6 +164,7 @@ describe("Log", () => {
               duration_sec: null,
               distance_m: null,
               rpe: 8,
+              heart_rate_bpm: null,
             },
           ],
         },
@@ -192,6 +193,31 @@ describe("Log", () => {
     await waitFor(() => expect(createSession).toHaveBeenCalledTimes(1));
     const [payload] = createSession.mock.calls[0];
     expect(payload.exercises?.[0].sets?.[0]).toMatchObject({ reps: 5, weight_kg: 102.06 });
+  });
+
+  it("sends an optional heart rate with a set and checks its range", async () => {
+    renderLog();
+    setWhen(PAST_DAY, "09:00", "45");
+    await addSquat();
+    setField(1, "workoutEditor.fields.repetitions", "5");
+    setField(1, "logSurface.fields.heartRate", "12");
+
+    fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.save" }));
+    expect(
+      await screen.findByText(
+        "logSurface.errors.invalidSet(exercise=Back squat,number=1,field=logSurface.fields.heartRate)",
+      ),
+    ).toBeInTheDocument();
+    expect(createSession).not.toHaveBeenCalled();
+
+    setField(1, "logSurface.fields.heartRate", "146");
+    fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.save" }));
+
+    await waitFor(() => expect(createSession).toHaveBeenCalledTimes(1));
+    expect(createSession.mock.calls[0][0].exercises?.[0].sets?.[0]).toMatchObject({
+      reps: 5,
+      heart_rate_bpm: 146,
+    });
   });
 
   it("holds load entry until the unit is known", async () => {

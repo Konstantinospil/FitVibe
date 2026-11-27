@@ -23,6 +23,7 @@ import {
 } from "./sessions.execution.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
+import { HEART_RATE_LIMITS } from "./sessions.normalization.js";
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
 const visibilityEnum = z.enum(["private", "followers", "public", "link"]);
@@ -64,6 +65,15 @@ const actualAttributesSchema = plannedAttributesSchema.extend({
   recorded_at: z.string().datetime().nullable().optional(),
 });
 
+/** A completed set's heart rate (issue 89); not part of a prescription. */
+const heartRateSchema = z
+  .number()
+  .int()
+  .min(HEART_RATE_LIMITS.min)
+  .max(HEART_RATE_LIMITS.max)
+  .nullable()
+  .optional();
+
 const setMetricFields = {
   reps: z.number().int().min(0).nullable().optional(),
   weight_kg: z.number().min(0).nullable().optional(),
@@ -89,6 +99,7 @@ const sessionSetSchema = z
     duration_sec: z.number().int().min(0).nullable().optional(),
     rpe: z.number().int().min(1).max(10).nullable().optional(),
     rest_sec: z.number().int().min(0).nullable().optional(),
+    heart_rate_bpm: heartRateSchema,
     extras: extrasSchema,
     recorded_at: z.string().datetime().nullable().optional(),
     notes: z.string().max(500).nullable().optional(),
@@ -400,6 +411,7 @@ const recordSetSchema = z
   .object({
     status: z.enum(["completed", "skipped"]),
     ...setMetricFields,
+    heart_rate_bpm: heartRateSchema,
     notes: z.string().max(500).nullable().optional(),
   })
   .strict();

@@ -1175,6 +1175,7 @@
     "duration": "Durée : {{value}} s",
     "distance": "Distance : {{value}} m",
     "rpe": "RPE : {{value}}",
+    "heartRate": "Fréquence cardiaque : {{value}} bpm",
     "rest": "Repos : {{value}} s",
     "empty": "Aucun exercice.",
     "loadError": "Impossible de charger l’entraînement.",
@@ -1272,7 +1273,8 @@
       "weight": "Poids (kg)",
       "weightLb": "Poids (lb)",
       "distance": "Distance (mètres)",
-      "rpe": "Effort (RPE 1–10)"
+      "rpe": "Effort (RPE 1–10)",
+      "heartRate": "Fréquence cardiaque (bpm, facultatif)"
     },
     "actions": {
       "save": "Enregistrer la séance",

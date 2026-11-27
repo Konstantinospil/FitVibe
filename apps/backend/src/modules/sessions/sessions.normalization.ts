@@ -66,6 +66,26 @@ function ensureRpeRange(
   return value;
 }
 
+/** Bounds of a set's heart rate (issue 89): they refuse typing errors, not unusual athletes. */
+export const HEART_RATE_LIMITS = { min: 20, max: 250 } as const;
+
+export function normalizeHeartRate(
+  value: number | null | undefined,
+  context: string,
+): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < HEART_RATE_LIMITS.min || value > HEART_RATE_LIMITS.max) {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${context}: heart_rate_bpm must be a whole number from ${HEART_RATE_LIMITS.min} to ${HEART_RATE_LIMITS.max}`,
+    );
+  }
+  return value;
+}
+
 function validateInterval(
   name: string,
   value: string | null | undefined,
@@ -235,6 +255,15 @@ function normalizeSet(set: SessionSetInput, order: number, setContext: string) {
   const status = set.status ?? (set.recorded_at ? "completed" : "planned");
   let performed = normalizeSetMetrics(performedValuesOf(set), setContext);
   let planned = set.planned ? normalizeSetMetrics(set.planned, `${setContext} planned`) : null;
+  // A result only, with no prescription twin: only completed sets carry one.
+  const heartRate = normalizeHeartRate(set.heart_rate_bpm, setContext);
+  if (heartRate !== null && status !== "completed") {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${setContext}: only a completed set can have heart_rate_bpm`,
+    );
+  }
 
   if (status === "planned") {
     if (set.recorded_at) {
@@ -271,6 +300,7 @@ function normalizeSet(set: SessionSetInput, order: number, setContext: string) {
     source: set.source ?? "prescribed",
     planned: planned && hasMetricValue(planned) ? planned : null,
     ...performed,
+    heart_rate_bpm: heartRate,
     extras: normalizeExtras(set.extras),
     recorded_at: set.recorded_at ? new Date(set.recorded_at).toISOString() : null,
     notes: trimToNull(set.notes),
@@ -399,6 +429,7 @@ export function convertExistingExerciseToInput(
               duration_sec: set.duration_sec ?? undefined,
               rpe: set.rpe ?? undefined,
               rest_sec: set.rest_sec ?? undefined,
+              heart_rate_bpm: set.heart_rate_bpm ?? undefined,
               extras: set.extras ? { ...set.extras } : undefined,
               recorded_at: set.recorded_at ?? undefined,
               notes: set.notes ?? undefined,

@@ -4,7 +4,7 @@ import {
   invalidMetric,
   isBlankSet,
   labelKeyFor,
-  pickMetricValues,
+  pickTargetValues,
   SET_METRIC_FIELDS,
   toMetricInputs,
   toMetricValues,
@@ -43,6 +43,7 @@ describe("set metrics", () => {
       duration_sec: null,
       distance_m: null,
       rpe: null,
+      heart_rate_bpm: null,
     });
     expect(toMetricInputs({ reps: 5, weight_kg: null, rpe: 0 }, "kg")).toEqual(
       inputs({ reps: "5", rpe: "0" }),
@@ -67,8 +68,19 @@ describe("set metrics", () => {
     expect(labelKeyFor(reps, "lb")).toBe("workoutEditor.fields.repetitions");
   });
 
-  it("picks stored values without converting them", () => {
-    expect(pickMetricValues({ reps: 5, weight_kg: 60.25 })).toEqual({
+  it("validates an optional heart rate as a whole number from 20 to 250", () => {
+    expect(invalidMetric(inputs({ heart_rate_bpm: "" }))).toBeNull();
+    expect(invalidMetric(inputs({ heart_rate_bpm: "148" }))).toBeNull();
+    expect(invalidMetric(inputs({ heart_rate_bpm: "19" }))).toBe("heart_rate_bpm");
+    expect(invalidMetric(inputs({ heart_rate_bpm: "251" }))).toBe("heart_rate_bpm");
+    expect(invalidMetric(inputs({ heart_rate_bpm: "140.5" }))).toBe("heart_rate_bpm");
+    expect(toMetricValues(inputs({ heart_rate_bpm: "148" }), "kg").heart_rate_bpm).toBe(148);
+  });
+
+  it("picks stored values as a target, without converting them or a heart rate", () => {
+    // A completed set as stored, heart rate included.
+    const stored = { reps: 5, weight_kg: 60.25, heart_rate_bpm: 150 };
+    expect(pickTargetValues(stored)).toEqual({
       reps: 5,
       weight_kg: 60.25,
       duration_sec: null,

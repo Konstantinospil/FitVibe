@@ -1175,6 +1175,7 @@
     "duration": "Dauer: {{value}} s",
     "distance": "Strecke: {{value}} m",
     "rpe": "RPE: {{value}}",
+    "heartRate": "Herzfrequenz: {{value}} bpm",
     "rest": "Pause: {{value}} s",
     "empty": "Keine Übungen.",
     "loadError": "Das Workout konnte nicht geladen werden.",
@@ -1272,7 +1273,8 @@
       "weight": "Gewicht (kg)",
       "weightLb": "Gewicht (lb)",
       "distance": "Strecke (Meter)",
-      "rpe": "Anstrengung (RPE 1–10)"
+      "rpe": "Anstrengung (RPE 1–10)",
+      "heartRate": "Herzfrequenz (bpm, optional)"
     },
     "actions": {
       "save": "Training speichern",

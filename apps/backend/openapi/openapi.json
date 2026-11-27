@@ -3057,6 +3057,12 @@
             "minimum": 0,
             "nullable": true
           },
+          "heart_rate_bpm": {
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250,
+            "nullable": true
+          },
           "extras": {
             "type": "object",
             "additionalProperties": true
@@ -3111,6 +3117,12 @@
           "rest_sec": {
             "type": "integer",
             "minimum": 0,
+            "nullable": true
+          },
+          "heart_rate_bpm": {
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250,
             "nullable": true
           },
           "notes": {
@@ -3569,6 +3581,12 @@
                       },
                       "rest_sec": {
                         "type": "integer",
+                        "nullable": true
+                      },
+                      "heart_rate_bpm": {
+                        "type": "integer",
+                        "minimum": 20,
+                        "maximum": 250,
                         "nullable": true
                       },
                       "extras": {

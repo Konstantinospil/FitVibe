@@ -84,6 +84,8 @@ export interface SessionSetInput {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  /** Optional result of a completed set, in beats per minute (issue 89). */
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;
@@ -200,6 +202,8 @@ export interface SessionExerciseSet {
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  /** Optional result of a completed set, in beats per minute (issue 89). */
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;

@@ -232,6 +232,7 @@ describe("LiveWorkout", () => {
         duration_sec: null,
         distance_m: null,
         rpe: null,
+        heart_rate_bpm: null,
       }),
     );
     expect(await screen.findByRole("heading", { level: 2, name: "Plank" })).toBeInTheDocument();
@@ -266,7 +267,27 @@ describe("LiveWorkout", () => {
         duration_sec: null,
         distance_m: null,
         rpe: null,
+        heart_rate_bpm: null,
       }),
+    );
+  });
+
+  it("offers an optional heart rate on every set, never prefilled", async () => {
+    mocked.recordSet.mockResolvedValue(afterSecondSet());
+    renderLive();
+
+    const form = await currentSet();
+    const heartRate = within(form).getByLabelText("logSurface.fields.heartRate");
+    expect(heartRate).toHaveValue(null);
+    fireEvent.change(heartRate, { target: { value: "158" } });
+    fireEvent.click(within(form).getByRole("button", { name: "liveWorkout.actions.completeSet" }));
+
+    await waitFor(() =>
+      expect(mocked.recordSet).toHaveBeenCalledWith(
+        "session-1",
+        "set-2",
+        expect.objectContaining({ status: "completed", reps: 5, heart_rate_bpm: 158 }),
+      ),
     );
   });
 

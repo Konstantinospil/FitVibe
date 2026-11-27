@@ -26,6 +26,7 @@ import { getContactById, getUserMetrics } from "./users.repository.js";
 import { passwordPolicy } from "../auth/auth.schemas.js";
 import { handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { writeUserDataArchive } from "./user-data-archive.service.js";
+import { lbToKg } from "../../utils/units.js";
 
 const usernameSchema = z
   .string()
@@ -36,7 +37,6 @@ const usernameSchema = z
     "Username may only contain letters, numbers, underscores, dots, or dashes",
   );
 
-const KG_PER_LB = 0.453592;
 const IMMUTABLE_PROFILE_FIELDS = ["date_of_birth", "gender", "dateOfBirth", "genderCode"] as const;
 
 const updateProfileSchema = z
@@ -76,7 +76,7 @@ const updateProfileSchema = z
       return;
     }
 
-    const weightKg = value.weightUnit === "lb" ? value.weight * KG_PER_LB : value.weight;
+    const weightKg = value.weightUnit === "lb" ? lbToKg(value.weight) : value.weight;
     if (weightKg < 20 || weightKg > 400) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

@@ -30,7 +30,7 @@ import {
   fieldFor,
   invalidMetric,
   labelKeyFor,
-  pickMetricValues,
+  pickTargetValues,
   toMetricInputs,
   toMetricValues,
   type SetMetricInputs,
@@ -67,7 +67,7 @@ function plannedFromLast(exercise: SessionExercise): SessionSetPlannedValues | n
   if (last.status !== "completed") {
     return null;
   }
-  return { ...pickMetricValues(last), rest_sec: last.rest_sec ?? null };
+  return { ...pickTargetValues(last), rest_sec: last.rest_sec ?? null };
 }
 
 const errorMessageKey = (error: unknown) =>

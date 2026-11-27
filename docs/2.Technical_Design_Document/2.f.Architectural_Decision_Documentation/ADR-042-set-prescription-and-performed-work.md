@@ -39,6 +39,11 @@ The session-lifecycle design note also ruled out two approaches. Replacing the w
 
 7. **Reuse copies a prescription.** Cloning without `include_actual` turns each set into a planned set. Its target is the original target, or what was performed when no target was recorded. Skipped sets are dropped. Previously all sets were dropped.
 8. **Name snapshots survive replacement.** When a session's exercises are replaced, an exercise that was already in the session keeps its recorded `exercise_name` snapshot (#289).
+9. **Heart rate is an optional result (#89, added 2026-11-27).** `exercise_sets.heart_rate_bpm` is a whole number from 20 to 250. It has no `planned_*` twin, because a target never holds a heart rate.
+   - Only a completed set may carry one; the database enforces this as well.
+   - A planned set that sends one is refused, not converted to a target.
+   - Recording or skipping a set in a live workout clears or sets it with the other results.
+   - A full copy keeps it; a reuse as a prescription drops it.
 
 ## Backfill
 

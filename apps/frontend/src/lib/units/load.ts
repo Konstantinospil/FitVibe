@@ -28,3 +28,20 @@ export function fromStoredKg(kg: number, unit: LoadUnit): number {
 export function toStoredKg(value: number, unit: LoadUnit): number {
   return unit === "lb" ? round(value * KG_PER_LB, STORED_DECIMALS) : value;
 }
+
+/** Body weight accepted by the profile, in kilograms (the backend checks the same range). */
+export const BODY_WEIGHT_KG_LIMITS = { min: 20, max: 400 } as const;
+
+/**
+ * The body-weight range to offer in `unit`, rounded inwards to the input's two
+ * decimals so both ends convert back inside the kilogram range.
+ */
+export function bodyWeightBounds(unit: LoadUnit): { min: number; max: number } {
+  if (unit === "kg") {
+    return { ...BODY_WEIGHT_KG_LIMITS };
+  }
+  return {
+    min: Math.ceil((BODY_WEIGHT_KG_LIMITS.min / KG_PER_LB) * 100) / 100,
+    max: Math.floor((BODY_WEIGHT_KG_LIMITS.max / KG_PER_LB) * 100) / 100,
+  };
+}

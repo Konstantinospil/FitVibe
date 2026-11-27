@@ -1175,6 +1175,7 @@
     "duration": "Duración: {{value}} s",
     "distance": "Distancia: {{value}} m",
     "rpe": "RPE: {{value}}",
+    "heartRate": "Frecuencia cardiaca: {{value}} ppm",
     "rest": "Descanso: {{value}} s",
     "empty": "No hay ejercicios.",
     "loadError": "No se pudo cargar el entrenamiento.",
@@ -1272,7 +1273,8 @@
       "weight": "Peso (kg)",
       "weightLb": "Peso (lb)",
       "distance": "Distancia (metros)",
-      "rpe": "Esfuerzo (RPE 1–10)"
+      "rpe": "Esfuerzo (RPE 1–10)",
+      "heartRate": "Frecuencia cardiaca (ppm, opcional)"
     },
     "actions": {
       "save": "Guardar entrenamiento",
