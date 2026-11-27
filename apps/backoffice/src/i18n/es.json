@@ -22,6 +22,7 @@
   "status.violations": "Informes de infracciones",
   "status.audit": "Registros de auditoría sin resolver",
   "status.issues": "Incidencias abiertas",
+  "status.unknown": "Desconocido",
   "mfa.title": "Confirmar acción de administración",
   "mfa.description": "{action} requiere un nuevo código de tu aplicación de autenticación. Cada código solo se puede utilizar una vez.",
   "mfa.code": "Código de autenticación",
