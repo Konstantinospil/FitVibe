@@ -28,6 +28,8 @@ const SHARED_SMALL_MODULES =
 // photo helpers, the exercise catalogue) stay out of it, so their imports are not
 // downloaded on every page. Grouped there, they pushed public and signed-in pages
 // over the LCP budget; Rolldown now places them with the pages that use them.
+const WORKOUT_EDITING_MODULES =
+  /[\\/]src[\\/](components[\\/]composites[\\/]ExercisePicker\.|hooks[\\/]useLoadUnit\.|lib[\\/](units|forms)[\\/])/;
 const SHARED_MODULES_WITH_IMPORTS =
   /[\\/]src[\\/](components[\\/](composites[\\/](ExercisePicker|ImageFilePicker|WorkoutPhotoField|SessionResultPanel|SessionIntakePanel|WorkoutEditor)\.|profile[\\/])|hooks[\\/]useLoadUnit\.)/;
 
@@ -252,6 +254,15 @@ export default defineConfig(() => {
                 codeSplitting: {
                   includeDependenciesRecursively: false,
                   groups: [
+                    // The pieces the workout editor and Log always load together
+                    // (exercise picker, load units, set fields), as one request
+                    // instead of several tiny ones on Plan, Library and Log.
+                    {
+                      name: "workout-editing",
+                      test: WORKOUT_EDITING_MODULES,
+                      minShareCount: 2,
+                      maxModuleSize: 4096,
+                    },
                     {
                       name: "shared-small",
                       test: (id: string) =>
