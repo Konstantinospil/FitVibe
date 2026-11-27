@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import PublicPageLayout from "../components/PublicPageLayout";
 import Login from "../pages/Login";
 import { LoadingFallback } from "../components/LoadingFallback";
-import { loadFullTranslations } from "../i18n/config";
+import { ensureLegalTranslationsLoaded, loadFullTranslations } from "../i18n/config";
 
 const TwoFactorVerificationLogin = lazy(() => import("../pages/TwoFactorVerificationLogin"));
 const Register = lazy(() => import("../pages/Register"));
@@ -16,8 +16,16 @@ const ResetPassword = lazy(async () => {
   const [module] = await Promise.all([import("../pages/ResetPassword"), loadFullTranslations()]);
   return module;
 });
-const Terms = lazy(() => import("../pages/Terms"));
-const Privacy = lazy(() => import("../pages/Privacy"));
+// The legal pages' consent strings live in the legal bundles (terms.json,
+// privacy.json), which no other page loads. Fetch them with the page chunk.
+const Terms = lazy(async () => {
+  const [module] = await Promise.all([import("../pages/Terms"), ensureLegalTranslationsLoaded()]);
+  return module;
+});
+const Privacy = lazy(async () => {
+  const [module] = await Promise.all([import("../pages/Privacy"), ensureLegalTranslationsLoaded()]);
+  return module;
+});
 const Cookie = lazy(() => import("../pages/Cookie"));
 const Contact = lazy(() => import("../pages/Contact"));
 const TermsReacceptance = lazy(() => import("../pages/TermsReacceptance"));

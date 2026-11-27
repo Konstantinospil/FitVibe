@@ -3,6 +3,7 @@ import i18n, {
   ensurePrivateTranslationsLoaded,
   loadFullTranslations,
   loadLanguageTranslations,
+  ensureLegalTranslationsLoaded,
 } from "../../src/i18n/config";
 
 describe("i18n config", () => {
@@ -32,6 +33,9 @@ describe("i18n config", () => {
 
   it("nests terms and privacy JSON so list keys return arrays", async () => {
     await loadFullTranslations();
+    await i18n.changeLanguage("en");
+    await ensureLegalTranslationsLoaded();
+    // Once a legal page has needed them, switching language brings them along.
     await loadLanguageTranslations("el");
 
     const englishTerms = i18n.t("terms.section1.items", { lng: "en", returnObjects: true });
