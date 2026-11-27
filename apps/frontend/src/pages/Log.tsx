@@ -363,6 +363,7 @@ const Log: React.FC = () => {
                   <div className="log-exercise__header">
                     <h4>{exercise.name}</h4>
                     <IconButton
+                      type="button"
                       icon={<X />}
                       label={t("logSurface.actions.removeExercise", { name: exercise.name })}
                       variant="ghost"
@@ -396,6 +397,7 @@ const Log: React.FC = () => {
                         ))}
                       </div>
                       <IconButton
+                        type="button"
                         icon={<Minus />}
                         label={t("logSurface.actions.removeSet", {
                           number: index + 1,
@@ -407,6 +409,7 @@ const Log: React.FC = () => {
                     </fieldset>
                   ))}
                   <Button
+                    type="button"
                     variant="secondary"
                     size="sm"
                     leadingIcon={<Plus aria-hidden="true" />}

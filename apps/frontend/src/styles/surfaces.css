@@ -313,7 +313,8 @@
   pointer-events: none;
 }
 
-.exercise-picker__search select {
+/* Outranks the shared control padding ([data-component$="-control"][data-size]) to clear the icon. */
+.exercise-picker__search input[data-component="input-control"] {
   padding-left: var(--space-2xl);
 }
 
@@ -325,7 +326,8 @@
 
 .log-surface__when {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Wraps instead of squeezing the native date and time inputs. */
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-3xl) * 3), 1fr));
   gap: var(--space-sm);
 }
 
@@ -381,6 +383,7 @@
 .log-set__fields {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
   gap: var(--space-xs);
 }
 
@@ -398,8 +401,7 @@
   .workout-editor__activity-fields,
   .workout-editor__rest-row,
   .workout-editor__bottom-actions,
-  .log-surface__grid,
-  .log-surface__when {
+  .log-surface__grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

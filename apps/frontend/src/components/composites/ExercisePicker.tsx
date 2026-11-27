@@ -111,7 +111,9 @@ export const ExercisePicker: React.FC<ExercisePickerProps> = ({ catalog, disable
           </SelectControl>
         </div>
 
+        {/* type="button": the picker also sits inside forms (manual Log) and must not submit them. */}
         <Button
+          type="button"
           variant="ghost"
           size="lg"
           onClick={() => selected && onAdd(selected)}

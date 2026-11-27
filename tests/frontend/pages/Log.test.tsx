@@ -162,6 +162,16 @@ describe("Log", () => {
     expect(await screen.findByText("Session page")).toBeInTheDocument();
   });
 
+  it("adds exercises and sets without submitting the form", async () => {
+    renderLog();
+    await addSquat();
+    fireEvent.click(screen.getByRole("button", { name: "logSurface.actions.addSet" }));
+
+    expect(screen.getByRole("group", { name: "sessionDetail.set(number=2)" })).toBeEnabled();
+    expect(screen.queryByText("logSurface.errors.noExercises")).not.toBeInTheDocument();
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
   it("copies the previous set's values into a new set", async () => {
     renderLog();
     await addSquat();
