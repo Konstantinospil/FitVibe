@@ -1,13 +1,19 @@
 import { z } from "zod";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
+
+const { account, linkToken, password } = AUTH_SECURITY_POLICY;
 
 // Structural validation only. The role-aware shared policy and online breach
 // screening execute server-side before credential persistence.
-export const passwordPolicy = z.string().min(12, "passwordMinLength").max(128);
+export const passwordPolicy = z
+  .string()
+  .min(password.minLengthFloor, "passwordMinLength")
+  .max(password.maxLength);
 
 const aliasSchema = z
   .string()
-  .min(3)
-  .max(50)
+  .min(account.usernameMinLength)
+  .max(account.usernameMaxLength)
   .regex(/^[a-zA-Z0-9_\-.]+$/, "usernameFormat");
 
 const registerProfileSchema = z
@@ -18,7 +24,7 @@ const registerProfileSchema = z
     fitness_level: z.string().trim().min(1).max(100).optional(),
     date_of_birth: z.string().date().optional(),
     /** @deprecated Send date_of_birth instead. */
-    age: z.number().int().min(13).max(120).optional(),
+    age: z.number().int().min(account.minAgeYears).max(account.maxAgeYears).optional(),
   })
   .refine((profile) => !(profile.date_of_birth && profile.age !== undefined), {
     message: "DATE_OF_BIRTH_AGE_CONFLICT",
@@ -32,10 +38,18 @@ const registerProfileSchema = z
       const birthDate = new Date(`${profile.date_of_birth}T00:00:00.000Z`);
       const today = new Date();
       const minimumBirthDate = new Date(
-        Date.UTC(today.getUTCFullYear() - 13, today.getUTCMonth(), today.getUTCDate()),
+        Date.UTC(
+          today.getUTCFullYear() - account.minAgeYears,
+          today.getUTCMonth(),
+          today.getUTCDate(),
+        ),
       );
       const maximumBirthDate = new Date(
-        Date.UTC(today.getUTCFullYear() - 120, today.getUTCMonth(), today.getUTCDate()),
+        Date.UTC(
+          today.getUTCFullYear() - account.maxAgeYears,
+          today.getUTCMonth(),
+          today.getUTCDate(),
+        ),
       );
       return birthDate <= minimumBirthDate && birthDate >= maximumBirthDate;
     },
@@ -45,16 +59,16 @@ const registerProfileSchema = z
     },
   );
 
-// One-time link token: 32 random bytes, base64url (43 characters).
+// One-time link token: linkToken.randomBytes random bytes, base64url.
 const registrationTokenSchema = z
   .string()
-  .min(20)
-  .max(128)
+  .min(linkToken.minLength)
+  .max(linkToken.maxLength)
   .regex(/^[A-Za-z0-9_-]+$/, "AUTH_INVALID_TOKEN");
 
 /** Step 1 of email-first registration (ADR-039): the address only. */
 export const StartRegistrationSchema = z.object({
-  email: z.string().trim().email().max(254),
+  email: z.string().trim().email().max(account.emailMaxLength),
   locale: z
     .string()
     .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$/)
@@ -87,7 +101,7 @@ export const CompleteRegistrationSchema = z
 export const LoginSchema = z.object({
   // Field name stays "email" for API compatibility, but login accepts either
   // the primary email address or the profile alias (for example "admin").
-  email: z.string().trim().min(1).max(254),
+  email: z.string().trim().min(1).max(account.emailMaxLength),
   password: z.string().min(1),
 });
 

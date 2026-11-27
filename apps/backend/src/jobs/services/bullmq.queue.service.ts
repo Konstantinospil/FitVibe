@@ -4,6 +4,9 @@ import { logger } from "../../config/logger.js";
 import { env } from "../../config/env.js";
 import { executeSharedJob, SHARED_JOB_TYPES, type SharedJobType } from "./job.handlers.js";
 
+/** How long a failed job that carries personal data stays in Redis for diagnosis, in seconds (one hour). */
+export const SENSITIVE_FAILED_JOB_RETENTION_SECONDS = 60 * 60;
+
 /**
  * Job payload interface for type safety
  */
@@ -141,7 +144,11 @@ export class BullMQQueueService {
         job.payload,
         job.sensitive
           ? // Personal data must not linger in Redis after the job has run.
-            { ...options, removeOnComplete: true, removeOnFail: { age: 3600 } }
+            {
+              ...options,
+              removeOnComplete: true,
+              removeOnFail: { age: SENSITIVE_FAILED_JOB_RETENTION_SECONDS },
+            }
           : options,
       );
       logger.debug(

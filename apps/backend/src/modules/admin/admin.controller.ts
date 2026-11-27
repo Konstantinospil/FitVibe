@@ -150,12 +150,19 @@ function requireAdminId(req: Request): string {
   return req.user.sub;
 }
 
+/** Longest free-text reason an administrator may attach to an action, in characters. */
+export const ADMIN_REASON_MAX_LENGTH = 500;
+
 function readOptionalReason(body: { reason?: unknown }): string | undefined {
   if (body.reason === undefined || body.reason === null) {
     return undefined;
   }
-  if (typeof body.reason !== "string" || body.reason.length > 500) {
-    throw new HttpError(400, "INVALID_REASON", "Reason must be a string of at most 500 characters");
+  if (typeof body.reason !== "string" || body.reason.length > ADMIN_REASON_MAX_LENGTH) {
+    throw new HttpError(
+      400,
+      "INVALID_REASON",
+      `Reason must be a string of at most ${ADMIN_REASON_MAX_LENGTH} characters`,
+    );
   }
   return body.reason.trim() || undefined;
 }

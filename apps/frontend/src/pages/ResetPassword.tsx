@@ -8,6 +8,7 @@ import { FormFeedback, FormStack } from "../components/composites/FormStack";
 import { resetPassword } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
 import i18n, { ensureLegalTranslationsLoaded, minimalTranslationsReady } from "../i18n/config";
+import { ACCOUNT_LIMITS } from "../config/account";
 
 const ResetPassword: React.FC = () => {
   const { t } = useTranslation();
@@ -152,7 +153,8 @@ const ResetPassword: React.FC = () => {
           name="password"
           placeholder={t("resetPassword.newPasswordPlaceholder")}
           required
-          minLength={12}
+          minLength={ACCOUNT_LIMITS.passwordMinLength}
+          maxLength={ACCOUNT_LIMITS.passwordMaxLength}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="new-password"
@@ -166,7 +168,8 @@ const ResetPassword: React.FC = () => {
           name="confirmPassword"
           placeholder={t("resetPassword.confirmPasswordPlaceholder")}
           required
-          minLength={12}
+          minLength={ACCOUNT_LIMITS.passwordMinLength}
+          maxLength={ACCOUNT_LIMITS.passwordMaxLength}
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           autoComplete="new-password"

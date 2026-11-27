@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { readRouteParam } from "../../utils/http.js";
 import { z } from "zod";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { ADMIN_CREATABLE_ROLES } from "./users.types.js";
 import {
   getMe,
@@ -101,7 +102,7 @@ export const UpdatePreferencesSchema = updatePreferencesSchema;
 
 const changePasswordSchema = z.object({
   // Existing bcrypt credentials may predate the 12-character requirement.
-  currentPassword: z.string().min(1).max(128),
+  currentPassword: z.string().min(1).max(AUTH_SECURITY_POLICY.password.maxLength),
   newPassword: passwordPolicy,
 });
 
@@ -118,7 +119,7 @@ const privacyPatchSchema = z
   });
 
 const emailSchema = z.object({
-  email: z.string().email().max(254),
+  email: z.string().email().max(AUTH_SECURITY_POLICY.account.emailMaxLength),
 });
 
 const phoneSchema = z.object({
@@ -137,7 +138,7 @@ const verifyContactBodySchema = z.object({
 const createUserSchema = z.object({
   username: usernameSchema,
   displayName: z.string().min(1).max(120),
-  email: z.string().email().max(254),
+  email: z.string().email().max(AUTH_SECURITY_POLICY.account.emailMaxLength),
   password: passwordPolicy,
   role: z.enum(ADMIN_CREATABLE_ROLES),
   locale: z.string().max(10).optional(),
@@ -152,7 +153,10 @@ const statusSchema = z.object({
 });
 
 const deleteAccountSchema = z.object({
-  password: z.string().min(12).max(128),
+  password: z
+    .string()
+    .min(AUTH_SECURITY_POLICY.password.minLengthFloor)
+    .max(AUTH_SECURITY_POLICY.password.maxLength),
 });
 
 export async function me(req: Request, res: Response): Promise<void> {
