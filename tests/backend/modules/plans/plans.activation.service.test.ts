@@ -84,7 +84,15 @@ const template = (id: string, plannedAt: string, overrides: Partial<SessionWithE
         exercise_id: null,
         order_index: 1,
         planned: { sets: 2, reps: 8 },
-        sets: [{ id: `${id}-set`, order_index: 1, reps: 8, rest_sec: 90 }],
+        sets: [
+          {
+            id: `${id}-set`,
+            order_index: 1,
+            status: "planned",
+            source: "prescribed",
+            planned: { reps: 8, rest_sec: 90 },
+          },
+        ],
       },
     ],
     ...overrides,

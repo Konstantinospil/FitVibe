@@ -44,6 +44,10 @@ describeWithTestDatabase("Integration: session logging (ADR-042)", () => {
     await truncateAll();
     await ensureRolesSeeded();
     athlete = await signInNewAthlete(app, "log");
+    await db("exercise_types")
+      .insert({ code: "strength", name: "Strength", description: "Strength training" })
+      .onConflict("code")
+      .ignore();
     exerciseId = uuidv4();
     await db("exercises").insert({
       id: exerciseId,
