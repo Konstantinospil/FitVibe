@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { VibeformProfile } from "@fitvibe/types";
-import type { VibeKey } from "../../constants/vibes";
+import { VIBE_KEYS, type VibeKey } from "../../constants/vibes";
 import { VibeformRenderer } from "../../lib/vibeform";
 import { VibeBadge } from "./VibeBadge";
 import "./VibeformConstellation.css";
@@ -20,14 +20,20 @@ export interface VibeformConstellationProps {
   vibeformAccessibleLabel?: string;
 }
 
-const VIBE_ORDER: readonly VibeKey[] = [
-  "regeneration",
-  "intelligence",
-  "agility",
-  "endurance",
-  "strength",
-  "explosivity",
-];
+/**
+ * Reading (and tab) order of the slots around the figure, top-left to bottom-right.
+ * Positions come from the stylesheet per data-vibe; a Record makes every Vibe need one.
+ */
+const READING_POSITION: Record<VibeKey, number> = {
+  regeneration: 0,
+  intelligence: 1,
+  agility: 2,
+  endurance: 3,
+  strength: 4,
+  explosivity: 5,
+};
+
+const SLOT_ORDER = [...VIBE_KEYS].sort((a, b) => READING_POSITION[a] - READING_POSITION[b]);
 
 export function VibeformConstellation({
   profile,
@@ -70,7 +76,7 @@ export function VibeformConstellation({
         />
       </div>
 
-      {VIBE_ORDER.map((vibe) => (
+      {SLOT_ORDER.map((vibe) => (
         <div
           key={vibe}
           className="vibeform-constellation__slot"

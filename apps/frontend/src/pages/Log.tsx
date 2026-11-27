@@ -307,7 +307,7 @@ const Log: React.FC = () => {
           {exercises.length === 0 ? (
             <div className="training-empty">{t("logSurface.empty")}</div>
           ) : (
-            <ol className="log-surface__exercise-list">
+            <ol className="stack-list">
               {exercises.map((exercise) => (
                 <li key={exercise.key} className="log-exercise">
                   <div className="log-exercise__header">

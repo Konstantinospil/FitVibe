@@ -331,14 +331,6 @@
   gap: var(--space-sm);
 }
 
-.log-surface__exercise-list {
-  display: grid;
-  gap: var(--space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .log-exercise {
   display: grid;
   gap: var(--space-sm);
@@ -436,12 +428,6 @@
   gap: var(--space-xs);
 }
 
-.live-clock__label {
-  color: var(--color-text-secondary);
-  font-size: var(--type-supporting-size);
-  line-height: var(--type-supporting-line-height);
-}
-
 .live-clock__value {
   color: var(--color-text-primary);
   font-family: var(--font-family-heading);
@@ -479,17 +465,10 @@
   gap: var(--space-sm);
 }
 
-.live-set__heading h2 {
-  margin: 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-section-title-size);
-}
-
-.live-set__heading p,
+.live-set__heading > *,
 .live-set__target,
 .live-set__next {
   margin: 0;
-  color: var(--color-text-secondary);
 }
 
 .live-rest {
@@ -510,7 +489,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.live-outline {
+/* A vertical list of blocks: the Log's exercises, the live workout plan. */
+.stack-list {
   display: grid;
   gap: var(--space-md);
   margin: 0;
@@ -536,13 +516,6 @@
 
 .live-outline__header h3 {
   margin: 0;
-  color: var(--color-text-primary);
-  font-size: var(--type-card-title-size);
-}
-
-.live-outline__header span {
-  color: var(--color-text-secondary);
-  font-size: var(--type-supporting-size);
 }
 
 .live-outline__set--current {

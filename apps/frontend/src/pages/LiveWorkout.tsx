@@ -111,10 +111,14 @@ const CurrentSet: React.FC<CurrentSetProps> = ({ position, loadUnit, disabled, o
   return (
     <FormStack className="live-set" noValidate onSubmit={complete} aria-labelledby="live-set-title">
       <div className="live-set__heading">
-        <h2 id="live-set-title">{exerciseName(t, exercise)}</h2>
-        <p>{t("liveWorkout.current.setOf", { number: setNumber, count: setCount })}</p>
+        <h2 id="live-set-title" className="typography-section-title">
+          {exerciseName(t, exercise)}
+        </h2>
+        <p className="text-secondary">
+          {t("liveWorkout.current.setOf", { number: setNumber, count: setCount })}
+        </p>
       </div>
-      <p className="live-set__target">
+      <p className="live-set__target text-secondary">
         {target
           ? t("liveWorkout.current.target", { value: target })
           : t("liveWorkout.current.noTarget")}
@@ -329,7 +333,7 @@ const LiveWorkout: React.FC = () => {
             aria-label={t("liveWorkout.clock.label")}
           >
             <div className="live-clock__primary">
-              <span className="live-clock__label">
+              <span className="typography-supporting text-secondary">
                 {paused ? t("liveWorkout.clock.paused") : t("liveWorkout.clock.active")}
               </span>
               <span className="live-clock__value" role="timer">
@@ -337,7 +341,9 @@ const LiveWorkout: React.FC = () => {
               </span>
             </div>
             <div className="live-clock__secondary">
-              <span className="live-clock__label">{t("liveWorkout.clock.elapsed")}</span>
+              <span className="typography-supporting text-secondary">
+                {t("liveWorkout.clock.elapsed")}
+              </span>
               <span className="live-clock__value live-clock__value--small" role="timer">
                 {formatClock(elapsedSeconds(session, now))}
               </span>
@@ -396,7 +402,7 @@ const LiveWorkout: React.FC = () => {
                 <div className="training-empty">{t("liveWorkout.current.done")}</div>
               )}
               {next ? (
-                <p className="live-set__next">
+                <p className="live-set__next text-secondary">
                   {t("liveWorkout.current.next", {
                     name: exerciseName(t, next.exercise),
                     number: next.setNumber,
@@ -406,7 +412,7 @@ const LiveWorkout: React.FC = () => {
             </TrainingPanel>
 
             <TrainingPanel title={t("liveWorkout.outline.title")} className="live-surface__outline">
-              <ol className="live-outline">
+              <ol className="stack-list">
                 {session.exercises.map((exercise) => {
                   const name = exerciseName(t, exercise);
                   const skipped = exercise.status === "skipped";
@@ -414,8 +420,12 @@ const LiveWorkout: React.FC = () => {
                   return (
                     <li key={exercise.id} className="live-outline__exercise" data-skipped={skipped}>
                       <div className="live-outline__header">
-                        <h3>{name}</h3>
-                        {skipped ? <span>{t("sessionDetail.skipped")}</span> : null}
+                        <h3 className="typography-card-title">{name}</h3>
+                        {skipped ? (
+                          <span className="typography-supporting text-secondary">
+                            {t("sessionDetail.skipped")}
+                          </span>
+                        ) : null}
                       </div>
                       {exercise.sets.map((set, index) => (
                         <TrainingSummaryCard
