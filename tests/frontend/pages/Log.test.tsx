@@ -141,6 +141,10 @@ describe("Log", () => {
     setField(2, "logSurface.fields.weight", "");
     setField(2, "logSurface.fields.rpe", "");
 
+    // Intake (ADR-045) is saved with the workout, apart from its calories.
+    fireEvent.change(screen.getByLabelText("workoutIntake.fields.total.water"), {
+      target: { value: "750" },
+    });
     // The Log's note is a post-workout note (ADR-044), not the plan's notes.
     fireEvent.change(screen.getByLabelText("workoutResult.note.label"), {
       target: { value: "  Felt strong  " },
@@ -155,6 +159,7 @@ describe("Log", () => {
       planned_at: new Date(2026, 10, 20, 9, 0).toISOString(),
       planned_duration_min: 45,
       result_note: "Felt strong",
+      intake: [{ kind: "water", amount: 750 }],
       visibility: "private",
       exercises: [
         {

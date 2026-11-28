@@ -41,6 +41,7 @@ import type { LoadUnit } from "../lib/units/load";
 import { setSummary, valuesSummary } from "../lib/sessions/setSummary";
 import { apiErrorCode } from "../services/httpApi";
 import { ResultNoteField } from "../components/domain/ResultNoteField";
+import { SessionIntakePanel } from "../components/composites/SessionIntakePanel";
 import { WorkoutPhotoField } from "../components/composites/WorkoutPhotoField";
 import { readImagePreview } from "../lib/media/imageFile";
 import { PHOTO_MESSAGE_VALUES, PHOTO_PROBLEM_KEYS } from "../lib/sessions/workoutPhoto";
@@ -280,7 +281,7 @@ const LiveWorkout: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { query, command, finish } = useLiveWorkout(id);
+  const { query, command, finish, update } = useLiveWorkout(id);
   const [finishing, setFinishing] = useState(false);
   const session = query.data;
   const active = session?.status === "in_progress";
@@ -394,48 +395,60 @@ const LiveWorkout: React.FC = () => {
           ) : null}
 
           <div className="training-grid live-surface__grid">
-            <TrainingPanel
-              title={t("liveWorkout.current.title")}
-              status={paused ? "warning" : "success"}
-              className="live-surface__current"
-            >
-              {paused ? (
-                <FormFeedback tone="info">{t("liveWorkout.pausedNotice")}</FormFeedback>
-              ) : null}
-              {rest > 0 ? (
-                <p className="live-rest">
-                  <span>{t("liveWorkout.rest")}</span>
-                  <span className="live-rest__value" role="timer">
-                    {formatClock(rest)}
-                  </span>
-                </p>
-              ) : null}
-              {position ? (
-                <CurrentSet
-                  key={`${position.set.id}:${loadUnit}`}
-                  position={position}
-                  loadUnit={loadUnit}
-                  disabled={busy || paused || !loadUnitReady}
-                  onRecord={(values) =>
-                    run({
-                      kind: "record",
-                      setId: position.set.id,
-                      payload: values ? { status: "completed", ...values } : { status: "skipped" },
-                    })
-                  }
+            <div className="flex flex--column flex--gap-md">
+              <TrainingPanel
+                title={t("liveWorkout.current.title")}
+                status={paused ? "warning" : "success"}
+                className="live-surface__current"
+              >
+                {paused ? (
+                  <FormFeedback tone="info">{t("liveWorkout.pausedNotice")}</FormFeedback>
+                ) : null}
+                {rest > 0 ? (
+                  <p className="live-rest">
+                    <span>{t("liveWorkout.rest")}</span>
+                    <span className="live-rest__value" role="timer">
+                      {formatClock(rest)}
+                    </span>
+                  </p>
+                ) : null}
+                {position ? (
+                  <CurrentSet
+                    key={`${position.set.id}:${loadUnit}`}
+                    position={position}
+                    loadUnit={loadUnit}
+                    disabled={busy || paused || !loadUnitReady}
+                    onRecord={(values) =>
+                      run({
+                        kind: "record",
+                        setId: position.set.id,
+                        payload: values
+                          ? { status: "completed", ...values }
+                          : { status: "skipped" },
+                      })
+                    }
+                  />
+                ) : (
+                  <div className="training-empty">{t("liveWorkout.current.done")}</div>
+                )}
+                {next ? (
+                  <p className="live-set__next text-secondary">
+                    {t("liveWorkout.current.next", {
+                      name: exerciseName(t, next.exercise),
+                      number: next.setNumber,
+                    })}
+                  </p>
+                ) : null}
+              </TrainingPanel>
+              {session.intake ? (
+                <SessionIntakePanel
+                  sessionId={session.id}
+                  intake={session.intake}
+                  status={session.status}
+                  onChanged={(intake) => update({ ...session, intake })}
                 />
-              ) : (
-                <div className="training-empty">{t("liveWorkout.current.done")}</div>
-              )}
-              {next ? (
-                <p className="live-set__next text-secondary">
-                  {t("liveWorkout.current.next", {
-                    name: exerciseName(t, next.exercise),
-                    number: next.setNumber,
-                  })}
-                </p>
               ) : null}
-            </TrainingPanel>
+            </div>
 
             <TrainingPanel title={t("liveWorkout.outline.title")} className="live-surface__outline">
               <ol className="stack-list">
