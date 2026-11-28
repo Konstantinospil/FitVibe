@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import BrandLogo from "./BrandLogo";

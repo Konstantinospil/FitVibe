@@ -22,6 +22,7 @@
   "status.violations": "Signalements d’infractions",
   "status.audit": "Journaux d’audit non résolus",
   "status.issues": "Problèmes ouverts",
+  "status.unknown": "Inconnu",
   "mfa.title": "Confirmer une action d’administration",
   "mfa.description": "{action} nécessite un nouveau code de votre application d’authentification. Chaque code est à usage unique.",
   "mfa.code": "Code d’authentification",

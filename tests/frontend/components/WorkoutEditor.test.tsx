@@ -224,6 +224,121 @@ describe("WorkoutEditor", () => {
     });
   });
 
+  describe("interval and circuit blocks (ADR-046)", () => {
+    const chooseBlock = (value: string) =>
+      fireEvent.change(screen.getByLabelText("workoutEditor.fields.block"), {
+        target: { value },
+      });
+
+    it("turns the exercise into an interval block whose rounds are its sets", async () => {
+      renderEditor();
+      await addExercise();
+      chooseBlock("interval");
+
+      fireEvent.change(screen.getByLabelText("workoutEditor.fields.rounds"), {
+        target: { value: "8" },
+      });
+      fireEvent.change(screen.getByLabelText("workoutEditor.fields.work"), {
+        target: { value: "20" },
+      });
+      fireEvent.change(screen.getByLabelText("workoutEditor.fields.blockRest"), {
+        target: { value: "10" },
+      });
+      // The block replaces the exercise's own sets, duration and set rest.
+      expect(screen.queryByLabelText("workoutEditor.fields.sets")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("workoutEditor.fields.duration")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("workoutEditor.fields.restSet")).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+      await waitFor(() => expect(mockedApi.createSession).toHaveBeenCalled());
+      const payload = mockedApi.createSession.mock.calls[0][0];
+      expect(payload.blocks).toEqual([
+        {
+          ref: 1,
+          kind: "interval",
+          name: null,
+          rounds: 8,
+          work_sec: 20,
+          rest_sec: 10,
+          round_rest_sec: null,
+        },
+      ]);
+      const [member] = payload.exercises ?? [];
+      expect(member.block_ref).toBe(1);
+      expect(member.planned?.sets).toBe(8);
+      expect(member.sets).toHaveLength(8);
+      expect(member.sets?.[0].planned).toMatchObject({ duration_sec: 20, rest_sec: 10 });
+    });
+
+    it("keeps a circuit of one exercise from being saved", async () => {
+      renderEditor();
+      await addExercise();
+      chooseBlock("circuit");
+
+      expect(screen.getByText("workoutEditor.errors.circuitSize")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "workoutEditor.actions.plan" })).toBeDisabled();
+
+      await addExercise();
+      chooseBlock("join");
+      expect(screen.queryByText("workoutEditor.errors.circuitSize")).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+      await waitFor(() => expect(mockedApi.createSession).toHaveBeenCalled());
+      const payload = mockedApi.createSession.mock.calls[0][0];
+      expect(payload.blocks).toEqual([expect.objectContaining({ ref: 1, kind: "circuit" })]);
+      expect(payload.exercises?.map((exercise) => exercise.block_ref)).toEqual([1, 1]);
+    });
+
+    it("keeps an existing session's blocks when it is saved again", async () => {
+      const existing: api.SessionWithExercises = {
+        ...savedSession,
+        id: "existing",
+        blocks: [
+          {
+            id: "block-1",
+            kind: "interval",
+            name: "Tabata",
+            rounds: 8,
+            work_sec: 20,
+            rest_sec: 10,
+            round_rest_sec: null,
+          },
+        ],
+        exercises: [
+          {
+            id: "session-ex-1",
+            session_id: "existing",
+            exercise_id: "exercise-1",
+            order_index: 1,
+            block_id: "block-1",
+            status: "planned",
+            source: "prescribed",
+            planned: { sets: 8 },
+            sets: [],
+          },
+        ],
+      };
+      renderEditor(existing);
+      expect(await screen.findByDisplayValue("Tabata")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+      await waitFor(() => expect(mockedApi.updateSession).toHaveBeenCalled());
+      const [, payload] = mockedApi.updateSession.mock.calls[0];
+      expect(payload.blocks).toEqual([
+        expect.objectContaining({
+          ref: 1,
+          kind: "interval",
+          name: "Tabata",
+          rounds: 8,
+          work_sec: 20,
+        }),
+      ]);
+      expect(payload.exercises?.[0].block_ref).toBe(1);
+    });
+  });
+
   it("edits an existing session instead of creating a duplicate", async () => {
     const existing: api.SessionWithExercises = {
       ...savedSession,

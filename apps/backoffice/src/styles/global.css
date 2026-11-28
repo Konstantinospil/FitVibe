@@ -125,6 +125,8 @@
 
   /* Shared primitive dimension authority */
   --textarea-min-height: 10rem;
+  /* Mirrors --brand-mark-sm in apps/frontend/src/styles/tokens.css. */
+  --brand-mark-sm: 32px;
 
   /* === DARK MODE COLORS (Primary) === */
 
@@ -1602,11 +1604,11 @@ body {
   min-height: 2.75rem;
 }
 
-/* The FitVibe mark at the athlete header size (--brand-mark-sm there). */
+/* The FitVibe mark at the athlete header size. */
 .backoffice-brand__logo {
   display: block;
-  width: 2rem;
-  height: 2rem;
+  width: var(--brand-mark-sm);
+  height: var(--brand-mark-sm);
 }
 
 .backoffice-navigation {

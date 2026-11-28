@@ -158,6 +158,38 @@ describe("SessionDetail", () => {
     expect(screen.getByText("sessionDetail.reps=3")).toBeInTheDocument();
   });
 
+  it("heads an interval block's exercises with the block (ADR-046)", async () => {
+    const session = baseSession();
+    mocked.getSession.mockResolvedValue({
+      ...session,
+      blocks: [
+        {
+          id: "block-1",
+          kind: "interval",
+          name: "Tabata",
+          rounds: 8,
+          work_sec: 20,
+          rest_sec: 10,
+          round_rest_sec: null,
+        },
+      ],
+      exercises: session.exercises.map((exercise) => ({ ...exercise, block_id: "block-1" })),
+    });
+    renderDetail();
+
+    expect(await screen.findByText("Tabata")).toBeInTheDocument();
+    expect(screen.getByText("sessionBlocks.kind.interval")).toBeInTheDocument();
+    expect(
+      screen.getByText("sessionBlocks.rounds · sessionBlocks.work=20 · sessionDetail.rest=10"),
+    ).toBeInTheDocument();
+    // The block heads its first member.
+    const blockTitle = screen.getByText("Tabata");
+    const memberTitle = screen.getByText("Back squat");
+    expect(
+      blockTitle.compareDocumentPosition(memberTitle) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it("says when a completed workout was stopped early", async () => {
     mocked.getSession.mockResolvedValue(
       baseSession({

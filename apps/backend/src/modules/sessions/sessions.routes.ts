@@ -20,6 +20,8 @@ import {
   uploadSessionPhotoHandler,
   getSessionPhotoHandler,
   deleteSessionPhotoHandler,
+  addIntakeEntryHandler,
+  deleteIntakeEntryHandler,
 } from "./sessions.controller.js";
 import { singleImageUpload } from "../../services/imageUpload.service.js";
 import { requireAccessToken } from "../auth/auth.middleware.js";
@@ -121,4 +123,18 @@ sessionsRouter.delete(
   rateLimit("sessions_photo_delete"),
   requireAccessToken,
   asyncHandler(deleteSessionPhotoHandler),
+);
+
+// Workout intake (ADR-045): water and food energy, owner only.
+sessionsRouter.post(
+  "/:id/intake",
+  rateLimit("sessions_intake"),
+  requireAccessToken,
+  asyncHandler(addIntakeEntryHandler),
+);
+sessionsRouter.delete(
+  "/:id/intake/:entryId",
+  rateLimit("sessions_intake"),
+  requireAccessToken,
+  asyncHandler(deleteIntakeEntryHandler),
 );

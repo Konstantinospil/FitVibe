@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { useUiText } from "../i18n/ui";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";

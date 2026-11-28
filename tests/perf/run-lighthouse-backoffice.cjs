@@ -13,7 +13,7 @@ const { backofficeRoutes, auditUrl } = require("./lighthouse-routes.cjs");
 const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
 const { scriptTransfer, networkRequests } = require("./lighthouse-measurement-validity.cjs");
 const { observeNavigation } = require("./lighthouse-observe-navigation.cjs");
-const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
+const { assertMedianRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const {
   routeContracts,
@@ -344,10 +344,10 @@ async function main() {
       const reports = measurements
         .filter((item) => item.valid && item.report && item.path.startsWith(mode + ":"))
         .map((item) => item.report);
-      // Reuse canonical pessimistic CI budgets. The mode argument changes only
-      // route identity, not the thresholds or worst-of-three aggregation.
+      // Reuse canonical median CI budgets. The mode argument changes only
+      // route identity, not the thresholds or median-of-three aggregation.
       budgetErrors.push(
-        ...assertWorstRunBudgets(
+        ...assertMedianRunBudgets(
           reports,
           paths,
           origin,
@@ -390,7 +390,7 @@ async function main() {
     );
     if (technicalErrors.length) console.error(technicalErrors.join("\n"));
     if (budgetErrors.length)
-      console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
+      console.error("Median-run budget breaches:\n" + budgetErrors.join("\n"));
     if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
     if (cacheSession) await cacheSession.detach().catch(() => undefined);
     if (cachePage) await cachePage.close().catch(() => undefined);

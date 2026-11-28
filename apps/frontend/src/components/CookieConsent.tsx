@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useInRouterContext, useLocation } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button, IconButton, Switch } from "@fitvibe/ui";

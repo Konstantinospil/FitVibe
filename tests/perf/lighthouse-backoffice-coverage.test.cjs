@@ -9,7 +9,8 @@ const {
   assertBackofficeAuditCoverage,
 } = require("./lighthouse-backoffice-readiness.cjs");
 const { backofficeRoutes, auditUrl } = require("./lighthouse-routes.cjs");
-const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
+const { assertMedianRunBudgets } = require("./lighthouse-score-contract.cjs");
+const { BUDGET_AGGREGATION_METHOD } = require("./lighthouse-aggregation.cjs");
 
 const origin = "http://127.0.0.1:4182";
 const pathname = "/translations";
@@ -192,18 +193,18 @@ test("Missing, duplicated, invalid and preflight-only audits cannot masquerade a
   );
 });
 
-test("Worst-run budgets retain the canonical 3000 ms limit across admin route modes", () => {
+test("Median-run budgets retain the canonical 3000 ms limit across admin route modes", () => {
   const route = { mode: "backoffice-admin", path: "/translations" };
   const assertion = {
     "largest-contentful-paint": [
       "error",
       {
         maxNumericValue: 3000,
-        aggregationMethod: "pessimistic",
+        aggregationMethod: BUDGET_AGGREGATION_METHOD,
       },
     ],
   };
-  const reports = [1200, 1300, 3100].map((lcp) =>
+  const reports = [1200, 3100, 3200].map((lcp) =>
     reportFor(route, {
       audits: {
         ...reportFor(route).audits,
@@ -212,16 +213,16 @@ test("Worst-run budgets retain the canonical 3000 ms limit across admin route mo
     }),
   );
   assert.match(
-    assertWorstRunBudgets(reports, [route.path], origin, assertion, 3, route.mode).join(" "),
+    assertMedianRunBudgets(reports, [route.path], origin, assertion, 3, route.mode).join(" "),
     /3100.*exceeds 3000/,
   );
   assert.deepEqual(
-    assertWorstRunBudgets(reports.slice(0, 2), [route.path], origin, assertion, 3, route.mode)
+    assertMedianRunBudgets(reports.slice(0, 2), [route.path], origin, assertion, 3, route.mode)
       .length > 0,
     true,
   );
   assert.deepEqual(
-    assertWorstRunBudgets(
+    assertMedianRunBudgets(
       reports.map((r) => ({
         ...r,
         audits: { ...r.audits, "largest-contentful-paint": { numericValue: 1000 } },

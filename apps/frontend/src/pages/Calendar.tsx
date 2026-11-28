@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
@@ -12,7 +13,8 @@ import {
 } from "../components/composites/TrainingSurface";
 import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 import { logger } from "../utils/logger";
-import WorkoutEditor, { type WorkoutEditorAction } from "../components/composites/WorkoutEditor";
+import type { WorkoutEditorAction } from "../components/composites/WorkoutEditor";
+import { LazyWorkoutEditor } from "../components/composites/LazyWorkoutEditor";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import PlanManagement from "../components/composites/PlanManagement";
 import { FormFeedback } from "../components/composites/FormStack";
@@ -721,7 +723,7 @@ const CalendarPage: React.FC = () => {
 
       <PlanManagement open={managePlansOpen} onClose={() => setManagePlansOpen(false)} />
 
-      <WorkoutEditor
+      <LazyWorkoutEditor
         open={editorAction !== null}
         onClose={() => setEditorAction(null)}
         plannedAt={selectedDayStart.toISOString()}

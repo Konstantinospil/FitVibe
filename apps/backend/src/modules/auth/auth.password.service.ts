@@ -19,6 +19,7 @@ import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
 import { queueService } from "../../jobs/services/queue.factory.js";
+import { EMAIL_STYLES } from "../../services/email.theme.js";
 
 const SECONDS_PER_MINUTE = 60;
 function passwordResetTtlSeconds(): number {
@@ -87,20 +88,20 @@ export async function dispatchPasswordReset(
     to: email,
     subject: "Reset your FitVibe password",
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="${EMAIL_STYLES.container}">
         <h2>Password Reset Request</h2>
         <p>We received a request to reset your password. Click the link below to create a new password:</p>
         <p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+          <a href="${resetUrl}" style="${EMAIL_STYLES.button}">
             Reset Password
           </a>
         </p>
         <p>Or copy and paste this link into your browser:</p>
-        <p style="color: #666; word-break: break-all;">${resetUrl}</p>
-        <p style="color: #999; font-size: 12px; margin-top: 32px;">
+        <p style="${EMAIL_STYLES.rawLink}">${resetUrl}</p>
+        <p style="${EMAIL_STYLES.footer}">
           This link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.
         </p>
-        <p style="color: #999; font-size: 12px;">
+        <p style="${EMAIL_STYLES.smallPrint}">
           If you didn't request this password reset, you can safely ignore this email.
         </p>
       </div>

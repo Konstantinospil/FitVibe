@@ -21,6 +21,20 @@ export const TRAINING_DATA_CONFIG = {
   setRpeMax: 10,
   setHeartRateMinBpm: 20,
   setHeartRateMaxBpm: 250,
+  // Largest single intake entry (ADR-045); the server enforces the same limits
+  // (INTAKE_LIMITS). Quick-add amounts for water during a workout.
+  intakeWaterMaxMl: 5000,
+  intakeEnergyMaxKcal: 5000,
+  intakeWaterQuickAddMl: [250, 500],
+  // Interval and circuit blocks (ADR-046); the server enforces the same bounds
+  // (SESSION_BLOCK_LIMITS). New blocks start with the default rounds.
+  blockRoundsMax: 50,
+  blockRoundsDefault: 3,
+  blockWorkMinSec: 1,
+  blockWorkMaxSec: 3600,
+  blockRestMaxSec: 3600,
+  blockNameMaxLength: 100,
+  blockCircuitMinExercises: 2,
   // Longest note on a session (the plan's notes and the post-workout note); the
   // server enforces the same limit (SESSION_TEXT_LIMITS).
   sessionNoteMaxLength: 1000,

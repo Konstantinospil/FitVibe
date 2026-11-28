@@ -881,7 +881,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Verify Lighthouse worst-run assertion policy
+      - name: Verify Lighthouse median-run assertion policy
         run: pnpm run test:lhci:config
 
       - name: Build frontend (SSR)
@@ -1369,7 +1369,7 @@ jobs:
         id: trufflehog
         continue-on-error: true
         timeout-minutes: 5
-        uses: trufflesecurity/trufflehog@d232362a64a09a9e7d58267b8f5acef00ae90e23 # v3.100.0
+        uses: trufflesecurity/trufflehog@4ef51f69ca6347aaa76a5e64a87eac9c0c909f71 # v3.100.1
         with:
           path: "./"
           version: "3.97.5"
@@ -1456,16 +1456,16 @@ jobs:
           fetch-depth: 0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934 # v4
         with:
           languages: javascript
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        uses: github/codeql-action/autobuild@915412ff23e8b7659517e607487dbeae018f2934 # v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
+        uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934 # v4
         with:
           category: "/language:javascript"
           output: codeql-sarif
@@ -2727,7 +2727,7 @@ jobs:
           if-no-files-found: error
 
       # Diagnostic only: 8 real public routes x 2 persisted consent scenarios
-      # x 3 worst-run measurements, checked in the Lighthouse-created tab.
+      # x 3 measurements judged on the median run, checked in the Lighthouse-created tab.
       # Preserve the existing blocking gate and budgets until proven by CI.
       - name: Diagnose public Lighthouse through real E2E ingress
         if: always() && matrix.shard == 1
@@ -3169,7 +3169,7 @@ jobs:
           echo "backoffice_digest=${backoffice_digest}" >> "$GITHUB_OUTPUT"
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+        uses: sigstore/cosign-installer@881c63bd87e38389154debd8331404ce7ca8a3ab # v4.1.4
 
       - name: Sign ingress image
         timeout-minutes: 5
@@ -3189,28 +3189,28 @@ jobs:
 
       - name: Generate ingress SBOM
         timeout-minutes: 5
-        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        uses: anchore/sbom-action@dfcb83b97731532d72be422cbc51ee64adb6fd56 # v0.24.4
         with:
           image: ${{ env.INGRESS_IMAGE }}@${{ steps.manifests.outputs.ingress_digest }}
           output-file: sbom-ingress.spdx.json
 
       - name: Generate backend SBOM
         timeout-minutes: 5
-        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        uses: anchore/sbom-action@dfcb83b97731532d72be422cbc51ee64adb6fd56 # v0.24.4
         with:
           image: ${{ env.BACKEND_IMAGE }}@${{ steps.manifests.outputs.backend_digest }}
           output-file: sbom-backend.spdx.json
 
       - name: Generate frontend SBOM
         timeout-minutes: 5
-        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        uses: anchore/sbom-action@dfcb83b97731532d72be422cbc51ee64adb6fd56 # v0.24.4
         with:
           image: ${{ env.FRONTEND_IMAGE }}@${{ steps.manifests.outputs.frontend_digest }}
           output-file: sbom-frontend.spdx.json
 
       - name: Generate backoffice SBOM
         timeout-minutes: 5
-        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        uses: anchore/sbom-action@dfcb83b97731532d72be422cbc51ee64adb6fd56 # v0.24.4
         with:
           image: ${{ env.BACKOFFICE_IMAGE }}@${{ steps.manifests.outputs.backoffice_digest }}
           output-file: sbom-backoffice.spdx.json

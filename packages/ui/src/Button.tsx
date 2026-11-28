@@ -1,4 +1,5 @@
-import React, { forwardRef } from "react";
+import type React from "react";
+import { forwardRef } from "react";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";

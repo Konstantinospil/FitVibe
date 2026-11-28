@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useCallback } from "react";
+import type React from "react";
+import { createContext, useState, useContext, useCallback } from "react";
 import { CheckCircle, XCircle, AlertCircle, Info, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 

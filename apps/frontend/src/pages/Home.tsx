@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo } from "react";
+import type React from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";

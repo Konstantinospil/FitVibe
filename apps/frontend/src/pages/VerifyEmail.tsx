@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageIntro from "../components/PageIntro";
 import { Button, InputControl } from "@fitvibe/ui";

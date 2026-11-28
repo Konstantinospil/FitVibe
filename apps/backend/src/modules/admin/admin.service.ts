@@ -78,6 +78,8 @@ export async function getOpsStatus(): Promise<AdminOpsStatus> {
   ]);
   const readOnly = isEffectiveReadOnly();
 
+  // Without a database the counts are unknown, not zero: null keeps an outage from
+  // looking like an empty queue.
   const [loggedInUsers, unresolvedMessages, violationReports, unresolvedAuditLogs] = dbOk
     ? await Promise.all([
         repo.countActiveSessions(),
@@ -85,7 +87,7 @@ export async function getOpsStatus(): Promise<AdminOpsStatus> {
         repo.countPendingReports(),
         repo.countUnresolvedAuditLogs(),
       ])
-    : [0, 0, 0, 0];
+    : [null, null, null, null];
 
   return {
     backend: {
@@ -105,7 +107,10 @@ export async function getOpsStatus(): Promise<AdminOpsStatus> {
       unresolvedMessages,
       violationReports,
       unresolvedAuditLogs,
-      openIssues: unresolvedMessages + violationReports + unresolvedAuditLogs,
+      openIssues:
+        unresolvedMessages === null || violationReports === null || unresolvedAuditLogs === null
+          ? null
+          : unresolvedMessages + violationReports + unresolvedAuditLogs,
     },
   };
 }

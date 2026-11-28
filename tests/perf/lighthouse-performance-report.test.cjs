@@ -24,14 +24,14 @@ const sample = (performance, lcp, lcpLabel = "Calendar") => ({
   },
 });
 
-test("Worst-run performance summary retains measured results despite budget breaches", () => {
+test("Median-run performance summary retains measured results despite budget breaches", () => {
   const input = {
     label: "Athlete",
     paths: ["/calendar"],
     expectedRuns: 3,
     results: [
-      sample(0.6, 3200, "Would you like to activate two-factor authentication?"),
-      sample(0.85, 2400),
+      sample(0.6, 3200),
+      sample(0.85, 2400, "Would you like to activate two-factor authentication?"),
       sample(0.9, 2200),
     ],
     budgetErrors: ["/calendar: LCP exceeds 3000"],
@@ -39,18 +39,22 @@ test("Worst-run performance summary retains measured results despite budget brea
   };
   const summary = buildPerformanceSummary(input);
   assert.equal(summary.pages[0].status, "measured");
-  assert.equal(summary.pages[0].worstLcpMs, 3200);
-  assert.equal(summary.pages[0].worstPerformanceScore, 0.6);
+  assert.equal(summary.pages[0].medianLcpMs, 2400);
+  assert.equal(summary.pages[0].medianPerformanceScore, 0.85);
   assert.deepEqual(summary.pages[0].lcpRunsMs, [3200, 2400, 2200]);
-  // The element of the slowest run, not of the first or fastest one.
+  // The element of the median run, not of the first, fastest or slowest one.
   assert.equal(
-    summary.pages[0].worstLcpElement,
+    summary.pages[0].medianLcpElement,
     "Would you like to activate two-factor authentication?",
   );
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), "fitvibe-lhr-summary-"));
   try {
     writePerformanceReport(directory, input);
-    assert.match(fs.readFileSync(path.join(directory, "summary.md"), "utf8"), /3200/);
+    assert.match(fs.readFileSync(path.join(directory, "summary.md"), "utf8"), /\| 2400 \|/);
+    assert.match(
+      fs.readFileSync(path.join(directory, "summary.md"), "utf8"),
+      /median of valid runs/,
+    );
     assert.match(fs.readFileSync(path.join(directory, "summary.md"), "utf8"), /LCP exceeds 3000/);
     assert.match(fs.readFileSync(path.join(directory, "summary.md"), "utf8"), /3200, 2400, 2200/);
     assert.equal(
@@ -71,9 +75,9 @@ test("Redirected or missing pages remain explicitly incomplete", () => {
     technicalErrors: ["/cookie redirected to login"],
   });
   assert.equal(summary.pages[0].status, "incomplete");
-  assert.equal(summary.pages[0].worstLcpMs, null);
+  assert.equal(summary.pages[0].medianLcpMs, null);
   assert.deepEqual(summary.pages[0].lcpRunsMs, []);
-  assert.equal(summary.pages[0].worstLcpElement, null);
+  assert.equal(summary.pages[0].medianLcpElement, null);
   assert.equal(summary.measuredPages, 0);
 });
 

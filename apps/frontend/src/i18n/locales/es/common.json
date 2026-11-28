@@ -1122,7 +1122,13 @@
       "exertion": "Esfuerzo objetivo",
       "restSet": "Descanso tras cada serie (segundos)",
       "restExercise": "Descanso tras el ejercicio (segundos)",
-      "trainingPlan": "Plan de entrenamiento"
+      "trainingPlan": "Plan de entrenamiento",
+      "block": "Intervalos o circuito",
+      "blockName": "Nombre del bloque",
+      "rounds": "Rondas",
+      "work": "Trabajo (segundos)",
+      "blockRest": "Descanso tras cada ejercicio (segundos)",
+      "roundRest": "Descanso entre rondas (segundos)"
     },
     "placeholders": {
       "name": "Nombre del entrenamiento",
@@ -1147,7 +1153,15 @@
     },
     "errors": {
       "save": "No se pudo guardar el entrenamiento.",
-      "exercises": "No se pudieron cargar los ejercicios."
+      "exercises": "No se pudieron cargar los ejercicios.",
+      "circuitSize": "Un circuito necesita al menos {{count}} ejercicios.",
+      "intervalWork": "Indica el tiempo de trabajo de cada bloque de intervalos."
+    },
+    "block": {
+      "none": "Fuera de un bloque",
+      "join": "Añadir al bloque anterior",
+      "newInterval": "Empezar un bloque de intervalos",
+      "newCircuit": "Empezar un circuito"
     }
   },
   "actions": {
@@ -1190,6 +1204,16 @@
     "skipped": "Omitida",
     "target": "objetivo: {{value}}",
     "stoppedEarly": "Terminado antes de tiempo"
+  },
+  "sessionBlocks": {
+    "kind": {
+      "interval": "Intervalos",
+      "circuit": "Circuito"
+    },
+    "rounds": "{{count}} ronda",
+    "rounds_other": "{{count}} rondas",
+    "work": "Trabajo: {{value}} s",
+    "roundRest": "Entre rondas: {{value}} s"
   },
   "librarySurface": {
     "title": "Biblioteca",
@@ -1484,5 +1508,43 @@
       "removeMessage": "La foto se eliminará. Puedes añadir otra más tarde.",
       "finishUploadFailed": "Tu entrenamiento está guardado, pero no se pudo subir la foto. Vuelve a añadirla aquí."
     }
+  },
+  "workoutIntake": {
+    "title": "Agua y comida",
+    "kind": {
+      "water": "Agua",
+      "energy": "Energía de la comida"
+    },
+    "amount": {
+      "water": "{{amount}} ml",
+      "energy": "{{amount}} kcal"
+    },
+    "quickWater": "Añadir {{amount}}",
+    "fields": {
+      "kind": "Tipo",
+      "amount": {
+        "water": "Agua (ml)",
+        "energy": "Energía de la comida (kcal)"
+      },
+      "total": {
+        "water": "Agua bebida (ml)",
+        "energy": "Energía de la comida ingerida (kcal)"
+      }
+    },
+    "add": "Añadir",
+    "entries": "Agua y comida registradas",
+    "entry": {
+      "water": "{{amount}} de agua a las {{time}}",
+      "energy": "{{amount}} de comida a las {{time}}"
+    },
+    "remove": "Quitar",
+    "removeEntry": "Quitar {{amount}}",
+    "empty": "Aún no hay nada registrado.",
+    "invalid": {
+      "water": "Introduce mililitros enteros de 1 a {{max}}.",
+      "energy": "Introduce kilocalorías enteras de 1 a {{max}}."
+    },
+    "saveError": "No se pudo guardar la entrada. Inténtalo de nuevo.",
+    "removeError": "No se pudo quitar la entrada. Inténtalo de nuevo."
   }
 }

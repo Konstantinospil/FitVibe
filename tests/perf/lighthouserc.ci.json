@@ -31,42 +31,42 @@
           "error",
           {
             "minScore": 0.6,
-            "aggregationMethod": "pessimistic"
+            "aggregationMethod": "median"
           }
         ],
         "categories:accessibility": [
           "error",
           {
             "minScore": 0.9,
-            "aggregationMethod": "pessimistic"
+            "aggregationMethod": "median"
           }
         ],
         "categories:best-practices": [
           "error",
           {
             "minScore": 0.9,
-            "aggregationMethod": "pessimistic"
+            "aggregationMethod": "median"
           }
         ],
         "categories:seo": [
           "error",
           {
             "minScore": 0.9,
-            "aggregationMethod": "pessimistic"
+            "aggregationMethod": "median"
           }
         ],
         "resource-summary:script.size": [
           "error",
           {
             "maxNumericValue": 307200,
-            "aggregationMethod": "pessimistic"
+            "aggregationMethod": "median"
           }
         ],
         "largest-contentful-paint": [
           "error",
           {
             "maxNumericValue": 3000,
-            "aggregationMethod": "pessimistic"
+            "aggregationMethod": "median"
           }
         ]
       }

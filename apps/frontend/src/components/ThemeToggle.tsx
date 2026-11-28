@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
 import { useThemeStore } from "../store/theme.store";

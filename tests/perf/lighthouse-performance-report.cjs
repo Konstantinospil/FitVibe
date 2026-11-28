@@ -1,17 +1,16 @@
 "use strict";
 const fs = require("node:fs");
 const path = require("node:path");
+const { isMeasured, median, medianEntry } = require("./lighthouse-aggregation.cjs");
 
-function worst(entries, read, direction = "max") {
-  const values = entries
-    .map(({ report }) => read(report))
-    .filter((value) => typeof value === "number" && Number.isFinite(value));
-  return values.length === entries.length && values.length
-    ? direction === "min"
-      ? Math.min(...values)
-      : Math.max(...values)
-    : null;
+// The value the budget judges: the median of the valid runs, or null when any
+// valid run lacks the metric (a partial set would hide a missing measurement).
+function medianOfRuns(entries, read) {
+  const values = entries.map(({ report }) => read(report));
+  return values.length && values.every(isMeasured) ? median(values) : null;
 }
+
+const lcpMs = (report) => report?.audits?.["largest-contentful-paint"]?.numericValue;
 
 function scriptBytes(report) {
   const resources = report.audits?.["resource-summary"]?.details?.items;
@@ -20,17 +19,11 @@ function scriptBytes(report) {
     : null;
 }
 
-// The element Lighthouse attributed LCP to in the slowest valid run, so the log
+// The element Lighthouse attributed LCP to in the median valid run, so the log
 // shows *what* the gate timed (page content, an overlay, a fallback...).
-function worstRunLcpElement(entries) {
-  let worstEntry = null;
-  for (const entry of entries) {
-    const value = entry.report?.audits?.["largest-contentful-paint"]?.numericValue;
-    if (typeof value !== "number" || !Number.isFinite(value)) continue;
-    const best = worstEntry?.report?.audits?.["largest-contentful-paint"]?.numericValue;
-    if (worstEntry === null || value > best) worstEntry = entry;
-  }
-  const node = worstEntry?.report?.audits?.["lcp-breakdown-insight"]?.details?.items?.find(
+function medianRunLcpElement(entries) {
+  const medianRun = medianEntry(entries, (entry) => lcpMs(entry.report));
+  const node = medianRun?.report?.audits?.["lcp-breakdown-insight"]?.details?.items?.find(
     (item) => item.type === "node",
   );
   const label =
@@ -55,18 +48,18 @@ function buildPerformanceSummary({
       validRuns: valid.length,
       expectedRuns,
       status: valid.length === expectedRuns ? "measured" : "incomplete",
-      worstPerformanceScore: worst(valid, (r) => r.categories?.performance?.score, "min"),
-      worstAccessibilityScore: worst(valid, (r) => r.categories?.accessibility?.score, "min"),
-      worstLcpMs: worst(valid, (r) => r.audits?.["largest-contentful-paint"]?.numericValue),
-      worstTbtMs: worst(valid, (r) => r.audits?.["total-blocking-time"]?.numericValue),
-      worstCls: worst(valid, (r) => r.audits?.["cumulative-layout-shift"]?.numericValue),
-      worstScriptBytes: worst(valid, scriptBytes),
+      medianPerformanceScore: medianOfRuns(valid, (r) => r.categories?.performance?.score),
+      medianAccessibilityScore: medianOfRuns(valid, (r) => r.categories?.accessibility?.score),
+      medianLcpMs: medianOfRuns(valid, lcpMs),
+      medianTbtMs: medianOfRuns(valid, (r) => r.audits?.["total-blocking-time"]?.numericValue),
+      medianCls: medianOfRuns(valid, (r) => r.audits?.["cumulative-layout-shift"]?.numericValue),
+      medianScriptBytes: medianOfRuns(valid, scriptBytes),
       // Every valid run's LCP, in collection order, so run-to-run spread is
       // visible in the job log without downloading the artifact.
-      worstLcpElement: worstRunLcpElement(valid),
+      medianLcpElement: medianRunLcpElement(valid),
       lcpRunsMs: valid
-        .map(({ report }) => report.audits?.["largest-contentful-paint"]?.numericValue)
-        .filter((value) => typeof value === "number" && Number.isFinite(value))
+        .map(({ report }) => lcpMs(report))
+        .filter(isMeasured)
         .map((value) => Math.round(value)),
     };
   });
@@ -89,13 +82,13 @@ function markdownReport(summary) {
       [
         page.path,
         page.validRuns + "/" + page.expectedRuns,
-        display(page.worstPerformanceScore === null ? null : page.worstPerformanceScore * 100),
-        display(page.worstLcpMs),
+        display(page.medianPerformanceScore === null ? null : page.medianPerformanceScore * 100),
+        display(page.medianLcpMs),
         page.lcpRunsMs.length ? page.lcpRunsMs.join(", ") : "—",
-        page.worstLcpElement === null ? "—" : page.worstLcpElement.replaceAll("|", "/"),
-        display(page.worstTbtMs),
-        display(page.worstCls, 3),
-        display(page.worstScriptBytes === null ? null : page.worstScriptBytes / 1024),
+        page.medianLcpElement === null ? "—" : page.medianLcpElement.replaceAll("|", "/"),
+        display(page.medianTbtMs),
+        display(page.medianCls, 3),
+        display(page.medianScriptBytes === null ? null : page.medianScriptBytes / 1024),
         page.status,
       ].join(" | ") +
       " |",
@@ -107,9 +100,9 @@ function markdownReport(summary) {
       summary.measuredPages +
       "/" +
       summary.expectedPages +
-      " pages. Performance scores and numeric metrics are **worst of valid runs**.",
+      " pages. Performance scores and numeric metrics are **median of valid runs**.",
     "",
-    "| Route | Valid runs | Performance / 100 | LCP ms | LCP per run ms | LCP element (worst run) | TBT ms | CLS | JS transfer KiB | Collection |",
+    "| Route | Valid runs | Performance / 100 | LCP ms | LCP per run ms | LCP element (median run) | TBT ms | CLS | JS transfer KiB | Collection |",
     "| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- |",
     ...rows,
     "",

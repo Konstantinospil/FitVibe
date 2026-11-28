@@ -61,12 +61,13 @@ export interface AdminOpsStatus {
     status: OpsLightStatus;
     ok: boolean;
   };
+  /** Null while the database is unreachable: the counts are unknown, not zero. */
   counts: {
-    loggedInUsers: number;
-    unresolvedMessages: number;
-    violationReports: number;
-    unresolvedAuditLogs: number;
-    openIssues: number;
+    loggedInUsers: number | null;
+    unresolvedMessages: number | null;
+    violationReports: number | null;
+    unresolvedAuditLogs: number | null;
+    openIssues: number | null;
   };
 }
 

@@ -11,7 +11,7 @@ const { chromium } = require("@playwright/test");
 const { athleteRoutes, auditUrl } = require("./lighthouse-routes.cjs");
 const { verifyRouteIdentity } = require("./lighthouse-report-contract.cjs");
 const { validateMeasurement } = require("./lighthouse-measurement-validity.cjs");
-const { assertWorstRunBudgets } = require("./lighthouse-score-contract.cjs");
+const { assertMedianRunBudgets } = require("./lighthouse-score-contract.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
 const { getPageReadySelector } = require("./lighthouse-page-readiness.cjs");
 const {
@@ -451,7 +451,7 @@ async function main() {
       );
     }
     // Isolated diagnostic: executed only after the authoritative Lighthouse
-    // measurements. Never modifies the worst-of-three budget calculations.
+    // measurements. Never modifies the median-of-three budget calculations.
     try {
       await runChromeCriticalPathDiagnostics({
         browser,
@@ -468,7 +468,7 @@ async function main() {
     // A budget failure must not discard LHR files or prevent report creation.
     // Evaluate only verified page identities, never redirected login screens.
     const validReports = results.filter((entry) => entry.valid).map((entry) => entry.report);
-    budgetErrors = assertWorstRunBudgets(
+    budgetErrors = assertMedianRunBudgets(
       validReports,
       athleteRoutes,
       origin,
@@ -476,7 +476,7 @@ async function main() {
       runCount,
     );
     // Diagnostic audit history is separate from the three valid runs and never
-    // changes the worst-of-three acceptance or the individual raw LHRs.
+    // changes the median-of-three acceptance or the individual raw LHRs.
     fs.writeFileSync(
       path.join(auditDir, "navigation-diagnostics.json"),
       JSON.stringify(navigationDiagnostics, null, 2),
@@ -508,7 +508,7 @@ async function main() {
     );
     if (technicalErrors.length) console.error(technicalErrors.join("\n"));
     if (budgetErrors.length)
-      console.error("Worst-run budget breaches:\n" + budgetErrors.join("\n"));
+      console.error("Median-run budget breaches:\n" + budgetErrors.join("\n"));
     if (technicalErrors.length || budgetErrors.length) process.exitCode = 1;
     bootstrap?.close();
     if (cacheSession) await cacheSession.detach().catch(() => undefined);

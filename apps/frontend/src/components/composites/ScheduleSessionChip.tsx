@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { GripHorizontal } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";
 import type { TrainingStatus } from "./TrainingSurface";

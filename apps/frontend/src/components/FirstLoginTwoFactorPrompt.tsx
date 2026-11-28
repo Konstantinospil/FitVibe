@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";

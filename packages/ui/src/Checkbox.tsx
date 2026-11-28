@@ -1,4 +1,5 @@
-import React, { forwardRef, useId, useState } from "react";
+import type React from "react";
+import { forwardRef, useId, useState } from "react";
 export type CheckboxState = "inactive" | "active" | "hover" | "error" | "disabled";
 export interface CheckboxProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,

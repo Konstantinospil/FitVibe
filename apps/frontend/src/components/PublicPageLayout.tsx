@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import Footer from "./Footer";
 import HeaderUtilitiesBar from "./HeaderUtilities";
 import { PageShell } from "../layouts/PageShell";

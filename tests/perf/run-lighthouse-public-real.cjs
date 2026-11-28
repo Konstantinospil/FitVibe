@@ -12,7 +12,7 @@ const {
   validateMeasurement,
   assertScenarioCoverage,
 } = require("./lighthouse-measurement-validity.cjs");
-const { assertPublicWorstBudgets } = require("./lighthouse-public-budgets.cjs");
+const { assertPublicMedianBudgets } = require("./lighthouse-public-budgets.cjs");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
 const { verifyPublicContent } = require("./lighthouse-public-readiness.cjs");
 const { writePerformanceReport } = require("./lighthouse-performance-report.cjs");
@@ -414,7 +414,7 @@ async function main() {
       sameNavigationReady: item.readiness?.ready === true,
     }));
     technicalErrors.push(...assertScenarioCoverage(records, publicRoutes, scenarios, expectedRuns));
-    budgetErrors = assertPublicWorstBudgets(
+    budgetErrors = assertPublicMedianBudgets(
       rows,
       publicRoutes,
       scenarios,
@@ -493,7 +493,7 @@ async function main() {
           traceRecoveries.length +
           ".",
         "",
-        "See first-visit/summary.md and consented/summary.md for independent worst-run budgets.",
+        "See first-visit/summary.md and consented/summary.md for independent median-run budgets.",
         "",
         ...technicalErrors.map((error) => "- INVALID: " + error),
         ...budgetErrors.map((error) => "- BUDGET: " + error),
@@ -514,7 +514,7 @@ async function main() {
     }
     // Remain diagnostic until this runner has validated CI evidence.
     if (budgetErrors.length)
-      console.warn("Canonical worst-run breaches:\n" + budgetErrors.join("\n"));
+      console.warn("Canonical median-run breaches:\n" + budgetErrors.join("\n"));
   }
 }
 

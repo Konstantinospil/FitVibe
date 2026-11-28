@@ -23,6 +23,7 @@ const {
 const {
   homeSurface,
   liveWorkout,
+  sessionBlocks,
   sessionDetail,
   workoutEditor,
 } = require("../../../apps/frontend/src/i18n/locales/en/common.json");
@@ -46,6 +47,29 @@ const withExercise = {
     },
   ],
 };
+
+// ADR-046: one exercise as a Tabata interval block, eight rounds of 20 s work / 10 s rest.
+const TABATA = { rounds: 8, work_sec: 20, rest_sec: 10 };
+const withTabata = {
+  exercises: [
+    {
+      order: 1,
+      exercise_id: null,
+      block_ref: 1,
+      planned: { sets: TABATA.rounds },
+      sets: Array.from({ length: TABATA.rounds }, (_, index) => ({
+        order: index + 1,
+        planned: { duration_sec: TABATA.work_sec, rest_sec: TABATA.rest_sec },
+      })),
+    },
+  ],
+  blocks: [{ ref: 1, kind: "interval", name: "Tabata", ...TABATA }],
+};
+const tabataSummary = [
+  sessionBlocks.rounds_other.replace("{{count}}", TABATA.rounds),
+  sessionBlocks.work.replace("{{value}}", TABATA.work_sec),
+  sessionDetail.rest.replace("{{value}}", TABATA.rest_sec),
+].join(" · ");
 
 // The Calendar lists today's workouts under the selected day and in this week's plan.
 const detailsButton = (page, title) =>
@@ -126,6 +150,33 @@ test.describe("Session details", () => {
     await expect(
       page.getByRole("button", { name: workoutEditor.actions.start, exact: true }),
     ).toBeVisible();
+  });
+
+  test("an interval block heads its exercises on the session page and in the live workout", async ({
+    page,
+  }, testInfo) => {
+    const { today } = scheduleDays();
+    const session = await createPlannedSession(page, {
+      title: `Blocks ${testInfo.testId}`,
+      plannedAt: at(today, DETAIL_HOUR, 5),
+      durationMin: 10,
+      extra: withTabata,
+    });
+    const stored = await fetchSession(page, session.id);
+    expect(stored.blocks).toEqual([expect.objectContaining({ kind: "interval", ...TABATA })]);
+    expect(stored.exercises[0].block_id).toBe(stored.blocks[0].id);
+    expect(stored.exercises[0].sets).toHaveLength(TABATA.rounds);
+
+    await page.goto(`/sessions/${session.id}`);
+    await waitForApp(page);
+    await expect(page.getByText("Tabata", { exact: true })).toBeVisible();
+    await expect(page.getByText(sessionBlocks.kind.interval, { exact: true })).toBeVisible();
+    await expect(page.getByText(tabataSummary, { exact: true })).toBeVisible();
+
+    // Each round is a set, so the live workout records the block round by round.
+    await page.getByRole("button", { name: workoutEditor.actions.start, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/start/${session.id}$`));
+    await expect(page.getByText(tabataSummary, { exact: true })).toBeVisible();
   });
 
   test("open a completed workout from Home's history, read-only", async ({ page }, testInfo) => {

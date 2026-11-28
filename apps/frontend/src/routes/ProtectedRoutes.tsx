@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useEffect, useState } from "react";
+import type React from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import {
   HydrationBoundary,

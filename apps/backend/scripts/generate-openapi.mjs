@@ -122,6 +122,56 @@ const heartRateBpm = nullable({ type: "integer", minimum: 20, maximum: 250 });
 // in sessions.normalization.ts by the contract test.
 const sessionNote = nullable({ type: "string", maxLength: 1000 });
 const setNote = nullable({ type: "string", maxLength: 500 });
+// Workout intake (ADR-045). Pinned to INTAKE_LIMITS in sessions.intake.service.ts
+// by the contract test.
+const intakeLimits = { waterMaxMl: 5000, energyMaxKcal: 5000, maxEntriesPerLog: 20 };
+const intakeEntryInput = {
+  type: "object",
+  description: `Water in millilitres (at most ${intakeLimits.waterMaxMl}) or food energy in kilocalories (at most ${intakeLimits.energyMaxKcal}). Not the workout's own calories.`,
+  properties: {
+    kind: { type: "string", enum: ["water", "energy"] },
+    amount: { type: "integer", minimum: 1, maximum: intakeLimits.waterMaxMl },
+  },
+  required: ["kind", "amount"],
+  additionalProperties: false,
+};
+// Interval and circuit blocks (ADR-046). Pinned to SESSION_BLOCK_LIMITS in
+// sessions.blocks.ts by the contract test.
+const blockLimits = {
+  maxRounds: 50,
+  minWorkSec: 1,
+  maxWorkSec: 3600,
+  maxRestSec: 3600,
+  nameMaxLength: 100,
+  minCircuitMembers: 2,
+  maxBlocks: 50,
+};
+const blockKindSchema = {
+  type: "string",
+  enum: ["interval", "circuit"],
+  description:
+    "interval: timed work and rest for each member (work_sec required). circuit: the members back to back.",
+};
+const blockRestSec = nullable({ type: "integer", minimum: 0, maximum: blockLimits.maxRestSec });
+const blockValueProperties = {
+  kind: blockKindSchema,
+  name: nullable({ type: "string", maxLength: blockLimits.nameMaxLength }),
+  rounds: { type: "integer", minimum: 1, maximum: blockLimits.maxRounds },
+  work_sec: nullable({
+    type: "integer",
+    minimum: blockLimits.minWorkSec,
+    maximum: blockLimits.maxWorkSec,
+    description: "Work per member and round.",
+  }),
+  rest_sec: { ...blockRestSec, description: "Rest after each member's work." },
+  round_rest_sec: { ...blockRestSec, description: "Rest between rounds." },
+};
+const sessionBlocksInput = {
+  type: "array",
+  maxItems: blockLimits.maxBlocks,
+  items: { $ref: "#/components/schemas/SessionBlockInput" },
+  description: `Interval and circuit blocks (ADR-046). Members set block_ref and must follow each other in exercise order; a circuit needs at least ${blockLimits.minCircuitMembers} (422 E.SESSION.INVALID_BLOCK otherwise).`,
+};
 // The shared image pipeline (services/imageUpload.service.ts).
 const imageUploadDescription = "JPEG, PNG, or WebP image up to 5 MB";
 
@@ -583,6 +633,41 @@ const paths = {
       ],
       responses: {
         200: jsonContent("#/components/schemas/SessionVibeChanges"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/intake": {
+    post: {
+      summary: "Record water or food energy for a workout",
+      description:
+        "Owner only (ADR-045). Once the session has started or is completed (409 E.SESSION.INTAKE_NOT_STARTED otherwise); 404 for a missing session and for someone else's. Returns the session's intake.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id")],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": { schema: { $ref: "#/components/schemas/SessionIntakeEntryInput" } },
+        },
+      },
+      responses: {
+        201: jsonContent("#/components/schemas/SessionIntake"),
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+        409: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/intake/{entryId}": {
+    delete: {
+      summary: "Remove an intake entry",
+      description: "Owner only. Returns the session's remaining intake.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id"), pathUuid("entryId")],
+      responses: {
+        200: jsonContent("#/components/schemas/SessionIntake"),
         404: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
@@ -1277,11 +1362,19 @@ const schemas = {
         description:
           "What the athlete wrote after the workout (ADR-044). Only with status completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise).",
       },
+      intake: {
+        type: "array",
+        maxItems: intakeLimits.maxEntriesPerLog,
+        items: intakeEntryInput,
+        description:
+          "What was drunk and eaten during a logged workout (ADR-045), recorded at its end. Only with status completed (400 E.SESSION.INTAKE_WITHOUT_RESULT otherwise).",
+      },
       recurrence_rule: { type: "string", maxLength: 255, nullable: true },
       exercises: {
         type: "array",
         items: { $ref: "#/components/schemas/SessionExerciseInput" },
       },
+      blocks: sessionBlocksInput,
     },
     required: ["planned_at"],
   },
@@ -1301,9 +1394,29 @@ const schemas = {
         maxItems: 100,
         items: { $ref: "#/components/schemas/SessionSetInput" },
       },
+      block_ref: nullable({
+        type: "integer",
+        minimum: 1,
+        description: "The ref of this exercise's block in the same request (ADR-046).",
+      }),
     },
     required: ["order"],
     additionalProperties: false,
+  },
+  SessionBlockInput: {
+    type: "object",
+    description:
+      "An interval or circuit block (ADR-046). ref only links it to its members within this request.",
+    properties: { ref: { type: "integer", minimum: 1 }, ...blockValueProperties },
+    required: ["ref", "kind", "rounds"],
+    additionalProperties: false,
+  },
+  SessionBlock: {
+    type: "object",
+    description:
+      "An interval or circuit block (ADR-046). Its position is that of its members; each round of a member is one of its sets.",
+    properties: { id: { type: "string", format: "uuid" }, ...blockValueProperties },
+    required: ["id", "kind", "name", "rounds", "work_sec", "rest_sec", "round_rest_sec"],
   },
   SessionSetInput: {
     type: "object",
@@ -1391,6 +1504,10 @@ const schemas = {
         description: "Replaces all exercises and sets of the session.",
         items: { $ref: "#/components/schemas/SessionExerciseInput" },
       },
+      blocks: {
+        ...sessionBlocksInput,
+        description: `${sessionBlocksInput.description} Replaced together with exercises; only accepted with exercises (400 E.SESSION.BLOCKS_WITHOUT_EXERCISES).`,
+      },
     },
     additionalProperties: false,
   },
@@ -1414,6 +1531,11 @@ const schemas = {
         allOf: [{ $ref: "#/components/schemas/SessionPhoto" }],
         description: "The workout photo; only the owner receives it (null for anyone else).",
       }),
+      intake: nullable({
+        allOf: [{ $ref: "#/components/schemas/SessionIntake" }],
+        description:
+          "Water and food energy (ADR-045); only the owner receives it (null for anyone else).",
+      }),
       recurrence_rule: nullable({ type: "string" }),
       started_at: nullable({ type: "string", format: "date-time" }),
       completed_at: nullable({ type: "string", format: "date-time" }),
@@ -1435,6 +1557,11 @@ const schemas = {
       deleted_at: nullable({ type: "string", format: "date-time" }),
       created_at: { type: "string", format: "date-time" },
       updated_at: { type: "string", format: "date-time" },
+      blocks: {
+        type: "array",
+        description: "Interval and circuit blocks, in the order of their first member (ADR-046).",
+        items: { $ref: "#/components/schemas/SessionBlock" },
+      },
       exercises: {
         type: "array",
         items: {
@@ -1448,6 +1575,11 @@ const schemas = {
               description: "Name snapshot at planning time.",
             }),
             order_index: { type: "integer", minimum: 1 },
+            block_id: nullable({
+              type: "string",
+              format: "uuid",
+              description: "The block this exercise belongs to (ADR-046).",
+            }),
             status: exerciseStatusSchema,
             source: setSourceSchema,
             notes: nullable({ type: "string" }),
@@ -1555,6 +1687,35 @@ const schemas = {
     },
     required: ["data", "meta"],
   },
+  SessionIntake: {
+    type: "object",
+    description: "What the athlete drank and ate during a workout (ADR-045).",
+    properties: {
+      entries: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            kind: { type: "string", enum: ["water", "energy"] },
+            amount: { type: "integer", minimum: 1 },
+            recorded_at: { type: "string", format: "date-time" },
+          },
+          required: ["id", "kind", "amount", "recorded_at"],
+        },
+      },
+      totals: {
+        type: "object",
+        properties: {
+          water_ml: { type: "integer", minimum: 0 },
+          energy_kcal: { type: "integer", minimum: 0 },
+        },
+        required: ["water_ml", "energy_kcal"],
+      },
+    },
+    required: ["entries", "totals"],
+  },
+  SessionIntakeEntryInput: intakeEntryInput,
   SessionPhoto: {
     type: "object",
     description: "A workout photo (ADR-044). A replaced photo has a new id and url.",

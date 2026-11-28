@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@fitvibe/ui";
 import { Modal } from "./composites/Modal";

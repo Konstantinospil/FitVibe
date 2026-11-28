@@ -129,5 +129,6 @@ export function useLiveWorkout(sessionId: string | undefined) {
     },
   });
 
-  return { query, command, finish };
+  // `update` shows a change made outside the commands, such as intake (ADR-045).
+  return { query, command, finish, update: store };
 }

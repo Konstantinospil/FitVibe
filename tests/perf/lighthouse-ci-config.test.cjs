@@ -3,9 +3,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
+const { BUDGET_AGGREGATION_METHOD } = require("./lighthouse-aggregation.cjs");
+
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, "lighthouserc.ci.json"), "utf8"));
 
-test("Lighthouse CI gates every assertion on the worst of at least three runs", () => {
+test("Lighthouse CI gates every assertion on the median of at least three runs", () => {
   assert.ok(config.ci.collect.numberOfRuns >= 3, "Collect at least three runs");
 
   const assertions = config.ci.assert.assertions;
@@ -14,8 +16,8 @@ test("Lighthouse CI gates every assertion on the worst of at least three runs", 
     assert.equal(level, "error", `${name} must remain a blocking assertion`);
     assert.equal(
       options?.aggregationMethod,
-      "pessimistic",
-      `${name} must evaluate the worst result, not the default best result`,
+      BUDGET_AGGREGATION_METHOD,
+      `${name} must evaluate the median run, not the default best result`,
     );
   }
 });

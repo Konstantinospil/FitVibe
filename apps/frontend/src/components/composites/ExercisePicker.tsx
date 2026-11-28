@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { BUTTON_ICON_SIZES, Button, InputControl, SelectControl } from "@fitvibe/ui";
@@ -86,7 +87,7 @@ export const ExercisePicker: React.FC<ExercisePickerProps> = ({ catalog, disable
       <div className="exercise-picker">
         <div className="form-label">
           <span className="form-label-text">{fieldLabel}</span>
-          <div className="exercise-picker__search">
+          <div data-slot="field-control-wrap" className="exercise-picker__search">
             <Search aria-hidden="true" size={BUTTON_ICON_SIZES.md} />
             <InputControl
               value={catalog.search}

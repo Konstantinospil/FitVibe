@@ -20,9 +20,9 @@ import {
   cloneExerciseInputsForReuse,
   convertExistingExerciseToInput,
   ensurePlanExists,
-  normalizeSessionExercises,
   trimToNull,
 } from "./sessions.normalization.js";
+import { blockInputsOf, normalizeSessionStructure } from "./sessions.blocks.js";
 
 export async function cloneOne(
   userId: string,
@@ -38,8 +38,12 @@ export async function cloneOne(
   const targetPlanId = dto.plan_id !== undefined ? (dto.plan_id ?? null) : (source.plan_id ?? null);
   const planChanged = targetPlanId !== (source.plan_id ?? null);
 
-  const normalizedExercises = normalizeSessionExercises(
-    source.exercises.map((exercise) => convertExistingExerciseToInput(exercise, includeActual)),
+  const sourceBlocks = blockInputsOf(source.blocks ?? []);
+  const structure = normalizeSessionStructure(
+    source.exercises.map((exercise) =>
+      convertExistingExerciseToInput(exercise, includeActual, sourceBlocks.refOf),
+    ),
+    sourceBlocks.blocks,
   );
 
   let plannedAt: string;
@@ -79,8 +83,8 @@ export async function cloneOne(
     }
 
     await createSession(row, trx);
-    if (normalizedExercises.length > 0) {
-      await replaceSessionExercises(trx, sessionId, normalizedExercises);
+    if (structure.exercises.length > 0) {
+      await replaceSessionExercises(trx, sessionId, structure);
     }
   });
 
@@ -105,7 +109,7 @@ export async function cloneOne(
     await recomputeProgress(userId, cloned.plan_id);
   }
 
-  if (normalizedExercises.length > 0) {
+  if (structure.exercises.length > 0) {
     await refreshSessionSummary();
   }
 
@@ -154,8 +158,11 @@ export async function applyRecurrence(
   const includeActual = dto.include_actual ?? false;
   const targetPlanId = dto.plan_id !== undefined ? (dto.plan_id ?? null) : (source.plan_id ?? null);
 
+  const sourceBlocks = blockInputsOf(source.blocks ?? []);
   const baseExercisesInput = source.exercises
-    ? source.exercises.map((exercise) => convertExistingExerciseToInput(exercise, includeActual))
+    ? source.exercises.map((exercise) =>
+        convertExistingExerciseToInput(exercise, includeActual, sourceBlocks.refOf),
+      )
     : [];
 
   const baseDate = new Date(source.planned_at);
@@ -238,10 +245,11 @@ export async function applyRecurrence(
       await createSession(row, trx);
 
       if (baseExercisesInput.length > 0) {
-        const normalized = normalizeSessionExercises(
+        const normalized = normalizeSessionStructure(
           cloneExerciseInputsForReuse(baseExercisesInput),
+          sourceBlocks.blocks,
         );
-        if (normalized.length > 0) {
+        if (normalized.exercises.length > 0) {
           await replaceSessionExercises(trx, sessionId, normalized);
         }
       }

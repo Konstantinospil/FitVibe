@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { slotKey } from "../../lib/scheduling/sessionSchedule";
 
 export interface ScheduleSlotState {

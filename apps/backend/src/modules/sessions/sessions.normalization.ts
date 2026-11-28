@@ -52,6 +52,9 @@ export function ensureNonNegativeInteger(
   return normalized;
 }
 
+/** Effort scale of a set (rating of perceived exertion). */
+export const RPE_LIMITS = { min: 1, max: 10 } as const;
+
 function ensureRpeRange(
   name: string,
   value: number | null | undefined,
@@ -60,8 +63,12 @@ function ensureRpeRange(
   if (value === null || value === undefined) {
     return null;
   }
-  if (!Number.isInteger(value) || value < 1 || value > 10) {
-    throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: ${name} must be 1-10`);
+  if (!Number.isInteger(value) || value < RPE_LIMITS.min || value > RPE_LIMITS.max) {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${context}: ${name} must be ${RPE_LIMITS.min}-${RPE_LIMITS.max}`,
+    );
   }
   return value;
 }
@@ -392,6 +399,8 @@ export function normalizeSessionExercises(
     return {
       id: exercise.id ?? uuidv4(),
       exercise_id: exercise.exercise_id ?? null,
+      // Linked by normalizeSessionStructure (sessions.blocks.ts, ADR-046).
+      block_id: null,
       order_index: order,
       status: exercise.status ?? "planned",
       source: exercise.source ?? "prescribed",
@@ -408,10 +417,13 @@ export function normalizeSessionExercises(
 export function convertExistingExerciseToInput(
   exercise: SessionExercise,
   includeActual: boolean,
+  /** ADR-046: the copy's block ref for a block id (see blockInputsOf). */
+  blockRefOf: (blockId: string | null | undefined) => number | null = () => null,
 ): SessionExerciseInput {
   return {
     order: exercise.order_index,
     exercise_id: exercise.exercise_id ?? undefined,
+    block_ref: blockRefOf(exercise.block_id),
     // A reused workout starts from scratch; a full copy keeps how it went.
     ...(includeActual ? { status: exercise.status, source: exercise.source } : {}),
     notes: exercise.notes ?? undefined,

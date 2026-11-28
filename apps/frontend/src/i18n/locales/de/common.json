@@ -1122,7 +1122,13 @@
       "exertion": "Zielanstrengung",
       "restSet": "Pause nach jedem Satz (Sekunden)",
       "restExercise": "Pause nach der Übung (Sekunden)",
-      "trainingPlan": "Trainingsplan"
+      "trainingPlan": "Trainingsplan",
+      "block": "Intervall oder Zirkel",
+      "blockName": "Name des Blocks",
+      "rounds": "Runden",
+      "work": "Belastung (Sekunden)",
+      "blockRest": "Pause nach jeder Übung (Sekunden)",
+      "roundRest": "Pause zwischen den Runden (Sekunden)"
     },
     "placeholders": {
       "name": "Name für das Workout",
@@ -1147,7 +1153,15 @@
     },
     "errors": {
       "save": "Das Workout konnte nicht gespeichert werden.",
-      "exercises": "Übungen konnten nicht geladen werden."
+      "exercises": "Übungen konnten nicht geladen werden.",
+      "circuitSize": "Ein Zirkel braucht mindestens {{count}} Übungen.",
+      "intervalWork": "Gib die Belastungszeit für jeden Intervallblock ein."
+    },
+    "block": {
+      "none": "Nicht Teil eines Blocks",
+      "join": "Zum Block darüber hinzufügen",
+      "newInterval": "Intervallblock beginnen",
+      "newCircuit": "Zirkel beginnen"
     }
   },
   "actions": {
@@ -1190,6 +1204,16 @@
     "skipped": "Übersprungen",
     "target": "Ziel: {{value}}",
     "stoppedEarly": "Vorzeitig beendet"
+  },
+  "sessionBlocks": {
+    "kind": {
+      "interval": "Intervall",
+      "circuit": "Zirkel"
+    },
+    "rounds": "{{count}} Runde",
+    "rounds_other": "{{count}} Runden",
+    "work": "Belastung: {{value}} s",
+    "roundRest": "Zwischen den Runden: {{value}} s"
   },
   "librarySurface": {
     "title": "Bibliothek",
@@ -1484,5 +1508,43 @@
       "removeMessage": "Das Foto wird gelöscht. Du kannst später ein anderes hinzufügen.",
       "finishUploadFailed": "Dein Training ist gespeichert, aber das Foto konnte nicht hochgeladen werden. Füge es hier erneut hinzu."
     }
+  },
+  "workoutIntake": {
+    "title": "Wasser und Essen",
+    "kind": {
+      "water": "Wasser",
+      "energy": "Nahrungsenergie"
+    },
+    "amount": {
+      "water": "{{amount}} ml",
+      "energy": "{{amount}} kcal"
+    },
+    "quickWater": "{{amount}} hinzufügen",
+    "fields": {
+      "kind": "Art",
+      "amount": {
+        "water": "Wasser (ml)",
+        "energy": "Nahrungsenergie (kcal)"
+      },
+      "total": {
+        "water": "Getrunkenes Wasser (ml)",
+        "energy": "Gegessene Nahrungsenergie (kcal)"
+      }
+    },
+    "add": "Hinzufügen",
+    "entries": "Erfasstes Wasser und Essen",
+    "entry": {
+      "water": "{{amount}} Wasser um {{time}}",
+      "energy": "{{amount}} Essen um {{time}}"
+    },
+    "remove": "Entfernen",
+    "removeEntry": "{{amount}} entfernen",
+    "empty": "Noch nichts erfasst.",
+    "invalid": {
+      "water": "Gib ganze Milliliter von 1 bis {{max}} ein.",
+      "energy": "Gib ganze Kilokalorien von 1 bis {{max}} ein."
+    },
+    "saveError": "Der Eintrag konnte nicht gespeichert werden. Versuche es noch einmal.",
+    "removeError": "Der Eintrag konnte nicht entfernt werden. Versuche es noch einmal."
   }
 }

@@ -92,8 +92,22 @@ describe("Sessions Repository", () => {
 
     it("returns an exercise count for each listed session using one batched query", async () => {
       const listed: Session[] = [
-        { id: "first", owner_id: userId, title: "A", planned_at: "2026-10-11T12:00:00Z", status: "planned", visibility: "private" },
-        { id: "second", owner_id: userId, title: "B", planned_at: "2026-10-12T12:00:00Z", status: "planned", visibility: "private" },
+        {
+          id: "first",
+          owner_id: userId,
+          title: "A",
+          planned_at: "2026-10-11T12:00:00Z",
+          status: "planned",
+          visibility: "private",
+        },
+        {
+          id: "second",
+          owner_id: userId,
+          title: "B",
+          planned_at: "2026-10-12T12:00:00Z",
+          status: "planned",
+          visibility: "private",
+        },
       ];
       const dbModule = await import("../../../../apps/backend/src/db/connection.js");
       const dbFn = dbModule.db as jest.Mock;
@@ -763,7 +777,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       expect(mockTrxQueryBuilder.where).toHaveBeenCalledWith({ session_id: sessionId });
       expect(mockTrxQueryBuilder.del).toHaveBeenCalled();
@@ -776,7 +793,10 @@ describe("Sessions Repository", () => {
 
       mockTrxQueryBuilder.del.mockResolvedValue(1);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, []);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises: [],
+        blocks: [],
+      });
 
       expect(mockTrxQueryBuilder.where).toHaveBeenCalledWith({ session_id: sessionId });
       expect(mockTrxQueryBuilder.del).toHaveBeenCalled();
@@ -810,7 +830,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledTimes(2); // session_exercises + planned_attributes
     });
@@ -847,7 +870,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledTimes(2);
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledWith([
@@ -889,7 +915,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledTimes(2); // session_exercises + exercise_sets
     });
@@ -912,7 +941,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       // Should only insert session_exercises, not planned_attributes
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledTimes(1);
@@ -945,7 +977,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       // Should only insert session_exercises, not planned_attributes (because it's empty)
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledTimes(1);
@@ -978,7 +1013,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       // Should insert session_exercises + planned_attributes, but not exercise_sets
       expect(mockTrxQueryBuilder.insert).toHaveBeenCalledTimes(2);
@@ -1016,7 +1054,10 @@ describe("Sessions Repository", () => {
       mockTrxQueryBuilder.del.mockResolvedValue(1);
       mockTrxQueryBuilder.insert.mockResolvedValue([]);
 
-      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, exercises);
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        exercises,
+        blocks: [],
+      });
 
       const recordedAtInsert = mockTrxQueryBuilder.insert.mock.calls.find(
         (call) =>
@@ -1026,6 +1067,64 @@ describe("Sessions Repository", () => {
           ),
       );
       expect(recordedAtInsert).toBeDefined();
+    });
+  });
+
+  describe("replaceSessionExercises with blocks (ADR-046)", () => {
+    it("clears the old blocks and writes the new ones before their members", async () => {
+      const builders = new Map<string, ReturnType<typeof createMockQueryBuilder>>();
+      const order: string[] = [];
+      const mockTrx = ((table: string) => {
+        if (!builders.has(table)) {
+          const builder = createMockQueryBuilder();
+          builder.del.mockResolvedValue(1);
+          builder.insert.mockImplementation(async () => {
+            order.push(table);
+            return [];
+          });
+          builders.set(table, builder);
+        }
+        return builders.get(table);
+      }) as any;
+      const block = {
+        id: "block-1",
+        kind: "interval" as const,
+        name: "Tabata",
+        rounds: 8,
+        work_sec: 20,
+        rest_sec: 10,
+        round_rest_sec: null,
+      };
+
+      await sessionsRepository.replaceSessionExercises(mockTrx, sessionId, {
+        blocks: [block],
+        exercises: [
+          {
+            id: "exercise-1",
+            exercise_id: null,
+            block_id: block.id,
+            order_index: 1,
+            status: "planned",
+            source: "prescribed",
+            notes: null,
+            planned: null,
+            sets: [],
+          },
+        ],
+      });
+
+      const blocks = builders.get(sessionsRepository.SESSION_BLOCKS_TABLE)!;
+      expect(blocks.where).toHaveBeenCalledWith({ session_id: sessionId });
+      expect(blocks.del).toHaveBeenCalled();
+      expect(blocks.insert).toHaveBeenCalledWith([
+        expect.objectContaining({ ...block, session_id: sessionId }),
+      ]);
+      expect(builders.get("session_exercises")!.insert).toHaveBeenCalledWith([
+        expect.objectContaining({ id: "exercise-1", block_id: block.id }),
+      ]);
+      expect(order.indexOf(sessionsRepository.SESSION_BLOCKS_TABLE)).toBeLessThan(
+        order.indexOf("session_exercises"),
+      );
     });
   });
 });

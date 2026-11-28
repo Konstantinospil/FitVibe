@@ -1,5 +1,6 @@
 import axios from "axios";
 import type {
+  SessionBlockKind,
   SessionCompletionOutcome,
   SessionExerciseStatus,
   SessionSetSource,
@@ -11,6 +12,7 @@ import { apiClient } from "./httpApi";
 
 // Sessions API (extending from earlier types)
 export type {
+  SessionBlockKind,
   SessionCompletionOutcome,
   SessionExerciseStatus,
   SessionSetSource,
@@ -77,8 +79,30 @@ export interface SessionExercise {
   planned?: SessionExerciseAttributes | null;
   actual?: SessionExerciseActualAttributes | null;
   sets: SessionExerciseSet[];
+  /** ADR-046: the interval or circuit block this exercise belongs to. */
+  block_id?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+/** ADR-046: groups consecutive exercises; each round of a member is one of its sets. */
+export interface SessionBlock {
+  id: string;
+  kind: SessionBlockKind;
+  name: string | null;
+  rounds: number;
+  /** Work per member and round; set for every interval block. */
+  work_sec: number | null;
+  /** Rest after each member's work. */
+  rest_sec: number | null;
+  /** Rest between rounds. */
+  round_rest_sec: number | null;
+}
+
+/** A block in a request; `ref` links it to its members' `block_ref` in that request. */
+export interface SessionBlockInput extends Omit<SessionBlock, "id" | "name"> {
+  ref: number;
+  name?: string | null;
 }
 
 export interface Session {
@@ -115,6 +139,22 @@ export interface SessionListItem extends Session {
   exercise_count: number;
 }
 
+/** ADR-045: water in millilitres, or food energy in kilocalories. */
+export type IntakeKind = "water" | "energy";
+
+export interface SessionIntakeEntry {
+  id: string;
+  kind: IntakeKind;
+  amount: number;
+  recorded_at: string;
+}
+
+/** What the athlete drank and ate during a workout; only its owner receives it. */
+export interface SessionIntake {
+  entries: SessionIntakeEntry[];
+  totals: { water_ml: number; energy_kcal: number };
+}
+
 /** The workout photo (ADR-044); only its owner receives it. */
 export interface SessionPhoto {
   id: string;
@@ -127,7 +167,10 @@ export interface SessionPhoto {
 
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
+  /** ADR-046: in the order of their first member. */
+  blocks?: SessionBlock[];
   photo?: SessionPhoto | null;
+  intake?: SessionIntake | null;
 }
 
 export interface SessionQuery {
@@ -171,6 +214,8 @@ export interface SessionExerciseInput {
     recorded_at?: string | null;
     notes?: string | null;
   }>;
+  /** ADR-046: the `ref` of this exercise's block in the same request. */
+  block_ref?: number | null;
 }
 
 export interface CreateSessionRequest {
@@ -187,6 +232,10 @@ export interface CreateSessionRequest {
   result_note?: string | null;
   recurrence_rule?: string | null;
   exercises?: SessionExerciseInput[];
+  /** ADR-046: interval and circuit blocks of the exercises. */
+  blocks?: SessionBlockInput[];
+  /** What was drunk and eaten; only with status "completed" (ADR-045). */
+  intake?: { kind: IntakeKind; amount: number }[];
 }
 
 export interface UpdateSessionRequest {
@@ -205,6 +254,8 @@ export interface UpdateSessionRequest {
   completed_at?: string | null;
   calories?: number | null;
   exercises?: SessionExerciseInput[];
+  /** ADR-046: replaced together with the exercises; only sent with them. */
+  blocks?: SessionBlockInput[];
 }
 
 export interface CloneSessionRequest {
@@ -283,6 +334,25 @@ export function getScheduleConflictIds(error: unknown): string[] | null {
 
 export async function deleteSession(sessionId: string): Promise<void> {
   await apiClient.delete(`/api/v1/sessions/${sessionId}`);
+}
+
+/** Records water or food energy for a started or completed workout (ADR-045). */
+export async function addIntakeEntry(
+  sessionId: string,
+  entry: { kind: IntakeKind; amount: number },
+): Promise<SessionIntake> {
+  const res = await apiClient.post<SessionIntake>(`/api/v1/sessions/${sessionId}/intake`, entry);
+  return res.data;
+}
+
+export async function deleteIntakeEntry(
+  sessionId: string,
+  entryId: string,
+): Promise<SessionIntake> {
+  const res = await apiClient.delete<SessionIntake>(
+    `/api/v1/sessions/${sessionId}/intake/${entryId}`,
+  );
+  return res.data;
 }
 
 /** Adds or replaces the photo of a completed workout (ADR-044). */

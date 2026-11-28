@@ -23,13 +23,34 @@ import {
 } from "./sessions.execution.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
-import { HEART_RATE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
+import { HEART_RATE_LIMITS, RPE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
+import {
+  INTAKE_KINDS,
+  INTAKE_LIMITS,
+  addIntakeEntry,
+  deleteIntakeEntry,
+  intakeMaxAmount,
+} from "./sessions.intake.service.js";
+import type { IntakeKind, SessionBlockKind } from "./sessions.types.js";
+import { SESSION_BLOCK_KINDS, SESSION_BLOCK_LIMITS } from "./sessions.blocks.js";
 import {
   SESSION_PHOTO_CACHE_CONTROL,
   deleteSessionPhoto,
   readSessionPhoto,
   saveSessionPhoto,
 } from "./sessions.photo.service.js";
+
+/** One water (ml) or food-energy (kcal) entry, within its kind's limit (ADR-045). */
+const intakeEntrySchema = z
+  .object({
+    kind: z.enum(INTAKE_KINDS as [IntakeKind, ...IntakeKind[]]),
+    amount: z.number().int().min(1),
+  })
+  .strict()
+  .refine((entry) => entry.amount <= intakeMaxAmount(entry.kind), {
+    message: "amount is above the limit for this kind",
+    path: ["amount"],
+  });
 
 const noteSchema = z.string().max(SESSION_TEXT_LIMITS.noteMaxLength).nullable().optional();
 const setNoteSchema = z.string().max(SESSION_TEXT_LIMITS.setNoteMaxLength).nullable().optional();
@@ -64,7 +85,7 @@ const plannedAttributesSchema = z
     load: z.number().min(0).nullable().optional(),
     distance: z.number().min(0).nullable().optional(),
     duration: intervalSchema,
-    rpe: z.number().int().min(1).max(10).nullable().optional(),
+    rpe: z.number().int().min(RPE_LIMITS.min).max(RPE_LIMITS.max).nullable().optional(),
     rest: intervalSchema,
     extras: extrasSchema,
   })
@@ -88,7 +109,7 @@ const setMetricFields = {
   weight_kg: z.number().min(0).nullable().optional(),
   distance_m: z.number().min(0).nullable().optional(),
   duration_sec: z.number().int().min(0).nullable().optional(),
-  rpe: z.number().int().min(1).max(10).nullable().optional(),
+  rpe: z.number().int().min(RPE_LIMITS.min).max(RPE_LIMITS.max).nullable().optional(),
   rest_sec: z.number().int().min(0).nullable().optional(),
 };
 
@@ -106,7 +127,7 @@ const sessionSetSchema = z
     weight_kg: z.number().min(0).nullable().optional(),
     distance_m: z.number().min(0).nullable().optional(),
     duration_sec: z.number().int().min(0).nullable().optional(),
-    rpe: z.number().int().min(1).max(10).nullable().optional(),
+    rpe: z.number().int().min(RPE_LIMITS.min).max(RPE_LIMITS.max).nullable().optional(),
     rest_sec: z.number().int().min(0).nullable().optional(),
     heart_rate_bpm: heartRateSchema,
     extras: extrasSchema,
@@ -126,8 +147,39 @@ const sessionExerciseSchema = z
     planned: plannedAttributesSchema.nullable().optional(),
     actual: actualAttributesSchema.nullable().optional(),
     sets: z.array(sessionSetSchema).max(100).optional(),
+    /** ADR-046: the `ref` of this exercise's block in the same request. */
+    block_ref: z.number().int().min(1).nullable().optional(),
   })
   .strict();
+
+const blockRestSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(SESSION_BLOCK_LIMITS.maxRestSec)
+  .nullable()
+  .optional();
+
+/** ADR-046: an interval or circuit block; structure is checked by the service. */
+const sessionBlockSchema = z
+  .object({
+    ref: z.number().int().min(1),
+    kind: z.enum(SESSION_BLOCK_KINDS as [SessionBlockKind, ...SessionBlockKind[]]),
+    name: z.string().trim().max(SESSION_BLOCK_LIMITS.nameMaxLength).nullable().optional(),
+    rounds: z.number().int().min(1).max(SESSION_BLOCK_LIMITS.maxRounds),
+    work_sec: z
+      .number()
+      .int()
+      .min(SESSION_BLOCK_LIMITS.minWorkSec)
+      .max(SESSION_BLOCK_LIMITS.maxWorkSec)
+      .nullable()
+      .optional(),
+    rest_sec: blockRestSchema,
+    round_rest_sec: blockRestSchema,
+  })
+  .strict();
+
+const blocksSchema = z.array(sessionBlockSchema).max(SESSION_BLOCK_LIMITS.maxBlocks).optional();
 
 const plannedDurationSchema = z
   .number()
@@ -149,12 +201,16 @@ const createSchema = z.object({
   result_note: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
   exercises: z.array(sessionExerciseSchema).max(50).optional(),
+  blocks: blocksSchema,
+  /** ADR-045: only with status "completed". */
+  intake: z.array(intakeEntrySchema).max(INTAKE_LIMITS.maxEntriesPerLog).optional(),
 });
 
 export const CreateSessionSchema = createSchema;
 /** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
 export const SessionExerciseInputSchema = sessionExerciseSchema;
 export const SessionSetInputSchema = sessionSetSchema;
+export const SessionBlockInputSchema = sessionBlockSchema;
 
 const updateSchema = z
   .object({
@@ -173,6 +229,7 @@ const updateSchema = z
     completed_at: z.string().datetime().optional(),
     calories: z.number().int().min(0).nullable().optional(),
     exercises: z.array(sessionExerciseSchema).max(50).optional(),
+    blocks: blocksSchema,
   })
   .strict();
 
@@ -416,6 +473,37 @@ export async function getSessionVibeChangesHandler(req: Request, res: Response):
 
   const id = readRouteParam(req.params.id, "id");
   res.json(await getSessionVibeChanges(userId, id));
+}
+
+// --- Workout intake (ADR-045) -------------------------------------------------
+
+export async function addIntakeEntryHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const parsed = intakeEntrySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  res
+    .status(201)
+    .json(await addIntakeEntry(userId, readRouteParam(req.params.id, "id"), parsed.data));
+}
+
+export async function deleteIntakeEntryHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  res.json(
+    await deleteIntakeEntry(
+      userId,
+      readRouteParam(req.params.id, "id"),
+      readRouteParam(req.params.entryId, "entryId"),
+    ),
+  );
 }
 
 // --- Workout photo (ADR-044) -------------------------------------------------

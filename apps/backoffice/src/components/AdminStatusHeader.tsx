@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { useUiText } from "../i18n/ui";
 import { useQuery } from "@tanstack/react-query";
 import { getOpsStatus, type OpsLightStatus } from "../services/api";
@@ -106,7 +106,7 @@ const AdminStatusHeader: React.FC = () => {
               }}
             >
               <div className="text-08 text-secondary">{item.label}</div>
-              <div className="text-125 font-weight-600">{item.value}</div>
+              <div className="text-125 font-weight-600">{item.value ?? t("status.unknown")}</div>
             </div>
           ))}
         </div>

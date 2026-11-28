@@ -152,6 +152,10 @@ export interface UserDataExportBundle {
     items: Record<string, unknown>[];
     exercises: Record<string, unknown>[];
     sets: Record<string, unknown>[];
+    /** ADR-046: interval and circuit blocks. */
+    blocks: Record<string, unknown>[];
+    /** ADR-045: water and food energy recorded with workouts. */
+    intake: Record<string, unknown>[];
   };
   points: {
     total: number;
