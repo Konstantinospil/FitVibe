@@ -10,6 +10,8 @@ import { executeSharedJob, SHARED_JOB_TYPES, type SharedJobType } from "./job.ha
 export interface QueueJob {
   name: string;
   payload: Record<string, unknown>;
+  /** Personal data in the payload: remove the job from Redis once it has run. */
+  sensitive?: boolean;
 }
 
 /**
@@ -134,7 +136,14 @@ export class BullMQQueueService {
     }
 
     try {
-      const bullJob = await queue.add(job.name, job.payload, options);
+      const bullJob = await queue.add(
+        job.name,
+        job.payload,
+        job.sensitive
+          ? // Personal data must not linger in Redis after the job has run.
+            { ...options, removeOnComplete: true, removeOnFail: { age: 3600 } }
+          : options,
+      );
       logger.debug(
         { jobId: bullJob.id, jobName: job.name, queueLength: await queue.count() },
         "[bullmq] Job enqueued",

@@ -4,6 +4,11 @@
  * Requirements:
  * - Verify resend limit 3/hour per account
  * - Auto-purge unverified accounts after 7 days
+ *
+ * Since email-first registration (ADR-039) self-service signup no longer
+ * creates pending accounts; the per-account cap applies to the resend endpoint
+ * for accounts an administrator created. The per-address registration
+ * throttle is covered in email-first-registration.integration.test.ts.
  */
 
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
@@ -71,14 +76,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       const bcrypt = await import("bcryptjs");
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
-      const result = await authService.register({
-        email: "test@example.com",
-        username: "testuser",
-        password: "ValidPassword123!",
-        terms_accepted: true,
-      });
+      await authService.resendVerificationEmail("test@example.com");
 
-      expect(result.verificationToken).toBeDefined();
+      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
       expect(mockAuthRepo.countAuthTokensSince).toHaveBeenCalled();
     });
 
@@ -92,14 +92,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       const bcrypt = await import("bcryptjs");
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
-      const result = await authService.register({
-        email: "test@example.com",
-        username: "testuser",
-        password: "ValidPassword123!",
-        terms_accepted: true,
-      });
+      await authService.resendVerificationEmail("test@example.com");
 
-      expect(result.verificationToken).toBeDefined();
+      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
     });
 
     it("should allow third verification email resend", async () => {
@@ -112,14 +107,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       const bcrypt = await import("bcryptjs");
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
-      const result = await authService.register({
-        email: "test@example.com",
-        username: "testuser",
-        password: "ValidPassword123!",
-        terms_accepted: true,
-      });
+      await authService.resendVerificationEmail("test@example.com");
 
-      expect(result.verificationToken).toBeDefined();
+      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
     });
 
     it("should block fourth verification email resend (rate limit exceeded)", async () => {
@@ -130,14 +120,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       const bcrypt = await import("bcryptjs");
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
-      await expect(
-        authService.register({
-          email: "test@example.com",
-          username: "testuser",
-          password: "ValidPassword123!",
-          terms_accepted: true,
-        }),
-      ).rejects.toThrow("AUTH_TOO_MANY_REQUESTS");
+      await expect(authService.resendVerificationEmail("test@example.com")).rejects.toThrow(
+        "AUTH_TOO_MANY_REQUESTS",
+      );
 
       // Should not create new token
       expect(mockAuthRepo.createAuthToken).not.toHaveBeenCalled();
@@ -153,12 +138,7 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       const bcrypt = await import("bcryptjs");
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
-      await authService.register({
-        email: "test@example.com",
-        username: "testuser",
-        password: "ValidPassword123!",
-        terms_accepted: true,
-      });
+      await authService.resendVerificationEmail("test@example.com");
 
       // Verify countAuthTokensSince was called with a date ~1 hour ago
       expect(mockAuthRepo.countAuthTokensSince).toHaveBeenCalledWith(
@@ -304,14 +284,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
       // User can still request resend even if account is old
-      const result = await authService.register({
-        email: "old@example.com",
-        username: "olduser",
-        password: "ValidPassword123!",
-        terms_accepted: true,
-      });
+      await authService.resendVerificationEmail("old@example.com");
 
-      expect(result.verificationToken).toBeDefined();
+      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
 
       // But the retention job would purge this account
       const { db } = await import("../../../../apps/backend/src/db/connection.js");
@@ -373,14 +348,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       const bcrypt = await import("bcryptjs");
       jest.mocked(bcrypt.hashSync).mockReturnValue("hashed");
 
-      await expect(
-        authService.register({
-          email: "user1@example.com",
-          username: "user1",
-          password: "ValidPassword123!",
-          terms_accepted: true,
-        }),
-      ).rejects.toThrow("AUTH_TOO_MANY_REQUESTS");
+      await expect(authService.resendVerificationEmail("user1@example.com")).rejects.toThrow(
+        "AUTH_TOO_MANY_REQUESTS",
+      );
 
       // User 2 should still be able to request
       mockAuthRepo.findUserByEmail.mockResolvedValueOnce(user2);
@@ -388,14 +358,9 @@ describe("AC-1.8: Email Verification Resend Limiting & Auto-Purge", () => {
       mockAuthRepo.markAuthTokensConsumed.mockResolvedValue(undefined);
       mockAuthRepo.createAuthToken.mockResolvedValue(undefined);
 
-      const result = await authService.register({
-        email: "user2@example.com",
-        username: "user2",
-        password: "ValidPassword123!",
-        terms_accepted: true,
-      });
+      await authService.resendVerificationEmail("user2@example.com");
 
-      expect(result.verificationToken).toBeDefined();
+      expect(mockAuthRepo.createAuthToken).toHaveBeenCalled();
     });
 
     it("should calculate 7 days threshold correctly across month boundaries", async () => {

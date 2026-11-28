@@ -7,6 +7,9 @@ import type {
   SessionExerciseActualInput,
   SessionExerciseAttributesInput,
   SessionExerciseInput,
+  SessionExerciseSet,
+  SessionSetInput,
+  SessionSetPlannedValues,
 } from "./sessions.types.js";
 
 const intervalPattern =
@@ -59,6 +62,29 @@ function ensureRpeRange(
   }
   if (!Number.isInteger(value) || value < 1 || value > 10) {
     throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: ${name} must be 1-10`);
+  }
+  return value;
+}
+
+/** Longest free text a session, exercise or set may hold, in characters. */
+export const SESSION_TEXT_LIMITS = { noteMaxLength: 1000, setNoteMaxLength: 500 } as const;
+
+/** Bounds of a set's heart rate (issue 89): they refuse typing errors, not unusual athletes. */
+export const HEART_RATE_LIMITS = { min: 20, max: 250 } as const;
+
+export function normalizeHeartRate(
+  value: number | null | undefined,
+  context: string,
+): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (!Number.isInteger(value) || value < HEART_RATE_LIMITS.min || value > HEART_RATE_LIMITS.max) {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${context}: heart_rate_bpm must be a whole number from ${HEART_RATE_LIMITS.min} to ${HEART_RATE_LIMITS.max}`,
+    );
   }
   return value;
 }
@@ -179,6 +205,111 @@ function intervalToSeconds(value: string | null, context: string, field: string)
   );
 }
 
+export type SetMetricValues = Required<{ [K in keyof SessionSetPlannedValues]: number | null }>;
+
+export const EMPTY_SET_METRICS: SetMetricValues = {
+  reps: null,
+  weight_kg: null,
+  distance_m: null,
+  duration_sec: null,
+  rpe: null,
+  rest_sec: null,
+};
+
+export function normalizeSetMetrics(
+  values: SessionSetPlannedValues | null | undefined,
+  context: string,
+): SetMetricValues {
+  return {
+    reps: ensureNonNegativeInteger("reps", values?.reps ?? null, context),
+    weight_kg: ensureNonNegativeNumber("weight_kg", values?.weight_kg ?? null, context),
+    distance_m: ensureNonNegativeInteger("distance_m", values?.distance_m ?? null, context),
+    duration_sec: ensureNonNegativeInteger("duration_sec", values?.duration_sec ?? null, context),
+    rpe: ensureRpeRange("rpe", values?.rpe ?? null, context),
+    rest_sec: ensureNonNegativeInteger("rest_sec", values?.rest_sec ?? null, context),
+  };
+}
+
+export function hasMetricValue(values: SetMetricValues): boolean {
+  return Object.values(values).some((value) => value !== null);
+}
+
+function performedValuesOf(set: SessionSetInput | SessionExerciseSet): SessionSetPlannedValues {
+  return {
+    reps: set.reps,
+    weight_kg: set.weight_kg,
+    distance_m: set.distance_m,
+    duration_sec: set.duration_sec,
+    rpe: set.rpe,
+    rest_sec: set.rest_sec,
+  };
+}
+
+/**
+ * ADR-042: the top-level set fields hold performed values; `planned` holds the
+ * prescription; only `completed` sets are performed work.
+ *
+ * Compatibility (ADR-029): a planned set that carries values only in the
+ * top-level fields is how clients wrote prescriptions before ADR-042. Those
+ * values are converted to the prescription. Remove this conversion once every
+ * client sends `planned` for planned sets.
+ */
+function normalizeSet(set: SessionSetInput, order: number, setContext: string) {
+  const status = set.status ?? (set.recorded_at ? "completed" : "planned");
+  let performed = normalizeSetMetrics(performedValuesOf(set), setContext);
+  let planned = set.planned ? normalizeSetMetrics(set.planned, `${setContext} planned`) : null;
+  // A result only, with no prescription twin: only completed sets carry one.
+  const heartRate = normalizeHeartRate(set.heart_rate_bpm, setContext);
+  if (heartRate !== null && status !== "completed") {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${setContext}: only a completed set can have heart_rate_bpm`,
+    );
+  }
+
+  if (status === "planned") {
+    if (set.recorded_at) {
+      throw new HttpError(
+        422,
+        "E.SESSION.INVALID_SET",
+        `${setContext}: a planned set cannot have recorded_at`,
+      );
+    }
+    if (hasMetricValue(performed)) {
+      if (planned && hasMetricValue(planned)) {
+        throw new HttpError(
+          422,
+          "E.SESSION.INVALID_SET",
+          `${setContext}: a planned set holds targets in planned only`,
+        );
+      }
+      planned = performed;
+      performed = { ...EMPTY_SET_METRICS };
+    }
+  }
+  if (status === "skipped" && hasMetricValue(performed)) {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${setContext}: a skipped set cannot have performed values`,
+    );
+  }
+
+  return {
+    id: set.id ?? uuidv4(),
+    order_index: order,
+    status,
+    source: set.source ?? "prescribed",
+    planned: planned && hasMetricValue(planned) ? planned : null,
+    ...performed,
+    heart_rate_bpm: heartRate,
+    extras: normalizeExtras(set.extras),
+    recorded_at: set.recorded_at ? new Date(set.recorded_at).toISOString() : null,
+    notes: trimToNull(set.notes),
+  };
+}
+
 function normalizeSets(
   sets: SessionExerciseInput["sets"],
   context: string,
@@ -199,19 +330,7 @@ function normalizeSets(
     }
     seenOrders.add(order);
 
-    return {
-      id: set.id ?? uuidv4(),
-      order_index: order,
-      reps: ensureNonNegativeInteger("reps", set.reps ?? null, setContext),
-      weight_kg: ensureNonNegativeNumber("weight_kg", set.weight_kg ?? null, setContext),
-      distance_m: ensureNonNegativeInteger("distance_m", set.distance_m ?? null, setContext),
-      duration_sec: ensureNonNegativeInteger("duration_sec", set.duration_sec ?? null, setContext),
-      rpe: ensureRpeRange("rpe", set.rpe ?? null, setContext),
-      rest_sec: ensureNonNegativeInteger("rest_sec", set.rest_sec ?? null, setContext),
-      extras: normalizeExtras(set.extras),
-      recorded_at: set.recorded_at ? new Date(set.recorded_at).toISOString() : null,
-      notes: trimToNull(set.notes),
-    };
+    return normalizeSet(set, order, setContext);
   });
 
   normalized.sort((a, b) => a.order_index - b.order_index);
@@ -253,6 +372,9 @@ export function normalizeSessionExercises(
       ? Array.from({ length: actual.sets && actual.sets > 0 ? actual.sets : 1 }, (_, setIndex) => ({
           id: uuidv4(),
           order_index: setIndex + 1,
+          status: "completed" as const,
+          source: "prescribed" as const,
+          planned: null,
           reps: actual.reps,
           weight_kg: actual.load,
           distance_m:
@@ -271,6 +393,8 @@ export function normalizeSessionExercises(
       id: exercise.id ?? uuidv4(),
       exercise_id: exercise.exercise_id ?? null,
       order_index: order,
+      status: exercise.status ?? "planned",
+      source: exercise.source ?? "prescribed",
       notes: trimToNull(exercise.notes),
       planned: normalizeAttributesInput(exercise.planned ?? null, `${context} planned`),
       sets: performedSets,
@@ -288,23 +412,40 @@ export function convertExistingExerciseToInput(
   return {
     order: exercise.order_index,
     exercise_id: exercise.exercise_id ?? undefined,
+    // A reused workout starts from scratch; a full copy keeps how it went.
+    ...(includeActual ? { status: exercise.status, source: exercise.source } : {}),
     notes: exercise.notes ?? undefined,
     planned: exercise.planned ?? undefined,
     actual: null,
-    sets: includeActual
-      ? (exercise.sets?.map((set) => ({
-          order: set.order_index,
-          reps: set.reps ?? undefined,
-          weight_kg: set.weight_kg ?? undefined,
-          distance_m: set.distance_m ?? undefined,
-          duration_sec: set.duration_sec ?? undefined,
-          rpe: set.rpe ?? undefined,
-          rest_sec: set.rest_sec ?? undefined,
-          extras: set.extras ? { ...set.extras } : undefined,
-          recorded_at: set.recorded_at ?? undefined,
-          notes: set.notes ?? undefined,
-        })) ?? [])
-      : [],
+    sets: (exercise.sets ?? [])
+      .filter((set) => includeActual || set.status !== "skipped")
+      .map((set, index) =>
+        includeActual
+          ? {
+              order: set.order_index,
+              status: set.status,
+              source: set.source,
+              planned: set.planned ? { ...set.planned } : null,
+              reps: set.reps ?? undefined,
+              weight_kg: set.weight_kg ?? undefined,
+              distance_m: set.distance_m ?? undefined,
+              duration_sec: set.duration_sec ?? undefined,
+              rpe: set.rpe ?? undefined,
+              rest_sec: set.rest_sec ?? undefined,
+              heart_rate_bpm: set.heart_rate_bpm ?? undefined,
+              extras: set.extras ? { ...set.extras } : undefined,
+              recorded_at: set.recorded_at ?? undefined,
+              notes: set.notes ?? undefined,
+            }
+          : {
+              // Reuse as a prescription: the original target, or what was done
+              // when no target was recorded (ADR-042).
+              order: index + 1,
+              status: "planned" as const,
+              source: "prescribed" as const,
+              planned: set.planned ?? (set.status === "completed" ? performedValuesOf(set) : null),
+            },
+      ),
   };
 }
 

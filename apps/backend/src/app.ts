@@ -29,6 +29,7 @@ import { pointsRouter } from "./api/points.routes.js";
 import { feedRouter } from "./api/feed.routes.js";
 import { adminRouter } from "./api/admin.routes.js";
 import { contactRouter } from "./api/contact.routes.js";
+import { clientErrorsRouter } from "./api/client-errors.routes.js";
 import { translationsRouter } from "./api/translations.routes.js";
 import { measurementsRouter } from "./api/measurements.routes.js";
 import { legalRouter } from "./api/legal.routes.js";
@@ -39,6 +40,8 @@ import { appSettingsRouter } from "./modules/system/app-settings.routes.js";
 import { consentRouter } from "./modules/consent/consent.routes.js";
 import { logsRouter } from "./modules/logs/logs.routes.js";
 import { jwksHandler } from "./modules/auth/auth.controller.js";
+import { mailCaptureRouter } from "./modules/dev/mail-capture.routes.js";
+import { isMailCaptureEnabled } from "./services/mail-capture.service.js";
 
 const app = express();
 
@@ -199,6 +202,7 @@ apiRouter.use("/points", pointsRouter);
 apiRouter.use("/feed", feedRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/contact", contactRouter);
+apiRouter.use("/client-errors", clientErrorsRouter);
 apiRouter.use("/logs", logsRouter);
 
 apiRouter.use("/system", systemRouter);
@@ -208,6 +212,12 @@ apiRouter.use("/translations", translationsRouter);
 apiRouter.use("/legal", legalRouter);
 apiRouter.use("/measurements", measurementsRouter);
 apiRouter.use("/vibeforms", vibeformsRouter);
+
+// Test mailbox for email-first registration (ADR-039). Never mounted in
+// production: env.ts rejects EMAIL_CAPTURE_ENABLED there.
+if (isMailCaptureEnabled()) {
+  apiRouter.use("/dev", mailCaptureRouter);
+}
 
 app.use("/api/v1", apiRouter);
 app.use("/health", healthRouter);

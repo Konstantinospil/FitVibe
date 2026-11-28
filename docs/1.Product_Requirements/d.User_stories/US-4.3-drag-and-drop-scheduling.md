@@ -42,6 +42,19 @@ Users need an intuitive drag-and-drop interface for scheduling sessions in a cal
 - Client-side conflict detection for UX
 - Server-side validation for data integrity
 
+## Implementation / verification (2026-11-25)
+
+- Planned sessions on the Calendar (selected-day list and weekly plan) carry a move handle. Dragging it onto a month-grid day moves the session to that day and keeps its local time; activating it without dragging opens a day-and-time dialog, the non-drag alternative required by [US-13.3](https://github.com/Konstantinospil/FitVibe/issues/139).
+- AC01: a move updates the cached calendar optimistically, without a page reload, and is restored if the server refuses it. The E2E scenario measures the time from pointer release to the target day's re-render and fails above 150 ms (it attaches the measurement).
+- AC02: conflicts against the loaded sessions are detected before any request. While dragging, the hovered day and the conflicting sessions are highlighted; a refused move shows an actionable message naming the blocking workout. Conflicting cards carry a text label, so the state does not rely on colour alone.
+- AC03: `PATCH /api/v1/sessions/:id` re-validates a changed `planned_at` inside the write transaction and rejects a conflict with `422 E.SESSION.SCHEDULE_CONFLICT` and `details.conflictingSessionIds`.
+- **Conflict definition (decided 2026-11-26):** every session has a planned length (`sessions.planned_duration_min`, 5–720 minutes, default 60) and occupies `[planned_at, planned_at + length)`. Two sessions conflict when those intervals overlap; back-to-back sessions do not, and canceled sessions occupy no time. The same rule applies on the client before saving, in `PATCH /sessions/:id` (moves and length changes), in plan activation and in recurrence (see [US-4.2](./US-4.2-plan-activation-progress.md)). Creating a session is not checked.
+- AC04 (2026-11-26): a view switch offers **Month**, **Week** and **Day**. Week and day views show hour rows (06:00–22:00, widened to fit earlier or later sessions) by day columns; each session is a chip labelled with its time and title and coloured by status. Dropping a chip on an hour slot moves the session to that day and hour and keeps its minutes.
+- Dragging near the top or bottom of the window scrolls the calendar, so off-screen days and hours stay reachable.
+- The week and day views show each session from its start to its end: the chip in the start slot reads e.g. "18:00–19:30", and later hours it still occupies are marked. Session cards show the same range.
+- E2E: `tests/frontend/e2e/calendar-scheduling.spec.cjs` covers month, week and day moves, keyboard moves, resizing, the reschedule dialog, client refusal of an overlap (no request sent) and the server 422 (HTTP trace attached). Integration: `tests/backend/integration/session-scheduling.integration.test.ts` checks the overlap rule against Postgres.
+- Close this story once that E2E suite passes in CI on `feature`.
+
 ## Test Strategy
 
 - E2E tests for drag-and-drop functionality

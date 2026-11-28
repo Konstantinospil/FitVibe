@@ -5,6 +5,7 @@
 const surfaceSelectors = Object.freeze({
   "/": '[data-app-surface="home"]',
   "/calendar": "main.calendar-surface[aria-labelledby='calendar-title']",
+  "/log": '[data-app-surface="log"]',
   "/library": '[data-app-surface="library"]',
   "/dashboard": '[data-app-surface="dashboard"]',
   "/settings": '[data-app-surface="settings"]',

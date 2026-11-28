@@ -6,6 +6,7 @@ const {
   passwordInput,
   confirmPasswordInput,
   displayNameInput,
+  readRegistrationLinkToken,
 } = require("./server-helpers.cjs");
 
 async function focusByTab(page, locator, maxTabs = 50) {
@@ -18,7 +19,10 @@ async function focusByTab(page, locator, maxTabs = 50) {
 }
 
 test.describe("Keyboard-only flows on active surfaces", () => {
-  test("user can complete real login with keyboard navigation", async ({ page, athleteAccount }) => {
+  test("user can complete real login with keyboard navigation", async ({
+    page,
+    athleteAccount,
+  }) => {
     await preparePage(page);
     await page.goto("/login");
     await waitForApp(page);
@@ -30,8 +34,7 @@ test.describe("Keyboard-only flows on active surfaces", () => {
 
     const loginResponse = page.waitForResponse(
       (response) =>
-        response.url().includes("/api/v1/auth/login") &&
-        response.request().method() === "POST",
+        response.url().includes("/api/v1/auth/login") && response.request().method() === "POST",
     );
     await page.keyboard.press("Enter");
     expect((await loginResponse).ok()).toBeTruthy();
@@ -40,7 +43,9 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     await expect(page.getByRole("heading", { name: /^home$/i })).toBeVisible();
   });
 
-  test("user can register with keyboard-accessible controls against the real server", async ({ page }, testInfo) => {
+  test("user can register with keyboard-accessible controls against the real server", async ({
+    page,
+  }, testInfo) => {
     await preparePage(page);
 
     const suffix = `${testInfo.workerIndex}-${testInfo.retry}`;
@@ -48,8 +53,29 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     const username = `keyboard.e2e.${suffix}`;
     const password = "SuperSecure123!";
 
+    // Step 1 (ADR-039): the address only.
     await page.goto("/register");
     await waitForApp(page);
+    await focusByTab(page, emailInput(page));
+    await page.keyboard.type(email);
+    const requestedAt = Date.now() - 1000;
+    await focusByTab(page, page.getByRole("button", { name: /continue/i }));
+    const startResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === "/api/v1/auth/register" &&
+        response.request().method() === "POST",
+    );
+    await page.keyboard.press("Enter");
+    expect((await startResponse).status()).toBe(202);
+    await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible();
+
+    // Step 2: the emailed link opens the profile form.
+    const token = await readRegistrationLinkToken(page.context().request, email, {
+      notBefore: requestedAt,
+    });
+    await page.goto(`/register/complete?token=${encodeURIComponent(token)}`);
+    await waitForApp(page);
+    await expect(emailInput(page)).toHaveValue(email);
     await focusByTab(page, displayNameInput(page));
     await page.keyboard.type("Jamie Carter");
     await focusByTab(page, page.getByRole("spinbutton", { name: /weight/i }));
@@ -67,8 +93,6 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     await focusByTab(page, activity);
     await page.keyboard.press("End");
     await expect(activity).not.toHaveValue("");
-    await focusByTab(page, emailInput(page));
-    await page.keyboard.type(email);
     await page.locator("form input[name='username']").fill(username);
     await focusByTab(page, passwordInput(page));
     await page.keyboard.type(password);
@@ -83,18 +107,21 @@ test.describe("Keyboard-only flows on active surfaces", () => {
     }
 
     await focusByTab(page, page.getByRole("button", { name: /create account/i }));
-    const registrationResponse = page.waitForResponse(
+    const completionResponse = page.waitForResponse(
       (response) =>
-        response.url().includes("/api/v1/auth/register") &&
+        new URL(response.url()).pathname === "/api/v1/auth/register/complete" &&
         response.request().method() === "POST",
     );
     await page.keyboard.press("Enter");
 
-    expect((await registrationResponse).status()).toBe(202);
-    await expect(page.getByRole("heading", { name: /check your email/i })).toBeVisible();
+    expect((await completionResponse).status()).toBe(201);
+    await expect(page.getByRole("heading", { name: /your account is ready/i })).toBeVisible();
   });
 
-  test("current application navigation is keyboard reachable with a real session", async ({ page, athleteAccount }) => {
+  test("current application navigation is keyboard reachable with a real session", async ({
+    page,
+    athleteAccount,
+  }) => {
     await preparePage(page, { authenticated: true, account: athleteAccount });
     await page.goto("/");
     await waitForApp(page);

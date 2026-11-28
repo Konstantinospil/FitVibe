@@ -19,29 +19,26 @@ export const loadMinimalLoginTranslations = async () => {
   });
 };
 
-// Load full English translations (for other pages)
-const loadFullEnglishTranslations = async () => {
-  const [enCommonModule, enAuthModule, enTermsModule, enPrivacyModule, enCookieModule] =
-    await Promise.all([
-      import("./locales/en/common.json"),
-      import("./locales/en/auth.json"),
-      import("./locales/en/terms.json"),
-      import("./locales/en/privacy.json"),
-      import("./locales/en/cookie.json"),
-    ]);
+// The app's strings for signed-in pages: everything but the legal documents, which
+// only the Terms and Privacy pages need (ensureLegalTranslationsLoaded). Loading
+// them on every page cost two requests and 9.5 KB compressed at boot.
+const loadAppBundle = async (lng: SupportedLanguage): Promise<Record<string, unknown>> => {
+  const [commonModule, authModule, cookieModule] = (await Promise.all([
+    import(`./locales/${lng}/common.json`),
+    import(`./locales/${lng}/auth.json`),
+    import(`./locales/${lng}/cookie.json`),
+  ])) as { default: Record<string, unknown> }[];
+  return mergeTranslations(mergeTranslations(commonModule.default, authModule.default), {
+    cookie: cookieModule.default,
+  });
+};
 
-  const enCommon = enCommonModule.default as Record<string, unknown>;
-  const enAuth = enAuthModule.default as Record<string, unknown>;
-  const enTerms = enTermsModule.default as Record<string, unknown>;
-  const enPrivacy = enPrivacyModule.default as Record<string, unknown>;
-  const enCookie = enCookieModule.default as Record<string, unknown>;
-
-  return mergeTranslations(
-    mergeTranslations(mergeTranslations(mergeTranslations(enCommon, enAuth), { terms: enTerms }), {
-      privacy: enPrivacy,
-    }),
-    { cookie: enCookie },
-  );
+const loadLegalBundle = async (lng: SupportedLanguage): Promise<Record<string, unknown>> => {
+  const [termsModule, privacyModule] = (await Promise.all([
+    import(`./locales/${lng}/terms.json`),
+    import(`./locales/${lng}/privacy.json`),
+  ])) as { default: Record<string, unknown> }[];
+  return { terms: termsModule.default, privacy: privacyModule.default };
 };
 
 type SupportedLanguage = "en" | "de" | "fr" | "es" | "el";
@@ -54,8 +51,9 @@ const mergeTranslations = <T extends Record<string, unknown>, U extends Record<s
   extra: U,
 ) => ({ ...base, ...extra });
 
-// Resources will be populated after loading translations
-const resources: Partial<Record<SupportedLanguage, { translation: Record<string, unknown> }>> = {};
+// Languages whose app strings and legal documents are registered.
+const appBundles = new Set<SupportedLanguage>();
+const legalBundles = new Set<SupportedLanguage>();
 
 const RESOURCE_NAMESPACES = ["translation", "common"] as const;
 
@@ -63,7 +61,6 @@ const addAppResourceBundle = (lng: SupportedLanguage, translations: Record<strin
   for (const ns of RESOURCE_NAMESPACES) {
     i18n.addResourceBundle(lng, ns, translations, true, true);
   }
-  resources[lng] = { translation: translations };
 };
 
 const FALLBACK_LANGUAGE: SupportedLanguage = "en";
@@ -88,56 +85,25 @@ const detectLanguage = (): SupportedLanguage => {
 
 const initialLanguage = detectLanguage();
 
-// Load translations on-demand (including English) to reduce initial bundle size
-const hasLegalDocumentBundle = (lng: SupportedLanguage): boolean => {
-  const terms = resources[lng]?.translation?.terms;
-  return Boolean(terms && typeof terms === "object" && "section1" in terms);
-};
-
+// Load a language's app strings on demand (English included, for code splitting).
 const loadLanguage = async (lng: SupportedLanguage): Promise<void> => {
-  if (resources[lng] && hasLegalDocumentBundle(lng)) {
+  if (appBundles.has(lng)) {
     return;
   }
-
   try {
-    // Dynamically import translation files only when needed
-    // This includes English to allow proper code-splitting
-    const modules = await Promise.all([
-      import(`./locales/${lng}/common.json`),
-      import(`./locales/${lng}/auth.json`),
-      import(`./locales/${lng}/terms.json`),
-      import(`./locales/${lng}/privacy.json`),
-      import(`./locales/${lng}/cookie.json`),
+    // A legal page in this session needs its strings in the new language too.
+    const [appTranslations] = await Promise.all([
+      loadAppBundle(lng),
+      legalBundles.size > 0 ? loadLegal(lng) : Promise.resolve(),
     ]);
-
-    const commonModule = modules[0] as { default: Record<string, unknown> };
-    const authModule = modules[1] as { default: Record<string, unknown> };
-    const termsModule = modules[2] as { default: Record<string, unknown> };
-    const privacyModule = modules[3] as { default: Record<string, unknown> };
-    const cookieModule = modules[4] as { default: Record<string, unknown> };
-
-    const common = commonModule.default;
-    const auth = authModule.default;
-    const terms = termsModule.default;
-    const privacy = privacyModule.default;
-    const cookie = cookieModule.default;
-
-    const translations = mergeTranslations(
-      mergeTranslations(mergeTranslations(mergeTranslations(common, auth), { terms }), {
-        privacy,
-      }),
-      { cookie },
-    );
-
-    addAppResourceBundle(lng, translations);
+    addAppResourceBundle(lng, appTranslations);
+    appBundles.add(lng);
   } catch (error) {
     // Log error but don't fail - fallback to English
     if (process.env.NODE_ENV !== "production") {
       console.warn(`Failed to load language ${lng}:`, error);
     }
-    // Fallback to English if language loading fails
     if (lng !== "en") {
-      // Try to load English as fallback
       await loadLanguage("en");
     }
   }
@@ -187,15 +153,16 @@ export const minimalTranslationsReady: Promise<void> = i18nReady.then(async () =
 let fullTranslationsInFlight: Promise<void> | undefined;
 
 export const loadFullTranslations = (): Promise<void> => {
-  if (hasLegalDocumentBundle("en")) {
+  if (appBundles.has("en")) {
     return Promise.resolve();
   }
   if (!fullTranslationsInFlight) {
     // The chunk download starts immediately; the bundle is only registered
     // once i18next has initialized.
-    fullTranslationsInFlight = Promise.all([loadFullEnglishTranslations(), i18nReady])
-      .then(([fullTranslations]) => {
-        addAppResourceBundle("en", fullTranslations);
+    fullTranslationsInFlight = Promise.all([loadAppBundle("en"), i18nReady])
+      .then(([appTranslations]) => {
+        addAppResourceBundle("en", appTranslations);
+        appBundles.add("en");
       })
       .finally(() => {
         // Allow a retry after a failed chunk request.
@@ -205,10 +172,24 @@ export const loadFullTranslations = (): Promise<void> => {
   return fullTranslationsInFlight;
 };
 
+const loadLegal = async (lng: SupportedLanguage): Promise<void> => {
+  if (legalBundles.has(lng)) {
+    return;
+  }
+  try {
+    addAppResourceBundle(lng, await loadLegalBundle(lng));
+    legalBundles.add(lng);
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(`Failed to load legal documents for ${lng}:`, error);
+    }
+  }
+};
+
+/** The Terms and Privacy documents of the current language; nothing else. */
 export const ensureLegalTranslationsLoaded = async (): Promise<void> => {
   const code = i18n.language?.slice(0, 2);
-  const lng = isSupportedLanguage(code) ? code : FALLBACK_LANGUAGE;
-  await loadLanguage(lng);
+  await loadLegal(isSupportedLanguage(code) ? code : FALLBACK_LANGUAGE);
 };
 
 // Export function to load languages on-demand

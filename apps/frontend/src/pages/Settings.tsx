@@ -18,6 +18,12 @@ import { TrainingPanel } from "../components/composites/TrainingSurface";
 import { AvatarEditor } from "../components/profile/AvatarEditor";
 import { CookiePreferences } from "../components/CookieConsent";
 import { TwoFactorManagement } from "../components/profile/TwoFactorManagement";
+import {
+  BODY_WEIGHT_INPUT_DECIMALS,
+  bodyWeightBounds,
+  KG_PER_LB,
+  loadUnitFor,
+} from "../lib/units/load";
 
 const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -32,6 +38,7 @@ const Settings: React.FC = () => {
     queryFn: getUserPreferences,
     refetchOnMount: "always",
   });
+  const weightBounds = bodyWeightBounds(loadUnitFor(preferencesQuery.data?.measurementSystem));
   const privacyQuery = useQuery({
     queryKey: ["settings", "privacy"],
     queryFn: getPrivacySettings,
@@ -79,7 +86,9 @@ const Settings: React.FC = () => {
     if (storedWeightKg === null || storedWeightKg === undefined) {
       setWeight("");
     } else if (preferencesQuery.data?.measurementSystem === "imperial") {
-      setWeight((storedWeightKg / 0.453592).toFixed(2).replace(/\.00$/, ""));
+      setWeight(
+        (storedWeightKg / KG_PER_LB).toFixed(BODY_WEIGHT_INPUT_DECIMALS).replace(/\.0+$/, ""),
+      );
     } else {
       setWeight(String(storedWeightKg));
     }
@@ -282,8 +291,8 @@ const Settings: React.FC = () => {
                 <span className="form-label-text">{t("settings.profile.weight")}</span>
                 <InputControl
                   type="number"
-                  min={preferencesQuery.data?.measurementSystem === "imperial" ? 44.09 : 20}
-                  max={preferencesQuery.data?.measurementSystem === "imperial" ? 881.85 : 400}
+                  min={weightBounds.min}
+                  max={weightBounds.max}
                   step="0.01"
                   value={weight}
                   onChange={(event) => setWeight(event.target.value)}

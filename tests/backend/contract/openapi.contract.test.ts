@@ -1,13 +1,23 @@
 import { z, type ZodTypeAny } from "zod";
 import {
-  RegisterSchema,
+  StartRegistrationSchema,
+  RegistrationIntentSchema,
+  CompleteRegistrationSchema,
   LoginSchema,
   ForgotPasswordSchema,
   ResetPasswordSchema,
   ResendVerificationSchema,
   Verify2FALoginSchema,
 } from "../../../apps/backend/src/modules/auth/auth.schemas.js";
-import { CreateSessionSchema } from "../../../apps/backend/src/modules/sessions/sessions.controller.js";
+import {
+  CreateSessionSchema,
+  SessionExerciseInputSchema,
+  SessionSetInputSchema,
+  UpdateSessionSchema,
+  RecordSetSchema,
+  AddSetSchema,
+  AddExerciseSchema,
+} from "../../../apps/backend/src/modules/sessions/sessions.controller.js";
 import { ReportFeedItemSchema } from "../../../apps/backend/src/modules/feed/feed.schemas.js";
 import {
   UpdateProfileSchema,
@@ -16,6 +26,12 @@ import {
 } from "../../../apps/backend/src/modules/users/users.controller.js";
 import { CreateExerciseTypeSchema } from "../../../apps/backend/src/modules/exercise-types/exerciseTypes.controller.js";
 import { UpdateVibeformPreferencesSchema } from "../../../apps/backend/src/modules/vibeforms/vibeforms.schemas.js";
+import { ClientErrorReportSchema } from "../../../apps/backend/src/modules/client-errors/client-errors.schemas.js";
+import { SESSION_DURATION_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.schedule.js";
+import {
+  HEART_RATE_LIMITS,
+  SESSION_TEXT_LIMITS,
+} from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -24,19 +40,28 @@ type SchemaMapEntry = {
 };
 
 const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
-  { name: "RegisterRequest", schema: RegisterSchema },
+  { name: "StartRegistrationRequest", schema: StartRegistrationSchema },
+  { name: "RegistrationIntentRequest", schema: RegistrationIntentSchema },
+  { name: "CompleteRegistrationRequest", schema: CompleteRegistrationSchema },
   { name: "LoginRequest", schema: LoginSchema },
   { name: "ForgotPasswordRequest", schema: ForgotPasswordSchema },
   { name: "ResetPasswordRequest", schema: ResetPasswordSchema },
   { name: "ResendVerificationRequest", schema: ResendVerificationSchema },
   { name: "Verify2FALoginRequest", schema: Verify2FALoginSchema },
   { name: "SessionCreateRequest", schema: CreateSessionSchema },
+  { name: "SessionUpdateRequest", schema: UpdateSessionSchema },
+  { name: "SessionExerciseInput", schema: SessionExerciseInputSchema },
+  { name: "SessionSetInput", schema: SessionSetInputSchema },
+  { name: "RecordSetRequest", schema: RecordSetSchema },
+  { name: "AddSetRequest", schema: AddSetSchema },
+  { name: "AddExerciseRequest", schema: AddExerciseSchema },
   { name: "ReportFeedItemRequest", schema: ReportFeedItemSchema },
   { name: "UpdateProfileRequest", schema: UpdateProfileSchema },
   { name: "UpdatePreferencesRequest", schema: UpdatePreferencesSchema },
   { name: "CreateUserRequest", schema: CreateUserSchema },
   { name: "CreateExerciseTypeRequest", schema: CreateExerciseTypeSchema },
   { name: "UpdateVibeformPreferencesRequest", schema: UpdateVibeformPreferencesSchema },
+  { name: "ClientErrorReportRequest", schema: ClientErrorReportSchema },
 ];
 
 type JsonSchemaObject = {
@@ -108,10 +133,87 @@ describe("OpenAPI contract alignment", () => {
     });
   }
 
+  it("documents PATCH /sessions/{id} with its request body and the 422 overlap contract", () => {
+    const operation = (openApiSpec as any).paths?.["/sessions/{id}"]?.patch;
+    const refOf = (status: number) =>
+      operation?.responses?.[status]?.content?.["application/json"]?.schema?.$ref;
+
+    expect(operation?.requestBody?.content?.["application/json"]?.schema?.$ref).toBe(
+      "#/components/schemas/SessionUpdateRequest",
+    );
+    expect(refOf(200)).toBe("#/components/schemas/SessionWithExercises");
+    expect(refOf(422)).toBe("#/components/schemas/ScheduleConflictResponse");
+    for (const status of [400, 401, 404, 409, 429]) {
+      expect(operation?.responses).toHaveProperty(String(status));
+    }
+
+    const conflict = (openApiSpec as any).components.schemas.ScheduleConflictResponse.properties
+      .error;
+    expect(conflict.properties.code.enum).toEqual(["E.SESSION.SCHEDULE_CONFLICT"]);
+    expect(conflict.required).toContain("details");
+    expect(conflict.properties.details.required).toEqual(["conflictingSessionIds"]);
+    expect(conflict.properties.details.properties.conflictingSessionIds.items).toEqual({
+      type: "string",
+      format: "uuid",
+    });
+  });
+
+  it("documents the session length on updates and responses within the server's bounds", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    for (const name of ["SessionCreateRequest", "SessionUpdateRequest", "SessionWithExercises"]) {
+      expect(schemas[name].properties.planned_duration_min).toMatchObject({
+        type: "integer",
+        minimum: SESSION_DURATION_LIMITS.min,
+        maximum: SESSION_DURATION_LIMITS.max,
+      });
+    }
+  });
+
+  it("documents a set's heart rate within the server's bounds (issue 89)", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    const responseSet =
+      schemas.SessionWithExercises.properties.exercises.items.properties.sets.items;
+    for (const set of [schemas.SessionSetInput, schemas.RecordSetRequest, responseSet]) {
+      expect(set.properties.heart_rate_bpm).toMatchObject({
+        type: "integer",
+        minimum: HEART_RATE_LIMITS.min,
+        maximum: HEART_RATE_LIMITS.max,
+      });
+    }
+  });
+
+  it("documents session and set note lengths within the server's limits (ADR-044)", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    for (const name of ["SessionCreateRequest", "SessionUpdateRequest"]) {
+      for (const field of ["notes", "result_note"]) {
+        expect(schemas[name].properties[field]).toMatchObject({
+          type: "string",
+          maxLength: SESSION_TEXT_LIMITS.noteMaxLength,
+        });
+      }
+    }
+    expect(schemas.SessionExerciseInput.properties.notes.maxLength).toBe(
+      SESSION_TEXT_LIMITS.noteMaxLength,
+    );
+    for (const set of [schemas.SessionSetInput, schemas.RecordSetRequest]) {
+      expect(set.properties.notes.maxLength).toBe(SESSION_TEXT_LIMITS.setNoteMaxLength);
+    }
+  });
+
+  it("documents the owner-only workout photo (ADR-044)", () => {
+    const paths = (openApiSpec as any).paths;
+    expect(Object.keys(paths["/sessions/{id}/photo"]).sort()).toEqual(["delete", "post"]);
+    expect(paths["/sessions/{id}/photo/{photoId}"].get.responses[200]).toBeDefined();
+    const photo = (openApiSpec as any).components.schemas.SessionWithExercises.properties.photo;
+    expect(photo).toMatchObject({
+      nullable: true,
+      allOf: [{ $ref: "#/components/schemas/SessionPhoto" }],
+    });
+  });
+
   it("keeps calculated Vibeform fields read-only on the preference update operation", () => {
     const operation = (openApiSpec as any).paths?.["/vibeforms/me/preferences"]?.put;
-    const requestReference =
-      operation?.requestBody?.content?.["application/json"]?.schema?.$ref;
+    const requestReference = operation?.requestBody?.content?.["application/json"]?.schema?.$ref;
     const requestSchema = (openApiSpec as any).components.schemas.UpdateVibeformPreferencesRequest;
 
     expect(requestReference).toBe("#/components/schemas/UpdateVibeformPreferencesRequest");

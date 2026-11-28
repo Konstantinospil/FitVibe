@@ -35,7 +35,7 @@ type InsertChain = {
   first: jest.Mock;
 };
 
-const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
+const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 
 function createInsertChain(): InsertChain {
   const chain: InsertChain = {
@@ -221,7 +221,7 @@ describe("database seed modules", () => {
       strategy: "ignore",
       assertInsert: (rows) => {
         const compound = (rows as Array<{ id: string; tags?: string }>).find(
-          (entry) => entry.id === "77777777-7777-7777-7777-777777777777",
+          (entry) => entry.id === "77777777-7777-4777-8777-777777777777",
         ) as { tags: string };
         expect(typeof compound.tags).toBe("string");
         expect(JSON.parse(compound.tags)).toContain("compound");

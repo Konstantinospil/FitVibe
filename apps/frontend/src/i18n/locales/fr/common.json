@@ -187,7 +187,6 @@
     "AUTH_INVALID_TOKEN": "Jeton de vérification invalide",
     "AUTH_TOKEN_EXPIRED": "Votre lien de vérification a expiré. Veuillez en demander un nouveau",
     "AUTH_TOO_MANY_REQUESTS": "Limite de vérification atteinte. Veuillez réessayer plus tard",
-    "AUTH_CONFLICT": "Impossible de terminer l'inscription",
     "AUTH_USER_NOT_FOUND": "Utilisateur introuvable",
     "AUTH_INVALID_CREDENTIALS": "Identifiants invalides",
     "AUTH_INVALID_REFRESH": "Jeton de rafraîchissement invalide",
@@ -197,6 +196,7 @@
     "AUTH_SESSION_NOT_FOUND": "Séance introuvable",
     "UNAUTHENTICATED": "Contexte d'authentification manquant",
     "USER_USERNAME_TAKEN": "Le nom d'utilisateur est déjà utilisé",
+    "AUTH_EMAIL_ALREADY_REGISTERED": "Un compte existe déjà pour cette adresse. Connectez-vous ou réinitialisez votre mot de passe.",
     "USER_USERNAME_INVALID": "Le nom d'utilisateur doit contenir entre 3 et 50 caractères et peut inclure des lettres, chiffres, points, underscores et tirets",
     "USER_STATUS_INVALID": "Impossible de changer le statut",
     "USER_DISPLAY_NAME_REQUIRED": "Le nom d'affichage est requis",
@@ -1026,7 +1026,11 @@
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
       "previousYear": "Année précédente",
-      "nextYear": "Année suivante"
+      "nextYear": "Année suivante",
+      "previousWeek": "Semaine précédente",
+      "nextWeek": "Semaine suivante",
+      "previousDay": "Jour précédent",
+      "nextDay": "Jour suivant"
     },
     "gridLabel": "Calendrier mensuel des entraînements",
     "dayLabel": "{{date}}, {{count}} entraînements",
@@ -1037,6 +1041,58 @@
     },
     "errors": {
       "load": "Impossible de charger les données du calendrier."
+    },
+    "schedule": {
+      "moveLabel": "Déplacer {{title}}",
+      "moveHint": "Faites glisser vers un autre jour ou une autre heure. Ou appuyez sur Espace pour le saisir, déplacez-le avec les flèches et appuyez sur Entrée pour le déposer. Entrée seule ouvre le choix du jour, de l’heure et de la durée.",
+      "resizeHint": "Faites glisser pour changer l’heure de fin de l’entraînement. Ou appuyez sur Espace, changez la fin avec les flèches haut et bas et appuyez sur Entrée pour enregistrer. Entrée seule ouvre le choix du jour, de l’heure et de la durée.",
+      "conflictLabel": "Conflit d’horaire",
+      "dialog": {
+        "title": "Reprogrammer l’entraînement",
+        "description": "Choisissez un nouveau jour, une heure de début et une durée pour {{title}}."
+      },
+      "fields": {
+        "day": "Jour",
+        "time": "Heure",
+        "duration": "Durée en minutes"
+      },
+      "actions": {
+        "save": "Reprogrammer l’entraînement",
+        "cancel": "Annuler"
+      },
+      "status": {
+        "rescheduled": "{{title}} est maintenant prévu le {{date}}, {{start}}–{{end}}."
+      },
+      "errors": {
+        "conflict": "{{title}} est prévu de {{start}} à {{end}} le {{date}}. Choisissez une autre heure.",
+        "conflictUnlisted": "Un autre entraînement est prévu entre {{start}} et {{end}} le {{date}}. Choisissez une autre heure.",
+        "invalid": "Ce jour et cette heure n’existent pas. Choisissez-en d’autres.",
+        "save": "Impossible de reprogrammer l’entraînement. Réessayez.",
+        "invalidDuration": "Choisissez une durée comprise entre {{min}} et {{max}} minutes."
+      },
+      "chipLabel": "{{time}} {{title}}, déplacer",
+      "resizeLabel": "{{title}}, se termine à {{time}}, changer la durée",
+      "keyboard": {
+        "pickedUp": "{{title}} saisi. Utilisez les flèches pour choisir un nouveau jour ou une nouvelle heure, Entrée pour déposer, Échap pour annuler.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}} : conflit avec {{title}}.",
+        "cancelled": "Déplacement de {{title}} annulé.",
+        "resizePickedUp": "Modification de la durée de {{title}}. Utilisez les flèches haut et bas pour changer la fin, Entrée pour enregistrer, Échap pour annuler.",
+        "resizeOver": "Se termine à {{time}}, {{duration}}.",
+        "resizeOverConflict": "Se termine à {{time}}, {{duration}} : conflit avec {{title}}.",
+        "resizeCancelled": "Durée de {{title}} inchangée."
+      }
+    },
+    "views": {
+      "label": "Vue du calendrier",
+      "month": "Mois",
+      "week": "Semaine",
+      "day": "Jour"
+    },
+    "timeGrid": {
+      "weekLabel": "Programme hebdomadaire des entraînements",
+      "dayLabel": "Programme quotidien des entraînements",
+      "timeHeading": "Heure"
     }
   },
   "workoutEditor": {
@@ -1061,6 +1117,7 @@
       "sets": "Séries",
       "repetitions": "Répétitions",
       "weight": "Résistance / poids",
+      "weightLb": "Résistance / poids (lb)",
       "duration": "Durée (secondes)",
       "exertion": "Effort cible",
       "restSet": "Repos après chaque série (secondes)",
@@ -1095,6 +1152,44 @@
   },
   "actions": {
     "retry": "Réessayer"
+  },
+  "sessionDetail": {
+    "title": "Entraînement",
+    "details": "Détails : {{title}}",
+    "planned": "Planifié",
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "canceled": "Annulé",
+    "plannedAt": "Planifié pour : {{value}}",
+    "startedAt": "Début : {{value}}",
+    "completedAt": "Terminé le : {{value}}",
+    "visibility": "Visibilité : {{value}}",
+    "exerciseList": "Exercices et séries",
+    "prescription": "Prescription",
+    "actual": "Résultats enregistrés",
+    "unrecorded": "Non enregistré",
+    "set": "Série {{number}}",
+    "reps": "Répétitions : {{value}}",
+    "load": "Charge : {{value}} kg",
+    "loadLb": "Charge : {{value}} lb",
+    "duration": "Durée : {{value}} s",
+    "distance": "Distance : {{value}} m",
+    "rpe": "RPE : {{value}}",
+    "heartRate": "Fréquence cardiaque : {{value}} bpm",
+    "rest": "Repos : {{value}} s",
+    "empty": "Aucun exercice.",
+    "loadError": "Impossible de charger l’entraînement.",
+    "saveError": "Impossible de mettre à jour l’entraînement.",
+    "reuse": "Réutiliser pour un nouvel entraînement",
+    "reuseDate": "Planifier la copie",
+    "pointsPending": "Les points sont en cours de calcul.",
+    "sets": "Séries : {{value}}",
+    "plannedDuration": "Durée prévue : {{value}}",
+    "plannedDistance": "Distance prévue : {{value}}",
+    "plannedRest": "Repos prévu : {{value}}",
+    "skipped": "Sautée",
+    "target": "objectif : {{value}}",
+    "stoppedEarly": "Arrêté avant la fin"
   },
   "librarySurface": {
     "title": "Bibliothèque",
@@ -1167,6 +1262,34 @@
       }
     }
   },
+  "logSurface": {
+    "title": "Enregistrer une séance",
+    "sections": {
+      "workout": "Séance",
+      "exercises": "Exercices"
+    },
+    "fields": {
+      "startTime": "Heure de début",
+      "weight": "Poids (kg)",
+      "weightLb": "Poids (lb)",
+      "distance": "Distance (mètres)",
+      "rpe": "Effort (RPE 1–10)",
+      "heartRate": "Fréquence cardiaque (bpm, facultatif)"
+    },
+    "actions": {
+      "save": "Enregistrer la séance",
+      "addSet": "Ajouter une série",
+      "removeSet": "Retirer la série {{number}} de {{name}}",
+      "removeExercise": "Retirer {{name}}"
+    },
+    "empty": "Ajoutez les exercices réalisés, puis remplissez chaque série.",
+    "errors": {
+      "save": "La séance n’a pas pu être enregistrée. Vérifiez les valeurs et réessayez.",
+      "future": "Une séance enregistrée doit avoir commencé dans le passé. Choisissez un jour ou une heure antérieurs.",
+      "noExercises": "Ajoutez au moins un exercice.",
+      "invalidSet": "{{exercise}}, série {{number}} : vérifiez {{field}}."
+    }
+  },
   "loading": {
     "app": "Chargement de l’application…"
   },
@@ -1179,6 +1302,7 @@
     "noDate": "Non définie",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} séances",
+    "progress": "{{completed}} séances sur {{total}} terminées ({{percent}})",
     "loading": "Chargement des plans…",
     "empty": "Aucun plan pour le moment.",
     "fields": {
@@ -1271,5 +1395,94 @@
   "vibeformConstellation": {
     "accessibleLabel": "Tableau de bord Vibeform",
     "athleteLabel": "Vibeform de l’athlète"
+  },
+  "liveWorkout": {
+    "title": "Séance en direct",
+    "notStarted": "Cette séance n'a pas commencé. Démarrez-la pour enregistrer chaque série au fur et à mesure.",
+    "pausedNotice": "En pause. Reprenez pour enregistrer des séries.",
+    "rest": "Récupération",
+    "clock": {
+      "label": "Durée de la séance",
+      "active": "Temps d'entraînement",
+      "paused": "En pause",
+      "elapsed": "Depuis le début"
+    },
+    "current": {
+      "title": "Maintenant",
+      "setOf": "Série {{number}} sur {{count}}",
+      "target": "Objectif : {{value}}",
+      "noTarget": "Aucun objectif. Enregistrez ce que vous avez fait.",
+      "values": "Ce que vous avez fait",
+      "next": "Ensuite : {{name}}, série {{number}}",
+      "done": "Toutes les séries sont enregistrées. Ajoutez une série ou un exercice, ou terminez la séance."
+    },
+    "outline": {
+      "title": "Programme de la séance"
+    },
+    "finish": {
+      "title": "Terminer la séance",
+      "done": "Séries faites",
+      "skipped": "Séries passées",
+      "remaining": "Séries non faites",
+      "scoring": "Seules les séries terminées comptent pour les points.",
+      "discardTitle": "Abandonner cette séance ?",
+      "discardWarning": "La séance et toutes les séries enregistrées seront supprimées, et aucun point ne sera attribué."
+    },
+    "actions": {
+      "continue": "Reprendre la séance",
+      "pause": "Pause",
+      "resume": "Reprendre",
+      "finish": "Terminer la séance",
+      "completeSet": "Valider la série",
+      "skipSet": "Passer la série",
+      "addSetTo": "Ajouter une série à {{name}}",
+      "skipExercise": "Passer {{name}}",
+      "saveCompleted": "Enregistrer la séance",
+      "saveStoppedEarly": "Enregistrer comme arrêtée tôt",
+      "discard": "Abandonner la séance",
+      "confirmDiscard": "Abandonner",
+      "keepWorkout": "Garder la séance"
+    },
+    "errors": {
+      "save": "La modification n'a pas pu être enregistrée. Réessayez.",
+      "notActive": "Cette séance n'est plus en cours. Ouvrez-la pour voir ce qui a été enregistré.",
+      "invalidSet": "Vérifiez {{field}}."
+    }
+  },
+  "vibeChanges": {
+    "title": "Évolution des Vibes",
+    "level": "Niveau {{value}}",
+    "none": "Cette séance n'a modifié aucun niveau de Vibe.",
+    "loading": "Chargement de l'évolution des Vibes…",
+    "loadError": "L'évolution des Vibes n'a pas pu être chargée."
+  },
+  "workoutResult": {
+    "title": "Comment ça s'est passé",
+    "note": {
+      "label": "Note de séance",
+      "placeholder": "Comment t'es-tu senti ? Quelque chose à retenir pour la prochaine fois ?",
+      "save": "Enregistrer la note",
+      "saved": "Note enregistrée.",
+      "saveError": "La note n'a pas pu être enregistrée. Réessaie."
+    },
+    "photo": {
+      "label": "Photo",
+      "alt": "Photo de cette séance",
+      "help": "JPEG, PNG ou WebP, jusqu'à {{size}} Mo. Toi seul peux la voir.",
+      "add": "Ajouter une photo",
+      "replace": "Remplacer la photo",
+      "remove": "Retirer la photo",
+      "invalidType": "Choisis une image JPEG, PNG ou WebP.",
+      "tooLarge": "Cette photo est trop lourde. Choisis-en une de {{size}} Mo maximum.",
+      "rejected": "Le contrôle de sécurité a refusé ce fichier. Choisis une autre photo.",
+      "uploadError": "La photo n'a pas pu être envoyée. Réessaie.",
+      "uploading": "Envoi de la photo…",
+      "added": "Photo ajoutée.",
+      "removed": "Photo retirée.",
+      "removeError": "La photo n'a pas pu être retirée. Réessaie.",
+      "removeTitle": "Retirer cette photo ?",
+      "removeMessage": "La photo sera supprimée. Tu pourras en ajouter une autre plus tard.",
+      "finishUploadFailed": "Ta séance est enregistrée, mais la photo n'a pas pu être envoyée. Ajoute-la de nouveau ici."
+    }
   }
 }

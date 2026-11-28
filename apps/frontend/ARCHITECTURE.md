@@ -72,3 +72,23 @@ packages/ui/
 ```
 
 The Architecture & Hardcoding QA job enforces design-token ownership and import direction. Exceptions must be narrow, explicit and justified rather than catch-all exclusions.
+
+### Maintainability ratchet
+
+The policy checks above guard specific files and patterns. The maintainability audit (`pnpm run architecture:maintainability`, run in the same CI job) scans every production TypeScript and CSS file in the web app, back office, backend and `@fitvibe/ui` for:
+
+| Rule                                      | Catches                                                                                                                            | Fix                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `magic-number`                            | A number other than 0, 1 or -1 outside a named `UPPER_CASE` constant, a `config/` or `constants/` module, a type or an HTTP status | Name it in the owning module or `config/trainingSurfaces.ts` |
+| `duplicate-function`                      | The same function body in two files that could share an import                                                                     | Keep one copy and import it                                  |
+| `duplicate-literal-list`                  | The same list of four or more strings, in any order                                                                                | One exported constant                                        |
+| `unquoted-css-url`                        | `` `url(${value})` `` without quotes; inlined data URLs contain quotes and break                                                   | `url(${JSON.stringify(value)})`                              |
+| `css-reimplements-component`              | A page rule that repeats a `[data-component]` or `[data-slot]` rule                                                                | Use the component                                            |
+| `css-duplicate-block`                     | Two rules with the same declarations in the same media context                                                                     | One shared class                                             |
+| `css-invalid-selector`, `css-parse-error` | Escaped `\n` in a selector, a sheet that does not parse                                                                            | Fix the stylesheet                                           |
+| `css-fixed-columns`                       | `repeat(3+, …)` tied to today's item count                                                                                         | `repeat(auto-fit, minmax(…))`                                |
+| `css-design-authority:*`                  | Literal CSS sizes and token misuse (from `design-authority-core.mjs`)                                                              | Use tokens                                                   |
+
+Code can only be shared where one side can import the other, so duplicates are reported within the web app plus `@fitvibe/ui`, the back office plus `@fitvibe/ui`, and the backend; frontend mirrors of backend values are kept aligned by contract tests instead. Literals inside a named constant pass by design: the name is what makes them reviewable.
+
+Existing findings are recorded per rule and file in `tests/qa/baseline/maintainability.json`. CI fails when any file gets worse, and also when one gets better without the baseline being lowered, so a cleanup cannot be undone later. After fixing findings, run `node tests/qa/audit-maintainability.mjs --update-baseline` and commit the baseline; `--list <rule>` prints the current findings for a rule. A justified exception carries `// maintainability: <rule> -- <reason>` (or the CSS comment form) on the same or the previous line.

@@ -82,6 +82,27 @@ jobs:
         continue-on-error: true
         run: node --test tests/qa/design-authority-core.test.mjs
 
+      - name: Maintainability audit regression tests
+        id: maintainability_tests
+        continue-on-error: true
+        run: node --test tests/qa/maintainability-core.test.mjs
+
+      # Magic numbers, duplicated helpers and lists, CSS that re-implements a shared
+      # component, literal CSS sizes. Ratchets against tests/qa/baseline/maintainability.json.
+      - name: Maintainability ratchet
+        id: maintainability_ratchet
+        continue-on-error: true
+        run: node tests/qa/audit-maintainability.mjs
+
+      - name: Upload maintainability report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: maintainability-audit-${{ github.run_id }}
+          path: tests/qa/reports/maintainability.json
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Enforce zero-tolerance result
         if: always()
         env:
@@ -90,6 +111,8 @@ jobs:
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
           TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
           DESIGN_AUTHORITY_OUTCOME: ${{ steps.design_authority_tests.outcome }}
+          MAINTAINABILITY_TESTS_OUTCOME: ${{ steps.maintainability_tests.outcome }}
+          MAINTAINABILITY_RATCHET_OUTCOME: ${{ steps.maintainability_ratchet.outcome }}
         run: |
           failed=0
           if [ "$BACKEND_OUTCOME" != "success" ]; then
@@ -112,6 +135,14 @@ jobs:
             echo "::error::Design authority regression tests failed."
             failed=1
           fi
+          if [ "$MAINTAINABILITY_TESTS_OUTCOME" != "success" ]; then
+            echo "::error::Maintainability audit regression tests failed."
+            failed=1
+          fi
+          if [ "$MAINTAINABILITY_RATCHET_OUTCOME" != "success" ]; then
+            echo "::error::Maintainability ratchet failed: a file has more findings than its baseline, or an improvement was not recorded."
+            failed=1
+          fi
           if [ "$failed" -ne 0 ]; then
             exit 1
           fi
@@ -125,6 +156,8 @@ jobs:
           FRONTEND_REUSE_OUTCOME: ${{ steps.architecture_frontend_reuse.outcome }}
           TYPOGRAPHY_OUTCOME: ${{ steps.typography_contract.outcome }}
           DESIGN_AUTHORITY_OUTCOME: ${{ steps.design_authority_tests.outcome }}
+          MAINTAINABILITY_TESTS_OUTCOME: ${{ steps.maintainability_tests.outcome }}
+          MAINTAINABILITY_RATCHET_OUTCOME: ${{ steps.maintainability_ratchet.outcome }}
         run: |
           echo "## Architecture & Hardcoding" >> "$GITHUB_STEP_SUMMARY"
           echo "- Backend policy authority: $BACKEND_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
@@ -132,6 +165,8 @@ jobs:
           echo "- Frontend component reuse: $FRONTEND_REUSE_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Typography contract: $TYPOGRAPHY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
           echo "- Design authority tests: $DESIGN_AUTHORITY_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Maintainability audit tests: $MAINTAINABILITY_TESTS_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Maintainability ratchet: $MAINTAINABILITY_RATCHET_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
 
   ui_literal_audit:
     name: UI Literal AST Audit
@@ -1972,7 +2007,6 @@ jobs:
           docker rm -f pre-main-backend pre-main-frontend pre-main-backoffice 2>/dev/null || true
           docker network rm pre-main-fitvibe 2>/dev/null || true
 
-
   pre_main_arm64_build:
     name: Pre-main arm64 Production Build
     runs-on: ubuntu-24.04-arm
@@ -3713,4 +3747,3 @@ jobs:
           artifacts: "artifacts/sbom-ingress.spdx.json,artifacts/sbom-backend.spdx.json,artifacts/sbom-frontend.spdx.json,artifacts/sbom-backoffice.spdx.json,artifacts/image-digests.txt,artifacts/artifacts/openapi/openapi.json"
           artifactErrorsFailBuild: true
           token: ${{ secrets.GITHUB_TOKEN }}
-

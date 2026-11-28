@@ -8,8 +8,9 @@ import {
   getSessionWithDetails,
   refreshSessionSummary,
   replaceSessionExercises,
-  sessionsExistAtDates,
+  findOverlappingSessions,
 } from "../sessions/sessions.repository.js";
+import { overlappingPairs, type ScheduleWindow } from "../sessions/sessions.schedule.js";
 import {
   convertExistingExerciseToInput,
   normalizeSessionExercises,
@@ -90,17 +91,25 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
         );
       }
       if (
-        detail.exercises.some((exercise) => exercise.sets.some((set) => Boolean(set.recorded_at)))
+        detail.exercises.some((exercise) =>
+          exercise.sets.some((set) => set.status === "completed" || Boolean(set.recorded_at)),
+        )
       ) {
         throw new HttpError(422, "E.PLAN.INVALID_TEMPLATE", "Template contains performed results");
       }
       sources.set(source.id, detail);
     }
-    const conflicts = await sessionsExistAtDates(
-      userId,
-      occurrences.map((row) => row.plannedAt),
-      trx,
+    const windows: ScheduleWindow[] = occurrences.map((occurrence) => ({
+      start: occurrence.plannedAt,
+      durationMin: sources.get(occurrence.sourceId)?.planned_duration_min ?? 0,
+    }));
+    const existing = await findOverlappingSessions(userId, windows, {}, trx);
+    const generated = overlappingPairs(windows).flatMap((pair) =>
+      pair.map((index) => windows[index].start),
     );
+    const conflicts = [
+      ...new Set([...existing.map(({ planned_at }) => planned_at), ...generated]),
+    ].sort();
     if (conflicts.length) {
       throw new HttpError(
         409,
@@ -126,6 +135,7 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
           owner_id: userId,
           plan_id: planId,
           planned_at: occurrence.plannedAt,
+          planned_duration_min: source.planned_duration_min,
           title: source.title ?? null,
           status: "planned",
           visibility: source.visibility,
@@ -139,14 +149,19 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
       const exercises = normalizeSessionExercises(
         source.exercises.map((exercise) => ({
           ...convertExistingExerciseToInput(exercise, false),
+          // Generated sessions repeat the template's prescription (ADR-042). Rows
+          // written before ADR-042 may still hold targets in the top-level fields.
           sets: exercise.sets.map((set) => ({
             order: set.order_index,
-            reps: set.reps ?? null,
-            weight_kg: set.weight_kg ?? null,
-            distance_m: set.distance_m ?? null,
-            duration_sec: set.duration_sec ?? null,
-            rpe: set.rpe ?? null,
-            rest_sec: set.rest_sec ?? null,
+            status: "planned" as const,
+            planned: set.planned ?? {
+              reps: set.reps ?? null,
+              weight_kg: set.weight_kg ?? null,
+              distance_m: set.distance_m ?? null,
+              duration_sec: set.duration_sec ?? null,
+              rpe: set.rpe ?? null,
+              rest_sec: set.rest_sec ?? null,
+            },
             extras: set.extras ?? {},
             notes: set.notes ?? null,
           })),

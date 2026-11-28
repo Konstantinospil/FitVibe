@@ -7,15 +7,33 @@ function watchBrowser(page) {
   const diagnostics = {
     pageErrors: [],
     consoleErrors: [],
+    consoleWarnings: [],
     failedRequests: [],
     apiHttpErrors: [],
     expectedApiHttpErrors: [],
   };
   const pathOf = (request) => new URL(request.url()).pathname;
   const apiRequest = (request) => pathOf(request).startsWith("/api/v1/");
+  const isApiUrl = (url) => {
+    try {
+      return new URL(url).pathname.startsWith("/api/v1/");
+    } catch {
+      return false;
+    }
+  };
   const onPageError = (error) => diagnostics.pageErrors.push(error.message);
   const onConsole = (message) => {
-    if (message.type() === "error") diagnostics.consoleErrors.push(message.text());
+    const type = message.type();
+    if (type !== "error" && type !== "warning") return;
+    const text = message.text();
+    const url = message.location?.()?.url ?? "";
+    // The browser reports every failed API response as "Failed to load
+    // resource". The response and requestfailed checks below already judge
+    // those (including registered expected errors), so don't count them twice.
+    // Failed non-API resources (scripts, styles, images) still count.
+    if (text.startsWith("Failed to load resource:") && isApiUrl(url)) return;
+    const entry = url ? `${text} (${url})` : text;
+    (type === "error" ? diagnostics.consoleErrors : diagnostics.consoleWarnings).push(entry);
   };
   const onRequestFailed = (request) => {
     if (!apiRequest(request)) return;
@@ -40,9 +58,7 @@ function watchBrowser(page) {
       expected.observed += 1;
       return;
     }
-    diagnostics.apiHttpErrors.push(
-      `${request.method()} ${pathOf(request)}: ${response.status()}`,
-    );
+    diagnostics.apiHttpErrors.push(`${request.method()} ${pathOf(request)}: ${response.status()}`);
   };
   page.on("pageerror", onPageError);
   page.on("console", onConsole);
@@ -64,6 +80,10 @@ function watchBrowser(page) {
     },
     assertHealthy() {
       assert.deepEqual(diagnostics.pageErrors, [], "Uncaught browser errors");
+      // Production no longer hides console output (issue 663), so console
+      // errors (app logging, CSP violations, failed assets) fail the test.
+      // Warnings are recorded and attached to the report, but don't fail it.
+      assert.deepEqual(diagnostics.consoleErrors, [], "Browser console errors");
       assert.deepEqual(diagnostics.failedRequests, [], "Unexpected API transport failures");
       assert.deepEqual(diagnostics.apiHttpErrors, [], "Unexpected API errors");
       assert.deepEqual(

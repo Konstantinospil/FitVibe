@@ -91,7 +91,6 @@ const testFiles = [
   "tests/frontend/utils/idleScheduler.test.ts",
   "tests/frontend/utils/jwt.test.ts",
   "tests/frontend/utils/logger.test.ts",
-  "tests/frontend/utils/suppressConsole.test.ts",
 ];
 
 const results = {
@@ -110,25 +109,25 @@ async function runTest(testFile) {
     typeof vitestPkg.bin === "string"
       ? vitestPkg.bin
       : (vitestPkg.bin?.vitest ?? vitestPkg.bin?.["vitest"]);
-  
+
   if (!binEntry) {
     console.error("[test] Unable to locate the Vitest binary entry point");
     return { passed: false, error: "Vitest binary not found" };
   }
-  
+
   const vitestBinPath = resolve(dirname(vitestPkgPath), binEntry);
   const nodeArgs = ["--max-old-space-size=6144"];
-  
+
   return new Promise((resolve) => {
     const startTime = Date.now();
     let timedOut = false;
     let killed = false;
     let testProcess = null;
     let timeoutId = null;
-    
+
     let stdout = "";
     let stderr = "";
-    
+
     testProcess = spawn(
       process.execPath,
       [...nodeArgs, vitestBinPath, "run", "--reporter=verbose", "--no-coverage", testFile],
@@ -138,25 +137,25 @@ async function runTest(testFile) {
         env: {
           ...process.env,
           VITEST: "true",
-          NODE_OPTIONS: process.env.NODE_OPTIONS 
+          NODE_OPTIONS: process.env.NODE_OPTIONS
             ? `${process.env.NODE_OPTIONS} --max-old-space-size=6144`.trim()
             : "--max-old-space-size=6144",
         },
       },
     );
-    
+
     testProcess.stdout.on("data", (data) => {
       const text = data.toString();
       stdout += text;
       process.stdout.write(text);
     });
-    
+
     testProcess.stderr.on("data", (data) => {
       const text = data.toString();
       stderr += text;
       process.stderr.write(text);
     });
-    
+
     timeoutId = setTimeout(() => {
       if (!killed && testProcess) {
         timedOut = true;
@@ -173,7 +172,7 @@ async function runTest(testFile) {
     testProcess.on("exit", (code, signal) => {
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
-      
+
       if (timedOut) {
         // Already handled in timeout
         return;
@@ -247,4 +246,3 @@ runAllTests().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

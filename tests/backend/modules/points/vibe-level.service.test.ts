@@ -41,12 +41,14 @@ describe("Vibe Level Service", () => {
             order_index: 0,
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 weight_kg: 100,
                 reps: 5,
               },
               {
+                status: "completed",
                 id: "set-2",
                 order_index: 1,
                 weight_kg: 100,
@@ -65,6 +67,44 @@ describe("Vibe Level Service", () => {
       expect(strengthDomain).toBeDefined();
       expect(strengthDomain?.impact).toBeGreaterThan(0);
       expect(strengthDomain?.reason).toContain("Lifted");
+    });
+
+    it("should ignore planned and skipped sets (ADR-042)", () => {
+      const session: SessionWithExercises = {
+        id: sessionId,
+        owner_id: userId,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        started_at: new Date(Date.now() - 3600000).toISOString(),
+        exercises: [
+          {
+            id: "ex-1",
+            session_id: sessionId,
+            order_index: 0,
+            sets: [
+              {
+                status: "planned",
+                id: "set-1",
+                order_index: 0,
+                weight_kg: 100,
+                reps: 5,
+              },
+              {
+                status: "skipped",
+                id: "set-2",
+                order_index: 1,
+                weight_kg: 100,
+                reps: 5,
+              },
+            ],
+          },
+        ],
+      } as SessionWithExercises;
+
+      const exerciseMetadata = new Map<string, ExerciseMetadata>();
+      const domains = vibeLevelService.detectSessionDomains(session, exerciseMetadata);
+
+      expect(domains.find((d) => d.domain === "strength")).toBeUndefined();
     });
 
     it("should detect endurance domain from distance", () => {
@@ -113,6 +153,7 @@ describe("Vibe Level Service", () => {
             },
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 rpe: 10,
@@ -145,6 +186,7 @@ describe("Vibe Level Service", () => {
             order_index: 0,
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 reps: 50,
@@ -267,6 +309,7 @@ describe("Vibe Level Service", () => {
             order_index: 0,
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 weight_kg: 100,
@@ -303,6 +346,7 @@ describe("Vibe Level Service", () => {
             },
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 weight_kg: 100,
@@ -359,6 +403,7 @@ describe("Vibe Level Service", () => {
             },
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 weight_kg: 50,
@@ -399,6 +444,7 @@ describe("Vibe Level Service", () => {
             order_index: 0,
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 weight_kg: 100,
@@ -738,6 +784,7 @@ describe("Vibe Level Service", () => {
             order_index: 0,
             sets: [
               {
+                status: "completed",
                 id: "set-1",
                 order_index: 0,
                 weight_kg: 100,

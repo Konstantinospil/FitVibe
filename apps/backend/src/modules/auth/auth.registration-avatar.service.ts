@@ -1,20 +1,14 @@
 import type { Knex } from "knex";
-import sharp from "sharp";
-import { HttpError } from "../../utils/http.js";
-import { scanBuffer } from "../../services/antivirus.service.js";
+import {
+  AVATAR_RENDITION,
+  prepareImage,
+  type UploadedImageFile,
+} from "../../services/imageUpload.service.js";
 import { deleteStorageObject, saveUserAvatarFile } from "../../services/mediaStorage.service.js";
 import { insertAudit } from "../common/audit.util.js";
 import { saveUserAvatarMetadata } from "../users/users.avatar.repository.js";
 
-const ALLOWED_AVATAR_MIME = new Set(["image/png", "image/jpeg", "image/webp", "image/jpg"]);
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
-
-export interface RegistrationAvatarFile {
-  buffer: Buffer;
-  mimetype: string;
-  originalname: string;
-  size: number;
-}
+export type RegistrationAvatarFile = UploadedImageFile;
 
 export interface PersistedRegistrationAvatar {
   storageKey: string;
@@ -22,43 +16,9 @@ export interface PersistedRegistrationAvatar {
   recordId: string;
 }
 
+/** Checks, scans and re-encodes the avatar chosen at registration (shared pipeline). */
 export async function prepareRegistrationAvatar(file: RegistrationAvatarFile): Promise<Buffer> {
-  if (!ALLOWED_AVATAR_MIME.has(file.mimetype)) {
-    throw new HttpError(422, "UPLOAD_UNSUPPORTED_TYPE", "UPLOAD_UNSUPPORTED_TYPE");
-  }
-  if (file.size > MAX_AVATAR_BYTES) {
-    throw new HttpError(422, "UPLOAD_TOO_LARGE", "UPLOAD_TOO_LARGE");
-  }
-
-  const scanResult = await scanBuffer(file.buffer, file.originalname);
-  if (scanResult.isInfected) {
-    throw new HttpError(422, "E.UPLOAD.MALWARE_DETECTED", "UPLOAD_MALWARE_DETECTED", {
-      reason: "malware_detected",
-      viruses: scanResult.viruses,
-    });
-  }
-
-  let imageFormat: string | undefined;
-  try {
-    imageFormat = (await sharp(file.buffer).metadata()).format;
-  } catch {
-    throw new HttpError(422, "UPLOAD_UNSUPPORTED_TYPE", "UPLOAD_UNSUPPORTED_TYPE");
-  }
-
-  if (!imageFormat || !["jpeg", "png", "webp"].includes(imageFormat)) {
-    throw new HttpError(422, "UPLOAD_UNSUPPORTED_TYPE", "UPLOAD_UNSUPPORTED_TYPE");
-  }
-
-  try {
-    return await sharp(file.buffer)
-      .rotate()
-      .resize(128, 128, { fit: "cover" })
-      .png({ quality: 80 })
-      .toBuffer();
-  } catch {
-    // Decoding can fail even when image metadata is readable.
-    throw new HttpError(422, "UPLOAD_UNSUPPORTED_TYPE", "UPLOAD_UNSUPPORTED_TYPE");
-  }
+  return (await prepareImage(file, AVATAR_RENDITION)).buffer;
 }
 
 export async function persistRegistrationAvatar(
@@ -66,14 +26,14 @@ export async function persistRegistrationAvatar(
   processed: Buffer,
   trx: Knex.Transaction,
 ): Promise<PersistedRegistrationAvatar> {
-  const fileMeta = await saveUserAvatarFile(userId, processed, "image/png");
+  const fileMeta = await saveUserAvatarFile(userId, processed, AVATAR_RENDITION.mimeType);
   try {
     const { record } = await saveUserAvatarMetadata(
       userId,
       {
         storageKey: fileMeta.storageKey,
         fileUrl: `/api/v1/users/avatar/${userId}`,
-        mimeType: "image/png",
+        mimeType: AVATAR_RENDITION.mimeType,
         bytes: fileMeta.bytes,
       },
       trx,
@@ -100,7 +60,7 @@ export async function auditRegistrationAvatar(
     entityId: avatar.recordId,
     metadata: {
       size: avatar.bytes,
-      mime: "image/png",
+      mime: AVATAR_RENDITION.mimeType,
       source: "registration",
     },
   });

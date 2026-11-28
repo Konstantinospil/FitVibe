@@ -1,7 +1,8 @@
 import { Router, type RequestHandler } from "express";
-import multer from "multer";
 import {
   register,
+  registrationIntent,
+  completeRegistration,
   registrationOptions,
   login,
   verify2FALogin,
@@ -25,7 +26,9 @@ import {
 import { rateLimit, rateLimitByUser } from "../common/rateLimiter.js";
 import { validate } from "../../utils/validation.js";
 import {
-  RegisterSchema,
+  StartRegistrationSchema,
+  RegistrationIntentSchema,
+  CompleteRegistrationSchema,
   LoginSchema,
   Verify2FALoginSchema,
   ForgotPasswordSchema,
@@ -40,22 +43,14 @@ import { asyncHandler } from "../../utils/async-handler.js";
 import twoFactorRoutes from "./two-factor.routes.js";
 import { administratorPasswordPolicyStatus } from "./admin-password-policy.controller.js";
 import { HttpError } from "../../utils/http.js";
+import { singleImageUpload } from "../../services/imageUpload.service.js";
 
 export const authRouter = Router();
 
-const registrationUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
+const readRegistrationAvatar = singleImageUpload("avatar");
 
 const registrationMultipart: RequestHandler = (req, res, next) => {
-  registrationUpload.single("avatar")(req, res, (error: unknown) => {
-    if (error instanceof multer.MulterError) {
-      res.status(422).json({
-        error: error.code === "LIMIT_FILE_SIZE" ? "UPLOAD_TOO_LARGE" : "UPLOAD_INVALID",
-      });
-      return;
-    }
+  readRegistrationAvatar(req, res, (error: unknown) => {
     if (error) {
       next(error);
       return;
@@ -89,12 +84,27 @@ authRouter.get(
   asyncHandler(registrationOptions),
 );
 
+// Email-first registration (ADR-039).
+// Step 1: the address only. Same answer for every address.
 authRouter.post(
   "/register",
   rateLimit("auth_register"),
-  registrationMultipart,
-  validate(RegisterSchema),
+  validate(StartRegistrationSchema),
   asyncHandler(register),
+);
+// Step 2: the emailed link proves mailbox ownership.
+authRouter.post(
+  "/register/intent",
+  rateLimit("auth_register_intent"),
+  validate(RegistrationIntentSchema),
+  asyncHandler(registrationIntent),
+);
+authRouter.post(
+  "/register/complete",
+  rateLimit("auth_register_complete"),
+  registrationMultipart,
+  validate(CompleteRegistrationSchema),
+  asyncHandler(completeRegistration),
 );
 authRouter.get("/verify", rateLimit("auth_verify"), asyncHandler(verifyEmail));
 authRouter.post(

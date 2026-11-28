@@ -2,20 +2,32 @@ import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 
 const resetTranslations = JSON.parse(
-  readFileSync(new URL("../../../../apps/frontend/src/i18n/locales/en/common.json", import.meta.url), "utf8"),
+  readFileSync(
+    new URL("../../../../apps/frontend/src/i18n/locales/en/common.json", import.meta.url),
+    "utf8",
+  ),
 ) as { resetPassword: { title: string } };
 import { skipUnlessMatrix } from "../helpers/project.js";
-import { capturePageScreenshot, openPublicPage, prepareVisualPage, waitForAppReady } from "../helpers/capture.js";
+import {
+  capturePageScreenshot,
+  openPublicPage,
+  prepareVisualPage,
+  waitForAppReady,
+} from "../helpers/capture.js";
 
 test.describe("Auth Page Visual Tests", () => {
   test("login page", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/login", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
-    const themeToggle = page.locator('[data-component="public-header"] [data-control="theme-toggle"]');
+    const themeToggle = page.locator(
+      '[data-component="public-header"] [data-control="theme-toggle"]',
+    );
     await expect(themeToggle).toHaveAttribute("title", /Switch to (light|dark) mode/);
     await expect(themeToggle).toHaveAttribute("aria-label", /Switch to (light|dark) mode/);
     await expect(themeToggle).toHaveText("");
-    await capturePageScreenshot(page, testInfo, "login", { waitFor: '[data-component="form-stack"]' });
+    await capturePageScreenshot(page, testInfo, "login", {
+      waitFor: '[data-component="form-stack"]',
+    });
   });
 
   // #558 negative control: the same geometry assertion must reject a displaced
@@ -35,40 +47,44 @@ test.describe("Auth Page Visual Tests", () => {
 
     // Prove the mutation actually moved the main region beyond the footer.
     const mainBox = await main.boundingBox();
-    const footerBox = await page
-      .locator('[data-component="page-shell-footer"]')
-      .boundingBox();
+    const footerBox = await page.locator('[data-component="page-shell-footer"]').boundingBox();
     expect(mainBox && footerBox).toBeTruthy();
     if (mainBox && footerBox) {
       expect(mainBox.y).toBeGreaterThan(footerBox.y + footerBox.height);
     }
 
-    await expect(assertVerticalAuthShell(page)).rejects.toThrow(
-      /toBeLessThanOrEqual/,
-    );
+    await expect(assertVerticalAuthShell(page)).rejects.toThrow(/toBeLessThanOrEqual/);
   });
 
   test("forgot password", async ({ page }, testInfo) => {
-    await openPublicPage(page, testInfo, "/forgot-password", { viewports: ["xs", "sm", "md", "lg"] });
+    await openPublicPage(page, testInfo, "/forgot-password", {
+      viewports: ["xs", "sm", "md", "lg"],
+    });
     await assertVerticalAuthShell(page);
-    await capturePageScreenshot(page, testInfo, "forgot-password", { waitFor: '[data-component="form-stack"]' });
+    await capturePageScreenshot(page, testInfo, "forgot-password", {
+      waitFor: '[data-component="form-stack"]',
+    });
   });
 
   test("reset password", async ({ page }, testInfo) => {
-    await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", { viewports: ["xs", "sm", "md", "lg"] });
+    await openPublicPage(page, testInfo, "/reset-password?token=visual-fixture", {
+      viewports: ["xs", "sm", "md", "lg"],
+    });
     await assertVerticalAuthShell(page);
 
     // Test ownership: #557.
     // Ensure asynchronous i18n has resolved before capturing a baseline.
-    await expect(page.getByRole("heading", {
-      name: resetTranslations.resetPassword.title,
-      exact: true,
-    })).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: resetTranslations.resetPassword.title,
+        exact: true,
+      }),
+    ).toBeVisible();
 
     // Verify that the password requirements are translated and rendered.
-    await expect(
-      page.locator('[data-component="password-requirements-panel"]')
-    ).toContainText("Password Requirements:");
+    await expect(page.locator('[data-component="password-requirements-panel"]')).toContainText(
+      "Password Requirements:",
+    );
 
     await capturePageScreenshot(page, testInfo, "reset-password", {
       waitFor: '[data-component="form-stack"]',
@@ -76,9 +92,11 @@ test.describe("Auth Page Visual Tests", () => {
   });
 
   // #557: capture the live strength indicator separately from the empty form.
+  // #653: email-first registration moved the password field from /register to
+  // the emailed-link step, /register/complete (intent mocked in mockApi.ts).
   for (const flow of [
     { name: "reset", url: "/reset-password?token=visual-fixture" },
-    { name: "register", url: "/register" },
+    { name: "register", url: "/register/complete?token=visual-fixture" },
   ] as const) {
     test(`${flow.name} password strength states`, async ({ page }, testInfo) => {
       await openPublicPage(page, testInfo, flow.url, {
@@ -110,7 +128,7 @@ test.describe("Auth Page Visual Tests", () => {
     await openPublicPage(page, testInfo, "/login", { viewports: ["xs", "sm", "md", "lg"] });
     await waitForAppReady(page);
     await page.locator('input[name="email"]').waitFor({ state: "visible" });
-    await page.route("**/api/v1/auth/login", async route => {
+    await page.route("**/api/v1/auth/login", async (route) => {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -135,7 +153,9 @@ test.describe("Auth Page Visual Tests", () => {
     });
     await expect(page).toHaveURL(/\/login\/verify-2fa$/);
     await assertVerticalAuthShell(page);
-    await capturePageScreenshot(page, testInfo, "two-factor-challenge", { waitFor: '[data-component="form-stack"]' });
+    await capturePageScreenshot(page, testInfo, "two-factor-challenge", {
+      waitFor: '[data-component="form-stack"]',
+    });
     await expect(page.locator('input[name="code"]')).toBeVisible();
   });
 
@@ -155,13 +175,17 @@ test.describe("Auth Page Visual Tests", () => {
     await waitForAppReady(page);
     await expect(page.getByRole("dialog", { name: /cookie/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /reject all/i })).toBeVisible();
-    await capturePageScreenshot(page, testInfo, "first-visit-login-cookie-popup", { waitFor: '[role="dialog"]' });
+    await capturePageScreenshot(page, testInfo, "first-visit-login-cookie-popup", {
+      waitFor: '[role="dialog"]',
+    });
   });
 
   test("register page", async ({ page }, testInfo) => {
     await openPublicPage(page, testInfo, "/register", { viewports: ["xs", "sm", "md", "lg"] });
     await assertVerticalAuthShell(page);
-    await capturePageScreenshot(page, testInfo, "register", { waitFor: '[data-component="form-stack"]' });
+    await capturePageScreenshot(page, testInfo, "register", {
+      waitFor: '[data-component="form-stack"]',
+    });
   });
 });
 

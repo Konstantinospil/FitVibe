@@ -72,6 +72,8 @@ interface VibeLevelChangeRow {
   change_reason: string;
   metadata: unknown;
   created_at: Date | string | number | null;
+  /** False once a gamification rebuild superseded the row. */
+  is_active?: boolean;
 }
 
 function toDomainVibeLevel(row: DomainVibeLevelRow): DomainVibeLevel {
@@ -220,6 +222,26 @@ export async function updateDomainVibeLevel(
       last_updated_at: lastUpdatedAt,
       updated_at: now,
     });
+}
+
+/**
+ * The Vibe level changes one completed session caused for its owner, as they stand
+ * now: a gamification rebuild supersedes old rows and writes new active ones.
+ */
+export async function listActiveSessionVibeChanges(
+  userId: string,
+  sessionId: string,
+): Promise<VibeLevelChangeRecord[]> {
+  const rows = await db<VibeLevelChangeRow>("vibe_level_changes")
+    .where({
+      user_id: userId,
+      session_id: sessionId,
+      change_reason: "session_completed",
+      is_active: true,
+    })
+    .orderBy("domain_code", "asc")
+    .select("*");
+  return rows.map(toVibeLevelChangeRecord);
 }
 
 export async function insertVibeLevelChange(

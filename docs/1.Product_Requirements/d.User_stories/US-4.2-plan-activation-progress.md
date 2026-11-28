@@ -51,6 +51,7 @@ Users need the ability to activate training plans, which generates scheduled ses
 - Backend work is in [PR #491](https://github.com/Konstantinospil/FitVibe/pull/491), superseding #484.
 - Tests include recurrence/DST behavior, database-backed activation with prescribed-set preservation, completion progress, rejected repeat activation, unauthorized requests, and invalid field bounds.
 - Keep this story **open** until CI quality, backend integration, API validation, and coverage gates pass with evidence.
+- **Closed 2026-11-26** ([#85](https://github.com/Konstantinospil/FitVibe/issues/85)): AC01–AC03 verified by `tests/backend/integration/plan-activation.integration.test.ts`, which passed in CI against current `feature`. The Training plans dialog now shows completion progress (`completed_count` of `session_count`, `progress_percent`) for activated plans.
 - User-facing plan activation/progress components remain aligned with [#84](https://github.com/Konstantinospil/FitVibe/issues/84) and the Planner UI; live workout execution is separately tracked by [#365](https://github.com/Konstantinospil/FitVibe/issues/365).
 
 ## Test Strategy

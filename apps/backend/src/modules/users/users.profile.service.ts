@@ -17,6 +17,7 @@ import {
 import type { UpdateProfileDTO, UserDetail } from "./users.types.js";
 import { toUserDetail } from "./users.mapping.js";
 import { ensureUsernameAvailable, ensureUsernameFormat } from "./users.username.js";
+import { lbToKg } from "../../utils/units.js";
 
 export async function updateProfile(userId: string, dto: UpdateProfileDTO): Promise<UserDetail> {
   const user = await findUserById(userId);
@@ -91,7 +92,7 @@ export async function updateProfile(userId: string, dto: UpdateProfileDTO): Prom
   if (dto.weight !== undefined || dto.weightUnit !== undefined) {
     let weightInKg = dto.weight;
     if (dto.weight !== undefined && dto.weightUnit === "lb") {
-      weightInKg = dto.weight * 0.453592;
+      weightInKg = lbToKg(dto.weight);
     }
 
     if (weightInKg !== undefined) {

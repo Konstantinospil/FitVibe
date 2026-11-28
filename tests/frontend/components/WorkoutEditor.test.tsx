@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import WorkoutEditor from "../../src/components/composites/WorkoutEditor";
 import * as api from "../../src/services/api";
+import * as accountApi from "../../src/services/accountApi";
 import * as planApi from "../../src/services/planApi";
 import { createTestQueryClient, cleanupQueryClient } from "../helpers/testQueryClient";
 
@@ -21,6 +22,11 @@ vi.mock("../../src/services/api", async () => {
     createSession: vi.fn(),
     updateSession: vi.fn(),
   };
+});
+
+vi.mock("../../src/services/accountApi", async () => {
+  const actual = await vi.importActual("../../src/services/accountApi");
+  return { ...actual, getUserPreferences: vi.fn() };
 });
 
 vi.mock("../../src/services/planApi", () => ({
@@ -76,6 +82,10 @@ describe("WorkoutEditor", () => {
   const onClose = vi.fn();
 
   beforeEach(() => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "metric",
+    });
     queryClient = createTestQueryClient();
     mockedApi.listExercises.mockResolvedValue(exerciseResponse);
     vi.mocked(planApi.listTrainingPlans).mockResolvedValue([]);
@@ -249,6 +259,42 @@ describe("WorkoutEditor", () => {
     expect(mockedApi.createSession).not.toHaveBeenCalled();
   });
 
+  it("plans load in pounds for an imperial athlete and stores kilograms", async () => {
+    vi.mocked(accountApi.getUserPreferences).mockResolvedValue({
+      language: "en",
+      measurementSystem: "imperial",
+    });
+    const existing: api.SessionWithExercises = {
+      ...savedSession,
+      id: "existing",
+      title: "Existing workout",
+      exercises: [
+        {
+          id: "session-ex-1",
+          session_id: "existing",
+          exercise_id: "exercise-1",
+          order_index: 0,
+          planned: { sets: 1, reps: 5, load: 100 },
+          sets: [],
+        },
+      ],
+    };
+    renderEditor(existing);
+
+    // The 100 kg target, in pounds.
+    const load = await screen.findByLabelText("workoutEditor.fields.weightLb");
+    expect(load).toHaveValue(220.5);
+    fireEvent.change(load, { target: { value: "225" } });
+    fireEvent.click(screen.getByRole("button", { name: "workoutEditor.actions.plan" }));
+
+    await waitFor(() => expect(mockedApi.updateSession).toHaveBeenCalled());
+    const [, payload] = mockedApi.updateSession.mock.calls[0];
+    expect(payload.exercises?.[0]).toMatchObject({
+      planned: { load: 102.06 },
+      sets: [{ planned: { weight_kg: 102.06 } }],
+    });
+  });
+
   it("keeps derived metrics unavailable instead of reimplementing #338", async () => {
     renderEditor();
 
@@ -282,7 +328,8 @@ describe("WorkoutEditor", () => {
       });
     });
 
-    const search = screen.getByLabelText(
+    // The form shows once the load unit is known.
+    const search = await screen.findByLabelText(
       "workoutEditor.fields.exercise librarySurface.filters.search",
     );
     fireEvent.change(search, { target: { value: "squat" } });
@@ -363,11 +410,10 @@ describe("WorkoutEditor", () => {
               id: "set-1",
               session_exercise_id: "session-ex-rich",
               order_index: 0,
-              reps: 7,
-              weight_kg: 40,
-              duration_sec: 30,
-              rpe: 6,
-              rest_sec: 45,
+              status: "planned",
+              source: "prescribed",
+              // The workout's targets live in the set's prescription (ADR-042).
+              planned: { reps: 7, weight_kg: 40, duration_sec: 30, rpe: 6, rest_sec: 45 },
             },
           ],
         },
@@ -412,11 +458,14 @@ describe("WorkoutEditor", () => {
               }),
               sets: expect.arrayContaining([
                 expect.objectContaining({
-                  reps: 8,
-                  weight_kg: 42.5,
-                  duration_sec: 30,
-                  rpe: 7,
-                  rest_sec: 45,
+                  status: "planned",
+                  planned: {
+                    reps: 8,
+                    weight_kg: 42.5,
+                    duration_sec: 30,
+                    rpe: 7,
+                    rest_sec: 45,
+                  },
                 }),
               ]),
             }),
@@ -463,13 +512,17 @@ describe("WorkoutEditor", () => {
                 extras: undefined,
               }),
               sets: [
-                expect.objectContaining({
-                  reps: null,
-                  weight_kg: null,
-                  duration_sec: null,
-                  rpe: null,
-                  rest_sec: null,
-                }),
+                {
+                  order: 1,
+                  status: "planned",
+                  planned: {
+                    reps: null,
+                    weight_kg: null,
+                    duration_sec: null,
+                    rpe: null,
+                    rest_sec: null,
+                  },
+                },
               ],
             }),
           ],
@@ -537,5 +590,4 @@ describe("WorkoutEditor", () => {
 
     expect(screen.queryByText("workoutEditor.title")).not.toBeInTheDocument();
   });
-
 });

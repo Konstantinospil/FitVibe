@@ -1,6 +1,6 @@
 [
   {
-    "id": "77777777-7777-7777-7777-777777777777",
+    "id": "77777777-7777-4777-8777-777777777777",
     "name": "Barbell Back Squat",
     "type_code": "strength",
     "muscle_group": "legs",
@@ -63,7 +63,7 @@
     "description": "Machine squat emphasizing quads with a supported back. The hillside that always holds you while you climb."
   },
   {
-    "id": "77777777-7777-7777-7777-777777777779",
+    "id": "77777777-7777-4777-8777-777777777779",
     "name": "Conventional Deadlift",
     "type_code": "strength",
     "muscle_group": "full_body",
@@ -126,7 +126,7 @@
     "description": "Loaded hip hinge with the bar on the back. Bow with a spine like a well-kept spear."
   },
   {
-    "id": "77777777-7777-7777-7777-777777777778",
+    "id": "77777777-7777-4777-8777-777777777778",
     "name": "Barbell Bench Press",
     "type_code": "strength",
     "muscle_group": "chest",
@@ -909,7 +909,7 @@
     "description": "Easy aerobic run below threshold. A river that is not in a hurry."
   },
   {
-    "id": "77777777-7777-7777-7777-777777777780",
+    "id": "77777777-7777-4777-8777-777777777780",
     "name": "Tempo Run 5K",
     "type_code": "endurance",
     "muscle_group": "legs",
@@ -1008,7 +1008,7 @@
     "description": "Walk with a weighted pack. Carry the camp and still arrive."
   },
   {
-    "id": "77777777-7777-7777-7777-777777777781",
+    "id": "77777777-7777-4777-8777-777777777781",
     "name": "Endurance Ride 60k",
     "type_code": "endurance",
     "muscle_group": "legs",

@@ -187,7 +187,6 @@
     "AUTH_INVALID_TOKEN": "Invalid verification token",
     "AUTH_TOKEN_EXPIRED": "Your verification link has expired. Please request a new one",
     "AUTH_TOO_MANY_REQUESTS": "Verification limit reached. Please try again later",
-    "AUTH_CONFLICT": "Unable to complete registration",
     "AUTH_USER_NOT_FOUND": "User not found",
     "AUTH_INVALID_CREDENTIALS": "Invalid credentials",
     "AUTH_INVALID_REFRESH": "Invalid refresh token",
@@ -197,6 +196,7 @@
     "AUTH_SESSION_NOT_FOUND": "Session not found",
     "UNAUTHENTICATED": "Missing authentication context",
     "USER_USERNAME_TAKEN": "Username already in use",
+    "AUTH_EMAIL_ALREADY_REGISTERED": "An account already exists for this address. Sign in or reset your password.",
     "USER_USERNAME_INVALID": "Username must be 3–50 characters and may include letters, numbers, dots, underscores, and dashes",
     "USER_STATUS_INVALID": "Cannot transition status",
     "USER_DISPLAY_NAME_REQUIRED": "Display name is required",
@@ -1026,7 +1026,11 @@
       "previousMonth": "Previous month",
       "nextMonth": "Next month",
       "previousYear": "Previous year",
-      "nextYear": "Next year"
+      "nextYear": "Next year",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "previousDay": "Previous day",
+      "nextDay": "Next day"
     },
     "gridLabel": "Monthly workout calendar",
     "dayLabel": "{{date}}, {{count}} workouts",
@@ -1037,6 +1041,58 @@
     },
     "errors": {
       "load": "Calendar data could not be loaded."
+    },
+    "schedule": {
+      "moveLabel": "Move {{title}}",
+      "moveHint": "Drag to another day or time. Or press Space to pick it up, move it with the arrow keys and press Enter to drop it. Press Enter on its own to change the day, time and length.",
+      "resizeHint": "Drag to change when the workout ends. Or press Space, change the end with the up and down arrow keys and press Enter to save. Press Enter on its own to change the day, time and length.",
+      "conflictLabel": "Time conflict",
+      "dialog": {
+        "title": "Reschedule workout",
+        "description": "Choose a new day, start time and length for {{title}}."
+      },
+      "fields": {
+        "day": "Day",
+        "time": "Time",
+        "duration": "Length in minutes"
+      },
+      "actions": {
+        "save": "Reschedule workout",
+        "cancel": "Cancel"
+      },
+      "status": {
+        "rescheduled": "{{title}} is now planned for {{date}}, {{start}}–{{end}}."
+      },
+      "errors": {
+        "conflict": "{{title}} is planned from {{start}} to {{end}} on {{date}}. Choose another time.",
+        "conflictUnlisted": "Another workout is planned between {{start}} and {{end}} on {{date}}. Choose another time.",
+        "invalid": "That day and time doesn't exist. Choose another one.",
+        "save": "The workout couldn't be rescheduled. Try again.",
+        "invalidDuration": "Choose a length between {{min}} and {{max}} minutes."
+      },
+      "chipLabel": "{{time}} {{title}}, move",
+      "resizeLabel": "{{title}}, ends {{time}}, change length",
+      "keyboard": {
+        "pickedUp": "{{title}} picked up. Use the arrow keys to choose a new day or time, Enter to drop, Escape to cancel.",
+        "over": "{{target}}.",
+        "overConflict": "{{target}}: conflicts with {{title}}.",
+        "cancelled": "Move of {{title}} cancelled.",
+        "resizePickedUp": "Changing the length of {{title}}. Use the up and down arrow keys to change the end, Enter to save, Escape to cancel.",
+        "resizeOver": "Ends at {{time}}, {{duration}}.",
+        "resizeOverConflict": "Ends at {{time}}, {{duration}}: conflicts with {{title}}.",
+        "resizeCancelled": "Length of {{title}} unchanged."
+      }
+    },
+    "views": {
+      "label": "Calendar view",
+      "month": "Month",
+      "week": "Week",
+      "day": "Day"
+    },
+    "timeGrid": {
+      "weekLabel": "Weekly workout schedule",
+      "dayLabel": "Daily workout schedule",
+      "timeHeading": "Time"
     }
   },
   "workoutEditor": {
@@ -1061,6 +1117,7 @@
       "sets": "Sets",
       "repetitions": "Repetitions",
       "weight": "Resistance / weight",
+      "weightLb": "Resistance / weight (lb)",
       "duration": "Duration (seconds)",
       "exertion": "Target exertion",
       "restSet": "Rest after each set (seconds)",
@@ -1095,6 +1152,44 @@
   },
   "actions": {
     "retry": "Retry"
+  },
+  "sessionDetail": {
+    "title": "Workout",
+    "details": "Details: {{title}}",
+    "planned": "Planned",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "canceled": "Canceled",
+    "plannedAt": "Scheduled: {{value}}",
+    "startedAt": "Started: {{value}}",
+    "completedAt": "Completed: {{value}}",
+    "visibility": "Visibility: {{value}}",
+    "exerciseList": "Exercises and sets",
+    "prescription": "Prescription",
+    "actual": "Recorded results",
+    "unrecorded": "Not recorded",
+    "set": "Set {{number}}",
+    "reps": "Reps: {{value}}",
+    "load": "Load: {{value}} kg",
+    "loadLb": "Load: {{value}} lb",
+    "duration": "Duration: {{value}} s",
+    "distance": "Distance: {{value}} m",
+    "rpe": "RPE: {{value}}",
+    "heartRate": "Heart rate: {{value}} bpm",
+    "rest": "Rest: {{value}} s",
+    "empty": "No exercises.",
+    "loadError": "Workout could not be loaded.",
+    "saveError": "Workout could not be updated.",
+    "reuse": "Reuse as new workout",
+    "reuseDate": "Schedule the copy",
+    "pointsPending": "Points are being processed.",
+    "sets": "Sets: {{value}}",
+    "plannedDuration": "Planned duration: {{value}}",
+    "plannedDistance": "Planned distance: {{value}}",
+    "plannedRest": "Planned rest: {{value}}",
+    "skipped": "Skipped",
+    "target": "target: {{value}}",
+    "stoppedEarly": "Stopped early"
   },
   "librarySurface": {
     "title": "Library",
@@ -1167,6 +1262,34 @@
       }
     }
   },
+  "logSurface": {
+    "title": "Log a workout",
+    "sections": {
+      "workout": "Workout",
+      "exercises": "Exercises"
+    },
+    "fields": {
+      "startTime": "Start time",
+      "weight": "Weight (kg)",
+      "weightLb": "Weight (lb)",
+      "distance": "Distance (metres)",
+      "rpe": "Effort (RPE 1–10)",
+      "heartRate": "Heart rate (bpm, optional)"
+    },
+    "actions": {
+      "save": "Save workout",
+      "addSet": "Add set",
+      "removeSet": "Remove set {{number}} of {{name}}",
+      "removeExercise": "Remove {{name}}"
+    },
+    "empty": "Add the exercises you did, then fill in each set.",
+    "errors": {
+      "save": "The workout couldn't be saved. Check the values and try again.",
+      "future": "A logged workout must have started in the past. Choose an earlier day or time.",
+      "noExercises": "Add at least one exercise.",
+      "invalidSet": "{{exercise}}, set {{number}}: check {{field}}."
+    }
+  },
   "loading": {
     "app": "Loading app…"
   },
@@ -1179,6 +1302,7 @@
     "noDate": "Not set",
     "dateRange": "{{start}} – {{end}}",
     "sessionCount": "{{count}} sessions",
+    "progress": "{{completed}} of {{total}} sessions completed ({{percent}})",
     "loading": "Loading plans…",
     "empty": "No training plans yet.",
     "fields": {
@@ -1271,5 +1395,94 @@
   "vibeformConstellation": {
     "accessibleLabel": "Vibeform dashboard",
     "athleteLabel": "Athlete Vibeform"
+  },
+  "liveWorkout": {
+    "title": "Live workout",
+    "notStarted": "This workout hasn't started. Start it to record each set as you go.",
+    "pausedNotice": "Paused. Resume to record sets.",
+    "rest": "Rest",
+    "clock": {
+      "label": "Workout time",
+      "active": "Training time",
+      "paused": "Paused",
+      "elapsed": "Since start"
+    },
+    "current": {
+      "title": "Now",
+      "setOf": "Set {{number}} of {{count}}",
+      "target": "Target: {{value}}",
+      "noTarget": "No target. Record what you did.",
+      "values": "What you did",
+      "next": "Next: {{name}}, set {{number}}",
+      "done": "Every set is recorded. Add a set or an exercise, or finish the workout."
+    },
+    "outline": {
+      "title": "Workout plan"
+    },
+    "finish": {
+      "title": "Finish workout",
+      "done": "Sets done",
+      "skipped": "Sets skipped",
+      "remaining": "Sets not done",
+      "scoring": "Only sets you completed count towards points.",
+      "discardTitle": "Discard this workout?",
+      "discardWarning": "The workout and every set you recorded will be removed, and no points will be awarded."
+    },
+    "actions": {
+      "continue": "Continue workout",
+      "pause": "Pause",
+      "resume": "Resume",
+      "finish": "Finish workout",
+      "completeSet": "Complete set",
+      "skipSet": "Skip set",
+      "addSetTo": "Add set to {{name}}",
+      "skipExercise": "Skip {{name}}",
+      "saveCompleted": "Save workout",
+      "saveStoppedEarly": "Save as stopped early",
+      "discard": "Discard workout",
+      "confirmDiscard": "Discard",
+      "keepWorkout": "Keep workout"
+    },
+    "errors": {
+      "save": "That change couldn't be saved. Try again.",
+      "notActive": "This workout is no longer in progress. Open it to see what was recorded.",
+      "invalidSet": "Check {{field}}."
+    }
+  },
+  "vibeChanges": {
+    "title": "Vibe changes",
+    "level": "Level {{value}}",
+    "none": "This workout didn't change a Vibe level.",
+    "loading": "Loading Vibe changes…",
+    "loadError": "Vibe changes couldn't be loaded."
+  },
+  "workoutResult": {
+    "title": "How it went",
+    "note": {
+      "label": "Workout note",
+      "placeholder": "How did it feel? Anything to remember next time?",
+      "save": "Save note",
+      "saved": "Note saved.",
+      "saveError": "The note couldn't be saved. Try again."
+    },
+    "photo": {
+      "label": "Photo",
+      "alt": "Photo from this workout",
+      "help": "JPEG, PNG or WebP, up to {{size}} MB. Only you can see it.",
+      "add": "Add photo",
+      "replace": "Replace photo",
+      "remove": "Remove photo",
+      "invalidType": "Choose a JPEG, PNG or WebP image.",
+      "tooLarge": "This photo is too large. Choose one up to {{size}} MB.",
+      "rejected": "This file was refused by the safety check. Choose another photo.",
+      "uploadError": "The photo couldn't be uploaded. Try again.",
+      "uploading": "Uploading photo…",
+      "added": "Photo added.",
+      "removed": "Photo removed.",
+      "removeError": "The photo couldn't be removed. Try again.",
+      "removeTitle": "Remove this photo?",
+      "removeMessage": "The photo will be deleted. You can add another one later.",
+      "finishUploadFailed": "Your workout is saved, but the photo couldn't be uploaded. Add it again here."
+    }
   }
 }

@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 import type { Transporter, SentMessageInfo } from "nodemailer";
 import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
+import { captureMail } from "./mail-capture.service.js";
 
 export interface MailMessage {
   to: string;
@@ -38,6 +39,8 @@ export class MailerService {
   }
 
   async send(message: MailMessage): Promise<void> {
+    captureMail(message);
+
     if (!env.email.enabled) {
       logger.debug(
         { to: message.to, subject: message.subject },

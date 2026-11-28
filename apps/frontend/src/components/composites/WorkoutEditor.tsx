@@ -1,29 +1,25 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Minus, Play, Plus, Search } from "lucide-react";
-import {
-  BUTTON_ICON_SIZES,
-  Button,
-  IconButton,
-  InputControl,
-  SelectControl,
-  TextareaControl,
-} from "@fitvibe/ui";
+import { CalendarDays, Minus, Play, Plus } from "lucide-react";
+import { Button, IconButton, InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import {
   createSession,
-  listExercises,
   updateSession,
   type Exercise,
   type SessionExerciseInput,
   type SessionWithExercises,
 } from "../../services/api";
-import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
 import { listTrainingPlans } from "../../services/planApi";
+import { optionalNonNegativeNumber } from "../../lib/forms/numberInput";
+import { fromStoredKg, toStoredKg, type LoadUnit } from "../../lib/units/load";
+import { useLoadUnit } from "../../hooks/useLoadUnit";
 import { logger } from "../../utils/logger";
+import { ExercisePicker, useExerciseCatalog, type ExerciseOption } from "./ExercisePicker";
 import { Modal } from "./Modal";
-import { RetryErrorPanel } from "./StatusPanel";
+import { RetryErrorPanel, StatusPanel } from "./StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "./TrainingSurface";
+import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
 
 export type WorkoutExerciseDraft = {
   id: string;
@@ -58,33 +54,34 @@ export type WorkoutEditorProps = {
 
 type PersistMode = WorkoutEditorAction;
 
-const optionalNumber = (value: string): number | null => {
-  if (!value.trim()) {
-    return null;
-  }
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-};
-
+/** The editor edits a workout's prescription: each set's targets (ADR-042). */
 const toDraftExercise = (
   sessionExercise: SessionWithExercises["exercises"][number],
   name: string,
-): WorkoutExerciseDraft => ({
-  id: sessionExercise.id,
-  exerciseId: sessionExercise.exercise_id ?? "",
-  name,
-  sets: sessionExercise.sets.length || sessionExercise.planned?.sets || 1,
-  repetitions: String(sessionExercise.planned?.reps ?? sessionExercise.sets[0]?.reps ?? ""),
-  weight: String(sessionExercise.planned?.load ?? sessionExercise.sets[0]?.weight_kg ?? ""),
-  duration: String(sessionExercise.sets[0]?.duration_sec ?? ""),
-  targetExertion: String(sessionExercise.planned?.rpe ?? sessionExercise.sets[0]?.rpe ?? ""),
-  restSet: String(sessionExercise.sets[0]?.rest_sec ?? ""),
-  restExercise: String(
-    typeof sessionExercise.planned?.extras?.rest_after_exercise_sec === "number"
-      ? sessionExercise.planned.extras.rest_after_exercise_sec
-      : "",
-  ),
-});
+  loadUnit: LoadUnit,
+): WorkoutExerciseDraft => {
+  const firstTarget = sessionExercise.sets[0]?.planned;
+  const storedLoad = sessionExercise.planned?.load ?? firstTarget?.weight_kg;
+  return {
+    id: sessionExercise.id,
+    exerciseId: sessionExercise.exercise_id ?? "",
+    name,
+    sets: sessionExercise.sets.length || sessionExercise.planned?.sets || 1,
+    repetitions: String(sessionExercise.planned?.reps ?? firstTarget?.reps ?? ""),
+    weight:
+      storedLoad === null || storedLoad === undefined
+        ? ""
+        : String(fromStoredKg(storedLoad, loadUnit)),
+    duration: String(firstTarget?.duration_sec ?? ""),
+    targetExertion: String(sessionExercise.planned?.rpe ?? firstTarget?.rpe ?? ""),
+    restSet: String(firstTarget?.rest_sec ?? ""),
+    restExercise: String(
+      typeof sessionExercise.planned?.extras?.rest_after_exercise_sec === "number"
+        ? sessionExercise.planned.extras.rest_after_exercise_sec
+        : "",
+    ),
+  };
+};
 
 const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   open,
@@ -96,18 +93,10 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   onSaved,
 }) => {
   const { t } = useTranslation();
+  const { unit: loadUnit, ready: loadUnitReady } = useLoadUnit();
   const nextDraftId = useRef(0);
-  const [exerciseSearch, setExerciseSearch] = useState("");
-  const exercises = useQuery({
-    queryKey: ["workout-editor", "exercises", exerciseSearch.trim()],
-    queryFn: () =>
-      listExercises({
-        q: exerciseSearch.trim() || undefined,
-        limit: TRAINING_DATA_CONFIG.exerciseCatalogLimit,
-      }),
-    staleTime: TRAINING_DATA_CONFIG.exerciseCatalogStaleMs,
-    enabled: open,
-  });
+  const catalog = useExerciseCatalog({ enabled: open, source: "workout editor" });
+  const { names: exerciseNames, reset: resetCatalog } = catalog;
 
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const plans = useQuery({
@@ -118,25 +107,20 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
-  const [selectedExerciseId, setSelectedExerciseId] = useState("");
   const [drafts, setDrafts] = useState<WorkoutExerciseDraft[]>([]);
   const [persisting, setPersisting] = useState<PersistMode | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const exerciseNames = useMemo(
-    () => new Map((exercises.data?.data ?? []).map((exercise) => [exercise.id, exercise.name])),
-    [exercises.data],
-  );
   const exerciseFallbackName = t("workoutEditor.exerciseFallback");
 
   useEffect(() => {
-    if (!open) {
+    // Wait for the load unit: re-running this effect resets the form.
+    if (!open || !loadUnitReady) {
       return;
     }
 
     setSaveError(null);
-    setSelectedExerciseId("");
-    setExerciseSearch("");
+    resetCatalog();
     setSelectedPlanId(session?.plan_id ?? "");
 
     if (!session) {
@@ -169,9 +153,9 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setDrafts(
       session.exercises
         .filter((exercise) => Boolean(exercise.exercise_id))
-        .map((exercise) => toDraftExercise(exercise, exerciseFallbackName)),
+        .map((exercise) => toDraftExercise(exercise, exerciseFallbackName, loadUnit)),
     );
-  }, [exerciseFallbackName, initialExercise, open, session]);
+  }, [exerciseFallbackName, initialExercise, loadUnit, loadUnitReady, open, resetCatalog, session]);
 
   useEffect(() => {
     if (!open || !session || exerciseNames.size === 0) {
@@ -192,20 +176,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     });
   }, [exerciseNames, open, session]);
 
-  useEffect(() => {
-    if (exercises.error) {
-      logger.apiError(
-        "Failed to load workout editor exercises",
-        exercises.error,
-        "/api/v1/exercises",
-        "GET",
-      );
-    }
-  }, [exercises.error]);
-
-  const selectedExercise = exercises.data?.data.find((item) => item.id === selectedExerciseId);
-
-  const addExercise = () => {
+  const addExercise = (selectedExercise: ExerciseOption | undefined) => {
     if (!selectedExercise) {
       return;
     }
@@ -235,12 +206,13 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     exercise: WorkoutExerciseDraft,
     order: number,
   ): SessionExerciseInput => {
-    const repetitions = optionalNumber(exercise.repetitions);
-    const weight = optionalNumber(exercise.weight);
-    const duration = optionalNumber(exercise.duration);
-    const exertion = optionalNumber(exercise.targetExertion);
-    const restSet = optionalNumber(exercise.restSet);
-    const restExercise = optionalNumber(exercise.restExercise);
+    const repetitions = optionalNonNegativeNumber(exercise.repetitions);
+    const enteredLoad = optionalNonNegativeNumber(exercise.weight);
+    const weight = enteredLoad === null ? null : toStoredKg(enteredLoad, loadUnit);
+    const duration = optionalNonNegativeNumber(exercise.duration);
+    const exertion = optionalNonNegativeNumber(exercise.targetExertion);
+    const restSet = optionalNonNegativeNumber(exercise.restSet);
+    const restExercise = optionalNonNegativeNumber(exercise.restExercise);
 
     return {
       exercise_id: exercise.exerciseId,
@@ -254,11 +226,14 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
       },
       sets: Array.from({ length: exercise.sets }, (_, setIndex) => ({
         order: setIndex + 1,
-        reps: repetitions,
-        weight_kg: weight,
-        duration_sec: duration,
-        rpe: exertion,
-        rest_sec: restSet,
+        status: "planned" as const,
+        planned: {
+          reps: repetitions,
+          weight_kg: weight,
+          duration_sec: duration,
+          rpe: exertion,
+          rest_sec: restSet,
+        },
       })),
     };
   };
@@ -317,7 +292,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   };
 
   const active = drafts[drafts.length - 1];
-  const isBusy = persisting !== null;
+  const isBusy = persisting !== null || !loadUnitReady;
   const canStart = actions.includes("start");
   const canPlan = actions.includes("plan");
 
@@ -363,306 +338,270 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
         </div>
       }
     >
-      <div className="workout-editor__shell">
-        {saveError ? (
-          <div className="training-error" role="alert">
-            {saveError}
-          </div>
-        ) : null}
+      {/* The form waits for the load unit, so nothing typed is reset or read in the other unit. */}
+      {!loadUnitReady ? (
+        <StatusPanel kind="loading">{t("loading.app")}</StatusPanel>
+      ) : (
+        <div className="workout-editor__shell">
+          {saveError ? (
+            <div className="training-error" role="alert">
+              {saveError}
+            </div>
+          ) : null}
 
-        <TrainingPanel title={t("workoutEditor.sections.general")}>
-          {canPlan && !session ? (
+          <TrainingPanel title={t("workoutEditor.sections.general")}>
+            {canPlan && !session ? (
+              <label className="form-label">
+                <span className="form-label-text">{t("workoutEditor.fields.trainingPlan")}</span>
+                <SelectControl
+                  aria-label={t("workoutEditor.fields.trainingPlan")}
+                  value={selectedPlanId}
+                  onChange={(event) => setSelectedPlanId(event.target.value)}
+                  disabled={isBusy || plans.isLoading}
+                >
+                  <option value="">{t("workoutEditor.placeholders.noTrainingPlan")}</option>
+                  {plans.data
+                    ?.filter((plan) => !plan.activated_at && plan.status !== "completed")
+                    .map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                </SelectControl>
+              </label>
+            ) : null}
+            {plans.isError && canPlan && !session ? (
+              <RetryErrorPanel
+                message={t("trainingPlans.errors.list")}
+                retryLabel={t("actions.retry")}
+                onRetry={() => void plans.refetch()}
+                isRetrying={plans.isFetching}
+              />
+            ) : null}
+            <div className="workout-editor__general">
+              <label className="form-label">
+                <span className="form-label-text">{t("workoutEditor.fields.name")}</span>
+                <InputControl
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder={t("workoutEditor.placeholders.name")}
+                  disabled={isBusy}
+                />
+              </label>
+
+              <div className="workout-editor__metric-row">
+                <div className="workout-editor__metric">
+                  <span className="workout-editor__metric-label">
+                    {t("workoutEditor.metrics.caloriesPerMinute")}
+                  </span>
+                  <span className="workout-editor__metric-value">
+                    {t("workoutEditor.metrics.unavailable")}
+                  </span>
+                </div>
+                <div className="workout-editor__metric">
+                  <span className="workout-editor__metric-label">
+                    {t("workoutEditor.metrics.duration")}
+                  </span>
+                  <span className="workout-editor__metric-value">
+                    {t("workoutEditor.metrics.unavailable")}
+                  </span>
+                </div>
+                <div className="workout-editor__metric">
+                  <span className="workout-editor__metric-label">
+                    {t("workoutEditor.metrics.calories")}
+                  </span>
+                  <span className="workout-editor__metric-value">
+                    {t("workoutEditor.metrics.unavailable")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <label className="form-label">
-              <span className="form-label-text">{t("workoutEditor.fields.trainingPlan")}</span>
-              <SelectControl
-                aria-label={t("workoutEditor.fields.trainingPlan")}
-                value={selectedPlanId}
-                onChange={(event) => setSelectedPlanId(event.target.value)}
-                disabled={isBusy || plans.isLoading}
-              >
-                <option value="">{t("workoutEditor.placeholders.noTrainingPlan")}</option>
-                {plans.data
-                  ?.filter((plan) => !plan.activated_at && plan.status !== "completed")
-                  .map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name}
-                    </option>
-                  ))}
-              </SelectControl>
-            </label>
-          ) : null}
-          {plans.isError && canPlan && !session ? (
-            <RetryErrorPanel
-              message={t("trainingPlans.errors.list")}
-              retryLabel={t("actions.retry")}
-              onRetry={() => void plans.refetch()}
-              isRetrying={plans.isFetching}
-            />
-          ) : null}
-          <div className="workout-editor__general">
-            <label className="form-label">
-              <span className="form-label-text">{t("workoutEditor.fields.name")}</span>
-              <InputControl
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t("workoutEditor.placeholders.name")}
+              <span className="form-label-text">{t("workoutEditor.fields.notes")}</span>
+              <TextareaControl
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                maxLength={TRAINING_DATA_CONFIG.sessionNoteMaxLength}
+                rows={2}
+                placeholder={t("workoutEditor.placeholders.notes")}
                 disabled={isBusy}
               />
             </label>
-
-            <div className="workout-editor__metric-row">
-              <div className="workout-editor__metric">
-                <span className="workout-editor__metric-label">
-                  {t("workoutEditor.metrics.caloriesPerMinute")}
-                </span>
-                <span className="workout-editor__metric-value">
-                  {t("workoutEditor.metrics.unavailable")}
-                </span>
-              </div>
-              <div className="workout-editor__metric">
-                <span className="workout-editor__metric-label">
-                  {t("workoutEditor.metrics.duration")}
-                </span>
-                <span className="workout-editor__metric-value">
-                  {t("workoutEditor.metrics.unavailable")}
-                </span>
-              </div>
-              <div className="workout-editor__metric">
-                <span className="workout-editor__metric-label">
-                  {t("workoutEditor.metrics.calories")}
-                </span>
-                <span className="workout-editor__metric-value">
-                  {t("workoutEditor.metrics.unavailable")}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <label className="form-label">
-            <span className="form-label-text">{t("workoutEditor.fields.notes")}</span>
-            <TextareaControl
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={2}
-              placeholder={t("workoutEditor.placeholders.notes")}
-              disabled={isBusy}
-            />
-          </label>
-        </TrainingPanel>
-
-        <div className="training-grid workout-editor__main">
-          <TrainingPanel title={t("workoutEditor.sections.activity")}>
-            <div className="workout-editor__activity-toolbar">
-              <div className="form-label">
-                <span className="form-label-text">{t("workoutEditor.fields.exercise")}</span>
-                <div className="workout-editor__search-control">
-                  <Search aria-hidden="true" size={BUTTON_ICON_SIZES.md} />
-                  <InputControl
-                    value={exerciseSearch}
-                    onChange={(event) => {
-                      setExerciseSearch(event.target.value);
-                      setSelectedExerciseId("");
-                    }}
-                    placeholder={t("planner.exerciseSearchPlaceholder")}
-                    aria-label={`${t("workoutEditor.fields.exercise")} ${t("librarySurface.filters.search")}`}
-                    disabled={isBusy}
-                  />
-                </div>
-                <SelectControl
-                  aria-label={t("workoutEditor.fields.exercise")}
-                  value={selectedExerciseId}
-                  onChange={(event) => setSelectedExerciseId(event.target.value)}
-                  disabled={isBusy || exercises.isLoading}
-                >
-                  <option value="">{t("workoutEditor.placeholders.exercise")}</option>
-                  {exercises.data?.data.map((exercise) => (
-                    <option key={exercise.id} value={exercise.id}>
-                      {exercise.name}
-                    </option>
-                  ))}
-                </SelectControl>
-              </div>
-
-              <Button
-                variant="ghost"
-                size="lg"
-                onClick={addExercise}
-                disabled={!selectedExercise || isBusy}
-              >
-                {t("workoutEditor.actions.addExercise")}
-              </Button>
-            </div>
-
-            {exercises.isError ? (
-              <RetryErrorPanel
-                message={t("workoutEditor.errors.exercises")}
-                retryLabel={t("actions.retry")}
-                onRetry={() => {
-                  void exercises.refetch();
-                }}
-                isRetrying={exercises.isFetching}
-              />
-            ) : null}
-
-            {active ? (
-              <>
-                <div className="workout-editor__activity-fields">
-                  <label className="form-label">
-                    <span className="form-label-text">{t("workoutEditor.fields.sets")}</span>
-                    <InputControl
-                      type="number"
-                      min="1"
-                      value={active.sets}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          sets: Math.max(1, Number(event.target.value) || 1),
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="form-label">
-                    <span className="form-label-text">{t("workoutEditor.fields.repetitions")}</span>
-                    <InputControl
-                      type="number"
-                      min="0"
-                      value={active.repetitions}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          repetitions: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="form-label">
-                    <span className="form-label-text">{t("workoutEditor.fields.weight")}</span>
-                    <InputControl
-                      type="number"
-                      min="0"
-                      value={active.weight}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          weight: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="form-label">
-                    <span className="form-label-text">{t("workoutEditor.fields.duration")}</span>
-                    <InputControl
-                      type="number"
-                      min="0"
-                      value={active.duration}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          duration: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="form-label">
-                    <span className="form-label-text">{t("workoutEditor.fields.exertion")}</span>
-                    <InputControl
-                      type="number"
-                      min="0"
-                      value={active.targetExertion}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          targetExertion: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-
-                <div className="workout-editor__rest-row">
-                  <label className="form-label">
-                    <span className="form-label-text">{t("workoutEditor.fields.restSet")}</span>
-                    <InputControl
-                      type="number"
-                      min="0"
-                      value={active.restSet}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          restSet: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-
-                  <label className="form-label">
-                    <span className="form-label-text">
-                      {t("workoutEditor.fields.restExercise")}
-                    </span>
-                    <InputControl
-                      type="number"
-                      min="0"
-                      value={active.restExercise}
-                      disabled={isBusy}
-                      onChange={(event) =>
-                        updateDraft(active.id, {
-                          restExercise: event.target.value,
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-              </>
-            ) : (
-              <div className="training-empty">{t("workoutEditor.empty.activity")}</div>
-            )}
           </TrainingPanel>
 
-          <TrainingPanel title={t("workoutEditor.sections.overview")}>
-            <div className="training-scroll workout-editor__overview-list">
-              {drafts.length === 0 ? (
-                <div className="training-empty">{t("workoutEditor.empty.overview")}</div>
-              ) : (
-                drafts.map((exerciseDraft) => (
-                  <TrainingSummaryCard
-                    key={exerciseDraft.id}
-                    title={exerciseDraft.name}
-                    meta={t("workoutEditor.summary.sets", {
-                      count: exerciseDraft.sets,
-                    })}
-                    supporting={
-                      exerciseDraft.repetitions
-                        ? t("workoutEditor.summary.repetitions", {
-                            value: exerciseDraft.repetitions,
+          <div className="training-grid workout-editor__main">
+            <TrainingPanel title={t("workoutEditor.sections.activity")}>
+              <ExercisePicker catalog={catalog} disabled={isBusy} onAdd={addExercise} />
+
+              {active ? (
+                <>
+                  <div className="workout-editor__activity-fields">
+                    <label className="form-label">
+                      <span className="form-label-text">{t("workoutEditor.fields.sets")}</span>
+                      <InputControl
+                        type="number"
+                        min="1"
+                        value={active.sets}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            sets: Math.max(1, Number(event.target.value) || 1),
                           })
-                        : undefined
-                    }
-                  />
-                ))
-              )}
-            </div>
+                        }
+                      />
+                    </label>
 
-            <div className="workout-editor__overview-actions">
-              <IconButton
-                icon={<Plus />}
-                label={t("workoutEditor.actions.addExercise")}
-                onClick={addExercise}
-                disabled={!selectedExercise || isBusy}
-              />
-              <IconButton
-                icon={<Minus />}
-                label={t("workoutEditor.actions.removeLast")}
-                onClick={() => setDrafts((current) => current.slice(0, -1))}
-                disabled={drafts.length === 0 || isBusy}
-              />
-            </div>
-          </TrainingPanel>
+                    <label className="form-label">
+                      <span className="form-label-text">
+                        {t("workoutEditor.fields.repetitions")}
+                      </span>
+                      <InputControl
+                        type="number"
+                        min="0"
+                        value={active.repetitions}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            repetitions: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="form-label">
+                      <span className="form-label-text">
+                        {t(
+                          loadUnit === "lb"
+                            ? "workoutEditor.fields.weightLb"
+                            : "workoutEditor.fields.weight",
+                        )}
+                      </span>
+                      <InputControl
+                        type="number"
+                        min="0"
+                        value={active.weight}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            weight: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="form-label">
+                      <span className="form-label-text">{t("workoutEditor.fields.duration")}</span>
+                      <InputControl
+                        type="number"
+                        min="0"
+                        value={active.duration}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            duration: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="form-label">
+                      <span className="form-label-text">{t("workoutEditor.fields.exertion")}</span>
+                      <InputControl
+                        type="number"
+                        min="0"
+                        value={active.targetExertion}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            targetExertion: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+
+                  <div className="workout-editor__rest-row">
+                    <label className="form-label">
+                      <span className="form-label-text">{t("workoutEditor.fields.restSet")}</span>
+                      <InputControl
+                        type="number"
+                        min="0"
+                        value={active.restSet}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            restSet: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+
+                    <label className="form-label">
+                      <span className="form-label-text">
+                        {t("workoutEditor.fields.restExercise")}
+                      </span>
+                      <InputControl
+                        type="number"
+                        min="0"
+                        value={active.restExercise}
+                        disabled={isBusy}
+                        onChange={(event) =>
+                          updateDraft(active.id, {
+                            restExercise: event.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <div className="training-empty">{t("workoutEditor.empty.activity")}</div>
+              )}
+            </TrainingPanel>
+
+            <TrainingPanel title={t("workoutEditor.sections.overview")}>
+              <div className="training-scroll workout-editor__overview-list">
+                {drafts.length === 0 ? (
+                  <div className="training-empty">{t("workoutEditor.empty.overview")}</div>
+                ) : (
+                  drafts.map((exerciseDraft) => (
+                    <TrainingSummaryCard
+                      key={exerciseDraft.id}
+                      title={exerciseDraft.name}
+                      meta={t("workoutEditor.summary.sets", {
+                        count: exerciseDraft.sets,
+                      })}
+                      supporting={
+                        exerciseDraft.repetitions
+                          ? t("workoutEditor.summary.repetitions", {
+                              value: exerciseDraft.repetitions,
+                            })
+                          : undefined
+                      }
+                    />
+                  ))
+                )}
+              </div>
+
+              <div className="workout-editor__overview-actions">
+                <IconButton
+                  icon={<Plus />}
+                  label={t("workoutEditor.actions.addExercise")}
+                  onClick={() => addExercise(catalog.selected)}
+                  disabled={!catalog.selected || isBusy}
+                />
+                <IconButton
+                  icon={<Minus />}
+                  label={t("workoutEditor.actions.removeLast")}
+                  onClick={() => setDrafts((current) => current.slice(0, -1))}
+                  disabled={drafts.length === 0 || isBusy}
+                />
+              </div>
+            </TrainingPanel>
+          </div>
         </div>
-      </div>
+      )}
     </Modal>
   );
 };

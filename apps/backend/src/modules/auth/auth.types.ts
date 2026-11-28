@@ -30,8 +30,16 @@ export interface RegisterProfileInput {
   age?: number | null;
 }
 
-export interface RegisterDTO {
+/** Step 1 of email-first registration (ADR-039): only the address. */
+export interface StartRegistrationDTO {
   email: string;
+  /** UI language of the request, used for the email it sends. */
+  locale?: string;
+}
+
+/** Step 2: completes the account for the holder of a continue link. */
+export interface CompleteRegistrationDTO {
+  token: string;
   alias?: string;
   username?: string;
   password: string;

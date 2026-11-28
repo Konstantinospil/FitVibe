@@ -13,8 +13,24 @@ export type LoginRequest = {
   password: string;
 };
 
-export type RegisterRequest = {
+/** Step 1 of email-first registration (ADR-039): the address only. */
+export type StartRegistrationRequest = {
   email: string;
+  locale?: string;
+};
+
+export type StartRegistrationResponse = {
+  message: string;
+};
+
+export type RegistrationIntent = {
+  email: string;
+  expiresAt: string;
+};
+
+/** Step 2: everything else, for the holder of the emailed link. */
+export type CompleteRegistrationRequest = {
+  token: string;
   password: string;
   username: string;
   terms_accepted: boolean;
@@ -266,10 +282,8 @@ export type LoginResponse =
       pendingSessionId: string;
     };
 
-export type RegisterResponse = {
-  user?: UserResponse;
-  session?: unknown;
-  message?: string;
+export type CompleteRegistrationResponse = {
+  user: UserResponse;
   passwordWarning?: "PASSWORD_BREACHED" | "BREACH_CHECK_UNAVAILABLE";
 };
 
@@ -314,18 +328,46 @@ export async function verify2FALogin(payload: Verify2FALoginRequest): Promise<Ve
   return res.data;
 }
 
-export async function register(payload: RegisterRequest, avatar?: File): Promise<RegisterResponse> {
+/**
+ * Step 1. The answer is identical for every address; the next step arrives by
+ * email (a continue link, or a notice if the address already has an account).
+ */
+export async function startRegistration(
+  payload: StartRegistrationRequest,
+): Promise<StartRegistrationResponse> {
+  const res = await rawHttpClient.post<StartRegistrationResponse>("/api/v1/auth/register", payload);
+  return res.data;
+}
+
+/** Which address does an emailed link finish? */
+export async function getRegistrationIntent(token: string): Promise<RegistrationIntent> {
+  const res = await rawHttpClient.post<RegistrationIntent>("/api/v1/auth/register/intent", {
+    token,
+  });
+  return res.data;
+}
+
+/** Step 2. Creates an active account for the link holder. */
+export async function completeRegistration(
+  payload: CompleteRegistrationRequest,
+  avatar?: File,
+): Promise<CompleteRegistrationResponse> {
   if (!avatar) {
-    const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", payload);
+    const res = await rawHttpClient.post<CompleteRegistrationResponse>(
+      "/api/v1/auth/register/complete",
+      payload,
+    );
     return res.data;
   }
 
   const formData = new FormData();
   formData.append("payload", JSON.stringify(payload));
   formData.append("avatar", avatar);
-  const res = await rawHttpClient.post<RegisterResponse>("/api/v1/auth/register", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const res = await rawHttpClient.post<CompleteRegistrationResponse>(
+    "/api/v1/auth/register/complete",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
   return res.data;
 }
 

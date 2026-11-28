@@ -4,15 +4,23 @@ import * as sessionsService from "../../../../apps/backend/src/modules/sessions/
 import * as estimationService from "../../../../apps/backend/src/modules/sessions/sessions.estimation.service.js";
 import * as idempotencyService from "../../../../apps/backend/src/modules/common/idempotency.service.js";
 import { HttpError } from "../../../../apps/backend/src/utils/http.js";
+import * as photoService from "../../../../apps/backend/src/modules/sessions/sessions.photo.service.js";
 
 // Mock dependencies
 jest.mock("../../../../apps/backend/src/modules/sessions/sessions.service.js");
 jest.mock("../../../../apps/backend/src/modules/sessions/sessions.estimation.service.js");
 jest.mock("../../../../apps/backend/src/modules/common/idempotency.service.js");
+jest.mock("../../../../apps/backend/src/modules/sessions/sessions.photo.service.js", () => ({
+  ...jest.requireActual("../../../../apps/backend/src/modules/sessions/sessions.photo.service.js"),
+  saveSessionPhoto: jest.fn(),
+  readSessionPhoto: jest.fn(),
+  deleteSessionPhoto: jest.fn(),
+}));
 
 const mockSessionsService = jest.mocked(sessionsService);
 const mockEstimationService = jest.mocked(estimationService);
 const mockIdempotencyService = jest.mocked(idempotencyService);
+const mockPhotoService = jest.mocked(photoService);
 
 describe("Sessions Controller", () => {
   let mockRequest: Partial<Request>;
@@ -544,6 +552,85 @@ describe("Sessions Controller", () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockSessionsService.cancelOne).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("workout photo handlers (ADR-044)", () => {
+    const photo = {
+      id: "photo-1",
+      url: `/api/v1/sessions/${sessionId}/photo/photo-1`,
+      mime_type: "image/jpeg",
+      bytes: 10,
+      uploaded_at: "2026-11-27T10:00:00.000Z",
+    };
+
+    it("answers 201 with the stored photo", async () => {
+      const file = {
+        buffer: Buffer.from("x"),
+        mimetype: "image/png",
+        originalname: "a.png",
+        size: 1,
+      };
+      mockRequest.params = { id: sessionId };
+      (mockRequest as { file?: unknown }).file = file;
+      mockPhotoService.saveSessionPhoto.mockResolvedValue(photo);
+
+      await sessionsController.uploadSessionPhotoHandler(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockPhotoService.saveSessionPhoto).toHaveBeenCalledWith(userId, sessionId, file);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(photo);
+    });
+
+    it("serves the image as private and immutable", async () => {
+      mockRequest.params = { id: sessionId, photoId: "photo-1" };
+      const buffer = Buffer.from("jpeg");
+      mockPhotoService.readSessionPhoto.mockResolvedValue({ buffer, mimeType: "image/jpeg" });
+
+      await sessionsController.getSessionPhotoHandler(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockPhotoService.readSessionPhoto).toHaveBeenCalledWith(userId, sessionId, "photo-1");
+      expect(mockResponse.set).toHaveBeenCalledWith("Content-Type", "image/jpeg");
+      expect(mockResponse.set).toHaveBeenCalledWith(
+        "Cache-Control",
+        photoService.SESSION_PHOTO_CACHE_CONTROL,
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(buffer);
+    });
+
+    it("answers 204 after removing the photo", async () => {
+      mockRequest.params = { id: sessionId };
+      mockPhotoService.deleteSessionPhoto.mockResolvedValue(undefined);
+
+      await sessionsController.deleteSessionPhotoHandler(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockPhotoService.deleteSessionPhoto).toHaveBeenCalledWith(userId, sessionId);
+      expect(mockResponse.status).toHaveBeenCalledWith(204);
+    });
+
+    it("refuses every photo handler without a signed-in user", async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { id: sessionId, photoId: "photo-1" };
+      for (const handler of [
+        sessionsController.uploadSessionPhotoHandler,
+        sessionsController.getSessionPhotoHandler,
+        sessionsController.deleteSessionPhotoHandler,
+      ]) {
+        await handler(mockRequest as Request, mockResponse as Response);
+      }
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+      expect(mockPhotoService.saveSessionPhoto).not.toHaveBeenCalled();
+      expect(mockPhotoService.readSessionPhoto).not.toHaveBeenCalled();
+      expect(mockPhotoService.deleteSessionPhoto).not.toHaveBeenCalled();
     });
   });
 });

@@ -55,36 +55,42 @@
     }
   ],
   "paths": {
+    "/auth/register/options": {
+      "get": {
+        "summary": "Get registration reference options",
+        "tags": ["Auth"],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationOptions"
+                }
+              }
+            }
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/register": {
       "post": {
-        "summary": "Register a new account",
-        "tags": [
-          "Auth"
-        ],
+        "summary": "Start email-first registration (ADR-039)",
+        "description": "Step 1. Accepts only an address and always answers 202 with the same body. The outcome is delivered by email: a continue link for a new address, a notice for an existing account.",
+        "tags": ["Auth"],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
-              }
-            },
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "payload": {
-                    "type": "string",
-                    "description": "JSON-encoded RegisterRequest payload"
-                  },
-                  "avatar": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Optional JPEG, PNG, or WebP profile photo up to 5 MB"
-                  }
-                },
-                "required": [
-                  "payload"
-                ]
+                "$ref": "#/components/schemas/StartRegistrationRequest"
               }
             }
           }
@@ -94,7 +100,113 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthSuccessResponse"
+                  "$ref": "#/components/schemas/RegistrationStartedResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/intent": {
+      "post": {
+        "summary": "Look up the address an emailed registration link belongs to",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrationIntentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationIntentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register/complete": {
+      "post": {
+        "summary": "Finish registration for the holder of an emailed link",
+        "description": "Step 2. Creates an active, verified account and consumes the link. A taken username is reported because the caller has proved mailbox ownership.",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRegistrationRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "payload": {
+                    "type": "string",
+                    "description": "JSON-encoded CompleteRegistrationRequest payload"
+                  },
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Optional profile photo: JPEG, PNG, or WebP image up to 5 MB"
+                  }
+                },
+                "required": ["payload"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationCompletedResponse"
                 }
               }
             }
@@ -109,6 +221,15 @@
             }
           },
           "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "410": {
             "content": {
               "application/json": {
                 "schema": {
@@ -132,9 +253,7 @@
     "/auth/login": {
       "post": {
         "summary": "Login with credentials",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "requestBody": {
           "content": {
             "application/json": {
@@ -169,9 +288,7 @@
     "/auth/refresh": {
       "post": {
         "summary": "Refresh access token",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "bearerAuth": []
@@ -211,9 +328,7 @@
     "/auth/logout": {
       "post": {
         "summary": "Logout current session",
-        "tags": [
-          "Auth"
-        ],
+        "tags": ["Auth"],
         "security": [
           {
             "bearerAuth": []
@@ -238,9 +353,7 @@
     "/users/me": {
       "get": {
         "summary": "Get current user profile",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
@@ -269,9 +382,7 @@
       },
       "patch": {
         "summary": "Update profile",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
@@ -296,7 +407,7 @@
               }
             }
           },
-          "400": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -305,7 +416,16 @@
               }
             }
           },
-          "401": {
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
@@ -318,29 +438,16 @@
       }
     },
     "/users/me/preferences": {
-      "patch": {
-        "summary": "Update user preferences",
-        "tags": [
-          "Users"
-        ],
+      "get": {
+        "summary": "Get user preferences",
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "requestBody": {
-          "description": "Success",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePreferencesRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -349,18 +456,7 @@
               }
             }
           },
-          "400": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "401": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -371,19 +467,25 @@
           }
         }
       },
-      "get": {
-        "summary": "Get user preferences",
-        "tags": [
-          "Users"
-        ],
+      "patch": {
+        "summary": "Update user preferences",
+        "tags": ["Users"],
         "security": [
           {
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePreferencesRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -392,8 +494,16 @@
               }
             }
           },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
-            "description": "Success",
             "content": {
               "application/json": {
                 "schema": {
@@ -408,9 +518,7 @@
     "/users/{alias}": {
       "get": {
         "summary": "Get public profile by alias",
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "name": "alias",
@@ -446,9 +554,7 @@
     "/exercises": {
       "get": {
         "summary": "List exercises",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -489,9 +595,7 @@
       },
       "post": {
         "summary": "Create exercise",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -531,9 +635,7 @@
     "/exercises/{id}": {
       "put": {
         "summary": "Update exercise",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -582,9 +684,7 @@
       },
       "delete": {
         "summary": "Archive exercise",
-        "tags": [
-          "Exercises"
-        ],
+        "tags": ["Exercises"],
         "security": [
           {
             "bearerAuth": []
@@ -620,9 +720,7 @@
     "/sessions": {
       "get": {
         "summary": "List sessions",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -651,9 +749,7 @@
       },
       "post": {
         "summary": "Create session",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -690,12 +786,1018 @@
         }
       }
     },
+    "/sessions/{id}": {
+      "patch": {
+        "summary": "Update a session (details, schedule, status, exercises)",
+        "description": "Partial update: only the fields sent change. There is no ETag or If-Match check; the last write wins.\n\nScheduling: a session occupies [planned_at, planned_at + planned_duration_min). A change of `planned_at` or `planned_duration_min` that overlaps another active session of the same user is refused with 422 `E.SESSION.SCHEDULE_CONFLICT`, listing the blocking sessions in `error.details.conflictingSessionIds`. Back-to-back sessions do not conflict; canceled sessions occupy no time; a session being canceled is not checked.\n\nStatus: allowed transitions are planned → in_progress | completed | canceled and in_progress → completed | canceled. `started_at` and `completed_at` default to the time of the change. Changing a completed session's plan, schedule, timestamps, calories or exercises requires reopening it first (409 `E.SESSION.REOPEN_REQUIRED`).\n\nSending `exercises` replaces the session's exercises and sets.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated session with its exercises.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (`error` is the zod field report), an invalid status transition (`E.SESSION.INVALID_STATUS`) or a plan the user does not own (`E.SESSION.INVALID_PLAN`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ValidationErrorResponse"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.REOPEN_REQUIRED`: reopen the completed session before correcting it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`E.SESSION.SCHEDULE_CONFLICT`: the new time overlaps other sessions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleConflictResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/pause": {
+      "post": {
+        "summary": "Pause a workout in progress",
+        "description": "Starts a pause; pausing again changes nothing. Pauses do not count as active time (ADR-043).",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/resume": {
+      "post": {
+        "summary": "Resume a paused workout",
+        "description": "Ends the pause and adds its length to `paused_seconds`; resuming a running workout changes nothing.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/sets/{setId}": {
+      "patch": {
+        "summary": "Record, correct or skip a set",
+        "description": "completed stores the performed values (a correction keeps the first recorded_at); skipped clears them. The set's prescription is never changed.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "setId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordSetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`E.SESSION.INVALID_SET`: a skipped set cannot have performed values.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/exercises": {
+      "post": {
+        "summary": "Add an exercise while training",
+        "description": "Appends the exercise (source added) with one empty planned set. Supports Idempotency-Key.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddExerciseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/exercises/{exerciseId}/sets": {
+      "post": {
+        "summary": "Add a set while training",
+        "description": "Appends a planned set (source added) to the exercise and brings a skipped exercise back. Supports Idempotency-Key.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exerciseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddSetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/exercises/{exerciseId}/skip": {
+      "post": {
+        "summary": "Skip an exercise",
+        "description": "Marks the exercise skipped and its remaining planned sets skipped; recorded sets stay.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exerciseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The whole workout after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionWithExercises"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (zod field report).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid access token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "CSRF check failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "`RATE_LIMITED`; see `Retry-After`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/estimate": {
+      "get": {
+        "summary": "Estimate planned session duration and intensity",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionEstimate"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/vibe-changes": {
+      "get": {
+        "summary": "Vibe level changes a completed session caused",
+        "description": "Owner only. Lists the active Vibe level changes from completing this session, one per Vibe it trained. Empty until the session is completed and its points are processed. Returns 404 for a missing session and for someone else's.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionVibeChanges"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/photo": {
+      "post": {
+        "summary": "Add or replace the photo of a completed workout",
+        "description": "Owner only (ADR-044). The image is scanned for malware, checked to be what it claims, and re-encoded as JPEG without metadata. Replaces an existing photo. Allowed once the session is completed, either outcome (409 E.SESSION.PHOTO_NOT_COMPLETED otherwise); 404 for a missing session and for someone else's.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG, PNG, or WebP image up to 5 MB"
+                  }
+                },
+                "required": ["photo"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionPhoto"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove the workout photo",
+        "description": "Owner only. Succeeds when there is no photo too; 404 for a missing session and for someone else's.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed, or there was none"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{id}/photo/{photoId}": {
+      "get": {
+        "summary": "The workout photo's image",
+        "description": "Owner only. Safe to cache: a replaced photo has a new id. 404 for anyone else, a missing session or an old id.",
+        "tags": ["Sessions"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The image",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{id}/reopen": {
       "post": {
         "summary": "Reopen a completed session for correction",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -746,9 +1848,7 @@
     "/sessions/{id}/complete": {
       "patch": {
         "summary": "Mark session complete",
-        "tags": [
-          "Sessions"
-        ],
+        "tags": ["Sessions"],
         "security": [
           {
             "bearerAuth": []
@@ -799,9 +1899,7 @@
     "/vibeforms/me": {
       "get": {
         "summary": "Get the current user's normalized Vibeform",
-        "tags": [
-          "Vibeforms"
-        ],
+        "tags": ["Vibeforms"],
         "security": [
           {
             "bearerAuth": []
@@ -832,9 +1930,7 @@
     "/vibeforms/me/preferences": {
       "put": {
         "summary": "Update the current user's Vibeform preferences",
-        "tags": [
-          "Vibeforms"
-        ],
+        "tags": ["Vibeforms"],
         "security": [
           {
             "bearerAuth": []
@@ -880,12 +1976,58 @@
         }
       }
     },
+    "/client-errors": {
+      "post": {
+        "summary": "Report a browser error (ADR-040)",
+        "description": "Public, CSRF-protected and rate-limited. Reports carry no identity; the server strips query strings, fragments and email addresses before logging.",
+        "tags": ["System"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientErrorReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Report recorded"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Liveness probe",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Service healthy",
@@ -909,9 +2051,7 @@
     "/metrics": {
       "get": {
         "summary": "Prometheus metrics",
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "responses": {
           "200": {
             "description": "Prometheus exposition format",
@@ -919,34 +2059,6 @@
               "text/plain": {
                 "schema": {
                   "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/register/options": {
-      "get": {
-        "summary": "Get registration reference options",
-        "tags": [
-          "Auth"
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RegistrationOptions"
-                }
-              }
-            }
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -986,24 +2098,17 @@
                 "format": "uuid"
               }
             },
-            "required": [
-              "code",
-              "message"
-            ]
+            "required": ["code", "message"]
           }
         },
-        "required": [
-          "error"
-        ]
+        "required": ["error"]
       },
       "VibeformPreferences": {
         "type": "object",
         "properties": {
           "templateCode": {
             "type": "string",
-            "enum": [
-              "flow"
-            ]
+            "enum": ["flow"]
           },
           "templateVersion": {
             "type": "integer",
@@ -1011,22 +2116,13 @@
           },
           "bodyProfile": {
             "type": "string",
-            "enum": [
-              "shoulder-dominant",
-              "balanced",
-              "hip-dominant"
-            ]
+            "enum": ["shoulder-dominant", "balanced", "hip-dominant"]
           },
           "motionEnabled": {
             "type": "boolean"
           }
         },
-        "required": [
-          "templateCode",
-          "templateVersion",
-          "bodyProfile",
-          "motionEnabled"
-        ],
+        "required": ["templateCode", "templateVersion", "bodyProfile", "motionEnabled"],
         "additionalProperties": false
       },
       "UpdateVibeformPreferencesRequest": {
@@ -1034,17 +2130,11 @@
         "properties": {
           "templateCode": {
             "type": "string",
-            "enum": [
-              "flow"
-            ]
+            "enum": ["flow"]
           },
           "bodyProfile": {
             "type": "string",
-            "enum": [
-              "shoulder-dominant",
-              "balanced",
-              "hip-dominant"
-            ]
+            "enum": ["shoulder-dominant", "balanced", "hip-dominant"]
           },
           "motionEnabled": {
             "type": "boolean"
@@ -1097,16 +2187,10 @@
             "maximum": 1
           },
           "bmi": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           },
           "heightCm": {
-            "type": [
-              "number",
-              "null"
-            ]
+            "type": ["number", "null"]
           }
         },
         "required": [
@@ -1140,12 +2224,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "preferences",
-          "metrics",
-          "calculationVersion",
-          "calculatedAt"
-        ],
+        "required": ["preferences", "metrics", "calculationVersion", "calculatedAt"],
         "additionalProperties": false
       },
       "AuthSuccessResponse": {
@@ -1164,18 +2243,160 @@
             "example": 900
           }
         },
-        "required": [
-          "accessToken",
-          "refreshToken",
-          "expiresIn"
-        ]
+        "required": ["accessToken", "refreshToken", "expiresIn"]
       },
-      "RegisterRequest": {
+      "RegistrationReferenceOption": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["code", "description"],
+        "additionalProperties": false
+      },
+      "RegistrationOptions": {
+        "type": "object",
+        "properties": {
+          "genders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistrationReferenceOption"
+            }
+          },
+          "fitnessLevels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistrationReferenceOption"
+            }
+          },
+          "weight": {
+            "type": "object",
+            "properties": {
+              "minKg": {
+                "type": "number"
+              },
+              "maxKg": {
+                "type": "number"
+              }
+            },
+            "required": ["minKg", "maxKg"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["genders", "fitnessLevels", "weight"],
+        "additionalProperties": false
+      },
+      "ClientErrorReportRequest": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["error", "unhandledrejection", "logger"]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "stack": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "route": {
+            "type": "string",
+            "pattern": "^/",
+            "maxLength": 200
+          }
+        },
+        "required": ["kind", "message", "route"],
+        "additionalProperties": false
+      },
+      "StartRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "locale": {
+            "type": "string",
+            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$",
+            "description": "UI language of the request; used for the email it sends."
+          }
+        },
+        "required": ["email"],
+        "additionalProperties": false
+      },
+      "RegistrationStartedResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": ["message"],
+        "additionalProperties": false
+      },
+      "RegistrationIntentRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          }
+        },
+        "required": ["token"],
+        "additionalProperties": false
+      },
+      "RegistrationIntentResponse": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
             "format": "email"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["email", "expiresAt"],
+        "additionalProperties": false
+      },
+      "RegistrationCompletedResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "passwordWarning": {
+            "type": "string",
+            "enum": ["PASSWORD_BREACHED", "BREACH_CHECK_UNAVAILABLE"]
+          }
+        },
+        "required": ["user"],
+        "additionalProperties": false
+      },
+      "CompleteRegistrationRequest": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
           },
           "alias": {
             "type": "string",
@@ -1245,11 +2466,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "email",
-          "password",
-          "terms_accepted"
-        ],
+        "required": ["token", "password", "terms_accepted"],
         "additionalProperties": false
       },
       "LoginRequest": {
@@ -1265,10 +2482,7 @@
             "minLength": 1
           }
         },
-        "required": [
-          "email",
-          "password"
-        ],
+        "required": ["email", "password"],
         "additionalProperties": false
       },
       "ForgotPasswordRequest": {
@@ -1279,9 +2493,7 @@
             "format": "email"
           }
         },
-        "required": [
-          "email"
-        ]
+        "required": ["email"]
       },
       "ResetPasswordRequest": {
         "type": "object",
@@ -1296,10 +2508,7 @@
             "maxLength": 128
           }
         },
-        "required": [
-          "token",
-          "newPassword"
-        ]
+        "required": ["token", "newPassword"]
       },
       "ResendVerificationRequest": {
         "type": "object",
@@ -1309,9 +2518,7 @@
             "format": "email"
           }
         },
-        "required": [
-          "email"
-        ]
+        "required": ["email"]
       },
       "Verify2FALoginRequest": {
         "type": "object",
@@ -1324,13 +2531,10 @@
             "type": "string",
             "minLength": 6,
             "maxLength": 9,
-            "pattern": "^(?:\\d{6}|[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})$"
+            "pattern": "^(?:\\\\d{6}|[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})$"
           }
         },
-        "required": [
-          "pendingSessionId",
-          "code"
-        ]
+        "required": ["pendingSessionId", "code"]
       },
       "ReportFeedItemRequest": {
         "type": "object",
@@ -1345,9 +2549,7 @@
             "maxLength": 500
           }
         },
-        "required": [
-          "reason"
-        ]
+        "required": ["reason"]
       },
       "CreateUserRequest": {
         "type": "object",
@@ -1374,11 +2576,7 @@
           },
           "role": {
             "type": "string",
-            "enum": [
-              "athlete",
-              "coach",
-              "support"
-            ]
+            "enum": ["athlete", "coach", "support"]
           },
           "locale": {
             "type": "string",
@@ -1386,30 +2584,14 @@
           },
           "preferredLang": {
             "type": "string",
-            "enum": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "el"
-            ]
+            "enum": ["en", "de", "fr", "es", "el"]
           },
           "status": {
             "type": "string",
-            "enum": [
-              "pending_verification",
-              "active",
-              "suspended"
-            ]
+            "enum": ["pending_verification", "active", "suspended"]
           }
         },
-        "required": [
-          "username",
-          "displayName",
-          "email",
-          "password",
-          "role"
-        ]
+        "required": ["username", "displayName", "email", "password", "role"]
       },
       "CreateExerciseTypeRequest": {
         "type": "object",
@@ -1429,10 +2611,7 @@
             "maxLength": 255
           }
         },
-        "required": [
-          "code",
-          "name"
-        ]
+        "required": ["code", "name"]
       },
       "RefreshRequest": {
         "type": "object",
@@ -1441,9 +2620,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "refreshToken"
-        ]
+        "required": ["refreshToken"]
       },
       "UserProfile": {
         "type": "object",
@@ -1477,15 +2654,19 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "met_value": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 30
+          },
+          "seconds_per_rep": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 120
           }
         },
-        "required": [
-          "id",
-          "email",
-          "alias",
-          "status",
-          "createdAt"
-        ]
+        "required": ["id", "email", "alias", "status", "createdAt"]
       },
       "PublicProfile": {
         "type": "object",
@@ -1512,35 +2693,21 @@
             }
           }
         },
-        "required": [
-          "alias"
-        ]
+        "required": ["alias"]
       },
       "UserPreferences": {
         "type": "object",
         "properties": {
           "language": {
             "type": "string",
-            "enum": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "el"
-            ]
+            "enum": ["en", "de", "fr", "es", "el"]
           },
           "measurementSystem": {
             "type": "string",
-            "enum": [
-              "metric",
-              "imperial"
-            ]
+            "enum": ["metric", "imperial"]
           }
         },
-        "required": [
-          "language",
-          "measurementSystem"
-        ],
+        "required": ["language", "measurementSystem"],
         "additionalProperties": false
       },
       "UpdateProfileRequest": {
@@ -1563,59 +2730,66 @@
           "alias": {
             "type": "string",
             "minLength": 3,
-            "maxLength": 50
+            "maxLength": 32
           },
           "weight": {
             "type": "number",
-            "minimum": 20,
-            "maximum": 500
+            "exclusiveMinimum": 0,
+            "description": "Weight in weightUnit; must be within the 20–400 kg equivalent range."
           },
           "weightUnit": {
             "type": "string",
-            "enum": [
-              "kg",
-              "lb"
-            ]
+            "enum": ["kg", "lb"]
           },
           "fitnessLevel": {
             "type": "string",
-            "enum": [
-              "beginner",
-              "intermediate",
-              "advanced",
-              "elite"
-            ]
+            "enum": ["beginner", "intermediate", "advanced", "elite"]
           },
           "trainingFrequency": {
             "type": "string",
-            "enum": [
-              "rarely",
-              "1_2_per_week",
-              "3_4_per_week",
-              "5_plus_per_week"
-            ]
+            "enum": ["rarely", "1_2_per_week", "3_4_per_week", "5_plus_per_week"]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "weightUnit": {
+                  "const": "lb"
+                }
+              },
+              "required": ["weightUnit"]
+            },
+            "then": {
+              "properties": {
+                "weight": {
+                  "minimum": 44.09,
+                  "maximum": 881.85
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "weight": {
+                  "minimum": 20,
+                  "maximum": 400
+                }
+              }
+            }
+          }
+        ],
+        "additionalProperties": false
       },
       "UpdatePreferencesRequest": {
         "type": "object",
         "properties": {
           "language": {
             "type": "string",
-            "enum": [
-              "en",
-              "de",
-              "fr",
-              "es",
-              "el"
-            ]
+            "enum": ["en", "de", "fr", "es", "el"]
           },
           "measurementSystem": {
             "type": "string",
-            "enum": [
-              "metric",
-              "imperial"
-            ]
+            "enum": ["metric", "imperial"]
           }
         },
         "additionalProperties": false
@@ -1646,10 +2820,7 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "public"
-            ]
+            "enum": ["private", "public"]
           },
           "createdAt": {
             "type": "string",
@@ -1660,12 +2831,7 @@
             "format": "date-time"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "visibility",
-          "createdAt"
-        ]
+        "required": ["id", "name", "visibility", "createdAt"]
       },
       "ExerciseUpsertRequest": {
         "type": "object",
@@ -1678,10 +2844,7 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "public"
-            ]
+            "enum": ["private", "public"]
           },
           "tags": {
             "type": "array",
@@ -1694,12 +2857,19 @@
             "items": {
               "type": "string"
             }
+          },
+          "met_value": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 30
+          },
+          "seconds_per_rep": {
+            "type": ["number", "null"],
+            "minimum": 0.1,
+            "maximum": 120
           }
         },
-        "required": [
-          "name",
-          "visibility"
-        ]
+        "required": ["name", "visibility"]
       },
       "ExerciseListResponse": {
         "type": "object",
@@ -1725,19 +2895,11 @@
             }
           }
         },
-        "required": [
-          "data",
-          "meta"
-        ]
+        "required": ["data", "meta"]
       },
       "SessionStatus": {
         "type": "string",
-        "enum": [
-          "planned",
-          "in_progress",
-          "completed",
-          "canceled"
-        ]
+        "enum": ["planned", "in_progress", "completed", "canceled"]
       },
       "Session": {
         "type": "object",
@@ -1768,20 +2930,442 @@
           },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "followers",
-              "public"
-            ]
+            "enum": ["private", "followers", "public"]
           }
         },
-        "required": [
-          "id",
-          "status",
-          "scheduledAt"
-        ]
+        "required": ["id", "status", "scheduledAt"]
       },
       "SessionCreateRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["planned", "completed"],
+            "description": "completed logs a past workout in one request: started_at = planned_at, completed_at = planned_at + planned_duration_min (not later than now). planned_at must not be in the future (422 E.SESSION.LOG_IN_FUTURE)."
+          },
+          "completion_outcome": {
+            "type": "string",
+            "enum": ["completed", "stopped_early"],
+            "description": "Only with status completed; defaults to completed."
+          },
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100,
+            "nullable": true
+          },
+          "planned_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "planned_duration_min": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 720,
+            "description": "Planned length in minutes; defaults to 60."
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["private", "followers", "public", "link"]
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "The plan's instructions."
+          },
+          "result_note": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "What the athlete wrote after the workout (ADR-044). Only with status completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise)."
+          },
+          "recurrence_rule": {
+            "type": "string",
+            "maxLength": 255,
+            "nullable": true
+          },
+          "exercises": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionExerciseInput"
+            }
+          }
+        },
+        "required": ["planned_at"]
+      },
+      "SessionExerciseInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "exercise_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "skipped"],
+            "description": "An exercise is done when its sets are; skipped is an explicit athlete action (ADR-043)."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["prescribed", "added"],
+            "description": "prescribed: part of the plan; added: added while training."
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true
+          },
+          "planned": {
+            "type": "object",
+            "properties": {
+              "sets": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "reps": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "load": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "distance": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "duration": {
+                "type": "string",
+                "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                "nullable": true
+              },
+              "rpe": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "nullable": true
+              },
+              "rest": {
+                "type": "string",
+                "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                "nullable": true
+              },
+              "extras": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "actual": {
+            "type": "object",
+            "properties": {
+              "sets": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "reps": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "load": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "distance": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "duration": {
+                "type": "string",
+                "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                "nullable": true
+              },
+              "rpe": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "nullable": true
+              },
+              "rest": {
+                "type": "string",
+                "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                "nullable": true
+              },
+              "extras": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "recorded_at": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "sets": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/SessionSetInput"
+            }
+          }
+        },
+        "required": ["order"],
+        "additionalProperties": false
+      },
+      "SessionSetInput": {
+        "type": "object",
+        "description": "Without status, a set with recorded_at is completed and any other set is planned. For compatibility, a planned set whose targets are in the top-level fields has them moved to planned.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "completed", "skipped"],
+            "description": "Only completed sets are performed work and count for scoring (ADR-042)."
+          },
+          "source": {
+            "type": "string",
+            "enum": ["prescribed", "added"],
+            "description": "prescribed: part of the plan; added: added while training."
+          },
+          "planned": {
+            "type": "object",
+            "description": "The set's prescription (targets). Performed values are the top-level set fields.",
+            "properties": {
+              "reps": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "weight_kg": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "distance_m": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "duration_sec": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "rpe": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "nullable": true
+              },
+              "rest_sec": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          },
+          "reps": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "weight_kg": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "distance_m": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "duration_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "rpe": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "nullable": true
+          },
+          "rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "heart_rate_bpm": {
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250,
+            "nullable": true
+          },
+          "extras": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        },
+        "required": ["order"],
+        "additionalProperties": false
+      },
+      "RecordSetRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["completed", "skipped"]
+          },
+          "reps": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "weight_kg": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "distance_m": {
+            "type": "number",
+            "minimum": 0,
+            "nullable": true
+          },
+          "duration_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "rpe": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10,
+            "nullable": true
+          },
+          "rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
+          "heart_rate_bpm": {
+            "type": "integer",
+            "minimum": 20,
+            "maximum": 250,
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 500,
+            "nullable": true
+          }
+        },
+        "required": ["status"],
+        "additionalProperties": false
+      },
+      "AddSetRequest": {
+        "type": "object",
+        "properties": {
+          "planned": {
+            "type": "object",
+            "description": "The set's prescription (targets). Performed values are the top-level set fields.",
+            "properties": {
+              "reps": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "weight_kg": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "distance_m": {
+                "type": "number",
+                "minimum": 0,
+                "nullable": true
+              },
+              "duration_sec": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              },
+              "rpe": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "nullable": true
+              },
+              "rest_sec": {
+                "type": "integer",
+                "minimum": 0,
+                "nullable": true
+              }
+            },
+            "additionalProperties": false,
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AddExerciseRequest": {
+        "type": "object",
+        "properties": {
+          "exercise_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": ["exercise_id"],
+        "additionalProperties": false
+      },
+      "SessionUpdateRequest": {
         "type": "object",
         "properties": {
           "plan_id": {
@@ -1799,72 +3383,504 @@
             "type": "string",
             "format": "date-time"
           },
+          "planned_duration_min": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 720,
+            "description": "Planned length in minutes."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "in_progress", "completed", "canceled"]
+          },
+          "completion_outcome": {
+            "type": "string",
+            "enum": ["completed", "stopped_early"],
+            "description": "Only when the session transitions to completed; defaults to completed (400 E.SESSION.OUTCOME_WITHOUT_COMPLETION otherwise)."
+          },
           "visibility": {
             "type": "string",
-            "enum": [
-              "private",
-              "followers",
-              "public",
-              "link"
-            ]
+            "enum": ["private", "followers", "public", "link"]
           },
           "notes": {
             "type": "string",
             "maxLength": 1000,
             "nullable": true
           },
+          "result_note": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "description": "What the athlete wrote after the workout (ADR-044). Only when the session is, or becomes, completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise). Editable on a completed session."
+          },
           "recurrence_rule": {
             "type": "string",
             "maxLength": 255,
             "nullable": true
           },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calories": {
+            "type": "integer",
+            "minimum": 0,
+            "nullable": true
+          },
           "exercises": {
             "type": "array",
+            "maxItems": 50,
+            "description": "Replaces all exercises and sets of the session.",
             "items": {
               "$ref": "#/components/schemas/SessionExerciseInput"
             }
           }
         },
-        "required": [
-          "planned_at"
-        ]
+        "additionalProperties": false
       },
-      "SessionExerciseInput": {
+      "SessionWithExercises": {
         "type": "object",
         "properties": {
-          "exerciseId": {
+          "id": {
             "type": "string",
             "format": "uuid"
           },
-          "sets": {
+          "owner_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "planned_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "planned_duration_min": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 720
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": ["private", "followers", "public", "link"]
+          },
+          "notes": {
+            "type": "string",
+            "description": "The plan's instructions.",
+            "nullable": true
+          },
+          "result_note": {
+            "type": "string",
+            "description": "What the athlete wrote after the workout (ADR-044).",
+            "nullable": true
+          },
+          "photo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SessionPhoto"
+              }
+            ],
+            "description": "The workout photo; only the owner receives it (null for anyone else).",
+            "nullable": true
+          },
+          "recurrence_rule": {
+            "type": "string",
+            "nullable": true
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completion_outcome": {
+            "type": "string",
+            "enum": ["completed", "stopped_early"],
+            "description": "How a completed session ended. Neither outcome counts as failure.",
+            "nullable": true
+          },
+          "paused_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Start of the current pause; null while running.",
+            "nullable": true
+          },
+          "paused_seconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Total length of finished pauses. Active time = elapsed − paused_seconds − open pause."
+          },
+          "calories": {
+            "type": "integer",
+            "nullable": true
+          },
+          "points": {
+            "type": "integer",
+            "description": "Server-awarded points once completed.",
+            "nullable": true
+          },
+          "gamification_rebuild_required": {
+            "type": "boolean"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "exercises": {
             "type": "array",
             "items": {
               "type": "object",
               "properties": {
-                "reps": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "session_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "exercise_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "nullable": true
+                },
+                "exercise_name": {
+                  "type": "string",
+                  "description": "Name snapshot at planning time.",
+                  "nullable": true
+                },
+                "order_index": {
                   "type": "integer",
                   "minimum": 1
                 },
-                "weight": {
-                  "type": "number",
-                  "minimum": 0
+                "status": {
+                  "type": "string",
+                  "enum": ["planned", "skipped"],
+                  "description": "An exercise is done when its sets are; skipped is an explicit athlete action (ADR-043)."
                 },
-                "rpe": {
-                  "type": "number",
-                  "minimum": 1,
-                  "maximum": 10
+                "source": {
+                  "type": "string",
+                  "enum": ["prescribed", "added"],
+                  "description": "prescribed: part of the plan; added: added while training."
+                },
+                "notes": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "planned": {
+                  "type": "object",
+                  "properties": {
+                    "sets": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "reps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "load": {
+                      "type": "number",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "distance": {
+                      "type": "number",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "duration": {
+                      "type": "string",
+                      "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                      "nullable": true
+                    },
+                    "rpe": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "nullable": true
+                    },
+                    "rest": {
+                      "type": "string",
+                      "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                      "nullable": true
+                    },
+                    "extras": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false,
+                  "nullable": true
+                },
+                "actual": {
+                  "type": "object",
+                  "properties": {
+                    "sets": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "reps": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "load": {
+                      "type": "number",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "distance": {
+                      "type": "number",
+                      "minimum": 0,
+                      "nullable": true
+                    },
+                    "duration": {
+                      "type": "string",
+                      "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                      "nullable": true
+                    },
+                    "rpe": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "nullable": true
+                    },
+                    "rest": {
+                      "type": "string",
+                      "description": "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+                      "nullable": true
+                    },
+                    "extras": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "recorded_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true
+                    }
+                  },
+                  "additionalProperties": false,
+                  "nullable": true
+                },
+                "sets": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "order_index": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": ["planned", "completed", "skipped"],
+                        "description": "Only completed sets are performed work and count for scoring (ADR-042)."
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": ["prescribed", "added"],
+                        "description": "prescribed: part of the plan; added: added while training."
+                      },
+                      "planned": {
+                        "type": "object",
+                        "description": "The set's prescription (targets). Performed values are the top-level set fields.",
+                        "properties": {
+                          "reps": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "weight_kg": {
+                            "type": "number",
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "distance_m": {
+                            "type": "number",
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "duration_sec": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "rpe": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 10,
+                            "nullable": true
+                          },
+                          "rest_sec": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          }
+                        },
+                        "additionalProperties": false,
+                        "nullable": true
+                      },
+                      "reps": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "weight_kg": {
+                        "type": "number",
+                        "nullable": true
+                      },
+                      "distance_m": {
+                        "type": "number",
+                        "nullable": true
+                      },
+                      "duration_sec": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "rpe": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "rest_sec": {
+                        "type": "integer",
+                        "nullable": true
+                      },
+                      "heart_rate_bpm": {
+                        "type": "integer",
+                        "minimum": 20,
+                        "maximum": 250,
+                        "nullable": true
+                      },
+                      "extras": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "recorded_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                      },
+                      "notes": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    },
+                    "required": ["id", "order_index", "status", "source"]
+                  }
                 }
               },
-              "required": [
-                "reps"
-              ]
+              "required": ["id", "session_id", "order_index", "status", "source", "sets"]
             }
           }
         },
         "required": [
-          "exerciseId",
-          "sets"
+          "id",
+          "owner_id",
+          "planned_at",
+          "planned_duration_min",
+          "status",
+          "visibility",
+          "exercises"
         ]
+      },
+      "ScheduleConflictResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": ["E.SESSION.SCHEDULE_CONFLICT"]
+              },
+              "message": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "conflictingSessionIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "description": "Active sessions whose planned time overlaps the requested one."
+                  }
+                },
+                "required": ["conflictingSessionIds"]
+              },
+              "requestId": {
+                "type": "string"
+              }
+            },
+            "required": ["code", "message", "details"]
+          }
+        },
+        "required": ["error"]
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "description": "Request body rejected by schema validation (zod `flatten()` output).",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "formErrors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fieldErrors": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "required": ["formErrors", "fieldErrors"]
+          }
+        },
+        "required": ["error"]
       },
       "SessionListResponse": {
         "type": "object",
@@ -1890,10 +3906,124 @@
             }
           }
         },
+        "required": ["data", "meta"]
+      },
+      "SessionPhoto": {
+        "type": "object",
+        "description": "A workout photo (ADR-044). A replaced photo has a new id and url.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "description": "Owner-only GET path of the image."
+          },
+          "mime_type": {
+            "type": "string",
+            "enum": ["image/jpeg"]
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["id", "url", "mime_type", "bytes", "uploaded_at"]
+      },
+      "SessionVibeChanges": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "domain_code": {
+                  "type": "string",
+                  "enum": [
+                    "strength",
+                    "agility",
+                    "endurance",
+                    "explosivity",
+                    "intelligence",
+                    "regeneration"
+                  ]
+                },
+                "previous_level": {
+                  "type": "number"
+                },
+                "new_level": {
+                  "type": "number"
+                },
+                "change": {
+                  "type": "number"
+                }
+              },
+              "required": ["domain_code", "previous_level", "new_level", "change"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["session_id", "changes"],
+        "additionalProperties": false
+      },
+      "SessionEstimate": {
+        "type": "object",
+        "properties": {
+          "activeDurationSec": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "restDurationSec": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minimumTotalDurationSec": {
+            "type": ["integer", "null"],
+            "minimum": 0
+          },
+          "normalizedMet": {
+            "type": ["number", "null"],
+            "minimum": 0
+          },
+          "estimatedKcalPerMin": {
+            "type": ["number", "null"],
+            "minimum": 0
+          },
+          "estimatedActiveKcal": {
+            "type": ["number", "null"],
+            "minimum": 0
+          },
+          "complete": {
+            "type": "boolean"
+          },
+          "missingInputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
         "required": [
-          "data",
-          "meta"
-        ]
+          "activeDurationSec",
+          "restDurationSec",
+          "minimumTotalDurationSec",
+          "normalizedMet",
+          "estimatedKcalPerMin",
+          "estimatedActiveKcal",
+          "complete",
+          "missingInputs"
+        ],
+        "additionalProperties": false
       },
       "SessionCompleteRequest": {
         "type": "object",
@@ -1907,61 +4037,6 @@
             "type": "string"
           }
         }
-      },
-      "RegistrationReferenceOption": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "description"
-        ],
-        "additionalProperties": false
-      },
-      "RegistrationOptions": {
-        "type": "object",
-        "properties": {
-          "genders": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RegistrationReferenceOption"
-            }
-          },
-          "fitnessLevels": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RegistrationReferenceOption"
-            }
-          },
-          "weight": {
-            "type": "object",
-            "properties": {
-              "minKg": {
-                "type": "number"
-              },
-              "maxKg": {
-                "type": "number"
-              }
-            },
-            "required": [
-              "minKg",
-              "maxKg"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "genders",
-          "fitnessLevels",
-          "weight"
-        ],
-        "additionalProperties": false
       }
     }
   }

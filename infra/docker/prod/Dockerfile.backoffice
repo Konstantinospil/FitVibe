@@ -5,13 +5,13 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-ENV HUSKY=0 \
-    COREPACK_ENABLE_PROJECT_SPEC=0 \
-    pnpm_config_pm_on_fail=ignore
+# pnpm comes from the root package.json `packageManager` field, the same
+# version CI and the lockfile use; do not pin a different version here.
+ENV HUSKY=0
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc .pnpmfile.cjs ./
-RUN corepack enable && corepack prepare pnpm@12.9.0 --activate
-RUN test "$(pnpm --version)" = "12.9.0"
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .pnpmfile.cjs ./
+RUN corepack enable && corepack install
+RUN test "pnpm@$(pnpm --version)" = "$(node -p "require('./package.json').packageManager")"
 RUN pnpm fetch --prod=false
 
 COPY . .

@@ -21,6 +21,7 @@ import {
 } from "./measurements.repository.js";
 import { upsertTranslation } from "../translations/translations.repository.js";
 import { insertAudit } from "../common/audit.util.js";
+import { kgToLb, lbToKg } from "../../utils/units.js";
 
 const DEFAULT_TRANSLATION_LANGUAGE = "en";
 
@@ -96,11 +97,11 @@ function convertLengthImperialToMetric(value: number, granularity: string): numb
 }
 
 function convertWeightMetricToImperial(value: number): number {
-  return value * 2.20462262;
+  return kgToLb(value);
 }
 
 function convertWeightImperialToMetric(value: number): number {
-  return value / 2.20462262;
+  return lbToKg(value);
 }
 
 function convertVolumeMetricToImperial(value: number): number {

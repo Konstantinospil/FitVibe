@@ -5,20 +5,17 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-# Docker needs pnpm >=12.9.0 for the fixed legacy deploy handling of
-# relative file:/link: dependencies. Keep this override scoped to the
-# image build; the repository-wide packageManager pin remains unchanged.
-ENV HUSKY=0 \
-    COREPACK_ENABLE_PROJECT_SPEC=0 \
-    pnpm_config_pm_on_fail=ignore
+# pnpm comes from the root package.json `packageManager` field, the same
+# version CI and the lockfile use; do not pin a different version here.
+ENV HUSKY=0
 
 # pnpm fetch is lockfile-driven. Avoid wildcard COPY destinations for
 # workspace manifests because Docker treats the destination wildcard
 # literally and would create /app/packages/* as a workspace directory.
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc .pnpmfile.cjs ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .pnpmfile.cjs ./
 
-RUN corepack enable && corepack prepare pnpm@12.9.0 --activate
-RUN test "$(pnpm --version)" = "12.9.0"
+RUN corepack enable && corepack install
+RUN test "pnpm@$(pnpm --version)" = "$(node -p "require('./package.json').packageManager")"
 RUN pnpm fetch --prod=false
 
 COPY . .

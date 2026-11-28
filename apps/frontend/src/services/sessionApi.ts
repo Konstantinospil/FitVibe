@@ -1,8 +1,33 @@
-import type { SessionStatus, SessionVisibility } from "@fitvibe/contracts";
+import axios from "axios";
+import type {
+  SessionCompletionOutcome,
+  SessionExerciseStatus,
+  SessionSetSource,
+  SessionSetStatus,
+  SessionStatus,
+  SessionVisibility,
+} from "@fitvibe/contracts";
 import { apiClient } from "./httpApi";
 
 // Sessions API (extending from earlier types)
-export type { SessionStatus, SessionVisibility };
+export type {
+  SessionCompletionOutcome,
+  SessionExerciseStatus,
+  SessionSetSource,
+  SessionSetStatus,
+  SessionStatus,
+  SessionVisibility,
+};
+
+/** A set's prescription (ADR-042). The top-level set fields hold performed values. */
+export interface SessionSetPlannedValues {
+  reps?: number | null;
+  weight_kg?: number | null;
+  distance_m?: number | null;
+  duration_sec?: number | null;
+  rpe?: number | null;
+  rest_sec?: number | null;
+}
 
 export interface SessionExerciseAttributes {
   sets?: number | null;
@@ -22,12 +47,18 @@ export interface SessionExerciseActualAttributes extends SessionExerciseAttribut
 export interface SessionExerciseSet {
   id: string;
   order_index: number;
+  /** Only completed sets are performed work (ADR-042). */
+  status: SessionSetStatus;
+  source: SessionSetSource;
+  planned: SessionSetPlannedValues | null;
   reps?: number | null;
   weight_kg?: number | null;
   distance_m?: number | null;
   duration_sec?: number | null;
   rpe?: number | null;
   rest_sec?: number | null;
+  /** Optional result of a completed set, in beats per minute. */
+  heart_rate_bpm?: number | null;
   extras?: Record<string, unknown>;
   recorded_at?: string | null;
   notes?: string | null;
@@ -38,7 +69,10 @@ export interface SessionExercise {
   id: string;
   session_id: string;
   exercise_id?: string | null;
+  exercise_name?: string | null;
   order_index: number;
+  status: SessionExerciseStatus;
+  source: SessionSetSource;
   notes?: string | null;
   planned?: SessionExerciseAttributes | null;
   actual?: SessionExerciseActualAttributes | null;
@@ -53,12 +87,22 @@ export interface Session {
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
+  /** Planned length in minutes; the session occupies [planned_at, planned_at + length). */
+  planned_duration_min: number;
   status: SessionStatus;
   visibility: SessionVisibility;
+  /** The plan's instructions. */
   notes?: string | null;
+  /** ADR-044: what the athlete wrote after the workout. */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
+  completion_outcome?: SessionCompletionOutcome | null;
+  /** ADR-043: start of the current pause, or null while running. */
+  paused_at?: string | null;
+  /** ADR-043: total length of finished pauses, in seconds. */
+  paused_seconds?: number;
   calories?: number | null;
   points?: number | null;
   deleted_at?: string | null;
@@ -71,8 +115,19 @@ export interface SessionListItem extends Session {
   exercise_count: number;
 }
 
+/** The workout photo (ADR-044); only its owner receives it. */
+export interface SessionPhoto {
+  id: string;
+  /** Owner-only image path; a replaced photo has a new one. */
+  url: string;
+  mime_type: string;
+  bytes: number;
+  uploaded_at: string;
+}
+
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
+  photo?: SessionPhoto | null;
 }
 
 export interface SessionQuery {
@@ -102,12 +157,16 @@ export interface SessionExerciseInput {
   sets?: Array<{
     id?: string;
     order: number;
+    status?: SessionSetStatus;
+    source?: SessionSetSource;
+    planned?: SessionSetPlannedValues | null;
     reps?: number | null;
     weight_kg?: number | null;
     distance_m?: number | null;
     duration_sec?: number | null;
     rpe?: number | null;
     rest_sec?: number | null;
+    heart_rate_bpm?: number | null;
     extras?: Record<string, unknown>;
     recorded_at?: string | null;
     notes?: string | null;
@@ -115,11 +174,17 @@ export interface SessionExerciseInput {
 }
 
 export interface CreateSessionRequest {
+  /** "completed" logs a past workout in one request (ADR-042). */
+  status?: "planned" | "completed";
+  completion_outcome?: SessionCompletionOutcome;
   plan_id?: string | null;
   title?: string | null;
   planned_at: string;
+  planned_duration_min?: number;
   visibility?: SessionVisibility;
   notes?: string | null;
+  /** Only with status "completed". */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   exercises?: SessionExerciseInput[];
 }
@@ -128,9 +193,13 @@ export interface UpdateSessionRequest {
   plan_id?: string | null;
   title?: string | null;
   planned_at?: string;
+  planned_duration_min?: number;
   status?: SessionStatus;
+  completion_outcome?: SessionCompletionOutcome;
   visibility?: SessionVisibility;
   notes?: string | null;
+  /** Only when the session is, or becomes, completed. */
+  result_note?: string | null;
   recurrence_rule?: string | null;
   started_at?: string | null;
   completed_at?: string | null;
@@ -159,6 +228,25 @@ export async function getSession(sessionId: string): Promise<SessionWithExercise
   return res.data;
 }
 
+/** How one Vibe's level moved because of a completed session (issue 289). */
+export interface SessionVibeChange {
+  domain_code: string;
+  previous_level: number;
+  new_level: number;
+  change: number;
+}
+
+export interface SessionVibeChanges {
+  session_id: string;
+  changes: SessionVibeChange[];
+}
+
+/** Owner only; empty until the session's points are processed. */
+export async function getSessionVibeChanges(sessionId: string): Promise<SessionVibeChanges> {
+  const res = await apiClient.get<SessionVibeChanges>(`/api/v1/sessions/${sessionId}/vibe-changes`);
+  return res.data;
+}
+
 export async function createSession(payload: CreateSessionRequest): Promise<SessionWithExercises> {
   const res = await apiClient.post<SessionWithExercises>("/api/v1/sessions", payload);
   return res.data;
@@ -172,8 +260,43 @@ export async function updateSession(
   return res.data;
 }
 
+/**
+ * IDs of the sessions that block a reschedule, when the server rejected it with
+ * `E.SESSION.SCHEDULE_CONFLICT`; null for every other error.
+ */
+export function getScheduleConflictIds(error: unknown): string[] | null {
+  if (!axios.isAxiosError(error) || error.response?.status !== 422) {
+    return null;
+  }
+  const body: unknown = error.response.data;
+  if (typeof body !== "object" || body === null || !("error" in body)) {
+    return null;
+  }
+  const payload = (body as { error?: { code?: unknown; details?: unknown } }).error;
+  if (payload?.code !== "E.SESSION.SCHEDULE_CONFLICT") {
+    return null;
+  }
+  const details = payload.details as { conflictingSessionIds?: unknown } | undefined;
+  const ids = details?.conflictingSessionIds;
+  return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+}
+
 export async function deleteSession(sessionId: string): Promise<void> {
   await apiClient.delete(`/api/v1/sessions/${sessionId}`);
+}
+
+/** Adds or replaces the photo of a completed workout (ADR-044). */
+export async function uploadSessionPhoto(sessionId: string, photo: File): Promise<SessionPhoto> {
+  const formData = new FormData();
+  formData.append("photo", photo);
+  const res = await apiClient.post<SessionPhoto>(`/api/v1/sessions/${sessionId}/photo`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+}
+
+export async function deleteSessionPhoto(sessionId: string): Promise<void> {
+  await apiClient.delete(`/api/v1/sessions/${sessionId}/photo`);
 }
 
 export async function cloneSession(
@@ -214,5 +337,79 @@ export interface SessionEstimate {
 
 export async function getSessionEstimate(sessionId: string): Promise<SessionEstimate> {
   const res = await apiClient.get<SessionEstimate>(`/api/v1/sessions/${sessionId}/estimate`);
+  return res.data;
+}
+
+// Live workout execution (ADR-043): each command returns the whole session.
+
+export interface RecordSetRequest {
+  status: "completed" | "skipped";
+  reps?: number | null;
+  weight_kg?: number | null;
+  distance_m?: number | null;
+  duration_sec?: number | null;
+  rpe?: number | null;
+  rest_sec?: number | null;
+  heart_rate_bpm?: number | null;
+  notes?: string | null;
+}
+
+export async function recordSet(
+  sessionId: string,
+  setId: string,
+  payload: RecordSetRequest,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.patch<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/sets/${setId}`,
+    payload,
+  );
+  return res.data;
+}
+
+/** One key per athlete action, so a retried request adds the set only once. */
+export async function addSessionSet(
+  sessionId: string,
+  exerciseRowId: string,
+  planned: SessionSetPlannedValues | null,
+  idempotencyKey: string,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/exercises/${exerciseRowId}/sets`,
+    planned ? { planned } : {},
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return res.data;
+}
+
+export async function addSessionExercise(
+  sessionId: string,
+  exerciseId: string,
+  idempotencyKey: string,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/exercises`,
+    { exercise_id: exerciseId },
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return res.data;
+}
+
+export async function skipSessionExercise(
+  sessionId: string,
+  exerciseRowId: string,
+): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(
+    `/api/v1/sessions/${sessionId}/exercises/${exerciseRowId}/skip`,
+  );
+  return res.data;
+}
+
+export async function pauseSession(sessionId: string): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(`/api/v1/sessions/${sessionId}/pause`);
+  return res.data;
+}
+
+export async function resumeSession(sessionId: string): Promise<SessionWithExercises> {
+  const res = await apiClient.post<SessionWithExercises>(`/api/v1/sessions/${sessionId}/resume`);
   return res.data;
 }

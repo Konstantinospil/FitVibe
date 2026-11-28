@@ -4,20 +4,48 @@
 // Keep conditional states separate: measuring a missing-token/error page as if
 // it were the intended successful journey would give misleading evidence.
 const publicRoutes = [
-  "/", "/login", "/register", "/forgot-password",
-  "/terms", "/privacy", "/cookie", "/contact",
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/terms",
+  "/privacy",
+  "/cookie",
+  "/contact",
 ];
 const athleteRoutes = [
-  "/", "/calendar", "/library", "/dashboard", "/settings",
-  "/terms", "/privacy", "/cookie",
+  "/",
+  "/calendar",
+  "/log",
+  "/library",
+  "/dashboard",
+  "/settings",
+  "/terms",
+  "/privacy",
+  "/cookie",
 ];
 const conditionalRoutes = [
   { mode: "public", path: "/login/verify-2fa", fixture: "pending two-factor challenge" },
   { mode: "public", path: "/verify", fixture: "unconsumed email-verification token" },
+  {
+    mode: "public",
+    path: "/register/complete",
+    fixture: "unconsumed registration link token (ADR-039)",
+  },
   { mode: "public", path: "/reset-password", fixture: "unconsumed password-reset token" },
   { mode: "public", path: "/terms-reacceptance", fixture: "authenticated legal reacceptance" },
   { mode: "athlete", path: "/terms-reacceptance", fixture: "outdated accepted legal version" },
-  { mode: "athlete", path: "/admin/password-update", fixture: "administrator password-policy gate" },
+  {
+    mode: "athlete",
+    path: "/admin/password-update",
+    fixture: "administrator password-policy gate",
+  },
+  { mode: "athlete", path: "/sessions/:id", fixture: "a session the athlete owns (dynamic id)" },
+  {
+    mode: "athlete",
+    path: "/start/:id",
+    fixture: "a workout the athlete has started (dynamic id)",
+  },
 ];
 // Backoffice has an independent admin session and must not be represented by
 // the athlete fixture. These are tracked but not yet collected.
@@ -43,4 +71,11 @@ function auditUrl(route, origin = "http://127.0.0.1:4180") {
   return url.toString();
 }
 
-module.exports = { publicRoutes, athleteRoutes, conditionalRoutes, backofficeRoutes, auditedRoutes, auditUrl };
+module.exports = {
+  publicRoutes,
+  athleteRoutes,
+  conditionalRoutes,
+  backofficeRoutes,
+  auditedRoutes,
+  auditUrl,
+};

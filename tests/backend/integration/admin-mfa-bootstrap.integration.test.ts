@@ -18,8 +18,9 @@ import { createUser } from "../../../apps/backend/src/modules/auth/auth.reposito
 import { verifyAccess } from "../../../apps/backend/src/modules/auth/auth.session-tokens.js";
 import { truncateAll, createTestIp, ensureRolesSeeded } from "../../setup/test-helpers.js";
 import { describeWithTestDatabase } from "../../setup/db-availability.js";
+import { obtainPasswordResetToken } from "../../setup/emailed-links.js";
 
-const ADMIN_ID = "11111111-1111-1111-1111-111111111111";
+const ADMIN_ID = "11111111-1111-4111-8111-111111111111";
 const PASSWORD = "StageA-Admin-Password-2026!";
 const REPLACEMENT_PASSWORD = "StageA-Replaced-Password-2026!";
 
@@ -81,7 +82,9 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
 
     const ip = createTestIp();
     const login = (password = PASSWORD) =>
-      request(app).post("/api/v1/auth/login").set("X-Forwarded-For", ip)
+      request(app)
+        .post("/api/v1/auth/login")
+        .set("X-Forwarded-For", ip)
         .send({ email: "admin@fitvibe.local", password });
 
     const passwordStage = await login();
@@ -91,17 +94,16 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     const passwordOnlyRefresh: string = passwordStage.body.tokens.refreshToken;
     expect(verifyAccess(passwordOnlyAccess)).toMatchObject({ role: "admin", mfa: false });
 
-    const blocked = await request(app).get("/api/v1/auth/sessions")
-      .set(auth(passwordOnlyAccess));
+    const blocked = await request(app).get("/api/v1/auth/sessions").set(auth(passwordOnlyAccess));
     expect(blocked.status).toBe(403);
     expect(blocked.body.error.code).toBe("ADMIN_2FA_REQUIRED");
 
-    const status = await request(app).get("/api/v1/auth/2fa/status")
-      .set(auth(passwordOnlyAccess));
+    const status = await request(app).get("/api/v1/auth/2fa/status").set(auth(passwordOnlyAccess));
     expect(status.status).toBe(200);
     expect(status.body.enabled).toBe(false);
 
-    const dismiss = await request(app).post("/api/v1/auth/2fa/invitation/dismiss")
+    const dismiss = await request(app)
+      .post("/api/v1/auth/2fa/invitation/dismiss")
       .set(auth(passwordOnlyAccess));
     // The global administrator MFA boundary denies dismissal before the route
     // handler executes. This is intentional defense in depth.
@@ -109,29 +111,36 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect(dismiss.body.error.code).toBe("ADMIN_2FA_REQUIRED");
     expect(await db("user_2fa_invitations").where({ user_id: ADMIN_ID }).first()).toBeUndefined();
 
-    const setup = await request(app).get("/api/v1/auth/2fa/setup")
-      .set(auth(passwordOnlyAccess));
+    const setup = await request(app).get("/api/v1/auth/2fa/setup").set(auth(passwordOnlyAccess));
     expect(setup.status).toBe(200);
     expect(setup.body.secret).toEqual(expect.any(String));
     expect(setup.body.backupCodes).toHaveLength(10);
 
-    const invalid = await request(app).post("/api/v1/auth/2fa/verify")
+    const invalid = await request(app)
+      .post("/api/v1/auth/2fa/verify")
       .set(auth(passwordOnlyAccess))
       .send({ code: authenticator.generate(setup.body.secret) === "000000" ? "000001" : "000000" });
     expect(invalid.status).toBe(401);
-    expect((await db("user_2fa_settings").where({ user_id: ADMIN_ID }).first()).is_enabled).toBe(false);
+    expect((await db("user_2fa_settings").where({ user_id: ADMIN_ID }).first()).is_enabled).toBe(
+      false,
+    );
 
-    const enabled = await request(app).post("/api/v1/auth/2fa/verify")
+    const enabled = await request(app)
+      .post("/api/v1/auth/2fa/verify")
       .set(auth(passwordOnlyAccess))
       .send({ code: authenticator.generate(setup.body.secret) });
     expect(enabled.status).toBe(200);
-    expect((await db("user_2fa_settings").where({ user_id: ADMIN_ID }).first()).is_verified).toBe(true);
+    expect((await db("user_2fa_settings").where({ user_id: ADMIN_ID }).first()).is_verified).toBe(
+      true,
+    );
 
     // Enrollment alone does NOT upgrade the password-only session.
-    const staleAccess = await request(app).get("/api/v1/auth/sessions")
+    const staleAccess = await request(app)
+      .get("/api/v1/auth/sessions")
       .set(auth(passwordOnlyAccess));
     expect(staleAccess.status).toBe(403);
-    const staleRefresh = await request(app).post("/api/v1/auth/refresh")
+    const staleRefresh = await request(app)
+      .post("/api/v1/auth/refresh")
       .set("Cookie", `${env.REFRESH_COOKIE_NAME}=${passwordOnlyRefresh}`);
     expect(staleRefresh.status).toBe(403);
 
@@ -142,7 +151,8 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     });
     expect(challenge.body.tokens).toBeUndefined();
     const pendingSessionId: string = challenge.body.pendingSessionId;
-    const rejectedCode = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const rejectedCode = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId,
@@ -150,11 +160,15 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       });
     expect(rejectedCode.status).toBe(401);
 
-    const verified = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const verified = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({ pendingSessionId, code: authenticator.generate(setup.body.secret) });
     expect(verified.status).toBe(200);
-    expect(verifyAccess(verified.body.tokens.accessToken)).toMatchObject({ role: "admin", mfa: true });
+    expect(verifyAccess(verified.body.tokens.accessToken)).toMatchObject({
+      role: "admin",
+      mfa: true,
+    });
 
     // A fully MFA-attested administrator reaches the route, where the persisted
     // administrator role still forbids dismissing mandatory MFA.
@@ -165,23 +179,27 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect(dismissalAfterMfa.body.error.code).toBe("ADMIN_2FA_REQUIRED");
     expect(await db("user_2fa_invitations").where({ user_id: ADMIN_ID }).first()).toBeUndefined();
 
-    const authenticated = await request(app).get("/api/v1/auth/sessions")
+    const authenticated = await request(app)
+      .get("/api/v1/auth/sessions")
       .set("Cookie", cookieHeader(verified));
     expect(authenticated.status).toBe(200);
 
-    const refresh = await request(app).post("/api/v1/auth/refresh")
+    const refresh = await request(app)
+      .post("/api/v1/auth/refresh")
       .set("Cookie", cookieHeader(verified));
     expect(refresh.status).toBe(200);
     const rotatedRefresh = cookieValue(refresh, env.REFRESH_COOKIE_NAME);
     expect(rotatedRefresh).not.toBe(verified.body.tokens.refreshToken);
-    const afterRefresh = await request(app).get("/api/v1/auth/sessions")
+    const afterRefresh = await request(app)
+      .get("/api/v1/auth/sessions")
       .set("Cookie", cookieHeader(refresh));
     expect(afterRefresh.status).toBe(200);
 
     // Recovery is a real second factor, consumed once, never a password-only shortcut.
     const recoveryChallenge = await login();
     expect(recoveryChallenge.body.requires2FA).toBe(true);
-    const recovered = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const recovered = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId: recoveryChallenge.body.pendingSessionId,
@@ -189,11 +207,13 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       });
     expect(recovered.status).toBe(200);
     expect(verifyAccess(recovered.body.tokens.accessToken).mfa).toBe(true);
-    expect(await db("backup_codes").where({ user_id: ADMIN_ID, is_used: true }).count("id as count"))
-      .toEqual([expect.objectContaining({ count: "1" })]);
+    expect(
+      await db("backup_codes").where({ user_id: ADMIN_ID, is_used: true }).count("id as count"),
+    ).toEqual([expect.objectContaining({ count: "1" })]);
 
     const replayChallenge = await login();
-    const replay = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const replay = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId: replayChallenge.body.pendingSessionId,
@@ -201,47 +221,57 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       });
     expect(replay.status).toBe(401);
 
-    const forgot = await request(app).post("/api/v1/auth/password/forgot")
-      .send({ email: "admin@fitvibe.local" });
-    expect(forgot.status).toBe(202);
-    expect(forgot.body.debugResetToken).toEqual(expect.any(String));
+    // The reset link reaches only the mailbox (ADR-039).
+    const resetToken = await obtainPasswordResetToken(app, "admin@fitvibe.local");
     const resetRow = await db("auth_tokens")
       .where({ user_id: ADMIN_ID, token_type: "password_reset" })
-      .orderBy("created_at", "desc").first();
-    expect(new Date(resetRow.expires_at).getTime() - new Date(resetRow.created_at).getTime())
-      .toBeLessThanOrEqual(15 * 60 * 1000);
+      .orderBy("created_at", "desc")
+      .first();
+    expect(
+      new Date(resetRow.expires_at).getTime() - new Date(resetRow.created_at).getTime(),
+    ).toBeLessThanOrEqual(15 * 60 * 1000);
 
-    const reset = await request(app).post("/api/v1/auth/password/reset")
-      .send({ token: forgot.body.debugResetToken, newPassword: REPLACEMENT_PASSWORD });
+    const reset = await request(app)
+      .post("/api/v1/auth/password/reset")
+      .send({ token: resetToken, newPassword: REPLACEMENT_PASSWORD });
     expect(reset.status).toBe(200);
     expect(reset.body).toEqual({});
-    const revoked = await request(app).get("/api/v1/auth/sessions")
+    const revoked = await request(app)
+      .get("/api/v1/auth/sessions")
       .set("Cookie", cookieHeader(refresh));
     expect(revoked.status).toBe(401);
-    const revokedRefresh = await request(app).post("/api/v1/auth/refresh")
+    const revokedRefresh = await request(app)
+      .post("/api/v1/auth/refresh")
       .set("Cookie", `${env.REFRESH_COOKIE_NAME}=${rotatedRefresh}`);
     expect(revokedRefresh.status).toBe(401);
 
     // Existing enrolled TOTP survives reset; no privileged password-only login.
     const afterReset = await login(REPLACEMENT_PASSWORD);
     expect(afterReset.body.requires2FA).toBe(true);
-    const reverified = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const reverified = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId: afterReset.body.pendingSessionId,
         code: authenticator.generate(setup.body.secret),
       });
     expect(reverified.status).toBe(200);
-    expect(verifyAccess(reverified.body.tokens.accessToken)).toMatchObject({ role: "admin", mfa: true });
-    expect((await request(app).get("/api/v1/auth/sessions")
-      .set("Cookie", cookieHeader(reverified))).status).toBe(200);
-    
+    expect(verifyAccess(reverified.body.tokens.accessToken)).toMatchObject({
+      role: "admin",
+      mfa: true,
+    });
+    expect(
+      (await request(app).get("/api/v1/auth/sessions").set("Cookie", cookieHeader(reverified)))
+        .status,
+    ).toBe(200);
+
     // Stage B/C: privileged sudo must accept a newly migrated Argon2id hash,
     // not only historical bcrypt. Complete a FRESH MFA login after promotion.
     await db("users").where({ id: ADMIN_ID }).update({ role_code: "superadmin" });
     const sudoChallenge = await login(REPLACEMENT_PASSWORD);
     expect(sudoChallenge.body.requires2FA).toBe(true);
-    const sudoLogin = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const sudoLogin = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId: sudoChallenge.body.pendingSessionId,
@@ -249,15 +279,20 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       });
     expect(sudoLogin.status).toBe(200);
     expect(verifyAccess(sudoLogin.body.tokens.accessToken)).toMatchObject({
-      role: "superadmin", mfa: true,
+      role: "superadmin",
+      mfa: true,
     });
     const latestHash = (await db("users").where({ id: ADMIN_ID }).first()).password_hash;
     expect(latestHash).toMatch(/^\$argon2id\$/);
-    const sudoDenied = await request(app).post("/api/v1/admin/superadmin/sudo")
-      .set(auth(sudoLogin.body.tokens.accessToken)).send({ password: "incorrect-password" });
+    const sudoDenied = await request(app)
+      .post("/api/v1/admin/superadmin/sudo")
+      .set(auth(sudoLogin.body.tokens.accessToken))
+      .send({ password: "incorrect-password" });
     expect(sudoDenied.status).toBe(401);
-    const sudoGranted = await request(app).post("/api/v1/admin/superadmin/sudo")
-      .set(auth(sudoLogin.body.tokens.accessToken)).send({ password: REPLACEMENT_PASSWORD });
+    const sudoGranted = await request(app)
+      .post("/api/v1/admin/superadmin/sudo")
+      .set(auth(sudoLogin.body.tokens.accessToken))
+      .send({ password: REPLACEMENT_PASSWORD });
     expect(sudoGranted.status).toBe(200);
     expect(sudoGranted.body.expiresAt).toEqual(expect.any(String));
   });
@@ -278,44 +313,48 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
       terms_accepted_at: new Date().toISOString(),
       terms_version: "2024-06-01",
     });
-    const originalLogin = await request(app).post("/api/v1/auth/login")
+    const originalLogin = await request(app)
+      .post("/api/v1/auth/login")
       .set("X-Forwarded-For", createTestIp())
       .send({ email, password: PASSWORD });
     expect(originalLogin.status).toBe(200);
     expect(originalLogin.body.requires2FA).toBe(false);
     const athleteAccess = originalLogin.body.tokens.accessToken;
-    expect((await request(app).get("/api/v1/auth/sessions")
-      .set(auth(athleteAccess))).status).toBe(200);
+    expect((await request(app).get("/api/v1/auth/sessions").set(auth(athleteAccess))).status).toBe(
+      200,
+    );
 
     // Direct persisted role mutation simulates pre-existing sessions at the
     // security boundary; transaction-level revocation is tested separately.
     await db("users").where({ id: userId }).update({ role_code: "admin" });
-    const promotedAccess = await request(app).get("/api/v1/auth/sessions")
-      .set(auth(athleteAccess));
+    const promotedAccess = await request(app).get("/api/v1/auth/sessions").set(auth(athleteAccess));
     expect(promotedAccess.status).toBe(403);
-    const promotedRefresh = await request(app).post("/api/v1/auth/refresh")
+    const promotedRefresh = await request(app)
+      .post("/api/v1/auth/refresh")
       .set("Cookie", cookieHeader(originalLogin));
     expect(promotedRefresh.status).toBe(403);
 
     for (const status of ["suspended", "deleted"]) {
       await db("users").where({ id: userId }).update({ status });
-      const inactive = await request(app).get("/api/v1/auth/sessions")
-        .set(auth(athleteAccess));
+      const inactive = await request(app).get("/api/v1/auth/sessions").set(auth(athleteAccess));
       expect(inactive.status).toBe(401);
     }
   });
   it("requires legacy administrators to replace their password after MFA before privileged routes", async () => {
     await seedBootstrapAdmin(db);
     const ip = createTestIp();
-    const initial = await request(app).post("/api/v1/auth/login")
-      .set("X-Forwarded-For", ip).send({ email: "admin@fitvibe.local", password: PASSWORD });
+    const initial = await request(app)
+      .post("/api/v1/auth/login")
+      .set("X-Forwarded-For", ip)
+      .send({ email: "admin@fitvibe.local", password: PASSWORD });
     expect(initial.status).toBe(200);
     expect(initial.body.requires2FA).toBe(false);
     const initialAccess = initial.body.tokens.accessToken;
 
     // Bootstrap must still permit TOTP enrollment, but password change is
     // unavailable until a genuinely verified second factor is present.
-    const preMfaChange = await request(app).post("/api/v1/users/change-password")
+    const preMfaChange = await request(app)
+      .post("/api/v1/users/change-password")
       .set(auth(initialAccess))
       .send({ currentPassword: PASSWORD, newPassword: "MfaMustBeVerified-2026!" });
     expect(preMfaChange.status).toBe(403);
@@ -323,24 +362,30 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
 
     const setup = await request(app).get("/api/v1/auth/2fa/setup").set(auth(initialAccess));
     expect(setup.status).toBe(200);
-    const enabled = await request(app).post("/api/v1/auth/2fa/verify")
-      .set(auth(initialAccess)).send({ code: authenticator.generate(setup.body.secret) });
+    const enabled = await request(app)
+      .post("/api/v1/auth/2fa/verify")
+      .set(auth(initialAccess))
+      .send({ code: authenticator.generate(setup.body.secret) });
     expect(enabled.status).toBe(200);
 
     // The historical credential may be short. Its hash gives no length proof.
     // Simulate a pre-migration administrator whose MFA is already enrolled.
     const legacyPassword = "OldAdmin123!";
-    await db("users").where({ id: ADMIN_ID }).update({
-      password_hash: await bcrypt.hash(legacyPassword, 12),
-      admin_password_policy_verified_at: null,
-    });
-    const passwordStage = await request(app).post("/api/v1/auth/login")
+    await db("users")
+      .where({ id: ADMIN_ID })
+      .update({
+        password_hash: await bcrypt.hash(legacyPassword, 12),
+        admin_password_policy_verified_at: null,
+      });
+    const passwordStage = await request(app)
+      .post("/api/v1/auth/login")
       .set("X-Forwarded-For", ip)
       .send({ email: "admin@fitvibe.local", password: legacyPassword });
     expect(passwordStage.status).toBe(200);
     expect(passwordStage.body.requires2FA).toBe(true);
 
-    const verified = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const verified = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId: passwordStage.body.pendingSessionId,
@@ -354,43 +399,54 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     expect(restricted.status).toBe(403);
     expect(restricted.body.error.code).toBe("ADMIN_PASSWORD_CHANGE_REQUIRED");
 
-    const status = await request(app).get("/api/v1/auth/admin-password/status")
-      .set(auth(access));
+    const status = await request(app).get("/api/v1/auth/admin-password/status").set(auth(access));
     expect(status.status).toBe(200);
     expect(status.body).toEqual({ passwordChangeRequired: true, minimumPasswordLength: 16 });
 
-    const invalidCurrent = await request(app).post("/api/v1/users/change-password")
-      .set(auth(access)).send({
+    const invalidCurrent = await request(app)
+      .post("/api/v1/users/change-password")
+      .set(auth(access))
+      .send({
         currentPassword: "incorrect",
         newPassword: "Secure-Rotated-Credential-2026!",
       });
     expect(invalidCurrent.status).toBe(401);
-    expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
-      .toBeNull();
+    expect(
+      (await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at,
+    ).toBeNull();
 
-    const shortCandidate = await request(app).post("/api/v1/users/change-password")
-      .set(auth(access)).send({
+    const shortCandidate = await request(app)
+      .post("/api/v1/users/change-password")
+      .set(auth(access))
+      .send({
         currentPassword: legacyPassword,
         newPassword: "TooShort123!",
       });
     expect(shortCandidate.status).toBe(400);
-    expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
-      .toBeNull();
+    expect(
+      (await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at,
+    ).toBeNull();
 
-    const usernameCandidate = await request(app).post("/api/v1/users/change-password")
-      .set(auth(access)).send({
+    const usernameCandidate = await request(app)
+      .post("/api/v1/users/change-password")
+      .set(auth(access))
+      .send({
         currentPassword: legacyPassword,
         newPassword: "Secure-Administrator-2026!",
       });
     expect(usernameCandidate.status).toBe(400);
     expect(usernameCandidate.body.error.code).toBe("PASSWORD_CONTAINS_USERNAME");
-    expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
-      .toBeNull();
+    expect(
+      (await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at,
+    ).toBeNull();
 
     const updatedPassword = "Secure-Rotated-Credential-2026!";
-    const changed = await request(app).post("/api/v1/users/change-password")
-      .set(auth(access)).send({
-        currentPassword: legacyPassword, newPassword: updatedPassword,
+    const changed = await request(app)
+      .post("/api/v1/users/change-password")
+      .set(auth(access))
+      .send({
+        currentPassword: legacyPassword,
+        newPassword: updatedPassword,
       });
     expect(changed.status).toBe(204);
     const updated = await db("users").where({ id: ADMIN_ID }).first();
@@ -402,66 +458,82 @@ describeWithTestDatabase("Stage A administrator MFA bootstrap and recovery (#557
     const stale = await request(app).get("/api/v1/auth/sessions").set(auth(access));
     expect(stale.status).toBe(401);
 
-    const nextLogin = await request(app).post("/api/v1/auth/login")
+    const nextLogin = await request(app)
+      .post("/api/v1/auth/login")
       .set("X-Forwarded-For", ip)
       .send({ email: "admin@fitvibe.local", password: updatedPassword });
     expect(nextLogin.body.requires2FA).toBe(true);
-    const nextVerified = await request(app).post("/api/v1/auth/login/verify-2fa")
+    const nextVerified = await request(app)
+      .post("/api/v1/auth/login/verify-2fa")
       .set("X-Forwarded-For", ip)
       .send({
         pendingSessionId: nextLogin.body.pendingSessionId,
         code: authenticator.generate(setup.body.secret),
       });
     expect(nextVerified.status).toBe(200);
-    expect((await request(app).get("/api/v1/auth/admin-password/status")
-      .set(auth(nextVerified.body.tokens.accessToken))).body)
-      .toEqual({ passwordChangeRequired: false, minimumPasswordLength: 16 });
-    expect((await request(app).get("/api/v1/auth/sessions")
-      .set(auth(nextVerified.body.tokens.accessToken))).status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .get("/api/v1/auth/admin-password/status")
+          .set(auth(nextVerified.body.tokens.accessToken))
+      ).body,
+    ).toEqual({ passwordChangeRequired: false, minimumPasswordLength: 16 });
+    expect(
+      (
+        await request(app)
+          .get("/api/v1/auth/sessions")
+          .set(auth(nextVerified.body.tokens.accessToken))
+      ).status,
+    ).toBe(200);
   });
   it("permits reset recovery for a legacy administrator but retains the MFA bootstrap boundary", async () => {
     await seedBootstrapAdmin(db);
-    await db("users").where({ id: ADMIN_ID }).update({
-      password_hash: await bcrypt.hash("OldAdmin123!", 12),
-      admin_password_policy_verified_at: null,
-    });
+    await db("users")
+      .where({ id: ADMIN_ID })
+      .update({
+        password_hash: await bcrypt.hash("OldAdmin123!", 12),
+        admin_password_policy_verified_at: null,
+      });
 
-    const forgot = await request(app).post("/api/v1/auth/password/forgot")
-      .send({ email: "admin@fitvibe.local" });
-    expect(forgot.status).toBe(202);
-    expect(forgot.body.debugResetToken).toEqual(expect.any(String));
+    const resetToken = await obtainPasswordResetToken(app, "admin@fitvibe.local");
 
-    const short = await request(app).post("/api/v1/auth/password/reset")
-      .send({ token: forgot.body.debugResetToken, newPassword: "TooShort123!" });
+    const short = await request(app)
+      .post("/api/v1/auth/password/reset")
+      .send({ token: resetToken, newPassword: "TooShort123!" });
     expect(short.status).toBe(400);
-    expect((await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at)
-      .toBeNull();
-    expect((await db("auth_tokens")
-      .where({ user_id: ADMIN_ID, token_type: "password_reset" }).first()).consumed_at)
-      .toBeNull();
+    expect(
+      (await db("users").where({ id: ADMIN_ID }).first()).admin_password_policy_verified_at,
+    ).toBeNull();
+    expect(
+      (await db("auth_tokens").where({ user_id: ADMIN_ID, token_type: "password_reset" }).first())
+        .consumed_at,
+    ).toBeNull();
 
     const replacement = "Secure-Recovered-Credential-2026!";
-    const recovered = await request(app).post("/api/v1/auth/password/reset")
-      .send({ token: forgot.body.debugResetToken, newPassword: replacement });
+    const recovered = await request(app)
+      .post("/api/v1/auth/password/reset")
+      .send({ token: resetToken, newPassword: replacement });
     expect(recovered.status).toBe(200);
     const changed = await db("users").where({ id: ADMIN_ID }).first();
     expect(changed.admin_password_policy_verified_at).not.toBeNull();
     expect(await verifyPasswordHash(replacement, changed.password_hash)).toBe(true);
 
-    const login = await request(app).post("/api/v1/auth/login")
+    const login = await request(app)
+      .post("/api/v1/auth/login")
       .set("X-Forwarded-For", createTestIp())
       .send({ email: "admin@fitvibe.local", password: replacement });
     expect(login.status).toBe(200);
     expect(login.body.requires2FA).toBe(false);
     const access = login.body.tokens.accessToken;
-    expect((await request(app).get("/api/v1/auth/sessions")
-      .set(auth(access))).status).toBe(403);
-    expect((await request(app).get("/api/v1/auth/2fa/setup")
-      .set(auth(access))).status).toBe(200);
-    expect((await request(app).post("/api/v1/users/change-password")
-      .set(auth(access))
-      .send({ currentPassword: replacement, newPassword: "MustHaveMfa-Again-2026!" }))
-      .status).toBe(403);
+    expect((await request(app).get("/api/v1/auth/sessions").set(auth(access))).status).toBe(403);
+    expect((await request(app).get("/api/v1/auth/2fa/setup").set(auth(access))).status).toBe(200);
+    expect(
+      (
+        await request(app)
+          .post("/api/v1/users/change-password")
+          .set(auth(access))
+          .send({ currentPassword: replacement, newPassword: "MustHaveMfa-Again-2026!" })
+      ).status,
+    ).toBe(403);
   });
-
 });

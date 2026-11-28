@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   getAll,
   getOne,
+  getSessionVibeChanges,
   createOne,
   updateOne,
   cancelOne,
@@ -12,10 +13,32 @@ import {
   applyRecurrence,
 } from "./sessions.service.js";
 import { getSessionEstimate } from "./sessions.estimation.service.js";
+import {
+  addExercise,
+  addSet,
+  pauseSession,
+  recordSet,
+  resumeSession,
+  skipExercise,
+} from "./sessions.execution.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
+import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
+import { HEART_RATE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
+import {
+  SESSION_PHOTO_CACHE_CONTROL,
+  deleteSessionPhoto,
+  readSessionPhoto,
+  saveSessionPhoto,
+} from "./sessions.photo.service.js";
+
+const noteSchema = z.string().max(SESSION_TEXT_LIMITS.noteMaxLength).nullable().optional();
+const setNoteSchema = z.string().max(SESSION_TEXT_LIMITS.setNoteMaxLength).nullable().optional();
 
 const statusEnum = z.enum(["planned", "in_progress", "completed", "canceled"]);
 const visibilityEnum = z.enum(["private", "followers", "public", "link"]);
+const setStatusEnum = z.enum(["planned", "completed", "skipped"]);
+const setSourceEnum = z.enum(["prescribed", "added"]);
+const completionOutcomeEnum = z.enum(["completed", "stopped_early"]);
 
 const titleSchema = z
   .string()
@@ -51,19 +74,44 @@ const actualAttributesSchema = plannedAttributesSchema.extend({
   recorded_at: z.string().datetime().nullable().optional(),
 });
 
+/** A completed set's heart rate (issue 89); not part of a prescription. */
+const heartRateSchema = z
+  .number()
+  .int()
+  .min(HEART_RATE_LIMITS.min)
+  .max(HEART_RATE_LIMITS.max)
+  .nullable()
+  .optional();
+
+const setMetricFields = {
+  reps: z.number().int().min(0).nullable().optional(),
+  weight_kg: z.number().min(0).nullable().optional(),
+  distance_m: z.number().min(0).nullable().optional(),
+  duration_sec: z.number().int().min(0).nullable().optional(),
+  rpe: z.number().int().min(1).max(10).nullable().optional(),
+  rest_sec: z.number().int().min(0).nullable().optional(),
+};
+
+/** A set's prescription (ADR-042); the top-level set fields hold performed values. */
+const plannedSetValuesSchema = z.object(setMetricFields).strict();
+
 const sessionSetSchema = z
   .object({
     id: z.string().uuid().optional(),
     order: z.number().int().min(1),
+    status: setStatusEnum.optional(),
+    source: setSourceEnum.optional(),
+    planned: plannedSetValuesSchema.nullable().optional(),
     reps: z.number().int().min(0).nullable().optional(),
     weight_kg: z.number().min(0).nullable().optional(),
     distance_m: z.number().min(0).nullable().optional(),
     duration_sec: z.number().int().min(0).nullable().optional(),
     rpe: z.number().int().min(1).max(10).nullable().optional(),
     rest_sec: z.number().int().min(0).nullable().optional(),
+    heart_rate_bpm: heartRateSchema,
     extras: extrasSchema,
     recorded_at: z.string().datetime().nullable().optional(),
-    notes: z.string().max(500).nullable().optional(),
+    notes: setNoteSchema,
   })
   .strict();
 
@@ -72,33 +120,54 @@ const sessionExerciseSchema = z
     id: z.string().uuid().optional(),
     exercise_id: z.string().uuid().nullable().optional(),
     order: z.number().int().min(1),
-    notes: z.string().max(1000).nullable().optional(),
+    status: z.enum(["planned", "skipped"]).optional(),
+    source: setSourceEnum.optional(),
+    notes: noteSchema,
     planned: plannedAttributesSchema.nullable().optional(),
     actual: actualAttributesSchema.nullable().optional(),
     sets: z.array(sessionSetSchema).max(100).optional(),
   })
   .strict();
 
+const plannedDurationSchema = z
+  .number()
+  .int()
+  .min(SESSION_DURATION_LIMITS.min)
+  .max(SESSION_DURATION_LIMITS.max);
+
 const createSchema = z.object({
+  /** "completed" logs a past workout in one request (ADR-042). */
+  status: z.enum(["planned", "completed"]).optional(),
+  completion_outcome: completionOutcomeEnum.optional(),
   plan_id: z.string().uuid().nullable().optional(),
   title: titleSchema.nullable().optional(),
   planned_at: z.string().datetime(),
+  planned_duration_min: plannedDurationSchema.optional(),
   visibility: visibilityEnum.optional(),
-  notes: z.string().max(1000).nullable().optional(),
+  notes: noteSchema,
+  /** ADR-044: only with status "completed". */
+  result_note: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
   exercises: z.array(sessionExerciseSchema).max(50).optional(),
 });
 
 export const CreateSessionSchema = createSchema;
+/** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
+export const SessionExerciseInputSchema = sessionExerciseSchema;
+export const SessionSetInputSchema = sessionSetSchema;
 
 const updateSchema = z
   .object({
     plan_id: z.string().uuid().nullable().optional(),
     title: titleSchema.nullable().optional(),
     planned_at: z.string().datetime().optional(),
+    planned_duration_min: plannedDurationSchema.optional(),
     status: statusEnum.optional(),
+    completion_outcome: completionOutcomeEnum.optional(),
     visibility: visibilityEnum.optional(),
-    notes: z.string().max(1000).nullable().optional(),
+    notes: noteSchema,
+    /** ADR-044: only when the session is, or becomes, completed. */
+    result_note: noteSchema,
     recurrence_rule: z.string().max(255).nullable().optional(),
     started_at: z.string().datetime().optional(),
     completed_at: z.string().datetime().optional(),
@@ -107,12 +176,14 @@ const updateSchema = z
   })
   .strict();
 
+export const UpdateSessionSchema = updateSchema;
+
 const cloneSchema = z
   .object({
     planned_at: z.string().datetime().optional(),
     date_offset_days: z.number().int().min(-365).max(365).optional(),
     title: titleSchema.nullable().optional(),
-    notes: z.string().max(1000).nullable().optional(),
+    notes: noteSchema,
     visibility: visibilityEnum.optional(),
     recurrence_rule: z.string().max(255).nullable().optional(),
     plan_id: z.string().uuid().nullable().optional(),
@@ -132,7 +203,7 @@ const recurrenceSchema = z.object({
   plan_id: z.string().uuid().nullable().optional(),
   visibility: visibilityEnum.optional(),
   title: titleSchema.nullable().optional(),
-  notes: z.string().max(1000).nullable().optional(),
+  notes: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
 });
 
@@ -336,3 +407,136 @@ export async function getSessionEstimateHandler(req: Request, res: Response): Pr
   const estimate = await getSessionEstimate(userId, id);
   res.json(estimate);
 }
+
+export async function getSessionVibeChangesHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+
+  const id = readRouteParam(req.params.id, "id");
+  res.json(await getSessionVibeChanges(userId, id));
+}
+
+// --- Workout photo (ADR-044) -------------------------------------------------
+
+export async function uploadSessionPhotoHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const id = readRouteParam(req.params.id, "id");
+  res.status(201).json(await saveSessionPhoto(userId, id, req.file));
+}
+
+export async function getSessionPhotoHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const photo = await readSessionPhoto(
+    userId,
+    readRouteParam(req.params.id, "id"),
+    readRouteParam(req.params.photoId, "photoId"),
+  );
+  res.set("Content-Type", photo.mimeType);
+  res.set("Cache-Control", SESSION_PHOTO_CACHE_CONTROL);
+  res.send(photo.buffer);
+}
+
+export async function deleteSessionPhotoHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  await deleteSessionPhoto(userId, readRouteParam(req.params.id, "id"));
+  res.status(204).send();
+}
+
+// --- Live workout execution (ADR-043) ---------------------------------------
+
+const recordSetSchema = z
+  .object({
+    status: z.enum(["completed", "skipped"]),
+    ...setMetricFields,
+    heart_rate_bpm: heartRateSchema,
+    notes: setNoteSchema,
+  })
+  .strict();
+
+const addSetSchema = z.object({ planned: plannedSetValuesSchema.nullable().optional() }).strict();
+
+const addExerciseSchema = z.object({ exercise_id: z.string().uuid() }).strict();
+
+/** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
+export const RecordSetSchema = recordSetSchema;
+export const AddSetSchema = addSetSchema;
+export const AddExerciseSchema = addExerciseSchema;
+
+async function executionCommand<T>(
+  req: Request,
+  res: Response,
+  schema: z.ZodType<T> | null,
+  command: (userId: string, sessionId: string, body: T) => Promise<unknown>,
+  options: { idempotent?: boolean; status?: number } = {},
+): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const parsed = schema
+    ? schema.safeParse(req.body ?? {})
+    : { success: true as const, data: {} as T };
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  const sessionId = readRouteParam(req.params.id, "id");
+  const status = options.status ?? 200;
+  if (options.idempotent) {
+    getIdempotencyKey(req);
+    const handled = await handleIdempotentRequest(req, res, userId, parsed.data, async () => ({
+      status,
+      body: await command(userId, sessionId, parsed.data),
+    }));
+    if (handled) {
+      return;
+    }
+  }
+  res.status(status).json(await command(userId, sessionId, parsed.data));
+}
+
+export const pauseSessionHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, null, (userId, sessionId) => pauseSession(userId, sessionId));
+
+export const resumeSessionHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, null, (userId, sessionId) => resumeSession(userId, sessionId));
+
+export const recordSetHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, recordSetSchema, (userId, sessionId, body) =>
+    recordSet(userId, sessionId, readRouteParam(req.params.setId, "setId"), body),
+  );
+
+export const addSetHandler = (req: Request, res: Response) =>
+  executionCommand(
+    req,
+    res,
+    addSetSchema,
+    (userId, sessionId, body) =>
+      addSet(userId, sessionId, readRouteParam(req.params.exerciseId, "exerciseId"), body),
+    { idempotent: true, status: 201 },
+  );
+
+export const addExerciseHandler = (req: Request, res: Response) =>
+  executionCommand(
+    req,
+    res,
+    addExerciseSchema,
+    (userId, sessionId, body) => addExercise(userId, sessionId, body),
+    { idempotent: true, status: 201 },
+  );
+
+export const skipExerciseHandler = (req: Request, res: Response) =>
+  executionCommand(req, res, null, (userId, sessionId) =>
+    skipExercise(userId, sessionId, readRouteParam(req.params.exerciseId, "exerciseId")),
+  );

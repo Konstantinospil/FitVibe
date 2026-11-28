@@ -59,6 +59,15 @@ vi.mock("../../../apps/frontend/src/pages/Home", () => ({
   },
 }));
 
+vi.mock("../../../apps/frontend/src/pages/SessionDetail", () => ({
+  default: () => <div>Session Detail Page</div>,
+}));
+vi.mock("../../../apps/frontend/src/pages/LiveWorkout", () => ({
+  default: () => <div>Live Workout Page</div>,
+}));
+vi.mock("../../../apps/frontend/src/pages/Log", () => ({
+  default: () => <div>Log Page</div>,
+}));
 vi.mock("../../../apps/frontend/src/pages/Calendar", () => ({
   default: () => <div>Calendar Page</div>,
 }));
@@ -259,6 +268,21 @@ describe("ProtectedRoutes", () => {
   it("renders Home at the authenticated root", async () => {
     renderRoute("/");
     expect(await screen.findByText("Home Page")).toBeInTheDocument();
+  });
+
+  it("renders the protected session-detail route", async () => {
+    renderRoute("/sessions/example-session");
+    expect(await screen.findByText("Session Detail Page")).toBeInTheDocument();
+  });
+
+  it("renders the protected manual Log route", async () => {
+    renderRoute("/log");
+    expect(await screen.findByText("Log Page")).toBeInTheDocument();
+  });
+
+  it("renders the protected live workout route", async () => {
+    renderRoute("/start/example-session");
+    expect(await screen.findByText("Live Workout Page")).toBeInTheDocument();
   });
 
   it("renders Calendar at the active calendar route", async () => {

@@ -8,7 +8,7 @@ import {
   getSessionWithDetails,
   refreshSessionSummary,
   replaceSessionExercises,
-  sessionsExistAtDates,
+  findOverlappingSessions,
 } from "./sessions.repository.js";
 import type {
   CloneSessionDTO,
@@ -61,6 +61,7 @@ export async function cloneOne(
     plan_id: targetPlanId ?? null,
     title: dto.title !== undefined ? trimToNull(dto.title) : trimToNull(source.title ?? null),
     planned_at: plannedAt,
+    planned_duration_min: source.planned_duration_min,
     status: "planned",
     visibility: dto.visibility ?? source.visibility ?? "private",
     notes: dto.notes !== undefined ? trimToNull(dto.notes) : trimToNull(source.notes ?? null),
@@ -191,7 +192,12 @@ export async function applyRecurrence(
     );
   }
 
-  const conflicts = await sessionsExistAtDates(userId, plannedDates);
+  const conflicts = (
+    await findOverlappingSessions(
+      userId,
+      plannedDates.map((start) => ({ start, durationMin: source.planned_duration_min })),
+    )
+  ).map(({ planned_at }) => planned_at);
   if (conflicts.length > 0) {
     throw new HttpError(
       409,
@@ -217,6 +223,7 @@ export async function applyRecurrence(
         plan_id: targetPlanId ?? null,
         title: dto.title !== undefined ? trimToNull(dto.title) : trimToNull(source.title ?? null),
         planned_at: plannedAt,
+        planned_duration_min: source.planned_duration_min,
         status: "planned",
         visibility: dto.visibility ?? source.visibility ?? "private",
         notes: dto.notes !== undefined ? trimToNull(dto.notes) : trimToNull(source.notes ?? null),

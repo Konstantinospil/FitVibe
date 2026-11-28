@@ -61,32 +61,39 @@ function resolveStoragePath(storageKey: string): string {
   return normalizedResolved;
 }
 
-export async function saveUserAvatarFile(userId: string, buffer: Buffer, mimeType: string) {
+/** Folders under the storage root, one per kind of media. */
+export const MEDIA_FOLDERS = {
+  avatars: "avatars",
+  progress: "progress",
+  sessions: "sessions",
+} as const;
+
+export type MediaFolder = (typeof MEDIA_FOLDERS)[keyof typeof MEDIA_FOLDERS];
+
+/** Writes a file under <folder>/<ownerId>/ with a random name; returns its storage key. */
+export async function saveMediaFile(
+  folder: MediaFolder,
+  ownerId: string,
+  buffer: Buffer,
+  mimeType: string,
+) {
   const ext = extensionFromMime(mimeType) || ".bin";
-  const dir = path.join(getStorageRoot(), "avatars", userId);
+  const dir = path.join(getStorageRoot(), folder, ownerId);
   await ensureDir(dir);
   const fileName = `${crypto.randomUUID()}${ext}`;
-  const fullPath = path.join(dir, fileName);
-  await fs.writeFile(fullPath, buffer);
-  const storageKey = normalizeKey("avatars", userId, fileName);
+  await fs.writeFile(path.join(dir, fileName), buffer);
   return {
-    storageKey,
+    storageKey: normalizeKey(folder, ownerId, fileName),
     bytes: buffer.length,
   };
 }
 
-export async function saveUserProgressPhotoFile(userId: string, buffer: Buffer, mimeType: string) {
-  const ext = extensionFromMime(mimeType) || ".bin";
-  const dir = path.join(getStorageRoot(), "progress", userId);
-  await ensureDir(dir);
-  const fileName = `${crypto.randomUUID()}${ext}`;
-  const fullPath = path.join(dir, fileName);
-  await fs.writeFile(fullPath, buffer);
-  const storageKey = normalizeKey("progress", userId, fileName);
-  return {
-    storageKey,
-    bytes: buffer.length,
-  };
+export function saveUserAvatarFile(userId: string, buffer: Buffer, mimeType: string) {
+  return saveMediaFile(MEDIA_FOLDERS.avatars, userId, buffer, mimeType);
+}
+
+export function saveUserProgressPhotoFile(userId: string, buffer: Buffer, mimeType: string) {
+  return saveMediaFile(MEDIA_FOLDERS.progress, userId, buffer, mimeType);
 }
 
 export async function readStorageObject(storageKey: string): Promise<Buffer> {

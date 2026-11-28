@@ -33,6 +33,135 @@ const bearerAuth = {
   bearerAuth: [],
 };
 
+const sessionIdParameter = {
+  name: "id",
+  in: "path",
+  required: true,
+  schema: { type: "string", format: "uuid" },
+};
+
+// Mirrors the zod schemas in sessions.controller.ts; tests/backend/contract checks them.
+const nullable = (schema) => ({ ...schema, nullable: true });
+const intervalString = nullable({
+  type: "string",
+  description: "ISO-8601 duration (e.g. PT90S) or HH:MM[:SS].",
+});
+const plannedAttributes = {
+  sets: nullable({ type: "integer", minimum: 0 }),
+  reps: nullable({ type: "integer", minimum: 0 }),
+  load: nullable({ type: "number", minimum: 0 }),
+  distance: nullable({ type: "number", minimum: 0 }),
+  duration: intervalString,
+  rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+  rest: intervalString,
+  extras: { type: "object", additionalProperties: true },
+};
+// ADR-042: a set's prescription; the top-level set fields hold performed values.
+const plannedSetValuesObject = nullable({
+  type: "object",
+  description: "The set's prescription (targets). Performed values are the top-level set fields.",
+  properties: {
+    reps: nullable({ type: "integer", minimum: 0 }),
+    weight_kg: nullable({ type: "number", minimum: 0 }),
+    distance_m: nullable({ type: "number", minimum: 0 }),
+    duration_sec: nullable({ type: "integer", minimum: 0 }),
+    rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+    rest_sec: nullable({ type: "integer", minimum: 0 }),
+  },
+  additionalProperties: false,
+});
+const setStatusSchema = {
+  type: "string",
+  enum: ["planned", "completed", "skipped"],
+  description: "Only completed sets are performed work and count for scoring (ADR-042).",
+};
+const setSourceSchema = {
+  type: "string",
+  enum: ["prescribed", "added"],
+  description: "prescribed: part of the plan; added: added while training.",
+};
+const exerciseStatusSchema = {
+  type: "string",
+  enum: ["planned", "skipped"],
+  description:
+    "An exercise is done when its sets are; skipped is an explicit athlete action (ADR-043).",
+};
+const executionErrors = {
+  400: {
+    description: "Invalid body (zod field report).",
+    ...jsonContent("#/components/schemas/ValidationErrorResponse"),
+  },
+  401: {
+    description: "Missing or invalid access token.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+  403: { description: "CSRF check failed.", ...jsonContent("#/components/schemas/ErrorResponse") },
+  404: {
+    description: "`E.SESSION.NOT_FOUND`, or the set/exercise is not part of this workout.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+  409: {
+    description: "`E.SESSION.NOT_ACTIVE`: the workout is not in progress.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+  429: {
+    description: "`RATE_LIMITED`; see `Retry-After`.",
+    ...jsonContent("#/components/schemas/ErrorResponse"),
+  },
+};
+const pathUuid = (name) => ({
+  name,
+  in: "path",
+  required: true,
+  schema: { type: "string", format: "uuid" },
+});
+// A completed set's heart rate (issue 89). The contract test pins these bounds to
+// HEART_RATE_LIMITS in sessions.normalization.ts.
+const heartRateBpm = nullable({ type: "integer", minimum: 20, maximum: 250 });
+// Free text of a session or exercise, and of a set. Pinned to SESSION_TEXT_LIMITS
+// in sessions.normalization.ts by the contract test.
+const sessionNote = nullable({ type: "string", maxLength: 1000 });
+const setNote = nullable({ type: "string", maxLength: 500 });
+// The shared image pipeline (services/imageUpload.service.ts).
+const imageUploadDescription = "JPEG, PNG, or WebP image up to 5 MB";
+
+const executionOperation = (summary, description, options = {}) => ({
+  summary,
+  description,
+  tags: ["Sessions"],
+  security: [bearerAuth],
+  parameters: [sessionIdParameter, ...(options.parameters ?? [])],
+  ...(options.requestBody ? { requestBody: jsonContent(options.requestBody) } : {}),
+  responses: {
+    [options.status ?? 200]: {
+      description: "The whole workout after the change.",
+      ...jsonContent("#/components/schemas/SessionWithExercises"),
+    },
+    ...executionErrors,
+    ...(options.extraResponses ?? {}),
+  },
+});
+
+const completionOutcomeSchema = {
+  type: "string",
+  enum: ["completed", "stopped_early"],
+  description: "How a completed session ended. Neither outcome counts as failure.",
+};
+
+const plannedAttributesObject = nullable({
+  type: "object",
+  properties: plannedAttributes,
+  additionalProperties: false,
+});
+const actualAttributesObject = nullable({
+  type: "object",
+  properties: {
+    ...plannedAttributes,
+    recorded_at: nullable({ type: "string", format: "date-time" }),
+  },
+  additionalProperties: false,
+});
+
 const paths = {
   "/auth/register/options": {
     get: {
@@ -46,12 +175,40 @@ const paths = {
   },
   "/auth/register": {
     post: {
-      summary: "Register a new account",
+      summary: "Start email-first registration (ADR-039)",
+      description:
+        "Step 1. Accepts only an address and always answers 202 with the same body. The outcome is delivered by email: a continue link for a new address, a notice for an existing account.",
+      tags: ["Auth"],
+      requestBody: jsonContent("#/components/schemas/StartRegistrationRequest"),
+      responses: {
+        202: jsonContent("#/components/schemas/RegistrationStartedResponse"),
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        429: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/auth/register/intent": {
+    post: {
+      summary: "Look up the address an emailed registration link belongs to",
+      tags: ["Auth"],
+      requestBody: jsonContent("#/components/schemas/RegistrationIntentRequest"),
+      responses: {
+        200: jsonContent("#/components/schemas/RegistrationIntentResponse"),
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        410: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/auth/register/complete": {
+    post: {
+      summary: "Finish registration for the holder of an emailed link",
+      description:
+        "Step 2. Creates an active, verified account and consumes the link. A taken username is reported because the caller has proved mailbox ownership.",
       tags: ["Auth"],
       requestBody: {
         content: {
           "application/json": {
-            schema: { $ref: "#/components/schemas/RegisterRequest" },
+            schema: { $ref: "#/components/schemas/CompleteRegistrationRequest" },
           },
           "multipart/form-data": {
             schema: {
@@ -59,12 +216,12 @@ const paths = {
               properties: {
                 payload: {
                   type: "string",
-                  description: "JSON-encoded RegisterRequest payload",
+                  description: "JSON-encoded CompleteRegistrationRequest payload",
                 },
                 avatar: {
                   type: "string",
                   format: "binary",
-                  description: "Optional JPEG, PNG, or WebP profile photo up to 5 MB",
+                  description: `Optional profile photo: ${imageUploadDescription}`,
                 },
               },
               required: ["payload"],
@@ -73,9 +230,10 @@ const paths = {
         },
       },
       responses: {
-        202: jsonContent("#/components/schemas/AuthSuccessResponse"),
+        201: jsonContent("#/components/schemas/RegistrationCompletedResponse"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
         409: jsonContent("#/components/schemas/ErrorResponse"),
+        410: jsonContent("#/components/schemas/ErrorResponse"),
         422: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
@@ -273,6 +431,122 @@ const paths = {
       },
     },
   },
+  "/sessions/{id}": {
+    patch: {
+      summary: "Update a session (details, schedule, status, exercises)",
+      description: [
+        "Partial update: only the fields sent change. There is no ETag or If-Match check; the last write wins.",
+        "",
+        "Scheduling: a session occupies [planned_at, planned_at + planned_duration_min). A change of `planned_at` or `planned_duration_min` that overlaps another active session of the same user is refused with 422 `E.SESSION.SCHEDULE_CONFLICT`, listing the blocking sessions in `error.details.conflictingSessionIds`. Back-to-back sessions do not conflict; canceled sessions occupy no time; a session being canceled is not checked.",
+        "",
+        "Status: allowed transitions are planned → in_progress | completed | canceled and in_progress → completed | canceled. `started_at` and `completed_at` default to the time of the change. Changing a completed session's plan, schedule, timestamps, calories or exercises requires reopening it first (409 `E.SESSION.REOPEN_REQUIRED`).",
+        "",
+        "Sending `exercises` replaces the session's exercises and sets.",
+      ].join("\n"),
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [sessionIdParameter],
+      requestBody: jsonContent("#/components/schemas/SessionUpdateRequest"),
+      responses: {
+        200: {
+          description: "The updated session with its exercises.",
+          ...jsonContent("#/components/schemas/SessionWithExercises"),
+        },
+        400: {
+          description:
+            "Invalid body (`error` is the zod field report), an invalid status transition (`E.SESSION.INVALID_STATUS`) or a plan the user does not own (`E.SESSION.INVALID_PLAN`).",
+          content: {
+            "application/json": {
+              schema: {
+                oneOf: [
+                  { $ref: "#/components/schemas/ErrorResponse" },
+                  { $ref: "#/components/schemas/ValidationErrorResponse" },
+                ],
+              },
+            },
+          },
+        },
+        401: {
+          description: "Missing or invalid access token.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        403: {
+          description: "CSRF check failed.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        404: {
+          description: "`E.SESSION.NOT_FOUND`.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        409: {
+          description:
+            "`E.SESSION.REOPEN_REQUIRED`: reopen the completed session before correcting it.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+        422: {
+          description: "`E.SESSION.SCHEDULE_CONFLICT`: the new time overlaps other sessions.",
+          ...jsonContent("#/components/schemas/ScheduleConflictResponse"),
+        },
+        429: {
+          description: "`RATE_LIMITED`; see `Retry-After`.",
+          ...jsonContent("#/components/schemas/ErrorResponse"),
+        },
+      },
+    },
+  },
+  "/sessions/{id}/pause": {
+    post: executionOperation(
+      "Pause a workout in progress",
+      "Starts a pause; pausing again changes nothing. Pauses do not count as active time (ADR-043).",
+    ),
+  },
+  "/sessions/{id}/resume": {
+    post: executionOperation(
+      "Resume a paused workout",
+      "Ends the pause and adds its length to `paused_seconds`; resuming a running workout changes nothing.",
+    ),
+  },
+  "/sessions/{id}/sets/{setId}": {
+    patch: executionOperation(
+      "Record, correct or skip a set",
+      "completed stores the performed values (a correction keeps the first recorded_at); skipped clears them. The set's prescription is never changed.",
+      {
+        parameters: [pathUuid("setId")],
+        requestBody: "#/components/schemas/RecordSetRequest",
+        extraResponses: {
+          422: {
+            description: "`E.SESSION.INVALID_SET`: a skipped set cannot have performed values.",
+            ...jsonContent("#/components/schemas/ErrorResponse"),
+          },
+        },
+      },
+    ),
+  },
+  "/sessions/{id}/exercises": {
+    post: executionOperation(
+      "Add an exercise while training",
+      "Appends the exercise (source added) with one empty planned set. Supports Idempotency-Key.",
+      { requestBody: "#/components/schemas/AddExerciseRequest", status: 201 },
+    ),
+  },
+  "/sessions/{id}/exercises/{exerciseId}/sets": {
+    post: executionOperation(
+      "Add a set while training",
+      "Appends a planned set (source added) to the exercise and brings a skipped exercise back. Supports Idempotency-Key.",
+      {
+        parameters: [pathUuid("exerciseId")],
+        requestBody: "#/components/schemas/AddSetRequest",
+        status: 201,
+      },
+    ),
+  },
+  "/sessions/{id}/exercises/{exerciseId}/skip": {
+    post: executionOperation(
+      "Skip an exercise",
+      "Marks the exercise skipped and its remaining planned sets skipped; recorded sets stay.",
+      { parameters: [pathUuid("exerciseId")] },
+    ),
+  },
   "/sessions/{id}/estimate": {
     get: {
       summary: "Estimate planned session duration and intensity",
@@ -288,6 +562,85 @@ const paths = {
       ],
       responses: {
         200: jsonContent("#/components/schemas/SessionEstimate"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/vibe-changes": {
+    get: {
+      summary: "Vibe level changes a completed session caused",
+      description:
+        "Owner only. Lists the active Vibe level changes from completing this session, one per Vibe it trained. Empty until the session is completed and its points are processed. Returns 404 for a missing session and for someone else's.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+        },
+      ],
+      responses: {
+        200: jsonContent("#/components/schemas/SessionVibeChanges"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/photo": {
+    post: {
+      summary: "Add or replace the photo of a completed workout",
+      description: `Owner only (ADR-044). The image is scanned for malware, checked to be what it claims, and re-encoded as JPEG without metadata. Replaces an existing photo. Allowed once the session is completed, either outcome (409 E.SESSION.PHOTO_NOT_COMPLETED otherwise); 404 for a missing session and for someone else's.`,
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id")],
+      requestBody: {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: {
+                photo: { type: "string", format: "binary", description: imageUploadDescription },
+              },
+              required: ["photo"],
+            },
+          },
+        },
+      },
+      responses: {
+        201: jsonContent("#/components/schemas/SessionPhoto"),
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+        409: jsonContent("#/components/schemas/ErrorResponse"),
+        422: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+    delete: {
+      summary: "Remove the workout photo",
+      description:
+        "Owner only. Succeeds when there is no photo too; 404 for a missing session and for someone else's.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id")],
+      responses: {
+        204: { description: "Removed, or there was none" },
+        404: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/sessions/{id}/photo/{photoId}": {
+    get: {
+      summary: "The workout photo's image",
+      description:
+        "Owner only. Safe to cache: a replaced photo has a new id. 404 for anyone else, a missing session or an old id.",
+      tags: ["Sessions"],
+      security: [bearerAuth],
+      parameters: [pathUuid("id"), pathUuid("photoId")],
+      responses: {
+        200: {
+          description: "The image",
+          content: { "image/jpeg": { schema: { type: "string", format: "binary" } } },
+        },
         404: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
@@ -353,6 +706,21 @@ const paths = {
         200: jsonContent("#/components/schemas/VibeformPreferences"),
         400: jsonContent("#/components/schemas/ErrorResponse"),
         401: jsonContent("#/components/schemas/ErrorResponse"),
+      },
+    },
+  },
+  "/client-errors": {
+    post: {
+      summary: "Report a browser error (ADR-040)",
+      description:
+        "Public, CSRF-protected and rate-limited. Reports carry no identity; the server strips query strings, fragments and email addresses before logging.",
+      tags: ["System"],
+      requestBody: jsonContent("#/components/schemas/ClientErrorReportRequest"),
+      responses: {
+        204: { description: "Report recorded" },
+        400: jsonContent("#/components/schemas/ErrorResponse"),
+        403: jsonContent("#/components/schemas/ErrorResponse"),
+        429: jsonContent("#/components/schemas/ErrorResponse"),
       },
     },
   },
@@ -520,10 +888,67 @@ const schemas = {
     required: ["genders", "fitnessLevels", "weight"],
     additionalProperties: false,
   },
-  RegisterRequest: {
+  ClientErrorReportRequest: {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["error", "unhandledrejection", "logger"] },
+      message: { type: "string", minLength: 1, maxLength: 1000 },
+      stack: { type: "string", maxLength: 4000 },
+      source: { type: "string", maxLength: 500 },
+      route: { type: "string", pattern: "^/", maxLength: 200 },
+    },
+    required: ["kind", "message", "route"],
+    additionalProperties: false,
+  },
+  StartRegistrationRequest: {
+    type: "object",
+    properties: {
+      email: { type: "string", format: "email", maxLength: 254 },
+      locale: {
+        type: "string",
+        pattern: "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})?$",
+        description: "UI language of the request; used for the email it sends.",
+      },
+    },
+    required: ["email"],
+    additionalProperties: false,
+  },
+  RegistrationStartedResponse: {
+    type: "object",
+    properties: { message: { type: "string" } },
+    required: ["message"],
+    additionalProperties: false,
+  },
+  RegistrationIntentRequest: {
+    type: "object",
+    properties: {
+      token: { type: "string", minLength: 20, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" },
+    },
+    required: ["token"],
+    additionalProperties: false,
+  },
+  RegistrationIntentResponse: {
     type: "object",
     properties: {
       email: { type: "string", format: "email" },
+      expiresAt: { type: "string", format: "date-time" },
+    },
+    required: ["email", "expiresAt"],
+    additionalProperties: false,
+  },
+  RegistrationCompletedResponse: {
+    type: "object",
+    properties: {
+      user: { type: "object", additionalProperties: true },
+      passwordWarning: { type: "string", enum: ["PASSWORD_BREACHED", "BREACH_CHECK_UNAVAILABLE"] },
+    },
+    required: ["user"],
+    additionalProperties: false,
+  },
+  CompleteRegistrationRequest: {
+    type: "object",
+    properties: {
+      token: { type: "string", minLength: 20, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" },
       alias: {
         type: "string",
         minLength: 3,
@@ -570,7 +995,7 @@ const schemas = {
       },
       terms_accepted: { type: "boolean" },
     },
-    required: ["email", "password", "terms_accepted"],
+    required: ["token", "password", "terms_accepted"],
     additionalProperties: false,
   },
   LoginRequest: {
@@ -666,7 +1091,17 @@ const schemas = {
       id: { type: "string", format: "uuid" },
       email: { type: "string", format: "email" },
       alias: { type: "string" },
-      status: { type: "string", enum: ["pending_verification", "active", "suspended", "banned", "pending_deletion", "deleted"] },
+      status: {
+        type: "string",
+        enum: [
+          "pending_verification",
+          "active",
+          "suspended",
+          "banned",
+          "pending_deletion",
+          "deleted",
+        ],
+      },
       createdAt: { type: "string", format: "date-time" },
       updatedAt: { type: "string", format: "date-time" },
       met_value: { type: ["number", "null"], minimum: 0.1, maximum: 30 },
@@ -816,11 +1251,32 @@ const schemas = {
   SessionCreateRequest: {
     type: "object",
     properties: {
+      status: {
+        type: "string",
+        enum: ["planned", "completed"],
+        description:
+          "completed logs a past workout in one request: started_at = planned_at, completed_at = planned_at + planned_duration_min (not later than now). planned_at must not be in the future (422 E.SESSION.LOG_IN_FUTURE).",
+      },
+      completion_outcome: {
+        ...completionOutcomeSchema,
+        description: "Only with status completed; defaults to completed.",
+      },
       plan_id: { type: "string", format: "uuid", nullable: true },
       title: { type: "string", minLength: 2, maxLength: 100, nullable: true },
       planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: {
+        type: "integer",
+        minimum: 5,
+        maximum: 720,
+        description: "Planned length in minutes; defaults to 60.",
+      },
       visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
-      notes: { type: "string", maxLength: 1000, nullable: true },
+      notes: { ...sessionNote, description: "The plan's instructions." },
+      result_note: {
+        ...sessionNote,
+        description:
+          "What the athlete wrote after the workout (ADR-044). Only with status completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise).",
+      },
       recurrence_rule: { type: "string", maxLength: 255, nullable: true },
       exercises: {
         type: "array",
@@ -832,21 +1288,254 @@ const schemas = {
   SessionExerciseInput: {
     type: "object",
     properties: {
-      exerciseId: { type: "string", format: "uuid" },
+      id: { type: "string", format: "uuid" },
+      exercise_id: nullable({ type: "string", format: "uuid" }),
+      order: { type: "integer", minimum: 1 },
+      status: exerciseStatusSchema,
+      source: setSourceSchema,
+      notes: sessionNote,
+      planned: plannedAttributesObject,
+      actual: actualAttributesObject,
       sets: {
+        type: "array",
+        maxItems: 100,
+        items: { $ref: "#/components/schemas/SessionSetInput" },
+      },
+    },
+    required: ["order"],
+    additionalProperties: false,
+  },
+  SessionSetInput: {
+    type: "object",
+    description:
+      "Without status, a set with recorded_at is completed and any other set is planned. For compatibility, a planned set whose targets are in the top-level fields has them moved to planned.",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      order: { type: "integer", minimum: 1 },
+      status: setStatusSchema,
+      source: setSourceSchema,
+      planned: plannedSetValuesObject,
+      reps: nullable({ type: "integer", minimum: 0 }),
+      weight_kg: nullable({ type: "number", minimum: 0 }),
+      distance_m: nullable({ type: "number", minimum: 0 }),
+      duration_sec: nullable({ type: "integer", minimum: 0 }),
+      rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+      rest_sec: nullable({ type: "integer", minimum: 0 }),
+      heart_rate_bpm: heartRateBpm,
+      extras: { type: "object", additionalProperties: true },
+      recorded_at: nullable({ type: "string", format: "date-time" }),
+      notes: setNote,
+    },
+    required: ["order"],
+    additionalProperties: false,
+  },
+  RecordSetRequest: {
+    type: "object",
+    properties: {
+      status: { type: "string", enum: ["completed", "skipped"] },
+      reps: nullable({ type: "integer", minimum: 0 }),
+      weight_kg: nullable({ type: "number", minimum: 0 }),
+      distance_m: nullable({ type: "number", minimum: 0 }),
+      duration_sec: nullable({ type: "integer", minimum: 0 }),
+      rpe: nullable({ type: "integer", minimum: 1, maximum: 10 }),
+      rest_sec: nullable({ type: "integer", minimum: 0 }),
+      heart_rate_bpm: heartRateBpm,
+      notes: setNote,
+    },
+    required: ["status"],
+    additionalProperties: false,
+  },
+  AddSetRequest: {
+    type: "object",
+    properties: { planned: plannedSetValuesObject },
+    additionalProperties: false,
+  },
+  AddExerciseRequest: {
+    type: "object",
+    properties: { exercise_id: { type: "string", format: "uuid" } },
+    required: ["exercise_id"],
+    additionalProperties: false,
+  },
+  SessionUpdateRequest: {
+    type: "object",
+    properties: {
+      plan_id: nullable({ type: "string", format: "uuid" }),
+      title: nullable({ type: "string", minLength: 2, maxLength: 100 }),
+      planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: {
+        type: "integer",
+        minimum: 5,
+        maximum: 720,
+        description: "Planned length in minutes.",
+      },
+      status: { type: "string", enum: ["planned", "in_progress", "completed", "canceled"] },
+      completion_outcome: {
+        ...completionOutcomeSchema,
+        description:
+          "Only when the session transitions to completed; defaults to completed (400 E.SESSION.OUTCOME_WITHOUT_COMPLETION otherwise).",
+      },
+      visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
+      notes: sessionNote,
+      result_note: {
+        ...sessionNote,
+        description:
+          "What the athlete wrote after the workout (ADR-044). Only when the session is, or becomes, completed (400 E.SESSION.RESULT_NOTE_WITHOUT_RESULT otherwise). Editable on a completed session.",
+      },
+      recurrence_rule: nullable({ type: "string", maxLength: 255 }),
+      started_at: { type: "string", format: "date-time" },
+      completed_at: { type: "string", format: "date-time" },
+      calories: nullable({ type: "integer", minimum: 0 }),
+      exercises: {
+        type: "array",
+        maxItems: 50,
+        description: "Replaces all exercises and sets of the session.",
+        items: { $ref: "#/components/schemas/SessionExerciseInput" },
+      },
+    },
+    additionalProperties: false,
+  },
+  SessionWithExercises: {
+    type: "object",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      owner_id: { type: "string", format: "uuid" },
+      plan_id: nullable({ type: "string", format: "uuid" }),
+      title: nullable({ type: "string" }),
+      planned_at: { type: "string", format: "date-time" },
+      planned_duration_min: { type: "integer", minimum: 5, maximum: 720 },
+      status: { $ref: "#/components/schemas/SessionStatus" },
+      visibility: { type: "string", enum: ["private", "followers", "public", "link"] },
+      notes: nullable({ type: "string", description: "The plan's instructions." }),
+      result_note: nullable({
+        type: "string",
+        description: "What the athlete wrote after the workout (ADR-044).",
+      }),
+      photo: nullable({
+        allOf: [{ $ref: "#/components/schemas/SessionPhoto" }],
+        description: "The workout photo; only the owner receives it (null for anyone else).",
+      }),
+      recurrence_rule: nullable({ type: "string" }),
+      started_at: nullable({ type: "string", format: "date-time" }),
+      completed_at: nullable({ type: "string", format: "date-time" }),
+      completion_outcome: nullable(completionOutcomeSchema),
+      paused_at: nullable({
+        type: "string",
+        format: "date-time",
+        description: "Start of the current pause; null while running.",
+      }),
+      paused_seconds: {
+        type: "integer",
+        minimum: 0,
+        description:
+          "Total length of finished pauses. Active time = elapsed − paused_seconds − open pause.",
+      },
+      calories: nullable({ type: "integer" }),
+      points: nullable({ type: "integer", description: "Server-awarded points once completed." }),
+      gamification_rebuild_required: { type: "boolean" },
+      deleted_at: nullable({ type: "string", format: "date-time" }),
+      created_at: { type: "string", format: "date-time" },
+      updated_at: { type: "string", format: "date-time" },
+      exercises: {
         type: "array",
         items: {
           type: "object",
           properties: {
-            reps: { type: "integer", minimum: 1 },
-            weight: { type: "number", minimum: 0 },
-            rpe: { type: "number", minimum: 1, maximum: 10 },
+            id: { type: "string", format: "uuid" },
+            session_id: { type: "string", format: "uuid" },
+            exercise_id: nullable({ type: "string", format: "uuid" }),
+            exercise_name: nullable({
+              type: "string",
+              description: "Name snapshot at planning time.",
+            }),
+            order_index: { type: "integer", minimum: 1 },
+            status: exerciseStatusSchema,
+            source: setSourceSchema,
+            notes: nullable({ type: "string" }),
+            planned: plannedAttributesObject,
+            actual: actualAttributesObject,
+            sets: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string", format: "uuid" },
+                  order_index: { type: "integer", minimum: 1 },
+                  status: setStatusSchema,
+                  source: setSourceSchema,
+                  planned: plannedSetValuesObject,
+                  reps: nullable({ type: "integer" }),
+                  weight_kg: nullable({ type: "number" }),
+                  distance_m: nullable({ type: "number" }),
+                  duration_sec: nullable({ type: "integer" }),
+                  rpe: nullable({ type: "integer" }),
+                  rest_sec: nullable({ type: "integer" }),
+                  heart_rate_bpm: heartRateBpm,
+                  extras: { type: "object", additionalProperties: true },
+                  recorded_at: nullable({ type: "string", format: "date-time" }),
+                  notes: nullable({ type: "string" }),
+                },
+                required: ["id", "order_index", "status", "source"],
+              },
+            },
           },
-          required: ["reps"],
+          required: ["id", "session_id", "order_index", "status", "source", "sets"],
         },
       },
     },
-    required: ["exerciseId", "sets"],
+    required: [
+      "id",
+      "owner_id",
+      "planned_at",
+      "planned_duration_min",
+      "status",
+      "visibility",
+      "exercises",
+    ],
+  },
+  ScheduleConflictResponse: {
+    type: "object",
+    properties: {
+      error: {
+        type: "object",
+        properties: {
+          code: { type: "string", enum: ["E.SESSION.SCHEDULE_CONFLICT"] },
+          message: { type: "string" },
+          details: {
+            type: "object",
+            properties: {
+              conflictingSessionIds: {
+                type: "array",
+                minItems: 1,
+                items: { type: "string", format: "uuid" },
+                description: "Active sessions whose planned time overlaps the requested one.",
+              },
+            },
+            required: ["conflictingSessionIds"],
+          },
+          requestId: { type: "string" },
+        },
+        required: ["code", "message", "details"],
+      },
+    },
+    required: ["error"],
+  },
+  ValidationErrorResponse: {
+    type: "object",
+    description: "Request body rejected by schema validation (zod `flatten()` output).",
+    properties: {
+      error: {
+        type: "object",
+        properties: {
+          formErrors: { type: "array", items: { type: "string" } },
+          fieldErrors: {
+            type: "object",
+            additionalProperties: { type: "array", items: { type: "string" } },
+          },
+        },
+        required: ["formErrors", "fieldErrors"],
+      },
+    },
+    required: ["error"],
   },
   SessionListResponse: {
     type: "object",
@@ -865,6 +1554,50 @@ const schemas = {
       },
     },
     required: ["data", "meta"],
+  },
+  SessionPhoto: {
+    type: "object",
+    description: "A workout photo (ADR-044). A replaced photo has a new id and url.",
+    properties: {
+      id: { type: "string", format: "uuid" },
+      url: { type: "string", description: "Owner-only GET path of the image." },
+      mime_type: { type: "string", enum: ["image/jpeg"] },
+      bytes: { type: "integer", minimum: 0 },
+      uploaded_at: { type: "string", format: "date-time" },
+    },
+    required: ["id", "url", "mime_type", "bytes", "uploaded_at"],
+  },
+  SessionVibeChanges: {
+    type: "object",
+    properties: {
+      session_id: { type: "string", format: "uuid" },
+      changes: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            domain_code: {
+              type: "string",
+              enum: [
+                "strength",
+                "agility",
+                "endurance",
+                "explosivity",
+                "intelligence",
+                "regeneration",
+              ],
+            },
+            previous_level: { type: "number" },
+            new_level: { type: "number" },
+            change: { type: "number" },
+          },
+          required: ["domain_code", "previous_level", "new_level", "change"],
+          additionalProperties: false,
+        },
+      },
+    },
+    required: ["session_id", "changes"],
+    additionalProperties: false,
   },
   SessionEstimate: {
     type: "object",

@@ -5,18 +5,24 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY apps/backend/package.json apps/backend/
-COPY packages/*/package.json packages/*/
+# pnpm comes from the root package.json `packageManager` field, the same
+# version CI and the lockfile use; do not pin a different version here.
+ENV HUSKY=0
 
-RUN corepack enable && corepack prepare pnpm@10.34.5 --activate
+# pnpm fetch is lockfile-driven. Avoid wildcard COPY destinations for
+# workspace manifests because Docker treats the destination wildcard
+# literally and would create /app/packages/* as a workspace directory.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .pnpmfile.cjs ./
+
+RUN corepack enable && corepack install
+RUN test "pnpm@$(pnpm --version)" = "$(node -p "require('./package.json').packageManager")"
 RUN pnpm fetch --prod=false
 
 COPY . .
 
 RUN pnpm install --frozen-lockfile --prod=false --offline
 RUN pnpm --filter @fitvibe/backend run build
-RUN pnpm deploy --filter @fitvibe/backend --prod /app/backend-deploy
+RUN pnpm deploy --legacy --filter @fitvibe/backend --prod /app/backend-deploy
 
 FROM node:24-alpine AS runtime
 WORKDIR /app

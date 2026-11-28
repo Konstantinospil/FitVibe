@@ -1,5 +1,4 @@
 import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import { hashPassword } from "./password-hashing.service.js";
 import { env } from "../../config/env.js";
 import { incrementAuthPasswordReset } from "../../observability/metrics.js";
@@ -19,12 +18,9 @@ import { breachedPasswordChecker } from "./breached-password.service.js";
 import { issueAuthToken, TOKEN_TYPES } from "./auth.tokens.service.js";
 import { isEmailBlacklisted } from "../common/email-blacklist.repository.js";
 import { getRuntimeAppSetting } from "../system/app-settings.runtime.js";
+import { queueService } from "../../jobs/services/queue.factory.js";
 
 const SECONDS_PER_MINUTE = 60;
-const DUMMY_PASSWORD_HASH = bcrypt.hashSync(
-  "fitvibe-placeholder-password",
-  AUTH_SECURITY_POLICY.password.hashCost,
-);
 function passwordResetTtlSeconds(): number {
   return (
     Math.min(
@@ -34,58 +30,84 @@ function passwordResetTtlSeconds(): number {
   );
 }
 
-export async function requestPasswordReset(email: string): Promise<{ resetToken?: string }> {
+export const PASSWORD_RESET_DISPATCH_JOB = "auth.password-reset.dispatch";
+
+export type PasswordResetDispatchOutcome = "sent" | "no_email";
+
+/**
+ * Forgot-password request. Like registration (ADR-039) it only queues the
+ * work: the request reads no account data, so its answer and timing are the
+ * same whether or not the address has an account, and the reset link reaches
+ * only the mailbox.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
   const startTime = Date.now();
   // Count all requests equally; existence must never affect public feedback.
   incrementAuthPasswordReset("requested");
 
   try {
-    const normalized = email.toLowerCase();
-    const blocked = await isEmailBlacklisted(normalized);
-    const user = await findUserByEmail(normalized);
-    if (blocked || !user || user.status !== "active") {
-      await bcrypt.compare("dummy-password", DUMMY_PASSWORD_HASH);
-      return {};
-    }
-
-    const resetToken = await issueAuthToken(
-      user.id,
-      TOKEN_TYPES.PASSWORD_RESET,
-      passwordResetTtlSeconds(),
-    );
-
-    if (env.email.enabled) {
-      const resetUrl = `${env.frontendUrl}/reset-password?token=${resetToken}`;
-      await mailerService.send({
-        to: email,
-        subject: "Reset your FitVibe password",
-        html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2>Password Reset Request</h2>
-          <p>We received a request to reset your password. Click the link below to create a new password:</p>
-          <p>
-            <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
-              Reset Password
-            </a>
-          </p>
-          <p>Or copy and paste this link into your browser:</p>
-          <p style="color: #666; word-break: break-all;">${resetUrl}</p>
-          <p style="color: #999; font-size: 12px; margin-top: 32px;">
-            This link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.
-          </p>
-          <p style="color: #999; font-size: 12px;">
-            If you didn't request this password reset, you can safely ignore this email.
-          </p>
-        </div>
-      `,
-        text: `Password Reset Request\n\nWe received a request to reset your password. Please visit the following link to create a new password:\n\n${resetUrl}\n\nThis link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.\n\nIf you didn't request this password reset, you can safely ignore this email.`,
-      });
-    }
-
-    return { resetToken };
+    await queueService.enqueue({
+      name: PASSWORD_RESET_DISPATCH_JOB,
+      payload: { email: email.trim().toLowerCase() },
+      sensitive: true,
+    });
   } finally {
     await normalizeAuthTiming(startTime);
   }
+}
+
+/**
+ * Background half of the forgot-password request. Runs in the job worker.
+ */
+export async function dispatchPasswordReset(
+  payload: Record<string, unknown>,
+): Promise<PasswordResetDispatchOutcome> {
+  if (typeof payload.email !== "string" || !payload.email.includes("@")) {
+    throw new Error("Invalid password reset dispatch payload");
+  }
+  const email = payload.email.trim().toLowerCase();
+  if (await isEmailBlacklisted(email)) {
+    return "no_email";
+  }
+  const user = await findUserByEmail(email);
+  if (!user || user.status !== "active") {
+    return "no_email";
+  }
+
+  const resetToken = await issueAuthToken(
+    user.id,
+    TOKEN_TYPES.PASSWORD_RESET,
+    passwordResetTtlSeconds(),
+  );
+
+  const resetUrl = `${env.frontendUrl}/reset-password?token=${resetToken}`;
+  // Always hand the message to the mailer: it delivers over SMTP when enabled
+  // and keeps it in the non-production test mailbox when capture is on.
+  await mailerService.send({
+    to: email,
+    subject: "Reset your FitVibe password",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Password Reset Request</h2>
+        <p>We received a request to reset your password. Click the link below to create a new password:</p>
+        <p>
+          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">
+            Reset Password
+          </a>
+        </p>
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="color: #666; word-break: break-all;">${resetUrl}</p>
+        <p style="color: #999; font-size: 12px; margin-top: 32px;">
+          This link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.
+        </p>
+        <p style="color: #999; font-size: 12px;">
+          If you didn't request this password reset, you can safely ignore this email.
+        </p>
+      </div>
+      `,
+    text: `Password Reset Request\n\nWe received a request to reset your password. Please visit the following link to create a new password:\n\n${resetUrl}\n\nThis link will expire in ${Math.floor(passwordResetTtlSeconds() / 60)} minutes.\n\nIf you didn't request this password reset, you can safely ignore this email.`,
+  });
+  return "sent";
 }
 
 function invalidResetToken(): HttpError {
