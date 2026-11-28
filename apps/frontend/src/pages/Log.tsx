@@ -8,6 +8,7 @@ import {
   createSession,
   type CreateSessionRequest,
   type SessionExerciseInput,
+  type IntakeKind,
 } from "../services/sessionApi";
 import {
   ExercisePicker,
@@ -29,6 +30,7 @@ import {
 } from "../lib/forms/setMetrics";
 import { apiErrorCode } from "../services/httpApi";
 import { ResultNoteField } from "../components/domain/ResultNoteField";
+import { INTAKE_KINDS, INTAKE_MAX_AMOUNT, parseIntakeAmount } from "../lib/sessions/intake";
 import { useLoadUnit } from "../hooks/useLoadUnit";
 import type { LoadUnit } from "../lib/units/load";
 import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
@@ -95,6 +97,11 @@ const Log: React.FC = () => {
   const [time, setTime] = useState(() => localTimeKey(initialStart));
   const [length, setLength] = useState(String(TRAINING_DATA_CONFIG.sessionDurationDefaultMinutes));
   const [resultNote, setResultNote] = useState("");
+  // ADR-045: optional totals for the workout, saved as intake entries.
+  const [intakeText, setIntakeText] = useState<Record<IntakeKind, string>>({
+    water: "",
+    energy: "",
+  });
   const [exercises, setExercises] = useState<LoggedExercise[]>([]);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -187,6 +194,18 @@ const Log: React.FC = () => {
       );
       return;
     }
+    const intake: { kind: IntakeKind; amount: number }[] = [];
+    for (const kind of INTAKE_KINDS) {
+      if (!intakeText[kind].trim()) {
+        continue;
+      }
+      const amount = parseIntakeAmount(kind, intakeText[kind]);
+      if (amount === null) {
+        setMessage(t(`workoutIntake.invalid.${kind}`, { max: INTAKE_MAX_AMOUNT[kind] }));
+        return;
+      }
+      intake.push({ kind, amount });
+    }
     if (exercises.length === 0) {
       setMessage(t("logSurface.errors.noExercises"));
       return;
@@ -215,6 +234,7 @@ const Log: React.FC = () => {
       planned_duration_min: minutes,
       // A logged workout is already done, so its note is a post-workout note (ADR-044).
       result_note: resultNote.trim() || null,
+      ...(intake.length > 0 ? { intake } : {}),
       visibility: "private",
       exercises: toExerciseInputs(exercises, loadUnit),
     });
@@ -286,6 +306,27 @@ const Log: React.FC = () => {
             </label>
           </div>
           <ResultNoteField value={resultNote} onChange={setResultNote} disabled={busy} />
+          <div className="set-fields">
+            {INTAKE_KINDS.map((kind) => (
+              <label key={kind} className="form-label">
+                <span className="form-label-text">{t(`workoutIntake.fields.total.${kind}`)}</span>
+                <InputControl
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={INTAKE_MAX_AMOUNT[kind]}
+                  step={1}
+                  value={intakeText[kind]}
+                  disabled={busy}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setIntakeText((current) => ({ ...current, [kind]: value }));
+                    setMessage(null);
+                  }}
+                />
+              </label>
+            ))}
+          </div>
           {message ? <FormFeedback tone="warning">{message}</FormFeedback> : null}
           <Button type="submit" isLoading={busy}>
             {t("logSurface.actions.save")}

@@ -1484,5 +1484,43 @@
       "removeMessage": "La foto se eliminará. Puedes añadir otra más tarde.",
       "finishUploadFailed": "Tu entrenamiento está guardado, pero no se pudo subir la foto. Vuelve a añadirla aquí."
     }
+  },
+  "workoutIntake": {
+    "title": "Agua y comida",
+    "kind": {
+      "water": "Agua",
+      "energy": "Energía de la comida"
+    },
+    "amount": {
+      "water": "{{amount}} ml",
+      "energy": "{{amount}} kcal"
+    },
+    "quickWater": "Añadir {{amount}}",
+    "fields": {
+      "kind": "Tipo",
+      "amount": {
+        "water": "Agua (ml)",
+        "energy": "Energía de la comida (kcal)"
+      },
+      "total": {
+        "water": "Agua bebida (ml)",
+        "energy": "Energía de la comida ingerida (kcal)"
+      }
+    },
+    "add": "Añadir",
+    "entries": "Agua y comida registradas",
+    "entry": {
+      "water": "{{amount}} de agua a las {{time}}",
+      "energy": "{{amount}} de comida a las {{time}}"
+    },
+    "remove": "Quitar",
+    "removeEntry": "Quitar {{amount}}",
+    "empty": "Aún no hay nada registrado.",
+    "invalid": {
+      "water": "Introduce mililitros enteros de 1 a {{max}}.",
+      "energy": "Introduce kilocalorías enteras de 1 a {{max}}."
+    },
+    "saveError": "No se pudo guardar la entrada. Inténtalo de nuevo.",
+    "removeError": "No se pudo quitar la entrada. Inténtalo de nuevo."
   }
 }

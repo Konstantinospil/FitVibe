@@ -8,6 +8,9 @@ import type {
   SessionExercise,
   SessionExerciseAttributes,
   SessionExerciseSet,
+  IntakeKind,
+  SessionIntake,
+  SessionIntakeEntry,
   SessionPhoto,
   SessionQuery,
   SessionExerciseStatus,
@@ -56,6 +59,41 @@ export async function findSessionPhoto(
         uploaded_at: toDateString(row.created_at) ?? "",
       }
     : null;
+}
+
+/** ADR-045: the athlete's water and food energy, one row per entry. */
+export const INTAKE_TABLE = "session_intake_entries";
+
+interface IntakeRow {
+  id: string;
+  kind: IntakeKind;
+  amount: number;
+  recorded_at: Date | string;
+}
+
+const toIntakeEntry = (row: IntakeRow): SessionIntakeEntry => ({
+  id: row.id,
+  kind: row.kind,
+  amount: Number(row.amount),
+  recorded_at: new Date(row.recorded_at).toISOString(),
+});
+
+/** The entries in the order they were recorded, with a total per kind. */
+export async function findSessionIntake(
+  sessionId: string,
+  trx?: Knex.Transaction,
+): Promise<SessionIntake> {
+  const rows = (await executor(trx)(INTAKE_TABLE)
+    .where({ session_id: sessionId })
+    .orderBy([
+      { column: "recorded_at", order: "asc" },
+      { column: "created_at", order: "asc" },
+    ])
+    .select("id", "kind", "amount", "recorded_at")) as IntakeRow[];
+  const entries = rows.map(toIntakeEntry);
+  const total = (kind: IntakeKind) =>
+    entries.filter((entry) => entry.kind === kind).reduce((sum, entry) => sum + entry.amount, 0);
+  return { entries, totals: { water_ml: total("water"), energy_kcal: total("energy") } };
 }
 
 interface SessionQueryOptions {
@@ -467,6 +505,7 @@ export async function getSessionWithDetails(
     ...session,
     exercises,
     photo: await findSessionPhoto(id, trx),
+    intake: await findSessionIntake(id, trx),
   };
 }
 

@@ -25,11 +25,31 @@ import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotenc
 import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
 import { HEART_RATE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
 import {
+  INTAKE_KINDS,
+  INTAKE_LIMITS,
+  addIntakeEntry,
+  deleteIntakeEntry,
+  intakeMaxAmount,
+} from "./sessions.intake.service.js";
+import type { IntakeKind } from "./sessions.types.js";
+import {
   SESSION_PHOTO_CACHE_CONTROL,
   deleteSessionPhoto,
   readSessionPhoto,
   saveSessionPhoto,
 } from "./sessions.photo.service.js";
+
+/** One water (ml) or food-energy (kcal) entry, within its kind's limit (ADR-045). */
+const intakeEntrySchema = z
+  .object({
+    kind: z.enum(INTAKE_KINDS as [IntakeKind, ...IntakeKind[]]),
+    amount: z.number().int().min(1),
+  })
+  .strict()
+  .refine((entry) => entry.amount <= intakeMaxAmount(entry.kind), {
+    message: "amount is above the limit for this kind",
+    path: ["amount"],
+  });
 
 const noteSchema = z.string().max(SESSION_TEXT_LIMITS.noteMaxLength).nullable().optional();
 const setNoteSchema = z.string().max(SESSION_TEXT_LIMITS.setNoteMaxLength).nullable().optional();
@@ -149,6 +169,8 @@ const createSchema = z.object({
   result_note: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
   exercises: z.array(sessionExerciseSchema).max(50).optional(),
+  /** ADR-045: only with status "completed". */
+  intake: z.array(intakeEntrySchema).max(INTAKE_LIMITS.maxEntriesPerLog).optional(),
 });
 
 export const CreateSessionSchema = createSchema;
@@ -416,6 +438,37 @@ export async function getSessionVibeChangesHandler(req: Request, res: Response):
 
   const id = readRouteParam(req.params.id, "id");
   res.json(await getSessionVibeChanges(userId, id));
+}
+
+// --- Workout intake (ADR-045) -------------------------------------------------
+
+export async function addIntakeEntryHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  const parsed = intakeEntrySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+  res
+    .status(201)
+    .json(await addIntakeEntry(userId, readRouteParam(req.params.id, "id"), parsed.data));
+}
+
+export async function deleteIntakeEntryHandler(req: Request, res: Response): Promise<void> {
+  const userId = requireUser(req, res);
+  if (!userId) {
+    return;
+  }
+  res.json(
+    await deleteIntakeEntry(
+      userId,
+      readRouteParam(req.params.id, "id"),
+      readRouteParam(req.params.entryId, "entryId"),
+    ),
+  );
 }
 
 // --- Workout photo (ADR-044) -------------------------------------------------

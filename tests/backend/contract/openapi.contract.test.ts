@@ -32,6 +32,7 @@ import {
   HEART_RATE_LIMITS,
   SESSION_TEXT_LIMITS,
 } from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
+import { INTAKE_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.intake.service.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -198,6 +199,24 @@ describe("OpenAPI contract alignment", () => {
     for (const set of [schemas.SessionSetInput, schemas.RecordSetRequest]) {
       expect(set.properties.notes.maxLength).toBe(SESSION_TEXT_LIMITS.setNoteMaxLength);
     }
+  });
+
+  it("documents workout intake within the server's limits (ADR-045)", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    const entry = schemas.SessionIntakeEntryInput;
+    expect(entry.properties.kind.enum).toEqual(["water", "energy"]);
+    expect(entry.properties.amount.maximum).toBe(
+      Math.max(INTAKE_LIMITS.waterMaxMl, INTAKE_LIMITS.energyMaxKcal),
+    );
+    expect(entry.description).toContain(`at most ${INTAKE_LIMITS.waterMaxMl}`);
+    expect(entry.description).toContain(`at most ${INTAKE_LIMITS.energyMaxKcal}`);
+    expect(schemas.SessionCreateRequest.properties.intake.maxItems).toBe(
+      INTAKE_LIMITS.maxEntriesPerLog,
+    );
+    const paths = (openApiSpec as any).paths;
+    expect(Object.keys(paths["/sessions/{id}/intake"])).toEqual(["post"]);
+    expect(Object.keys(paths["/sessions/{id}/intake/{entryId}"])).toEqual(["delete"]);
+    expect(schemas.SessionWithExercises.properties.intake).toMatchObject({ nullable: true });
   });
 
   it("documents the owner-only workout photo (ADR-044)", () => {
