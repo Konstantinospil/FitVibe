@@ -11,7 +11,7 @@ import { FormActions } from "../components/composites/FormStack";
 import { Modal } from "../components/composites/Modal";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
-import WorkoutEditor from "../components/composites/WorkoutEditor";
+import { LazyWorkoutEditor } from "../components/composites/LazyWorkoutEditor";
 import { useCurrentUserId } from "../lib/auth/useCurrentUserId";
 import { logger } from "../utils/logger";
 
@@ -282,7 +282,7 @@ const Library: React.FC = () => {
         onSaved={() => void refresh()}
       />
 
-      <WorkoutEditor
+      <LazyWorkoutEditor
         open={workoutExercise !== undefined}
         initialExercise={workoutExercise ?? null}
         onClose={() => setWorkoutExercise(undefined)}
