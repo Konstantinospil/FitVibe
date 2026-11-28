@@ -9,7 +9,7 @@
 
 ## Status
 
-FitVibe is under active development. The `main` branch is the production/release baseline and currently reports version **2.2.0**.
+FitVibe is under active development. The `main` branch is the production/release baseline and currently reports version **2.3.0**.
 
 This README describes the repository as it exists today. The product requirements under
 [`docs/1.Product_Requirements/`](docs/1.Product_Requirements/) define the intended product scope; open GitHub issues and roadmap items may therefore describe capabilities that are still being completed or verified.
@@ -18,14 +18,14 @@ This README describes the repository as it exists today. The product requirement
 
 FitVibe is designed around six complementary training domains. The goal is not only to record individual workouts, but to make training structure, consistency, progress, and balance visible over time.
 
-| Vibe | Element | Focus |
-| --- | --- | --- |
-| Strength | Earth | Force, resistance and strength-oriented training |
-| Agility | Air | Coordination, movement quality and skill |
-| Endurance | Water | Sustained aerobic and work-capacity training |
-| Explosivity | Fire | Speed, power and short high-intensity efforts |
-| Intelligence | Shadow | Skill, strategy and cognitively demanding activities |
-| Regeneration | Aether | Recovery, mobility and restorative work |
+| Vibe         | Element | Focus                                                |
+| ------------ | ------- | ---------------------------------------------------- |
+| Strength     | Earth   | Force, resistance and strength-oriented training     |
+| Agility      | Air     | Coordination, movement quality and skill             |
+| Endurance    | Water   | Sustained aerobic and work-capacity training         |
+| Explosivity  | Fire    | Speed, power and short high-intensity efforts        |
+| Intelligence | Shadow  | Skill, strategy and cognitively demanding activities |
+| Regeneration | Aether  | Recovery, mobility and restorative work              |
 
 ## Current repository capabilities
 
@@ -67,17 +67,17 @@ FitVibe/
 
 ### Main technology stack
 
-| Layer | Technologies |
-| --- | --- |
-| Frontend | React 19, Preact-compatible tooling, Vite 8, TypeScript 6, TanStack Query, Zustand, i18next |
-| Backoffice | React 19 / Vite 8, shared `@fitvibe/ui` components |
-| Backend | Node.js 24+, Express 5, TypeScript 6, Knex |
-| Persistence | PostgreSQL |
-| Jobs/cache | Redis + BullMQ |
-| File processing | ClamAV, Sharp |
-| Security | Helmet, CSRF protection, JWT, bcrypt, TOTP/2FA, rate limiting |
-| Observability | OpenTelemetry, Prometheus-compatible metrics, Grafana/Loki/Tempo assets |
-| Delivery | Docker Compose, Nginx, GitHub Actions, GHCR |
+| Layer           | Technologies                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| Frontend        | React 19, Preact-compatible tooling, Vite 8, TypeScript 6, TanStack Query, Zustand, i18next |
+| Backoffice      | React 19 / Vite 8, shared `@fitvibe/ui` components                                          |
+| Backend         | Node.js 24+, Express 5, TypeScript 6, Knex                                                  |
+| Persistence     | PostgreSQL                                                                                  |
+| Jobs/cache      | Redis + BullMQ                                                                              |
+| File processing | ClamAV, Sharp                                                                               |
+| Security        | Helmet, CSRF protection, JWT, bcrypt, TOTP/2FA, rate limiting                               |
+| Observability   | OpenTelemetry, Prometheus-compatible metrics, Grafana/Loki/Tempo assets                     |
+| Delivery        | Docker Compose, Nginx, GitHub Actions, GHCR                                                 |
 
 Kubernetes manifests remain in the repository for infrastructure documentation/experimentation, while the authoritative current production runtime contract is Docker Compose.
 
@@ -131,11 +131,11 @@ pnpm dev
 
 Typical development endpoints are:
 
-| Service | Address |
-| --- | --- |
+| Service       | Address                 |
+| ------------- | ----------------------- |
 | User frontend | `http://localhost:5173` |
-| Backoffice | `http://localhost:5174` |
-| Backend API | `http://localhost:4000` |
+| Backoffice    | `http://localhost:5174` |
+| Backend API   | `http://localhost:4000` |
 
 Run migrations explicitly when required:
 
@@ -239,16 +239,16 @@ The repository includes controls and automated checks for authentication/session
 
 ## Documentation
 
-| Area | Documentation |
-| --- | --- |
-| Product requirements | [docs/1.Product_Requirements/](docs/1.Product_Requirements/) |
-| Technical design & ADRs | [docs/2.Technical_Design_Document/](docs/2.Technical_Design_Document/) |
-| Design system | [docs/3.Sensory_Design_System/](docs/3.Sensory_Design_System/) |
-| Testing & QA | [docs/4.Testing_and_Quality_Assurance_Plan/](docs/4.Testing_and_Quality_Assurance_Plan/) |
-| Policies | [docs/5.Policies/](docs/5.Policies/) |
-| Implementation notes | [docs/6.Implementation/](docs/6.Implementation/) |
-| API documentation | [docs/api/](docs/api/) |
-| Documentation hub | [docs/README.md](docs/README.md) |
+| Area                    | Documentation                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| Product requirements    | [docs/1.Product_Requirements/](docs/1.Product_Requirements/)                             |
+| Technical design & ADRs | [docs/2.Technical_Design_Document/](docs/2.Technical_Design_Document/)                   |
+| Design system           | [docs/3.Sensory_Design_System/](docs/3.Sensory_Design_System/)                           |
+| Testing & QA            | [docs/4.Testing_and_Quality_Assurance_Plan/](docs/4.Testing_and_Quality_Assurance_Plan/) |
+| Policies                | [docs/5.Policies/](docs/5.Policies/)                                                     |
+| Implementation notes    | [docs/6.Implementation/](docs/6.Implementation/)                                         |
+| API documentation       | [docs/api/](docs/api/)                                                                   |
+| Documentation hub       | [docs/README.md](docs/README.md)                                                         |
 
 Application-specific documentation:
 
