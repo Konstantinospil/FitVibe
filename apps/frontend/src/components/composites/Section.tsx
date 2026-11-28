@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 
 export interface SectionProps extends React.HTMLAttributes<HTMLElement> {
   as?: "section" | "div" | "article";

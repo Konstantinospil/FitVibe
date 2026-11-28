@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { useUiText } from "../i18n/ui";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button, InputControl, TextareaControl } from "@fitvibe/ui";

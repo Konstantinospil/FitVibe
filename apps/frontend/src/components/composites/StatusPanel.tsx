@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { CheckCircle2, CircleAlert, LoaderCircle, XCircle } from "lucide-react";
 import { Button } from "@fitvibe/ui";
 import { FormFeedback, type FeedbackTone } from "./FormStack";

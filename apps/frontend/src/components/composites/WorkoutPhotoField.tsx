@@ -1,4 +1,5 @@
-import React, { useId } from "react";
+import type React from "react";
+import { useId } from "react";
 import { Button } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { ImageFilePicker } from "./ImageFilePicker";

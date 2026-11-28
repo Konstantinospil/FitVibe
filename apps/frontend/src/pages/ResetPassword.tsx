@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+import type React from "react";
+import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";

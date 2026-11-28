@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { useTranslation } from "react-i18next";
 import AuthPageLayout from "../components/AuthPageLayout";
 import LoginFormContent from "./LoginFormContent";

@@ -1,4 +1,5 @@
-import React, { forwardRef, useId, useState } from "react";
+import type React from "react";
+import { forwardRef, useId, useState } from "react";
 export type SwitchState = "inactive" | "active" | "hover" | "disabled";
 export interface SwitchProps extends Omit<
   React.InputHTMLAttributes<HTMLInputElement>,

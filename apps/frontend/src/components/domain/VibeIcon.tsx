@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import type { VibeKey } from "../../constants/vibes";
 import strengthIcon from "../../assets/icons/earth-strength.svg";
 import agilityIcon from "../../assets/icons/air-agility.svg";

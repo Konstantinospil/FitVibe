@@ -1,4 +1,5 @@
-import React, { useId, useState } from "react";
+import type React from "react";
+import { useId, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CustomScrollbar } from "../components/CustomScrollbar";

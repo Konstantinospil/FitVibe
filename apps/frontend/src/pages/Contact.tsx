@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, InputField, TextareaField } from "@fitvibe/ui";
 import { FormFeedback, FormStack } from "../components/composites/FormStack";

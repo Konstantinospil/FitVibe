@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";

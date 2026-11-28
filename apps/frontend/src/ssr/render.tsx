@@ -3,7 +3,6 @@
  * Renders React components to HTML string for SSR
  */
 
-import React from "react";
 import { renderToString } from "react-dom/server";
 import { QueryClientProvider, dehydrate, type QueryClient } from "@tanstack/react-query";
 import { Router } from "../routes/Router.js";

@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import "./CustomScrollbar.css";
 
 export interface CustomScrollbarProps extends React.HTMLAttributes<HTMLDivElement> {

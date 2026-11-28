@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { TextareaControl } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";
 import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";

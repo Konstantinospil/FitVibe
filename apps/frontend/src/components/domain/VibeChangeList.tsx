@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { useTranslation } from "react-i18next";
 import { MetricCard } from "@fitvibe/ui";
 import { VIBE_KEYS, type VibeKey } from "../../constants/vibes";

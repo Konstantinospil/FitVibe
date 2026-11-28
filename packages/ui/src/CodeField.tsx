@@ -1,4 +1,5 @@
-import React, { forwardRef, useId, useMemo, useState } from "react";
+import type React from "react";
+import { forwardRef, useId, useMemo, useState } from "react";
 import { InputControl } from "./FieldControls";
 export type CodeFieldState = "default" | "focus" | "error" | "disabled";
 export interface CodeFieldProps extends Omit<

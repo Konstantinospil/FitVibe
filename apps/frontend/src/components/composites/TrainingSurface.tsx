@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { Card, CardTitle } from "@fitvibe/ui";
 
 export type TrainingStatus = "default" | "success" | "warning" | "danger";

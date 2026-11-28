@@ -1,4 +1,5 @@
-import React, { Suspense, lazy } from "react";
+import type React from "react";
+import { Suspense, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import PublicPageLayout from "../components/PublicPageLayout";
 import Login from "../pages/Login";

@@ -1,4 +1,5 @@
-import React, { useId, useState, useMemo } from "react";
+import type React from "react";
+import { useId, useState, useMemo } from "react";
 import { useUiText } from "../i18n/ui";
 import { useNavigate } from "react-router-dom";
 import { Button, InputControl } from "@fitvibe/ui";
