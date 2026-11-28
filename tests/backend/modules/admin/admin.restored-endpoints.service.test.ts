@@ -102,11 +102,18 @@ describe("admin service: restored endpoints (#649)", () => {
       expect((await adminService.getOpsStatus()).backend.status).toBe("yellow");
     });
 
-    it("is red without a database and skips the count queries", async () => {
+    it("is red without a database, skips the count queries and reports them as unknown", async () => {
       jest.mocked(db.raw).mockRejectedValue(new Error("connection refused") as never);
       const status = await adminService.getOpsStatus();
       expect(status.backend.status).toBe("red");
-      expect(status.counts.openIssues).toBe(0);
+      // An outage must not look like an empty queue.
+      expect(status.counts).toEqual({
+        loggedInUsers: null,
+        unresolvedMessages: null,
+        violationReports: null,
+        unresolvedAuditLogs: null,
+        openIssues: null,
+      });
       expect(repo.countActiveSessions).not.toHaveBeenCalled();
     });
 

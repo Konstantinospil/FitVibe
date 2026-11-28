@@ -58,6 +58,10 @@ export const Modal: React.FC<ModalProps> = ({
     return null;
   }
 
+  // Conditional children such as `{flag ? <p /> : null}` leave only nulls;
+  // an empty body would still take its padding and show as a blank band.
+  const hasBody = React.Children.toArray(children).length > 0;
+
   return (
     <div
       data-component="modal-layer"
@@ -97,9 +101,11 @@ export const Modal: React.FC<ModalProps> = ({
             />
           ) : null}
         </header>
-        <CustomScrollbar data-slot="modal-body" label={t("scrollbar.dialogLabel")}>
-          {children}
-        </CustomScrollbar>
+        {hasBody ? (
+          <CustomScrollbar data-slot="modal-body" label={t("scrollbar.dialogLabel")}>
+            {children}
+          </CustomScrollbar>
+        ) : null}
         {footer ? <footer data-slot="modal-footer">{footer}</footer> : null}
       </div>
     </div>

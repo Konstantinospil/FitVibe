@@ -86,7 +86,7 @@ export const ExercisePicker: React.FC<ExercisePickerProps> = ({ catalog, disable
       <div className="exercise-picker">
         <div className="form-label">
           <span className="form-label-text">{fieldLabel}</span>
-          <div className="exercise-picker__search">
+          <div data-slot="field-control-wrap" className="exercise-picker__search">
             <Search aria-hidden="true" size={BUTTON_ICON_SIZES.md} />
             <InputControl
               value={catalog.search}

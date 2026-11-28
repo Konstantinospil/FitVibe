@@ -21,7 +21,11 @@ export const APP_SETTINGS_REGISTRY = {
     category: "security",
     sensitive: false,
     activation: "restart",
-    schema: z.number().int().min(AUTH_SECURITY_POLICY.password.minLengthFloor).max(128),
+    schema: z
+      .number()
+      .int()
+      .min(AUTH_SECURITY_POLICY.password.minLengthFloor)
+      .max(AUTH_SECURITY_POLICY.password.maxLength),
     defaultValue: AUTH_SECURITY_POLICY.password.minLengthFloor,
   },
   "security.global_rate_limit_points": {

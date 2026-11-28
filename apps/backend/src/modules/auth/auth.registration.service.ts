@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { hashPassword } from "./password-hashing.service.js";
 import { v4 as uuidv4 } from "uuid";
 import { env } from "../../config/env.js";
+import { AUTH_SECURITY_POLICY } from "../../config/security-policy.js";
 import { db } from "../../db/connection.js";
 import { acceptLegalDocumentVersion, getCurrentLegalPublication } from "../legal/legal.service.js";
 import { HttpError } from "../../utils/http.js";
@@ -247,7 +248,9 @@ export async function dispatchRegistrationRequest(
   const existing = await findUserByEmail(email);
   if (!existing) {
     await consumeOpenRegistrationLinks(emailHash, now);
-    const token = crypto.randomBytes(32).toString("base64url");
+    const token = crypto
+      .randomBytes(AUTH_SECURITY_POLICY.linkToken.randomBytes)
+      .toString("base64url");
     await insertRegistrationIntent({
       ...throttleOnlyRow,
       email,

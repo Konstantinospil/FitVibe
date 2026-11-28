@@ -22,6 +22,7 @@
   "status.violations": "Verstoßmeldungen",
   "status.audit": "Ungelöste Audit-Einträge",
   "status.issues": "Offene Vorgänge",
+  "status.unknown": "Unbekannt",
   "mfa.title": "Administratoraktion bestätigen",
   "mfa.description": "{action} erfordert einen neuen Code aus Ihrer Authenticator-App. Jeder Code kann nur einmal verwendet werden.",
   "mfa.code": "Authenticator-Code",

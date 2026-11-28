@@ -22,6 +22,7 @@
   "status.violations": "Violation reports",
   "status.audit": "Unresolved audit logs",
   "status.issues": "Open issues",
+  "status.unknown": "Unknown",
   "mfa.title": "Confirm administrator action",
   "mfa.description": "{action} requires a new code from your authenticator. A code can only be used once.",
   "mfa.code": "Authenticator code",

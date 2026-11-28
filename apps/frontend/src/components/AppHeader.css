@@ -24,6 +24,7 @@
 
 .app-header__brand {
   min-width: var(--app-header-brand-min);
+  overflow: hidden;
   flex: 1 1 var(--app-header-brand-basis);
   display: flex;
   align-items: center;
@@ -31,6 +32,10 @@
 }
 
 .app-header__slogan {
+  /* Long translations shorten instead of running under the navigation. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--color-text-secondary);
   font-family: var(--font-family-body);
   font-weight: var(--font-weight-regular);
@@ -50,6 +55,7 @@
 
 .app-header__nav-item {
   position: relative;
+  white-space: nowrap;
   min-height: var(--app-header-nav-target);
   min-width: var(--app-header-nav-target);
   display: inline-flex;
@@ -115,21 +121,10 @@
   flex: 0 0 auto;
 }
 
-@media (max-width: 1100px) {
-  .app-header__brand {
-    flex-basis: var(--app-header-brand-basis-compact);
-  }
-
-  .app-header__slogan {
-    display: none;
-  }
-
-  .app-header--writing .app-header__nav-item {
-    padding-inline: var(--space-xs);
-  }
-}
-
-@media (max-width: 920px) {
+/* The slogan and labelled items fit in every locale only from 1280px;
+   below that the longest translations (el, fr) overflow or overlap. */
+@media (max-width: 1279px) {
+  .app-header__slogan,
   .app-header__nav-label,
   .app-header__logout-label,
   .app-header .language-switcher__code {
@@ -140,7 +135,15 @@
     width: var(--app-header-nav-target);
     padding: var(--space-xs);
   }
+}
 
+@media (max-width: 1100px) {
+  .app-header__brand {
+    flex-basis: var(--app-header-brand-basis-compact);
+  }
+}
+
+@media (max-width: 920px) {
   .app-header__brand {
     min-width: var(--app-header-brand-min-narrow);
     flex-basis: var(--app-header-brand-min-narrow);
