@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Eye, Pencil, Plus } from "lucide-react";
 import { Button, InputControl, SelectControl } from "@fitvibe/ui";

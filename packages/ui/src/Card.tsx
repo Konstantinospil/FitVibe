@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 export type CardVariant = "surface" | "muted";
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   as?: keyof React.JSX.IntrinsicElements;

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { Briefcase, Camera, Code2, Play } from "lucide-react";
 import { IconButton } from "@fitvibe/ui";
 import { useTranslation } from "react-i18next";

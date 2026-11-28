@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { useUiText } from "../i18n/ui";
 import { InputControl, TextareaControl } from "@fitvibe/ui";
 import { Button } from "../components/ui/Button";

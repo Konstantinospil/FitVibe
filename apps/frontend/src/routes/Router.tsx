@@ -3,7 +3,8 @@
  * This component is used by both server and client entry points
  */
 
-import React, { Suspense, lazy, useState, useCallback } from "react";
+import type React from "react";
+import { Suspense, lazy, useState, useCallback } from "react";
 import { BrowserRouter, StaticRouter } from "react-router-dom";
 import type { QueryClient, DehydratedState } from "@tanstack/react-query";
 import * as AuthContext from "../contexts/AuthContext.js";

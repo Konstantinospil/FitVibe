@@ -1,4 +1,5 @@
-import React, { forwardRef, useId, useState } from "react";
+import type React from "react";
+import { forwardRef, useId, useState } from "react";
 import { IconButton } from "./IconButton";
 import { InputControl } from "./FieldControls";
 export type PasswordFieldState = "default" | "focus" | "error" | "disabled";

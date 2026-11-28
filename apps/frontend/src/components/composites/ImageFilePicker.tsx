@@ -1,4 +1,5 @@
-import React, { useRef } from "react";
+import type React from "react";
+import { useRef } from "react";
 import { Button, type ButtonProps } from "@fitvibe/ui";
 import {
   IMAGE_FILE_ACCEPT,

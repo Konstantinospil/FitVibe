@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { createPortal } from "react-dom";
 import { GripVertical } from "lucide-react";
 import { Button, IconButton } from "@fitvibe/ui";

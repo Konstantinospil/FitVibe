@@ -1,4 +1,5 @@
-import React, { forwardRef } from "react";
+import type React from "react";
+import { forwardRef } from "react";
 import type { ButtonSize } from "./Button";
 export type IconButtonVariant = "ghost" | "surface" | "danger";
 export interface IconButtonProps extends Omit<

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import PageIntro from "./PageIntro";
 import Footer from "./Footer";
 import HeaderUtilitiesBar from "./HeaderUtilities";

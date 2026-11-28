@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import type React from "react";
+import { useMemo } from "react";
 export type AvatarSize = "sm" | "lg";
 export type AvatarFormat = "initials" | "photo";
 export type AvatarStatus = "online" | "offline" | "unknown";

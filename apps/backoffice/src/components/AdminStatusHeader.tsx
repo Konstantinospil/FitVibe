@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { useUiText } from "../i18n/ui";
 import { useQuery } from "@tanstack/react-query";
 import { getOpsStatus, type OpsLightStatus } from "../services/api";

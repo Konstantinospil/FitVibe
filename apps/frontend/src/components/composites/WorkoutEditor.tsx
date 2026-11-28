@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, Minus, Play, Plus } from "lucide-react";
 import { Button, IconButton, InputControl, SelectControl, TextareaControl } from "@fitvibe/ui";

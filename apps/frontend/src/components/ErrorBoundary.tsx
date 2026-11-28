@@ -1,4 +1,5 @@
-import React, { Component, type ReactNode } from "react";
+import type React from "react";
+import { Component, type ReactNode } from "react";
 import { withTranslation, type WithTranslation } from "react-i18next";
 import { Button } from "@fitvibe/ui";
 import { logger } from "../utils/logger.js";

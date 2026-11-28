@@ -1,4 +1,5 @@
-import React, { useEffect, useId, useRef } from "react";
+import type React from "react";
+import { useEffect, useId, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { IconButton } from "@fitvibe/ui";
