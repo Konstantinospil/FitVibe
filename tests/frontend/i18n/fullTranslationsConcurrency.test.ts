@@ -16,9 +16,31 @@ describe("loadFullTranslations concurrency", () => {
 
     await Promise.all([first, viaEnsure]);
 
+    // The app's strings are registered; the legal documents are not, since only
+    // the Terms and Privacy pages need them (ensureLegalTranslationsLoaded).
+    expect(config.default.getResource("en", "translation", "settings")).toBeDefined();
     const terms = config.default.getResource("en", "translation", "terms") as
       Record<string, unknown> | undefined;
-    expect(terms && "section1" in terms).toBe(true);
+    expect(terms && "section1" in terms).toBe(false);
+  });
+
+  it("loads the legal documents only when a legal page asks for them", async () => {
+    const config = await import("../../src/i18n/config");
+    await Promise.all([config.ensurePrivateTranslationsLoaded(), config.minimalTranslationsReady]);
+    await config.ensureLegalTranslationsLoaded();
+
+    const terms = config.default.getResource("en", "translation", "terms") as Record<
+      string,
+      unknown
+    >;
+    const privacy = config.default.getResource("en", "translation", "privacy") as Record<
+      string,
+      unknown
+    >;
+    expect("section1" in terms).toBe(true);
+    expect("consent" in privacy).toBe(true);
+    // The app's own short entries for the legal pages are kept, not replaced.
+    expect(terms.title).toBeTruthy();
   });
 
   it("registers the full bundle even when started before the login strings finish", async () => {

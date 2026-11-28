@@ -3,12 +3,16 @@ import {
   ensurePrivateTranslationsLoaded,
   loadFullTranslations,
   loadLanguageTranslations,
+  ensureLegalTranslationsLoaded,
 } from "../../src/i18n/config";
 import i18n from "../../src/i18n/config";
 
 describe("i18n config", () => {
   const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
-  const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  const originalLocalStorageDescriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "localStorage",
+  );
   const originalNavigatorDescriptor = Object.getOwnPropertyDescriptor(globalThis, "navigator");
   const originalWindowNavigatorDescriptor = Object.getOwnPropertyDescriptor(window, "navigator");
   const originalNavigatorLanguageDescriptor = Object.getOwnPropertyDescriptor(
@@ -602,7 +606,10 @@ describe("privacy consent localization contract", () => {
   it.each(["en", "de", "fr", "es", "el"] as const)(
     "loads every acknowledgement action and error message for %s",
     async (language) => {
+      // The consent strings come with the legal documents, loaded by the legal pages.
       await loadLanguageTranslations(language);
+      await i18n.changeLanguage(language);
+      await ensureLegalTranslationsLoaded();
       const bundle = i18n.getResourceBundle(language, "translation") as {
         privacy?: { consent?: Record<string, string> };
       };
