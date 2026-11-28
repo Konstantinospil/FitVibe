@@ -52,6 +52,9 @@ export function ensureNonNegativeInteger(
   return normalized;
 }
 
+/** Effort scale of a set (rating of perceived exertion). */
+export const RPE_LIMITS = { min: 1, max: 10 } as const;
+
 function ensureRpeRange(
   name: string,
   value: number | null | undefined,
@@ -60,8 +63,12 @@ function ensureRpeRange(
   if (value === null || value === undefined) {
     return null;
   }
-  if (!Number.isInteger(value) || value < 1 || value > 10) {
-    throw new HttpError(422, "E.SESSION.INVALID_SET", `${context}: ${name} must be 1-10`);
+  if (!Number.isInteger(value) || value < RPE_LIMITS.min || value > RPE_LIMITS.max) {
+    throw new HttpError(
+      422,
+      "E.SESSION.INVALID_SET",
+      `${context}: ${name} must be ${RPE_LIMITS.min}-${RPE_LIMITS.max}`,
+    );
   }
   return value;
 }

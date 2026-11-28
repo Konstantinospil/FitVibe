@@ -19,7 +19,7 @@ export const TOKEN_TYPES = {
 } as const;
 
 function generateToken(): { raw: string; hash: string } {
-  const raw = crypto.randomBytes(32).toString("base64url");
+  const raw = crypto.randomBytes(AUTH_SECURITY_POLICY.linkToken.randomBytes).toString("base64url");
   const hash = crypto.createHash("sha256").update(raw).digest("hex");
   return { raw, hash };
 }

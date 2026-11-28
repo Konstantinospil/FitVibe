@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { deleteExercise, listExercises, listExerciseTypes, type Exercise } from "../services/api";
 import ExerciseCreator from "../components/composites/ExerciseCreator";
+import { FormActions } from "../components/composites/FormStack";
 import { Modal } from "../components/composites/Modal";
 import { RetryErrorPanel } from "../components/composites/StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "../components/composites/TrainingSurface";
@@ -133,7 +134,7 @@ const Library: React.FC = () => {
           <p>{t("librarySurface.description")}</p>
         </div>
 
-        <div data-slot="library-actions">
+        <FormActions data-slot="library-actions">
           <Button
             variant="secondary"
             leadingIcon={<Plus />}
@@ -144,7 +145,7 @@ const Library: React.FC = () => {
           <Button leadingIcon={<Plus />} onClick={() => setCreatorExercise(null)}>
             {t("librarySurface.actions.createExercise")}
           </Button>
-        </div>
+        </FormActions>
       </div>
 
       <TrainingPanel title={t("librarySurface.sections.search")}>
@@ -207,7 +208,7 @@ const Library: React.FC = () => {
                     .filter(Boolean)
                     .join(" · ")}
                   trailing={
-                    <div data-slot="library-card-actions">
+                    <FormActions data-slot="library-card-actions">
                       <Button
                         size="sm"
                         variant="ghost"
@@ -246,7 +247,7 @@ const Library: React.FC = () => {
                           </Button>
                         </>
                       ) : null}
-                    </div>
+                    </FormActions>
                   }
                 />
               ))}

@@ -9,7 +9,23 @@ export const AUTH_SECURITY_POLICY = {
   password: {
     minLengthFloor: 12,
     privilegedMinLengthFloor: 16,
+    maxLength: 128,
     hashCost: 12,
+  },
+  account: {
+    usernameMinLength: 3,
+    usernameMaxLength: 50,
+    // RFC 5321 limit for a forward path, the longest address a mail server accepts.
+    emailMaxLength: 254,
+    minAgeYears: 13,
+    maxAgeYears: 120,
+  },
+  // One-time links (verification, reset, registration, contact): random bytes
+  // encoded as base64url, and the length range a submitted token may have.
+  linkToken: {
+    randomBytes: 32,
+    minLength: 20,
+    maxLength: 128,
   },
   timing: {
     minOperationMs: 300,

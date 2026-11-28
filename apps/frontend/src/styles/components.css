@@ -506,8 +506,8 @@
 }
 
 .schedule-session-card--conflict {
-  outline: 2px solid var(--color-danger-border);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-danger-border);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .schedule-session-card__conflict {
@@ -520,15 +520,17 @@
   opacity: var(--opacity-subtle);
 }
 
-.schedule-session-card__handle {
-  /* Touch drags start on the handle only, so the rest of the page keeps native scrolling.
-     Dragging from the handle must not start a text selection across the page. */
+.schedule-session-card__handle,
+.schedule-chip--movable {
+  /* Touch drags start on the handle or movable chip only, so the rest of the page
+     keeps native scrolling. Dragging must not start a text selection across the page. */
   touch-action: none;
   user-select: none;
   cursor: grab;
 }
 
-.schedule-session-card__handle:active {
+.schedule-session-card__handle:active,
+.schedule-chip--movable:active {
   cursor: grabbing;
 }
 
@@ -540,7 +542,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
-  max-width: min(18rem, 70vw);
+  /* Fixed position: 100% is the viewport, less the margin on both sides. */
+  max-width: min(calc(var(--space-3xl) * 5), calc(100% - var(--space-sm) * 2));
   margin: var(--space-sm) 0 0 var(--space-sm);
   padding: var(--space-xs) var(--space-sm);
   background: var(--color-surface);
@@ -583,10 +586,11 @@
   overflow-x: auto;
 }
 
+/* maintainability: css-fixed-columns -- a week always has seven days; data-days="1" below is the day view */
 .schedule-time-grid {
   display: grid;
   grid-template-columns: max-content repeat(7, minmax(4.5rem, 1fr));
-  gap: 1px;
+  gap: var(--control-border-width);
   background: var(--color-border);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -621,8 +625,8 @@
 }
 
 .schedule-time-grid__day [data-ui="button"][aria-pressed="true"] {
-  outline: 2px solid var(--color-primary-on);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-primary-on);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .schedule-time-grid__hour {
@@ -645,16 +649,21 @@
   background: var(--color-surface);
 }
 
-.schedule-time-grid__slot--drop-target {
+/* Calendar scheduling drop targets (time grid slots and month cells). A dashed
+ * highlight outline marks where a dragged workout will land; the solid outline
+ * stays reserved for the selected day. The month cell is doubled so it outranks
+ * the base cell backgrounds in surfaces.css, which load later. */
+.schedule-time-grid__slot--drop-target,
+.calendar-month__cell.calendar-month__cell--drop-target {
   background: var(--color-info-bg);
-  outline: 2px dashed var(--color-highlight);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) dashed var(--color-highlight);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .schedule-time-grid__slot--conflict {
   background: var(--color-danger-bg);
-  outline: 2px solid var(--color-danger);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-danger);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .schedule-time-grid__slot--drop-target.schedule-time-grid__slot--conflict {
@@ -731,23 +740,12 @@
 }
 
 .schedule-chip--conflict {
-  outline: 2px solid var(--color-danger-border);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-danger-border);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .schedule-chip--moving {
   opacity: var(--opacity-subtle);
-}
-
-.schedule-chip--movable {
-  /* As with the card handle: touch drags start here and must not scroll or select text. */
-  touch-action: none;
-  user-select: none;
-  cursor: grab;
-}
-
-.schedule-chip--movable:active {
-  cursor: grabbing;
 }
 
 /* A movable chip with its resize handle underneath: the handle sits on the
@@ -771,8 +769,8 @@
 }
 
 .schedule-chip--resizing {
-  outline: 2px dashed var(--color-highlight);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) dashed var(--color-highlight);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 /* Later slots a session still occupies (ScheduleSessionContinuation). */
@@ -799,8 +797,8 @@
 }
 
 .schedule-chip-continuation--conflict {
-  outline: 2px solid var(--color-danger-border);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-danger-border);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .training-empty,

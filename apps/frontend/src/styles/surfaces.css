@@ -48,7 +48,10 @@
 }
 
 .home-surface__grid {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 5fr) minmax(0, 2fr);
+  /* The side columns keep room for a metric, its button and short labels. */
+  grid-template-columns:
+    minmax(calc(var(--space-3xl) * 4), 1fr) minmax(0, 5fr)
+    minmax(calc(var(--space-3xl) * 4), 2fr);
   grid-template-areas:
     "metric trending feed"
     "activities trending feed";
@@ -79,7 +82,8 @@
 }
 
 .home-surface__trending-list {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Cards wrap by available width instead of a fixed column count. */
+  grid-template-columns: repeat(auto-fit, minmax(calc(var(--space-3xl) * 3), 1fr));
 }
 
 .home-surface__metric-value {
@@ -110,7 +114,7 @@
 .calendar-month__matrix {
   display: grid;
   grid-template-columns: minmax(max-content, 1fr) repeat(6, minmax(0, 1fr));
-  gap: 1px;
+  gap: var(--control-border-width);
   background: var(--color-border);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -178,8 +182,8 @@
 }
 
 .calendar-month__selected {
-  outline: 2px solid var(--color-highlight);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-highlight);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .calendar-surface__selected-day {
@@ -194,16 +198,10 @@
   font-weight: var(--font-weight-semibold);
 }
 
-/* Calendar scheduling drop targets. A dashed highlight outline marks where a
- * dragged workout will land; the solid outline stays reserved for the selected
- * day. Conflicting days switch to danger tokens; the session cards involved carry
- * a text label (see .schedule-session-card), so state never depends on color alone. */
-.calendar-month__cell--drop-target {
-  background: var(--color-info-bg);
-  outline: 2px dashed var(--color-highlight);
-  outline-offset: -2px;
-}
-
+/* Month-cell drop targets share .schedule-time-grid__slot--drop-target in
+ * components.css. Conflicting days switch to danger tokens; the session cards
+ * involved carry a text label (see .schedule-session-card), so state never
+ * depends on color alone. */
 .calendar-month__cell--conflict,
 .calendar-month__cell--drop-target.calendar-month__cell--conflict {
   background: var(--color-danger-bg);
@@ -211,8 +209,8 @@
 }
 
 .calendar-month__cell--conflict:not(.calendar-month__cell--drop-target) {
-  outline: 2px solid var(--color-danger);
-  outline-offset: -2px;
+  outline: var(--control-strong-border-width) solid var(--color-danger);
+  outline-offset: calc(var(--control-strong-border-width) * -1);
 }
 
 .calendar-month__cell--conflict button {
@@ -297,12 +295,6 @@
 
 .workout-editor__bottom-actions {
   grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.exercise-picker__search {
-  position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .exercise-picker__search > svg {
@@ -559,10 +551,6 @@
       "activities";
   }
 
-  .home-surface__trending-list {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .calendar-month__matrix {
     overflow-x: auto;
   }
@@ -576,12 +564,7 @@
   align-items: center;
   flex-wrap: wrap;
 }
-[data-slot="library-actions"],
-[data-slot="library-card-actions"] {
-  display: flex;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
+/* Both action rows are FormActions; the card row is tighter. */
 [data-slot="library-card-actions"] {
   gap: var(--space-xs);
 }

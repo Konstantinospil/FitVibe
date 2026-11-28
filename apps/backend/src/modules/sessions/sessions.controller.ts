@@ -23,7 +23,7 @@ import {
 } from "./sessions.execution.service.js";
 import { getIdempotencyKey, handleIdempotentRequest } from "../common/idempotency.helpers.js";
 import { SESSION_DURATION_LIMITS } from "./sessions.schedule.js";
-import { HEART_RATE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
+import { HEART_RATE_LIMITS, RPE_LIMITS, SESSION_TEXT_LIMITS } from "./sessions.normalization.js";
 import {
   INTAKE_KINDS,
   INTAKE_LIMITS,
@@ -84,7 +84,7 @@ const plannedAttributesSchema = z
     load: z.number().min(0).nullable().optional(),
     distance: z.number().min(0).nullable().optional(),
     duration: intervalSchema,
-    rpe: z.number().int().min(1).max(10).nullable().optional(),
+    rpe: z.number().int().min(RPE_LIMITS.min).max(RPE_LIMITS.max).nullable().optional(),
     rest: intervalSchema,
     extras: extrasSchema,
   })
@@ -108,7 +108,7 @@ const setMetricFields = {
   weight_kg: z.number().min(0).nullable().optional(),
   distance_m: z.number().min(0).nullable().optional(),
   duration_sec: z.number().int().min(0).nullable().optional(),
-  rpe: z.number().int().min(1).max(10).nullable().optional(),
+  rpe: z.number().int().min(RPE_LIMITS.min).max(RPE_LIMITS.max).nullable().optional(),
   rest_sec: z.number().int().min(0).nullable().optional(),
 };
 
@@ -126,7 +126,7 @@ const sessionSetSchema = z
     weight_kg: z.number().min(0).nullable().optional(),
     distance_m: z.number().min(0).nullable().optional(),
     duration_sec: z.number().int().min(0).nullable().optional(),
-    rpe: z.number().int().min(1).max(10).nullable().optional(),
+    rpe: z.number().int().min(RPE_LIMITS.min).max(RPE_LIMITS.max).nullable().optional(),
     rest_sec: z.number().int().min(0).nullable().optional(),
     heart_rate_bpm: heartRateSchema,
     extras: extrasSchema,

@@ -38,7 +38,7 @@ function contactTokenType(contactId: string): string {
 }
 
 function generateContactToken() {
-  const raw = crypto.randomBytes(32).toString("base64url");
+  const raw = crypto.randomBytes(AUTH_SECURITY_POLICY.linkToken.randomBytes).toString("base64url");
   const hash = crypto.createHash("sha256").update(raw).digest("hex");
   return { raw, hash };
 }

@@ -301,12 +301,13 @@ export interface OpsStatusResponse {
     status: OpsLightStatus;
     ok: boolean;
   };
+  /** Null while the server's database is unreachable: the counts are unknown. */
   counts: {
-    loggedInUsers: number;
-    unresolvedMessages: number;
-    violationReports: number;
-    unresolvedAuditLogs: number;
-    openIssues: number;
+    loggedInUsers: number | null;
+    unresolvedMessages: number | null;
+    violationReports: number | null;
+    unresolvedAuditLogs: number | null;
+    openIssues: number | null;
   };
 }
 

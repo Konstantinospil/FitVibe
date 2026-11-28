@@ -24,6 +24,7 @@ import {
   type RegistrationOptions,
 } from "../services/api";
 import { useRequiredFieldValidation } from "../hooks/useRequiredFieldValidation";
+import { ACCOUNT_LIMITS } from "../config/account";
 
 const AVATAR_PROBLEM_KEYS: Record<ImageFileProblem, string> = {
   invalidType: "auth.register.avatarInvalidType",
@@ -175,7 +176,10 @@ const CompleteRegistration: React.FC = () => {
       return;
     }
 
-    if (dateOfBirth > dateYearsAgo(13) || dateOfBirth < dateYearsAgo(120)) {
+    if (
+      dateOfBirth > dateYearsAgo(ACCOUNT_LIMITS.minAgeYears) ||
+      dateOfBirth < dateYearsAgo(ACCOUNT_LIMITS.maxAgeYears)
+    ) {
       setError(t("auth.register.dateOfBirthInvalid"));
       return;
     }
@@ -191,15 +195,18 @@ const CompleteRegistration: React.FC = () => {
     }
 
     // Passwords are evaluated as passphrases, not by mandatory character classes.
-    if (password.length < 12 || password.length > 128) {
+    if (
+      password.length < ACCOUNT_LIMITS.passwordMinLength ||
+      password.length > ACCOUNT_LIMITS.passwordMaxLength
+    ) {
       setError(t("validation.passwordMinLength"));
       return;
     }
 
     const finalUsername = username.trim() || usernameFromEmail(email);
     if (
-      finalUsername.length < 3 ||
-      finalUsername.length > 50 ||
+      finalUsername.length < ACCOUNT_LIMITS.usernameMinLength ||
+      finalUsername.length > ACCOUNT_LIMITS.usernameMaxLength ||
       !/^[a-zA-Z0-9_.-]+$/.test(finalUsername)
     ) {
       setError(t("errors.USER_USERNAME_INVALID"));
@@ -370,8 +377,8 @@ const CompleteRegistration: React.FC = () => {
           label={t("auth.register.dateOfBirthLabel")}
           name="dateOfBirth"
           type="date"
-          min={dateYearsAgo(120)}
-          max={dateYearsAgo(13)}
+          min={dateYearsAgo(ACCOUNT_LIMITS.maxAgeYears)}
+          max={dateYearsAgo(ACCOUNT_LIMITS.minAgeYears)}
           required
           value={dateOfBirth}
           onChange={(event) => setDateOfBirth(event.target.value)}
@@ -422,8 +429,8 @@ const CompleteRegistration: React.FC = () => {
           onChange={(event) => setUsername(event.target.value)}
           autoComplete="username"
           disabled={isSubmitting}
-          minLength={3}
-          maxLength={50}
+          minLength={ACCOUNT_LIMITS.usernameMinLength}
+          maxLength={ACCOUNT_LIMITS.usernameMaxLength}
           pattern="[a-zA-Z0-9_.\-]+"
         />
 
