@@ -4,6 +4,7 @@ import {
   RPE_LIMITS,
   SESSION_TEXT_LIMITS,
 } from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
+import { SESSION_BLOCK_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.blocks.js";
 import { BODY_WEIGHT_KG_LIMITS } from "../../../apps/backend/src/utils/units.js";
 import { ACCOUNT_LIMITS } from "../../../apps/frontend/src/config/account.js";
 import { TRAINING_DATA_CONFIG } from "../../../apps/frontend/src/config/trainingSurfaces.js";
@@ -29,6 +30,20 @@ describe("frontend limits mirror the server", () => {
     expect(TRAINING_DATA_CONFIG.setHeartRateMinBpm).toBe(HEART_RATE_LIMITS.min);
     expect(TRAINING_DATA_CONFIG.setHeartRateMaxBpm).toBe(HEART_RATE_LIMITS.max);
     expect(TRAINING_DATA_CONFIG.sessionNoteMaxLength).toBe(SESSION_TEXT_LIMITS.noteMaxLength);
+  });
+
+  it("interval and circuit block bounds match SESSION_BLOCK_LIMITS (ADR-046)", () => {
+    expect(TRAINING_DATA_CONFIG.blockRoundsMax).toBe(SESSION_BLOCK_LIMITS.maxRounds);
+    expect(TRAINING_DATA_CONFIG.blockRoundsDefault).toBeLessThanOrEqual(
+      SESSION_BLOCK_LIMITS.maxRounds,
+    );
+    expect(TRAINING_DATA_CONFIG.blockWorkMinSec).toBe(SESSION_BLOCK_LIMITS.minWorkSec);
+    expect(TRAINING_DATA_CONFIG.blockWorkMaxSec).toBe(SESSION_BLOCK_LIMITS.maxWorkSec);
+    expect(TRAINING_DATA_CONFIG.blockRestMaxSec).toBe(SESSION_BLOCK_LIMITS.maxRestSec);
+    expect(TRAINING_DATA_CONFIG.blockNameMaxLength).toBe(SESSION_BLOCK_LIMITS.nameMaxLength);
+    expect(TRAINING_DATA_CONFIG.blockCircuitMinExercises).toBe(
+      SESSION_BLOCK_LIMITS.minCircuitMembers,
+    );
   });
 
   it("body weight bounds match the units module", () => {

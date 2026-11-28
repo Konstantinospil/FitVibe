@@ -1122,7 +1122,13 @@
       "exertion": "Esfuerzo objetivo",
       "restSet": "Descanso tras cada serie (segundos)",
       "restExercise": "Descanso tras el ejercicio (segundos)",
-      "trainingPlan": "Plan de entrenamiento"
+      "trainingPlan": "Plan de entrenamiento",
+      "block": "Intervalos o circuito",
+      "blockName": "Nombre del bloque",
+      "rounds": "Rondas",
+      "work": "Trabajo (segundos)",
+      "blockRest": "Descanso tras cada ejercicio (segundos)",
+      "roundRest": "Descanso entre rondas (segundos)"
     },
     "placeholders": {
       "name": "Nombre del entrenamiento",
@@ -1147,7 +1153,15 @@
     },
     "errors": {
       "save": "No se pudo guardar el entrenamiento.",
-      "exercises": "No se pudieron cargar los ejercicios."
+      "exercises": "No se pudieron cargar los ejercicios.",
+      "circuitSize": "Un circuito necesita al menos {{count}} ejercicios.",
+      "intervalWork": "Indica el tiempo de trabajo de cada bloque de intervalos."
+    },
+    "block": {
+      "none": "Fuera de un bloque",
+      "join": "Añadir al bloque anterior",
+      "newInterval": "Empezar un bloque de intervalos",
+      "newCircuit": "Empezar un circuito"
     }
   },
   "actions": {
@@ -1190,6 +1204,16 @@
     "skipped": "Omitida",
     "target": "objetivo: {{value}}",
     "stoppedEarly": "Terminado antes de tiempo"
+  },
+  "sessionBlocks": {
+    "kind": {
+      "interval": "Intervalos",
+      "circuit": "Circuito"
+    },
+    "rounds": "{{count}} ronda",
+    "rounds_other": "{{count}} rondas",
+    "work": "Trabajo: {{value}} s",
+    "roundRest": "Entre rondas: {{value}} s"
   },
   "librarySurface": {
     "title": "Biblioteca",

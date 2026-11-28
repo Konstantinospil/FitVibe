@@ -135,6 +135,43 @@ const intakeEntryInput = {
   required: ["kind", "amount"],
   additionalProperties: false,
 };
+// Interval and circuit blocks (ADR-046). Pinned to SESSION_BLOCK_LIMITS in
+// sessions.blocks.ts by the contract test.
+const blockLimits = {
+  maxRounds: 50,
+  minWorkSec: 1,
+  maxWorkSec: 3600,
+  maxRestSec: 3600,
+  nameMaxLength: 100,
+  minCircuitMembers: 2,
+  maxBlocks: 50,
+};
+const blockKindSchema = {
+  type: "string",
+  enum: ["interval", "circuit"],
+  description:
+    "interval: timed work and rest for each member (work_sec required). circuit: the members back to back.",
+};
+const blockRestSec = nullable({ type: "integer", minimum: 0, maximum: blockLimits.maxRestSec });
+const blockValueProperties = {
+  kind: blockKindSchema,
+  name: nullable({ type: "string", maxLength: blockLimits.nameMaxLength }),
+  rounds: { type: "integer", minimum: 1, maximum: blockLimits.maxRounds },
+  work_sec: nullable({
+    type: "integer",
+    minimum: blockLimits.minWorkSec,
+    maximum: blockLimits.maxWorkSec,
+    description: "Work per member and round.",
+  }),
+  rest_sec: { ...blockRestSec, description: "Rest after each member's work." },
+  round_rest_sec: { ...blockRestSec, description: "Rest between rounds." },
+};
+const sessionBlocksInput = {
+  type: "array",
+  maxItems: blockLimits.maxBlocks,
+  items: { $ref: "#/components/schemas/SessionBlockInput" },
+  description: `Interval and circuit blocks (ADR-046). Members set block_ref and must follow each other in exercise order; a circuit needs at least ${blockLimits.minCircuitMembers} (422 E.SESSION.INVALID_BLOCK otherwise).`,
+};
 // The shared image pipeline (services/imageUpload.service.ts).
 const imageUploadDescription = "JPEG, PNG, or WebP image up to 5 MB";
 
@@ -1337,6 +1374,7 @@ const schemas = {
         type: "array",
         items: { $ref: "#/components/schemas/SessionExerciseInput" },
       },
+      blocks: sessionBlocksInput,
     },
     required: ["planned_at"],
   },
@@ -1356,9 +1394,29 @@ const schemas = {
         maxItems: 100,
         items: { $ref: "#/components/schemas/SessionSetInput" },
       },
+      block_ref: nullable({
+        type: "integer",
+        minimum: 1,
+        description: "The ref of this exercise's block in the same request (ADR-046).",
+      }),
     },
     required: ["order"],
     additionalProperties: false,
+  },
+  SessionBlockInput: {
+    type: "object",
+    description:
+      "An interval or circuit block (ADR-046). ref only links it to its members within this request.",
+    properties: { ref: { type: "integer", minimum: 1 }, ...blockValueProperties },
+    required: ["ref", "kind", "rounds"],
+    additionalProperties: false,
+  },
+  SessionBlock: {
+    type: "object",
+    description:
+      "An interval or circuit block (ADR-046). Its position is that of its members; each round of a member is one of its sets.",
+    properties: { id: { type: "string", format: "uuid" }, ...blockValueProperties },
+    required: ["id", "kind", "name", "rounds", "work_sec", "rest_sec", "round_rest_sec"],
   },
   SessionSetInput: {
     type: "object",
@@ -1446,6 +1504,10 @@ const schemas = {
         description: "Replaces all exercises and sets of the session.",
         items: { $ref: "#/components/schemas/SessionExerciseInput" },
       },
+      blocks: {
+        ...sessionBlocksInput,
+        description: `${sessionBlocksInput.description} Replaced together with exercises; only accepted with exercises (400 E.SESSION.BLOCKS_WITHOUT_EXERCISES).`,
+      },
     },
     additionalProperties: false,
   },
@@ -1495,6 +1557,11 @@ const schemas = {
       deleted_at: nullable({ type: "string", format: "date-time" }),
       created_at: { type: "string", format: "date-time" },
       updated_at: { type: "string", format: "date-time" },
+      blocks: {
+        type: "array",
+        description: "Interval and circuit blocks, in the order of their first member (ADR-046).",
+        items: { $ref: "#/components/schemas/SessionBlock" },
+      },
       exercises: {
         type: "array",
         items: {
@@ -1508,6 +1575,11 @@ const schemas = {
               description: "Name snapshot at planning time.",
             }),
             order_index: { type: "integer", minimum: 1 },
+            block_id: nullable({
+              type: "string",
+              format: "uuid",
+              description: "The block this exercise belongs to (ADR-046).",
+            }),
             status: exerciseStatusSchema,
             source: setSourceSchema,
             notes: nullable({ type: "string" }),

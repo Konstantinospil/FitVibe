@@ -40,6 +40,7 @@ import {
 import { useLoadUnit } from "../hooks/useLoadUnit";
 import type { LoadUnit } from "../lib/units/load";
 import { setSummary, valuesSummary } from "../lib/sessions/setSummary";
+import { blockCardProps, blocksByFirstExercise } from "../lib/sessions/blocks";
 import { apiErrorCode } from "../services/httpApi";
 import { ResultNoteField } from "../components/domain/ResultNoteField";
 import { SessionIntakePanel } from "../components/composites/SessionIntakePanel";
@@ -47,6 +48,7 @@ import { WorkoutPhotoField } from "../components/composites/WorkoutPhotoField";
 import { readImagePreview } from "../lib/media/imageFile";
 import { PHOTO_MESSAGE_VALUES, PHOTO_PROBLEM_KEYS } from "../lib/sessions/workoutPhoto";
 import type {
+  SessionBlock,
   SessionCompletionOutcome,
   SessionExercise,
   SessionSetPlannedValues,
@@ -290,6 +292,7 @@ const LiveWorkout: React.FC = () => {
   const now = useClock(active);
   const catalog = useExerciseCatalog({ enabled: active, source: "live workout" });
   const { unit: loadUnit, ready: loadUnitReady } = useLoadUnit();
+  const blockStarts = session ? blocksByFirstExercise(session) : new Map<string, SessionBlock>();
 
   const run = (input: LiveCommand) => {
     if (!command.isPending) {
@@ -457,8 +460,10 @@ const LiveWorkout: React.FC = () => {
                   const name = exerciseName(t, exercise);
                   const skipped = exercise.status === "skipped";
                   const hasOpenSets = exercise.sets.some((set) => set.status === "planned");
+                  const block = blockStarts.get(exercise.id);
                   return (
                     <li key={exercise.id} className="live-outline__exercise" data-skipped={skipped}>
+                      {block ? <TrainingSummaryCard {...blockCardProps(t, block)} /> : null}
                       <div className="live-outline__header">
                         <h3 className="typography-card-title">{name}</h3>
                         {skipped ? (

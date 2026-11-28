@@ -11,10 +11,8 @@ import {
   findOverlappingSessions,
 } from "../sessions/sessions.repository.js";
 import { overlappingPairs, type ScheduleWindow } from "../sessions/sessions.schedule.js";
-import {
-  convertExistingExerciseToInput,
-  normalizeSessionExercises,
-} from "../sessions/sessions.normalization.js";
+import { convertExistingExerciseToInput } from "../sessions/sessions.normalization.js";
+import { blockInputsOf, normalizeSessionStructure } from "../sessions/sessions.blocks.js";
 import type { Session, SessionWithExercises } from "../sessions/sessions.types.js";
 import { updatePlanProgress, type PlanRow } from "./plans.repository.js";
 import { buildWeeklyOccurrences, planEndDate } from "./plans.activation.schedule.js";
@@ -146,9 +144,11 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
         },
         trx,
       );
-      const exercises = normalizeSessionExercises(
+      // ADR-046: generated sessions repeat the template's interval/circuit blocks.
+      const sourceBlocks = blockInputsOf(source.blocks ?? []);
+      const structure = normalizeSessionStructure(
         source.exercises.map((exercise) => ({
-          ...convertExistingExerciseToInput(exercise, false),
+          ...convertExistingExerciseToInput(exercise, false, sourceBlocks.refOf),
           // Generated sessions repeat the template's prescription (ADR-042). Rows
           // written before ADR-042 may still hold targets in the top-level fields.
           sets: exercise.sets.map((set) => ({
@@ -166,8 +166,9 @@ export async function activateUserPlan(userId: string, planId: string): Promise<
             notes: set.notes ?? null,
           })),
         })),
+        sourceBlocks.blocks,
       );
-      await replaceSessionExercises(trx, id, exercises);
+      await replaceSessionExercises(trx, id, structure);
     }
     const stats = await trx("sessions")
       .where({ owner_id: userId, plan_id: planId })

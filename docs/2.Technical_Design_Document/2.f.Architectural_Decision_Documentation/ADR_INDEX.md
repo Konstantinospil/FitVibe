@@ -49,6 +49,7 @@
 | ADR-043 | Live Workout Execution Commands                                                                   | Accepted   | 2026-11-27    | [ADR-043-live-workout-execution-commands.md](./ADR-043-live-workout-execution-commands.md)                                           |
 | ADR-044 | Post-workout Note and Photo                                                                       | Accepted   | 2026-11-27    | [ADR-044-post-workout-note-and-photo.md](./ADR-044-post-workout-note-and-photo.md)                                                   |
 | ADR-045 | Workout Intake (Water and Food Energy)                                                            | Accepted   | 2026-11-27    | [ADR-045-workout-intake.md](./ADR-045-workout-intake.md)                                                                             |
+| ADR-046 | Interval and Circuit Blocks                                                                       | Accepted   | 2026-11-28    | [ADR-046-interval-and-circuit-blocks.md](./ADR-046-interval-and-circuit-blocks.md)                                                   |
 
 ## Numbering notes
 
@@ -73,3 +74,4 @@
 - ADR-043 adds server-authoritative live workout commands (record, correct and skip sets, add work, skip exercises, pause and resume) with timestamp-derived timing.
 - ADR-044 stores the post-workout note apart from the plan's notes, adds one owner-only photo per completed session, and moves every image upload onto one shared pipeline.
 - ADR-045 records workout water and food energy as typed, owner-only entries, apart from the workout's own calories.
+- ADR-046 groups consecutive exercises into interval and circuit blocks, with each round of a member stored as one of its ordinary sets.

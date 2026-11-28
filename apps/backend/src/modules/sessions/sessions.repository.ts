@@ -4,6 +4,8 @@ import type { ScheduleWindow } from "./sessions.schedule.js";
 import type {
   PaginatedResult,
   Session,
+  SessionBlock,
+  SessionBlockKind,
   SessionListItem,
   SessionExercise,
   SessionExerciseAttributes,
@@ -121,12 +123,63 @@ export interface SessionExerciseSetUpsert {
 export interface SessionExerciseUpsertInput {
   id: string;
   exercise_id: string | null;
+  /** ADR-046: the block (in the same structure) this exercise belongs to. */
+  block_id: string | null;
   order_index: number;
   status: SessionExerciseStatus;
   source: SessionSetSource;
   notes: string | null;
   planned?: SessionExerciseAttributes | null;
   sets: SessionExerciseSetUpsert[];
+}
+
+/** ADR-046: an interval or circuit block to write with its session's exercises. */
+export interface SessionBlockUpsertInput {
+  id: string;
+  kind: SessionBlockKind;
+  name: string | null;
+  rounds: number;
+  work_sec: number | null;
+  rest_sec: number | null;
+  round_rest_sec: number | null;
+}
+
+/** A session's exercises and blocks; they are always replaced together. */
+export interface SessionStructure {
+  exercises: SessionExerciseUpsertInput[];
+  blocks: SessionBlockUpsertInput[];
+}
+
+export const SESSION_BLOCKS_TABLE = "session_blocks";
+
+/** Blocks in the order of their first member (ADR-046: a block has no order of its own). */
+export async function findSessionBlocks(
+  sessionId: string,
+  trx?: Knex.Transaction,
+): Promise<SessionBlock[]> {
+  const rows = (await executor(trx)(`${SESSION_BLOCKS_TABLE} as b`)
+    .join("session_exercises as se", "se.block_id", "b.id")
+    .where("b.session_id", sessionId)
+    .groupBy("b.id")
+    .orderByRaw("MIN(se.order_index) ASC")
+    .select(
+      "b.id",
+      "b.kind",
+      "b.name",
+      "b.rounds",
+      "b.work_sec",
+      "b.rest_sec",
+      "b.round_rest_sec",
+    )) as SessionBlock[];
+  return rows.map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    name: row.name ?? null,
+    rounds: row.rounds,
+    work_sec: row.work_sec ?? null,
+    rest_sec: row.rest_sec ?? null,
+    round_rest_sec: row.round_rest_sec ?? null,
+  }));
 }
 
 export interface RegionalTrainingLoadWindow {
@@ -341,6 +394,7 @@ type SessionExerciseRow = {
   exercise_id: string | null;
   exercise_name: string | null; // Snapshot of exercise name
   order_index: number;
+  block_id: string | null;
   status: SessionExerciseStatus;
   source: SessionSetSource;
   notes: string | null;
@@ -403,6 +457,7 @@ export async function getSessionWithDetails(
       "se.exercise_id as exercise_id",
       "se.exercise_name as exercise_name",
       "se.order_index as order_index",
+      "se.block_id as block_id",
       "se.status as status",
       "se.source as source",
       "se.notes as notes",
@@ -490,6 +545,7 @@ export async function getSessionWithDetails(
       exercise_id: row.exercise_id,
       exercise_name: row.exercise_name ?? null,
       order_index: row.order_index,
+      block_id: row.block_id ?? null,
       status: row.status,
       source: row.source,
       notes: row.notes ?? null,
@@ -504,6 +560,7 @@ export async function getSessionWithDetails(
   return {
     ...session,
     exercises,
+    blocks: exercises.some((exercise) => exercise.block_id) ? await findSessionBlocks(id, trx) : [],
     photo: await findSessionPhoto(id, trx),
     intake: await findSessionIntake(id, trx),
   };
@@ -604,7 +661,7 @@ export async function findOverlappingSessions(
 export async function replaceSessionExercises(
   trx: Knex.Transaction,
   sessionId: string,
-  exercises: SessionExerciseUpsertInput[],
+  { exercises, blocks }: SessionStructure,
 ): Promise<void> {
   // Keep the name snapshot an exercise already has in this session. Replacing
   // the rows must not rename recorded history after a catalogue rename (#289).
@@ -622,12 +679,24 @@ export async function replaceSessionExercises(
   }
 
   await trx("session_exercises").where({ session_id: sessionId }).del();
+  await trx(SESSION_BLOCKS_TABLE).where({ session_id: sessionId }).del();
 
   if (!exercises.length) {
     return;
   }
 
   const timestamp = new Date().toISOString();
+
+  if (blocks.length) {
+    await trx(SESSION_BLOCKS_TABLE).insert(
+      blocks.map((block) => ({
+        ...block,
+        session_id: sessionId,
+        created_at: timestamp,
+        updated_at: timestamp,
+      })),
+    );
+  }
 
   // New exercises take a snapshot of the catalogue name at the time they are added.
   const exerciseIds = exercises
@@ -653,6 +722,7 @@ export async function replaceSessionExercises(
         ? (exerciseNamesMap.get(exercise.exercise_id) ?? null)
         : null,
       order_index: exercise.order_index,
+      block_id: exercise.block_id,
       status: exercise.status,
       source: exercise.source,
       notes: exercise.notes,

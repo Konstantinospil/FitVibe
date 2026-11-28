@@ -1122,7 +1122,13 @@
       "exertion": "Effort cible",
       "restSet": "Repos après chaque série (secondes)",
       "restExercise": "Repos après l’exercice (secondes)",
-      "trainingPlan": "Programme d’entraînement"
+      "trainingPlan": "Programme d’entraînement",
+      "block": "Fractionné ou circuit",
+      "blockName": "Nom du bloc",
+      "rounds": "Tours",
+      "work": "Effort (secondes)",
+      "blockRest": "Repos après chaque exercice (secondes)",
+      "roundRest": "Repos entre les tours (secondes)"
     },
     "placeholders": {
       "name": "Nom de l’entraînement",
@@ -1147,7 +1153,15 @@
     },
     "errors": {
       "save": "L’entraînement n’a pas pu être enregistré.",
-      "exercises": "Les exercices n’ont pas pu être chargés."
+      "exercises": "Les exercices n’ont pas pu être chargés.",
+      "circuitSize": "Un circuit doit compter au moins {{count}} exercices.",
+      "intervalWork": "Indiquez le temps d’effort de chaque bloc fractionné."
+    },
+    "block": {
+      "none": "Hors bloc",
+      "join": "Ajouter au bloc précédent",
+      "newInterval": "Commencer un bloc fractionné",
+      "newCircuit": "Commencer un circuit"
     }
   },
   "actions": {
@@ -1190,6 +1204,16 @@
     "skipped": "Sautée",
     "target": "objectif : {{value}}",
     "stoppedEarly": "Arrêté avant la fin"
+  },
+  "sessionBlocks": {
+    "kind": {
+      "interval": "Fractionné",
+      "circuit": "Circuit"
+    },
+    "rounds": "{{count}} tour",
+    "rounds_other": "{{count}} tours",
+    "work": "Effort : {{value}} s",
+    "roundRest": "Entre les tours : {{value}} s"
   },
   "librarySurface": {
     "title": "Bibliothèque",

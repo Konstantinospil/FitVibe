@@ -1,5 +1,6 @@
 import type {
   SessionCompletionOutcome as SharedSessionCompletionOutcome,
+  SessionBlockKind as SharedSessionBlockKind,
   SessionExerciseStatus as SharedSessionExerciseStatus,
   SessionSetSource as SharedSessionSetSource,
   SessionSetStatus as SharedSessionSetStatus,
@@ -13,6 +14,38 @@ export type SessionSetStatus = SharedSessionSetStatus;
 export type SessionSetSource = SharedSessionSetSource;
 export type SessionCompletionOutcome = SharedSessionCompletionOutcome;
 export type SessionExerciseStatus = SharedSessionExerciseStatus;
+export type SessionBlockKind = SharedSessionBlockKind;
+
+/**
+ * ADR-046: an interval or circuit block. It groups consecutive exercises of a
+ * session; each round of a member is one of that member's sets.
+ */
+export interface SessionBlock {
+  id: string;
+  kind: SessionBlockKind;
+  name: string | null;
+  rounds: number;
+  /** Work per member and round; required for an interval block. */
+  work_sec: number | null;
+  /** Rest after each member's work. */
+  rest_sec: number | null;
+  /** Rest between rounds. */
+  round_rest_sec: number | null;
+}
+
+/**
+ * A block in a create/update request. `ref` only links it to its members
+ * (`SessionExerciseInput.block_ref`) within that request.
+ */
+export interface SessionBlockInput {
+  ref: number;
+  kind: SessionBlockKind;
+  name?: string | null;
+  rounds: number;
+  work_sec?: number | null;
+  rest_sec?: number | null;
+  round_rest_sec?: number | null;
+}
 
 export interface Session {
   id: string;
@@ -104,6 +137,8 @@ export interface SessionExerciseInput {
   planned?: SessionExerciseAttributesInput | null;
   actual?: SessionExerciseActualInput | null;
   sets?: SessionSetInput[];
+  /** ADR-046: the `ref` of the block this exercise belongs to, if any. */
+  block_ref?: number | null;
 }
 
 export interface CreateSessionDTO {
@@ -120,6 +155,8 @@ export interface CreateSessionDTO {
   result_note?: string | null;
   recurrence_rule?: string | null;
   exercises?: SessionExerciseInput[];
+  /** ADR-046: interval and circuit blocks; only together with exercises. */
+  blocks?: SessionBlockInput[];
   /** What was drunk and eaten; only with status "completed" (ADR-045). */
   intake?: { kind: IntakeKind; amount: number }[];
 }
@@ -141,6 +178,8 @@ export interface UpdateSessionDTO {
   completed_at?: string | null;
   calories?: number | null;
   exercises?: SessionExerciseInput[];
+  /** ADR-046: replaces the blocks together with the exercises. */
+  blocks?: SessionBlockInput[];
 }
 
 export interface CloneSessionDTO {
@@ -231,6 +270,8 @@ export interface SessionExercise {
   planned?: SessionExerciseAttributes | null;
   actual?: SessionExerciseActualAttributes | null;
   sets: SessionExerciseSet[];
+  /** ADR-046: the block this exercise belongs to, or null. */
+  block_id: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -275,6 +316,8 @@ export interface SessionPhoto {
 
 export interface SessionWithExercises extends Session {
   exercises: SessionExercise[];
+  /** ADR-046: in the order of their first member. */
+  blocks: SessionBlock[];
   /** Present on the owner's reads; null when there is none or for anyone else. */
   photo?: SessionPhoto | null;
   /** ADR-045: present on the owner's reads; null for anyone else. */

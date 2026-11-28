@@ -399,6 +399,8 @@ export function normalizeSessionExercises(
     return {
       id: exercise.id ?? uuidv4(),
       exercise_id: exercise.exercise_id ?? null,
+      // Linked by normalizeSessionStructure (sessions.blocks.ts, ADR-046).
+      block_id: null,
       order_index: order,
       status: exercise.status ?? "planned",
       source: exercise.source ?? "prescribed",
@@ -415,10 +417,13 @@ export function normalizeSessionExercises(
 export function convertExistingExerciseToInput(
   exercise: SessionExercise,
   includeActual: boolean,
+  /** ADR-046: the copy's block ref for a block id (see blockInputsOf). */
+  blockRefOf: (blockId: string | null | undefined) => number | null = () => null,
 ): SessionExerciseInput {
   return {
     order: exercise.order_index,
     exercise_id: exercise.exercise_id ?? undefined,
+    block_ref: blockRefOf(exercise.block_id),
     // A reused workout starts from scratch; a full copy keeps how it went.
     ...(includeActual ? { status: exercise.status, source: exercise.source } : {}),
     notes: exercise.notes ?? undefined,

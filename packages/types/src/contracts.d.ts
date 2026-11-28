@@ -13,6 +13,8 @@ export type SessionSetSource = "prescribed" | "added";
 export type SessionCompletionOutcome = "completed" | "stopped_early";
 /** ADR-043: an exercise is done when its sets are; skipping is explicit. */
 export type SessionExerciseStatus = "planned" | "skipped";
+/** ADR-046: an interval block times work and rest; a circuit runs its members back to back. */
+export type SessionBlockKind = "interval" | "circuit";
 
 export type UserLanguage = "en" | "de" | "fr" | "es" | "el";
 

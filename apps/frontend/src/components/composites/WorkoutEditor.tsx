@@ -8,6 +8,8 @@ import {
   createSession,
   updateSession,
   type Exercise,
+  type SessionBlockInput,
+  type SessionBlockKind,
   type SessionExerciseInput,
   type SessionWithExercises,
 } from "../../services/api";
@@ -18,9 +20,11 @@ import { useLoadUnit } from "../../hooks/useLoadUnit";
 import { logger } from "../../utils/logger";
 import { ExercisePicker, useExerciseCatalog, type ExerciseOption } from "./ExercisePicker";
 import { Modal } from "./Modal";
+import { FormFeedback } from "./FormStack";
 import { RetryErrorPanel, StatusPanel } from "./StatusPanel";
 import { TrainingPanel, TrainingSummaryCard } from "./TrainingSurface";
 import { TRAINING_DATA_CONFIG } from "../../config/trainingSurfaces";
+import { joinMetrics } from "../../lib/sessions/setSummary";
 
 export type WorkoutExerciseDraft = {
   id: string;
@@ -33,7 +37,91 @@ export type WorkoutExerciseDraft = {
   targetExertion: string;
   restSet: string;
   restExercise: string;
+  /** ADR-046: key of the interval or circuit block this exercise belongs to. */
+  blockKey: string | null;
 };
+
+/** An interval or circuit block being edited; its members share these values (ADR-046). */
+export type WorkoutBlockDraft = {
+  kind: SessionBlockKind;
+  name: string;
+  rounds: number;
+  work: string;
+  rest: string;
+  roundRest: string;
+};
+
+/** How the active exercise relates to blocks; "join" adds it to the block above. */
+type BlockChoice = "none" | "join" | SessionBlockKind;
+
+const newBlockDraft = (kind: SessionBlockKind): WorkoutBlockDraft => ({
+  kind,
+  name: "",
+  rounds: TRAINING_DATA_CONFIG.blockRoundsDefault,
+  work: "",
+  rest: "",
+  roundRest: "",
+});
+
+const clampRounds = (value: number) =>
+  Math.min(TRAINING_DATA_CONFIG.blockRoundsMax, Math.max(1, Math.trunc(value) || 1));
+
+/** Blocks in member order, numbered for the request, and each draft's block ref. */
+function toBlockPayload(
+  drafts: WorkoutExerciseDraft[],
+  blocks: Record<string, WorkoutBlockDraft>,
+): { blocks: SessionBlockInput[]; refs: Map<string, number> } {
+  const refs = new Map<string, number>();
+  const payload: SessionBlockInput[] = [];
+  for (const draft of drafts) {
+    const block = draft.blockKey ? blocks[draft.blockKey] : undefined;
+    if (!draft.blockKey || !block || refs.has(draft.blockKey)) {
+      continue;
+    }
+    const ref = payload.length + 1;
+    refs.set(draft.blockKey, ref);
+    payload.push({
+      ref,
+      kind: block.kind,
+      name: block.name.trim() || null,
+      rounds: block.rounds,
+      work_sec: optionalNonNegativeNumber(block.work),
+      rest_sec: optionalNonNegativeNumber(block.rest),
+      round_rest_sec: optionalNonNegativeNumber(block.roundRest),
+    });
+  }
+  return { blocks: payload, refs };
+}
+
+/** What stops the blocks from being saved, as an i18n key with its values. */
+function blockProblem(
+  drafts: WorkoutExerciseDraft[],
+  blocks: Record<string, WorkoutBlockDraft>,
+): { key: string; values?: Record<string, number> } | null {
+  const members = new Map<string, number>();
+  for (const draft of drafts) {
+    if (draft.blockKey) {
+      members.set(draft.blockKey, (members.get(draft.blockKey) ?? 0) + 1);
+    }
+  }
+  for (const [key, count] of members) {
+    const block = blocks[key];
+    if (block?.kind === "circuit" && count < TRAINING_DATA_CONFIG.blockCircuitMinExercises) {
+      return {
+        key: "workoutEditor.errors.circuitSize",
+        values: { count: TRAINING_DATA_CONFIG.blockCircuitMinExercises },
+      };
+    }
+    const work = block ? optionalNonNegativeNumber(block.work) : null;
+    if (
+      block?.kind === "interval" &&
+      (work === null || work < TRAINING_DATA_CONFIG.blockWorkMinSec)
+    ) {
+      return { key: "workoutEditor.errors.intervalWork" };
+    }
+  }
+  return null;
+}
 
 export type WorkoutDraft = {
   name: string;
@@ -81,8 +169,24 @@ const toDraftExercise = (
         ? sessionExercise.planned.extras.rest_after_exercise_sec
         : "",
     ),
+    blockKey: sessionExercise.block_id ?? null,
   };
 };
+
+const toBlockDrafts = (session: SessionWithExercises): Record<string, WorkoutBlockDraft> =>
+  Object.fromEntries(
+    (session.blocks ?? []).map((block) => [
+      block.id,
+      {
+        kind: block.kind,
+        name: block.name ?? "",
+        rounds: block.rounds,
+        work: block.work_sec === null ? "" : String(block.work_sec),
+        rest: block.rest_sec === null ? "" : String(block.rest_sec),
+        roundRest: block.round_rest_sec === null ? "" : String(block.round_rest_sec),
+      },
+    ]),
+  );
 
 const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   open,
@@ -109,6 +213,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [drafts, setDrafts] = useState<WorkoutExerciseDraft[]>([]);
+  const [blocks, setBlocks] = useState<Record<string, WorkoutBlockDraft>>({});
   const [persisting, setPersisting] = useState<PersistMode | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -127,6 +232,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     if (!session) {
       setName("");
       setNotes("");
+      setBlocks({});
       if (initialExercise) {
         nextDraftId.current += 1;
         setDrafts([
@@ -141,6 +247,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
             targetExertion: "",
             restSet: "",
             restExercise: "",
+            blockKey: null,
           },
         ]);
       } else {
@@ -151,6 +258,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 
     setName(session.title ?? "");
     setNotes(session.notes ?? "");
+    setBlocks(toBlockDrafts(session));
     setDrafts(
       session.exercises
         .filter((exercise) => Boolean(exercise.exercise_id))
@@ -194,6 +302,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
       targetExertion: "",
       restSet: "",
       restExercise: "",
+      blockKey: null,
     };
 
     setDrafts((current) => [...current, draft]);
@@ -203,29 +312,61 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setDrafts((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   };
 
+  const updateBlock = (key: string, patch: Partial<WorkoutBlockDraft>) => {
+    setBlocks((current) => ({ ...current, [key]: { ...current[key], ...patch } }));
+  };
+
+  const chooseBlock =
+    (draft: WorkoutExerciseDraft, previous: WorkoutExerciseDraft | undefined) =>
+    (choice: BlockChoice) => {
+      if (choice === "none") {
+        updateDraft(draft.id, { blockKey: null });
+      } else if (choice === "join") {
+        updateDraft(draft.id, { blockKey: previous?.blockKey ?? null });
+      } else {
+        nextDraftId.current += 1;
+        const key = `block-${nextDraftId.current}`;
+        setBlocks((current) => ({ ...current, [key]: newBlockDraft(choice) }));
+        updateDraft(draft.id, { blockKey: key });
+      }
+    };
+
+  /**
+   * A member's rounds are its sets (ADR-046): an interval's work and rest become
+   * each round's targets, and a circuit's rest follows each exercise.
+   */
   const toSessionExercise = (
     exercise: WorkoutExerciseDraft,
     order: number,
+    blockRef: number | null,
   ): SessionExerciseInput => {
+    const block = exercise.blockKey ? blocks[exercise.blockKey] : undefined;
     const repetitions = optionalNonNegativeNumber(exercise.repetitions);
     const enteredLoad = optionalNonNegativeNumber(exercise.weight);
     const weight = enteredLoad === null ? null : toStoredKg(enteredLoad, loadUnit);
-    const duration = optionalNonNegativeNumber(exercise.duration);
+    const duration =
+      block?.kind === "interval"
+        ? optionalNonNegativeNumber(block.work)
+        : optionalNonNegativeNumber(exercise.duration);
     const exertion = optionalNonNegativeNumber(exercise.targetExertion);
-    const restSet = optionalNonNegativeNumber(exercise.restSet);
+    const restSet = block
+      ? optionalNonNegativeNumber(block.rest)
+      : optionalNonNegativeNumber(exercise.restSet);
     const restExercise = optionalNonNegativeNumber(exercise.restExercise);
+    const setCount = block ? block.rounds : exercise.sets;
 
     return {
       exercise_id: exercise.exerciseId,
       order,
+      block_ref: blockRef,
       planned: {
-        sets: exercise.sets,
+        sets: setCount,
         reps: repetitions,
         load: weight,
         rpe: exertion,
         extras: restExercise === null ? undefined : { rest_after_exercise_sec: restExercise },
       },
-      sets: Array.from({ length: exercise.sets }, (_, setIndex) => ({
+      sets: Array.from({ length: setCount }, (_, setIndex) => ({
         order: setIndex + 1,
         status: "planned" as const,
         planned: {
@@ -239,8 +380,10 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     };
   };
 
+  const problem = blockProblem(drafts, blocks);
+
   const persist = async (mode: PersistMode) => {
-    if (persisting || drafts.length === 0) {
+    if (persisting || drafts.length === 0 || problem) {
       return;
     }
 
@@ -248,7 +391,14 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     setSaveError(null);
 
     const resolvedPlannedAt = session?.planned_at ?? plannedAt ?? new Date().toISOString();
-    const exercisesPayload = drafts.map((draft, index) => toSessionExercise(draft, index + 1));
+    const blockPayload = toBlockPayload(drafts, blocks);
+    const exercisesPayload = drafts.map((draft, index) =>
+      toSessionExercise(
+        draft,
+        index + 1,
+        draft.blockKey ? (blockPayload.refs.get(draft.blockKey) ?? null) : null,
+      ),
+    );
 
     try {
       const saved = session
@@ -259,6 +409,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
             status: mode === "start" ? "in_progress" : "planned",
             started_at: mode === "start" ? (session.started_at ?? new Date().toISOString()) : null,
             exercises: exercisesPayload,
+            blocks: blockPayload.blocks,
           })
         : await createSession({
             title: name.trim() || null,
@@ -267,6 +418,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
             visibility: "private",
             ...(mode === "plan" && selectedPlanId ? { plan_id: selectedPlanId } : {}),
             exercises: exercisesPayload,
+            blocks: blockPayload.blocks,
           });
 
       const resolved =
@@ -292,7 +444,16 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
     }
   };
 
-  const active = drafts[drafts.length - 1];
+  // The editor edits the last exercise added; the one before it may hold its block.
+  const activeIndex = drafts.length - 1;
+  const active = drafts[activeIndex];
+  const previous = drafts[activeIndex - 1];
+  const activeBlock = active?.blockKey ? blocks[active.blockKey] : undefined;
+  const activeChoice: BlockChoice = !active?.blockKey
+    ? "none"
+    : active.blockKey === previous?.blockKey
+      ? "join"
+      : (activeBlock?.kind ?? "none");
   const isBusy = persisting !== null || !loadUnitReady;
   const canStart = actions.includes("start");
   const canPlan = actions.includes("plan");
@@ -313,7 +474,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
               size="lg"
               leadingIcon={<Play />}
               fullWidth
-              disabled={drafts.length === 0 || isBusy}
+              disabled={drafts.length === 0 || isBusy || problem !== null}
               isLoading={persisting === "start"}
               onClick={() => {
                 void persist("start");
@@ -327,7 +488,7 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
               variant="ghost"
               size="lg"
               leadingIcon={<CalendarDays />}
-              disabled={drafts.length === 0 || isBusy}
+              disabled={drafts.length === 0 || isBusy || problem !== null}
               isLoading={persisting === "plan"}
               onClick={() => {
                 void persist("plan");
@@ -437,21 +598,127 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
 
               {active ? (
                 <>
+                  <label className="form-label">
+                    <span className="form-label-text">{t("workoutEditor.fields.block")}</span>
+                    <SelectControl
+                      value={activeChoice}
+                      disabled={isBusy}
+                      onChange={(event) =>
+                        chooseBlock(active, previous)(event.target.value as BlockChoice)
+                      }
+                    >
+                      <option value="none">{t("workoutEditor.block.none")}</option>
+                      {previous?.blockKey ? (
+                        <option value="join">{t("workoutEditor.block.join")}</option>
+                      ) : null}
+                      <option value="interval">{t("workoutEditor.block.newInterval")}</option>
+                      <option value="circuit">{t("workoutEditor.block.newCircuit")}</option>
+                    </SelectControl>
+                  </label>
+
+                  {active.blockKey && activeBlock ? (
+                    <div className="workout-editor__activity-fields">
+                      <label className="form-label">
+                        <span className="form-label-text">
+                          {t("workoutEditor.fields.blockName")}
+                        </span>
+                        <InputControl
+                          value={activeBlock.name}
+                          maxLength={TRAINING_DATA_CONFIG.blockNameMaxLength}
+                          placeholder={t(`sessionBlocks.kind.${activeBlock.kind}`)}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateBlock(active.blockKey!, { name: event.target.value })
+                          }
+                        />
+                      </label>
+                      <label className="form-label">
+                        <span className="form-label-text">{t("workoutEditor.fields.rounds")}</span>
+                        <InputControl
+                          type="number"
+                          min="1"
+                          max={TRAINING_DATA_CONFIG.blockRoundsMax}
+                          value={activeBlock.rounds}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateBlock(active.blockKey!, {
+                              rounds: clampRounds(Number(event.target.value)),
+                            })
+                          }
+                        />
+                      </label>
+                      {activeBlock.kind === "interval" ? (
+                        <label className="form-label">
+                          <span className="form-label-text">{t("workoutEditor.fields.work")}</span>
+                          <InputControl
+                            type="number"
+                            min={TRAINING_DATA_CONFIG.blockWorkMinSec}
+                            max={TRAINING_DATA_CONFIG.blockWorkMaxSec}
+                            value={activeBlock.work}
+                            disabled={isBusy}
+                            onChange={(event) =>
+                              updateBlock(active.blockKey!, { work: event.target.value })
+                            }
+                          />
+                        </label>
+                      ) : null}
+                      <label className="form-label">
+                        <span className="form-label-text">
+                          {t("workoutEditor.fields.blockRest")}
+                        </span>
+                        <InputControl
+                          type="number"
+                          min="0"
+                          max={TRAINING_DATA_CONFIG.blockRestMaxSec}
+                          value={activeBlock.rest}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateBlock(active.blockKey!, { rest: event.target.value })
+                          }
+                        />
+                      </label>
+                      <label className="form-label">
+                        <span className="form-label-text">
+                          {t("workoutEditor.fields.roundRest")}
+                        </span>
+                        <InputControl
+                          type="number"
+                          min="0"
+                          max={TRAINING_DATA_CONFIG.blockRestMaxSec}
+                          value={activeBlock.roundRest}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateBlock(active.blockKey!, { roundRest: event.target.value })
+                          }
+                        />
+                      </label>
+                    </div>
+                  ) : null}
+
+                  {problem ? (
+                    <FormFeedback tone="danger">
+                      {t(problem.key, problem.values ?? {})}
+                    </FormFeedback>
+                  ) : null}
+
                   <div className="workout-editor__activity-fields">
-                    <label className="form-label">
-                      <span className="form-label-text">{t("workoutEditor.fields.sets")}</span>
-                      <InputControl
-                        type="number"
-                        min="1"
-                        value={active.sets}
-                        disabled={isBusy}
-                        onChange={(event) =>
-                          updateDraft(active.id, {
-                            sets: Math.max(1, Number(event.target.value) || 1),
-                          })
-                        }
-                      />
-                    </label>
+                    {/* A block member's sets are the block's rounds (ADR-046). */}
+                    {activeBlock ? null : (
+                      <label className="form-label">
+                        <span className="form-label-text">{t("workoutEditor.fields.sets")}</span>
+                        <InputControl
+                          type="number"
+                          min="1"
+                          value={active.sets}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateDraft(active.id, {
+                              sets: Math.max(1, Number(event.target.value) || 1),
+                            })
+                          }
+                        />
+                      </label>
+                    )}
 
                     <label className="form-label">
                       <span className="form-label-text">
@@ -491,20 +758,25 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                       />
                     </label>
 
-                    <label className="form-label">
-                      <span className="form-label-text">{t("workoutEditor.fields.duration")}</span>
-                      <InputControl
-                        type="number"
-                        min="0"
-                        value={active.duration}
-                        disabled={isBusy}
-                        onChange={(event) =>
-                          updateDraft(active.id, {
-                            duration: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
+                    {/* An interval's work is every member's duration. */}
+                    {activeBlock?.kind === "interval" ? null : (
+                      <label className="form-label">
+                        <span className="form-label-text">
+                          {t("workoutEditor.fields.duration")}
+                        </span>
+                        <InputControl
+                          type="number"
+                          min="0"
+                          value={active.duration}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateDraft(active.id, {
+                              duration: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    )}
 
                     <label className="form-label">
                       <span className="form-label-text">{t("workoutEditor.fields.exertion")}</span>
@@ -523,20 +795,23 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                   </div>
 
                   <div className="workout-editor__rest-row">
-                    <label className="form-label">
-                      <span className="form-label-text">{t("workoutEditor.fields.restSet")}</span>
-                      <InputControl
-                        type="number"
-                        min="0"
-                        value={active.restSet}
-                        disabled={isBusy}
-                        onChange={(event) =>
-                          updateDraft(active.id, {
-                            restSet: event.target.value,
-                          })
-                        }
-                      />
-                    </label>
+                    {/* A block's rest replaces the rest after each set. */}
+                    {activeBlock ? null : (
+                      <label className="form-label">
+                        <span className="form-label-text">{t("workoutEditor.fields.restSet")}</span>
+                        <InputControl
+                          type="number"
+                          min="0"
+                          value={active.restSet}
+                          disabled={isBusy}
+                          onChange={(event) =>
+                            updateDraft(active.id, {
+                              restSet: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    )}
 
                     <label className="form-label">
                       <span className="form-label-text">
@@ -566,22 +841,31 @@ const WorkoutEditor: React.FC<WorkoutEditorProps> = ({
                 {drafts.length === 0 ? (
                   <div className="training-empty">{t("workoutEditor.empty.overview")}</div>
                 ) : (
-                  drafts.map((exerciseDraft) => (
-                    <TrainingSummaryCard
-                      key={exerciseDraft.id}
-                      title={exerciseDraft.name}
-                      meta={t("workoutEditor.summary.sets", {
-                        count: exerciseDraft.sets,
-                      })}
-                      supporting={
-                        exerciseDraft.repetitions
-                          ? t("workoutEditor.summary.repetitions", {
-                              value: exerciseDraft.repetitions,
-                            })
-                          : undefined
-                      }
-                    />
-                  ))
+                  drafts.map((exerciseDraft) => {
+                    const block = exerciseDraft.blockKey
+                      ? blocks[exerciseDraft.blockKey]
+                      : undefined;
+                    const supporting = joinMetrics([
+                      block ? block.name.trim() || t(`sessionBlocks.kind.${block.kind}`) : null,
+                      exerciseDraft.repetitions
+                        ? t("workoutEditor.summary.repetitions", {
+                            value: exerciseDraft.repetitions,
+                          })
+                        : null,
+                    ]);
+                    return (
+                      <TrainingSummaryCard
+                        key={exerciseDraft.id}
+                        title={exerciseDraft.name}
+                        meta={
+                          block
+                            ? t("sessionBlocks.rounds", { count: block.rounds })
+                            : t("workoutEditor.summary.sets", { count: exerciseDraft.sets })
+                        }
+                        supporting={supporting || undefined}
+                      />
+                    );
+                  })
                 )}
               </div>
 

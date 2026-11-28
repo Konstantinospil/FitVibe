@@ -13,6 +13,7 @@ import {
   CreateSessionSchema,
   SessionExerciseInputSchema,
   SessionSetInputSchema,
+  SessionBlockInputSchema,
   UpdateSessionSchema,
   RecordSetSchema,
   AddSetSchema,
@@ -33,6 +34,10 @@ import {
   SESSION_TEXT_LIMITS,
 } from "../../../apps/backend/src/modules/sessions/sessions.normalization.js";
 import { INTAKE_LIMITS } from "../../../apps/backend/src/modules/sessions/sessions.intake.service.js";
+import {
+  SESSION_BLOCK_KINDS,
+  SESSION_BLOCK_LIMITS,
+} from "../../../apps/backend/src/modules/sessions/sessions.blocks.js";
 import openApiSpec from "../../../apps/backend/openapi/openapi.json";
 
 type SchemaMapEntry = {
@@ -53,6 +58,7 @@ const CONTRACT_SCHEMAS: SchemaMapEntry[] = [
   { name: "SessionUpdateRequest", schema: UpdateSessionSchema },
   { name: "SessionExerciseInput", schema: SessionExerciseInputSchema },
   { name: "SessionSetInput", schema: SessionSetInputSchema },
+  { name: "SessionBlockInput", schema: SessionBlockInputSchema },
   { name: "RecordSetRequest", schema: RecordSetSchema },
   { name: "AddSetRequest", schema: AddSetSchema },
   { name: "AddExerciseRequest", schema: AddExerciseSchema },
@@ -217,6 +223,29 @@ describe("OpenAPI contract alignment", () => {
     expect(Object.keys(paths["/sessions/{id}/intake"])).toEqual(["post"]);
     expect(Object.keys(paths["/sessions/{id}/intake/{entryId}"])).toEqual(["delete"]);
     expect(schemas.SessionWithExercises.properties.intake).toMatchObject({ nullable: true });
+  });
+
+  it("documents interval and circuit blocks within the server's limits (ADR-046)", () => {
+    const schemas = (openApiSpec as any).components.schemas;
+    for (const block of [schemas.SessionBlockInput, schemas.SessionBlock]) {
+      expect(block.properties.kind.enum).toEqual([...SESSION_BLOCK_KINDS]);
+      expect(block.properties.rounds.maximum).toBe(SESSION_BLOCK_LIMITS.maxRounds);
+      expect(block.properties.work_sec.minimum).toBe(SESSION_BLOCK_LIMITS.minWorkSec);
+      expect(block.properties.work_sec.maximum).toBe(SESSION_BLOCK_LIMITS.maxWorkSec);
+      expect(block.properties.rest_sec.maximum).toBe(SESSION_BLOCK_LIMITS.maxRestSec);
+      expect(block.properties.round_rest_sec.maximum).toBe(SESSION_BLOCK_LIMITS.maxRestSec);
+      expect(block.properties.name.maxLength).toBe(SESSION_BLOCK_LIMITS.nameMaxLength);
+    }
+    for (const request of [schemas.SessionCreateRequest, schemas.SessionUpdateRequest]) {
+      expect(request.properties.blocks.maxItems).toBe(SESSION_BLOCK_LIMITS.maxBlocks);
+      expect(request.properties.blocks.description).toContain(
+        `at least ${SESSION_BLOCK_LIMITS.minCircuitMembers}`,
+      );
+    }
+    expect(schemas.SessionExerciseInput.properties.block_ref).toMatchObject({ nullable: true });
+    expect(schemas.SessionWithExercises.properties.blocks.items.$ref).toBe(
+      "#/components/schemas/SessionBlock",
+    );
   });
 
   it("documents the owner-only workout photo (ADR-044)", () => {

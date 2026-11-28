@@ -1122,7 +1122,13 @@
       "exertion": "Zielanstrengung",
       "restSet": "Pause nach jedem Satz (Sekunden)",
       "restExercise": "Pause nach der Übung (Sekunden)",
-      "trainingPlan": "Trainingsplan"
+      "trainingPlan": "Trainingsplan",
+      "block": "Intervall oder Zirkel",
+      "blockName": "Name des Blocks",
+      "rounds": "Runden",
+      "work": "Belastung (Sekunden)",
+      "blockRest": "Pause nach jeder Übung (Sekunden)",
+      "roundRest": "Pause zwischen den Runden (Sekunden)"
     },
     "placeholders": {
       "name": "Name für das Workout",
@@ -1147,7 +1153,15 @@
     },
     "errors": {
       "save": "Das Workout konnte nicht gespeichert werden.",
-      "exercises": "Übungen konnten nicht geladen werden."
+      "exercises": "Übungen konnten nicht geladen werden.",
+      "circuitSize": "Ein Zirkel braucht mindestens {{count}} Übungen.",
+      "intervalWork": "Gib die Belastungszeit für jeden Intervallblock ein."
+    },
+    "block": {
+      "none": "Nicht Teil eines Blocks",
+      "join": "Zum Block darüber hinzufügen",
+      "newInterval": "Intervallblock beginnen",
+      "newCircuit": "Zirkel beginnen"
     }
   },
   "actions": {
@@ -1190,6 +1204,16 @@
     "skipped": "Übersprungen",
     "target": "Ziel: {{value}}",
     "stoppedEarly": "Vorzeitig beendet"
+  },
+  "sessionBlocks": {
+    "kind": {
+      "interval": "Intervall",
+      "circuit": "Zirkel"
+    },
+    "rounds": "{{count}} Runde",
+    "rounds_other": "{{count}} Runden",
+    "work": "Belastung: {{value}} s",
+    "roundRest": "Zwischen den Runden: {{value}} s"
   },
   "librarySurface": {
     "title": "Bibliothek",

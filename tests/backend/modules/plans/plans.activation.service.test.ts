@@ -146,7 +146,7 @@ describe("activateUserPlan", () => {
     ]);
     expect(created.every((row) => row.planned_duration_min === 45)).toBe(true);
     expect(created.every((row) => row.status === "planned" && row.plan_id === planId)).toBe(true);
-    const [, , exercises] = sessions.replaceSessionExercises.mock.calls[0];
+    const [, , { exercises }] = sessions.replaceSessionExercises.mock.calls[0];
     expect(exercises[0].sets).toEqual([
       // The templates' targets become the generated sessions' prescription (ADR-042).
       expect.objectContaining({

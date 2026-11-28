@@ -435,6 +435,44 @@ describe("Sessions Service", () => {
       expect(mockSessionsRepo.updateSession).toHaveBeenCalled();
     });
 
+    describe("interval and circuit blocks (ADR-046)", () => {
+      it("refuses blocks sent without the exercises they group", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(existingSession);
+
+        await expect(
+          sessionsService.updateOne(userId, sessionId, {
+            blocks: [{ ref: 1, kind: "circuit", rounds: 3 }],
+          }),
+        ).rejects.toMatchObject({ status: 400, code: "E.SESSION.BLOCKS_WITHOUT_EXERCISES" });
+        expect(mockSessionsRepo.updateSession).not.toHaveBeenCalled();
+      });
+
+      it("replaces the exercises and their blocks together", async () => {
+        mockSessionsRepo.getSessionById.mockResolvedValue(existingSession);
+        mockSessionsRepo.updateSession.mockResolvedValue(1);
+        mockSessionsRepo.getSessionWithDetails.mockResolvedValue({
+          ...existingSession,
+          exercises: [],
+          blocks: [],
+        } as SessionWithExercises);
+
+        await sessionsService.updateOne(userId, sessionId, {
+          exercises: [
+            { order: 1, block_ref: 1 },
+            { order: 2, block_ref: 1 },
+          ],
+          blocks: [{ ref: 1, kind: "circuit", rounds: 3 }],
+        });
+
+        const [, , structure] = mockSessionsRepo.replaceSessionExercises.mock.calls[0];
+        expect(structure.blocks).toEqual([expect.objectContaining({ kind: "circuit", rounds: 3 })]);
+        expect(structure.exercises.map((item) => item.block_id)).toEqual([
+          structure.blocks[0].id,
+          structure.blocks[0].id,
+        ]);
+      });
+    });
+
     describe("result note (ADR-044)", () => {
       it("refuses a result note on a session that is not completed", async () => {
         mockSessionsRepo.getSessionById.mockResolvedValue(existingSession);

@@ -34,13 +34,13 @@ import { ensureSessionInteractionAllowed, loadSessionOrThrow } from "../feed/fee
 import {
   ensureNonNegativeInteger,
   ensurePlanExists,
-  normalizeSessionExercises,
   trimToNull,
 } from "./sessions.normalization.js";
 import { DEFAULT_SESSION_DURATION_MIN, type ScheduleWindow } from "./sessions.schedule.js";
 import { closedPause } from "./sessions.execution.service.js";
 import { listActiveSessionVibeChanges } from "../points/vibe-level.repository.js";
 import { insertLoggedIntake } from "./sessions.intake.service.js";
+import { normalizeSessionStructure } from "./sessions.blocks.js";
 
 /**
  * Server-side re-validation for rescheduling and resizing (US-4.3-AC03). Clients
@@ -150,7 +150,7 @@ export async function createOne(
   userId: string,
   dto: CreateSessionDTO,
 ): Promise<SessionWithExercises> {
-  const normalizedExercises = normalizeSessionExercises(dto.exercises);
+  const structure = normalizeSessionStructure(dto.exercises, dto.blocks);
   const sessionId = uuidv4();
   const now = new Date();
   const timestamp = now.toISOString();
@@ -203,8 +203,8 @@ export async function createOne(
     }
 
     await createSession(row, trx);
-    if (normalizedExercises.length > 0) {
-      await replaceSessionExercises(trx, sessionId, normalizedExercises);
+    if (structure.exercises.length > 0) {
+      await replaceSessionExercises(trx, sessionId, structure);
     }
     if (logging && row.completed_at) {
       await insertLoggedIntake(trx, sessionId, row.completed_at, dto.intake ?? []);
@@ -225,7 +225,8 @@ export async function createOne(
       planned_at: row.planned_at,
       visibility: row.visibility,
       recurrence_rule: row.recurrence_rule,
-      exercise_count: normalizedExercises.length,
+      exercise_count: structure.exercises.length,
+      block_count: structure.blocks.length,
       status: row.status,
       completion_outcome: row.completion_outcome ?? null,
     },
@@ -243,7 +244,7 @@ export async function createOne(
     });
   }
 
-  if (normalizedExercises.length > 0 || created.status === "completed") {
+  if (structure.exercises.length > 0 || created.status === "completed") {
     await refreshSessionSummary();
   }
 
@@ -282,7 +283,16 @@ export async function updateOne(
     );
   }
 
-  const normalizedExercises = dto.exercises ? normalizeSessionExercises(dto.exercises) : null;
+  // ADR-046: blocks are only meaningful with the exercises they group, and
+  // replacing the exercises replaces the blocks.
+  if (dto.blocks !== undefined && dto.exercises === undefined) {
+    throw new HttpError(
+      400,
+      "E.SESSION.BLOCKS_WITHOUT_EXERCISES",
+      "blocks are only accepted together with exercises",
+    );
+  }
+  const structure = dto.exercises ? normalizeSessionStructure(dto.exercises, dto.blocks) : null;
 
   const targetStatus = dto.status;
   if (
@@ -406,8 +416,8 @@ export async function updateOne(
       throw new HttpError(404, "E.SESSION.NOT_FOUND", "SESSION_NOT_FOUND");
     }
 
-    if (normalizedExercises !== null) {
-      await replaceSessionExercises(trx, id, normalizedExercises);
+    if (structure !== null) {
+      await replaceSessionExercises(trx, id, structure);
     }
 
     if (completing) {
@@ -422,7 +432,7 @@ export async function updateOne(
   }
 
   const statusChanged = current.status !== updated.status;
-  const exercisesTouched = normalizedExercises !== null;
+  const exercisesTouched = structure !== null;
   const visibilityChanged =
     dto.visibility !== undefined && current.visibility !== updated.visibility;
 

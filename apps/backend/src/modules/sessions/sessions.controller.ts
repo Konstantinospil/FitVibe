@@ -31,7 +31,8 @@ import {
   deleteIntakeEntry,
   intakeMaxAmount,
 } from "./sessions.intake.service.js";
-import type { IntakeKind } from "./sessions.types.js";
+import type { IntakeKind, SessionBlockKind } from "./sessions.types.js";
+import { SESSION_BLOCK_KINDS, SESSION_BLOCK_LIMITS } from "./sessions.blocks.js";
 import {
   SESSION_PHOTO_CACHE_CONTROL,
   deleteSessionPhoto,
@@ -146,8 +147,39 @@ const sessionExerciseSchema = z
     planned: plannedAttributesSchema.nullable().optional(),
     actual: actualAttributesSchema.nullable().optional(),
     sets: z.array(sessionSetSchema).max(100).optional(),
+    /** ADR-046: the `ref` of this exercise's block in the same request. */
+    block_ref: z.number().int().min(1).nullable().optional(),
   })
   .strict();
+
+const blockRestSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(SESSION_BLOCK_LIMITS.maxRestSec)
+  .nullable()
+  .optional();
+
+/** ADR-046: an interval or circuit block; structure is checked by the service. */
+const sessionBlockSchema = z
+  .object({
+    ref: z.number().int().min(1),
+    kind: z.enum(SESSION_BLOCK_KINDS as [SessionBlockKind, ...SessionBlockKind[]]),
+    name: z.string().trim().max(SESSION_BLOCK_LIMITS.nameMaxLength).nullable().optional(),
+    rounds: z.number().int().min(1).max(SESSION_BLOCK_LIMITS.maxRounds),
+    work_sec: z
+      .number()
+      .int()
+      .min(SESSION_BLOCK_LIMITS.minWorkSec)
+      .max(SESSION_BLOCK_LIMITS.maxWorkSec)
+      .nullable()
+      .optional(),
+    rest_sec: blockRestSchema,
+    round_rest_sec: blockRestSchema,
+  })
+  .strict();
+
+const blocksSchema = z.array(sessionBlockSchema).max(SESSION_BLOCK_LIMITS.maxBlocks).optional();
 
 const plannedDurationSchema = z
   .number()
@@ -169,6 +201,7 @@ const createSchema = z.object({
   result_note: noteSchema,
   recurrence_rule: z.string().max(255).nullable().optional(),
   exercises: z.array(sessionExerciseSchema).max(50).optional(),
+  blocks: blocksSchema,
   /** ADR-045: only with status "completed". */
   intake: z.array(intakeEntrySchema).max(INTAKE_LIMITS.maxEntriesPerLog).optional(),
 });
@@ -177,6 +210,7 @@ export const CreateSessionSchema = createSchema;
 /** Request schemas checked against the OpenAPI spec (tests/backend/contract). */
 export const SessionExerciseInputSchema = sessionExerciseSchema;
 export const SessionSetInputSchema = sessionSetSchema;
+export const SessionBlockInputSchema = sessionBlockSchema;
 
 const updateSchema = z
   .object({
@@ -195,6 +229,7 @@ const updateSchema = z
     completed_at: z.string().datetime().optional(),
     calories: z.number().int().min(0).nullable().optional(),
     exercises: z.array(sessionExerciseSchema).max(50).optional(),
+    blocks: blocksSchema,
   })
   .strict();
 

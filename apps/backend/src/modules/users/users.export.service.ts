@@ -3,7 +3,7 @@ import { HttpError } from "../../utils/http.js";
 import { insertAudit } from "../common/audit.util.js";
 import type { ContactRow, UserRow, ProfileRow } from "./users.repository.js";
 import type { UserDataExportBundle } from "./users.types.js";
-import { INTAKE_TABLE } from "../sessions/sessions.repository.js";
+import { INTAKE_TABLE, SESSION_BLOCKS_TABLE } from "../sessions/sessions.repository.js";
 
 type SessionRow = { id: string; owner_id: string };
 type SessionExerciseRow = { id: string; session_id: string };
@@ -134,7 +134,7 @@ export async function collectUserData(userId: string): Promise<UserDataExportBun
   const sessionIds = sessions.map((session) => session.id);
   const totalPoints = pointsHistory.reduce((sum, record) => sum + Number(record.points ?? 0), 0);
 
-  const [sessionExercises, exerciseSets, sessionIntake] = await Promise.all([
+  const [sessionExercises, exerciseSets, sessionIntake, sessionBlocks] = await Promise.all([
     sessionIds.length
       ? db<SessionExerciseRow>("session_exercises").whereIn("session_id", sessionIds)
       : Promise.resolve([]),
@@ -147,6 +147,10 @@ export async function collectUserData(userId: string): Promise<UserDataExportBun
     // ADR-045: water and food energy recorded with workouts.
     sessionIds.length
       ? db<GenericRow>(INTAKE_TABLE).whereIn("session_id", sessionIds).orderBy("recorded_at")
+      : Promise.resolve([]),
+    // ADR-046: interval and circuit blocks; members carry session_exercises.block_id.
+    sessionIds.length
+      ? db<GenericRow>(SESSION_BLOCKS_TABLE).whereIn("session_id", sessionIds)
       : Promise.resolve([]),
   ]);
 
@@ -237,6 +241,7 @@ export async function collectUserData(userId: string): Promise<UserDataExportBun
       items: sessions,
       exercises: sessionExercises,
       sets: exerciseSets,
+      blocks: sessionBlocks,
       intake: sessionIntake,
     },
     points: {

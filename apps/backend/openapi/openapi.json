@@ -3140,6 +3140,14 @@
             "items": {
               "$ref": "#/components/schemas/SessionExerciseInput"
             }
+          },
+          "blocks": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/SessionBlockInput"
+            },
+            "description": "Interval and circuit blocks (ADR-046). Members set block_ref and must follow each other in exercise order; a circuit needs at least 2 (422 E.SESSION.INVALID_BLOCK otherwise)."
           }
         },
         "required": ["planned_at"]
@@ -3280,10 +3288,111 @@
             "items": {
               "$ref": "#/components/schemas/SessionSetInput"
             }
+          },
+          "block_ref": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "The ref of this exercise's block in the same request (ADR-046).",
+            "nullable": true
           }
         },
         "required": ["order"],
         "additionalProperties": false
+      },
+      "SessionBlockInput": {
+        "type": "object",
+        "description": "An interval or circuit block (ADR-046). ref only links it to its members within this request.",
+        "properties": {
+          "ref": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["interval", "circuit"],
+            "description": "interval: timed work and rest for each member (work_sec required). circuit: the members back to back."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "rounds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "work_sec": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600,
+            "description": "Work per member and round.",
+            "nullable": true
+          },
+          "rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600,
+            "nullable": true,
+            "description": "Rest after each member's work."
+          },
+          "round_rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600,
+            "nullable": true,
+            "description": "Rest between rounds."
+          }
+        },
+        "required": ["ref", "kind", "rounds"],
+        "additionalProperties": false
+      },
+      "SessionBlock": {
+        "type": "object",
+        "description": "An interval or circuit block (ADR-046). Its position is that of its members; each round of a member is one of its sets.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["interval", "circuit"],
+            "description": "interval: timed work and rest for each member (work_sec required). circuit: the members back to back."
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true
+          },
+          "rounds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "work_sec": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3600,
+            "description": "Work per member and round.",
+            "nullable": true
+          },
+          "rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600,
+            "nullable": true,
+            "description": "Rest after each member's work."
+          },
+          "round_rest_sec": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600,
+            "nullable": true,
+            "description": "Rest between rounds."
+          }
+        },
+        "required": ["id", "kind", "name", "rounds", "work_sec", "rest_sec", "round_rest_sec"]
       },
       "SessionSetInput": {
         "type": "object",
@@ -3583,6 +3692,14 @@
             "items": {
               "$ref": "#/components/schemas/SessionExerciseInput"
             }
+          },
+          "blocks": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "$ref": "#/components/schemas/SessionBlockInput"
+            },
+            "description": "Interval and circuit blocks (ADR-046). Members set block_ref and must follow each other in exercise order; a circuit needs at least 2 (422 E.SESSION.INVALID_BLOCK otherwise). Replaced together with exercises; only accepted with exercises (400 E.SESSION.BLOCKS_WITHOUT_EXERCISES)."
           }
         },
         "additionalProperties": false
@@ -3707,6 +3824,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "blocks": {
+            "type": "array",
+            "description": "Interval and circuit blocks, in the order of their first member (ADR-046).",
+            "items": {
+              "$ref": "#/components/schemas/SessionBlock"
+            }
+          },
           "exercises": {
             "type": "array",
             "items": {
@@ -3733,6 +3857,12 @@
                 "order_index": {
                   "type": "integer",
                   "minimum": 1
+                },
+                "block_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "The block this exercise belongs to (ADR-046).",
+                  "nullable": true
                 },
                 "status": {
                   "type": "string",

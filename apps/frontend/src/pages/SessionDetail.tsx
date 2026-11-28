@@ -19,6 +19,7 @@ import { CALENDAR_QUERY_KEY } from "../lib/scheduling/calendarQuery";
 import { durationOf, sessionEnd } from "../lib/scheduling/sessionSchedule";
 import { TRAINING_DATA_CONFIG } from "../config/trainingSurfaces";
 import { joinMetrics, loadMetric, metric, setSummary } from "../lib/sessions/setSummary";
+import { blockCardProps, blocksByFirstExercise } from "../lib/sessions/blocks";
 import { useLoadUnit } from "../hooks/useLoadUnit";
 import type { LoadUnit } from "../lib/units/load";
 import { liveSessionQueryKey, liveWorkoutPath } from "../lib/execution/liveWorkout";
@@ -51,11 +52,15 @@ function exerciseSummary(t: Translate, exercise: SessionExercise, unit: LoadUnit
 const SessionExercises: React.FC<{ session: SessionWithExercises }> = ({ session }) => {
   const { t } = useTranslation();
   const { unit } = useLoadUnit();
+  const blockStarts = blocksByFirstExercise(session);
   return (
     <TrainingPanel title={t("sessionDetail.exerciseList")}>
       {session.exercises.length === 0 ? <p>{t("sessionDetail.empty")}</p> : null}
       {session.exercises.map((exercise) => (
         <React.Fragment key={exercise.id}>
+          {blockStarts.has(exercise.id) ? (
+            <TrainingSummaryCard {...blockCardProps(t, blockStarts.get(exercise.id)!)} />
+          ) : null}
           <TrainingSummaryCard
             title={exercise.exercise_name || t("workoutEditor.exerciseFallback")}
             meta={t("sessionDetail.prescription")}
