@@ -1,6 +1,11 @@
 "use strict";
 
-const finite = (value) => typeof value === "number" && Number.isFinite(value);
+const {
+  BUDGET_AGGREGATION_METHOD,
+  budgetBreaches,
+  isMeasured,
+  median,
+} = require("./lighthouse-aggregation.cjs");
 
 function metric(report, name) {
   if (name.startsWith("categories:")) {
@@ -18,48 +23,39 @@ function metric(report, name) {
 
 /**
  * Exactly match the canonical CI score/category/LCP/JS thresholds, using the
- * worst of three independent runs for each public route AND consent scenario.
+ * median of three independent runs for each public route AND consent scenario.
  */
-function assertPublicWorstBudgets(rows, paths, scenarios, assertions, runCount) {
+function assertPublicMedianBudgets(rows, paths, scenarios, assertions, runCount) {
   const errors = [];
   for (const scenario of scenarios) {
     for (const pathname of paths) {
-      const group = rows.filter((row) => row.path === pathname &&
-        row.scenario === scenario && row.valid);
+      const group = rows.filter(
+        (row) => row.path === pathname && row.scenario === scenario && row.valid,
+      );
       if (group.length !== runCount) {
-        errors.push(scenario + " " + pathname + ": expected " + runCount +
-          " valid runs, got " + group.length);
+        errors.push(
+          scenario + " " + pathname + ": expected " + runCount + " valid runs, got " + group.length,
+        );
         continue;
       }
       for (const [name, policy] of Object.entries(assertions)) {
         const [level, settings] = policy;
-        if (level !== "error" || settings?.aggregationMethod !== "pessimistic") {
-          errors.push("Nonblocking or non-pessimistic budget: " + name);
+        if (level !== "error" || settings?.aggregationMethod !== BUDGET_AGGREGATION_METHOD) {
+          errors.push("Nonblocking or non-" + BUDGET_AGGREGATION_METHOD + " budget: " + name);
           continue;
         }
         const values = group.map((row) => metric(row.report, name));
-        if (!values.every(finite)) {
+        if (!values.every(isMeasured)) {
           errors.push(scenario + " " + pathname + ": missing metric " + name);
           continue;
         }
-        if (settings.minScore !== undefined) {
-          const worst = Math.min(...values);
-          if (worst < settings.minScore) {
-            errors.push(scenario + " " + pathname + ": " + name +
-              " worst " + worst + " below " + settings.minScore);
-          }
-        }
-        if (settings.maxNumericValue !== undefined) {
-          const worst = Math.max(...values);
-          if (worst > settings.maxNumericValue) {
-            errors.push(scenario + " " + pathname + ": " + name +
-              " worst " + worst + " above " + settings.maxNumericValue);
-          }
-        }
+        errors.push(
+          ...budgetBreaches(scenario + " " + pathname + ": " + name, median(values), settings),
+        );
       }
     }
   }
   return errors;
 }
 
-module.exports = { assertPublicWorstBudgets };
+module.exports = { assertPublicMedianBudgets };

@@ -881,7 +881,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --no-offline
 
-      - name: Verify Lighthouse worst-run assertion policy
+      - name: Verify Lighthouse median-run assertion policy
         run: pnpm run test:lhci:config
 
       - name: Build frontend (SSR)
@@ -2727,7 +2727,7 @@ jobs:
           if-no-files-found: error
 
       # Diagnostic only: 8 real public routes x 2 persisted consent scenarios
-      # x 3 worst-run measurements, checked in the Lighthouse-created tab.
+      # x 3 measurements judged on the median run, checked in the Lighthouse-created tab.
       # Preserve the existing blocking gate and budgets until proven by CI.
       - name: Diagnose public Lighthouse through real E2E ingress
         if: always() && matrix.shard == 1

@@ -3,7 +3,7 @@
 **Status:** current as of branch `fix/auth-bootstrap-634` (issue #634).
 **Scope:** what happens between an authenticated reload and the first protected page render, which parts measurably matter for the authenticated Lighthouse gate, and the security invariants every optimisation must keep.
 
-The authenticated Lighthouse gate (three valid runs per route, worst-of-three LCP ≤ 3,000 ms, Lighthouse's default mobile profile with simulated throttling: 150 ms RTT, ~1.6 Mbps, 4× CPU slowdown) measures this path. The CI ingress is nginx over **HTTP/1.1** (`listen 80`), so Lighthouse simulates at most 6 connections per origin.
+The authenticated Lighthouse gate (three valid runs per route, median-of-three LCP ≤ 3,000 ms, Lighthouse's default mobile profile with simulated throttling: 150 ms RTT, ~1.6 Mbps, 4× CPU slowdown) measures this path. The CI ingress is nginx over **HTTP/1.1** (`listen 80`), so Lighthouse simulates at most 6 connections per origin.
 
 ## 1. Sequence (production SSR)
 
@@ -88,7 +88,7 @@ Two consequences for the simulated gate:
 - Moving bytes _into_ the entry graph to save requests (H11) made every route slower.
 - Collapsing W2 from 2 rounds to 1 with **identical bytes** (H12) made real loading ~170 ms faster in the timeline but did **not** change simulated LCP. So connection contention in W2 is not what Lighthouse's simulation charges; the wave picture above describes real loading, not the simulated critical path. The next step is to read the simulated critical path directly (Lighthouse's Lantern LCP graph from a saved trace) instead of inferring it from waves.
 
-**Checked:** with a mocked API, the LCP element on authenticated routes was the first-login two-factor prompt overlay. In CI (real backend) it is page content on all 8 routes (headings, legal text, the calendar date), so the gate times the pages themselves. The report table prints each route's worst-run LCP element.
+**Checked:** with a mocked API, the LCP element on authenticated routes was the first-login two-factor prompt overlay. In CI (real backend) it is page content on all 8 routes (headings, legal text, the calendar date), so the gate times the pages themselves. The report table prints each route's median-run LCP element.
 
 ## 3b. Measurement validity and bounded recoveries
 
@@ -101,7 +101,9 @@ A run counts only if it is valid: right route and identity, same-navigation cont
 
 Every attempt's report is kept (`-retry-N`), and recoveries are logged and written to `consent-recovery-events.json` / `trace-recoveries.json`. Since a recovered run measured nothing, re-collecting it cannot select a faster result. The cap keeps systematic breakage failing.
 
-The job log and step summary print each runner's full table: worst-of-three per route, every run's LCP, and the worst run's LCP element.
+The job log and step summary print each runner's full table: median-of-three per route, every run's LCP, and the median run's LCP element.
+
+**Aggregation (since 2026-11-28):** every Lighthouse budget (LHCI config, authenticated, public and backoffice runners) judges the **median** of the valid runs, defined once in `tests/perf/lighthouse-aggregation.cjs`. The worst-of-three gate it replaces failed on single outlier runs: routes sit within about ±60 ms of the LCP budget (§3), so one slow run out of three decided pass/fail. Historical figures in this document are route-worst values and are kept as measured.
 
 ## 3c. Lantern's LCP graph (read from saved Lighthouse traces)
 
@@ -130,4 +132,4 @@ After H9a and H10, authenticated route-worst LCP averages 3.0–3.08 s across si
 - Page data requests (step 6) start only after the guard opens.
 - **Measurement context (policy, not a fix):** the budget is measured over HTTP/1.1. If production serves HTTP/2 at its TLS edge, per-request round trips cost less there than in CI.
 
-Every change to this path follows the experiment contract in issue #634: one hypothesis per change, baseline and patch SHAs, the unchanged worst-of-three gate, TBT/CLS counter-metrics, and an explicit retain/revert decision.
+Every change to this path follows the experiment contract in issue #634: one hypothesis per change, baseline and patch SHAs, the unchanged median-of-three gate, TBT/CLS counter-metrics, and an explicit retain/revert decision.

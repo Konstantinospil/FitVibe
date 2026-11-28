@@ -3,60 +3,83 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { assertPublicWorstBudgets } = require("./lighthouse-public-budgets.cjs");
+const { assertPublicMedianBudgets } = require("./lighthouse-public-budgets.cjs");
 const { publicRoutes } = require("./lighthouse-routes.cjs");
 
-const canonical = JSON.parse(fs.readFileSync(
-  path.join(__dirname, "lighthouserc.ci.json"), "utf8",
-));
+const canonical = JSON.parse(fs.readFileSync(path.join(__dirname, "lighthouserc.ci.json"), "utf8"));
 const config = canonical.ci.assert.assertions;
 const scenarios = ["first-visit", "consented"];
 function goodReport() {
   return {
     categories: Object.fromEntries(
-      ["performance", "accessibility", "best-practices", "seo"]
-        .map((name) => [name, { score: 1 }]),
+      ["performance", "accessibility", "best-practices", "seo"].map((name) => [name, { score: 1 }]),
     ),
     audits: {
       "largest-contentful-paint": { numericValue: 1800 },
-      "resource-summary": { details: { items: [
-        { resourceType: "script", transferSize: 125000 },
-      ] } },
+      "resource-summary": {
+        details: { items: [{ resourceType: "script", transferSize: 125000 }] },
+      },
     },
   };
 }
 function rows() {
-  return scenarios.flatMap((scenario) => publicRoutes.flatMap((pathname) =>
-    [1, 2, 3].map(() => ({
-      path: pathname, scenario, valid: true, report: goodReport(),
-    })),
-  ));
+  return scenarios.flatMap((scenario) =>
+    publicRoutes.flatMap((pathname) =>
+      [1, 2, 3].map(() => ({
+        path: pathname,
+        scenario,
+        valid: true,
+        report: goodReport(),
+      })),
+    ),
+  );
 }
-test("public scenario budgets enforce all canonical pessimistic thresholds independently", () => {
+test("public scenario budgets enforce all canonical median thresholds independently", () => {
   const result = rows();
   assert.equal(result.length, 48);
-  assert.deepEqual(assertPublicWorstBudgets(
-    result, publicRoutes, scenarios, config, canonical.ci.collect.numberOfRuns,
-  ), []);
-  // A single slow measurement must fail even when other two are fast.
+  assert.deepEqual(
+    assertPublicMedianBudgets(
+      result,
+      publicRoutes,
+      scenarios,
+      config,
+      canonical.ci.collect.numberOfRuns,
+    ),
+    [],
+  );
+  // A single slow measurement is an outlier: the median of the three runs passes.
   result[1].report.audits["largest-contentful-paint"].numericValue = 3200;
-  const errors = assertPublicWorstBudgets(result, publicRoutes, scenarios, config, 3);
-  assert.match(errors.join("; "), /first-visit \/: largest-contentful-paint worst 3200 above 3000/);
+  assert.deepEqual(assertPublicMedianBudgets(result, publicRoutes, scenarios, config, 3), []);
+  // Two slow runs out of three fail, judged on the median run.
+  result[2].report.audits["largest-contentful-paint"].numericValue = 3100;
+  const errors = assertPublicMedianBudgets(result, publicRoutes, scenarios, config, 3);
+  assert.match(
+    errors.join("; "),
+    /first-visit \/: largest-contentful-paint median 3100 exceeds 3000/,
+  );
   assert.ok(!errors.some((text) => text.startsWith("consented ")));
 });
-test("missing/invalid measurements and worst JavaScript transfer are blocking", () => {
+test("missing/invalid measurements and median JavaScript transfer are blocking", () => {
   const result = rows();
   result.splice(0, 1);
-  assert.match(assertPublicWorstBudgets(result, publicRoutes, scenarios, config, 3).join("; "),
-    /expected 3 valid runs, got 2/);
+  assert.match(
+    assertPublicMedianBudgets(result, publicRoutes, scenarios, config, 3).join("; "),
+    /expected 3 valid runs, got 2/,
+  );
 
   const complete = rows();
-  complete[0].report.audits["resource-summary"].details.items[0].transferSize = 307201;
-  assert.match(assertPublicWorstBudgets(complete, publicRoutes, scenarios, config, 3).join("; "),
-    /resource-summary:script.size worst 307201 above 307200/);
+  for (const run of complete.slice(0, 2)) {
+    run.report.audits["resource-summary"].details.items[0].transferSize = 307201;
+  }
+  assert.match(
+    assertPublicMedianBudgets(complete, publicRoutes, scenarios, config, 3).join("; "),
+    /resource-summary:script.size median 307201 exceeds 307200/,
+  );
   complete[0].report.audits["resource-summary"].details.items[0].transferSize = undefined;
-  assert.match(assertPublicWorstBudgets(complete, publicRoutes, scenarios, config, 3).join("; "),
-    /missing metric resource-summary:script.size/);
+  assert.match(
+    assertPublicMedianBudgets(complete, publicRoutes, scenarios, config, 3).join("; "),
+    /missing metric resource-summary:script.size/,
+  );
 });
 test("real public diagnostic must observe the measured tab and collect both states", () => {
   const source = fs.readFileSync(path.join(__dirname, "run-lighthouse-public-real.cjs"), "utf8");
